@@ -1,0 +1,30 @@
+<zk>
+	<window title="Cloud Drive" border="normal" id="openBookDlg" closable="true"
+		apply="org.zkoss.zss.app.ui.dlg.OpenManageBookCtrl" mode="modal" hflex="min" vflex="min">
+		<vlayout spacing="5" hflex="min" vflex="min">
+			<listbox id="bookList" rows="8" width="400px">
+				<listhead>
+					<listheader label="Name" align="left" sortAscending="${openBookDlg$composer.bookNameAscComparator}" sortDescending="${openBookDlg$composer.bookNameDescComparator}"/>
+					<listheader label="Last modified date" width="150px" align="center" sortAscending="${openBookDlg$composer.bookDateAscComparator}" sortDescending="${openBookDlg$composer.bookDateDescComparator}" />
+				</listhead>
+				<template name="model">
+					<listitem forward="onDoubleClick=bookList.onDoubleClick">
+						<listcell label="${each.name}"/>
+						<listcell  label="${each.lastmodify}"/>
+					</listitem>
+				</template>
+			</listbox>
+			<space orient="horizontal" hflex="1"/>
+			<hbox hflex="1">
+				<hbox hflex="1" pack="start">
+					<button id="open" label="Open" autodisable="open,cancel,delete,upload" disabled="true"/>
+					<button id="delete" label="Delete" disabled="true"/>
+				</hbox>
+				<hbox hflex="1" pack="end">
+					<button id="upload" label="Upload..."/>
+				</hbox>
+			</hbox>
+		</vlayout>
+	</window>
+
+</zk>

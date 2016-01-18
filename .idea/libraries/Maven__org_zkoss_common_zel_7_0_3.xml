@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: org.zkoss.common:zel:7.0.3">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/zkoss/common/zel/7.0.3/zel-7.0.3.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/org/zkoss/common/zel/7.0.3/zel-7.0.3-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/zkoss/common/zel/7.0.3/zel-7.0.3-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

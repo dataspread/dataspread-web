@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+
+<!--
+Purpose:
+	Defines methods and actions for DSP
+Description:
+	
+Histroy:
+	2013/7/24 Dennis
+
+Copyright (C) 2013 Potix Corporation. All Rights Reserved.
+-->
+
+<taglib>
+	<uri>http://www.zkoss.org/dsp/zss/core</uri>
+	<description>
+	Methods and actions of ZSS utilities
+	</description>
+
+	<!--         -->
+	<!-- Imports -->
+	<!--         -->
+
+	<!--           -->
+	<!-- Functions -->
+	<!--           -->
+	<!-- ZUML Functions -->
+	<function>
+		<name>encodeWithZSS</name>
+		<function-class>org.zkoss.zss.ui.impl.CoreFns</function-class>
+		<function-signature>
+	java.lang.String encodeWithZSS(java.lang.String)
+		</function-signature>
+		<description>
+	Returns the string encoded with ZSS
+		</description>
+	</function>
+</taglib>

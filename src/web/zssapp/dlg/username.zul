@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+hyperlink.zul
+
+	Purpose:
+		
+	Description:
+		
+	History:
+		Tue, Nov 26, 2014  2:32:05 PM, Created by JerryChen
+
+Copyright (C) 2014 Potix Corporation. All Rights Reserved.
+
+-->
+<zk>
+	<window title="What's your name?" border="normal" id="usernameDlg"
+		apply="org.zkoss.zss.app.ui.dlg.UsernameCtrl" hflex="min" vflex="min">
+		<vbox hflex="1" pack="center" align="center">
+			<label>Please enter your nick name</label>
+			<hbox>			
+				<textbox id="username"></textbox>
+				<button id="ok" label="OK" />
+			</hbox>
+		</vbox>
+	</window>
+</zk>

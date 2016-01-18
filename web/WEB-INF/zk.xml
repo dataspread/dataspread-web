@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<zk>
+	<library-property>
+		<name>zssapp.bookrepostory.readonly</name>
+		<value>false</value>
+	</library-property>
+		
+	<session-config>
+		<max-desktops-per-session>10</max-desktops-per-session>
+	</session-config>
+<!--
+	<library-property>
+		<name>zssapp.collaboration.disabled</name>
+		<value>true</value>
+	</library-property>
+	
+ 	<library-property>
+		<name>zssapp.menu.sharebook.hidden</name>
+		<value>true</value>
+	</library-property>
+	
+	<library-property>
+		<name>zssapp.menu.username.hidden</name>
+		<value>true</value>
+	</library-property>
+
+	<library-property>
+		<name>zssapp.menu.zssmark.hidden</name>
+		<value>true</value>
+	</library-property>
+	
+	<library-property>
+		<name>zssapp.warning.save</name>
+		<value>false</value>
+	</library-property> 
+	
+	<library-property>
+		<name>zssapp.save.period.second</name>
+		<value>60</value>
+	</library-property> 
+	
+	<library-property>
+		<name>zssapp.bookmark.disable</name>
+		<value>true</value>
+	</library-property>
+-->	
+	
+
+</zk>

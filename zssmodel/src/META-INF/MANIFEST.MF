@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Class-Path: zweb-7.0.3.jar junit-4.8.1.jar zel-7.0.3.jar slf4j-jdk14-1
+ .7.5.jar stax-api-1.0.1.jar commons-logging-1.1.1.jar dom4j-1.6.1.jar
+  log4j-1.2.13.jar xmlbeans-2.3.0.jar slf4j-api-1.7.5.jar commons-file
+ upload-1.2.2.jar ooxml-schemas-1.1.jar zcommon-7.0.3.jar zk-7.0.3.jar
+  commons-codec-1.5.jar bsh-2.0b4.jar jsoup-1.7.3.jar
+Main-Class: 
+

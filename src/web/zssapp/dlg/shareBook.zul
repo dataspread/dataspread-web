@@ -1,0 +1,21 @@
+<zk>
+	<window title="Share with others" border="normal" id="shareBookDlg"
+		apply="org.zkoss.zss.app.ui.dlg.ShareBookCtrl" mode="modal" hflex="min" vflex="min">
+		<vlayout spacing="5">
+			<grid hflex="min" vflex="min" >
+				<rows>
+					<row>
+						<vbox>
+							You can now share this book via the following URL.
+							<textbox id="url" width="400px" focus="true"/>
+						</vbox>
+					</row>
+				</rows>
+			</grid>
+			<space orient="horizontal"/>
+			<hbox hflex="1" pack="center" align="center">
+				<button id="done" label="Done" />
+			</hbox>
+		</vlayout>
+	</window>
+</zk>

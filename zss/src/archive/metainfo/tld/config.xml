@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- config.xml
+	Purpose:
+		
+	Description:
+		
+	History:
+		2013/7/24 Dennis
+
+Copyright (C) 2010 Potix Corporation. All Rights Reserved.
+-->
+
+<config>
+	<config-name>zss</config-name><!-- used to resolve dependency -->
+	<version>
+		<version-class>org.zkoss.zss.ui.Version</version-class>
+		<version-uid>3.8.1</version-uid>
+		<zk.version>7.0.3</zk.version><!-- or later -->
+	</version>
+	<taglib>
+		<taglib-uri>http://www.zkoss.org/dsp/zss/core</taglib-uri>
+		<taglib-location>/web/WEB-INF/tld/zss/core.dsp.tld</taglib-location>
+	</taglib>
+</config>

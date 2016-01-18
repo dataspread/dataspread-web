@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Specification-Title: ZK POI
+Specification-Version: 3.9.8
+Specification-Vendor: Potix Corporation
+Implementation-Title: org.zkoss.zpoi
+Implementation-URL: http://www.zkoss.org/zss
+Implementation-Version: 3.9.8
+Implementation-Vendor: Potix Corporation

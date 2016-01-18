@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- config.xml
+	Purpose:
+		
+	Description:
+		
+	History:
+		Tue Dec 14 15:16:37     2010, Created by ashish
+
+Copyright (C) 2010 Potix Corporation. All Rights Reserved.
+-->
+
+<config>
+	<config-name>zss</config-name><!-- used to resolve dependency -->
+	<version>
+		<version-class>org.zkoss.zss.ui.Version</version-class>
+		<version-uid>3.8.1</version-uid>
+		<zk.version>7.0.3</zk.version><!-- or later -->
+	</version>
+	<listener>
+		<listener-class>org.zkoss.zss.ui.WebAppInit</listener-class>
+	</listener>
+	<library-property>
+		<name>org.zkoss.zss.model.default.Exporter.class</name>
+		<value>excel=org.zkoss.zss.model.sys.impl.ExcelExporter</value>
+	</library-property>
+	<library-property>
+		<name>org.zkoss.zss.model.default.Importer.class</name>
+		<value>excel=org.zkoss.zss.model.sys.impl.ExcelImporter</value>
+	</library-property>
+</config>

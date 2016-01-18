@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- zk.wpd
+	Purpose:
+		
+	Description:
+		
+	History:
+		Fri May 15 15:41:31     2009, Created by sam
+
+Copyright (C) 2009 Potix Corporation. All Rights Reserved.
+-->
+<package name="zss" language="xul/html" depends="zul,zul.layout, zul.inp, zul.tab, zul.menu, zul.box">
+	<widget name="Spreadsheet"/>
+	<script src="globalDef.js"/>
+	<script src="AreaCtrl.js"/>
+	<script src="AutoScrollCtrl.js"/>
+	<script src="Button.js"/>
+	<script src="CacheCtrl.js"/>
+	<script src="CellBlockCtrl.js"/>
+	<script src="Cell.js"/>
+	<script src="Configuration.js"/>
+	<script src="DataPanel.js"/>
+	<script src="Defer.js"/>
+	<script src="DragHandler.js"/>
+	<script src="Editbox.js"/>
+	<script src="FocusMarkCtrl.js"/>
+	<script src="Formulabar.js"/>
+	<script src="Header.js" />
+	<script src="Highlight.js"/>
+	<script src="Id.js" />
+	<script src="Info.js" />
+	<script src="Labels.js" />
+	<script src="MainBlockCtrl.js" />
+	<script src="MergeMatrix.js"/>
+	<script src="CornerPanel.js"/>
+	<script src="LeftPanel.js" />
+	<script src="Toolbar.js" />
+	<script src="TopPanel.js" />
+	<script src="Pos.js" />
+	<script src="PositionHelper.js" />
+	<script src="Range.js" />
+	<script src="Row.js" />
+	<script src="ScrollInfo.js" />
+	<script src="ScrollPanel.js"/>
+	<script src="Sheetbar.js"/>
+	<script src="SSheetCtrl.js"/>
+	<script src="ss.js"/>
+	<script src="Util.js"/>
+	<script src="zcss.js"/>
+</package>
