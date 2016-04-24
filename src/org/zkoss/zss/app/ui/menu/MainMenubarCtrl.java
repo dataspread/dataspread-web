@@ -95,7 +95,7 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 	@Wire
 	Menu insertMenu;
 	
-	private static final String ZSS_PREFIX = "ZK Spreadsheet ";
+	private static final String ZSS_PREFIX = "DataSpread ";
 	
 	@Override
 	public void doAfterCompose(Menubar comp) throws Exception {

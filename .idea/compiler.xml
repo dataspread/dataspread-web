@@ -39,10 +39,5 @@
         <module name="zss" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="zpoi" target="1.6" />
-      <module name="zss" target="1.6" />
-      <module name="zssmodel" target="1.6" />
-    </bytecodeTargetLevel>
   </component>
 </project>
