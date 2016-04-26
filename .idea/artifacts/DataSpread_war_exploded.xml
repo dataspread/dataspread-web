@@ -1,11 +1,11 @@
 <component name="ArtifactManager">
-  <artifact type="exploded-war" build-on-make="true" name="zssapp:war exploded">
-    <output-path>$PROJECT_DIR$/out/artifacts/zssapp_war_exploded</output-path>
+  <artifact type="exploded-war" build-on-make="true" name="DataSpread:war exploded">
+    <output-path>$PROJECT_DIR$/out/artifacts/DataSpread_war_exploded</output-path>
     <root id="root">
-      <element id="javaee-facet-resources" facet="zssapp/web/Web" />
+      <element id="javaee-facet-resources" facet="DataSpread/web/Web" />
       <element id="directory" name="WEB-INF">
         <element id="directory" name="classes">
-          <element id="module-output" name="zssapp" />
+          <element id="module-output" name="DataSpread" />
           <element id="module-output" name="zssmodel" />
           <element id="module-output" name="zpoi" />
           <element id="module-output" name="zss" />
