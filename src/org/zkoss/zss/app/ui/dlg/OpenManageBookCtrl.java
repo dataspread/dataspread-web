@@ -14,6 +14,7 @@ package org.zkoss.zss.app.ui.dlg;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.sql.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -42,7 +43,10 @@ import org.zkoss.zss.app.repository.BookRepositoryFactory;
 import org.zkoss.zss.app.BookManager;
 import org.zkoss.zss.app.impl.BookManagerImpl;
 import org.zkoss.zss.app.repository.impl.BookUtil;
+import org.zkoss.zss.app.repository.impl.SimpleBookInfo;
 import org.zkoss.zss.app.ui.UiUtil;
+import org.zkoss.zss.model.impl.BookImpl;
+import org.zkoss.zss.model.impl.DBHandler;
 import org.zkoss.zul.Button;
 import org.zkoss.zul.Fileupload;
 import org.zkoss.zul.ListModelList;
@@ -96,13 +100,23 @@ public class OpenManageBookCtrl extends DlgCtrlBase{
 	
 	private void reloadBookModel(){
 		bookListModel = new ListModelList<Map<String,Object>>();
-		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
-		for(BookInfo info : repo.list()){
-			Map<String,Object> data = new HashMap<String,Object>();
-			data.put("name", info.getName());
-			data.put("lastmodify", dateFormat.format(info.getLastModify()));
-			data.put("bookinfo", info);
-			bookListModel.add(data);
+
+		String bookListQuery = "SELECT * FROM books";
+		try (Connection connection = DBHandler.instance.getConnection();
+			 Statement stmt = connection.createStatement();
+			 ResultSet resultSet = stmt.executeQuery(bookListQuery))
+		{
+			while(resultSet.next())
+			{
+				Map<String,Object> data = new HashMap<String,Object>();
+				data.put("name", resultSet.getString("bookname"));
+				data.put("booktable", resultSet.getString("booktable"));
+				bookListModel.add(data);
+			}
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
 		}
 		bookList.setModel(bookListModel);
 		updateButtonState();
@@ -115,8 +129,10 @@ public class OpenManageBookCtrl extends DlgCtrlBase{
 			UiUtil.showWarnMessage("Please select a book first");
 			return;
 		}
+		final  String bookName = (String) selection.get("name");
+		final  String bookTable = (String) selection.get("booktable");
 		BookInfo bookInfo = (BookInfo) selection.get("bookinfo");
-		postCallback(ON_OPEN, newMap(newEntry(ARG_BOOKINFO, bookInfo), newEntry(ARG_BOOK, loadBook(bookInfo))));
+		postCallback(ON_OPEN, newMap(newEntry(ARG_BOOK, loadBook(bookName, bookTable))));
 		detach();
 	}
 	
@@ -146,29 +162,21 @@ public class OpenManageBookCtrl extends DlgCtrlBase{
 			return;
 		}
 		
-		final BookInfo bookinfo = (BookInfo)selection.get("bookinfo");
+		final  String bookName = (String) selection.get("name");
+		final  String bookTable = (String) selection.get("booktable");
 		
-		synchronized (bookManager) {
-			String bookName = bookinfo.getName();
-			if(bookManager.isBookAttached(bookinfo)) {
-				String users = Arrays.toString(collaborationInfo.getUsedUsernames(bookName).toArray());
-				UiUtil.showInfoMessage("Book \"" + bookinfo.getName() + "\" is in used by " + users + ".");
-				return;
-			}
-				
-			Messagebox.show("want to delete file \"" + bookName + "\" ?", "ZK Spreadsheet", 
-					Messagebox.OK + Messagebox.CANCEL, Messagebox.INFORMATION, new SerializableEventListener<Event>() {
-				private static final long serialVersionUID = 4698610847862970542L;
+		Messagebox.show("Want to delete \"" + bookName + "\" ?", "DataSpread",
+				Messagebox.OK + Messagebox.CANCEL, Messagebox.INFORMATION, new SerializableEventListener<Event>() {
+			private static final long serialVersionUID = 4698610847862970542L;
 
-				@Override
-				public void onEvent(Event event) throws Exception {
-					if(event.getData().equals(Messagebox.OK)) {
-						bookManager.deleteBook(bookinfo);
-						reloadBookModel();
-					}
+			@Override
+			public void onEvent(Event event) throws Exception {
+				if(event.getData().equals(Messagebox.OK)) {
+					BookImpl.deleteBook(bookName, bookTable);
+					reloadBookModel();
 				}
-			});
-		}
+			}
+		});
 	}
 	
 	@Listen("onClick=#cancel;onCancel=#openBookDlg")
@@ -233,13 +241,14 @@ public class OpenManageBookCtrl extends DlgCtrlBase{
 		});
 	}
 	
-	private Book loadBook(BookInfo bookInfo) {
+	private Book loadBook(String bookName, String bookTable) {
+		Importer importer = Importers.getImporter();
 		Book book = null;
 		try {
-			book = bookManager.readBook(bookInfo);
+			book = importer.imports(getClass().getResourceAsStream("/web/zssapp/blank.xlsx"), bookName);
+			book.getInternalBook().setId(bookTable);
 		} catch (IOException e) {
-			log.error(e.getMessage(),e);
-			UiUtil.showWarnMessage("Can't load the specified book:" + bookInfo.getName());
+			e.printStackTrace();
 		}
 		return book;
 	}

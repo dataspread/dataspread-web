@@ -515,6 +515,13 @@ public class RangeImpl implements SRange {
 					StyleUtil.setDataFormat(cell.getSheet().getBook(), cell, format);
 				}
 
+
+				if (cell.getSheet().getEndRowIndex()<cell.getRowIndex())
+					cell.getSheet().setEndRowIndex(cell.getRowIndex());
+				if (cell.getSheet().getEndColumnIndex()<cell.getColumnIndex())
+					cell.getSheet().setEndColumnIndex(cell.getColumnIndex());
+
+
 				// Mangesh - Update to Database
 				try {
 					if (result.getType()==CellType.BLANK) {

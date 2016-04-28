@@ -22,7 +22,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +33,7 @@ import org.zkoss.lang.Library;
 import org.zkoss.poi.ss.util.CellReference;
 import org.zkoss.poi.ss.util.SheetUtil;
 import org.zkoss.poi.ss.util.WorkbookUtil;
+import org.zkoss.poi.util.SystemOutLogger;
 import org.zkoss.util.logging.Log;
 import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.SAutoFilter.FilterOp;
@@ -101,6 +101,10 @@ public class SheetImpl extends AbstractSheetAdv {
 
 	//Mangesh
 	static final private int PreFetchSize = 100;
+	private int _maxColumnIndex=-1;
+	private int _maxRowIndex=-1;
+
+
 	//ZSS-855
 	private final List<STable> _tables = new ArrayList<STable>();
 	
@@ -410,16 +414,49 @@ public class SheetImpl extends AbstractSheetAdv {
 	}
 
 	public int getEndRowIndex() {
-		return _rows.lastKey();
+		return _maxRowIndex;
 	}
-	
+
+	private void updateMaxValuestoDB()
+	{
+		String bookTable = getBook().getId();
+		String updateWorkbook = "UPDATE " + bookTable + "_workbook SET maxrow = ?, maxcolumn = ?" +
+				" WHERE sheetid = ?";
+
+
+		try (Connection connection = DBHandler.instance.getConnection();
+			 PreparedStatement stmt = connection.prepareStatement(updateWorkbook)) {
+				stmt.setInt(1, _maxRowIndex);
+				stmt.setInt(2, _maxColumnIndex);
+				stmt.setInt(3, getDBId());
+				stmt.execute();
+				connection.commit();
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	public void setEndRowIndex(int newEndRowIndex) {
+		System.out.println("setEndRowIndex to "+newEndRowIndex);
+		this._maxRowIndex=newEndRowIndex;
+		updateMaxValuestoDB();
+	}
+
 	public int getStartColumnIndex() {
 		return _columnArrays.size()>0?_columnArrays.firstFirstKey():-1;
 	}
 
 	public int getEndColumnIndex() {
-		return _columnArrays.size()>0?_columnArrays.lastLastKey():-1;
+		return _maxColumnIndex;
 	}
+
+	public void setEndColumnIndex(int newEndColumnIndex) {
+		this._maxColumnIndex = newEndColumnIndex;
+		updateMaxValuestoDB();
+	}
+
 
 	public int getStartCellIndex(int rowIdx) {
 		int idx1 = -1;
@@ -922,7 +959,7 @@ public class SheetImpl extends AbstractSheetAdv {
 		}
 		// _rows
 		for (AbstractRowAdv srcrow : this._rows.values()) {
-			AbstractRowAdv tgtrow = srcrow.cloneRow(tgt); 
+			AbstractRowAdv tgtrow = srcrow.cloneRow(tgt);
 			tgt._rows.put(tgtrow.getIndex(), tgtrow);
 		}
 		//_columnArrays

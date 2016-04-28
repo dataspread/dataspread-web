@@ -903,7 +903,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 	 * 
 	 * @param importer the importer to import a spread sheet file from a document
 	 * format (e.g. an Excel file) by the specified src (@link
-	 * #setSrc(). The default importer is {@link ExcelImporter}.
+	 * #setSrc(). The default importer is {@link }.
 	 * @deprecated since 3.0.0 , use {@link #setImporter(Importer)}
 	 */
 	public void setSImporter(SImporter importer) {
@@ -2065,7 +2065,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 
     /**
      * Sets the sheet protection
-     * @param boolean protect
+     * @param protect
      */
 	private void setProtectSheet(boolean protect) {
 		if (_protectSheet != protect) {
@@ -5908,12 +5908,16 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 	private CellRegion findDataBoundary(SSheet sheet) {
 		// or find print area for real data
 		int firstCol = 0;
-		int endCol = -1;
+		int endCol = sheet.getEndColumnIndex();
 		int firstRow = 0;
-		int endRow = -1;
+		int endRow = sheet.getEndRowIndex();
 		SBook _wb = getSBook();
 
+
+
+
 		// Boundary for cell data
+		/*
 		Iterator<SRow> rowIter = sheet.getRowIterator();
 		while (rowIter.hasNext()) {
 			SRow row = rowIter.next();
@@ -5948,7 +5952,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 			}
 			endCol = Math.max(endCol, lastCol);
 			endRow = Math.max(endRow, row.getIndex());
-		}
+		} */
 		
 		// Boundary for pictures
 		List<SPicture> pics = sheet.getPictures();

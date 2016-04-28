@@ -515,7 +515,22 @@ public class AppCtrl extends CtrlBase<Component>{
 		} else
 			doOpenNewBook0(renewState);
 	}
-	
+
+	private void doOpenExistingBook(Book book) {
+		book.setShareScope(EventQueues.APPLICATION);
+		setBook(book, null);
+		setBookmark("");
+		collaborationInfo.removeRelationship(username);
+		ss.setBook(loadedBook);
+		initSaveNotification(loadedBook);
+		pushAppEvent(AppEvts.ON_CHANGED_FILE_STATE, BookInfo.STATE_UNSAVED);
+		pushAppEvent(AppEvts.ON_LOADED_BOOK, loadedBook);
+		pushAppEvent(AppEvts.ON_CHANGED_SPREADSHEET, ss);
+		updatePageInfo();
+	}
+
+
+
 	private void doOpenNewBook0(boolean renewState) {
 		Importer importer = Importers.getImporter();
 		try {
@@ -866,9 +881,8 @@ public class AppCtrl extends CtrlBase<Component>{
 
 			public void onEvent(DlgCallbackEvent event) throws Exception {
 				if(OpenManageBookCtrl.ON_OPEN.equals(event.getName())){					
-					BookInfo info = (BookInfo)event.getData(OpenManageBookCtrl.ARG_BOOKINFO);
 					Book book = (Book)event.getData(OpenManageBookCtrl.ARG_BOOK);
-					doLoadBook(info, book, null, true);
+					doOpenExistingBook(book);
 				}
 			}});
 	}

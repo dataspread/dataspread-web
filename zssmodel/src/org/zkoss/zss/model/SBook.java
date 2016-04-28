@@ -356,6 +356,7 @@ public interface SBook {
 	public SCellStyle getOrCreateDefaultHyperlinkStyle();
 
 	public String getId();
+	public void setId(String id);
 
 	public boolean hasSchema();
 }

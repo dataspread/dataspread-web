@@ -96,7 +96,7 @@ public class BookImpl extends AbstractBookAdv{
 	
 	private final static Random _random = new Random(System.currentTimeMillis());
 	private final static AtomicInteger _bookCount = new AtomicInteger();
-	private final String _bookId;
+	private String _bookId;
 	
 	private final HashMap<String,AtomicInteger> _objIdCounter = new HashMap<String,AtomicInteger>();
 	private final int _maxRowSize = SpreadsheetVersion.EXCEL2007.getMaxRows();
@@ -155,6 +155,27 @@ public class BookImpl extends AbstractBookAdv{
 		return _bookName;
 	}
 
+
+	public static void deleteBook(String bookName, String bookTable)
+	{
+		String deleteBookEntry = "DELETE FROM books WHERE bookname = ?";
+		try (Connection connection = DBHandler.instance.getConnection();
+			 Statement stmt = connection.createStatement();
+			 PreparedStatement deleteBookStmt = connection.prepareStatement(deleteBookEntry))
+		{
+			stmt.execute("DROP TABLE " + bookTable + "_sheetdata");
+			stmt.execute("DROP TABLE " + bookTable + "_workbook");
+			deleteBookStmt.setString(1, bookName);
+			deleteBookStmt.execute();
+			deleteBookStmt.close();
+			connection.commit();
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
+		}
+	}
+
 	@Override
 	public void checkDBSchema() {
 		if (schemaPresent)
@@ -176,29 +197,31 @@ public class BookImpl extends AbstractBookAdv{
 					"  updatedby     INTEGER DEFAULT (-1) NOT NULL,\n" +
 					"  parent_col    INTEGER,\n" +
 					"  parent_row    INTEGER,\n" +
-					"  PRIMARY KEY (sheetid, col, row)\n" +
-					");";
+					"  PRIMARY KEY (sheetid, col, row))";
 			stmt.execute(createTable);
 			String createBookRelation = "CREATE TABLE " + bookTable + "_workbook (" +
-					"  sheetid       INTEGER,           \n" +
-					"  sheetname     TEXT,           \n" +
-					"  PRIMARY KEY (sheetid)\n" +
-					");";
+					"  sheetid       INTEGER," +
+					"  sheetname     TEXT," +
+					"  maxrow        INTEGER," +
+					"  maxcolumn     INTEGER," +
+					"  PRIMARY KEY (sheetid))";
 			stmt.execute(createBookRelation);
 
 			String insertBook = "INSERT INTO books(bookname, booktable) VALUES (?,?)";
-			PreparedStatement insertBooktStmt = connection.prepareStatement(insertBook);
-			insertBooktStmt.setString(1, getBookName());
-			insertBooktStmt.setString(2, getId());
-			insertBooktStmt.execute();
+			PreparedStatement insertBookStmt = connection.prepareStatement(insertBook);
+			insertBookStmt.setString(1, getBookName());
+			insertBookStmt.setString(2, getId());
+			insertBookStmt.execute();
 
 
-			String insertSheets = "INSERT INTO " + bookTable + "_workbook VALUES(?, ?)";
+			String insertSheets = "INSERT INTO " + bookTable + "_workbook VALUES(?, ?, ?, ?)";
 			PreparedStatement insertSheetStmt = connection.prepareStatement(insertSheets);
 			for (SSheet sheet:getSheets())
 			{
 				insertSheetStmt.setInt(1,sheet.getDBId());
 				insertSheetStmt.setString(2,sheet.getSheetName());
+				insertSheetStmt.setInt(3,sheet.getEndRowIndex());
+				insertSheetStmt.setInt(4,sheet.getEndColumnIndex());
 				insertSheetStmt.execute();
 			}
 			insertSheetStmt.close();
@@ -973,6 +996,12 @@ public class BookImpl extends AbstractBookAdv{
 	@Override 
 	public String getId(){
 		return _bookId; 
+	}
+
+	@Override
+	public void setId(String id){
+		schemaPresent = true;
+		this._bookId = id;
 	}
 
 	@Override
