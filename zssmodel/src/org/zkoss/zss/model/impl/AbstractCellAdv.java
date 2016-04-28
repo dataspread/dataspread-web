@@ -25,6 +25,7 @@ import java.util.Set;
 
 import org.zkoss.poi.ss.formula.eval.ValueEval;
 import org.zkoss.poi.ss.usermodel.Hyperlink;
+import org.zkoss.poi.ss.usermodel.ZssContext;
 import org.zkoss.zss.model.ErrorValue;
 import org.zkoss.zss.model.InvalidModelOpException;
 import org.zkoss.zss.model.SCell;
@@ -36,10 +37,17 @@ import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.SHyperlink.HyperlinkType;
 import org.zkoss.zss.model.sys.EngineFactory;
 import org.zkoss.zss.model.sys.dependency.Ref;
+import org.zkoss.zss.model.sys.format.FormatContext;
+import org.zkoss.zss.model.sys.format.FormatEngine;
 import org.zkoss.zss.model.sys.formula.FormulaEngine;
 import org.zkoss.zss.model.sys.formula.FormulaExpression;
 import org.zkoss.zss.model.sys.formula.FormulaParseContext;
+import org.zkoss.zss.model.sys.input.InputEngine;
+import org.zkoss.zss.model.sys.input.InputParseContext;
+import org.zkoss.zss.model.sys.input.InputResult;
 import org.zkoss.zss.model.util.Validations;
+import org.zkoss.zss.range.impl.StyleUtil;
+
 /**
  * 
  * @author dennis
@@ -258,5 +266,69 @@ public abstract class AbstractCellAdv implements SCell,LinkedModelObject,Seriali
 	
 	//ZSS-873
 	//@since 3.7.0
-	public abstract FormulaExpression getFormulaExpression(); 
+	public abstract FormulaExpression getFormulaExpression();
+
+	private boolean equalObjects(Object obj1, Object obj2) {
+		if (obj1 == obj2) {
+			return true;
+		}
+		if (obj1 != null) {
+			return obj1.equals(obj2);
+		}
+		return false;
+	}
+
+	public void setValueParse(String valueParse) {
+		final InputEngine ie = EngineFactory.getInstance().createInputEngine();
+		Locale locale = ZssContext.getCurrent().getLocale();
+		InputResult result;
+		result = ie.parseInput(valueParse == null ? ""
+				: valueParse, getCellStyle().getDataFormat(), new InputParseContext(locale));
+		Object resultVal = result.getValue();
+		if (getType() == result.getType()) {
+			// 20140828, henrichen: getValue() will cause evalFormula(); costly.
+			if (result.getType() == CellType.FORMULA) {
+				FormatEngine fe = EngineFactory.getInstance().createFormatEngine();
+				String oldEditText = fe.getEditText(this, new FormatContext(locale));
+				if (valueParse.equals(oldEditText)) {
+					return;
+				}
+			} else {
+				Object cellval = getValue();
+				if (equalObjects(cellval, resultVal)) {
+					return;
+				}
+			}
+		}
+		String format = result.getFormat();
+
+		switch (result.getType()) {
+			case BLANK:
+				clearValue();
+				break;
+			case BOOLEAN:
+				setBooleanValue((Boolean) resultVal);
+				break;
+			case FORMULA:
+				setFormulaValue((String) resultVal, locale); //ZSS-565
+				break;
+			case NUMBER:
+				if (resultVal instanceof Date) {
+					setDateValue((Date) resultVal);
+				} else {
+					setNumberValue((Double) resultVal);
+				}
+				break;
+			case STRING:
+				setStringValue((String) resultVal);
+				break;
+			case ERROR:
+				setErrorValue(ErrorValue.valueOf(((Byte) resultVal).byteValue())); //ZSS-672
+				break;
+			default:
+				setValue(resultVal);
+		}
+
+
+	}
 }

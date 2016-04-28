@@ -16,6 +16,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -27,30 +28,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.function.Supplier;
 
 import org.zkoss.lang.Library;
 import org.zkoss.poi.ss.util.CellReference;
 import org.zkoss.poi.ss.util.SheetUtil;
 import org.zkoss.poi.ss.util.WorkbookUtil;
 import org.zkoss.util.logging.Log;
-import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.InvalidModelOpException;
-import org.zkoss.zss.model.SAutoFilter;
-import org.zkoss.zss.model.SBook;
-import org.zkoss.zss.model.SCell;
-import org.zkoss.zss.model.SChart;
-import org.zkoss.zss.model.SColumn;
-import org.zkoss.zss.model.SColumnArray;
-import org.zkoss.zss.model.SSheetProtection;
-import org.zkoss.zss.model.SDataValidation;
-import org.zkoss.zss.model.SPicture;
-import org.zkoss.zss.model.SPrintSetup;
-import org.zkoss.zss.model.SRow;
-import org.zkoss.zss.model.SSheetViewInfo;
-import org.zkoss.zss.model.STable;
-import org.zkoss.zss.model.ViewAnchor;
-import org.zkoss.zss.model.PasteOption;
-import org.zkoss.zss.model.SheetRegion;
+import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.SAutoFilter.FilterOp;
 import org.zkoss.zss.model.SAutoFilter.NFilterColumn;
 import org.zkoss.zss.model.SPicture.Format;
@@ -72,6 +57,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	private AbstractBookAdv _book;
 	private String _name;
 	private final String _id;
+	private final int _dbid;
 	
 	private boolean _protected; //whether this sheet is protected
 	private short _password; //hashed password
@@ -111,13 +97,17 @@ public class SheetImpl extends AbstractSheetAdv {
 	private HashMap<String,Object> _attributes;
 	private int _defaultColumnWidth = 64; //in pixel
 	private int _defaultRowHeight = 20;//in pixel
-	
+
+
+	//Mangesh
+	static final private int PreFetchSize = 100;
 	//ZSS-855
 	private final List<STable> _tables = new ArrayList<STable>();
 	
-	public SheetImpl(AbstractBookAdv book,String id){
+	public SheetImpl(AbstractBookAdv book,String id, int dbid){
 		this._book = book;
 		this._id = id;
+		this._dbid = dbid;
 	}
 	
 	protected void checkOwnership(SPicture picture){
@@ -350,6 +340,38 @@ public class SheetImpl extends AbstractSheetAdv {
 //		return columns.get(column);
 //	}
 
+	// Mangesh
+	private void preFetchRows(int row)
+	{
+		int minRow = Math.max(0,row-PreFetchSize);
+		int maxRow = minRow+PreFetchSize*2-1;
+
+		String bookTable = getBook().getId();
+		String query ="SELECT * FROM "+ bookTable +"_sheetdata WHERE sheetid = ? AND row BETWEEN ? AND ?";
+		for (int i=minRow;i<=maxRow;i++)
+			getOrCreateRow(i);
+
+		try (Connection connection = DBHandler.instance.getConnection();
+			 PreparedStatement stmt = ((Supplier<PreparedStatement>)() -> {
+				 try {
+					 PreparedStatement s = connection.prepareStatement(query);
+					 s.setInt(1, getDBId());
+					 s.setInt(2, minRow);
+					 s.setInt(3, maxRow);
+					 return s;
+				 } catch (SQLException e) { throw new RuntimeException(e); }
+			 }).get();
+			 ResultSet rs = stmt.executeQuery()) {
+			while (rs.next())
+				getOrCreateCell(rs.getInt("row"), rs.getInt("col")).setValueParse(rs.getString("value"));
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+
 	@Override
 	public SCell getCell(int rowIdx, int columnIdx) {
 		return getCell(rowIdx,columnIdx,true);
@@ -368,6 +390,11 @@ public class SheetImpl extends AbstractSheetAdv {
 		AbstractRowAdv rowObj = (AbstractRowAdv) getRow(rowIdx,false);
 		if(rowObj!=null){
 			return rowObj.getCell(columnIdx,proxy);
+		}
+		else if (getBook().hasSchema())
+		{
+			preFetchRows(rowIdx);
+			return getCell(rowIdx, columnIdx, proxy);
 		}
 		return proxy?new CellProxy(this, rowIdx,columnIdx):null;
 	}
@@ -1469,6 +1496,11 @@ public class SheetImpl extends AbstractSheetAdv {
 
 	public String getId() {
 		return _id;
+	}
+
+	@Override
+	public int getDBId() {
+		return _dbid;
 	}
 
 	public SPicture addPicture(Format format, byte[] data,ViewAnchor anchor) {

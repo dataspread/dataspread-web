@@ -35,7 +35,15 @@ public interface SBook {
 	 * @return book name;
 	 */
 	public String getBookName();
-	
+
+
+	/**
+	 * Check for schema and create if not there
+	 * @return book name;
+	 */
+
+	public void checkDBSchema();
+
 	/**
 	 * Get the book series, it contains a group of book that might refer to other by book name
 	 * @return book series
@@ -57,7 +65,7 @@ public interface SBook {
 	
 	/**
 	 * Get the index of sheet
-	 * @param sheet the sheet
+	 * @param sheetName
 	 * @return the index
 	 * @since 3.6.0
 	 */
@@ -328,7 +336,6 @@ public interface SBook {
 	/**
 	 * Get if book is changed
 	 * @return
-	 * @see #resetDirty()
 	 * @since 3.8.0
 	 */
 	public boolean isDirty();
@@ -347,4 +354,8 @@ public interface SBook {
 	 * @since 3.8.0
 	 */
 	public SCellStyle getOrCreateDefaultHyperlinkStyle();
+
+	public String getId();
+
+	public boolean hasSchema();
 }

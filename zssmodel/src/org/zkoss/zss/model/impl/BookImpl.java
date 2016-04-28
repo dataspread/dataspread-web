@@ -16,6 +16,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import org.zkoss.lang.Objects;
 import org.zkoss.poi.ss.SpreadsheetVersion;
@@ -113,6 +115,8 @@ public class BookImpl extends AbstractBookAdv{
 	
 	//ZSS-855
 	private HashMap<String, STable> _tables; //since 3.8.0
+
+	boolean schemaPresent=false;
 	
 	/**
 	 * the sheet which is destroying now.
@@ -150,7 +154,64 @@ public class BookImpl extends AbstractBookAdv{
 	public String getBookName(){
 		return _bookName;
 	}
-	
+
+	@Override
+	public void checkDBSchema() {
+		if (schemaPresent)
+			return;
+		String bookTable=getId();
+
+		try (Connection connection = DBHandler.instance.getConnection();
+			 Statement stmt = connection.createStatement())
+		{
+			String createTable = "CREATE TABLE " + bookTable + "_sheetdata (\n" +
+					"  sheetid       INTEGER              NOT NULL,\n" +
+					"  col           INTEGER              NOT NULL,\n" +
+					"  row           INTEGER              NOT NULL,\n" +
+					"  value         TEXT,\n" +
+					"  formula       TEXT,\n" +
+					"  query TEXT,\n" +
+					"  type          SMALLINT,\n" +
+					"  value_numeric NUMERIC DEFAULT 0,\n" +
+					"  updatedby     INTEGER DEFAULT (-1) NOT NULL,\n" +
+					"  parent_col    INTEGER,\n" +
+					"  parent_row    INTEGER,\n" +
+					"  PRIMARY KEY (sheetid, col, row)\n" +
+					");";
+			stmt.execute(createTable);
+			String createBookRelation = "CREATE TABLE " + bookTable + "_workbook (" +
+					"  sheetid       INTEGER,           \n" +
+					"  sheetname     TEXT,           \n" +
+					"  PRIMARY KEY (sheetid)\n" +
+					");";
+			stmt.execute(createBookRelation);
+
+			String insertBook = "INSERT INTO books(bookname, booktable) VALUES (?,?)";
+			PreparedStatement insertBooktStmt = connection.prepareStatement(insertBook);
+			insertBooktStmt.setString(1, getBookName());
+			insertBooktStmt.setString(2, getId());
+			insertBooktStmt.execute();
+
+
+			String insertSheets = "INSERT INTO " + bookTable + "_workbook VALUES(?, ?)";
+			PreparedStatement insertSheetStmt = connection.prepareStatement(insertSheets);
+			for (SSheet sheet:getSheets())
+			{
+				insertSheetStmt.setInt(1,sheet.getDBId());
+				insertSheetStmt.setString(2,sheet.getSheetName());
+				insertSheetStmt.execute();
+			}
+			insertSheetStmt.close();
+			connection.commit();
+			schemaPresent = true;
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
+		}
+
+	}
+
 	@Override
 	public SSheet getSheet(int i){
 		return _sheets.get(i);
@@ -234,7 +295,15 @@ public class BookImpl extends AbstractBookAdv{
 		sb.append(i.getAndIncrement());
 		return sb.toString();
 	}
-	
+
+	int nextIntObjId(String type){
+		AtomicInteger i = _objIdCounter.get(type);
+		if(i==null){
+			_objIdCounter.put(type, i = new AtomicInteger(0));
+		}
+		return i.getAndIncrement();
+	}
+
 	@Override
 	public SSheet createSheet(String name,SSheet src) {
 		checkLegalSheetName(name);
@@ -242,7 +311,7 @@ public class BookImpl extends AbstractBookAdv{
 			checkOwnership(src);
 		
 
-		AbstractSheetAdv sheet = new SheetImpl(this,nextObjId("sheet"));
+		AbstractSheetAdv sheet = new SheetImpl(this,nextObjId("sheet"),nextIntObjId("dbsheet"));
 		sheet.setSheetName(name);
 		_sheets.add(sheet);
 		
@@ -905,7 +974,12 @@ public class BookImpl extends AbstractBookAdv{
 	public String getId(){
 		return _bookId; 
 	}
-	
+
+	@Override
+	public boolean hasSchema() {
+		return schemaPresent;
+	}
+
 	@Override
 	public SPictureData addPictureData(SPicture.Format format, byte[] data) {
 		if (_picDatas == null) {
@@ -1223,3 +1297,4 @@ public class BookImpl extends AbstractBookAdv{
 		return linkStyle;
 	}
 }
+

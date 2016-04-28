@@ -48,12 +48,8 @@ public class DBHandler implements ServletContextListener {
             System.err.println("Unable to connect to a Database");
             e.printStackTrace();
         }
+        createBookTable();
 
-        try {
-            loadBooks();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
@@ -61,35 +57,22 @@ public class DBHandler implements ServletContextListener {
 
     }
 
-    private void loadBooks() throws SQLException
+    private void createBookTable()
     {
-        try (
-                Connection connection = DBHandler.instance.getConnection();
-                PreparedStatement statement = connection.prepareStatement("select * from emp");
-                ResultSet resultSet = statement.executeQuery();
-        ) {
-            while (resultSet.next()) {
-                System.out.println(resultSet.getString(0) + " " + resultSet.getString(1) );
-            }
+        try (Connection connection = DBHandler.instance.getConnection();
+             Statement stmt = connection.createStatement())
+        {
+            String createTable = "CREATE TABLE  IF NOT  EXISTS  books (" +
+                    "bookname  TEXT NOT NULL," +
+                    "booktable TEXT NOT NULL," +
+                    "PRIMARY KEY (bookname)" +
+                    ");";
+            stmt.execute(createTable);
+            connection.commit();
         }
-
+        catch (SQLException e)
+        {
+            e.printStackTrace();
+        }
     }
-
-    /*
-    try (
-    Connection connection = database.getConnection();
-    PreparedStatement statement = connection.prepareStatement("SELECT id, name, value FROM Biler");
-    ResultSet resultSet = statement.executeQuery();
-    ) {
-        while (resultSet.next()) {
-            Biler biler = new Biler();
-            biler.setId(resultSet.getLong("id"));
-            biler.setName(resultSet.getString("name"));
-            biler.setValue(resultSet.getInt("value"));
-            bilers.add(biler);
-        }
-    } */
-
-
-
 }

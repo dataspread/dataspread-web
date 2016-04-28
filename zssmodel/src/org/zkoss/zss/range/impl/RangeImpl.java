@@ -16,6 +16,9 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.range.impl;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -65,18 +68,7 @@ import org.zkoss.zss.model.SSheetViewInfo;
 import org.zkoss.zss.model.STable;
 import org.zkoss.zss.model.SheetRegion;
 import org.zkoss.zss.model.ViewAnchor;
-import org.zkoss.zss.model.impl.AbstractBookAdv;
-import org.zkoss.zss.model.impl.AbstractBookSeriesAdv;
-import org.zkoss.zss.model.impl.AbstractCellAdv;
-import org.zkoss.zss.model.impl.AbstractDataValidationAdv;
-import org.zkoss.zss.model.impl.AbstractNameAdv;
-import org.zkoss.zss.model.impl.AbstractSheetAdv;
-import org.zkoss.zss.model.impl.CellAttribute;
-import org.zkoss.zss.model.impl.ColorImpl;
-import org.zkoss.zss.model.impl.FormulaCacheCleaner;
-import org.zkoss.zss.model.impl.NameRefImpl;
-import org.zkoss.zss.model.impl.RefImpl;
-import org.zkoss.zss.model.impl.SheetImpl;
+import org.zkoss.zss.model.impl.*;
 import org.zkoss.zss.model.sys.EngineFactory;
 import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.dependency.DependencyTable.RefFilter;
@@ -439,7 +431,16 @@ public class RangeImpl implements SRange {
 		final ResultWrap<InputResult> input = new ResultWrap<InputResult>();
 		final ResultWrap<HyperlinkType> hyperlinkType = new ResultWrap<HyperlinkType>();
 		new CellVisitorTask(new CellVisitorForUpdate() {
+			Connection connection = null;
+
+			PreparedStatement insertStmt=null;
+			PreparedStatement deleteStmt =null;
+
+
 			public boolean visit(SCell cell) {
+				if (connection==null)
+					initConnection(cell);
+
 				//ZSS-565: Support input with Swedish locale into formula
 				Locale locale = ZssContext.getCurrent().getLocale();
 
@@ -513,13 +514,72 @@ public class RangeImpl implements SRange {
 					//if there is a suggested format and old format is not general
 					StyleUtil.setDataFormat(cell.getSheet().getBook(), cell, format);
 				}
+
+				// Mangesh - Update to Database
+				try {
+					if (result.getType()==CellType.BLANK) {
+						deleteStmt.setInt(2, cell.getRowIndex());
+						deleteStmt.setInt(3, cell.getColumnIndex());
+						deleteStmt.execute();
+					}
+					else
+					{
+						insertStmt.setInt(2, cell.getRowIndex());
+						insertStmt.setInt(3, cell.getColumnIndex());
+						insertStmt.setString(4, editText);
+						insertStmt.setString(5, editText);
+						insertStmt.setInt(7, cell.getRowIndex());
+						insertStmt.setInt(8, cell.getColumnIndex());
+						insertStmt.execute();
+					}
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+
 				return true;
 			}
-			
+
+			private void initConnection(SCell cell)  {
+				try {
+					cell.getSheet().getBook().checkDBSchema();
+					connection = DBHandler.instance.getConnection();
+					String bookTable = cell.getSheet().getBook().getId();
+					insertStmt = connection.prepareStatement("INSERT INTO " + bookTable + "_sheetdata (sheetid,row,col,value) VALUES (?, ?, ?, ?) " +
+							" ON CONFLICT (sheetid, row, col) DO UPDATE" +
+							" SET value = ? WHERE " + bookTable + "_sheetdata.sheetid = ? " +
+							"AND " + bookTable + "_sheetdata.row = ? " +
+							"AND " + bookTable + "_sheetdata.col = ?");
+					insertStmt.setInt(1,cell.getSheet().getDBId());
+					insertStmt.setInt(6,cell.getSheet().getDBId());
+
+					deleteStmt = connection.prepareStatement("DELETE FROM " + bookTable + "_sheetdata WHERE sheetid = ? AND row = ? AND col = ?");
+					deleteStmt.setInt(1,cell.getSheet().getDBId());
+				}
+				catch (SQLException e)
+				{
+					e.printStackTrace();
+				}
+
+			}
+
 			//ZSS-939
 			@Override
 			CellAttribute getCellAttr() {
 				return CellAttribute.ALL;
+			}
+
+			@Override
+			public void afterVisitAll() {
+				// Close connection
+				try {
+					insertStmt.close();
+					deleteStmt.close();
+					connection.commit();
+					connection.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+				super.afterVisitAll();
 			}
 		}).doInWriteLock(getLock());
 	}

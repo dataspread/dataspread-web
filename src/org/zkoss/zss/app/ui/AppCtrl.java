@@ -13,8 +13,10 @@ package org.zkoss.zss.app.ui;
 
 import java.io.*;
 import java.net.URLDecoder;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -517,7 +519,12 @@ public class AppCtrl extends CtrlBase<Component>{
 	private void doOpenNewBook0(boolean renewState) {
 		Importer importer = Importers.getImporter();
 		try {
-			Book book = importer.imports(getClass().getResourceAsStream("/web/zssapp/blank.xlsx"), "New Book.xlsx");
+			Date dNow = new Date( );
+			SimpleDateFormat ft =
+					new SimpleDateFormat ("yyyyMMdd_hhmmss_S");
+
+			Book book = importer.imports(getClass().getResourceAsStream("/web/zssapp/blank.xlsx"),
+					"New Book_".concat(ft.format(dNow)));
 			book.setShareScope(EventQueues.APPLICATION);
 			setBook(book, null);
 		} catch (IOException e) {

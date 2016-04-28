@@ -105,6 +105,8 @@ public interface SSheet {
 	 * @return interal sheet object ID
 	 */
 	public String getId();
+
+	public int getDBId();
 	
 	public SSheetViewInfo getViewInfo();
 	public SPrintSetup getPrintSetup();
@@ -221,7 +223,7 @@ public interface SSheet {
 	/**
 	 * Remove the merged area that are contained by region 
 	 * @param region
-	 * @param removeOverlpas true if you want to remove the merged areas that are just overlapped.
+	 * @param removeOverlaps true if you want to remove the merged areas that are just overlapped.
 	 */
 	public void removeMergedRegion(CellRegion region,boolean removeOverlaps);
 	/**
@@ -299,7 +301,7 @@ public interface SSheet {
 	
 	/**
 	 * Sets password to protect sheet, set null to unprotect it.
-	 * @param protection
+	 * @param password
 	 */
 	public void setPassword(String password);
 	
@@ -363,7 +365,8 @@ public interface SSheet {
 	 * @since 3.7.0
 	 */
 	public void setSheetVisible(SheetVisible state);
-	
+
+
 	public enum SheetVisible {
 		VISIBLE,	// This sheet is visible
 		HIDDEN,		// This sheet is hidden (but can be unhide via UI dialog)
