@@ -5,9 +5,9 @@
 			<menupopup id="fileMenupopup">
 				<menuitem id="newFile" label="${c:l('zssapp.mainMenu.file.new')}" sclass="zsmenuitem-app appmenu"/>
 				<menuitem id="openManageFile" label="${c:l('zssapp.mainMenu.file.openManage')}" sclass="zsmenuitem-app appmenu" />
-				<menuitem id="saveFile" label="${c:l('zssapp.mainMenu.file.save')}" sclass="zsmenuitem-app appmenu" />
+				<!-- <menuitem id="saveFile" label="${c:l('zssapp.mainMenu.file.save')}" sclass="zsmenuitem-app appmenu" /> -->
 				<menuitem id="saveFileAs" label="${c:l('zssapp.mainMenu.file.saveas')}" sclass="zsmenuitem-app appmenu" />
-				<menuitem id="saveFileAndClose" label="${c:l('zssapp.mainMenu.file.saveClose')}" sclass="zsmenuitem-app appmenu" />
+				<!-- <menuitem id="saveFileAndClose" label="${c:l('zssapp.mainMenu.file.saveClose')}" sclass="zsmenuitem-app appmenu" /> -->
 				<menuitem id="closeFile" label="${c:l('zssapp.mainMenu.file.close')}" sclass="zsmenuitem-app appmenu" />
 				<menuseparator />
 				<menuitem id="importFile" label="${c:l('zssapp.mainMenu.file.import')}" sclass="zsmenuitem-app appmenu" />

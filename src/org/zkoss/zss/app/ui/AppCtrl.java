@@ -561,7 +561,7 @@ public class AppCtrl extends CtrlBase<Component>{
 	}
 	
 	private void updatePageInfo(){
-		String name = isBookSaved() ? selectedBookInfo.getName() : isBookLoaded() ? loadedBook.getBookName() : null;
+		String name = isBookLoaded() ? loadedBook.getBookName() : null;
 		getPage().setTitle(name!=null?name:"");
 	}
 	
@@ -684,7 +684,7 @@ public class AppCtrl extends CtrlBase<Component>{
 	}
 
 	private boolean isBookSaved() {
-		return selectedBookInfo != null;
+		return true;
 	}
 
 
@@ -699,41 +699,13 @@ public class AppCtrl extends CtrlBase<Component>{
 		}
 		
 		String name = loadedBook.getBookName();
-		if(isBookSaved()){
-			name = "Copy Of "+selectedBookInfo.getName();
-		}
-		name = BookUtil.appendExtension(name, loadedBook);
-		name = BookUtil.suggestFileName(name, loadedBook, BookRepositoryFactory.getInstance().getRepository());
-		
+
 		SaveBookAsCtrl.show(new SerializableEventListener<DlgCallbackEvent>(){
 			private static final long serialVersionUID = 3378482725465871522L;
 
 			public void onEvent(DlgCallbackEvent event) throws Exception {
 				if(SaveBookAsCtrl.ON_SAVE.equals(event.getName())){
-					
-					String name = (String)event.getData(SaveBookAsCtrl.ARG_NAME);
-
-					try {
-						synchronized (bookManager) {		
-							if(bookManager.isBookAttached(new SimpleBookInfo(name))) {
-								String users = Arrays.toString(CollaborationInfoImpl.getInstance().getUsedUsernames(name).toArray());
-								UiUtil.showWarnMessage("File \"" + name + "\" is in used by " + users + ". Please try again.");
-							}
-							BookInfo info = bookManager.saveBook(new SimpleBookInfo(name), loadedBook);
-							doLoadBook(info, null, "", true);
-						}
-						
-						pushAppEvent(AppEvts.ON_SAVED_BOOK,loadedBook);
-						if(close){
-							doCloseBook(false);
-						}else{
-							updatePageInfo();
-						}
-					} catch (IOException e) {
-						log.error(e.getMessage(),e);
-						UiUtil.showWarnMessage("Can't save the specified book: " + name);
-						return;
-					}
+					updatePageInfo();
 				}
 			}},name, loadedBook);
 	}
