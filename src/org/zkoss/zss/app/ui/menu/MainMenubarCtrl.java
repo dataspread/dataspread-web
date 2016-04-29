@@ -149,9 +149,9 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 		openManageFile.setDisabled(false);
 		boolean readonly = UiUtil.isRepositoryReadonly();
 		boolean disabled = !hasBook;
-		saveFile.setDisabled(disabled || readonly);
+//		saveFile.setDisabled(disabled || readonly);
 		saveFileAs.setDisabled(disabled || readonly);
-		saveFileAndClose.setDisabled(disabled || readonly);
+//		saveFileAndClose.setDisabled(disabled || readonly);
 		closeFile.setDisabled(disabled);
 		exportFile.setDisabled(disabled);
 		exportPdf.setDisabled(!isEE || disabled);

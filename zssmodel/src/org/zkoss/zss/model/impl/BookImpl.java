@@ -78,7 +78,7 @@ public class BookImpl extends AbstractBookAdv{
 
 	private static final Log _logger = Log.lookup(BookImpl.class);
 
-	private final String _bookName;
+	private String _bookName;
 	
 	private String _shareScope;
 	
@@ -135,7 +135,7 @@ public class BookImpl extends AbstractBookAdv{
 		_colors.put(ColorImpl.GREEN,ColorImpl.GREEN);
 		_colors.put(ColorImpl.BLUE,ColorImpl.BLUE);
 		
-		_bookId = ((char)('a'+_random.nextInt(26))) + Long.toString(/*System.currentTimeMillis()+*/_bookCount.getAndIncrement(), Character.MAX_RADIX) ;
+		_bookId = ((char)('a'+_random.nextInt(26))) + Long.toString(System.currentTimeMillis()+_bookCount.getAndIncrement(), Character.MAX_RADIX) ;
 		_tables = new HashMap<String, STable>(0);
 	}
 	
@@ -155,6 +155,35 @@ public class BookImpl extends AbstractBookAdv{
 		return _bookName;
 	}
 
+	@Override
+	public boolean setBookName(String bookName) {
+		if (schemaPresent)
+		{
+			String updateBookName = "UPDATE books SET bookname = ? WHERE bookname = ?";
+			try (Connection connection = DBHandler.instance.getConnection();
+				 Statement stmt = connection.createStatement();
+				 PreparedStatement updateBookNameStmt = connection.prepareStatement(updateBookName))
+			{
+				updateBookNameStmt.setString(1, bookName);
+				updateBookNameStmt.setString(2, _bookName);
+				updateBookNameStmt.execute();
+				connection.commit();
+			}
+			catch (SQLException e)
+			{
+				System.out.println(e.getErrorCode());
+				e.printStackTrace();
+				return false;
+			}
+			this._bookName = bookName;
+		}
+		else {
+			this._bookName = bookName;
+			checkDBSchema();
+		}
+		return true;
+	}
+
 
 	public static void deleteBook(String bookName, String bookTable)
 	{
@@ -167,7 +196,6 @@ public class BookImpl extends AbstractBookAdv{
 			stmt.execute("DROP TABLE " + bookTable + "_workbook");
 			deleteBookStmt.setString(1, bookName);
 			deleteBookStmt.execute();
-			deleteBookStmt.close();
 			connection.commit();
 		}
 		catch (SQLException e)

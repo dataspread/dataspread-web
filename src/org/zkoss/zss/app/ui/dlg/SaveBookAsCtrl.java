@@ -59,7 +59,7 @@ public class SaveBookAsCtrl extends DlgCtrlBase{
 	private BookManager bookManager = BookManagerImpl.getInstance(repo);
 	private final static String URI = "~./zssapp/dlg/saveBookAs.zul";
 
-
+	private Book _book;
 	
 	public static void show(EventListener<DlgCallbackEvent> callback, String name, Book book) {
 		Map arg = newArg(callback);
@@ -88,7 +88,8 @@ public class SaveBookAsCtrl extends DlgCtrlBase{
 		super.doAfterCompose(comp);
 		
 		Map<?, ?> arg = Executions.getCurrent().getArg();
-		
+
+		_book =  (Book) arg.get(BOOK);
 		String title = (String) arg.get(TITLE);
 		String okBtnName = (String)arg.get(OK_BTN_NAME);
 		
@@ -106,33 +107,16 @@ public class SaveBookAsCtrl extends DlgCtrlBase{
 			bookName.setErrorMessage("empty name is not allowed");
 			return;
 		}
-		
-		Book book = (Book) Executions.getCurrent().getArg().get(BOOK);
-		final String name = BookUtil.appendExtension(bookName.getValue(), book);
-		
-		if(bookManager.isBookAttached(new SimpleBookInfo(name))) {			
-			String users = Arrays.toString(CollaborationInfoImpl.getInstance().getUsedUsernames(name).toArray());
-			bookName.setErrorMessage("Book \"" + name + "\" is in used by " + users + ".");
-			return;
-		}
-		
-		String sname = BookUtil.suggestFileName(name, book, repo);
-		if(!name.equals(sname)) {
-			Messagebox.show("want to overwrite file \"" + name + "\" ?", "ZK Spreadsheet", 
-					Messagebox.OK + Messagebox.CANCEL, Messagebox.INFORMATION, new SerializableEventListener<Event>() {
-				private static final long serialVersionUID = -461662357611872195L;
 
-				@Override
-				public void onEvent(Event event) throws Exception {
-					if(event.getData().equals(Messagebox.OK)) {
-						postCallback(ON_SAVE, newMap(newEntry(ARG_NAME, name)));
-						detach();
-					}
-				}
-			});
-		} else {
-			postCallback(ON_SAVE, newMap(newEntry(ARG_NAME, name)));
+		if (_book.getInternalBook().setBookName(bookName.getValue()))
+		{
+			postCallback(ON_SAVE, newMap(newEntry(ARG_NAME, bookName.getValue())));
 			detach();
+		}
+		else
+		{
+			Messagebox.show("File Name already exists.", "DataSpread",
+					Messagebox.OK , Messagebox.ERROR);
 		}
 	}
 	

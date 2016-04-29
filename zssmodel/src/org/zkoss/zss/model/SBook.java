@@ -36,6 +36,12 @@ public interface SBook {
 	 */
 	public String getBookName();
 
+	/**
+	 * Set the book name, if schema created, update table.
+	 * @return return error if name already exists;
+	 */
+	public boolean setBookName(String bookName);
+
 
 	/**
 	 * Check for schema and create if not there
