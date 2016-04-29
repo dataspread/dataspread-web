@@ -1085,12 +1085,11 @@ public class BookImpl extends AbstractBookAdv{
 	}
 
 	@Override
-	public void setId(String id){
+	public void setIdAndLoad(String id){
 		schemaPresent = true;
 		this._bookId = id;
 
 		// Load Schema
-		_sheets.clear();
 		String bookTable = getId();
 		String query ="SELECT * FROM "+ bookTable +"_workbook";
 

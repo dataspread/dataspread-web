@@ -32,23 +32,29 @@ public class BookImpl implements Book{
 
 	private ModelRef<SBook> _bookRef;
 	private BookType _type;
-	
+	private SBook _book;
+
 	public BookImpl(ModelRef<SBook> ref){
 		this._bookRef = ref;
 		SBook book = ref.get();
-		
+		_book = book;
+
 		//ZSS-610, get the information that stored in book's attibute when importing
 		String bookType = AbstractExcelImporter.getBookType(book);
 		_type = "xls".equalsIgnoreCase(bookType)?BookType.XLS:BookType.XLSX;
 	}
 
+	public BookImpl(String bookName){
+		_book = new org.zkoss.zss.model.impl.BookImpl(bookName);
+	}
+
 	public SBook getNative() {
-		return _bookRef.get();
+		return _book;
 	}
 	
 	@Override
 	public SBook getInternalBook(){
-		return _bookRef.get();
+		return _book;
 	}
 	
 	public ModelRef<SBook> getRef(){

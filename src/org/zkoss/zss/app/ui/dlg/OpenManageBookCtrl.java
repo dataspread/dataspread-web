@@ -11,13 +11,9 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.app.ui.dlg;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.sql.*;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -43,7 +39,6 @@ import org.zkoss.zss.app.repository.BookRepositoryFactory;
 import org.zkoss.zss.app.BookManager;
 import org.zkoss.zss.app.impl.BookManagerImpl;
 import org.zkoss.zss.app.repository.impl.BookUtil;
-import org.zkoss.zss.app.repository.impl.SimpleBookInfo;
 import org.zkoss.zss.app.ui.UiUtil;
 import org.zkoss.zss.model.impl.BookImpl;
 import org.zkoss.zss.model.impl.DBHandler;
@@ -243,13 +238,8 @@ public class OpenManageBookCtrl extends DlgCtrlBase{
 	
 	private Book loadBook(String bookName, String bookTable) {
 		Importer importer = Importers.getImporter();
-		Book book = null;
-		try {
-			book = importer.imports(getClass().getResourceAsStream("/web/zssapp/blank.xlsx"), bookName);
-			book.getInternalBook().setId(bookTable);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		Book book = new org.zkoss.zss.api.model.impl.BookImpl(bookName);
+		book.getInternalBook().setIdAndLoad(bookTable);
 		return book;
 	}
 	
