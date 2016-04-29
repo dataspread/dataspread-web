@@ -21,12 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.zkoss.zss.model.SCell;
-import org.zkoss.zss.model.SCellStyle;
-import org.zkoss.zss.model.SColumn;
-import org.zkoss.zss.model.SColumnArray;
-import org.zkoss.zss.model.SRow;
-import org.zkoss.zss.model.STable;
+import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.impl.AbstractBookAdv;
 import org.zkoss.zss.model.impl.AbstractSheetAdv;
 import org.zkoss.zss.range.SRange;
@@ -167,12 +162,14 @@ public class ClearCellHelper extends RangeHelperBase{
 		}else if(isWholeColumn()){
 			clearWholeColumnContent();
 		}else{
-			for(int r = getRow(); r <= getLastRow(); r++){
+			// Mangesh - For now destroy the cells. Later need to change this.
+			sheet.clearCell(new CellRegion(getRow(), getColumn(),getLastRow(),getLastColumn()));
+			/* for(int r = getRow(); r <= getLastRow(); r++){
 				for (int c = getColumn(); c <= getLastColumn(); c++){
 					SCell cell = sheet.getCell(r,c);
 					clearCellContent(cell);
 				}
-			}
+			} */
 		}
 	}
 	
@@ -223,6 +220,7 @@ public class ClearCellHelper extends RangeHelperBase{
 				clearCellContent(cell);
 			}
 		}
+		sheet.clearCell(new CellRegion(0,getColumn(),sheet.getEndRowIndex(),getLastColumn()));
 	}
 
 	private void clearWholeRowContent() {
@@ -233,6 +231,7 @@ public class ClearCellHelper extends RangeHelperBase{
 				clearCellContent(cell);
 			}
 		}
+		sheet.clearCell(new CellRegion(getRow(),0,getLastRow(),sheet.getEndColumnIndex()));
 	}
 	
 	private void clearCellContent(SCell cell){

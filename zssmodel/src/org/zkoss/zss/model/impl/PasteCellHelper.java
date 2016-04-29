@@ -408,14 +408,7 @@ public class PasteCellHelper { //ZSS-693: promote visibility
 		int lastRow = src.getLastRow();
 		int lastColumn = src.getLastColumn();
 		SSheet srcSheet = src.getSheet();
-		for(int r = row ; r<=lastRow;r++){
-			for(int c= column; c<=lastColumn;c++){
-				SCell cell = srcSheet.getCell(r,c);
-				if(!cell.isNull()){
-					srcSheet.clearCell(new CellRegion(r,c));
-				}
-			}
-		}
+		srcSheet.clearCell(new CellRegion(row,column,lastRow,lastColumn));
 	}
 
 

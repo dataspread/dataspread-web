@@ -438,10 +438,10 @@ public class SheetImpl extends AbstractSheetAdv {
 		}
 	}
 
-	public void setEndRowIndex(int newEndRowIndex) {
-		System.out.println("setEndRowIndex to "+newEndRowIndex);
+	public void setEndRowIndex(int newEndRowIndex, boolean updatetoDB) {
 		this._maxRowIndex=newEndRowIndex;
-		updateMaxValuestoDB();
+		if (updatetoDB)
+			updateMaxValuestoDB();
 	}
 
 	public int getStartColumnIndex() {
@@ -452,9 +452,10 @@ public class SheetImpl extends AbstractSheetAdv {
 		return _maxColumnIndex;
 	}
 
-	public void setEndColumnIndex(int newEndColumnIndex) {
+	public void setEndColumnIndex(int newEndColumnIndex, boolean updatetoDB) {
 		this._maxColumnIndex = newEndColumnIndex;
-		updateMaxValuestoDB();
+		if (updatetoDB)
+			updateMaxValuestoDB();
 	}
 
 
@@ -537,11 +538,34 @@ public class SheetImpl extends AbstractSheetAdv {
 		int rowEnd = Math.max(rowIdx, rowIdx2);
 		int columnStart = Math.min(columnIdx, columnIdx2);
 		int columnEnd = Math.max(columnIdx, columnIdx2);
-		
+
 		Collection<AbstractRowAdv> effected = _rows.subValues(rowStart,rowEnd);
 		for(AbstractRowAdv row:effected){
 			row.clearCell(columnStart, columnEnd);
 		}
+
+		//Delete from DB
+		String bookTable = getBook().getId();
+		String updateWorkbook = "DELETE FROM  " + bookTable + "_sheetdata WHERE sheetid = ? " +
+				" AND row BETWEEN  ? AND ? " +
+				" AND col BETWEEN  ? AND ? ";
+
+		try (Connection connection = DBHandler.instance.getConnection();
+			 PreparedStatement stmt = connection.prepareStatement(updateWorkbook)) {
+			stmt.setInt(1, getDBId());
+			stmt.setInt(2, rowStart);
+			stmt.setInt(3, rowEnd);
+			stmt.setInt(4, columnStart);
+			stmt.setInt(5, columnEnd);
+			stmt.execute();
+			connection.commit();
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
+		}
+
+
 	}
 
 	@Override

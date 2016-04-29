@@ -517,9 +517,9 @@ public class RangeImpl implements SRange {
 
 
 				if (cell.getSheet().getEndRowIndex()<cell.getRowIndex())
-					cell.getSheet().setEndRowIndex(cell.getRowIndex());
+					cell.getSheet().setEndRowIndex(cell.getRowIndex(),true);
 				if (cell.getSheet().getEndColumnIndex()<cell.getColumnIndex())
-					cell.getSheet().setEndColumnIndex(cell.getColumnIndex());
+					cell.getSheet().setEndColumnIndex(cell.getColumnIndex(),true);
 
 
 				// Mangesh - Update to Database

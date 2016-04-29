@@ -113,10 +113,10 @@ public interface SSheet {
 	
 	public abstract int getStartRowIndex();
 	public abstract int getEndRowIndex();
-	public abstract void setEndRowIndex(int newEndRowIndex);
+	public abstract void setEndRowIndex(int newEndRowIndex, boolean updatetoDB);
 	public abstract int getStartColumnIndex();
 	public abstract int getEndColumnIndex();
-	public abstract void setEndColumnIndex(int newEndColumnIndex);
+	public abstract void setEndColumnIndex(int newEndColumnIndex, boolean updatetoDB);
 	public abstract int getStartCellIndex(int rowIdx);
 	public abstract int getEndCellIndex(int rowIdx);
 	

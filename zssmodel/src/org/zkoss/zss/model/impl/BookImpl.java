@@ -329,6 +329,19 @@ public class BookImpl extends AbstractBookAdv{
 			}
 		}
 	}
+
+
+	private SSheet createExistingSheet(String name, int dbId) {
+		AbstractSheetAdv sheet = new SheetImpl(this,nextObjId("sheet"),dbId);
+		sheet.setSheetName(name);
+		_sheets.add(sheet);
+
+		//create formula cache for any sheet, sheet name, position change
+		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
+
+		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new RefImpl(sheet, -1));
+		return sheet;
+	}
 	
 	@Override
 	public SSheet createSheet(String name) {
@@ -365,7 +378,29 @@ public class BookImpl extends AbstractBookAdv{
 		AbstractSheetAdv sheet = new SheetImpl(this,nextObjId("sheet"),nextIntObjId("dbsheet"));
 		sheet.setSheetName(name);
 		_sheets.add(sheet);
-		
+
+		// Update to DB
+		if (hasSchema())
+		{
+			String bookTable=getId();
+			String insertSheets = "INSERT INTO " + bookTable + "_workbook VALUES(?, ?, ?, ?)";
+			try (Connection connection = DBHandler.instance.getConnection();
+				 PreparedStatement stmt = connection.prepareStatement(insertSheets))
+			{
+				stmt.setInt(1,sheet.getDBId());
+				stmt.setString(2,sheet.getSheetName());
+				stmt.setInt(3,sheet.getEndRowIndex());
+				stmt.setInt(4,sheet.getEndColumnIndex());
+				stmt.execute();
+				connection.commit();
+			}
+			catch (SQLException e)
+			{
+				e.printStackTrace();
+			}
+		}
+
+
 		if(src instanceof AbstractSheetAdv){
 			((AbstractSheetAdv)src).copyTo(sheet);
 		}
@@ -1030,6 +1065,27 @@ public class BookImpl extends AbstractBookAdv{
 	public void setId(String id){
 		schemaPresent = true;
 		this._bookId = id;
+
+		// Load Schema
+		_sheets.clear();
+		String bookTable = getId();
+		String query ="SELECT * FROM "+ bookTable +"_workbook";
+
+		try (Connection connection = DBHandler.instance.getConnection();
+			 PreparedStatement stmt = connection.prepareStatement(query);
+			 ResultSet rs = stmt.executeQuery()) {
+			 while (rs.next())
+			 {
+				SSheet sheet =  createExistingSheet(rs.getString("sheetname"), rs.getInt("sheetid"));
+				sheet.setEndRowIndex(rs.getInt("maxrow"),false);
+				sheet.setEndColumnIndex(rs.getInt("maxcolumn"),false);
+			 }
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
+		}
+
 	}
 
 	@Override
