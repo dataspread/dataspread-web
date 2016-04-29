@@ -563,6 +563,29 @@ public class BookImpl extends AbstractBookAdv{
 		//ZSS-815
 		// adjust sheet index
 		adjustSheetIndex(bookName, index);
+		// update DB
+
+		// Update to DB
+		if (hasSchema())
+		{
+			String bookTable=getId();
+			String deleteSheet = "DELETE FROM " + bookTable + "_workbook WHERE sheetid = ?";
+			String deleteSheetData = "DELETE FROM " + bookTable + "_sheetdata WHERE sheetid = ?";
+			try (Connection connection = DBHandler.instance.getConnection();
+				 PreparedStatement deleteSheetstmt = connection.prepareStatement(deleteSheet);
+				 PreparedStatement deleteSheetDatastmt = connection.prepareStatement(deleteSheetData);)
+			{
+				deleteSheetstmt.setInt(1,sheet.getDBId());
+				deleteSheetstmt.execute();
+				deleteSheetDatastmt.setInt(1,sheet.getDBId());
+				deleteSheetDatastmt.execute();
+				connection.commit();
+			}
+			catch (SQLException e)
+			{
+				e.printStackTrace();
+			}
+		}
 	}
 
 	//ZSS-815
