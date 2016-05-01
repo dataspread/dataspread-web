@@ -16,6 +16,9 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -132,7 +135,11 @@ public class PasteCellHelper { //ZSS-693: promote visibility
 			for (CellRegion mergedRegion : _destSheet.getMergedRegions()) {
 				if (mergedRegion.contains(dest)) {
 					CellRegion destRegion = new CellRegion(dest.getRow(),dest.getColumn(),dest.getRow(),dest.getColumn());
-					pasteCells(srcBuffer,destRegion,cutFrom,option,rowOffset,columnOffset);
+					try {
+						pasteCells(srcBuffer,destRegion,cutFrom,option,rowOffset,columnOffset);
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
 					if (option.isCut()) { //ZSS-696: if cut and paste, must unmerge
 						pasteDataValidations(srcVBuffer, src, dest, option); // ZSS-694: only when CUT and paste
 						_destSheet.removeMergedRegion(mergedRegion, true); // ZSS-696: should unmerge when cut and paste
@@ -160,7 +167,11 @@ public class PasteCellHelper { //ZSS-693: promote visibility
 				CellRegion destRegion = new CellRegion(dest.getRow()+rowMultpleOffset,dest.getColumn()+colMultipleOffset,
 						dest.getRow()+srcRowCount+ -1 + rowMultpleOffset,
 						dest.getColumn()+srcColCount -1 + colMultipleOffset);
-				pasteCells(srcBuffer,destRegion,cutFrom,option,rowOffset+rowMultpleOffset,columnOffset+colMultipleOffset);
+				try {
+					pasteCells(srcBuffer,destRegion,cutFrom,option,rowOffset+rowMultpleOffset,columnOffset+colMultipleOffset);
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
 				pasteDataValidations(srcVBuffer, src, destRegion, option); // ZSS-694
 				
 				if(mergeBuffer!=null && mergeBuffer.size()>0){
@@ -436,12 +447,26 @@ public class PasteCellHelper { //ZSS-693: promote visibility
 		}
 	}
 	
-	private void pasteCells(CellBuffer[][] srcBuffer, CellRegion destRegion,SheetRegion cutFrom,PasteOption option, int rowOffset,int columnOffset) {
+	private void pasteCells(CellBuffer[][] srcBuffer, CellRegion destRegion,SheetRegion cutFrom,PasteOption option, int rowOffset,int columnOffset) throws SQLException {
 		int row = destRegion.getRow();
 		int col = destRegion.getColumn();
 		int lastRow = destRegion.getLastRow();
 		int lastColumn = destRegion.getLastColumn();
 		boolean transpose = option.isTranspose();
+		// Mangesh Update to DB
+		// Need to handle formatting and other information
+
+		Connection connection = DBHandler.instance.getConnection();
+		String bookTable = _destSheet.getBook().getId();
+		PreparedStatement insertStmt = connection.prepareStatement("INSERT INTO " + bookTable + "_sheetdata (sheetid,row,col,value) VALUES (?, ?, ?, ?) " +
+				" ON CONFLICT (sheetid, row, col) DO UPDATE" +
+				" SET value = ? WHERE " + bookTable + "_sheetdata.sheetid = ? " +
+				"AND " + bookTable + "_sheetdata.row = ? " +
+				"AND " + bookTable + "_sheetdata.col = ?");
+		insertStmt.setInt(1, _destSheet.getDBId());
+		insertStmt.setInt(6, _destSheet.getDBId());
+
+
 		for(int r = row; r <= lastRow; r++){
 			for (int c = col; c <= lastColumn;c++){
 				CellBuffer buffer = srcBuffer[r-row][c-col];
@@ -458,11 +483,20 @@ public class PasteCellHelper { //ZSS-693: promote visibility
 				SCell destCell = _destSheet.getCell(r,c);
 				if(buffer==null){
 					if(!destCell.isNull()){
+						// Already updated to the database.
 						_destSheet.clearCell(destCell.getRowIndex(), destCell.getColumnIndex(), destCell.getRowIndex(), destCell.getColumnIndex());
 						continue;
 					}
 					continue;
 				}
+
+				insertStmt.setInt(2, destCell.getRowIndex());
+				insertStmt.setInt(3, destCell.getColumnIndex());
+				insertStmt.setString(4, buffer.getValue().toString());
+				insertStmt.setString(5, buffer.getValue().toString());
+				insertStmt.setInt(7, destCell.getRowIndex());
+				insertStmt.setInt(8, destCell.getColumnIndex());
+				insertStmt.execute();
 				
 				switch(option.getPasteType()){
 				case ALL:
@@ -501,6 +535,10 @@ public class PasteCellHelper { //ZSS-693: promote visibility
 
 			}
 		}
+
+		insertStmt.close();
+		connection.commit();
+		connection.close();
 	}
 
 	private void pasteFormat(CellBuffer buffer, SCell destCell) {
