@@ -490,23 +490,18 @@ public class PasteCellHelper { //ZSS-693: promote visibility
 					continue;
 				}
 
-				insertStmt.setInt(2, destCell.getRowIndex());
-				insertStmt.setInt(3, destCell.getColumnIndex());
-				insertStmt.setString(4, buffer.getValue().toString());
-				insertStmt.setString(5, buffer.getValue().toString());
-				insertStmt.setInt(7, destCell.getRowIndex());
-				insertStmt.setInt(8, destCell.getColumnIndex());
-				insertStmt.execute();
-				
+
+				String updatedValue="";
+
 				switch(option.getPasteType()){
 				case ALL:
-					pasteValue(buffer,destCell,cutFrom,true,rowOffset,columnOffset,transpose,row,col);
+					updatedValue = pasteValue(buffer,destCell,cutFrom,true,rowOffset,columnOffset,transpose,row,col);
 					pasteStyle(buffer,destCell,true);//border,comment
 					buffer.applyHyperlink(destCell);
 					buffer.applyComment(destCell);
 					break;
 				case ALL_EXCEPT_BORDERS:
-					pasteValue(buffer,destCell,cutFrom,true,rowOffset,columnOffset,transpose,row,col);
+					updatedValue = pasteValue(buffer,destCell,cutFrom,true,rowOffset,columnOffset,transpose,row,col);
 					pasteStyle(buffer,destCell,false);//border,comment
 					buffer.applyHyperlink(destCell);
 					buffer.applyComment(destCell);
@@ -521,17 +516,25 @@ public class PasteCellHelper { //ZSS-693: promote visibility
 				case FORMULAS_AND_NUMBER_FORMATS:
 					pasteFormat(buffer,destCell);
 				case FORMULAS:
-					pasteValue(buffer,destCell,cutFrom,true,rowOffset,columnOffset,transpose,row,col);
+					updatedValue = pasteValue(buffer,destCell,cutFrom,true,rowOffset,columnOffset,transpose,row,col);
 					break;
 				case VALIDATAION:
 				case VALUES_AND_NUMBER_FORMATS:
 					pasteFormat(buffer,destCell);
 				case VALUES:
-					pasteValue(buffer,destCell,cutFrom);
+					updatedValue = pasteValue(buffer,destCell,cutFrom);
 					break;
 				case COLUMN_WIDTHS:
 					break;				
 				}
+
+				insertStmt.setInt(2, destCell.getRowIndex());
+				insertStmt.setInt(3, destCell.getColumnIndex());
+				insertStmt.setString(4, updatedValue);
+				insertStmt.setString(5,updatedValue);
+				insertStmt.setInt(7, destCell.getRowIndex());
+				insertStmt.setInt(8, destCell.getColumnIndex());
+				insertStmt.execute();
 
 			}
 		}
@@ -572,11 +575,11 @@ public class PasteCellHelper { //ZSS-693: promote visibility
 		}
 	}
 
-	private void pasteValue(CellBuffer buffer, SCell destCell,SheetRegion cutFrom) {
-		pasteValue(buffer,destCell,cutFrom,false,-1,-1,false,-1,-1);
+	private String pasteValue(CellBuffer buffer, SCell destCell,SheetRegion cutFrom) {
+		return pasteValue(buffer,destCell,cutFrom,false,-1,-1,false,-1,-1);
 	}
 	//ZSS-693: promote to public so SortHelper can use this
-	public void pasteValue(CellBuffer buffer, SCell destCell,SheetRegion cutFrom, boolean pasteFormula, int rowOffset,int columnOffset, boolean transpose, int rowOrigin, int columnOrigin) {
+	public String pasteValue(CellBuffer buffer, SCell destCell,SheetRegion cutFrom, boolean pasteFormula, int rowOffset,int columnOffset, boolean transpose, int rowOrigin, int columnOrigin) {
 		if(pasteFormula){
 			String formula = buffer.getFormula();
 			if(formula!=null){
@@ -596,10 +599,15 @@ public class PasteCellHelper { //ZSS-693: promote visibility
 				
 				if(!expr.hasError()){
 					destCell.setValue(expr);
+					return "=" + expr.getFormulaString();
 				}//ignore if get parsing error
-				return;
+				return "";
 			}
 		}
 		destCell.setValue(buffer.getValue());
+		if (buffer.isNull())
+			return "";
+		else
+			return buffer.getValue().toString();
 	}
 }
