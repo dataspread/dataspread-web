@@ -593,6 +593,38 @@ public class SheetImpl extends AbstractSheetAdv {
 			throw new IllegalArgumentException(rowIdx+">"+lastRowIdx);
 		}
 		int size = lastRowIdx-rowIdx+1;
+
+		// Shift Cells in DB
+		String bookTable = getBook().getId();
+		// Workaround for shifting.
+		// Counted btree should remove this.
+		String shiftRows = "UPDATE " + bookTable + "_sheetdata " +
+				" SET row = (row + ?) * -1" +
+				" WHERE sheetid = ?" +
+				" AND   row >= ?";
+
+		String shiftRows1 = "UPDATE " + bookTable + "_sheetdata " +
+				" SET row = row  * -1" +
+				" WHERE sheetid = ?" +
+				" AND   row < 0";
+
+
+		try (Connection connection = DBHandler.instance.getConnection();
+			 Statement stmt = connection.createStatement();
+			 PreparedStatement shiftRowsStmt = connection.prepareStatement(shiftRows);
+			 PreparedStatement shiftRowsStmt1 = connection.prepareStatement(shiftRows1)) {
+			shiftRowsStmt.setInt(1, size);
+			shiftRowsStmt.setInt(2, getDBId());
+			shiftRowsStmt.setInt(3, rowIdx);
+			shiftRowsStmt.execute();
+
+			shiftRowsStmt1.setInt(1, getDBId());
+			shiftRowsStmt1.execute();
+			connection.commit();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		setEndRowIndex(_maxRowIndex + size, true);
 		_rows.insert(rowIdx, size);
 
 		//destroy the row that exceed the max size
