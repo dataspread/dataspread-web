@@ -107,7 +107,8 @@ public interface SSheet {
 	public String getId();
 
 	public int getDBId();
-	
+	public void setDBId(int dbId);
+
 	public SSheetViewInfo getViewInfo();
 	public SPrintSetup getPrintSetup();
 	

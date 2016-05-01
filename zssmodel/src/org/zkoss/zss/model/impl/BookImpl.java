@@ -161,7 +161,6 @@ public class BookImpl extends AbstractBookAdv{
 		{
 			String updateBookName = "UPDATE books SET bookname = ? WHERE bookname = ?";
 			try (Connection connection = DBHandler.instance.getConnection();
-				 Statement stmt = connection.createStatement();
 				 PreparedStatement updateBookNameStmt = connection.prepareStatement(updateBookName))
 			{
 				updateBookNameStmt.setString(1, bookName);
@@ -171,8 +170,6 @@ public class BookImpl extends AbstractBookAdv{
 			}
 			catch (SQLException e)
 			{
-				System.out.println(e.getErrorCode());
-				e.printStackTrace();
 				return false;
 			}
 			this._bookName = bookName;
@@ -229,6 +226,7 @@ public class BookImpl extends AbstractBookAdv{
 			stmt.execute(createTable);
 			String createBookRelation = "CREATE TABLE " + bookTable + "_workbook (" +
 					"  sheetid       INTEGER," +
+					"  sheetindex    INTEGER," +
 					"  sheetname     TEXT," +
 					"  maxrow        INTEGER," +
 					"  maxcolumn     INTEGER," +
@@ -242,14 +240,15 @@ public class BookImpl extends AbstractBookAdv{
 			insertBookStmt.execute();
 
 
-			String insertSheets = "INSERT INTO " + bookTable + "_workbook VALUES(?, ?, ?, ?)";
+			String insertSheets = "INSERT INTO " + bookTable + "_workbook VALUES(?, ?, ?, ?, ?)";
 			PreparedStatement insertSheetStmt = connection.prepareStatement(insertSheets);
 			for (SSheet sheet:getSheets())
 			{
-				insertSheetStmt.setInt(1,sheet.getDBId());
-				insertSheetStmt.setString(2,sheet.getSheetName());
-				insertSheetStmt.setInt(3,sheet.getEndRowIndex());
-				insertSheetStmt.setInt(4,sheet.getEndColumnIndex());
+				insertSheetStmt.setInt(1, sheet.getDBId());
+				insertSheetStmt.setInt(2, _sheets.indexOf(sheet));
+				insertSheetStmt.setString(3, sheet.getSheetName());
+				insertSheetStmt.setInt(4, sheet.getEndRowIndex());
+				insertSheetStmt.setInt(5, sheet.getEndColumnIndex());
 				insertSheetStmt.execute();
 			}
 			insertSheetStmt.close();
@@ -332,7 +331,8 @@ public class BookImpl extends AbstractBookAdv{
 
 
 	private SSheet createExistingSheet(String name, int dbId) {
-		AbstractSheetAdv sheet = new SheetImpl(this,nextObjId("sheet"),dbId);
+		AbstractSheetAdv sheet = new SheetImpl(this,nextObjId("sheet"));
+		sheet.setDBId(dbId);
 		sheet.setSheetName(name);
 		_sheets.add(sheet);
 
@@ -375,7 +375,7 @@ public class BookImpl extends AbstractBookAdv{
 			checkOwnership(src);
 		
 
-		AbstractSheetAdv sheet = new SheetImpl(this,nextObjId("sheet"),nextIntObjId("dbsheet"));
+		AbstractSheetAdv sheet = new SheetImpl(this,nextObjId("sheet"));
 		sheet.setSheetName(name);
 		_sheets.add(sheet);
 
@@ -383,15 +383,21 @@ public class BookImpl extends AbstractBookAdv{
 		if (hasSchema())
 		{
 			String bookTable=getId();
-			String insertSheets = "INSERT INTO " + bookTable + "_workbook VALUES(?, ?, ?, ?)";
+			String insertSheets = "INSERT INTO " + bookTable + "_workbook " +
+					" SELECT max(sheetid) +  1, ?, ?, ?, ? " +
+					" FROM " +  bookTable + "_workbook  " +
+					" RETURNING sheetid";
 			try (Connection connection = DBHandler.instance.getConnection();
 				 PreparedStatement stmt = connection.prepareStatement(insertSheets))
 			{
-				stmt.setInt(1,sheet.getDBId());
+				stmt.setInt(1,_sheets.indexOf(sheet));
 				stmt.setString(2,sheet.getSheetName());
 				stmt.setInt(3,sheet.getEndRowIndex());
 				stmt.setInt(4,sheet.getEndColumnIndex());
-				stmt.execute();
+				ResultSet rs = stmt.executeQuery();
+				if (rs.next())
+					sheet.setDBId(rs.getInt("sheetid"));
+				rs.close();
 				connection.commit();
 			}
 			catch (SQLException e)
@@ -399,7 +405,10 @@ public class BookImpl extends AbstractBookAdv{
 				e.printStackTrace();
 			}
 		}
-
+		else
+		{
+			sheet.setDBId(nextIntObjId("dbsheet"));
+		}
 
 		if(src instanceof AbstractSheetAdv){
 			((AbstractSheetAdv)src).copyTo(sheet);
@@ -605,12 +614,31 @@ public class BookImpl extends AbstractBookAdv{
 		if(oldindex==index){
 			return;
 		}
-		
+
 		//ZSS-820
 		reorderSheetFormula(getSheet(oldindex).getSheetName(), oldindex, index);
 		_sheets.remove(oldindex);
 		_sheets.add(index, (AbstractSheetAdv)sheet);
-		
+
+		//Update to DB
+		if (hasSchema()) {
+			String bookTable = getId();
+			String updateSheetIndex = "UPDATE " + bookTable + "_workbook " +
+					" SET sheetindex = ? WHERE sheetid = ?";
+			try (Connection connection = DBHandler.instance.getConnection();
+				 PreparedStatement updateSheetIndexStmt = connection.prepareStatement(updateSheetIndex)) {
+				for (SSheet s:_sheets)
+				{
+					updateSheetIndexStmt.setInt(1, _sheets.indexOf(s));
+					updateSheetIndexStmt.setInt(2, s.getDBId());
+					updateSheetIndexStmt.execute();
+				}
+				connection.commit();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+
 		//create formula cache for any sheet, sheet name, position change
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
 
@@ -1091,7 +1119,7 @@ public class BookImpl extends AbstractBookAdv{
 
 		// Load Schema
 		String bookTable = getId();
-		String query ="SELECT * FROM "+ bookTable +"_workbook";
+		String query ="SELECT * FROM "+ bookTable +"_workbook ORDER BY sheetindex";
 
 		try (Connection connection = DBHandler.instance.getConnection();
 			 PreparedStatement stmt = connection.prepareStatement(query);

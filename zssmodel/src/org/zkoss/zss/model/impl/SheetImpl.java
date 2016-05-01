@@ -57,7 +57,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	private AbstractBookAdv _book;
 	private String _name;
 	private final String _id;
-	private final int _dbid;
+	private int _dbid;
 	
 	private boolean _protected; //whether this sheet is protected
 	private short _password; //hashed password
@@ -108,10 +108,9 @@ public class SheetImpl extends AbstractSheetAdv {
 	//ZSS-855
 	private final List<STable> _tables = new ArrayList<STable>();
 	
-	public SheetImpl(AbstractBookAdv book,String id, int dbid){
+	public SheetImpl(AbstractBookAdv book,String id){
 		this._book = book;
 		this._id = id;
-		this._dbid = dbid;
 	}
 	
 	protected void checkOwnership(SPicture picture){
@@ -482,6 +481,25 @@ public class SheetImpl extends AbstractSheetAdv {
 	void setSheetName(String name) {
 		checkLegalSheetName(name);
 		this._name = name;
+		if (getBook().hasSchema())
+		{
+			String bookTable = getBook().getId();
+			String updateWorkbook = "UPDATE " + bookTable + "_workbook " +
+					" SET sheetname = ? WHERE sheetid = ?";
+			try (Connection connection = DBHandler.instance.getConnection();
+				 PreparedStatement updateSheetNameStmt = connection.prepareStatement(updateWorkbook))
+			{
+				updateSheetNameStmt.setString(1,name);
+				updateSheetNameStmt.setInt(2,getDBId());
+				updateSheetNameStmt.execute();
+				connection.commit();
+			}
+			catch (SQLException e)
+			{
+				e.printStackTrace();
+			}
+		}
+
 	}
 	
 
@@ -1563,6 +1581,12 @@ public class SheetImpl extends AbstractSheetAdv {
 	public int getDBId() {
 		return _dbid;
 	}
+
+	@Override
+	public void setDBId(int dbId) {
+		_dbid=dbId;
+	}
+
 
 	public SPicture addPicture(Format format, byte[] data,ViewAnchor anchor) {
 		checkOrphan();
