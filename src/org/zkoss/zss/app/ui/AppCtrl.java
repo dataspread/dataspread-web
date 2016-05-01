@@ -13,6 +13,10 @@ package org.zkoss.zss.app.ui;
 
 import java.io.*;
 import java.net.URLDecoder;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
@@ -22,6 +26,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.opencsv.CSVReader;
 import org.zkoss.image.AImage;
 import org.zkoss.lang.Library;
 import org.zkoss.lang.Strings;
@@ -54,6 +59,8 @@ import org.zkoss.zss.app.ui.dlg.*;
 import org.zkoss.zss.model.ModelEvent;
 import org.zkoss.zss.model.ModelEventListener;
 import org.zkoss.zss.model.ModelEvents;
+import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.impl.DBHandler;
 import org.zkoss.zss.ui.*;
 import org.zkoss.zss.ui.event.Events;
 import org.zkoss.zss.ui.event.SyncFriendFocusEvent;
@@ -462,7 +469,43 @@ public class AppCtrl extends CtrlBase<Component>{
 		} else
 			doImportBook0();
 	}
-	
+
+
+	private void importCSVSheet(String name, InputStream csv) throws IOException {
+		CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(csv)));
+		String[] nextLine;
+		loadedBook.getInternalBook().checkDBSchema();
+		SSheet newSheet = loadedBook.getInternalBook().createSheet(name);
+		int sheetId = newSheet.getDBId();
+		int row = 0;
+
+		String bookTable = loadedBook.getInternalBook().getId();
+		String insertQuery = "INSERT INTO " + bookTable + "_sheetdata " +
+				"(sheetid,row,col,value) VALUES (?, ?, ?, ?)";
+
+		try (Connection connection = DBHandler.instance.getConnection();
+			 PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
+			while ((nextLine = reader.readNext()) != null) {
+				for (int col = 0; col < nextLine.length; col++) {
+					insertStmt.setInt(1, sheetId);
+					insertStmt.setInt(2, row);
+					insertStmt.setInt(3, col);
+					insertStmt.setString(4, nextLine[col]);
+					insertStmt.execute();
+
+				}
+				++row;
+				if (row % 1000 == 0)
+					System.out.println("Importing " + name + " " + row + " loaded");
+			}
+			newSheet.setEndRowIndex(row, true);
+			connection.commit();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+
 	private void doImportBook0(){
 		Fileupload.get(1,new SerializableEventListener<UploadEvent>() {
 			private static final long serialVersionUID = -8173538106339815887L;
@@ -470,9 +513,6 @@ public class AppCtrl extends CtrlBase<Component>{
 			public void onEvent(UploadEvent event) throws Exception {
 				Importer importer = Importers.getImporter();
 				Media[] medias = event.getMedias();
-				
-				if(isBookLoaded())
-					doCloseBook(false);
 				
 				if(medias==null)
 					return;
@@ -482,6 +522,17 @@ public class AppCtrl extends CtrlBase<Component>{
 					Media m = event.getMedias()[0];
 					if (m.isBinary()){
 						String name = m.getName();
+						if (name.endsWith(".csv")) {
+							if (!isBookLoaded())
+								doOpenNewBook0(false);
+							importCSVSheet(name.substring(0, name.indexOf(".csv")), m.getStreamData());
+							Book bookhere = loadedBook;
+							if (isBookLoaded())
+								doCloseBook(false);
+							doOpenExistingBook(bookhere);
+							return;
+						}
+
 						Book book = importer.imports(m.getStreamData(), name);
 						book.setShareScope(EventQueues.APPLICATION);
 						
