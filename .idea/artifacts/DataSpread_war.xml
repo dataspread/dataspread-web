@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="war" name="DataSpread:war">
+    <output-path>$PROJECT_DIR$/out/artifacts/DataSpread_war</output-path>
+    <root id="archive" name="DataSpread_war.war">
+      <element id="artifact" artifact-name="DataSpread:war exploded" />
+    </root>
+  </artifact>
+</component>
