@@ -99,8 +99,8 @@ public class BookImpl extends AbstractBookAdv{
 	private String _bookId;
 	
 	private final HashMap<String,AtomicInteger> _objIdCounter = new HashMap<String,AtomicInteger>();
-	private final int _maxRowSize = SpreadsheetVersion.EXCEL2007.getMaxRows();
-	private final int _maxColumnSize = SpreadsheetVersion.EXCEL2007.getMaxColumns();
+	private final int _maxRowSize = Integer.MAX_VALUE;
+	private final int _maxColumnSize = Integer.MAX_VALUE;
 	
 	private EventListenerAdaptor _listeners;
 	private EventListenerAdaptor _queueListeners;
@@ -210,7 +210,7 @@ public class BookImpl extends AbstractBookAdv{
 		try (Connection connection = DBHandler.instance.getConnection();
 			 Statement stmt = connection.createStatement())
 		{
-			String createTable = "CREATE TABLE " + bookTable + "_sheetdata (\n" +
+			String createTable = "CREATE  UNLOGGED  TABLE " + bookTable + "_sheetdata (\n" +
 					"  sheetid       INTEGER              NOT NULL,\n" +
 					"  col           INTEGER              NOT NULL,\n" +
 					"  row           INTEGER              NOT NULL,\n" +

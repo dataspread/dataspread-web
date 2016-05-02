@@ -261,7 +261,8 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 	//For IE9: after 30000 cells, browser become slow
 	//For Chrome and FF 10 : after 60000 cells, browser become slower but may acceptable
 	private static final int DEFAULT_MAX_RENDERED_CELL_SIZE = 8000;
-	
+	private static final int WIDTH_PER_CHAR = 9;
+
 	transient private SBook _book; // the spreadsheet book
 
 	private String _src; // the src to create an internal book
@@ -6033,6 +6034,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 			maxRowsCols = new int[2];
 			initSheetMaxRowsCols(sheet, maxRowsCols);
 		}
+		setLeftheadwidth(Integer.toString(_maxRows > 0 ? _maxRows : maxRowsCols[0]).length() * WIDTH_PER_CHAR + WIDTH_PER_CHAR);
 		return _maxRows > 0 ? _maxRows : maxRowsCols[0];
 	}
 	
@@ -6061,14 +6063,10 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 		if (region != null) {
 			int maxRows = region.lastRow + 2;
 			int maxCols = region.lastColumn + 2;
-			if (maxRows > SpreadsheetVersion.EXCEL2007.getMaxRows()) {
-				maxRows = SpreadsheetVersion.EXCEL2007.getMaxRows();
-			} else if (maxRows < DEFAULT_MAX_ROWS) {
+			if (maxRows < DEFAULT_MAX_ROWS) {
 				maxRows = DEFAULT_MAX_ROWS;
 			}
-			if (maxCols > SpreadsheetVersion.EXCEL2007.getMaxColumns()) {
-				maxCols = SpreadsheetVersion.EXCEL2007.getMaxColumns();
-			} else if (maxCols < DEFAULT_MAX_COLUMNS) {
+			if (maxCols < DEFAULT_MAX_COLUMNS) {
 				maxCols = DEFAULT_MAX_COLUMNS;
 			}
 			maxRowsCols[0] = maxRows;
