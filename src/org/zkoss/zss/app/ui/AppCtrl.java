@@ -25,8 +25,16 @@ import java.util.Date;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.sql.PooledConnection;
 
 import com.opencsv.CSVReader;
+import org.apache.tomcat.dbcp.dbcp2.DelegatingConnection;
+import org.postgresql.PGConnection;
+import org.postgresql.copy.CopyIn;
+import org.postgresql.copy.CopyManager;
+import org.postgresql.core.BaseConnection;
+import org.postgresql.jdbc.PgConnection;
+import org.postgresql.jdbc2.optional.PoolingDataSource;
 import org.zkoss.image.AImage;
 import org.zkoss.lang.Library;
 import org.zkoss.lang.Strings;
@@ -86,7 +94,8 @@ public class AppCtrl extends CtrlBase<Component>{
 	private static final String UNSAVED_MESSAGE = "Do you want to leave this book without save??";
 	private static final String UTF8 = "UTF-8";
 	private static final boolean DISABLE_BOOKMARK = Boolean.valueOf(Library.getProperty("zssapp.bookmark.disable", "false"));
-	
+	private static final int COMMIT_SIZE = 100000;
+
 	private static BookRepository repo = BookRepositoryFactory.getInstance().getRepository();
 	private static CollaborationInfo collaborationInfo = CollaborationInfoImpl.getInstance();
 	private static BookManager bookManager = BookManagerImpl.getInstance(repo);
@@ -505,6 +514,50 @@ public class AppCtrl extends CtrlBase<Component>{
 		}
 	}
 
+	// Import using Copy command
+	// Postgres specific, fast performance.
+	private void importCSVSheetCopy(String name, InputStream csv) throws IOException {
+		CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(csv)));
+		String[] nextLine;
+		loadedBook.getInternalBook().checkDBSchema();
+		SSheet newSheet = loadedBook.getInternalBook().createSheet(name);
+		int sheetId = newSheet.getDBId();
+		int row = 0;
+
+		String bookTable = loadedBook.getInternalBook().getId();
+
+		try (Connection connection = DBHandler.instance.getConnection()) {
+			Connection rawConn = ((DelegatingConnection) connection).getInnermostDelegate();
+			CopyManager cm = ((PgConnection) rawConn).getCopyAPI();
+
+			CopyIn cpIN = cm.copyIn("COPY " + bookTable + "_sheetdata (sheetid,row,col,value)" +
+					" FROM STDIN WITH DELIMITER '|'");
+
+			StringBuffer sb = new StringBuffer();
+			while ((nextLine = reader.readNext()) != null) {
+				for (int col = 0; col < nextLine.length; col++) {
+					sb.append(sheetId).append('|');
+					sb.append(row).append('|');
+					sb.append(col).append('|');
+					sb.append(nextLine[col]).append('\n');
+				}
+				++row;
+				if (row % COMMIT_SIZE == 0) {
+					cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
+					sb = new StringBuffer();
+				}
+			}
+			if (sb.length() > 0)
+				cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
+			cpIN.endCopy();
+			rawConn.commit();
+			newSheet.setEndRowIndex(row - 1, true);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+
 
 	private void doImportBook0(){
 		Fileupload.get(1,new SerializableEventListener<UploadEvent>() {
@@ -525,11 +578,16 @@ public class AppCtrl extends CtrlBase<Component>{
 						if (name.endsWith(".csv")) {
 							if (!isBookLoaded())
 								doOpenNewBook0(false);
-							importCSVSheet(name.substring(0, name.indexOf(".csv")), m.getStreamData());
+							String sheetName = name.substring(0, name.indexOf(".csv"));
+							importCSVSheetCopy(sheetName, m.getStreamData());
+							Messagebox.show("File imported", "DataSpread",
+									Messagebox.OK, Messagebox.INFORMATION, null);
+
 							Book bookhere = loadedBook;
 							if (isBookLoaded())
 								doCloseBook(false);
 							doOpenExistingBook(bookhere);
+							ss.setSelectedSheet(sheetName);
 							return;
 						}
 

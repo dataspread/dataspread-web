@@ -24,5 +24,7 @@
     <orderEntry type="module" module-name="zpoi" exported="" />
     <orderEntry type="module" module-name="zss" exported="" />
     <orderEntry type="module" module-name="zssmodel" exported="" />
+    <orderEntry type="library" scope="PROVIDED" name="postgresql-9.4.1208" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="tomcat-dbcp" level="project" />
   </component>
 </module>

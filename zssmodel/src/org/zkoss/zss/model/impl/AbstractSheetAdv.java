@@ -45,7 +45,9 @@ public abstract class AbstractSheetAdv implements SSheet,LinkedModelObject,Seria
 	
 	
 	/*package*/ abstract void copyTo(AbstractSheetAdv sheet);
-	/*package*/ abstract void setSheetName(String name);
+
+	/*package*/
+	abstract void setSheetName(String name, boolean updateToDB);
 	
 //	/*package*/ abstract void onModelInternalEvent(ModelInternalEvent event);
 	

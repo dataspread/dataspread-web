@@ -333,7 +333,7 @@ public class BookImpl extends AbstractBookAdv{
 	private SSheet createExistingSheet(String name, int dbId) {
 		AbstractSheetAdv sheet = new SheetImpl(this,nextObjId("sheet"));
 		sheet.setDBId(dbId);
-		sheet.setSheetName(name);
+		sheet.setSheetName(name, false);
 		_sheets.add(sheet);
 
 		//create formula cache for any sheet, sheet name, position change
@@ -376,7 +376,7 @@ public class BookImpl extends AbstractBookAdv{
 		
 
 		AbstractSheetAdv sheet = new SheetImpl(this,nextObjId("sheet"));
-		sheet.setSheetName(name);
+		sheet.setSheetName(name, false);
 		_sheets.add(sheet);
 
 		// Update to DB
@@ -433,7 +433,7 @@ public class BookImpl extends AbstractBookAdv{
 		
 		int index = getSheetIndex(sheet);
 		String oldname = sheet.getSheetName();
-		((AbstractSheetAdv)sheet).setSheetName(newname);
+		((AbstractSheetAdv) sheet).setSheetName(newname, true);
 		
 		//create formula cache for any sheet, sheet name, position change
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));

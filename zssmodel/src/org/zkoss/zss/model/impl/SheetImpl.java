@@ -478,10 +478,10 @@ public class SheetImpl extends AbstractSheetAdv {
 	}
 	
 	@Override
-	void setSheetName(String name) {
+	void setSheetName(String name, boolean updateToDB) {
 		checkLegalSheetName(name);
 		this._name = name;
-		if (getBook().hasSchema())
+		if (getBook().hasSchema() && updateToDB)
 		{
 			String bookTable = getBook().getId();
 			String updateWorkbook = "UPDATE " + bookTable + "_workbook " +
