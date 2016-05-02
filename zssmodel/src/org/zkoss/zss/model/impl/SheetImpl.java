@@ -100,7 +100,7 @@ public class SheetImpl extends AbstractSheetAdv {
 
 
 	//Mangesh
-	static final private int PreFetchSize = 100;
+	static final private int PreFetchSize = 800;
 	private int _maxColumnIndex=-1;
 	private int _maxRowIndex=-1;
 
