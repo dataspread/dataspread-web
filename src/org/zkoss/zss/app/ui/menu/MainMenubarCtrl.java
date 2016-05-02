@@ -167,9 +167,7 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 		if(!evalOnly && Boolean.valueOf(Library.getProperty("zssapp.menu.zssmark.hidden")) == Boolean.TRUE) {
 			zssmark.setVisible(false);
 		} else {
-			String title = ZSS_PREFIX + Version.UID;
-			if(evalOnly)
-				title += " (Evaluation)";
+			String title = ZSS_PREFIX + Version.DATASPREADUID;
 			zssmark.setLabel(title);
 		}
 		
