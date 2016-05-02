@@ -516,8 +516,8 @@ public class AppCtrl extends CtrlBase<Component>{
 
 	// Import using Copy command
 	// Postgres specific, fast performance.
-	private void importCSVSheetCopy(String name, InputStream csv) throws IOException {
-		CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(csv)));
+	private void importCSVSheetCopy(String name, InputStream csv, char delimiter) throws IOException {
+		CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(csv)), delimiter);
 		String[] nextLine;
 		loadedBook.getInternalBook().checkDBSchema();
 		SSheet newSheet = loadedBook.getInternalBook().createSheet(name);
@@ -575,11 +575,12 @@ public class AppCtrl extends CtrlBase<Component>{
 					Media m = event.getMedias()[0];
 					if (m.isBinary()){
 						String name = m.getName();
-						if (name.endsWith(".csv")) {
+						if (name.endsWith(".csv") || name.endsWith(".tsv") || name.endsWith(".ssv")) {
 							if (!isBookLoaded())
 								doOpenNewBook0(false);
-							String sheetName = name.substring(0, name.indexOf(".csv"));
-							importCSVSheetCopy(sheetName, m.getStreamData());
+							String sheetName = name.substring(0,name.lastIndexOf('.'));
+							char delimiter = name.endsWith(".csv")?',':name.endsWith(".ssv")?'\t':' ';
+							importCSVSheetCopy(sheetName, m.getStreamData(), delimiter);
 							Messagebox.show("File imported", "DataSpread",
 									Messagebox.OK, Messagebox.INFORMATION, null);
 
