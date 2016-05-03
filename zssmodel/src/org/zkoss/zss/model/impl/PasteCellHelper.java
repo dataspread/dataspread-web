@@ -605,9 +605,6 @@ public class PasteCellHelper { //ZSS-693: promote visibility
 			}
 		}
 		destCell.setValue(buffer.getValue());
-		if (buffer.isNull())
-			return "";
-		else
-			return buffer.getValue().toString();
+		return buffer.getValue().toString();
 	}
 }
