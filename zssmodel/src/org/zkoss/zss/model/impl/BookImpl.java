@@ -222,7 +222,7 @@ public class BookImpl extends AbstractBookAdv{
 					"  updatedby     INTEGER DEFAULT (-1) NOT NULL,\n" +
 					"  parent_col    INTEGER,\n" +
 					"  parent_row    INTEGER,\n" +
-					"  PRIMARY KEY (sheetid, col, row))";
+					"  PRIMARY KEY (sheetid, row, col))";
 			stmt.execute(createTable);
 			String createBookRelation = "CREATE TABLE " + bookTable + "_workbook (" +
 					"  sheetid       INTEGER," +
