@@ -593,39 +593,41 @@ public class SheetImpl extends AbstractSheetAdv {
 		}
 		int size = lastRowIdx-rowIdx+1;
 
-		// Shift Cells in DB
-		String bookTable = getBook().getId();
-		// Workaround for shifting.
-		// Counted btree should remove this.
-		String shiftRows = "UPDATE " + bookTable + "_sheetdata " +
-				" SET row = (row + ?) * -1" +
-				" WHERE sheetid = ?" +
-				" AND   row >= ?";
+		if (getBook().hasSchema()) {
+			// Shift Cells in DB
+			String bookTable = getBook().getId();
+			// Workaround for shifting.
+			// Counted btree should remove this.
+			String shiftRows = "UPDATE " + bookTable + "_sheetdata " +
+					" SET row = (row + ?) * -1" +
+					" WHERE sheetid = ?" +
+					" AND   row >= ?";
 
-		String shiftRows1 = "UPDATE " + bookTable + "_sheetdata " +
-				" SET row = row  * -1" +
-				" WHERE sheetid = ?" +
-				" AND   row < 0";
+			String shiftRows1 = "UPDATE " + bookTable + "_sheetdata " +
+					" SET row = row  * -1" +
+					" WHERE sheetid = ?" +
+					" AND   row < 0";
 
 
-		try (Connection connection = DBHandler.instance.getConnection();
-			 Statement stmt = connection.createStatement();
-			 PreparedStatement shiftRowsStmt = connection.prepareStatement(shiftRows);
-			 PreparedStatement shiftRowsStmt1 = connection.prepareStatement(shiftRows1)) {
-			shiftRowsStmt.setInt(1, size);
-			shiftRowsStmt.setInt(2, getDBId());
-			shiftRowsStmt.setInt(3, rowIdx);
-			shiftRowsStmt.execute();
+			try (Connection connection = DBHandler.instance.getConnection();
+				 Statement stmt = connection.createStatement();
+				 PreparedStatement shiftRowsStmt = connection.prepareStatement(shiftRows);
+				 PreparedStatement shiftRowsStmt1 = connection.prepareStatement(shiftRows1)) {
+				shiftRowsStmt.setInt(1, size);
+				shiftRowsStmt.setInt(2, getDBId());
+				shiftRowsStmt.setInt(3, rowIdx);
+				shiftRowsStmt.execute();
 
-			shiftRowsStmt1.setInt(1, getDBId());
-			shiftRowsStmt1.execute();
-			setEndRowIndex(_maxRowIndex + size, connection, true);
-			_rows.insert(rowIdx, size);
+				shiftRowsStmt1.setInt(1, getDBId());
+				shiftRowsStmt1.execute();
+				setEndRowIndex(_maxRowIndex + size, connection, true);
 
-			connection.commit();
-		} catch (SQLException e) {
-			e.printStackTrace();
+				connection.commit();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
+		_rows.insert(rowIdx, size);
 
 
 		//destroy the row that exceed the max size
@@ -717,6 +719,41 @@ public class SheetImpl extends AbstractSheetAdv {
 			row.destroy();
 		}
 		int size = lastRowIdx-rowIdx+1;
+
+		if (getBook().hasSchema()) {
+			// Shift Cells in DB
+			String bookTable = getBook().getId();
+			// Workaround for shifting.
+			// Counted btree should remove this.
+			String shiftRows = "UPDATE " + bookTable + "_sheetdata " +
+					" SET row = (row - ?) * -1" +
+					" WHERE sheetid = ?" +
+					" AND   row >= ?";
+
+			String shiftRows1 = "UPDATE " + bookTable + "_sheetdata " +
+					" SET row = row  * -1" +
+					" WHERE sheetid = ?" +
+					" AND   row < 0";
+
+
+			try (Connection connection = DBHandler.instance.getConnection();
+				 Statement stmt = connection.createStatement();
+				 PreparedStatement shiftRowsStmt = connection.prepareStatement(shiftRows);
+				 PreparedStatement shiftRowsStmt1 = connection.prepareStatement(shiftRows1)) {
+				shiftRowsStmt.setInt(1, size);
+				shiftRowsStmt.setInt(2, getDBId());
+				shiftRowsStmt.setInt(3, rowIdx);
+				shiftRowsStmt.execute();
+
+				shiftRowsStmt1.setInt(1, getDBId());
+				shiftRowsStmt1.execute();
+				setEndRowIndex(_maxRowIndex - size, connection, true);
+
+				connection.commit();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
 		_rows.delete(rowIdx, size);
 		
 		//ZSS-619, should clear formula for entire effected region
