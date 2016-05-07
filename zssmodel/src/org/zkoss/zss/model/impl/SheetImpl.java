@@ -423,12 +423,19 @@ public class SheetImpl extends AbstractSheetAdv {
 		String updateWorkbook = "UPDATE " + bookTable + "_workbook SET maxrow = ?, maxcolumn = ?" +
 				" WHERE sheetid = ?";
 
-
-		try (PreparedStatement stmt = connection.prepareStatement(updateWorkbook)) {
-				stmt.setInt(1, _maxRowIndex);
-				stmt.setInt(2, _maxColumnIndex);
-				stmt.setInt(3, getDBId());
-				stmt.execute();
+		try  {
+			Connection localConnection = connection == null ? DBHandler.instance.getConnection() : connection;
+			PreparedStatement stmt = localConnection.prepareStatement(updateWorkbook);
+			stmt.setInt(1, _maxRowIndex);
+			stmt.setInt(2, _maxColumnIndex);
+			stmt.setInt(3, getDBId());
+			stmt.execute();
+			stmt.close();
+			if (connection==null)
+			{
+				localConnection.commit();
+				localConnection.close();
+			}
 		}
 		catch (SQLException e)
 		{
