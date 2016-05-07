@@ -457,15 +457,6 @@ public class PasteCellHelper { //ZSS-693: promote visibility
 		// Need to handle formatting and other information
 
 		Connection connection = DBHandler.instance.getConnection();
-		String bookTable = _destSheet.getBook().getId();
-		PreparedStatement insertStmt = connection.prepareStatement("INSERT INTO " + bookTable + "_sheetdata (sheetid,row,col,value) VALUES (?, ?, ?, ?) " +
-				" ON CONFLICT (sheetid, row, col) DO UPDATE" +
-				" SET value = ? WHERE " + bookTable + "_sheetdata.sheetid = ? " +
-				"AND " + bookTable + "_sheetdata.row = ? " +
-				"AND " + bookTable + "_sheetdata.col = ?");
-		insertStmt.setInt(1, _destSheet.getDBId());
-		insertStmt.setInt(6, _destSheet.getDBId());
-
 
 		for(int r = row; r <= lastRow; r++){
 			for (int c = col; c <= lastColumn;c++){
@@ -495,13 +486,13 @@ public class PasteCellHelper { //ZSS-693: promote visibility
 
 				switch(option.getPasteType()){
 				case ALL:
-					updatedValue = pasteValue(buffer,destCell,cutFrom,true,rowOffset,columnOffset,transpose,row,col);
+					updatedValue = pasteValue(buffer,destCell,cutFrom,true,rowOffset,columnOffset,transpose,row,col, connection, true);
 					pasteStyle(buffer,destCell,true);//border,comment
 					buffer.applyHyperlink(destCell);
 					buffer.applyComment(destCell);
 					break;
 				case ALL_EXCEPT_BORDERS:
-					updatedValue = pasteValue(buffer,destCell,cutFrom,true,rowOffset,columnOffset,transpose,row,col);
+					updatedValue = pasteValue(buffer,destCell,cutFrom,true,rowOffset,columnOffset,transpose,row,col, connection, true);
 					pasteStyle(buffer,destCell,false);//border,comment
 					buffer.applyHyperlink(destCell);
 					buffer.applyComment(destCell);
@@ -516,30 +507,19 @@ public class PasteCellHelper { //ZSS-693: promote visibility
 				case FORMULAS_AND_NUMBER_FORMATS:
 					pasteFormat(buffer,destCell);
 				case FORMULAS:
-					updatedValue = pasteValue(buffer,destCell,cutFrom,true,rowOffset,columnOffset,transpose,row,col);
+					updatedValue = pasteValue(buffer,destCell,cutFrom,true,rowOffset,columnOffset,transpose,row,col, connection, true);
 					break;
 				case VALIDATAION:
 				case VALUES_AND_NUMBER_FORMATS:
 					pasteFormat(buffer,destCell);
 				case VALUES:
-					updatedValue = pasteValue(buffer,destCell,cutFrom);
+					updatedValue = pasteValue(buffer,destCell,cutFrom, connection, true);
 					break;
 				case COLUMN_WIDTHS:
 					break;				
 				}
-
-				insertStmt.setInt(2, destCell.getRowIndex());
-				insertStmt.setInt(3, destCell.getColumnIndex());
-				insertStmt.setString(4, updatedValue);
-				insertStmt.setString(5,updatedValue);
-				insertStmt.setInt(7, destCell.getRowIndex());
-				insertStmt.setInt(8, destCell.getColumnIndex());
-				insertStmt.execute();
-
 			}
 		}
-
-		insertStmt.close();
 		connection.commit();
 		connection.close();
 	}
@@ -575,11 +555,12 @@ public class PasteCellHelper { //ZSS-693: promote visibility
 		}
 	}
 
-	private String pasteValue(CellBuffer buffer, SCell destCell,SheetRegion cutFrom) {
-		return pasteValue(buffer,destCell,cutFrom,false,-1,-1,false,-1,-1);
+	private String pasteValue(CellBuffer buffer, SCell destCell,SheetRegion cutFrom, Connection connection, boolean updateToDB) {
+		return pasteValue(buffer,destCell,cutFrom,false,-1,-1,false,-1,-1,connection, updateToDB);
 	}
 	//ZSS-693: promote to public so SortHelper can use this
-	public String pasteValue(CellBuffer buffer, SCell destCell,SheetRegion cutFrom, boolean pasteFormula, int rowOffset,int columnOffset, boolean transpose, int rowOrigin, int columnOrigin) {
+	public String pasteValue(CellBuffer buffer, SCell destCell,SheetRegion cutFrom, boolean pasteFormula, int rowOffset,int columnOffset,
+							 boolean transpose, int rowOrigin, int columnOrigin, Connection connection, boolean updateToDB) {
 		if(pasteFormula){
 			String formula = buffer.getFormula();
 			if(formula!=null){
@@ -598,13 +579,13 @@ public class PasteCellHelper { //ZSS-693: promote visibility
 				}
 				
 				if(!expr.hasError()){
-					destCell.setValue(expr);
+					destCell.setValue(expr, connection, updateToDB);
 					return "=" + expr.getFormulaString();
 				}//ignore if get parsing error
 				return "";
 			}
 		}
-		destCell.setValue(buffer.getValue());
+		destCell.setValue(buffer.getValue(), connection, updateToDB);
 		return buffer.getValue().toString();
 	}
 }

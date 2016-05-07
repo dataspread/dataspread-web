@@ -306,13 +306,35 @@ public class RangeImpl implements SRange {
 	@Override
 	public void setValue(final Object value) {
 		new CellVisitorTask(new CellVisitorForUpdate() {
+			Connection connection = null;
 			public boolean visit(SCell cell) {
+				if (connection==null)
+					initConnection(cell);
 				Object cellval = cell.getValue();
 				if (!equalObjects(cellval, value)) {
-					cell.setValue(value);
+					cell.setValue(value, connection, true);
 				}
 				return true;
 			}
+
+			private void initConnection(SCell cell)  {
+				cell.getSheet().getBook().checkDBSchema();
+				connection = DBHandler.instance.getConnection();
+
+			}
+
+			@Override
+			public void afterVisitAll() {
+				// Close connection
+				try {
+					connection.commit();
+					connection.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+				super.afterVisitAll();
+			}
+
 			//ZSS-939
 			@Override
 			CellAttribute getCellAttr() {
@@ -433,139 +455,17 @@ public class RangeImpl implements SRange {
 		new CellVisitorTask(new CellVisitorForUpdate() {
 			Connection connection = null;
 
-			PreparedStatement insertStmt=null;
-			PreparedStatement deleteStmt =null;
-
-
 			public boolean visit(SCell cell) {
 				if (connection==null)
 					initConnection(cell);
 
-				//ZSS-565: Support input with Swedish locale into formula
-				Locale locale = ZssContext.getCurrent().getLocale();
-
-				InputResult result;
-				if((result = input.get())==null){
-					result = ie.parseInput(editText == null ? ""
-						: editText, cell.getCellStyle().getDataFormat(), new InputParseContext(locale));
-					input.set(result);
-					
-					//check if a hyperlink
-					if(result.getType() == CellType.STRING){
-						final HyperlinkType type = getHyperlinkType((String)result.getValue());
-						if (type == HyperlinkType.EMAIL || type == HyperlinkType.URL) {
-							hyperlinkType.set(type);
-						}
-					}
-				}
-				
-				//ZSS-750
-				Object resultVal = result.getValue();
-				if (cell.getType() == result.getType()) {
-					// 20140828, henrichen: getValue() will cause evalFormula(); costly.
-					if (result.getType() == CellType.FORMULA) {
-						FormatEngine fe = EngineFactory.getInstance().createFormatEngine();
-						String oldEditText = fe.getEditText(cell, new FormatContext(locale));		
-						if (editText.equals(oldEditText)) {
-							return true;
-						}
-					} else {
-						Object cellval = cell.getValue();
-						if (equalObjects(cellval, resultVal)) {
-							return true;
-						}
-					}
-				}
-				
-				String format = result.getFormat();
-				
-				switch (result.getType()) {
-				case BLANK:
-					cell.clearValue();
-					break;
-				case BOOLEAN:
-					cell.setBooleanValue((Boolean) resultVal);
-					break;
-				case FORMULA:
-					((AbstractCellAdv)cell).setFormulaValue((String) resultVal, locale); //ZSS-565
-					break;
-				case NUMBER:
-					if(resultVal instanceof Date){
-						cell.setDateValue((Date)resultVal);
-					}else{
-						cell.setNumberValue((Double) resultVal);
-					}
-					break;
-				case STRING:
-					cell.setStringValue((String) resultVal);
-					if(hyperlinkType.get()!=null){
-						setupHyperlink0(cell, hyperlinkType.get(),(String)resultVal,(String)resultVal);
-					}
-					break;
-				case ERROR:
-					cell.setErrorValue(ErrorValue.valueOf(((Byte)resultVal).byteValue())); //ZSS-672
-					break;
-				default:
-					cell.setValue(resultVal);
-				}
-				
-				String oldFormat = cell.getCellStyle().getDataFormat();
-				if(format!=null && SCellStyle.FORMAT_GENERAL.equals(oldFormat)){
-					//if there is a suggested format and old format is not general
-					StyleUtil.setDataFormat(cell.getSheet().getBook(), cell, format);
-				}
-
-
-				if (cell.getSheet().getEndRowIndex()<cell.getRowIndex())
-					cell.getSheet().setEndRowIndex(cell.getRowIndex(),true);
-				if (cell.getSheet().getEndColumnIndex()<cell.getColumnIndex())
-					cell.getSheet().setEndColumnIndex(cell.getColumnIndex(),true);
-
-
-				// Mangesh - Update to Database
-				try {
-					if (result.getType()==CellType.BLANK) {
-						deleteStmt.setInt(2, cell.getRowIndex());
-						deleteStmt.setInt(3, cell.getColumnIndex());
-						deleteStmt.execute();
-					}
-					else
-					{
-						insertStmt.setInt(2, cell.getRowIndex());
-						insertStmt.setInt(3, cell.getColumnIndex());
-						insertStmt.setString(4, editText);
-						insertStmt.setString(5, editText);
-						insertStmt.setInt(7, cell.getRowIndex());
-						insertStmt.setInt(8, cell.getColumnIndex());
-						insertStmt.execute();
-					}
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-
+				cell.setValueParse(editText, connection, true);
 				return true;
 			}
 
 			private void initConnection(SCell cell)  {
-				try {
-					cell.getSheet().getBook().checkDBSchema();
-					connection = DBHandler.instance.getConnection();
-					String bookTable = cell.getSheet().getBook().getId();
-					insertStmt = connection.prepareStatement("INSERT INTO " + bookTable + "_sheetdata (sheetid,row,col,value) VALUES (?, ?, ?, ?) " +
-							" ON CONFLICT (sheetid, row, col) DO UPDATE" +
-							" SET value = ? WHERE " + bookTable + "_sheetdata.sheetid = ? " +
-							"AND " + bookTable + "_sheetdata.row = ? " +
-							"AND " + bookTable + "_sheetdata.col = ?");
-					insertStmt.setInt(1,cell.getSheet().getDBId());
-					insertStmt.setInt(6,cell.getSheet().getDBId());
-
-					deleteStmt = connection.prepareStatement("DELETE FROM " + bookTable + "_sheetdata WHERE sheetid = ? AND row = ? AND col = ?");
-					deleteStmt.setInt(1,cell.getSheet().getDBId());
-				}
-				catch (SQLException e)
-				{
-					e.printStackTrace();
-				}
+				cell.getSheet().getBook().checkDBSchema();
+				connection = DBHandler.instance.getConnection();
 
 			}
 
@@ -579,8 +479,6 @@ public class RangeImpl implements SRange {
 			public void afterVisitAll() {
 				// Close connection
 				try {
-					insertStmt.close();
-					deleteStmt.close();
 					connection.commit();
 					connection.close();
 				} catch (SQLException e) {
@@ -1213,7 +1111,11 @@ public class RangeImpl implements SRange {
 	public void setHyperlink(final HyperlinkType linkType,final String address,
 			final String display) {
 		new CellVisitorTask(new CellVisitorForUpdate() {
+			Connection connection = null;
+
 			public boolean visit(SCell cell) {
+				if (connection==null)
+					initConnection(cell);
 				SHyperlink link = setupHyperlink0(cell, linkType,address,display);
 				
 				String text = display;
@@ -1221,10 +1123,25 @@ public class RangeImpl implements SRange {
 //				while(text.startsWith("=")){
 //					text = text.substring(1);
 //				}
-				cell.setStringValue(text);
+				cell.setStringValue(text, connection, true);
 				return true;
 			}
-			
+
+			private void initConnection(SCell cell)  {
+				connection = DBHandler.instance.getConnection();
+			}
+
+			@Override
+			public void afterVisitAll() {
+				// Close connection
+				try {
+					connection.commit();
+					connection.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+				super.afterVisitAll();
+			}
 			//ZSS-939
 			@Override
 			CellAttribute getCellAttr() {
@@ -2564,14 +2481,35 @@ public class RangeImpl implements SRange {
 	@Override
 	public void setStringValue(final String value) {
 		new CellVisitorTask(new CellVisitorForUpdate() {
+			Connection connection = null;
 			public boolean visit(SCell cell) {
+				if (connection==null)
+					initConnection(cell);
 				Object cellval = cell.getValue();
 				if (!equalObjects(cellval, value)) {
-					((AbstractCellAdv)cell).setStringValue(value);
+					((AbstractCellAdv)cell).setStringValue(value, connection, true);
 				}
 				return true;
 			}
-			
+
+			private void initConnection(SCell cell)  {
+				cell.getSheet().getBook().checkDBSchema();
+				connection = DBHandler.instance.getConnection();
+
+			}
+
+			@Override
+			public void afterVisitAll() {
+				// Close connection
+				try {
+					connection.commit();
+					connection.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+				super.afterVisitAll();
+			}
+
 			@Override
 			CellAttribute getCellAttr() {
 				return CellAttribute.ALL;

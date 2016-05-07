@@ -168,7 +168,7 @@ public class MergeHelper extends RangeHelperBase{
 			for (int c = lCol + 1; c <= rCol; ++c) {
 				final SCell cell = sheet.getCell(tRow, c);
 				cell.setCellStyle(style); //set all cell in the merged range to CellStyle of the target minus border
-				cell.setValue(null);
+				cell.setValue(null, null, true);
 //				final Set<Ref>[] refs = BookHelper.setCellValue(cell, (RichTextString) null);
 //				if (refs != null) {
 //					last.addAll(refs[0]);
@@ -180,7 +180,7 @@ public class MergeHelper extends RangeHelperBase{
 				for(int c = lCol; c <= rCol; ++c) {
 					final SCell cell = sheet.getCell(r, c);
 					cell.setCellStyle(style); //set all cell in the merged range to CellStyle of the target minus border
-					cell.setValue(null);
+					cell.setValue(null, null, true);
 //					final Set<Ref>[] refs = BookHelper.setCellValue(cell, (RichTextString) null);
 //					if (refs != null) {
 //						last.addAll(refs[0]);

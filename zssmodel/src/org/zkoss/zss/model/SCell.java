@@ -16,6 +16,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model;
 
+import java.sql.Connection;
 import java.util.Date;
 
 import org.zkoss.poi.ss.usermodel.CellStyle;
@@ -66,7 +67,7 @@ public interface SCell extends CellStyleHolder,FormulaContent{
 	 */
 	public Object getValue();
 	
-	public void setValue(Object value);
+	public void setValue(Object value, Connection connection, boolean updateToDB);
 //	public NCellValue getCellValue();
 	
 	/**
@@ -101,11 +102,11 @@ public interface SCell extends CellStyleHolder,FormulaContent{
 	/**
 	 * clear cell value , reset it to blank
 	 */
-	public void clearValue();//
+	public void clearValue(Connection connection, boolean updateToDB);//
 	/**
 	 * Set string value, if the value start with '=', then it sets as formula 
 	 */
-	public void setStringValue(String value);
+	public void setStringValue(String value, Connection connection, boolean updateToDB);
 	public String getStringValue();
 	
 	
@@ -127,44 +128,51 @@ public interface SCell extends CellStyleHolder,FormulaContent{
 	
 	/**
 	 * set formula with string without '=', e.g. SUM(A1:B2)
-	 * @param fromula
+	 * @param formula
 	 */
-	public void setFormulaValue(String formula);
+	public void setFormulaValue(String formula, Connection connection, boolean updateToDB);
 	
 	/**
 	 * @return returns formula string without '=', e.g. SUM(A1:B2)
 	 */
 	public String getFormulaValue();
 	
-	public void setNumberValue(Double number);
+	public void setNumberValue(Double number, Connection connection, boolean updateToDB);
 	public Double getNumberValue();
 	
 	/**
 	 * Sets the number value a date instance, it will transfer the date to double value 
 	 */
-	public void setDateValue(Date date);
+	public void setDateValue(Date date, Connection connection, boolean updateToDB);
 	/**
 	 * Gets the date value that is transfered by the double number value.
 	 */
 	public Date getDateValue();
 	
-	public void setBooleanValue(Boolean bool);
+	public void setBooleanValue(Boolean bool, Connection connection, boolean updateToDB);
 	/**
 	 * Gets the boolean value
 	 */
 	public Boolean getBooleanValue();
 	
 	public ErrorValue getErrorValue();
-	public void setErrorValue(ErrorValue errorValue);
+	public void setErrorValue(ErrorValue errorValue, Connection connection, boolean updateToDB);
 	
 	
 	public void setComment(SComment comment);
 	public SComment setupComment();
 	public SComment getComment();
-	
+
+	/**
+	 * Parse Input string and update value
+	 */
+	public void setValueParse(String valueParse, Connection connection, boolean updateToDB);
+
 	/**
 	 * Delete the comment associated with this cell.
 	 * @since 3.7.0
 	 */
 	public void deleteComment();
+
+
 }

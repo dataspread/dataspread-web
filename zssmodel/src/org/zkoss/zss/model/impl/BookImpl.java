@@ -411,7 +411,13 @@ public class BookImpl extends AbstractBookAdv{
 		}
 
 		if(src instanceof AbstractSheetAdv){
-			((AbstractSheetAdv)src).copyTo(sheet);
+			((AbstractSheetAdv)src).copyTo(sheet, null, false);
+
+			if (hasSchema()) {
+				// TODO: Make a copy of sheet in DB
+
+
+			}
 		}
 		
 		//create formula cache for any sheet, sheet name, position change
@@ -1127,8 +1133,8 @@ public class BookImpl extends AbstractBookAdv{
 			 while (rs.next())
 			 {
 				SSheet sheet =  createExistingSheet(rs.getString("sheetname"), rs.getInt("sheetid"));
-				sheet.setEndRowIndex(rs.getInt("maxrow"),false);
-				sheet.setEndColumnIndex(rs.getInt("maxcolumn"),false);
+				sheet.setEndRowIndex(rs.getInt("maxrow"), null, false);
+				sheet.setEndColumnIndex(rs.getInt("maxcolumn"), null, false);
 			 }
 		}
 		catch (SQLException e)

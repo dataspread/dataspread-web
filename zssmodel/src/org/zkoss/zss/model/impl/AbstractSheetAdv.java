@@ -17,6 +17,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 package org.zkoss.zss.model.impl;
 
 import java.io.Serializable;
+import java.sql.Connection;
 import java.util.Set;
 
 import org.zkoss.zss.model.SColumn;
@@ -44,7 +45,7 @@ public abstract class AbstractSheetAdv implements SSheet,LinkedModelObject,Seria
 	/*package*/ abstract AbstractCellAdv getOrCreateCell(int rowIdx, int columnIdx);
 	
 	
-	/*package*/ abstract void copyTo(AbstractSheetAdv sheet);
+	/*package*/ abstract void copyTo(AbstractSheetAdv sheet, Connection connection, boolean updateToDB);
 
 	/*package*/
 	abstract void setSheetName(String name, boolean updateToDB);

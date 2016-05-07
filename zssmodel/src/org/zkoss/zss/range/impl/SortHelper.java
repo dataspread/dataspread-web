@@ -338,7 +338,7 @@ public class SortHelper extends RangeHelperBase {
 		}else{
 			helper.pasteValue(buffer,cell,cutFrom,
 					buffer.getType() == CellType.FORMULA,rowOffset,
-					columnOffset,false,0,0);
+					columnOffset,false,0,0, null, true);
 			buffer.applyStyle(cell);
 			buffer.applyHyperlink(cell);
 			buffer.applyComment(cell);
@@ -512,7 +512,7 @@ public class SortHelper extends RangeHelperBase {
 			if (method.getName().equals("setFormulaValue")){
 				FormulaExpression fexpr = getFormulaEngine().parse(args[0].toString(), context);
 				FormulaExpression movedFormula = getFormulaEngine().movePtgs(fexpr, srcRegion, rowOffset, columnOffset, context);
-				proxiedCell.setFormulaValue(movedFormula.getFormulaString());
+				proxiedCell.setFormulaValue(movedFormula.getFormulaString(), null, true);
 				return null;
 			}
 			return method.invoke(proxiedCell, args);

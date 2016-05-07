@@ -17,6 +17,8 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 package org.zkoss.zss.range.impl.imexp;
 
 import java.io.*;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.*;
 
 import org.zkoss.poi.hssf.usermodel.HSSFRichTextString;
@@ -36,14 +38,7 @@ import org.zkoss.zss.model.SAutoFilter.NFilterColumn;
 import org.zkoss.zss.model.SFill.FillPattern;
 import org.zkoss.zss.model.SPicture.Format;
 import org.zkoss.zss.model.SSheet.SheetVisible;
-import org.zkoss.zss.model.impl.AbstractCellStyleAdv;
-import org.zkoss.zss.model.impl.BookImpl;
-import org.zkoss.zss.model.impl.CellStyleImpl;
-import org.zkoss.zss.model.impl.HeaderFooterImpl;
-import org.zkoss.zss.model.impl.NamedStyleImpl;
-import org.zkoss.zss.model.impl.AbstractBookAdv;
-import org.zkoss.zss.model.impl.RichTextImpl;
-import org.zkoss.zss.model.impl.AbstractCellAdv;
+import org.zkoss.zss.model.impl.*;
 import org.zkoss.zss.model.sys.formula.FormulaExpression;
 
 /**
@@ -151,7 +146,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 				SSheet sheet = book.getSheet(i);
 				Sheet poiSheet = workbook.getSheetAt(i);
 				for (Row poiRow : poiSheet) {
-					importRow(poiRow, sheet);
+					importRow(poiRow, sheet, null, false);
 				}
 				importColumn(poiSheet, sheet);
 				importMergedRegions(poiSheet, sheet);
@@ -405,7 +400,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 
 	abstract protected void importValidation(Sheet poiSheet, SSheet sheet);
 
-	protected SRow importRow(Row poiRow, SSheet sheet) {
+	protected SRow importRow(Row poiRow, SSheet sheet, Connection connection, boolean updateToDB) {
 		SRow row = sheet.getRow(poiRow.getRowNum());
 		row.setHeight(UnitUtil.twipToPx(poiRow.getHeight()));
 		row.setCustomHeight(poiRow.isCustomHeight());
@@ -416,20 +411,20 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 		}
 
 		for (Cell poiCell : poiRow) {
-			importCell(poiCell, poiRow.getRowNum(), sheet);
+			importCell(poiCell, poiRow.getRowNum(), sheet, connection, updateToDB);
 		}
 
 		return row;
 	}
 
-	protected SCell importCell(Cell poiCell, int row, SSheet sheet) {
+	protected SCell importCell(Cell poiCell, int row, SSheet sheet, Connection connection, boolean updateToDB) {
 
 		SCell cell = sheet.getCell(row, poiCell.getColumnIndex());
 		cell.setCellStyle(importCellStyle(poiCell.getCellStyle()));
 
 		switch (poiCell.getCellType()) {
 		case Cell.CELL_TYPE_NUMERIC:
-			cell.setNumberValue(poiCell.getNumericCellValue());
+			cell.setNumberValue(poiCell.getNumericCellValue(),connection, updateToDB);
 			break;
 		case Cell.CELL_TYPE_STRING:
 			RichTextString poiRichTextString = poiCell.getRichStringCellValue();
@@ -437,14 +432,14 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 				SRichText richText = cell.setupRichTextValue();
 				importRichText(poiCell, poiRichTextString, richText);
 			} else {
-				cell.setStringValue(poiCell.getStringCellValue());
+				cell.setStringValue(poiCell.getStringCellValue(),connection, updateToDB);
 			}
 			break;
 		case Cell.CELL_TYPE_BOOLEAN:
-			cell.setBooleanValue(poiCell.getBooleanCellValue());
+			cell.setBooleanValue(poiCell.getBooleanCellValue(),connection, updateToDB);
 			break;
 		case Cell.CELL_TYPE_FORMULA:
-			cell.setFormulaValue(poiCell.getCellFormula());
+			cell.setFormulaValue(poiCell.getCellFormula(),connection, updateToDB);
 			//ZSS-873
 			if (isImportCache() && !poiCell.isCalcOnLoad() && !mustCalc(cell)) {
 				ValueEval val = null;
@@ -478,7 +473,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 			}
 			break;
 		case Cell.CELL_TYPE_ERROR:
-			cell.setErrorValue(PoiEnumConversion.toErrorCode(poiCell.getErrorCellValue()));
+			cell.setErrorValue(PoiEnumConversion.toErrorCode(poiCell.getErrorCellValue()), connection, updateToDB);
 			break;
 		case Cell.CELL_TYPE_BLANK:
 			// do nothing because spreadsheet model auto creates blank cells

@@ -514,7 +514,7 @@ public class InsertDeleteHelper extends RangeHelperBase {
 			final STableColumn tbCol = tb.getColumnAt(j);
 			final String name = tbCol.getName();
 			final SCell cell = sheet.getCell(r1, j);
-			cell.setStringValue(name);
+			cell.setStringValue(name, null, true);
 		}
 	}
 	

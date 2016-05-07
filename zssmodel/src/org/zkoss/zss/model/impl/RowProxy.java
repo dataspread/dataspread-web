@@ -17,6 +17,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 package org.zkoss.zss.model.impl;
 
 import java.lang.ref.WeakReference;
+import java.sql.Connection;
 import java.util.Collections;
 import java.util.Iterator;
 
@@ -202,11 +203,11 @@ class RowProxy extends AbstractRowAdv{
 	
 	//ZSS-688
 	//@since 3.6.0
-	/*package*/ AbstractRowAdv cloneRow(AbstractSheetAdv sheet) {
+	/*package*/ AbstractRowAdv cloneRow(AbstractSheetAdv sheet, Connection connection, boolean updateToDB) {
 		if (_proxy == null) {
 			return new 	RowProxy(sheet, this._index);
 		} else {
-			return _proxy.cloneRow(sheet);
+			return _proxy.cloneRow(sheet, connection, updateToDB);
 		}
 	}
 	

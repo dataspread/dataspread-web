@@ -134,7 +134,8 @@ public class CellBuffer {
 		//style are shared between sheets, could use it directly
 		destCell.setCellStyle(getStyle());
 	}
-	
+
+	/*
 	public void applyValue(SCell destCell) {
 		if(getType()==CellType.FORMULA){
 			destCell.setFormulaValue(getFormula());
@@ -142,6 +143,8 @@ public class CellBuffer {
 			destCell.setValue(getValue());
 		}
 	}
+	*/
+
 	public void applyComment(SCell destCell) {
 		SComment comment = getComment();
 		destCell.setComment(comment==null?null:((AbstractCommentAdv)comment).clone());

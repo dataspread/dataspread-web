@@ -600,7 +600,7 @@ public class StyleUtil {
 		}
 		
 		if (modified) {
-			cell.setValue(newText);
+			cell.setValue(newText, null, true);
 			return true;
 		}
 		
@@ -637,7 +637,7 @@ public class StyleUtil {
 		}
 		
 		if (modified) {
-			cell.setValue(newText);
+			cell.setValue(newText, null, true);
 			return true;
 		}
 		
@@ -674,7 +674,7 @@ public class StyleUtil {
 		}
 		
 		if (modified) {
-			cell.setValue(newText);
+			cell.setValue(newText, null, true);
 			return true;
 		}
 		
@@ -711,7 +711,7 @@ public class StyleUtil {
 		}
 		
 		if (modified) {
-			cell.setValue(newText);
+			cell.setValue(newText, null, true);
 			return true;
 		}
 		
@@ -748,7 +748,7 @@ public class StyleUtil {
 		}
 		
 		if (modified) {
-			cell.setValue(newText);
+			cell.setValue(newText, null, true);
 			return true;
 		}
 		
@@ -785,7 +785,7 @@ public class StyleUtil {
 		}
 		
 		if (modified) {
-			cell.setValue(newText);
+			cell.setValue(newText, null, true);
 			return true;
 		}
 		
@@ -822,7 +822,7 @@ public class StyleUtil {
 		}
 		
 		if (modified) {
-			cell.setValue(newText);
+			cell.setValue(newText, null, true);
 			return true;
 		}
 		
@@ -859,7 +859,7 @@ public class StyleUtil {
 		}
 		
 		if (modified) {
-			cell.setValue(newText);
+			cell.setValue(newText, null, true);
 			return true;
 		}
 		

@@ -366,7 +366,7 @@ public class SheetImpl extends AbstractSheetAdv {
 			 }).get();
 			 ResultSet rs = stmt.executeQuery()) {
 			while (rs.next())
-				getOrCreateCell(rs.getInt("row"), rs.getInt("col")).setValueParse(rs.getString("value"));
+				getOrCreateCell(rs.getInt("row"), rs.getInt("col")).setValueParse(rs.getString("value"), null, false);
 		}
 		catch (SQLException e)
 		{
@@ -416,20 +416,19 @@ public class SheetImpl extends AbstractSheetAdv {
 		return _maxRowIndex;
 	}
 
-	private void updateMaxValuestoDB()
+	private void updateMaxValuestoDB(Connection connection)
 	{
+		// Assuming connection is present.
 		String bookTable = getBook().getId();
 		String updateWorkbook = "UPDATE " + bookTable + "_workbook SET maxrow = ?, maxcolumn = ?" +
 				" WHERE sheetid = ?";
 
 
-		try (Connection connection = DBHandler.instance.getConnection();
-			 PreparedStatement stmt = connection.prepareStatement(updateWorkbook)) {
+		try (PreparedStatement stmt = connection.prepareStatement(updateWorkbook)) {
 				stmt.setInt(1, _maxRowIndex);
 				stmt.setInt(2, _maxColumnIndex);
 				stmt.setInt(3, getDBId());
 				stmt.execute();
-				connection.commit();
 		}
 		catch (SQLException e)
 		{
@@ -437,10 +436,10 @@ public class SheetImpl extends AbstractSheetAdv {
 		}
 	}
 
-	public void setEndRowIndex(int newEndRowIndex, boolean updatetoDB) {
+	public void setEndRowIndex(int newEndRowIndex, Connection connection, boolean updatetoDB) {
 		this._maxRowIndex=newEndRowIndex;
 		if (updatetoDB)
-			updateMaxValuestoDB();
+			updateMaxValuestoDB(connection);
 	}
 
 	public int getStartColumnIndex() {
@@ -451,10 +450,10 @@ public class SheetImpl extends AbstractSheetAdv {
 		return _maxColumnIndex;
 	}
 
-	public void setEndColumnIndex(int newEndColumnIndex, boolean updatetoDB) {
+	public void setEndColumnIndex(int newEndColumnIndex, Connection connection,  boolean updatetoDB) {
 		this._maxColumnIndex = newEndColumnIndex;
 		if (updatetoDB)
-			updateMaxValuestoDB();
+			updateMaxValuestoDB(connection);
 	}
 
 
@@ -620,12 +619,14 @@ public class SheetImpl extends AbstractSheetAdv {
 
 			shiftRowsStmt1.setInt(1, getDBId());
 			shiftRowsStmt1.execute();
+			setEndRowIndex(_maxRowIndex + size, connection, true);
+			_rows.insert(rowIdx, size);
+
 			connection.commit();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		setEndRowIndex(_maxRowIndex + size, true);
-		_rows.insert(rowIdx, size);
+
 
 		//destroy the row that exceed the max size
 		int maxSize = getBook().getMaxRowSize();
@@ -996,7 +997,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	}
 	
 	@Override
-	void copyTo(AbstractSheetAdv sheet) {
+	void copyTo(AbstractSheetAdv sheet, Connection connection, boolean updateToDB) {
 		if(sheet==this)
 			return;
 		
@@ -1033,7 +1034,7 @@ public class SheetImpl extends AbstractSheetAdv {
 		}
 		// _rows
 		for (AbstractRowAdv srcrow : this._rows.values()) {
-			AbstractRowAdv tgtrow = srcrow.cloneRow(tgt);
+			AbstractRowAdv tgtrow = srcrow.cloneRow(tgt, connection, updateToDB);
 			tgt._rows.put(tgtrow.getIndex(), tgtrow);
 		}
 		//_columnArrays

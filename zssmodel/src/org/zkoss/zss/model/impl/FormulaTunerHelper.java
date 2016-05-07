@@ -283,7 +283,7 @@ import org.zkoss.zss.model.sys.formula.FormulaParseContext;
 		FormulaExpression exprAfter = engine.movePtgs(expr, sheetRegion, rowOffset, columnOffset, new FormulaParseContext(cell, null));//null ref, no trace dependence here
 		
 		if(!expr.getFormulaString().equals(exprAfter.getFormulaString())){
-			cell.setValue(exprAfter);
+			cell.setValue(exprAfter, null, true);
 			//don't need to notify cell change, cell will do
 		}else{
 			//zss-626, has to clear cache and notify ref update
@@ -551,7 +551,7 @@ import org.zkoss.zss.model.sys.formula.FormulaParseContext;
 		FormulaEngine engine = getFormulaEngine();
 		FormulaExpression exprAfter = engine.extendPtgs(fexpr, sheetRegion,horizontal, new FormulaParseContext(sheet, null));//null ref, no trace dependence here //ZSS-747
 		if(!fexpr.getFormulaString().equals(exprAfter.getFormulaString())){			
-			cell.setValue(exprAfter);
+			cell.setValue(exprAfter, null, true);
 			//don't need to notify cell change, cell will do
 		}else{
 			//zss-626, has to clear cache and notify ref update
@@ -809,7 +809,7 @@ import org.zkoss.zss.model.sys.formula.FormulaParseContext;
 		FormulaEngine engine = getFormulaEngine();
 		FormulaExpression exprAfter = engine.shrinkPtgs(fexpr, sheetRegion, horizontal, new FormulaParseContext(sheet, null));//null ref, no trace dependence here
 		if(!fexpr.getFormulaString().equals(exprAfter.getFormulaString())){
-			cell.setValue(exprAfter);
+			cell.setValue(exprAfter, null, true);
 			//don't need to notify cell change, cell will do
 		}else{
 			//zss-626, has to clear cache and notify ref update
@@ -1054,7 +1054,7 @@ import org.zkoss.zss.model.sys.formula.FormulaParseContext;
 		FormulaEngine engine = getFormulaEngine();
 		FormulaExpression exprAfter = engine.renameSheetPtgs(expr, bookOfSheet, oldName, newName,new FormulaParseContext(cell, sheetName, null));//null ref, no trace dependence here
 		
-		cell.setValue(exprAfter);
+		cell.setValue(exprAfter, null, true);
 		//don't need to notify cell change, cell will do
 	}	
 
@@ -1119,7 +1119,7 @@ import org.zkoss.zss.model.sys.formula.FormulaParseContext;
 		FormulaExpression exprAfter = 
 				engine.renameNamePtgs(expr, bookOfSheet, sheetIndex, oldName, newName, new FormulaParseContext(cell, null));
 		
-		cell.setValue(exprAfter);
+		cell.setValue(exprAfter, null, true);
 		//don't need to notify cell change, cell will do
 	}
 
@@ -1375,7 +1375,7 @@ import org.zkoss.zss.model.sys.formula.FormulaParseContext;
 		FormulaEngine engine = getFormulaEngine();
 		FormulaExpression exprAfter = engine.reorderSheetPtgs(expr, bookOfSheet, oldIndex, newIndex,new FormulaParseContext(cell, sheetName, null));//null ref, no trace dependence here
 		
-		cell.setValue(exprAfter);
+		cell.setValue(exprAfter, null, true);
 		//don't need to notify cell change, cell will do
 	}	
 
@@ -1433,7 +1433,7 @@ import org.zkoss.zss.model.sys.formula.FormulaParseContext;
 		FormulaExpression exprAfter = 
 				engine.renameTableNameTablePtgs(expr, bookOfSheet, oldName, newName, new FormulaParseContext(cell, null));
 		
-		cell.setValue(exprAfter);
+		cell.setValue(exprAfter, null, true);
 		//don't need to notify cell change, cell will do
 	}
 
@@ -1469,7 +1469,7 @@ import org.zkoss.zss.model.sys.formula.FormulaParseContext;
 		FormulaExpression exprAfter = 
 				engine.renameColumnNameTablePtgs(expr, table, oldName, newName, new FormulaParseContext(cell, null));
 		
-		cell.setValue(exprAfter);
+		cell.setValue(exprAfter, null, true);
 		//don't need to notify cell change, cell will do
 	}
 

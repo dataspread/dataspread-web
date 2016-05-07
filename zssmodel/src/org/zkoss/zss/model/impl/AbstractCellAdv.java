@@ -17,6 +17,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 package org.zkoss.zss.model.impl;
 
 import java.io.Serializable;
+import java.sql.Connection;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedHashSet;
@@ -88,8 +89,8 @@ public abstract class AbstractCellAdv implements SCell,LinkedModelObject,Seriali
 	}
 	
 	@Override
-	public void setStringValue(String value) {
-		setValue(value, true); //ZSS-853
+	public void setStringValue(String value, Connection connection, boolean updateToDB) {
+		setValue(value, true, connection, updateToDB); //ZSS-853
 	}
 
 	@Override
@@ -105,8 +106,8 @@ public abstract class AbstractCellAdv implements SCell,LinkedModelObject,Seriali
 	}
 
 	@Override
-	public void setNumberValue(Double number) {
-		setValue(number);
+	public void setNumberValue(Double number, Connection connection, boolean updateToDB) {
+		setValue(number, connection, updateToDB);
 	}
 
 	@Override
@@ -128,9 +129,9 @@ public abstract class AbstractCellAdv implements SCell,LinkedModelObject,Seriali
 	}
 
 	@Override
-	public void setDateValue(Date date) {
+	public void setDateValue(Date date, Connection connection, boolean updateToDB) {
 		double num = EngineFactory.getInstance().getCalendarUtil().dateToDoubleValue(date);
-		setNumberValue(num);
+		setNumberValue(num, connection, updateToDB);
 	}
 
 	@Override
@@ -144,8 +145,8 @@ public abstract class AbstractCellAdv implements SCell,LinkedModelObject,Seriali
 	}
 	
 	@Override
-	public void setBooleanValue(Boolean date) {
-		setValue(date);
+	public void setBooleanValue(Boolean boolVal, Connection connection, boolean updateToDB) {
+		setValue(boolVal, connection, updateToDB);
 	}
 
 	@Override
@@ -173,8 +174,8 @@ public abstract class AbstractCellAdv implements SCell,LinkedModelObject,Seriali
 	}
 
 	@Override
-	public void setErrorValue(ErrorValue errorValue) {
-		setValue(errorValue);
+	public void setErrorValue(ErrorValue errorValue, Connection connection, boolean updateToDB) {
+		setValue(errorValue, connection, updateToDB);
 	}
 
 	@Override
@@ -192,7 +193,8 @@ public abstract class AbstractCellAdv implements SCell,LinkedModelObject,Seriali
 			return (SRichText)val;
 		}
 		SRichText text = new RichTextImpl();
-		setValue(text);
+		// Mangesh - Value needs to be updated in import
+		setValue(text, null, false);
 		return text;
 	}
 
@@ -250,11 +252,11 @@ public abstract class AbstractCellAdv implements SCell,LinkedModelObject,Seriali
 	/*package*/ abstract Ref getRef();
 
 	//ZSS-565: Support input with Swedish locale into formula 
-	public abstract void setFormulaValue(String formula, Locale locale);
+	public abstract void setFormulaValue(String formula, Locale locale, Connection connection, boolean updateToDB);
 	
 	//ZSS-688
 	//@since 3.6.0
-	/*package*/ abstract AbstractCellAdv cloneCell(AbstractRowAdv row);
+	/*package*/ abstract AbstractCellAdv cloneCell(AbstractRowAdv row, Connection connection, boolean updateToDB);
 	
 	//ZSS-818
 	//@since 3.7.0
@@ -262,7 +264,7 @@ public abstract class AbstractCellAdv implements SCell,LinkedModelObject,Seriali
 	
 	//ZSS-853
 	//@since 3.7.0
-	protected abstract void setValue(Object value, boolean aString);
+	protected abstract void setValue(Object value, boolean aString, Connection connection, boolean updateToDB);
 	
 	//ZSS-873
 	//@since 3.7.0
@@ -278,7 +280,7 @@ public abstract class AbstractCellAdv implements SCell,LinkedModelObject,Seriali
 		return false;
 	}
 
-	public void setValueParse(String valueParse) {
+	public void setValueParse(String valueParse, Connection connection, boolean updateToDB) {
 		final InputEngine ie = EngineFactory.getInstance().createInputEngine();
 		Locale locale = ZssContext.getCurrent().getLocale();
 		InputResult result;
@@ -304,29 +306,29 @@ public abstract class AbstractCellAdv implements SCell,LinkedModelObject,Seriali
 
 		switch (result.getType()) {
 			case BLANK:
-				clearValue();
+				clearValue(connection, updateToDB);
 				break;
 			case BOOLEAN:
-				setBooleanValue((Boolean) resultVal);
+				setBooleanValue((Boolean) resultVal, connection, updateToDB);
 				break;
 			case FORMULA:
-				setFormulaValue((String) resultVal, locale); //ZSS-565
+				setFormulaValue((String) resultVal, locale, connection, updateToDB); //ZSS-565
 				break;
 			case NUMBER:
 				if (resultVal instanceof Date) {
-					setDateValue((Date) resultVal);
+					setDateValue((Date) resultVal, connection, updateToDB);
 				} else {
-					setNumberValue((Double) resultVal);
+					setNumberValue((Double) resultVal, connection, updateToDB);
 				}
 				break;
 			case STRING:
-				setStringValue((String) resultVal);
+				setStringValue((String) resultVal, connection, updateToDB);
 				break;
 			case ERROR:
-				setErrorValue(ErrorValue.valueOf(((Byte) resultVal).byteValue())); //ZSS-672
+				setErrorValue(ErrorValue.valueOf(((Byte) resultVal).byteValue()), connection, updateToDB); //ZSS-672
 				break;
 			default:
-				setValue(resultVal);
+				setValue(resultVal, connection, updateToDB);
 		}
 
 

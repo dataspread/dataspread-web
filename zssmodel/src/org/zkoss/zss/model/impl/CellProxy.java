@@ -17,6 +17,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 package org.zkoss.zss.model.impl;
 
 import java.lang.ref.WeakReference;
+import java.sql.Connection;
 import java.util.Locale;
 
 import org.zkoss.poi.ss.formula.eval.ValueEval;
@@ -102,52 +103,52 @@ class CellProxy extends AbstractCellAdv {
 	}
 
 	@Override
-	public void setFormulaValue(String formula) {
+	public void setFormulaValue(String formula, Connection connection, boolean updateToDB) {
 		loadProxy();
 		if (_proxy == null) {
 			_proxy = (AbstractCellAdv) ((AbstractRowAdv) ((AbstractSheetAdv)getSheet()).getOrCreateRow(
 					_rowIdx)).getOrCreateCell(_columnIdx);
-			_proxy.setFormulaValue(formula);
+			_proxy.setFormulaValue(formula, connection, updateToDB);
 		} else if (_proxy != null) {
-			_proxy.setFormulaValue(formula);
+			_proxy.setFormulaValue(formula,connection, updateToDB);
 		}
 	}
 
 	//ZSS-565: Support input with Swedish locale into Formula
 	@Override
-	public void setFormulaValue(String formula, Locale locale) {
+	public void setFormulaValue(String formula, Locale locale, Connection connection, boolean updateToDB) {
 		loadProxy();
 		if (_proxy == null) {
 			_proxy = (AbstractCellAdv) ((AbstractRowAdv) ((AbstractSheetAdv)getSheet()).getOrCreateRow(
 					_rowIdx)).getOrCreateCell(_columnIdx);
-			_proxy.setFormulaValue(formula, locale);
+			_proxy.setFormulaValue(formula, locale, connection, updateToDB);
 		} else if (_proxy != null) {
-			_proxy.setFormulaValue(formula, locale);
+			_proxy.setFormulaValue(formula, locale, connection, updateToDB);
 		}
 	}
 
 	@Override
-	public void setValue(Object value) {
+	public void setValue(Object value, Connection connection, boolean updateToDB) {
 		loadProxy();
 		if (_proxy == null && value != null) {
 			_proxy = (AbstractCellAdv) ((AbstractRowAdv) ((AbstractSheetAdv)getSheet()).getOrCreateRow(
 					_rowIdx)).getOrCreateCell(_columnIdx);
-			_proxy.setValue(value);
+			_proxy.setValue(value, connection, updateToDB);
 		} else if (_proxy != null) {
-			_proxy.setValue(value);
+			_proxy.setValue(value, connection, updateToDB);
 		}
 	}
 
 	//ZSS-853
 	@Override
-	protected void setValue(Object value, boolean aString) {
+	protected void setValue(Object value, boolean aString, Connection connection, boolean updateToDB) {
 		loadProxy();
 		if (_proxy == null && value != null) {
 			_proxy = (AbstractCellAdv) ((AbstractRowAdv) ((AbstractSheetAdv)getSheet()).getOrCreateRow(
 					_rowIdx)).getOrCreateCell(_columnIdx);
-			_proxy.setValue(value, aString);
+			_proxy.setValue(value, aString, connection, updateToDB);
 		} else if (_proxy != null) {
-			_proxy.setValue(value, aString);
+			_proxy.setValue(value, aString, connection, updateToDB);
 		}
 	}
 
@@ -215,10 +216,10 @@ class CellProxy extends AbstractCellAdv {
 	}
 
 	@Override
-	public void clearValue() {
+	public void clearValue(Connection connection, boolean updateToDB) {
 		loadProxy();
 		if (_proxy != null)
-			_proxy.clearValue();
+			_proxy.clearValue(connection, updateToDB);
 	}
 
 	@Override
@@ -305,11 +306,11 @@ class CellProxy extends AbstractCellAdv {
 	//ZSS-688
 	//@since 3.6.0
 	@Override
-	/*package*/ AbstractCellAdv cloneCell(AbstractRowAdv row) {
+	/*package*/ AbstractCellAdv cloneCell(AbstractRowAdv row, Connection connection, boolean updateToDB) {
 		if (_proxy == null) {
 			return new CellProxy((AbstractSheetAdv)row.getSheet(), row.getIndex(), this.getColumnIndex());
 		} else {
-			return _proxy.cloneCell(row);
+			return _proxy.cloneCell(row, connection, updateToDB);
 		}
 	}
 

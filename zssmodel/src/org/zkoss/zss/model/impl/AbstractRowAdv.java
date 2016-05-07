@@ -17,6 +17,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 package org.zkoss.zss.model.impl;
 
 import java.io.Serializable;
+import java.sql.Connection;
 import java.util.Iterator;
 
 import org.zkoss.zss.model.SCell;
@@ -52,7 +53,7 @@ public abstract class AbstractRowAdv implements SRow,LinkedModelObject,Serializa
 	/*package*/ abstract void moveCellTo(AbstractRowAdv target, int start, int end, int offset);
 	
 	//ZSS-688
-	/*package*/ abstract AbstractRowAdv cloneRow(AbstractSheetAdv sheet);
+	/*package*/ abstract AbstractRowAdv cloneRow(AbstractSheetAdv sheet, Connection connection, boolean updateToDB);
 	
 	public abstract Iterator<SCell> getCellIterator(boolean reverse, int start, int end);
 }

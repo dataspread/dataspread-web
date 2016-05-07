@@ -16,6 +16,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -290,11 +291,11 @@ public class RowImpl extends AbstractRowAdv {
 	}
 	
 	//ZSS-688
-	/*package*/ AbstractRowAdv cloneRow(AbstractSheetAdv sheet) {
+	/*package*/ AbstractRowAdv cloneRow(AbstractSheetAdv sheet, Connection connection, boolean updateToDB) {
 		final RowImpl tgt = new RowImpl(sheet, this._index);
 		
 		for (SCell cell : this.cells.values()) {
-			tgt.cells.put(cell.getColumnIndex(), ((CellImpl)cell).cloneCell(tgt));
+			tgt.cells.put(cell.getColumnIndex(), ((CellImpl)cell).cloneCell(tgt, connection, updateToDB));
 		}
 
 		tgt.cellStyle = this.cellStyle;

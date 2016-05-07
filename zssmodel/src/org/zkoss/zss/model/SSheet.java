@@ -16,6 +16,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model;
 
+import java.sql.Connection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -114,10 +115,10 @@ public interface SSheet {
 	
 	public abstract int getStartRowIndex();
 	public abstract int getEndRowIndex();
-	public abstract void setEndRowIndex(int newEndRowIndex, boolean updatetoDB);
+	public abstract void setEndRowIndex(int newEndRowIndex, Connection connection, boolean updatetoDB);
 	public abstract int getStartColumnIndex();
 	public abstract int getEndColumnIndex();
-	public abstract void setEndColumnIndex(int newEndColumnIndex, boolean updatetoDB);
+	public abstract void setEndColumnIndex(int newEndColumnIndex, Connection connection, boolean updatetoDB);
 	public abstract int getStartCellIndex(int rowIdx);
 	public abstract int getEndCellIndex(int rowIdx);
 	

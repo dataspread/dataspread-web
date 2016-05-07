@@ -17,6 +17,9 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 package org.zkoss.zss.model.impl;
 
 import java.io.Serializable;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.Locale;
 
@@ -133,7 +136,7 @@ public class CellImpl extends AbstractCellAdv {
 		checkOrphan();
 		//ZSS-985: when delete table cell, it causes side effect to 
 		//     rename column name; thus use a boolean to distinguish the case
-		clearValue0(true);
+		clearValue0(true, null, false);
 		_row = null;
 	}
 
@@ -209,15 +212,15 @@ public class CellImpl extends AbstractCellAdv {
 	}
 
 	@Override
-	public void clearValue() {
-		clearValue0(false); //ZSS-985
+	public void clearValue(Connection connection, boolean updateToDB) {
+		clearValue0(false, connection, updateToDB); //ZSS-985
 	}
-	private void clearValue0(boolean destroy) {
+	private void clearValue0(boolean destroy, Connection connection, boolean updateToDB) {
 		checkOrphan();
 		clearFormulaDependency();
 		clearFormulaResultCache();
 		
-		setCellValue(null, destroy); //ZSS-985
+		setCellValue(null, destroy, connection, updateToDB); //ZSS-985
 		
 		OptFields opts = getOpts(false); 
 		if(opts!=null){
@@ -235,14 +238,14 @@ public class CellImpl extends AbstractCellAdv {
 	}
 	
 	@Override
-	public void setFormulaValue(String formula) {
+	public void setFormulaValue(String formula, Connection connection, boolean updateToDB) {
 		//ZSS-565: enforce internal US locale
-		setFormulaValue(formula, Locale.US);
+		setFormulaValue(formula, Locale.US, connection, updateToDB);
 	}
 	
 	// ZSS-565: Support input with Swedish locale into Formula
 	@Override
-	public void setFormulaValue(String formula, Locale locale) {
+	public void setFormulaValue(String formula, Locale locale, Connection connection, boolean updateToDB) {
 		checkOrphan();
 		Validations.argNotNull(formula);
 		
@@ -250,7 +253,7 @@ public class CellImpl extends AbstractCellAdv {
 		// this cell in table header row
 		final STable table = getTable();
 		if (table != null && table.getHeaderRowCount() > 0 && table.getHeadersRegion().getRow() == this.getRowIndex()) {
-			setCellValue(new CellValue("0"), false); //ZSS-985
+			setCellValue(new CellValue("0"), false, connection, updateToDB); //ZSS-985
 			return;
 		}
 		
@@ -263,7 +266,7 @@ public class CellImpl extends AbstractCellAdv {
 			throw new InvalidFormulaException(msg==null?"The formula ="+formula+" contains error":msg);
 		}
 		//ZSS-747. 20140828, henrichen: update dependency table in setValue()		
-		setValue(expr);
+		setValue(expr, connection, updateToDB);
 	}
 	
 	private void clearValueForSet(boolean clearDependency) {
@@ -325,7 +328,7 @@ public class CellImpl extends AbstractCellAdv {
 		return _localValue;
 	}
 	
-	private void setCellValue(CellValue value, boolean destroy){ //ZSS-985
+	private void setCellValue(CellValue value, boolean destroy, Connection connection, boolean updateToDB){ //ZSS-985
 		checkOrphan();
 		
 		this._localValue = value!=null&&value.getType()==CellType.BLANK?null:value;
@@ -365,6 +368,64 @@ public class CellImpl extends AbstractCellAdv {
 					setTableTotalsRowFunction(value, tbCol);
 				}
 			}
+
+			if (getSheet().getEndRowIndex()<getRowIndex())
+				getSheet().setEndRowIndex(getRowIndex(), connection, updateToDB);
+			if (getSheet().getEndColumnIndex()<getColumnIndex())
+				getSheet().setEndColumnIndex(getColumnIndex(), connection, updateToDB);
+
+			if (updateToDB)
+			{
+				getSheet().getBook().checkDBSchema();
+				try {
+					Connection localConnection = connection == null ? DBHandler.instance.getConnection() : connection;
+					String bookTable = getSheet().getBook().getId();
+					if (_localValue==null)
+					{
+						//Delete
+						PreparedStatement deleteStmt = localConnection.prepareStatement("DELETE FROM " + bookTable + "_sheetdata WHERE sheetid = ? AND row = ? AND col = ?");
+						deleteStmt.setInt(1,getSheet().getDBId());
+						deleteStmt.setInt(2, getRowIndex());
+						deleteStmt.setInt(3, getColumnIndex());
+						deleteStmt.execute();
+					}
+					else
+					{
+						//Update
+						PreparedStatement insertStmt = localConnection.prepareStatement("INSERT INTO " + bookTable + "_sheetdata (sheetid,row,col,value) VALUES (?, ?, ?, ?) " +
+								" ON CONFLICT (sheetid, row, col) DO UPDATE" +
+								" SET value = ? WHERE " + bookTable + "_sheetdata.sheetid = ? " +
+								"AND " + bookTable + "_sheetdata.row = ? " +
+								"AND " + bookTable + "_sheetdata.col = ?");
+						insertStmt.setInt(1, getSheet().getDBId());
+						insertStmt.setInt(2, getRowIndex());
+						insertStmt.setInt(3, getColumnIndex());
+						if (getType()==CellType.FORMULA) {
+							insertStmt.setString(4, "=" + getFormulaValue());
+							insertStmt.setString(5, "=" + getFormulaValue());
+						}
+						else
+						{
+							insertStmt.setString(4, getValue().toString());
+							insertStmt.setString(5, getValue().toString());
+						}
+						insertStmt.setInt(6, getSheet().getDBId());
+						insertStmt.setInt(7, getRowIndex());
+						insertStmt.setInt(8, getColumnIndex());
+						insertStmt.execute();
+
+					}
+
+					if (connection == null) {
+						localConnection.commit();
+						localConnection.close();
+					}
+				}
+				catch (SQLException e)
+				{
+					e.printStackTrace();
+				}
+			}
 		}
 	}
 
@@ -400,13 +461,13 @@ public class CellImpl extends AbstractCellAdv {
 	}
 	
 	@Override
-	public void setValue(Object newVal) {
-		setValue(newVal, false); //ZSS-853
+	public void setValue(Object newVal, Connection connection, boolean updateToDB) {
+		setValue(newVal, false, connection, updateToDB); //ZSS-853
 	}
 	
 	//ZSS-853
 	@Override
-	protected void setValue(Object newVal, boolean aString) {
+	protected void setValue(Object newVal, boolean aString, Connection connection, boolean updateToDB) {
 		CellValue oldVal = getCellValue();
 		if( (oldVal==null && newVal==null) ||
 			(oldVal != null && valueEuqals(oldVal.getValue(),newVal))) {
@@ -420,7 +481,7 @@ public class CellImpl extends AbstractCellAdv {
 		} else if (newVal instanceof String) {
 			if (!aString && isFormula((String) newVal)) { //ZSS-853
 				// recursive back with newVal an instance of FromulaExpression
-				setFormulaValue(((String) newVal).substring(1)); 
+				setFormulaValue(((String) newVal).substring(1), connection, updateToDB);
 				return;// break;
 			} else {
 				newType = CellType.STRING;
@@ -458,7 +519,7 @@ public class CellImpl extends AbstractCellAdv {
 			EngineFactory.getInstance().createFormulaEngine().updateDependencyTable((FormulaExpression)newVal, context);
 		}
 			
-		setCellValue(newCellVal, false); //ZSS-985
+		setCellValue(newCellVal, false, connection, updateToDB); //ZSS-985
 	}
 
 	@Override
@@ -571,7 +632,7 @@ public class CellImpl extends AbstractCellAdv {
 	//ZSS-688
 	//@since 3.6.0
 	@Override
-	/*package*/ AbstractCellAdv cloneCell(AbstractRowAdv row) {
+	/*package*/ AbstractCellAdv cloneCell(AbstractRowAdv row, Connection connection, boolean updateToDB) {
 		final CellImpl tgt = new CellImpl(row, this._index);
 		
 		if (_localValue != null) {
@@ -581,7 +642,7 @@ public class CellImpl extends AbstractCellAdv {
 			} else if (newVal instanceof FormulaExpression) {
 				newVal = "="+((FormulaExpression)newVal).getFormulaString();
 			}
-			tgt.setValue(newVal);
+			tgt.setValue(newVal, connection, updateToDB);
 		}
 		
 		tgt._cellStyle = this._cellStyle;

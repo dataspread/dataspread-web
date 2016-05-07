@@ -237,7 +237,7 @@ public class ClearCellHelper extends RangeHelperBase{
 	private void clearCellContent(SCell cell){
 		if (!cell.isNull()) {
 			cell.setHyperlink(null);
-			cell.clearValue();
+			cell.clearValue(null, false);
 		}
 	}
 

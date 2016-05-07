@@ -16,6 +16,8 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.range.impl.autofill;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -34,6 +36,7 @@ import org.zkoss.zss.model.PasteOption;
 import org.zkoss.zss.model.SheetRegion;
 import org.zkoss.zss.model.SCell.CellType;
 import org.zkoss.zss.model.PasteOption.PasteType;
+import org.zkoss.zss.model.impl.DBHandler;
 import org.zkoss.zss.model.sys.EngineFactory;
 import org.zkoss.zss.model.sys.format.FormatContext;
 import org.zkoss.zss.model.sys.format.FormatEngine;
@@ -814,30 +817,37 @@ public class AutoFillHelper {
 		}
 
 		if (!isPasteValue(pasteType)) return; //ZSS-722
-		
-		for(int c = srclCol, j = 0; c <= srcrCol; ++c) {
-			final StepChunk stepChunk = stepChunks[j++];
-			for(int srcIndex = 0, r = srcbRow + 1; r <= dstbRow; ++r, ++srcIndex) {
-				final int index = srcIndex % rowCount;
-				final int srcrow = srctRow + index;
-				final SCell srcCell = sheet.getCell(srcrow, c);
-				if (srcCell.isNull()) {
-					sheet.clearCell(new CellRegion(r,c));
-				} else {
-					Object value = stepChunk.getStep(index).next(srcCell);
-					applyStepValue(srcCell,sheet.getCell(r,c),value);
+
+		try (Connection connection = DBHandler.instance.getConnection()) {
+			for (int c = srclCol, j = 0; c <= srcrCol; ++c) {
+				final StepChunk stepChunk = stepChunks[j++];
+				for (int srcIndex = 0, r = srcbRow + 1; r <= dstbRow; ++r, ++srcIndex) {
+					final int index = srcIndex % rowCount;
+					final int srcrow = srctRow + index;
+					final SCell srcCell = sheet.getCell(srcrow, c);
+					if (srcCell.isNull()) {
+						sheet.clearCell(new CellRegion(r, c));
+					} else {
+						Object value = stepChunk.getStep(index).next(srcCell);
+						applyStepValue(srcCell, sheet.getCell(r, c), value, connection, true);
+					}
 				}
 			}
+			connection.commit();
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
 		}
 	}
 	
-	public void applyStepValue(SCell srcCell,SCell dstCell,Object value){
+	public void applyStepValue(SCell srcCell, SCell dstCell, Object value, Connection connection, boolean updateToDB){
 		CellType type = srcCell.getType();
 		if(type==CellType.FORMULA){
 			//it is formula, it should shift by copy/paste already, just ignore it.
 			return;
 		}
-		dstCell.setValue(value);
+		dstCell.setValue(value, connection, updateToDB);
 	}
 	
 	public void fillUp(SSheet sheet, CellRegion srcRef, CellRegion dstRef, FillType fillType) {
@@ -875,20 +885,27 @@ public class AutoFillHelper {
 		}
 		
 		if (!isPasteValue(pasteType)) return; //ZSS-722
-		
-		for(int c = srclCol, j = 0; c <= srcrCol; ++c) {
-			final StepChunk stepChunk = stepChunks[j++];
-			for(int srcIndex = 0, r = srctRow - 1; r >= dsttRow; --r, ++srcIndex) {
-				final int index = srcIndex % rowCount;
-				final int srcrow = srcbRow - index;
-				final SCell srcCell = sheet.getCell(srcrow, c);
-				if (srcCell.isNull()) {
-					sheet.clearCell(new CellRegion(r,c));
-				} else {
-					Object value = stepChunk.getStep(index).next(srcCell);
-					applyStepValue(srcCell, sheet.getCell(r,c),value);
+
+		try (Connection connection = DBHandler.instance.getConnection()) {
+			for(int c = srclCol, j = 0; c <= srcrCol; ++c) {
+				final StepChunk stepChunk = stepChunks[j++];
+				for(int srcIndex = 0, r = srctRow - 1; r >= dsttRow; --r, ++srcIndex) {
+					final int index = srcIndex % rowCount;
+					final int srcrow = srcbRow - index;
+					final SCell srcCell = sheet.getCell(srcrow, c);
+					if (srcCell.isNull()) {
+						sheet.clearCell(new CellRegion(r,c));
+					} else {
+						Object value = stepChunk.getStep(index).next(srcCell);
+						applyStepValue(srcCell, sheet.getCell(r,c),value, connection, true);
+					}
 				}
 			}
+			connection.commit();
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
 		}
 	}
 	
@@ -927,21 +944,28 @@ public class AutoFillHelper {
 		}
 		
 		if (!isPasteValue(pasteType)) return; //ZSS-722
-		
-		for(int r = srctRow, j = 0; r <= srcbRow; ++r) {
-			final StepChunk stepChunk = stepChunks[j++];
-			for(int srcIndex = 0, c = srcrCol + 1; c <= dstrCol; ++c, ++srcIndex) {
-				final int index = srcIndex % colCount;
-				final int srccol = srclCol + index;
-				final SCell srcCell = sheet.getCell(r, srccol);
-				if (srcCell.isNull()) {
-					sheet.clearCell(new CellRegion(r, c));
-				} else {
-					
-					Object value = stepChunk.getStep(index).next(srcCell);
-					applyStepValue(srcCell,sheet.getCell(r,c),value);
+
+		try (Connection connection = DBHandler.instance.getConnection()) {
+			for(int r = srctRow, j = 0; r <= srcbRow; ++r) {
+				final StepChunk stepChunk = stepChunks[j++];
+				for(int srcIndex = 0, c = srcrCol + 1; c <= dstrCol; ++c, ++srcIndex) {
+					final int index = srcIndex % colCount;
+					final int srccol = srclCol + index;
+					final SCell srcCell = sheet.getCell(r, srccol);
+					if (srcCell.isNull()) {
+						sheet.clearCell(new CellRegion(r, c));
+					} else {
+
+						Object value = stepChunk.getStep(index).next(srcCell);
+						applyStepValue(srcCell,sheet.getCell(r,c),value, connection, true);
+					}
 				}
 			}
+			connection.commit();
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
 		}
 	}
 	
@@ -980,20 +1004,26 @@ public class AutoFillHelper {
 		}
 		
 		if (!isPasteValue(pasteType)) return; //ZSS-722
-		
-		for(int r = srctRow, j = 0; r <= srcbRow; ++r) {
-			final StepChunk stepChunk = stepChunks[j++];
-			for(int srcIndex = 0, c = srclCol - 1; c >= dstlCol; --c, ++srcIndex) {
-				final int index = srcIndex % colCount;
-				final int srccol = srcrCol - index;
-				final SCell srcCell = sheet.getCell(r, srccol);
-				if (srcCell.isNull()) {
-					sheet.clearCell(new CellRegion(r, c));
-				} else {
-					Object value = stepChunk.getStep(index).next(srcCell);
-					applyStepValue(srcCell,sheet.getCell(r,c),value);
+		try (Connection connection = DBHandler.instance.getConnection()) {
+			for(int r = srctRow, j = 0; r <= srcbRow; ++r) {
+				final StepChunk stepChunk = stepChunks[j++];
+				for(int srcIndex = 0, c = srclCol - 1; c >= dstlCol; --c, ++srcIndex) {
+					final int index = srcIndex % colCount;
+					final int srccol = srcrCol - index;
+					final SCell srcCell = sheet.getCell(r, srccol);
+					if (srcCell.isNull()) {
+						sheet.clearCell(new CellRegion(r, c));
+					} else {
+						Object value = stepChunk.getStep(index).next(srcCell);
+						applyStepValue(srcCell,sheet.getCell(r,c),value, connection, true);
+					}
 				}
 			}
+		connection.commit();
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
 		}
 	}
 	

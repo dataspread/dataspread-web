@@ -487,6 +487,7 @@ public class AppCtrl extends CtrlBase<Component>{
 		SSheet newSheet = loadedBook.getInternalBook().createSheet(name);
 		int sheetId = newSheet.getDBId();
 		int row = 0;
+		int maxcol = 0;
 
 		String bookTable = loadedBook.getInternalBook().getId();
 		String insertQuery = "INSERT INTO " + bookTable + "_sheetdata " +
@@ -495,6 +496,8 @@ public class AppCtrl extends CtrlBase<Component>{
 		try (Connection connection = DBHandler.instance.getConnection();
 			 PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
 			while ((nextLine = reader.readNext()) != null) {
+				if (maxcol < nextLine.length)
+					maxcol = nextLine.length;
 				for (int col = 0; col < nextLine.length; col++) {
 					insertStmt.setInt(1, sheetId);
 					insertStmt.setInt(2, row);
@@ -507,7 +510,8 @@ public class AppCtrl extends CtrlBase<Component>{
 				if (row % 1000 == 0)
 					System.out.println("Importing " + name + " " + row + " loaded");
 			}
-			newSheet.setEndRowIndex(row, true);
+			newSheet.setEndColumnIndex(maxcol, connection, true);
+			newSheet.setEndRowIndex(row, connection, true);
 			connection.commit();
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -523,6 +527,7 @@ public class AppCtrl extends CtrlBase<Component>{
 		SSheet newSheet = loadedBook.getInternalBook().createSheet(name);
 		int sheetId = newSheet.getDBId();
 		int row = 0;
+		int maxcol = 0;
 
 		String bookTable = loadedBook.getInternalBook().getId();
 
@@ -535,6 +540,8 @@ public class AppCtrl extends CtrlBase<Component>{
 
 			StringBuffer sb = new StringBuffer();
 			while ((nextLine = reader.readNext()) != null) {
+				if (maxcol < nextLine.length)
+					maxcol = nextLine.length;
 				for (int col = 0; col < nextLine.length; col++) {
 					sb.append(sheetId).append('|');
 					sb.append(row).append('|');
@@ -551,7 +558,9 @@ public class AppCtrl extends CtrlBase<Component>{
 				cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
 			cpIN.endCopy();
 			rawConn.commit();
-			newSheet.setEndRowIndex(row - 1, true);
+			newSheet.setEndRowIndex(row - 1, connection, true);
+			newSheet.setEndColumnIndex(maxcol-1, connection, true);
+			connection.commit();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
