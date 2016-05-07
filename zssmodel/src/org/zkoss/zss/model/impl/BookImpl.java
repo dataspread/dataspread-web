@@ -414,9 +414,24 @@ public class BookImpl extends AbstractBookAdv{
 			((AbstractSheetAdv)src).copyTo(sheet, null, false);
 
 			if (hasSchema()) {
-				// TODO: Make a copy of sheet in DB
-
-
+				String bookTable=getId();
+				String insertSheets = "INSERT INTO " + bookTable + "_sheetdata " +
+						" (sheetid, row, col, value) " +
+						" SELECT ?, row, col, value " +
+						" FROM " +  bookTable + "_sheetdata " +
+						" WHERE sheetid = ? ";
+				try (Connection connection = DBHandler.instance.getConnection();
+					 PreparedStatement stmt = connection.prepareStatement(insertSheets))
+				{
+					stmt.setInt(1, sheet.getDBId());
+					stmt.setInt(2, src.getDBId());
+					stmt.execute();
+					connection.commit();
+				}
+				catch (SQLException e)
+				{
+					e.printStackTrace();
+				}
 			}
 		}
 		
