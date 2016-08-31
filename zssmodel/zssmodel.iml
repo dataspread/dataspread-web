@@ -28,5 +28,6 @@
     <orderEntry type="library" name="Maven: org.zkoss.common:zweb:7.0.3" level="project" />
     <orderEntry type="library" name="Maven: org.jsoup:jsoup:1.7.3" level="project" />
     <orderEntry type="library" name="Maven: javax.servlet:servlet-api:2.4" level="project" />
+    <orderEntry type="library" name="kryo-4.0.0" level="project" />
   </component>
 </module>
