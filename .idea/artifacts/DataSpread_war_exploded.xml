@@ -12,6 +12,7 @@
         </element>
         <element id="directory" name="lib">
           <element id="library" level="project" name="lib" />
+          <element id="library" level="project" name="kryo-4.0.0" />
         </element>
       </element>
     </root>

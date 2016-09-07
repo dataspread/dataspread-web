@@ -3,6 +3,11 @@
     <output-path>$PROJECT_DIR$/out/artifacts/DataSpread_war</output-path>
     <root id="archive" name="DataSpread_war.war">
       <element id="artifact" artifact-name="DataSpread:war exploded" />
+      <element id="directory" name="WEB-INF">
+        <element id="directory" name="lib">
+          <element id="library" level="project" name="kryo-4.0.0" />
+        </element>
+      </element>
     </root>
   </artifact>
 </component>
