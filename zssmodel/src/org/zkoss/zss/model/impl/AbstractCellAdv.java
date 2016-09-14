@@ -16,38 +16,22 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
-import java.io.Serializable;
-import java.sql.Connection;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.LinkedHashSet;
-import java.util.Locale;
-import java.util.Set;
-
 import org.zkoss.poi.ss.formula.eval.ValueEval;
-import org.zkoss.poi.ss.usermodel.Hyperlink;
 import org.zkoss.poi.ss.usermodel.ZssContext;
-import org.zkoss.zss.model.ErrorValue;
-import org.zkoss.zss.model.InvalidModelOpException;
-import org.zkoss.zss.model.SCell;
-import org.zkoss.zss.model.SCellStyle;
-import org.zkoss.zss.model.SComment;
-import org.zkoss.zss.model.SHyperlink;
-import org.zkoss.zss.model.SRichText;
-import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.SHyperlink.HyperlinkType;
 import org.zkoss.zss.model.sys.EngineFactory;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.format.FormatContext;
 import org.zkoss.zss.model.sys.format.FormatEngine;
-import org.zkoss.zss.model.sys.formula.FormulaEngine;
 import org.zkoss.zss.model.sys.formula.FormulaExpression;
-import org.zkoss.zss.model.sys.formula.FormulaParseContext;
 import org.zkoss.zss.model.sys.input.InputEngine;
 import org.zkoss.zss.model.sys.input.InputParseContext;
 import org.zkoss.zss.model.sys.input.InputResult;
-import org.zkoss.zss.model.util.Validations;
-import org.zkoss.zss.range.impl.StyleUtil;
+
+import java.io.Serializable;
+import java.sql.Connection;
+import java.util.*;
 
 /**
  * 
@@ -330,7 +314,11 @@ public abstract class AbstractCellAdv implements SCell,LinkedModelObject,Seriali
 			default:
 				setValue(resultVal, connection, updateToDB);
 		}
-
-
 	}
+
+	protected abstract byte[] toBytes();
+
+	public abstract void setRowIndex(int rowIndex);
+
+	public abstract void setColumnIndex(int columnIndex);
 }

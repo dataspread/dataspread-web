@@ -16,30 +16,16 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
-import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.Date;
-import java.util.Locale;
-
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import com.esotericsoftware.kryo.pool.KryoFactory;
+import com.esotericsoftware.kryo.pool.KryoPool;
 import org.zkoss.poi.ss.formula.eval.EvaluationException;
 import org.zkoss.poi.ss.formula.eval.ValueEval;
 import org.zkoss.poi.ss.usermodel.ZssContext;
 import org.zkoss.poi.util.Internal;
-import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.ErrorValue;
-import org.zkoss.zss.model.InvalidFormulaException;
-import org.zkoss.zss.model.SBook;
-import org.zkoss.zss.model.SBookSeries;
-import org.zkoss.zss.model.SCellStyle;
-import org.zkoss.zss.model.SColumnArray;
-import org.zkoss.zss.model.SComment;
-import org.zkoss.zss.model.SHyperlink;
-import org.zkoss.zss.model.SRichText;
-import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.model.STable;
-import org.zkoss.zss.model.STableColumn;
+import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.STableColumn.STotalsRowFunction;
 import org.zkoss.zss.model.impl.sys.formula.FormulaEngineImpl;
 import org.zkoss.zss.model.sys.EngineFactory;
@@ -48,13 +34,16 @@ import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.format.FormatContext;
 import org.zkoss.zss.model.sys.format.FormatEngine;
 import org.zkoss.zss.model.sys.format.FormatResult;
-import org.zkoss.zss.model.sys.formula.EvaluationResult;
-import org.zkoss.zss.model.sys.formula.FormulaClearContext;
-import org.zkoss.zss.model.sys.formula.FormulaEngine;
-import org.zkoss.zss.model.sys.formula.FormulaEvaluationContext;
-import org.zkoss.zss.model.sys.formula.FormulaExpression;
-import org.zkoss.zss.model.sys.formula.FormulaParseContext;
+import org.zkoss.zss.model.sys.formula.*;
 import org.zkoss.zss.model.util.Validations;
+
+import java.io.ByteArrayOutputStream;
+import java.io.Serializable;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.Date;
+import java.util.Locale;
 //import org.zkoss.zss.ngmodel.InvalidateModelValueException;
 /**
  * 
@@ -63,31 +52,70 @@ import org.zkoss.zss.model.util.Validations;
  */
 public class CellImpl extends AbstractCellAdv {
 	private static final long serialVersionUID = 1L;
-	private AbstractRowAdv _row;
+	private static KryoFactory factory = new KryoFactory() {
+		public Kryo create() {
+			Kryo kryo = new Kryo();
+			// configure kryo instance, customize settings
+			kryo.register(CellImpl.class, 0);
+			return kryo;
+		}
+	};
+	private final static KryoPool kryoPool = new KryoPool.Builder(factory).softReferences().build();
+	private AbstractRowAdv _row; // TODO: Mangesh - Need to remove this.
+	private int _rowIndex;
+	private int _columnIndex;
 	private int _index;
 	private CellValue _localValue = null;
 	private AbstractCellStyleAdv _cellStyle;
 	transient private FormulaResultCellValue _formulaResultValue;// cache
-	
-	
 	//use another object to reduce object reference size
 	private OptFields _opts;
-	
-	private static class OptFields implements Serializable{
-		private AbstractHyperlinkAdv _hyperlink;
-		private AbstractCommentAdv _comment;
-	}
 
-	private OptFields getOpts(boolean create){
-		if(_opts==null && create){
-			_opts = new OptFields();
-		}
-		return _opts;
+	public CellImpl() {
+
 	}
 
 	public CellImpl(AbstractRowAdv row, int index) {
 		this._row = row;
 		this._index = index;
+	}
+
+	public static CellImpl fromBytes(byte[] inByteArray) {
+		CellImpl cellImpl;
+		Kryo kryo = kryoPool.borrow();
+		try (Input in = new Input(inByteArray)) {
+			cellImpl = kryo.readObject(in, CellImpl.class);
+			in.close();
+		} catch (Exception e) {
+			// data that cannot be parsed is considered as a string value.
+			cellImpl = new CellImpl();
+			cellImpl.setCellValue(new CellValue(new String(inByteArray)), false, null, false);
+		}
+		kryoPool.release(kryo);
+		return cellImpl;
+	}
+
+	private static boolean valueEuqals(Object val1, Object val2) {
+		return val1 == val2 || (val1 != null && val1.equals(val2));
+	}
+
+	@Override
+	public byte[] toBytes() {
+		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+		Output out = new Output(byteArrayOutputStream);
+		Kryo kryo = kryoPool.borrow();
+		kryo.writeObject(out, this);
+		byte[] outByteArray = out.toBytes();
+		out.close();
+		kryoPool.release(kryo);
+		return outByteArray;
+	}
+	
+	private OptFields getOpts(boolean create){
+		if(_opts==null && create){
+			_opts = new OptFields();
+		}
+		return _opts;
 	}
 
 	@Override
@@ -108,9 +136,19 @@ public class CellImpl extends AbstractCellAdv {
 	}
 
 	@Override
+	public void setRowIndex(int rowIndex) {
+		_rowIndex = rowIndex;
+	}
+
+	@Override
 	public int getColumnIndex() {
 		checkOrphan();
 		return _index;
+	}
+
+	@Override
+	public void setColumnIndex(int columnIndex) {
+		_columnIndex = columnIndex;
 	}
 
 	@Override
@@ -146,6 +184,15 @@ public class CellImpl extends AbstractCellAdv {
 	}
 
 	@Override
+	public void setCellStyle(SCellStyle cellStyle) {
+		if (cellStyle != null) {
+			Validations.argInstance(cellStyle, AbstractCellStyleAdv.class);
+		}
+		this._cellStyle = (AbstractCellStyleAdv) cellStyle;
+		addCellUpdate(CellAttribute.STYLE); //ZSS-939
+	}
+
+	@Override
 	public SCellStyle getCellStyle(boolean local) {
 		if (local || _cellStyle != null) {
 			return _cellStyle;
@@ -156,7 +203,7 @@ public class CellImpl extends AbstractCellAdv {
 		if (_cellStyle == null) {
 			SColumnArray array = sheet.getColumnArray(getColumnIndex());
 			if(array!=null){
-				_cellStyle = (AbstractCellStyleAdv)((AbstractColumnArrayAdv)array).getCellStyle(true);
+				_cellStyle = (AbstractCellStyleAdv) array.getCellStyle(true);
 			}
 		}
 		if (_cellStyle == null) {
@@ -164,15 +211,6 @@ public class CellImpl extends AbstractCellAdv {
 					.getDefaultCellStyle();
 		}
 		return _cellStyle;
-	}
-
-	@Override
-	public void setCellStyle(SCellStyle cellStyle) {
-		if(cellStyle!=null){
-			Validations.argInstance(cellStyle, AbstractCellStyleAdv.class);
-		}
-		this._cellStyle = (AbstractCellStyleAdv) cellStyle;
-		addCellUpdate(CellAttribute.STYLE); //ZSS-939
 	}
 
 	@Override
@@ -226,7 +264,7 @@ public class CellImpl extends AbstractCellAdv {
 		if(opts!=null){
 			// clear for value, don't clear hyperlink
 //			opts.hyperlink = null;
-		};
+		}
 		//don't update when sheet is destroying
 		if(BookImpl.destroyingSheet.get()!=getSheet()){
 			addCellUpdate(CellAttribute.TEXT); //ZSS-939
@@ -280,7 +318,7 @@ public class CellImpl extends AbstractCellAdv {
 		if(opts!=null){
 			// Clear value only, don't clear hyperlink
 //			opts.hyperlink = null;
-		};
+		}
 	}
 
 	@Override
@@ -456,10 +494,6 @@ public class CellImpl extends AbstractCellAdv {
 		tbCol.setTotalsRowFunction(func);
 	}
 	
-	private static boolean valueEuqals(Object val1, Object val2){
-		return val1==val2||(val1!=null && val1.equals(val2));
-	}
-	
 	@Override
 	public void setValue(Object newVal, Connection connection, boolean updateToDB) {
 		setValue(newVal, false, connection, updateToDB); //ZSS-853
@@ -473,9 +507,9 @@ public class CellImpl extends AbstractCellAdv {
 			(oldVal != null && valueEuqals(oldVal.getValue(),newVal))) {
 			return;
 		}
-		
+
 		CellType newType;
-		
+
 		if (newVal == null) {
 			newType = CellType.BLANK;
 		} else if (newVal instanceof String) {
@@ -509,16 +543,16 @@ public class CellImpl extends AbstractCellAdv {
 							+ ", supports NULL, String, Date, Number and Byte(as Error Code)");
 		}
 
-		
+
 		CellValue newCellVal = new InnerCellValue(newType,newVal);
-		//ZSS-747. 
+		//ZSS-747.
 		//20140828, henrichen: clear if previous is a formula; update dependency table if a formula
 		clearValueForSet(oldVal!=null && oldVal.getType()==CellType.FORMULA);
 		if (newType == CellType.FORMULA) {
 			FormulaParseContext context = new FormulaParseContext(this, getRef());
 			EngineFactory.getInstance().createFormulaEngine().updateDependencyTable((FormulaExpression)newVal, context);
 		}
-			
+
 		setCellValue(newCellVal, false, connection, updateToDB); //ZSS-985
 	}
 
@@ -534,7 +568,7 @@ public class CellImpl extends AbstractCellAdv {
 		getOpts(true)._hyperlink = (AbstractHyperlinkAdv)hyperlink;
 		addCellUpdate(CellAttribute.TEXT); //ZSS-939
 	}
-	
+
 	@Override
 	public SComment getComment() {
 		OptFields opts = getOpts(false);
@@ -547,7 +581,7 @@ public class CellImpl extends AbstractCellAdv {
 		getOpts(true)._comment = (AbstractCommentAdv)comment;
 		addCellUpdate(CellAttribute.COMMENT); //ZSS-939
 	}
-	
+
 	//ZSS-848
 	@Override
 	public void deleteComment() {
@@ -561,7 +595,7 @@ public class CellImpl extends AbstractCellAdv {
 		if(this._index==newidx){
 			return;
 		}
-		
+
 		CellType type = getType();
 		String formula = null;
 		DependencyTable table = null;
@@ -569,7 +603,7 @@ public class CellImpl extends AbstractCellAdv {
 			formula = getFormulaValue();
 			//clear the old dependency
 			Ref oldRef = getRef();
-			table = ((AbstractBookSeriesAdv) getSheet().getBook().getBookSeries()).getDependencyTable(); 
+			table = ((AbstractBookSeriesAdv) getSheet().getBook().getBookSeries()).getDependencyTable();
 			table.clearDependents(oldRef);
 		}
 		this._index = newidx;
@@ -588,7 +622,7 @@ public class CellImpl extends AbstractCellAdv {
 		if(oldRowIdx==row.getIndex() && this._row==row){
 			return;
 		}
-		
+
 		CellType type = getType();
 		String formula = null;
 		DependencyTable table = null;
@@ -597,7 +631,7 @@ public class CellImpl extends AbstractCellAdv {
 			//clear the old dependency
 			SSheet sheet = getSheet();
 			Ref oldRef = new RefImpl(sheet.getBook().getBookName(),sheet.getSheetName(),oldRowIdx,getColumnIndex());
-			table = ((AbstractBookSeriesAdv) getSheet().getBook().getBookSeries()).getDependencyTable(); 
+			table = ((AbstractBookSeriesAdv) getSheet().getBook().getBookSeries()).getDependencyTable();
 			table.clearDependents(oldRef);
 		}
 		this._row = row;
@@ -611,16 +645,8 @@ public class CellImpl extends AbstractCellAdv {
 		}
 	}
 	
-
 	protected Ref getRef(){
 		return new RefImpl(this);
-	}
-	
-	private static class InnerCellValue extends CellValue{
-		private static final long serialVersionUID = 1L;
-		private InnerCellValue(CellType type, Object value){
-			super(type,value);
-		}
 	}
 	
 	public String toString(){
@@ -634,7 +660,7 @@ public class CellImpl extends AbstractCellAdv {
 	@Override
 	/*package*/ AbstractCellAdv cloneCell(AbstractRowAdv row, Connection connection, boolean updateToDB) {
 		final CellImpl tgt = new CellImpl(row, this._index);
-		
+
 		if (_localValue != null) {
 			Object newVal = _localValue.getValue();
 			if (newVal instanceof SRichText) {
@@ -644,12 +670,12 @@ public class CellImpl extends AbstractCellAdv {
 			}
 			tgt.setValue(newVal, connection, updateToDB);
 		}
-		
+
 		tgt._cellStyle = this._cellStyle;
-		
+
 		// do not clone _formulaResultValue
 		//transient private FormulaResultCellValue _formulaResultValue;// cache
-		
+
 		if (this._opts != null) {
 			final OptFields opts = tgt.getOpts(true);
 			if (this._opts._comment != null) {
@@ -659,7 +685,7 @@ public class CellImpl extends AbstractCellAdv {
 				opts._hyperlink = this._opts._hyperlink.clone();
 			}
 		}
-		
+
 		return tgt;
 	}
 	
@@ -670,14 +696,14 @@ public class CellImpl extends AbstractCellAdv {
 			_formulaResultValue = new FormulaResultCellValue(FormulaEngineImpl.convertToEvaluationResult(value));
 		} catch (EvaluationException e) {
 			// ignore it!
-		}		
+		}
 	}
 	
 	//ZSS-873
 	//@since 3.7.0
 	public FormulaExpression getFormulaExpression() {
-		return _localValue != null && _localValue.getType() == CellType.FORMULA ? 
-				(FormulaExpression) _localValue.getValue() : null; 
+		return _localValue != null && _localValue.getType() == CellType.FORMULA ?
+				(FormulaExpression) _localValue.getValue() : null;
 	}
 	
 	//ZSS-967
@@ -694,5 +720,18 @@ public class CellImpl extends AbstractCellAdv {
 	@Internal
 	public Object getFromulaResultValue() {
 		return _formulaResultValue;
+	}
+
+	private static class OptFields implements Serializable {
+		private AbstractHyperlinkAdv _hyperlink;
+		private AbstractCommentAdv _comment;
+	}
+
+	private static class InnerCellValue extends CellValue {
+		private static final long serialVersionUID = 1L;
+
+		private InnerCellValue(CellType type, Object value) {
+			super(type, value);
+		}
 	}
 }

@@ -16,22 +16,14 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
+import org.zkoss.poi.ss.formula.eval.ValueEval;
+import org.zkoss.zss.model.*;
+import org.zkoss.zss.model.sys.dependency.Ref;
+import org.zkoss.zss.model.sys.formula.FormulaExpression;
+
 import java.lang.ref.WeakReference;
 import java.sql.Connection;
 import java.util.Locale;
-
-import org.zkoss.poi.ss.formula.eval.ValueEval;
-import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.SCellStyle;
-import org.zkoss.zss.model.SColumnArray;
-import org.zkoss.zss.model.SComment;
-import org.zkoss.zss.model.SHyperlink;
-import org.zkoss.zss.model.SRichText;
-import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.model.SCell.CellType;
-import org.zkoss.zss.model.sys.dependency.Ref;
-import org.zkoss.zss.model.sys.formula.FormulaExpression;
-import org.zkoss.zss.model.util.Validations;
 /**
  * 
  * @author dennis
@@ -39,10 +31,10 @@ import org.zkoss.zss.model.util.Validations;
  */
 class CellProxy extends AbstractCellAdv {
 	private static final long serialVersionUID = 1L;
+	AbstractCellAdv _proxy;
 	private WeakReference<AbstractSheetAdv> _sheetRef;
 	private int _rowIdx;
 	private int _columnIdx;
-	AbstractCellAdv _proxy;
 
 	public CellProxy(AbstractSheetAdv sheet, int row, int column) {
 		this._sheetRef = new WeakReference<AbstractSheetAdv>(sheet);
@@ -65,7 +57,7 @@ class CellProxy extends AbstractCellAdv {
 
 	private void loadProxy() {
 		if (_proxy == null) {
-			_proxy = (AbstractCellAdv) ((AbstractSheetAdv)getSheet()).getCell(_rowIdx, _columnIdx, false);
+			_proxy = ((AbstractSheetAdv) getSheet()).getCell(_rowIdx, _columnIdx, false);
 		}
 	}
 
@@ -97,17 +89,27 @@ class CellProxy extends AbstractCellAdv {
 	}
 
 	@Override
+	public void setRowIndex(int rowIndex) {
+
+	}
+
+	@Override
 	public int getColumnIndex() {
 		loadProxy();
 		return _proxy == null ? _columnIdx : _proxy.getColumnIndex();
 	}
 
 	@Override
+	public void setColumnIndex(int columnIndex) {
+
+	}
+
+	@Override
 	public void setFormulaValue(String formula, Connection connection, boolean updateToDB) {
 		loadProxy();
 		if (_proxy == null) {
-			_proxy = (AbstractCellAdv) ((AbstractRowAdv) ((AbstractSheetAdv)getSheet()).getOrCreateRow(
-					_rowIdx)).getOrCreateCell(_columnIdx);
+			_proxy = ((AbstractSheetAdv) getSheet()).getOrCreateRow(
+					_rowIdx).getOrCreateCell(_columnIdx);
 			_proxy.setFormulaValue(formula, connection, updateToDB);
 		} else if (_proxy != null) {
 			_proxy.setFormulaValue(formula,connection, updateToDB);
@@ -119,8 +121,8 @@ class CellProxy extends AbstractCellAdv {
 	public void setFormulaValue(String formula, Locale locale, Connection connection, boolean updateToDB) {
 		loadProxy();
 		if (_proxy == null) {
-			_proxy = (AbstractCellAdv) ((AbstractRowAdv) ((AbstractSheetAdv)getSheet()).getOrCreateRow(
-					_rowIdx)).getOrCreateCell(_columnIdx);
+			_proxy = ((AbstractSheetAdv) getSheet()).getOrCreateRow(
+					_rowIdx).getOrCreateCell(_columnIdx);
 			_proxy.setFormulaValue(formula, locale, connection, updateToDB);
 		} else if (_proxy != null) {
 			_proxy.setFormulaValue(formula, locale, connection, updateToDB);
@@ -131,8 +133,8 @@ class CellProxy extends AbstractCellAdv {
 	public void setValue(Object value, Connection connection, boolean updateToDB) {
 		loadProxy();
 		if (_proxy == null && value != null) {
-			_proxy = (AbstractCellAdv) ((AbstractRowAdv) ((AbstractSheetAdv)getSheet()).getOrCreateRow(
-					_rowIdx)).getOrCreateCell(_columnIdx);
+			_proxy = ((AbstractSheetAdv) getSheet()).getOrCreateRow(
+					_rowIdx).getOrCreateCell(_columnIdx);
 			_proxy.setValue(value, connection, updateToDB);
 		} else if (_proxy != null) {
 			_proxy.setValue(value, connection, updateToDB);
@@ -144,8 +146,8 @@ class CellProxy extends AbstractCellAdv {
 	protected void setValue(Object value, boolean aString, Connection connection, boolean updateToDB) {
 		loadProxy();
 		if (_proxy == null && value != null) {
-			_proxy = (AbstractCellAdv) ((AbstractRowAdv) ((AbstractSheetAdv)getSheet()).getOrCreateRow(
-					_rowIdx)).getOrCreateCell(_columnIdx);
+			_proxy = ((AbstractSheetAdv) getSheet()).getOrCreateRow(
+					_rowIdx).getOrCreateCell(_columnIdx);
 			_proxy.setValue(value, aString, connection, updateToDB);
 		} else if (_proxy != null) {
 			_proxy.setValue(value, aString, connection, updateToDB);
@@ -174,6 +176,16 @@ class CellProxy extends AbstractCellAdv {
 	}
 
 	@Override
+	public void setCellStyle(SCellStyle cellStyle) {
+		loadProxy();
+		if (_proxy == null) {
+			_proxy = ((AbstractSheetAdv) getSheet()).getOrCreateRow(
+					_rowIdx).getOrCreateCell(_columnIdx);
+		}
+		_proxy.setCellStyle(cellStyle);
+	}
+
+	@Override
 	public SCellStyle getCellStyle(boolean local) {
 		loadProxy();
 		if (_proxy != null) {
@@ -182,7 +194,7 @@ class CellProxy extends AbstractCellAdv {
 		if (local)
 			return null;
 		AbstractSheetAdv sheet =  ((AbstractSheetAdv)getSheet());
-		AbstractRowAdv row = (AbstractRowAdv) sheet.getRow(_rowIdx, false);
+		AbstractRowAdv row = sheet.getRow(_rowIdx, false);
 		SCellStyle style = null;
 		if (row != null) {
 			style = row.getCellStyle(true);
@@ -197,16 +209,6 @@ class CellProxy extends AbstractCellAdv {
 			style = sheet.getBook().getDefaultCellStyle();
 		}
 		return style;
-	}
-
-	@Override
-	public void setCellStyle(SCellStyle cellStyle) {
-		loadProxy();
-		if (_proxy == null) {
-			_proxy = (AbstractCellAdv) ((AbstractRowAdv)  ((AbstractSheetAdv)getSheet()).getOrCreateRow(
-					_rowIdx)).getOrCreateCell(_columnIdx);
-		}
-		_proxy.setCellStyle(cellStyle);
 	}
 
 	@Override
@@ -262,12 +264,12 @@ class CellProxy extends AbstractCellAdv {
 	public void setHyperlink(SHyperlink hyperlink) {
 		loadProxy();
 		if (_proxy == null) {
-			_proxy = (AbstractCellAdv) ((AbstractRowAdv)  ((AbstractSheetAdv)getSheet()).getOrCreateRow(
-					_rowIdx)).getOrCreateCell(_columnIdx);
+			_proxy = ((AbstractSheetAdv) getSheet()).getOrCreateRow(
+					_rowIdx).getOrCreateCell(_columnIdx);
 		}
 		_proxy.setHyperlink(hyperlink);
 	}
-	
+
 	@Override
 	public SComment getComment() {
 		loadProxy();
@@ -278,8 +280,8 @@ class CellProxy extends AbstractCellAdv {
 	public void setComment(SComment comment) {
 		loadProxy();
 		if (_proxy == null) {
-			_proxy = (AbstractCellAdv) ((AbstractRowAdv)  ((AbstractSheetAdv)getSheet()).getOrCreateRow(
-					_rowIdx)).getOrCreateCell(_columnIdx);
+			_proxy = ((AbstractSheetAdv) getSheet()).getOrCreateRow(
+					_rowIdx).getOrCreateCell(_columnIdx);
 		}
 		_proxy.setComment(comment);
 	}
@@ -287,18 +289,19 @@ class CellProxy extends AbstractCellAdv {
 	@Override
 	public boolean isFormulaParsingError() {
 		loadProxy();
-		return _proxy == null ? false : _proxy.isFormulaParsingError();
+		return _proxy != null && _proxy.isFormulaParsingError();
 	}
 
 	@Override
 	void setIndex(int newidx) {
 		throw new UnsupportedOperationException("readonly");
 	}
+
 	@Override
 	void setRow(int oldRowIdx,AbstractRowAdv row) {
 		throw new UnsupportedOperationException("readonly");
 	}
-	
+
 	protected Ref getRef(){
 		return new RefImpl(this);
 	}
@@ -337,5 +340,10 @@ class CellProxy extends AbstractCellAdv {
 			return _proxy.getFormulaExpression();
 		}
 		return null;
+	}
+
+	@Override
+	protected byte[] toBytes() {
+		return new byte[0];
 	}
 }
