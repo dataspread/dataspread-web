@@ -225,6 +225,10 @@ public class RCV_Model extends Model {
     public Collection<AbstractCellAdv> getCells(DBContext context, Range fetchRange) {
         // Reduce Range to bounds
         Range range = getBounds(context).intersection(fetchRange);
+        Collection<AbstractCellAdv> cells = new ArrayList<>();
+        if (range == null)
+            return cells;
+
         Integer[] rowIds = rowMapping.getIDs(context, range.getMinRow(), range.getMaxRow() - range.getMinRow() + 1);
         Integer[] colIds = colMapping.getIDs(context, range.getMinCol(), range.getMaxCol() - range.getMinCol() + 1);
         HashMap<Integer, Integer> row_map = IntStream.range(0, rowIds.length)
@@ -238,8 +242,6 @@ public class RCV_Model extends Model {
                 .append(tableName)
                 .append(" WHERE row = ANY (?) AND col = ANY (?)").toString();
 
-
-        Collection<AbstractCellAdv> cells = new ArrayList<>();
 
         try (PreparedStatement stmt = context.getConnection().prepareStatement(select)) {
 

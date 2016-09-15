@@ -34,7 +34,7 @@ import org.zkoss.zss.model.util.Validations;
 
 import java.sql.*;
 import java.util.*;
-import java.util.function.Supplier;
+
 /**
  * 
  * @author dennis
@@ -44,7 +44,8 @@ public class SheetImpl extends AbstractSheetAdv {
 	private static final long serialVersionUID = 1L;
 	private static final Log _logger = Log.lookup(SheetImpl.class);
     //Mangesh
-    static final private int PreFetchSize = 200;
+    static final private int PreFetchRows = 100;
+	static final private int PreFetchColumns = 20;
     /**
      * internal use only for developing/test state, should remove when stable
      */
@@ -56,7 +57,7 @@ public class SheetImpl extends AbstractSheetAdv {
         }
     }
 
-    final int CACHE_SIZE = 2000;
+    final int CACHE_SIZE = -1;
     private final String _id;
 	private final IndexPool<AbstractRowAdv> _rows = new IndexPool<AbstractRowAdv>(){
 		private static final long serialVersionUID = 1L;
@@ -328,34 +329,34 @@ public class SheetImpl extends AbstractSheetAdv {
 //	}
 
 	// Mangesh
-	private void preFetchRows(int row)
+	private void preFetchCells(Range range)
 	{
-		int minRow = Math.max(0,row-PreFetchSize);
-		int maxRow = minRow+PreFetchSize*2-1;
+		int minRow = Math.max(0,range.getMinRow()- PreFetchRows);
+		int maxRow = minRow + PreFetchRows *2-1;
 
-		String bookTable = getBook().getId();
-		String query ="SELECT * FROM "+ bookTable +"_sheetdata WHERE sheetid = ? AND row BETWEEN ? AND ?";
-		for (int i=minRow;i<=maxRow;i++)
-			getOrCreateRow(i);
+		int minColumn = Math.max(0,range.getMinCol()- PreFetchColumns);
+		int maxColumn = minColumn + PreFetchColumns * 2-1;
 
-		try (Connection connection = DBHandler.instance.getConnection();
-			 PreparedStatement stmt = ((Supplier<PreparedStatement>)() -> {
-				 try {
-					 PreparedStatement s = connection.prepareStatement(query);
-					 s.setInt(1, getDBId());
-					 s.setInt(2, minRow);
-					 s.setInt(3, maxRow);
-					 return s;
-				 } catch (SQLException e) { throw new RuntimeException(e); }
-			 }).get();
-			 ResultSet rs = stmt.executeQuery()) {
-			while (rs.next())
-				getOrCreateCell(rs.getInt("row"), rs.getInt("col")).setValueParse(rs.getString("value"), null, false);
-		}
+		Range fetchRange = new Range(minRow, minColumn, maxRow, maxColumn);
+
+		try (Connection connection = DBHandler.instance.getConnection())
+		{
+			DBContext dbContext = new DBContext(connection);
+			Collection<AbstractCellAdv> cells = dataModel.getCells(dbContext, fetchRange);
+            cells.stream().forEach(e->sheetDataCache.put(new Range(e.getRowIndex(), e.getColumnIndex()), e));
+        }
 		catch (SQLException e)
 		{
 			e.printStackTrace();
 		}
+
+        for (int row=fetchRange.getMinRow();row<=fetchRange.getMaxRow();++row) {
+            for (int col = fetchRange.getMinCol(); col <= fetchRange.getMaxCol(); ++col) {
+                Range cellRange = new Range(row, col);
+                if (!sheetDataCache.containsKey(cellRange))
+                    sheetDataCache.put(cellRange, new CellProxy(this, row,col));
+            }
+        }
 	}
 
 
@@ -374,27 +375,33 @@ public class SheetImpl extends AbstractSheetAdv {
 	
 	@Override
 	AbstractCellAdv getCell(int rowIdx, int columnIdx, boolean proxy) {
-        AbstractCellAdv cell = sheetDataCache.get(new Range(rowIdx, columnIdx));
-        if (cell == null) {
-            //Data not cached.
-            // Cache Data.
-        }
-
-
-        AbstractRowAdv rowObj = getRow(rowIdx,false);
-        if(rowObj!=null){
-			return rowObj.getCell(columnIdx,proxy);
+		Range range = new Range(rowIdx, columnIdx);
+        AbstractCellAdv cell = sheetDataCache.get(range);
+		if (cell == null) {
+			//Data not cached.
+			// Cache Data.
+			if (getBook().hasSchema()) {
+				preFetchCells(range);
+				// After prefetch assume this can get a cell.
+				return getCell(rowIdx, columnIdx, proxy);
+			}
+			else {
+				return proxy ? new CellProxy(this, rowIdx, columnIdx) : null;
+			}
 		}
-		else if (getBook().hasSchema()) {
-            //dataModel.getCells()
-
-
-
-			preFetchRows(rowIdx);
-			return getCell(rowIdx, columnIdx, proxy);
+		else {
+			if (proxy) {
+				return cell;
+			} else {
+				if (cell instanceof CellProxy)
+					return null;
+				else
+					return cell;
+			}
 		}
-		return proxy?new CellProxy(this, rowIdx,columnIdx):null;
 	}
+
+
 	@Override
 	AbstractCellAdv getOrCreateCell(int rowIdx, int columnIdx) {
         AbstractRowAdv rowObj = getOrCreateRow(rowIdx);
