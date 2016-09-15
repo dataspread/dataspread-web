@@ -361,6 +361,9 @@ public class SheetImpl extends AbstractSheetAdv {
 		{
 			DBContext dbContext = new DBContext(connection);
 			Collection<AbstractCellAdv> cells = dataModel.getCells(dbContext, fetchRange);
+			//Update book reference for the cells.
+			cells.stream().forEach(e -> e.setSheet(this));
+
             cells.stream().forEach(e->sheetDataCache.put(new Range(e.getRowIndex(), e.getColumnIndex()), e));
         }
 		catch (SQLException e)

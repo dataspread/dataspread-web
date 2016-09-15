@@ -69,7 +69,8 @@ public class CellImpl extends AbstractCellAdv {
 	private CellValue _localValue = null;
 	private AbstractCellStyleAdv _cellStyle;
 	transient private FormulaResultCellValue _formulaResultValue;// cache
-	//use another object to reduce object reference size
+    transient private AbstractSheetAdv _sheet;
+    //use another object to reduce object reference size
 	private OptFields _opts;
 
 	public CellImpl() {
@@ -88,7 +89,8 @@ public class CellImpl extends AbstractCellAdv {
 			cellImpl = kryo.readObject(in, CellImpl.class);
 			in.close();
 		} catch (Exception e) {
-			// data that cannot be parsed is considered as a string value.
+            e.printStackTrace();
+            // data that cannot be parsed is considered as a string value.
 			cellImpl = new CellImpl();
 //			cellImpl.setCellValue(new CellValue(new String(inByteArray)), false, null, false);
 		}
@@ -132,9 +134,8 @@ public class CellImpl extends AbstractCellAdv {
 
 	@Override
 	public int getRowIndex() {
-		checkOrphan();
-		return _row.getIndex();
-	}
+        return _rowIndex;
+    }
 
 	@Override
 	public void setRowIndex(int rowIndex) {
@@ -143,9 +144,8 @@ public class CellImpl extends AbstractCellAdv {
 
 	@Override
 	public int getColumnIndex() {
-		checkOrphan();
-		return _index;
-	}
+        return _columnIndex;
+    }
 
 	@Override
 	public void setColumnIndex(int columnIndex) {
@@ -167,9 +167,13 @@ public class CellImpl extends AbstractCellAdv {
 
 	@Override
 	public SSheet getSheet() {
-		checkOrphan();
-		return _row.getSheet();
-	}
+        return _sheet;
+    }
+
+    @Override
+    public void setSheet(AbstractSheetAdv sheet) {
+        this._sheet = sheet;
+    }
 
 	@Override
 	public void destroy() {
@@ -199,7 +203,11 @@ public class CellImpl extends AbstractCellAdv {
 		if (local || _cellStyle != null) {
 			return _cellStyle;
 		}
-		checkOrphan();
+
+        return _sheet.getBook().getDefaultCellStyle();
+        //TODO: Maitain row and sheet level styles
+        /*
+        checkOrphan();
 		_cellStyle = (AbstractCellStyleAdv) _row.getCellStyle(true);
 		AbstractSheetAdv sheet = (AbstractSheetAdv)_row.getSheet();
 		if (_cellStyle == null) {
@@ -212,7 +220,8 @@ public class CellImpl extends AbstractCellAdv {
 			_cellStyle = (AbstractCellStyleAdv) sheet.getBook()
 					.getDefaultCellStyle();
 		}
-		return _cellStyle;
+
+		return _cellStyle; */
 	}
 
 	@Override
@@ -699,6 +708,11 @@ public class CellImpl extends AbstractCellAdv {
 
 	private static class InnerCellValue extends CellValue {
 		private static final long serialVersionUID = 1L;
+
+        InnerCellValue() {
+            super();
+        }
+
 
 		private InnerCellValue(CellType type, Object value) {
 			super(type, value);

@@ -21,7 +21,6 @@ import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.formula.FormulaExpression;
 
-import java.lang.ref.WeakReference;
 import java.sql.Connection;
 import java.util.Locale;
 /**
@@ -32,13 +31,13 @@ import java.util.Locale;
 class CellProxy extends AbstractCellAdv {
 	private static final long serialVersionUID = 1L;
 	AbstractCellAdv _proxy;
-	private WeakReference<AbstractSheetAdv> _sheetRef;
 	private int _rowIdx;
 	private int _columnIdx;
+    private AbstractSheetAdv _sheet;
 
 	public CellProxy(AbstractSheetAdv sheet, int row, int column) {
-		this._sheetRef = new WeakReference<AbstractSheetAdv>(sheet);
-		this._rowIdx = row;
+        this._sheet = sheet;
+        this._rowIdx = row;
 		this._columnIdx = column;
 	}
 
@@ -47,13 +46,13 @@ class CellProxy extends AbstractCellAdv {
 		if(_proxy!=null){
 			return _proxy.getSheet();
 		}
-		AbstractSheetAdv sheet = _sheetRef.get();
-		if (sheet == null) {
-			throw new IllegalStateException(
-					"proxy sheet target lost, you should't keep this instance");
-		}
-		return sheet;
-	}
+        return _sheet;
+    }
+
+    @Override
+    public void setSheet(AbstractSheetAdv sheet) {
+
+    }
 
 	private void loadProxy() {
 		if (_proxy == null) {
@@ -146,9 +145,12 @@ class CellProxy extends AbstractCellAdv {
 	protected void setValue(Object value, boolean aString, Connection connection, boolean updateToDB) {
 		loadProxy();
 		if (_proxy == null && value != null) {
-			_proxy = ((AbstractSheetAdv) getSheet()).getOrCreateRow(
-					_rowIdx).getOrCreateCell(_columnIdx);
-			_proxy.setValue(value, aString, connection, updateToDB);
+            // Create a new cell object
+            _proxy = new CellImpl();
+            _proxy.setRowIndex(_rowIdx);
+            _proxy.setColumnIndex(_columnIdx);
+            _proxy.setSheet(_sheet);
+            _proxy.setValue(value, aString, connection, updateToDB);
 		} else if (_proxy != null) {
 			_proxy.setValue(value, aString, connection, updateToDB);
 		}

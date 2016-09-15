@@ -321,4 +321,6 @@ public abstract class AbstractCellAdv implements SCell,LinkedModelObject,Seriali
 	public abstract void setRowIndex(int rowIndex);
 
 	public abstract void setColumnIndex(int columnIndex);
+
+    public abstract void setSheet(AbstractSheetAdv sheet);
 }
