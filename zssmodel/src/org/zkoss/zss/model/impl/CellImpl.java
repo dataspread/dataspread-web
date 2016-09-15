@@ -40,9 +40,10 @@ import org.zkoss.zss.model.util.Validations;
 import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.Locale;
 //import org.zkoss.zss.ngmodel.InvalidateModelValueException;
 /**
@@ -61,10 +62,10 @@ public class CellImpl extends AbstractCellAdv {
 		}
 	};
 	private final static KryoPool kryoPool = new KryoPool.Builder(factory).softReferences().build();
-	private AbstractRowAdv _row; // TODO: Mangesh - Need to remove this.
-	private int _rowIndex;
-	private int _columnIndex;
-	private int _index;
+	transient private AbstractRowAdv _row; // TODO: Mangesh - Need to remove this.
+	transient private int _rowIndex;
+	transient private int _columnIndex;
+	private int _index; //TODO: Mangesh - Remove this
 	private CellValue _localValue = null;
 	private AbstractCellStyleAdv _cellStyle;
 	transient private FormulaResultCellValue _formulaResultValue;// cache
@@ -89,7 +90,7 @@ public class CellImpl extends AbstractCellAdv {
 		} catch (Exception e) {
 			// data that cannot be parsed is considered as a string value.
 			cellImpl = new CellImpl();
-			cellImpl.setCellValue(new CellValue(new String(inByteArray)), false, null, false);
+//			cellImpl.setCellValue(new CellValue(new String(inByteArray)), false, null, false);
 		}
 		kryoPool.release(kryo);
 		return cellImpl;
@@ -158,9 +159,10 @@ public class CellImpl extends AbstractCellAdv {
 
 	@Override
 	public void checkOrphan() {
-		if (_row == null) {
+		// TODO: Remvoe the concept of row.
+	/*	if (_row == null) {
 			throw new IllegalStateException("doesn't connect to parent");
-		}
+		} */
 	}
 
 	@Override
@@ -417,42 +419,10 @@ public class CellImpl extends AbstractCellAdv {
 				getSheet().getBook().checkDBSchema();
 				try {
 					Connection localConnection = connection == null ? DBHandler.instance.getConnection() : connection;
-					String bookTable = getSheet().getBook().getId();
-					if (_localValue==null)
-					{
-						//Delete
-						PreparedStatement deleteStmt = localConnection.prepareStatement("DELETE FROM " + bookTable + "_sheetdata WHERE sheetid = ? AND row = ? AND col = ?");
-						deleteStmt.setInt(1,getSheet().getDBId());
-						deleteStmt.setInt(2, getRowIndex());
-						deleteStmt.setInt(3, getColumnIndex());
-						deleteStmt.execute();
-					}
-					else
-					{
-						//Update
-						PreparedStatement insertStmt = localConnection.prepareStatement("INSERT INTO " + bookTable + "_sheetdata (sheetid,row,col,value) VALUES (?, ?, ?, ?) " +
-								" ON CONFLICT (sheetid, row, col) DO UPDATE" +
-								" SET value = ? WHERE " + bookTable + "_sheetdata.sheetid = ? " +
-								"AND " + bookTable + "_sheetdata.row = ? " +
-								"AND " + bookTable + "_sheetdata.col = ?");
-						insertStmt.setInt(1, getSheet().getDBId());
-						insertStmt.setInt(2, getRowIndex());
-						insertStmt.setInt(3, getColumnIndex());
-						if (getType()==CellType.FORMULA) {
-							insertStmt.setString(4, "=" + getFormulaValue());
-							insertStmt.setString(5, "=" + getFormulaValue());
-						}
-						else
-						{
-							insertStmt.setString(4, getValue().toString());
-							insertStmt.setString(5, getValue().toString());
-						}
-						insertStmt.setInt(6, getSheet().getDBId());
-						insertStmt.setInt(7, getRowIndex());
-						insertStmt.setInt(8, getColumnIndex());
-						insertStmt.execute();
-
-					}
+					Collection<AbstractCellAdv> cells = new LinkedList<>();
+					cells.add(this);
+					getSheet().getDataModel().updateCells(new DBContext(connection), cells);
+					//TODO: Handle cell delete.
 
 					if (connection == null) {
 						localConnection.commit();

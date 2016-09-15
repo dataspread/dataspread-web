@@ -97,7 +97,8 @@ public class BookImpl extends AbstractBookAdv{
 		try (Connection connection = DBHandler.instance.getConnection();
 			 Statement stmt = connection.createStatement();
 			 PreparedStatement deleteBookStmt = connection.prepareStatement(deleteBookEntry)) {
-			stmt.execute("DROP TABLE " + bookTable + "_sheetdata");
+			//TODO: Delete sheet
+			//stmt.execute("DROP TABLE " + bookTable + "_sheetdata");
 			stmt.execute("DROP TABLE " + bookTable + "_workbook");
 			deleteBookStmt.setString(1, bookName);
 			deleteBookStmt.execute();
@@ -1090,6 +1091,7 @@ public class BookImpl extends AbstractBookAdv{
 			 while (rs.next())
 			 {
 				SSheet sheet =  createExistingSheet(rs.getString("sheetname"), rs.getInt("sheetid"));
+				 sheet.setDataModel(rs.getString("modelname"));
 				sheet.setEndRowIndex(rs.getInt("maxrow"), null, false);
 				sheet.setEndColumnIndex(rs.getInt("maxcolumn"), null, false);
 			 }

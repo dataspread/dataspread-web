@@ -32,7 +32,10 @@ import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.formula.FormulaClearContext;
 import org.zkoss.zss.model.util.Validations;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.*;
 
 /**
@@ -329,13 +332,28 @@ public class SheetImpl extends AbstractSheetAdv {
 //	}
 
 	// Mangesh
+	public Model getDataModel() {
+		return dataModel;
+	}
+
+	@Override
+	public void setDataModel(String model) {
+		try (Connection connection = DBHandler.instance.getConnection()) {
+			DBContext dbContext = new DBContext(connection);
+			dataModel = new RCV_Model(dbContext, model);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+
 	private void preFetchCells(Range range)
 	{
 		int minRow = Math.max(0,range.getMinRow()- PreFetchRows);
-		int maxRow = minRow + PreFetchRows *2-1;
+		int maxRow = minRow + PreFetchRows * 2 - 1;
 
 		int minColumn = Math.max(0,range.getMinCol()- PreFetchColumns);
-		int maxColumn = minColumn + PreFetchColumns * 2-1;
+		int maxColumn = minColumn + PreFetchColumns * 2 - 1;
 
 		Range fetchRange = new Range(minRow, minColumn, maxRow, maxColumn);
 

@@ -17,6 +17,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 package org.zkoss.zss.model;
 
 import org.zkoss.zss.model.impl.DBContext;
+import org.zkoss.zss.model.impl.Model;
 
 import java.sql.Connection;
 import java.util.Iterator;
@@ -46,7 +47,13 @@ public interface SSheet {
 	 * @return an iterator of existing rows excluding those blank rows
 	 */
 	Iterator<SRow> getRowIterator();
-	
+
+
+	Model getDataModel();
+
+	void setDataModel(String model);
+
+
 	/**
 	 * @return an iterator of existing columns excluding those blank columns
 	 */
@@ -462,6 +469,7 @@ public interface SSheet {
 	 * @since 3.8.1
 	 */
 	void setAlgName(String algName);
+
 
 	enum SheetVisible {
 		VISIBLE,    // This sheet is visible

@@ -16,13 +16,13 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
-import java.io.Serializable;
-import java.sql.Connection;
-import java.util.Set;
-
 import org.zkoss.zss.model.SColumn;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.STable;
+
+import java.io.Serializable;
+import java.sql.Connection;
+import java.util.Set;
 /**
  * 
  * @author dennis
@@ -49,7 +49,7 @@ public abstract class AbstractSheetAdv implements SSheet,LinkedModelObject,Seria
 
 	/*package*/
 	abstract void setSheetName(String name, boolean updateToDB);
-	
+
 //	/*package*/ abstract void onModelInternalEvent(ModelInternalEvent event);
 	
 	//ZSS-855
