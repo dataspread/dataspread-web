@@ -88,8 +88,8 @@ class CellProxy extends AbstractCellAdv {
 	}
 
 	@Override
-	public void setRowIndex(int rowIndex) {
-
+	public void setRow(int row) {
+        throw new UnsupportedOperationException("readonly");
 	}
 
 	@Override
@@ -99,8 +99,8 @@ class CellProxy extends AbstractCellAdv {
 	}
 
 	@Override
-	public void setColumnIndex(int columnIndex) {
-
+	public void setColumn(int column) {
+        throw new UnsupportedOperationException("readonly");
 	}
 
 	@Override
@@ -147,8 +147,8 @@ class CellProxy extends AbstractCellAdv {
 		if (_proxy == null && value != null) {
             // Create a new cell object
             _proxy = new CellImpl();
-            _proxy.setRowIndex(_rowIdx);
-            _proxy.setColumnIndex(_columnIdx);
+            _proxy.setRow(_rowIdx);
+            _proxy.setColumn(_columnIdx);
             _proxy.setSheet(_sheet);
             _proxy.setValue(value, aString, connection, updateToDB);
 		} else if (_proxy != null) {
@@ -247,16 +247,6 @@ class CellProxy extends AbstractCellAdv {
 	}
 
 	@Override
-	public void destroy() {
-		throw new IllegalStateException(
-				"never link proxy object and call it's release");
-	}
-
-	@Override
-	public void checkOrphan() {
-	}
-
-	@Override
 	public SHyperlink getHyperlink() {
 		loadProxy();
 		return _proxy == null ? null : _proxy.getHyperlink();
@@ -294,30 +284,22 @@ class CellProxy extends AbstractCellAdv {
 		return _proxy != null && _proxy.isFormulaParsingError();
 	}
 
-	@Override
-	void setIndex(int newidx) {
-		throw new UnsupportedOperationException("readonly");
-	}
-
-	@Override
-	void setRow(int oldRowIdx,AbstractRowAdv row) {
-		throw new UnsupportedOperationException("readonly");
-	}
-
 	protected Ref getRef(){
 		return new RefImpl(this);
 	}
 
 	//ZSS-688
 	//@since 3.6.0
+    /* TODO: Remove the idea of clone cell. For sheet cloning use data modle cloning */
+    /*
 	@Override
-	/*package*/ AbstractCellAdv cloneCell(AbstractRowAdv row, Connection connection, boolean updateToDB) {
+    AbstractCellAdv cloneCell(AbstractRowAdv row, Connection connection, boolean updateToDB) {
 		if (_proxy == null) {
 			return new CellProxy((AbstractSheetAdv)row.getSheet(), row.getIndex(), this.getColumnIndex());
 		} else {
 			return _proxy.cloneCell(row, connection, updateToDB);
 		}
-	}
+	} */
 
 	@Override
 	public void setFormulaResultValue(ValueEval value) {

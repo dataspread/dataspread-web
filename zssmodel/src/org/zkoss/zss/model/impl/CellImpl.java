@@ -29,7 +29,6 @@ import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.STableColumn.STotalsRowFunction;
 import org.zkoss.zss.model.impl.sys.formula.FormulaEngineImpl;
 import org.zkoss.zss.model.sys.EngineFactory;
-import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.format.FormatContext;
 import org.zkoss.zss.model.sys.format.FormatEngine;
@@ -62,25 +61,14 @@ public class CellImpl extends AbstractCellAdv {
 		}
 	};
 	private final static KryoPool kryoPool = new KryoPool.Builder(factory).softReferences().build();
-	transient private AbstractRowAdv _row; // TODO: Mangesh - Need to remove this.
-	transient private int _rowIndex;
-	transient private int _columnIndex;
-	private int _index; //TODO: Mangesh - Remove this
+	transient private int _row;
+	transient private int _column;
 	private CellValue _localValue = null;
 	private AbstractCellStyleAdv _cellStyle;
 	transient private FormulaResultCellValue _formulaResultValue;// cache
     transient private AbstractSheetAdv _sheet;
     //use another object to reduce object reference size
 	private OptFields _opts;
-
-	public CellImpl() {
-
-	}
-
-	public CellImpl(AbstractRowAdv row, int index) {
-		this._row = row;
-		this._index = index;
-	}
 
 	public static CellImpl fromBytes(byte[] inByteArray) {
 		CellImpl cellImpl;
@@ -134,35 +122,27 @@ public class CellImpl extends AbstractCellAdv {
 
 	@Override
 	public int getRowIndex() {
-        return _rowIndex;
+        return _row;
     }
 
 	@Override
-	public void setRowIndex(int rowIndex) {
-		_rowIndex = rowIndex;
+	public void setRow(int row) {
+		_row = row;
 	}
 
 	@Override
 	public int getColumnIndex() {
-        return _columnIndex;
+        return _column;
     }
 
 	@Override
-	public void setColumnIndex(int columnIndex) {
-		_columnIndex = columnIndex;
+	public void setColumn(int column) {
+		_column = column;
 	}
 
 	@Override
 	public String getReferenceString() {
 		return new CellRegion(getRowIndex(), getColumnIndex()).getReferenceString();
-	}
-
-	@Override
-	public void checkOrphan() {
-		// TODO: Remvoe the concept of row.
-	/*	if (_row == null) {
-			throw new IllegalStateException("doesn't connect to parent");
-		} */
 	}
 
 	@Override
@@ -174,15 +154,6 @@ public class CellImpl extends AbstractCellAdv {
     public void setSheet(AbstractSheetAdv sheet) {
         this._sheet = sheet;
     }
-
-	@Override
-	public void destroy() {
-		checkOrphan();
-		//ZSS-985: when delete table cell, it causes side effect to 
-		//     rename column name; thus use a boolean to distinguish the case
-		clearValue0(true, null, false);
-		_row = null;
-	}
 
 	@Override
 	public SCellStyle getCellStyle() {
@@ -265,7 +236,6 @@ public class CellImpl extends AbstractCellAdv {
 		clearValue0(false, connection, updateToDB); //ZSS-985
 	}
 	private void clearValue0(boolean destroy, Connection connection, boolean updateToDB) {
-		checkOrphan();
 		clearFormulaDependency();
 		clearFormulaResultCache();
 		
@@ -295,7 +265,6 @@ public class CellImpl extends AbstractCellAdv {
 	// ZSS-565: Support input with Swedish locale into Formula
 	@Override
 	public void setFormulaValue(String formula, Locale locale, Connection connection, boolean updateToDB) {
-		checkOrphan();
 		Validations.argNotNull(formula);
 		
 		//ZSS-967
@@ -373,13 +342,10 @@ public class CellImpl extends AbstractCellAdv {
 	}
 	
 	private CellValue getCellValue(){
-		checkOrphan();
 		return _localValue;
 	}
 	
 	private void setCellValue(CellValue value, boolean destroy, Connection connection, boolean updateToDB){ //ZSS-985
-		checkOrphan();
-		
 		this._localValue = value!=null&&value.getType()==CellType.BLANK?null:value;
 		
 		//clear the dependent's formula result cache
@@ -568,7 +534,10 @@ public class CellImpl extends AbstractCellAdv {
 		if (opts == null) return;
 		opts._comment = null;
 	}
-	
+
+
+	// TODO: Mangesh - Implement shifting logic for formaule refrence
+	/*
 	@Override
 	void setIndex(int newidx) {
 		if(this._index==newidx){
@@ -594,35 +563,7 @@ public class CellImpl extends AbstractCellAdv {
 				table.setEvaluated(ref);
 			}
 		}
-	}
-	
-	@Override
-	void setRow(int oldRowIdx, AbstractRowAdv row){
-		if(oldRowIdx==row.getIndex() && this._row==row){
-			return;
-		}
-
-		CellType type = getType();
-		String formula = null;
-		DependencyTable table = null;
-		if(type == CellType.FORMULA){
-			formula = getFormulaValue();
-			//clear the old dependency
-			SSheet sheet = getSheet();
-			Ref oldRef = new RefImpl(sheet.getBook().getBookName(),sheet.getSheetName(),oldRowIdx,getColumnIndex());
-			table = ((AbstractBookSeriesAdv) getSheet().getBook().getBookSeries()).getDependencyTable();
-			table.clearDependents(oldRef);
-		}
-		this._row = row;
-		if(formula!=null){
-			FormulaEngine fe = EngineFactory.getInstance().createFormulaEngine();
-			Ref ref = getRef();
-			fe.parse(formula, new FormulaParseContext(this ,ref));//rebuild the expression to make new dependency with current row,column
-			if(_formulaResultValue!=null){
-				table.setEvaluated(ref);
-			}
-		}
-	}
+	} */
 	
 	protected Ref getRef(){
 		return new RefImpl(this);
@@ -634,40 +575,7 @@ public class CellImpl extends AbstractCellAdv {
 		return sb.toString();
 	}
 	
-	//ZSS-688
-	//@since 3.6.0
-	@Override
-	/*package*/ AbstractCellAdv cloneCell(AbstractRowAdv row, Connection connection, boolean updateToDB) {
-		final CellImpl tgt = new CellImpl(row, this._index);
 
-		if (_localValue != null) {
-			Object newVal = _localValue.getValue();
-			if (newVal instanceof SRichText) {
-				newVal = ((AbstractRichTextAdv)newVal).clone();
-			} else if (newVal instanceof FormulaExpression) {
-				newVal = "="+((FormulaExpression)newVal).getFormulaString();
-			}
-			tgt.setValue(newVal, connection, updateToDB);
-		}
-
-		tgt._cellStyle = this._cellStyle;
-
-		// do not clone _formulaResultValue
-		//transient private FormulaResultCellValue _formulaResultValue;// cache
-
-		if (this._opts != null) {
-			final OptFields opts = tgt.getOpts(true);
-			if (this._opts._comment != null) {
-				opts._comment = this._opts._comment.clone();
-			}
-			if (this._opts._hyperlink != null) {
-				opts._hyperlink = this._opts._hyperlink.clone();
-			}
-		}
-
-		return tgt;
-	}
-	
 	//ZSS-818
 	//@since 3.7.0
 	public void setFormulaResultValue(ValueEval value) {

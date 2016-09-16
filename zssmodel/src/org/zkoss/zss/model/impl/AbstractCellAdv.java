@@ -38,7 +38,7 @@ import java.util.*;
  * @author dennis
  * @since 3.5.0
  */
-public abstract class AbstractCellAdv implements SCell,LinkedModelObject,Serializable{
+public abstract class AbstractCellAdv implements SCell,Serializable{
 	private static final long serialVersionUID = 1L;
 	
 	protected void checkType(CellType... types){
@@ -231,16 +231,10 @@ public abstract class AbstractCellAdv implements SCell,LinkedModelObject,Seriali
 		return comment;
 	}
 	
-	/*package*/ abstract void setIndex(int newidx);
-	/*package*/ abstract void setRow(int oldRowIdx, AbstractRowAdv row);
 	/*package*/ abstract Ref getRef();
 
 	//ZSS-565: Support input with Swedish locale into formula 
 	public abstract void setFormulaValue(String formula, Locale locale, Connection connection, boolean updateToDB);
-	
-	//ZSS-688
-	//@since 3.6.0
-	/*package*/ abstract AbstractCellAdv cloneCell(AbstractRowAdv row, Connection connection, boolean updateToDB);
 	
 	//ZSS-818
 	//@since 3.7.0
@@ -318,9 +312,9 @@ public abstract class AbstractCellAdv implements SCell,LinkedModelObject,Seriali
 
 	protected abstract byte[] toBytes();
 
-	public abstract void setRowIndex(int rowIndex);
+	public abstract void setRow(int row);
 
-	public abstract void setColumnIndex(int columnIndex);
+	public abstract void setColumn(int column);
 
     public abstract void setSheet(AbstractSheetAdv sheet);
 }
