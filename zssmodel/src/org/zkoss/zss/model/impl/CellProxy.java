@@ -51,7 +51,7 @@ class CellProxy extends AbstractCellAdv {
 
     @Override
     public void setSheet(AbstractSheetAdv sheet) {
-
+		_sheet = sheet;
     }
 
 	private void loadProxy() {
@@ -143,7 +143,7 @@ class CellProxy extends AbstractCellAdv {
 	//ZSS-853
 	@Override
 	protected void setValue(Object value, boolean aString, Connection connection, boolean updateToDB) {
-		loadProxy();
+		//loadProxy();
 		if (_proxy == null && value != null) {
             // Create a new cell object
             _proxy = new CellImpl();

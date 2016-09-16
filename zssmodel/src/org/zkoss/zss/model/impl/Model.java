@@ -1,5 +1,7 @@
 package org.zkoss.zss.model.impl;
 
+import org.zkoss.zss.model.CellRegion;
+
 import java.util.Collection;
 
 public abstract class Model {
@@ -43,12 +45,12 @@ public abstract class Model {
     public abstract void updateCells(DBContext context, Collection<AbstractCellAdv> cells);
 
     //Delete cells
-    public abstract void deleteCells(DBContext context, Range range);
+    public abstract void deleteCells(DBContext context, CellRegion cellRegion);
 
     public abstract void deleteCells(DBContext context, Collection<AbstractCellAdv> cells);
 
     //Get a range of cells
-    public abstract Collection<AbstractCellAdv> getCells(DBContext context, Range range);
+    public abstract Collection<AbstractCellAdv> getCells(DBContext context, CellRegion cellRegion);
 
     // Get all Cells
     public Collection<AbstractCellAdv> getCells(DBContext context) {
@@ -56,7 +58,7 @@ public abstract class Model {
     }
 
     // Get size of sheet
-    public abstract Range getBounds(DBContext context);
+    public abstract CellRegion getBounds(DBContext context);
 
     // Flush Cache and clearCache DB connection
     public abstract void clearCache(DBContext context);

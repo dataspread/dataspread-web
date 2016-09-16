@@ -47,8 +47,8 @@ public class SheetImpl extends AbstractSheetAdv {
 	private static final long serialVersionUID = 1L;
 	private static final Log _logger = Log.lookup(SheetImpl.class);
     //Mangesh
-    static final private int PreFetchRows = 100;
-	static final private int PreFetchColumns = 20;
+    static final private int PreFetchRows = 5;
+	static final private int PreFetchColumns = 2;
     /**
      * internal use only for developing/test state, should remove when stable
      */
@@ -60,7 +60,7 @@ public class SheetImpl extends AbstractSheetAdv {
         }
     }
 
-    final int CACHE_SIZE = -1;
+    final int CACHE_SIZE = 50;
     private final String _id;
 	private final IndexPool<AbstractRowAdv> _rows = new IndexPool<AbstractRowAdv>(){
 		private static final long serialVersionUID = 1L;
@@ -80,7 +80,7 @@ public class SheetImpl extends AbstractSheetAdv {
     //ZSS-855
     private final List<STable> _tables = new ArrayList<STable>();
     Model dataModel;
-    LruCache<Range, AbstractCellAdv> sheetDataCache;
+    LruCache<CellRegion, AbstractCellAdv> sheetDataCache;
     private AbstractBookAdv _book;
     private String _name;
     private int _dbid;
@@ -347,15 +347,15 @@ public class SheetImpl extends AbstractSheetAdv {
 	}
 
 
-	private void preFetchCells(Range range)
+	private void preFetchCells(CellRegion cellRegion)
 	{
-		int minRow = Math.max(0,range.getMinRow()- PreFetchRows);
+		int minRow = Math.max(0,cellRegion.getRow()- PreFetchRows);
 		int maxRow = minRow + PreFetchRows * 2 - 1;
 
-		int minColumn = Math.max(0,range.getMinCol()- PreFetchColumns);
+		int minColumn = Math.max(0,cellRegion.getColumn()- PreFetchColumns);
 		int maxColumn = minColumn + PreFetchColumns * 2 - 1;
 
-		Range fetchRange = new Range(minRow, minColumn, maxRow, maxColumn);
+		CellRegion fetchRange = new CellRegion(minRow, minColumn, maxRow, maxColumn);
 
 		try (Connection connection = DBHandler.instance.getConnection())
 		{
@@ -364,18 +364,18 @@ public class SheetImpl extends AbstractSheetAdv {
 			//Update book reference for the cells.
 			cells.stream().forEach(e -> e.setSheet(this));
 
-            cells.stream().forEach(e->sheetDataCache.put(new Range(e.getRowIndex(), e.getColumnIndex()), e));
+            cells.stream().forEach(e->sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
         }
 		catch (SQLException e)
 		{
 			e.printStackTrace();
 		}
 
-        for (int row=fetchRange.getMinRow();row<=fetchRange.getMaxRow();++row) {
-            for (int col = fetchRange.getMinCol(); col <= fetchRange.getMaxCol(); ++col) {
-                Range cellRange = new Range(row, col);
+        for (int row=fetchRange.getRow();row<=fetchRange.getLastRow();++row) {
+            for (int col = fetchRange.getColumn(); col <= fetchRange.getLastColumn(); ++col) {
+				CellRegion cellRange = new CellRegion(row, col);
                 if (!sheetDataCache.containsKey(cellRange))
-                    sheetDataCache.put(cellRange, new CellProxy(this, row,col));
+                    sheetDataCache.put(cellRange, new CellProxy(this, row, col));
             }
         }
 	}
@@ -396,13 +396,13 @@ public class SheetImpl extends AbstractSheetAdv {
 	
 	@Override
 	AbstractCellAdv getCell(int rowIdx, int columnIdx, boolean proxy) {
-		Range range = new Range(rowIdx, columnIdx);
-        AbstractCellAdv cell = sheetDataCache.get(range);
+		CellRegion cellRegion = new CellRegion(rowIdx, columnIdx);
+        AbstractCellAdv cell = sheetDataCache.get(cellRegion);
 		if (cell == null) {
 			//Data not cached.
 			// Cache Data.
 			if (getBook().hasSchema()) {
-				preFetchCells(range);
+				preFetchCells(cellRegion);
 				// After prefetch assume this can get a cell.
 				return getCell(rowIdx, columnIdx, proxy);
 			}

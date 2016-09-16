@@ -1,5 +1,7 @@
 package org.zkoss.zss.model.impl;
 
+import org.zkoss.zss.model.CellRegion;
+
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
@@ -172,10 +174,10 @@ public class RCV_Model extends Model {
     }
 
     @Override
-    public void deleteCells(DBContext context, Range range) {
+    public void deleteCells(DBContext context, CellRegion range) {
 
-        Integer[] rowIds = rowMapping.getIDs(context, range.getMinRow(), range.getMaxRow() - range.getMinRow() + 1);
-        Integer[] colIds = colMapping.getIDs(context, range.getMinCol(), range.getMaxCol() - range.getMinCol() + 1);
+        Integer[] rowIds = rowMapping.getIDs(context, range.getRow(), range.getLastRow() - range.getRow() + 1);
+        Integer[] colIds = colMapping.getIDs(context, range.getColumn(), range.getLastColumn() - range.getColumn() + 1);
 
         String delete = new StringBuffer("DELETE FROM ")
                 .append(tableName)
@@ -222,20 +224,25 @@ public class RCV_Model extends Model {
     }
 
     @Override
-    public Collection<AbstractCellAdv> getCells(DBContext context, Range fetchRange) {
+    public Collection<AbstractCellAdv> getCells(DBContext context, CellRegion fetchRange) {
         // Reduce Range to bounds
-        Range range = getBounds(context).intersection(fetchRange);
         Collection<AbstractCellAdv> cells = new ArrayList<>();
-        if (range == null)
+
+        CellRegion bounds =  getBounds(context);
+        if (bounds==null || fetchRange==null)
             return cells;
 
-        Integer[] rowIds = rowMapping.getIDs(context, range.getMinRow(), range.getMaxRow() - range.getMinRow() + 1);
-        Integer[] colIds = colMapping.getIDs(context, range.getMinCol(), range.getMaxCol() - range.getMinCol() + 1);
+        CellRegion fetchRegion = bounds.getOverlap(fetchRange);
+        if (fetchRegion == null)
+            return cells;
+
+        Integer[] rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
+        Integer[] colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
         HashMap<Integer, Integer> row_map = IntStream.range(0, rowIds.length)
-                .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(rowIds[i], range.getMinRow() + i), null);
+                .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(rowIds[i], fetchRegion.getRow() + i), null);
 
         HashMap<Integer, Integer> col_map = IntStream.range(0, colIds.length)
-                .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(colIds[i], range.getMinCol() + i), null);
+                .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(colIds[i], fetchRegion.getColumn() + i), null);
 
 
         String select = new StringBuffer("SELECT row, col, data FROM ")
@@ -270,8 +277,13 @@ public class RCV_Model extends Model {
     }
 
     @Override
-    public Range getBounds(DBContext context) {
-        return new Range(0, 0, rowMapping.size(context) - 1, colMapping.size(context) - 1);
+    public CellRegion getBounds(DBContext context) {
+        int rows = rowMapping.size(context);
+        int columns = colMapping.size(context);
+        if (rows==0 || columns ==0)
+            return null;
+        else
+            return new CellRegion(0, 0, rowMapping.size(context) - 1, colMapping.size(context) - 1);
     }
 
     @Override
