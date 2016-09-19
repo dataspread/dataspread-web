@@ -443,7 +443,7 @@ public class CellImpl extends AbstractCellAdv {
 	public void setValue(Object newVal, Connection connection, boolean updateToDB) {
 		setValue(newVal, false, connection, updateToDB); //ZSS-853
 	}
-	
+
 	//ZSS-853
 	@Override
 	protected void setValue(Object newVal, boolean aString, Connection connection, boolean updateToDB) {

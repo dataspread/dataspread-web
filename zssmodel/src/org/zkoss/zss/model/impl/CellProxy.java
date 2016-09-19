@@ -130,14 +130,7 @@ class CellProxy extends AbstractCellAdv {
 
 	@Override
 	public void setValue(Object value, Connection connection, boolean updateToDB) {
-		loadProxy();
-		if (_proxy == null && value != null) {
-			_proxy = ((AbstractSheetAdv) getSheet()).getOrCreateRow(
-					_rowIdx).getOrCreateCell(_columnIdx);
-			_proxy.setValue(value, connection, updateToDB);
-		} else if (_proxy != null) {
-			_proxy.setValue(value, connection, updateToDB);
-		}
+		setValue(value, false, connection, updateToDB);
 	}
 
 	//ZSS-853
