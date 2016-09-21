@@ -28,6 +28,11 @@ import org.zkoss.poi.util.LittleEndianInput;
 public final class RefPtg extends Ref2DPtgBase {
 	public final static byte sid = 0x24;
 
+
+	@SuppressWarnings("unused")
+	public RefPtg() {
+		// Required for serialization.
+	}
 	/**
 	 * Takes in a String representation of a cell reference and fills out the
 	 * numeric fields.

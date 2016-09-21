@@ -118,14 +118,14 @@ class CellProxy extends AbstractCellAdv {
 	//ZSS-565: Support input with Swedish locale into Formula
 	@Override
 	public void setFormulaValue(String formula, Locale locale, Connection connection, boolean updateToDB) {
-		loadProxy();
 		if (_proxy == null) {
-			_proxy = ((AbstractSheetAdv) getSheet()).getOrCreateRow(
-					_rowIdx).getOrCreateCell(_columnIdx);
-			_proxy.setFormulaValue(formula, locale, connection, updateToDB);
-		} else if (_proxy != null) {
-			_proxy.setFormulaValue(formula, locale, connection, updateToDB);
-		}
+            _proxy = new CellImpl();
+            _proxy.setRow(_rowIdx);
+            _proxy.setColumn(_columnIdx);
+            _proxy.setSheet(_sheet);
+        }
+        _proxy.setFormulaValue(formula, locale, connection, updateToDB);
+
 	}
 
 	@Override
@@ -234,8 +234,8 @@ class CellProxy extends AbstractCellAdv {
 	}
 
 	@Override
-	protected Object getValue(boolean eval) {
-		loadProxy();
+    public Object getValue(boolean eval) {
+        loadProxy();
 		return _proxy == null ? null : _proxy.getValue(eval);
 	}
 

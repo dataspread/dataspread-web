@@ -18,11 +18,11 @@ import org.zkoss.poi.ss.usermodel.FormulaError;
 import org.zkoss.zss.model.ErrorValue;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
-import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.SCell.CellType;
-import org.zkoss.zss.model.sys.formula.FormulaExpression;
-import org.zkoss.zss.model.impl.CellImpl;
+import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.impl.AbstractCellAdv;
 import org.zkoss.zss.model.impl.AbstractSheetAdv;
+import org.zkoss.zss.model.sys.formula.FormulaExpression;
 
 /**
  * 
@@ -149,9 +149,9 @@ public class EvalSheet implements EvaluationSheet {
 		
 		//ZSS-759
 		public FormulaExpression getFormulaExpression() {
-			return cell.getType() == CellType.FORMULA ? 
-					(FormulaExpression) ((CellImpl)cell).getValue(false) : null;
-		}
+			return cell.getType() == CellType.FORMULA ?
+                    (FormulaExpression) ((AbstractCellAdv) cell).getValue(false) : null;
+        }
 	}
 
 	private static class Key {
@@ -192,10 +192,8 @@ public class EvalSheet implements EvaluationSheet {
 				return false;
 			if(row != other.row)
 				return false;
-			if(sheet != other.sheet)
-				return false;
-			return true;
-		}
+            return sheet == other.sheet;
+        }
 
 	}
 

@@ -65,9 +65,11 @@ public abstract class AbstractCellAdv implements SCell,Serializable{
 	}
 	
 	/*package*/ abstract void evalFormula();
-	/*package*/ abstract Object getValue(boolean evaluatedVal);
-	
-	@Override
+
+    /*package*/
+    public abstract Object getValue(boolean evaluatedVal);
+
+    @Override
 	public Object getValue(){
 		return getValue(true);
 	}
