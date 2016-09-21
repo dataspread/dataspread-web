@@ -97,9 +97,7 @@ public class SheetImpl extends AbstractSheetAdv {
     private HashMap<String,Object> _attributes;
 	private int _defaultColumnWidth = 64; //in pixel
 	private int _defaultRowHeight = 20;//in pixel
-	private int _maxColumnIndex=-1;
-	private int _maxRowIndex=-1;
-	
+
 	public SheetImpl(AbstractBookAdv book,String id){
 		this._book = book;
 		this._id = id;
@@ -440,40 +438,18 @@ public class SheetImpl extends AbstractSheetAdv {
 	}
 
 	public int getEndRowIndex() {
-		return _maxRowIndex;
-	}
-
-	private void updateMaxValuestoDB(Connection connection)
-	{
-		// Assuming connection is present.
-		String bookTable = getBook().getId();
-		String updateWorkbook = "UPDATE " + bookTable + "_workbook SET maxrow = ?, maxcolumn = ?" +
-				" WHERE sheetid = ?";
-
-		try  {
-			Connection localConnection = connection == null ? DBHandler.instance.getConnection() : connection;
-			PreparedStatement stmt = localConnection.prepareStatement(updateWorkbook);
-			stmt.setInt(1, _maxRowIndex);
-			stmt.setInt(2, _maxColumnIndex);
-			stmt.setInt(3, getDBId());
-			stmt.execute();
-			stmt.close();
-			if (connection==null)
-			{
-				localConnection.commit();
+		if (dataModel != null) {
+			Connection localConnection = DBHandler.instance.getConnection();
+			CellRegion cellRegion = dataModel.getBounds(new DBContext(localConnection));
+			if (cellRegion != null)
+				return cellRegion.getLastRow();
+			try {
 				localConnection.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
 			}
 		}
-		catch (SQLException e)
-		{
-			e.printStackTrace();
-		}
-	}
-
-	public void setEndRowIndex(int newEndRowIndex, Connection connection, boolean updatetoDB) {
-		this._maxRowIndex=newEndRowIndex;
-		if (updatetoDB)
-			updateMaxValuestoDB(connection);
+		return -1;
 	}
 
 	public int getStartColumnIndex() {
@@ -481,13 +457,18 @@ public class SheetImpl extends AbstractSheetAdv {
 	}
 
 	public int getEndColumnIndex() {
-		return _maxColumnIndex;
-	}
-
-	public void setEndColumnIndex(int newEndColumnIndex, Connection connection,  boolean updatetoDB) {
-		this._maxColumnIndex = newEndColumnIndex;
-		if (updatetoDB)
-			updateMaxValuestoDB(connection);
+		if (dataModel != null) {
+			Connection localConnection = DBHandler.instance.getConnection();
+			CellRegion cellRegion = dataModel.getBounds(new DBContext(localConnection));
+			if (cellRegion != null)
+				return cellRegion.getLastColumn();
+			try {
+				localConnection.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		return -1;
 	}
 
 
@@ -654,8 +635,6 @@ public class SheetImpl extends AbstractSheetAdv {
 
 				shiftRowsStmt1.setInt(1, getDBId());
 				shiftRowsStmt1.execute();
-				setEndRowIndex(_maxRowIndex + size, connection, true);
-
 				connection.commit();
 			} catch (SQLException e) {
 				e.printStackTrace();
@@ -781,8 +760,6 @@ public class SheetImpl extends AbstractSheetAdv {
 
 				shiftRowsStmt1.setInt(1, getDBId());
 				shiftRowsStmt1.execute();
-				setEndRowIndex(_maxRowIndex - size, connection, true);
-
 				connection.commit();
 			} catch (SQLException e) {
 				e.printStackTrace();

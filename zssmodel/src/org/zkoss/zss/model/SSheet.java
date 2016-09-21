@@ -19,7 +19,6 @@ package org.zkoss.zss.model;
 import org.zkoss.zss.model.impl.DBContext;
 import org.zkoss.zss.model.impl.Model;
 
-import java.sql.Connection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -131,13 +130,9 @@ public interface SSheet {
 
 	int getEndRowIndex();
 
-	void setEndRowIndex(int newEndRowIndex, Connection connection, boolean updatetoDB);
-
 	int getStartColumnIndex();
 
 	int getEndColumnIndex();
-
-	void setEndColumnIndex(int newEndColumnIndex, Connection connection, boolean updatetoDB);
 
 	int getStartCellIndex(int rowIdx);
 

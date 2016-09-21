@@ -384,11 +384,6 @@ public class CellImpl extends AbstractCellAdv {
 				}
 			}
 
-			if (getSheet().getEndRowIndex()<getRowIndex())
-				getSheet().setEndRowIndex(getRowIndex(), connection, updateToDB);
-			if (getSheet().getEndColumnIndex()<getColumnIndex())
-				getSheet().setEndColumnIndex(getColumnIndex(), connection, updateToDB);
-
 			if (updateToDB)
 			{
 				getSheet().getBook().checkDBSchema();

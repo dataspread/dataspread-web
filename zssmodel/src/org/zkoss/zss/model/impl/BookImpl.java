@@ -1093,8 +1093,6 @@ public class BookImpl extends AbstractBookAdv{
 			 {
 				SSheet sheet =  createExistingSheet(rs.getString("sheetname"), rs.getInt("sheetid"));
 				 sheet.setDataModel(rs.getString("modelname"));
-				sheet.setEndRowIndex(rs.getInt("maxrow"), null, false);
-				sheet.setEndColumnIndex(rs.getInt("maxcolumn"), null, false);
 			 }
 		}
 		catch (SQLException e)
