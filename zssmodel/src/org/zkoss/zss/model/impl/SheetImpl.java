@@ -405,10 +405,15 @@ public class SheetImpl extends AbstractSheetAdv {
 				preFetchCells(cellRegion);
 				// After prefetch assume this can get a cell.
 				return getCell(rowIdx, columnIdx, proxy);
-			}
-			else {
-				return proxy ? new CellProxy(this, rowIdx, columnIdx) : null;
-			}
+			} else {
+                if (proxy) {
+                    CellProxy cellProxy = new CellProxy(this, rowIdx, columnIdx);
+                    sheetDataCache.put(cellRegion, cellProxy);
+                    return cellProxy;
+                } else {
+                    return null;
+                }
+            }
 		}
 		else {
 			if (proxy) {

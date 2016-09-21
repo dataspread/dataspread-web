@@ -179,6 +179,7 @@ public class BookImpl extends AbstractBookAdv{
 			insertBookStmt.setString(1, getBookName());
 			insertBookStmt.setString(2, getId());
 			insertBookStmt.execute();
+            insertBookStmt.close();
 
 
 			String insertSheets = "INSERT INTO " + bookTable + "_workbook VALUES(?, ?, ?, ?, ?, ?)";
