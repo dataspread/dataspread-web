@@ -56,7 +56,7 @@ public final class FunctionEval {
 	protected static final Function[] functions = produceFunctions();
 
 	private static Function[] produceFunctions() {
-		Function[] retval = new Function[368];
+		Function[] retval = new Function[369];
 
 		retval[0] = new Count();
 		retval[ID.IF] = new IfFunc();
@@ -107,7 +107,7 @@ public final class FunctionEval {
 		retval[58] = FinanceFunction.NPER;
 		retval[59] = FinanceFunction.PMT;
 
-      retval[60] = new Rate();
+      	retval[60] = new Rate();
 		retval[62] = new Irr();
 		retval[63] = NumericFunction.RAND;
 		retval[64] = new Match();
@@ -232,6 +232,12 @@ public final class FunctionEval {
 
 		retval[362] = MinaMaxa.MAXA;
 		retval[363] = MinaMaxa.MINA;
+
+		//add new relational operator functions here
+		//retval[368] = new FirstSelectFunction();
+
+
+
 
 		for (int i = 0; i < retval.length; i++) {
 			//20130927, dennischen@zkoss.org, support to override basic function
