@@ -24,21 +24,25 @@ this part of the code.
 
 ### Commit your branch
 
-1. After you finish one branch, you can make a pull request and commit it to
-  other repositories(your teammates or the master branch).
+1. After you finish your branch or you want to commit the changes, you can commit
+it and push to the repositories(update your branch or merge to your your teammates' branch).
 2. Click VCS->Git->Push, and choose the files which you have changed and you
   want to commit, then check all the fields on the "Before Commit" region except
   for the last one.
 3. Add the detailed comments on your changes to the codes. Then click
-  Commit->Commit and Push.
-4. Go to the bitbucket.org and in the DBSpread-Web repository you click Branches
-  in the left toolbar.
-5. You will see the request you just pushed and it is waited to be checked by
-  the master.
-6. Click on that branch, and correctly choose the origin and the destination
-  where you want to commit the branch to(teammates or the master branch or others),
-  choose to close the branch when it is checked by masters.
-7. Done.
+  Commit->Commit and Push. Only push necessary files to the repository!
+4. If your branch is finalized and you want to merge your branch to the production,
+   you need to make a pull request to master branch.
+5. Go to the bitbucket.org and in the DBSpread-Web repository, click Branches
+   in the left toolbar.
+6. You will see the branch you just pushed, click it to make a pull request.
+7. Correctly choose the origin and the destination where you want to commit the branch
+   to(teammates or the master branch or others). Put both Mangesh and Paul as reviewers.
+   If your branch is finalized and will no longer be used, choose to choose to close
+   the branch when it is checked by masters. While you can always create a new branch if
+   your current branch is closed when you continue your work.
+8. Done.
+
 
 
 
