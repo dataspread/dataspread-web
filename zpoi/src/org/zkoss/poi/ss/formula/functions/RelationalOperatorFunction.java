@@ -2,6 +2,7 @@ package org.zkoss.poi.ss.formula.functions;
 
 import org.zkoss.poi.ss.formula.eval.AreaEval;
 import org.zkoss.poi.ss.formula.eval.EvaluationException;
+import org.zkoss.poi.ss.formula.eval.StringEval;
 import org.zkoss.poi.ss.formula.eval.ValueEval;
 
 /**
@@ -74,7 +75,7 @@ public abstract class RelationalOperatorFunction implements Function {
     };
     
     
-    public static final Function PRODUCT = new TwoRangeFunction() {
+    public static final Function CROSSPRODUCT = new TwoRangeFunction() {
         
         @Override
         protected ValueEval evaluate(AreaEval range1, AreaEval range2) {
@@ -82,6 +83,48 @@ public abstract class RelationalOperatorFunction implements Function {
         }
     };
     
+    
+    public static final Function SELECT = new SelectFunction() {
+        
+        //select with no conditions
+        @Override
+        protected ValueEval evaluate(AreaEval range) {
+            return new StringEval("select");
+        }
+
+        //select with conditions
+        @Override
+        protected ValueEval evaluate(AreaEval range, ValueEval[] args) {
+            return null;
+        }
+    };
+    
+    
+    public static final Function PROJECT = new RangeSchemaFunction() {
+        
+        @Override
+        protected ValueEval evaluate(AreaEval range, ValueEval[] args) {
+            return null;
+        }
+    };
+    
+    
+    public static final Function RENAME = new RangeSchemaFunction() {
+        
+        @Override
+        protected ValueEval evaluate(AreaEval range, ValueEval[] args) {
+            return null;
+        }
+    };   
+    
+    
+    public static final Function JOIN = new JoinFunction() {
+        
+        @Override
+        protected ValueEval evaluate(AreaEval range1, AreaEval range2, ValueEval[] args) {
+            return null;
+        }
+    };
     
     
 }

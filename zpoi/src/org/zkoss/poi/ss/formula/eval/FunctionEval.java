@@ -56,7 +56,7 @@ public final class FunctionEval {
 	protected static final Function[] functions = produceFunctions();
 
 	private static Function[] produceFunctions() {
-		Function[] retval = new Function[369];
+		Function[] retval = new Function[376];
 
 		retval[0] = new Count();
 		retval[ID.IF] = new IfFunc();
@@ -234,7 +234,14 @@ public final class FunctionEval {
 		retval[363] = MinaMaxa.MINA;
 
 		//add new relational operator functions here
-		//retval[368] = new FirstSelectFunction();
+		retval[368] = RelationalOperatorFunction.UNION;
+		retval[369] = RelationalOperatorFunction.DIFFERENCE;
+		retval[370] = RelationalOperatorFunction.INTERSECTION;
+		retval[371] = RelationalOperatorFunction.CROSSPRODUCT;
+		retval[372] = RelationalOperatorFunction.SELECT;
+		retval[373] = RelationalOperatorFunction.PROJECT;
+		retval[374] = RelationalOperatorFunction.RENAME;
+		retval[375] = RelationalOperatorFunction.JOIN;
 
 
 

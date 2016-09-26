@@ -5,36 +5,35 @@ import org.zkoss.poi.ss.formula.eval.*;
 import java.util.Arrays;
 
 /**
- * Abstract class to be inherited by join function in RelationalOperatorFunction.
+ * Abstract class to be inherited by project and rename functions in RelationalOperatorFunction.
  * Created by Danny on 9/22/2016.
  */
-public abstract class JoinFunction implements Function {
+public abstract class RangeSchemaFunction implements Function {
 
     public final ValueEval evaluate (ValueEval[] args, int srcCellRow, int srcCellCol) {
         
         try {
-            
-            if (args.length < 3) {
+
+            if (args.length < 2) {
                 
                 return ErrorEval.VALUE_INVALID;
                 
             }
             
-            AreaEval range1 = convertRangeArg(args[0]);
-            AreaEval range2 = convertRangeArg(args[1]);
-            ValueEval[] conditions = Arrays.copyOfRange(args, 1, args.length - 1);
+            AreaEval range = convertRangeArg(args[0]);
+            ValueEval[] schema = Arrays.copyOfRange(args, 1, args.length - 1);
             
-            return evaluate(range1, range2, conditions);            
+            return evaluate(range, schema);            
             
         }
         catch (EvaluationException e) {
             return e.getErrorEval();
-        }
+        }        
         
     }
     
     
-    protected abstract ValueEval evaluate(AreaEval range1, AreaEval range2, ValueEval[] args);
+    protected abstract ValueEval evaluate(AreaEval range, ValueEval[] args);
 
 
     /**
@@ -55,5 +54,4 @@ public abstract class JoinFunction implements Function {
         }
         throw new EvaluationException(ErrorEval.VALUE_INVALID);
     }
-    
 }
