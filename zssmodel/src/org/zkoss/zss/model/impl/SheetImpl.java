@@ -1164,12 +1164,23 @@ public class SheetImpl extends AbstractSheetAdv {
 		}
 
 		int size = lastColumnIdx - columnIdx + 1;
-		insertAndSplitColumnArray(columnIdx,size);
-		
-		for(AbstractRowAdv row:_rows.values()){
-			row.insertCell(columnIdx,size);
-		}
-		
+        //TODO: Store column based attributes
+        try (Connection connection = DBHandler.instance.getConnection()) {
+
+            DBContext dbContext = new DBContext(connection);
+            dataModel.insertCols(dbContext, columnIdx, size);
+            connection.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        // Update Column numbers for cached cells
+        List<AbstractCellAdv> cellsToShift = new LinkedList<>(sheetDataCache.values());
+        cellsToShift.stream()
+                .filter(e -> e.getColumnIndex() >= columnIdx)
+                .forEach(e -> e.setColumn(e.getColumnIndex() + size));
+
+
 		//ZSS-619, should clear formula for entire effected region
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
 		

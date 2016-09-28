@@ -100,8 +100,8 @@ class CellProxy extends AbstractCellAdv {
 
 	@Override
 	public void setColumn(int column) {
-        throw new UnsupportedOperationException("readonly");
-	}
+        _columnIdx = column;
+    }
 
 	@Override
 	public void setFormulaValue(String formula, Connection connection, boolean updateToDB) {
