@@ -22,7 +22,7 @@ public abstract class JoinFunction implements Function {
             
             AreaEval range1 = convertRangeArg(args[0]);
             AreaEval range2 = convertRangeArg(args[1]);
-            ValueEval[] conditions = Arrays.copyOfRange(args, 1, args.length - 1);
+            ValueEval[] conditions = Arrays.copyOfRange(args, 1, args.length);
             
             return evaluate(range1, range2, conditions);            
             

@@ -21,7 +21,7 @@ public abstract class RangeSchemaFunction implements Function {
             }
             
             AreaEval range = convertRangeArg(args[0]);
-            ValueEval[] schema = Arrays.copyOfRange(args, 1, args.length - 1);
+            ValueEval[] schema = Arrays.copyOfRange(args, 1, args.length);
             
             return evaluate(range, schema);            
             
