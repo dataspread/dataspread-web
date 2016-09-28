@@ -14,7 +14,7 @@ public abstract class JoinFunction implements Function {
         
         try {
             
-            if (args.length < 3) {
+            if (args.length < 2) {
                 
                 return ErrorEval.VALUE_INVALID;
                 
