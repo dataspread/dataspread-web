@@ -58,118 +58,37 @@ public abstract class RelationalOperatorFunction implements Function {
                 
             }
         }
+
+
+        /**
+         * Helper method for UNION to determine which indices to keep (distinct rows)
+         * @param rows
+         * @return
+         */
+        private boolean[] getDistinctIndices(Row[] rows) {
+
+            boolean[] indicesToKeep = new boolean[rows.length];
+            Arrays.fill(indicesToKeep, true);
+
+            for (int r1 = 0; r1 < rows.length; r1++) {
+                for (int r2 = r1 + 1; r2 < rows.length; r2++) {
+
+                    Row row1 = rows[r1];
+                    Row row2 = rows[r2];
+
+                    if (row1.matches(row2)) {
+
+                        indicesToKeep[r2] = false;
+
+                    }
+
+                }//end r2 for loop
+            }//end r1 for loop
+
+            return indicesToKeep;
+
+        }
     };
-
-
-    /**
-     * Helper method for UNION to determine which indices to keep (distinct rows)
-     * @param rows
-     * @return
-     */
-    private static boolean[] getDistinctIndices(Row[] rows) {
-
-        boolean[] indicesToKeep = new boolean[rows.length];
-        Arrays.fill(indicesToKeep, true);
-
-        for (int r1 = 0; r1 < rows.length; r1++) {
-            for (int r2 = r1 + 1; r2 < rows.length; r2++) {
-
-                Row row1 = rows[r1];
-                Row row2 = rows[r2];
-
-                if (row1.matches(row2)) {
-
-                    indicesToKeep[r2] = false;
-
-                }
-
-            }//end r2 for loop
-        }//end r1 for loop
-
-        return indicesToKeep;
-
-    }
-
-
-    /**
-     * Helper method for getRowsToKeep to find how many rows are going to be in the result
-     * @param indicesToKeep
-     * @return
-     */
-    private static int getNumToKeep(boolean[] indicesToKeep) {
-        
-        int numToKeep = 0;
-        
-        for (int i = 0; i < indicesToKeep.length; i++) {
-            if (indicesToKeep[i]) {
-                numToKeep++;
-            }
-        }
-        
-        return numToKeep;
-        
-    }
-
-
-    /**
-     * Helper method for relational operator functions to get the resulting set of rows
-     * @param indicesToKeep
-     * @param rows
-     * @return
-     */
-    private static Row[] getRowsToKeep(boolean[] indicesToKeep, Row[] rows) {
-
-        int numToKeep = getNumToKeep(indicesToKeep);
-
-        Row[] rowsToKeep = new Row[numToKeep];
-        int insertIndex = 0;
-
-        for (int r = 0; r < indicesToKeep.length; r++) {
-
-            if (indicesToKeep[r]) {
-                rowsToKeep[insertIndex++] = rows[r];
-            }
-        }
-        
-        return rowsToKeep;
-        
-    }
-
-
-    /**
-     * Helper method to check if two rows match
-     * @param row1
-     * @param row2
-     * @return
-     */
-    private static boolean rowsMatch(ValueEval[] row1, ValueEval[] row2) {
-        
-        if (row1.length != row2.length) {
-            return false;
-        }
-        
-        int width = row1.length;
-        boolean matches = true;
-        
-        //Iterate over columns
-        for (int c = 0; c < width; c++) {
-
-            ValueEval value1 = row1[c];
-            ValueEval value2 = row2[c];
-
-            //arguments for srcCellRow and srcCellCol not used in createCriteriaPredicate, so just use 0, 0
-            I_MatchPredicate matchPredicate = Countif.createCriteriaPredicate(value1, 0, 0);
-
-            if (!matchPredicate.matches(value2)) {
-                matches = false;
-                break;
-            }
-        }
-        
-        return matches;
-        
-        
-    }
 
 
     /**
@@ -199,40 +118,40 @@ public abstract class RelationalOperatorFunction implements Function {
 
             }
         }
+
+
+        /**
+         * Helper function for getRows1DiffRows2 to find the indices in rows1 that don't have
+         * matching rows in rows2.
+         * @param rows1
+         * @param rows2
+         * @return
+         */
+        private boolean[] getIndicesNotInRows2(Row[] rows1, Row[] rows2) {
+
+            boolean[] indicesToKeep = new boolean[rows1.length];
+            Arrays.fill(indicesToKeep, true);
+
+            for (int r1 = 0; r1 < rows1.length; r1++) {
+                for (int r2 = 0; r2 < rows1.length; r2++) {
+
+                    Row row1 = rows1[r1];
+                    Row row2 = rows2[r2];
+
+                    //this row exists in the other range, so don't include it
+                    if (row1.matches(row2)) {
+
+                        indicesToKeep[r1] = false;
+                        break;
+
+                    }
+                }//end r2 for loop
+            }//end r1 for loop
+
+            return indicesToKeep;
+
+        }
     };
-
-
-    /**
-     * Helper function for getRows1DiffRows2 to find the indices in rows1 that don't have
-     * matching rows in rows2.
-     * @param rows1
-     * @param rows2
-     * @return
-     */
-    private static boolean[] getIndicesNotInRows2(Row[] rows1, Row[] rows2) {
-        
-        boolean[] indicesToKeep = new boolean[rows1.length];
-        Arrays.fill(indicesToKeep, true);
-        
-        for (int r1 = 0; r1 < rows1.length; r1++) {            
-            for (int r2 = 0; r2 < rows1.length; r2++) {
-                
-                Row row1 = rows1[r1];
-                Row row2 = rows2[r2];
-                
-                //this row exists in the other range, so don't include it
-                if (row1.matches(row2)) {
-                    
-                    indicesToKeep[r1] = false;
-                    break;
-                    
-                }                
-            }//end r2 for loop
-        }//end r1 for loop
-        
-        return indicesToKeep;
-        
-    }
 
 
     /**
@@ -262,37 +181,37 @@ public abstract class RelationalOperatorFunction implements Function {
 
             }
         }
-    };
 
 
-    /**
-     * Helper method for INTERSECTION to find the indices in rows1 that have matching rows in rows2
-     * @param rows1
-     * @param rows2
-     * @return
-     */
-    private static boolean[] getMatchingIndices(Row[] rows1, Row[] rows2) {
+        /**
+         * Helper method for INTERSECTION to find the indices in rows1 that have matching rows in rows2
+         * @param rows1
+         * @param rows2
+         * @return
+         */
+        private boolean[] getMatchingIndices(Row[] rows1, Row[] rows2) {
 
-        boolean[] indicesToKeep = new boolean[rows1.length];
-        Arrays.fill(indicesToKeep, false);
-        
-        for (int r1 = 0; r1 < rows1.length; r1++) {
-            for (int r2 = 0; r2 < rows2.length; r2++) {
-                
-                Row row1 = rows1[r1];
-                Row row2 = rows2[r2];
-                
-                if (row1.matches(row2)) {
-                    indicesToKeep[r1] = true;
-                    break;
+            boolean[] indicesToKeep = new boolean[rows1.length];
+            Arrays.fill(indicesToKeep, false);
+
+            for (int r1 = 0; r1 < rows1.length; r1++) {
+                for (int r2 = 0; r2 < rows2.length; r2++) {
+
+                    Row row1 = rows1[r1];
+                    Row row2 = rows2[r2];
+
+                    if (row1.matches(row2)) {
+                        indicesToKeep[r1] = true;
+                        break;
+                    }
+
                 }
-                
             }
+
+            return indicesToKeep;
+
         }
-        
-        return indicesToKeep;
-        
-    }
+    };
     
     
     public static final Function CROSSPRODUCT = new TwoRangeFunction() {
@@ -328,6 +247,49 @@ public abstract class RelationalOperatorFunction implements Function {
             }
         }
     };
+    
+    
+    public static final Function SELECT = new SelectFunction() {
+        
+        //select with no conditions
+        @Override
+        protected ValueEval evaluate(AreaEval range) {
+            return new StringEval("not implemented");
+        }
+
+        //select with conditions
+        @Override
+        protected ValueEval evaluate(AreaEval range, ValueEval[] args) {
+            return new StringEval("not implemented");
+        }
+    };
+    
+    
+    public static final Function PROJECT = new RangeSchemaFunction() {
+        
+        @Override
+        protected ValueEval evaluate(AreaEval range, ValueEval[] args) {
+            return new StringEval("not implemented");
+        }
+    };
+    
+    
+    public static final Function RENAME = new RangeSchemaFunction() {
+        
+        @Override
+        protected ValueEval evaluate(AreaEval range, ValueEval[] args) {
+            return new StringEval("not implemented");
+        }
+    };   
+    
+    
+    public static final Function JOIN = new JoinFunction() {
+        
+        @Override
+        protected ValueEval evaluate(AreaEval range1, AreaEval range2, ValueEval[] args) {
+            return new StringEval("not implemented");
+        }
+    };
 
 
     /**
@@ -346,54 +308,51 @@ public abstract class RelationalOperatorFunction implements Function {
 
         }
     }
-    
-    
-    public static final Function SELECT = new SelectFunction() {
-        
-        //select with no conditions
-        @Override
-        protected ValueEval evaluate(AreaEval range) {
-            return new StringEval("select");
+
+
+    /**
+     * Helper method for getRowsToKeep to find how many rows are going to be in the result
+     * @param indicesToKeep
+     * @return
+     */
+    private static int getNumToKeep(boolean[] indicesToKeep) {
+
+        int numToKeep = 0;
+
+        for (int i = 0; i < indicesToKeep.length; i++) {
+            if (indicesToKeep[i]) {
+                numToKeep++;
+            }
         }
 
-        //select with conditions
-        @Override
-        protected ValueEval evaluate(AreaEval range, ValueEval[] args) {
-            
-            int height = range.getHeight();
-            int width = range.getWidth();
-            
-            ValueEval result = new StringEval(args[0].toString());
-            return result;
+        return numToKeep;
+
+    }
+
+
+    /**
+     * Helper method for relational operator functions to get the resulting set of rows
+     * @param indicesToKeep
+     * @param rows
+     * @return
+     */
+    private static Row[] getRowsToKeep(boolean[] indicesToKeep, Row[] rows) {
+
+        int numToKeep = getNumToKeep(indicesToKeep);
+
+        Row[] rowsToKeep = new Row[numToKeep];
+        int insertIndex = 0;
+
+        for (int r = 0; r < indicesToKeep.length; r++) {
+
+            if (indicesToKeep[r]) {
+                rowsToKeep[insertIndex++] = rows[r];
+            }
         }
-    };
-    
-    
-    public static final Function PROJECT = new RangeSchemaFunction() {
-        
-        @Override
-        protected ValueEval evaluate(AreaEval range, ValueEval[] args) {
-            return null;
-        }
-    };
-    
-    
-    public static final Function RENAME = new RangeSchemaFunction() {
-        
-        @Override
-        protected ValueEval evaluate(AreaEval range, ValueEval[] args) {
-            return null;
-        }
-    };   
-    
-    
-    public static final Function JOIN = new JoinFunction() {
-        
-        @Override
-        protected ValueEval evaluate(AreaEval range1, AreaEval range2, ValueEval[] args) {
-            return null;
-        }
-    };
+
+        return rowsToKeep;
+
+    }
 
 
     /**
@@ -422,7 +381,13 @@ public abstract class RelationalOperatorFunction implements Function {
         
         return new StringEval(evalString);
     }
+
     
+    /**
+     * Helper method for evalHelper that gets a string of the value
+     * @param eval
+     * @return
+     */
     private static String getStringVal (ValueEval eval) {
         
         if (eval instanceof NumberEval) {
@@ -431,6 +396,8 @@ public abstract class RelationalOperatorFunction implements Function {
         else if (eval instanceof StringEval) {
             return ((StringEval) eval).getStringValue();
         }
+        
+        //TODO: Check other eval instances
         
         return null;
         
@@ -544,7 +511,7 @@ public abstract class RelationalOperatorFunction implements Function {
             
         }
         
-    }
+    }//end Row class
     
     
 }
