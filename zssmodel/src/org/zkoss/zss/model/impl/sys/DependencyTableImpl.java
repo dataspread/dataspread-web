@@ -1,20 +1,13 @@
 package org.zkoss.zss.model.impl.sys;
 
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Queue;
-import java.util.Set;
-
 import org.zkoss.util.logging.Log;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SBookSeries;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.dependency.Ref.RefType;
+
+import java.util.*;
+import java.util.Map.Entry;
 
 /* DependencyTableImpl.java
 
@@ -34,27 +27,47 @@ import org.zkoss.zss.model.sys.dependency.Ref.RefType;
  * @since 3.5.0
  */
 public class DependencyTableImpl extends DependencyTableAdv {
-	private static final long serialVersionUID = 1L;
-	private static final Log _logger = Log.lookup(DependencyTableImpl.class.getName());
 	protected static final EnumSet<RefType> _regionTypes = EnumSet.of(RefType.BOOK, RefType.SHEET, RefType.AREA,
 			RefType.CELL, RefType.TABLE);
-
-	/** Map<dependant, precedent> */
+    private static final long serialVersionUID = 1L;
+    private static final Log _logger = Log.lookup(DependencyTableImpl.class.getName());
+    /** Map<dependant, precedent> */
 	protected Map<Ref, Set<Ref>> _map = new LinkedHashMap<Ref, Set<Ref>>();
 	protected Map<Ref, Set<Ref>> _evaledMap = new LinkedHashMap<Ref, Set<Ref>>();
-	protected SBookSeries _books;
+    protected Map<Ref, Set<Ref>> _backward_map = new LinkedHashMap<Ref, Set<Ref>>();
+    protected SBookSeries _books;
+
 
 	public DependencyTableImpl() {
 	}
+
 
 	@Override
 	public void setBookSeries(SBookSeries series) {
 		this._books = series;
 	}
 
+
 	@Override
 	public void add(Ref dependant, Ref precedent) {
-		Set<Ref> precedents = _map.get(dependant);
+        addForward(dependant, precedent);
+        addBackward(dependant, precedent);
+    }
+
+
+    private void addBackward(Ref dependant, Ref precedent) {
+        Set<Ref> dependants = _backward_map.get(precedent);
+        if (dependants == null) {
+            dependants = new LinkedHashSet<Ref>();
+            _backward_map.put(precedent, dependants);
+        }
+        dependants.add(precedent);
+
+    }
+
+
+    private void addForward(Ref dependant, Ref precedent) {
+        Set<Ref> precedents = _map.get(dependant);
 		if(precedents == null) {
 			precedents = new LinkedHashSet<Ref>();
 			_map.put(dependant, precedents);
@@ -65,19 +78,34 @@ public class DependencyTableImpl extends DependencyTableAdv {
 	public void clear() {
 		_map.clear();
 		_evaledMap.clear();
-	}
+        _backward_map.clear();
+    }
 
 	@Override
 	public void clearDependents(Ref dependant) {
-		_map.remove(dependant);
-		_evaledMap.remove(dependant);
+        //Clear forward dependents
+        Set<Ref> precedents = _map.get(dependant);
+        if (precedents != null) {
+            for (Ref precedent : precedents) {
+                _backward_map.remove(precedent);
+            }
+        }
+        //Clear backward dependents
+        Set<Ref> dependents = _backward_map.get(dependant);
+        if (dependents != null) {
+            for (Ref dependent : dependents) {
+                _map.remove(dependent);
+            }
+        }
+        _evaledMap.remove(dependant);
+
 	}
 
+
 	@Override
-	public Set<Ref> getDependents(Ref precedent) {
-		return getDependents(precedent,_map);
-	}
-	
+    public Set<Ref> getBackwardDependents(Ref precedent) {
+        return getBackwardDependents(precedent, _backward_map);
+    }
 	@Override
 	public Set<Ref> getEvaluatedDependents(Ref precedent) {
 		return getDependents(precedent,_evaledMap);
@@ -89,7 +117,30 @@ public class DependencyTableImpl extends DependencyTableAdv {
 		if(precedents!=null){
 			_evaledMap.put(dependent, precedents);
 		}
-	}
+    }
+
+    private Set<Ref> getBackwardDependents(Ref precedent, Map<Ref, Set<Ref>> base) {
+
+        if (_regionTypes.contains(precedent.getType())) {
+            SBook book = _books.getBook(precedent.getBookName());
+            if (book == null) { // no such book
+                return Collections.emptySet();
+            }
+            int[] aSheetIndexes = getSheetIndex(book, precedent);
+            if (aSheetIndexes[0] < 0) { // no such sheet
+                return Collections.emptySet();
+            }
+        }
+        Set<Ref> result = new LinkedHashSet<Ref>();
+        result.addAll(_backward_map.get(precedent));
+
+        for (Ref directDependent : _backward_map.get(precedent)) {
+            Set<Ref> indirectDependent = _backward_map.get(directDependent);
+            result.addAll(indirectDependent);
+        }
+
+        return result;
+    }
 	
 	private Set<Ref> getDependents(Ref precedent,Map<Ref, Set<Ref>> base) {
 		// ZSS-818
@@ -135,27 +186,9 @@ public class DependencyTableImpl extends DependencyTableAdv {
 	
 	@Override
 	public Set<Ref> getDirectDependents(Ref precedent) {
-		// search direct dependents 
-		Set<Ref> result = new LinkedHashSet<Ref>();
-		RefType precedentType = precedent.getType();
-		for(Entry<Ref, Set<Ref>> entry : _map.entrySet()) {
-			Ref target = entry.getKey();
-			if(!result.contains(target)) {
-				//ZSS-581, should also match to precedent (especially for larger scope ref).
-				if((precedentType==RefType.BOOK || precedentType==RefType.SHEET) && isMatched(target, precedent)) {
-					result.add(target);
-					continue;
-				}
-				for(Ref pre : entry.getValue()) {
-					if(isMatched(pre, precedent)) {
-						result.add(target);
-						break;
-					}
-				}
-			}
-		}
-		return result;
-	}	
+        Set<Ref> directDependents = _backward_map.get(precedent);
+        return directDependents;
+    }
 
 	private boolean isMatched(Ref a, Ref b) {
 		if(_regionTypes.contains(a.getType()) && _regionTypes.contains(b.getType())) {
@@ -278,19 +311,21 @@ public class DependencyTableImpl extends DependencyTableAdv {
 		DependencyTableImpl another = (DependencyTableImpl)dependencyTable;
 		_map.putAll(another._map);
 		_evaledMap.putAll(another._evaledMap);
-	}
+        _backward_map.putAll(another._backward_map);
+    }
 	
 	@Override
 	public Set<Ref> searchPrecedents(RefFilter filter){
 		Set<Ref> precedents = new LinkedHashSet<Ref>();
-		for(Entry<Ref, Set<Ref>> entry : _map.entrySet()) {
-			for(Ref pre : entry.getValue()) {
-				if(filter.accept(pre)) {
-					precedents.add(pre);
-				}
-			}
+
+        for (Entry<Ref, Set<Ref>> entry : _backward_map.entrySet()) {
+            Ref pre = entry.getKey();
+            if (filter.accept(pre)) {
+                precedents.add(pre);
+            }
 		}
-		return precedents;
+
+        return precedents;
 	}
 	
 	public void dump(){
