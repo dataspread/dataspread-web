@@ -33,7 +33,7 @@ public abstract class SelectFunction implements Function {
             //evaluate with conditions
             else {
                 
-                ValueEval[] conditions = Arrays.copyOfRange(args, 1, args.length - 1);
+                ValueEval[] conditions = Arrays.copyOfRange(args, 1, args.length);
                 return evaluate(range, conditions);
                 
             }           
