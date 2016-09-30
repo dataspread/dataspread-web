@@ -34,7 +34,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
     /** Map<dependant, precedent> */
 	protected Map<Ref, Set<Ref>> _map = new LinkedHashMap<Ref, Set<Ref>>();
 	protected Map<Ref, Set<Ref>> _evaledMap = new LinkedHashMap<Ref, Set<Ref>>();
-    protected Map<Ref, Set<Ref>> _backward_map = new LinkedHashMap<Ref, Set<Ref>>();
+    protected Map<Ref, Set<Ref>> _backwardMap = new LinkedHashMap<Ref, Set<Ref>>();
     protected SBookSeries _books;
 
 
@@ -56,10 +56,10 @@ public class DependencyTableImpl extends DependencyTableAdv {
 
 
     private void addBackward(Ref dependant, Ref precedent) {
-        Set<Ref> dependants = _backward_map.get(precedent);
+        Set<Ref> dependants = _backwardMap.get(precedent);
         if (dependants == null) {
             dependants = new LinkedHashSet<Ref>();
-            _backward_map.put(precedent, dependants);
+            _backwardMap.put(precedent, dependants);
         }
         dependants.add(precedent);
 
@@ -78,33 +78,28 @@ public class DependencyTableImpl extends DependencyTableAdv {
 	public void clear() {
 		_map.clear();
 		_evaledMap.clear();
-        _backward_map.clear();
+        _backwardMap.clear();
     }
 
 	@Override
 	public void clearDependents(Ref dependant) {
-        //Clear forward dependents
+        _map.remove(dependant);
+        _evaledMap.remove(dependant);
+
+        //Clear backward dependents
         Set<Ref> precedents = _map.get(dependant);
         if (precedents != null) {
             for (Ref precedent : precedents) {
-                _backward_map.remove(precedent);
-            }
-        }
-        //Clear backward dependents
-        Set<Ref> dependents = _backward_map.get(dependant);
-        if (dependents != null) {
-            for (Ref dependent : dependents) {
-                _map.remove(dependent);
+                _backwardMap.remove(precedent);
             }
         }
         _evaledMap.remove(dependant);
-
 	}
 
 
 	@Override
     public Set<Ref> getBackwardDependents(Ref precedent) {
-        return getBackwardDependents(precedent, _backward_map);
+        return getBackwardDependents(precedent, _backwardMap);
     }
 	@Override
 	public Set<Ref> getEvaluatedDependents(Ref precedent) {
@@ -132,13 +127,15 @@ public class DependencyTableImpl extends DependencyTableAdv {
             }
         }
         Set<Ref> result = new LinkedHashSet<Ref>();
-        result.addAll(_backward_map.get(precedent));
+        return recursivelyGetBackwardDependents(precedent, base, result);
 
-        for (Ref directDependent : _backward_map.get(precedent)) {
-            Set<Ref> indirectDependent = _backward_map.get(directDependent);
-            result.addAll(indirectDependent);
+    }
+
+    private Set<Ref> recursivelyGetBackwardDependents(Ref precedent, Map<Ref, Set<Ref>> base, Set<Ref> result) {
+        result.addAll(_backwardMap.get(precedent));
+        for (Ref directDependent : _backwardMap.get(precedent)) {
+            result = recursivelyGetBackwardDependents(directDependent, base, result);
         }
-
         return result;
     }
 	
@@ -186,7 +183,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 	
 	@Override
 	public Set<Ref> getDirectDependents(Ref precedent) {
-        Set<Ref> directDependents = _backward_map.get(precedent);
+        Set<Ref> directDependents = _backwardMap.get(precedent);
         return directDependents;
     }
 
@@ -311,14 +308,14 @@ public class DependencyTableImpl extends DependencyTableAdv {
 		DependencyTableImpl another = (DependencyTableImpl)dependencyTable;
 		_map.putAll(another._map);
 		_evaledMap.putAll(another._evaledMap);
-        _backward_map.putAll(another._backward_map);
+        _backwardMap.putAll(another._backwardMap);
     }
 	
 	@Override
 	public Set<Ref> searchPrecedents(RefFilter filter){
 		Set<Ref> precedents = new LinkedHashSet<Ref>();
 
-        for (Entry<Ref, Set<Ref>> entry : _backward_map.entrySet()) {
+        for (Entry<Ref, Set<Ref>> entry : _backwardMap.entrySet()) {
             Ref pre = entry.getKey();
             if (filter.accept(pre)) {
                 precedents.add(pre);
