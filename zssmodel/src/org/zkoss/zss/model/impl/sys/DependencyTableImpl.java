@@ -8,7 +8,6 @@ import org.zkoss.zss.model.sys.dependency.Ref.RefType;
 
 import java.util.*;
 import java.util.Map.Entry;
-
 /* DependencyTableImpl.java
 
  Purpose:
@@ -41,19 +40,43 @@ public class DependencyTableImpl extends DependencyTableAdv {
 	public DependencyTableImpl() {
 	}
 
-
 	@Override
 	public void setBookSeries(SBookSeries series) {
 		this._books = series;
 	}
 
-
 	@Override
-	public void add(Ref dependant, Ref precedent) {
-        addForward(dependant, precedent);
-        addBackward(dependant, precedent);
+    public void add(Ref dependant, Ref precedent) {
+
+        if (_map.get(precedent) == null) {
+            addForward(dependant, precedent);
+            addBackward(dependant, precedent);
+        } else {
+            boolean isCyclic = true;
+            try {
+                isCyclic = DFSdetectCyclicDependencies(dependant, precedent);
+            } catch (MyOwnException e) {
+                e.printStackTrace();
+                return;
+            }
+            if (!isCyclic) {
+                addForward(dependant, precedent);
+                addBackward(dependant, precedent);
+            }
+        }
     }
 
+    private boolean DFSdetectCyclicDependencies(Ref target, Ref ref) throws MyOwnException {
+        if (ref.equals(target))
+            throw new MyOwnException("Cyclic dependecies detected!");
+        if (ref != null) {
+            for (Ref precedent : _map.get(ref)) {
+                if (precedent != null)
+                    DFSdetectCyclicDependencies(target, precedent);
+            }
+        }
+        return false;
+    }
 
     private void addBackward(Ref dependant, Ref precedent) {
         Set<Ref> dependants = _backwardMap.get(precedent);
@@ -64,7 +87,6 @@ public class DependencyTableImpl extends DependencyTableAdv {
         dependants.add(precedent);
 
     }
-
 
     private void addForward(Ref dependant, Ref precedent) {
         Set<Ref> precedents = _map.get(dependant);
@@ -84,7 +106,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 	@Override
 	public void clearDependents(Ref dependant) {
         _map.remove(dependant);
-        _evaledMap.remove(dependant);
+
 
         //Clear backward dependents
         Set<Ref> precedents = _map.get(dependant);
@@ -96,16 +118,16 @@ public class DependencyTableImpl extends DependencyTableAdv {
         _evaledMap.remove(dependant);
 	}
 
-
 	@Override
     public Set<Ref> getBackwardDependents(Ref precedent) {
         return getBackwardDependents(precedent, _backwardMap);
     }
+
 	@Override
 	public Set<Ref> getEvaluatedDependents(Ref precedent) {
 		return getDependents(precedent,_evaledMap);
 	}
-	
+
 	@Override
 	public void setEvaluated(Ref dependent){
 		Set<Ref> precedents = _map.get(dependent);
@@ -138,11 +160,11 @@ public class DependencyTableImpl extends DependencyTableAdv {
         }
         return result;
     }
-	
+
 	private Set<Ref> getDependents(Ref precedent,Map<Ref, Set<Ref>> base) {
 		// ZSS-818
-		if (_regionTypes.contains(precedent.getType())) { 
-			SBook book = _books.getBook(precedent.getBookName());
+        if (_regionTypes.contains(precedent.getType())) {
+            SBook book = _books.getBook(precedent.getBookName());
 			if (book == null) { // no such book
 				return Collections.emptySet();
 			}
@@ -151,8 +173,8 @@ public class DependencyTableImpl extends DependencyTableAdv {
 				return Collections.emptySet();
 			}
 		}
-		
-		// search dependents and their dependents recursively
+
+        // search dependents and their dependents recursively
 		Set<Ref> result = new LinkedHashSet<Ref>();
 		Queue<Ref> queue = new LinkedList<Ref>();
 		queue.add(precedent);
@@ -187,7 +209,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
         return directDependents;
     }
 
-	private boolean isMatched(Ref a, Ref b) {
+    private boolean isMatched(Ref a, Ref b) {
 		if(_regionTypes.contains(a.getType()) && _regionTypes.contains(b.getType())) {
 			return isIntersected(a, b);
 		} else {
@@ -310,8 +332,8 @@ public class DependencyTableImpl extends DependencyTableAdv {
 		_evaledMap.putAll(another._evaledMap);
         _backwardMap.putAll(another._backwardMap);
     }
-	
-	@Override
+
+    @Override
 	public Set<Ref> searchPrecedents(RefFilter filter){
 		Set<Ref> precedents = new LinkedHashSet<Ref>();
 
@@ -340,7 +362,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 		return _map.get(dependent);
 	}
 
-	//ZSS-815
+    //ZSS-815
 	@Override
 	public void adjustSheetIndex(String bookName, int index, int size) {
 		// do nothing
@@ -351,4 +373,10 @@ public class DependencyTableImpl extends DependencyTableAdv {
 	public void moveSheetIndex(String bookName, int oldIndex, int newIndex) {
 		// do nothing
 	}
+
+    class MyOwnException extends Exception {
+        public MyOwnException(String msg) {
+            super(msg);
+        }
+    }
 }
