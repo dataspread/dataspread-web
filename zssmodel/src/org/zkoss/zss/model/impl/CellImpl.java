@@ -86,7 +86,7 @@ public class CellImpl extends AbstractCellAdv {
 		return cellImpl;
 	}
 
-	private static boolean valueEuqals(Object val1, Object val2) {
+	private static boolean valueEquals(Object val1, Object val2) {
 		return val1 == val2 || (val1 != null && val1.equals(val2));
 	}
 
@@ -444,7 +444,7 @@ public class CellImpl extends AbstractCellAdv {
 	protected void setValue(Object newVal, boolean aString, Connection connection, boolean updateToDB) {
 		CellValue oldVal = getCellValue();
 		if( (oldVal==null && newVal==null) ||
-			(oldVal != null && valueEuqals(oldVal.getValue(),newVal))) {
+				(oldVal != null && valueEquals(oldVal.getValue(), newVal))) {
 			return;
 		}
 
