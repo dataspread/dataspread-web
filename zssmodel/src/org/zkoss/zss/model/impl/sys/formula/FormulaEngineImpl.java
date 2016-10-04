@@ -11,57 +11,11 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
  */
 package org.zkoss.zss.model.impl.sys.formula;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.zkoss.poi.ss.formula.CollaboratingWorkbooksEnvironment;
-import org.zkoss.poi.ss.formula.DependencyTracker;
-import org.zkoss.poi.ss.formula.EvaluationCell;
-import org.zkoss.poi.ss.formula.EvaluationSheet;
-import org.zkoss.poi.ss.formula.EvaluationWorkbook;
+import org.zkoss.poi.ss.formula.*;
 import org.zkoss.poi.ss.formula.EvaluationWorkbook.ExternalSheet;
-import org.zkoss.poi.ss.formula.ExternSheetReferenceToken;
-import org.zkoss.poi.ss.formula.FormulaParseException;
-import org.zkoss.poi.ss.formula.FormulaParser;
-import org.zkoss.poi.ss.formula.FormulaParsingWorkbook;
-import org.zkoss.poi.ss.formula.FormulaRenderer;
-import org.zkoss.poi.ss.formula.FormulaType;
-import org.zkoss.poi.ss.formula.IStabilityClassifier;
-import org.zkoss.poi.ss.formula.PtgShifter;
-import org.zkoss.poi.ss.formula.WorkbookEvaluator;
-import org.zkoss.poi.ss.formula.eval.AreaEval;
-import org.zkoss.poi.ss.formula.eval.BlankEval;
-import org.zkoss.poi.ss.formula.eval.BoolEval;
-import org.zkoss.poi.ss.formula.eval.ErrorEval;
-import org.zkoss.poi.ss.formula.eval.EvaluationException;
-import org.zkoss.poi.ss.formula.eval.NotImplementedException;
-import org.zkoss.poi.ss.formula.eval.NumberEval;
-import org.zkoss.poi.ss.formula.eval.RefEval;
-import org.zkoss.poi.ss.formula.eval.StringEval;
-import org.zkoss.poi.ss.formula.eval.ValueEval;
-import org.zkoss.poi.ss.formula.eval.ValuesEval;
+import org.zkoss.poi.ss.formula.eval.*;
 import org.zkoss.poi.ss.formula.function.FunctionMetadataRegistry;
-import org.zkoss.poi.ss.formula.ptg.AbstractFunctionPtg;
-import org.zkoss.poi.ss.formula.ptg.Area3DPtg;
-import org.zkoss.poi.ss.formula.ptg.AreaPtg;
-import org.zkoss.poi.ss.formula.ptg.AreaPtgBase;
-import org.zkoss.poi.ss.formula.ptg.FuncPtg;
-import org.zkoss.poi.ss.formula.ptg.NamePtg;
-import org.zkoss.poi.ss.formula.ptg.NameXPtg;
-import org.zkoss.poi.ss.formula.ptg.ParenthesisPtg;
-import org.zkoss.poi.ss.formula.ptg.Ptg;
-import org.zkoss.poi.ss.formula.ptg.Ref3DPtg;
-import org.zkoss.poi.ss.formula.ptg.RefPtg;
-import org.zkoss.poi.ss.formula.ptg.RefPtgBase;
-import org.zkoss.poi.ss.formula.ptg.TablePtg;
+import org.zkoss.poi.ss.formula.ptg.*;
 import org.zkoss.poi.ss.formula.ptg.TablePtg.Item;
 import org.zkoss.poi.ss.formula.udf.UDFFinder;
 import org.zkoss.poi.xssf.model.IndexedUDFFinder;
@@ -70,38 +24,18 @@ import org.zkoss.xel.FunctionMapper;
 import org.zkoss.xel.VariableResolver;
 import org.zkoss.xel.XelContext;
 import org.zkoss.xel.util.SimpleXelContext;
-import org.zkoss.zss.model.ErrorValue;
-import org.zkoss.zss.model.SBook;
-import org.zkoss.zss.model.SCell;
-import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.model.STable;
-import org.zkoss.zss.model.SheetRegion;
-import org.zkoss.zss.model.impl.AbstractBookAdv;
-import org.zkoss.zss.model.impl.AbstractBookSeriesAdv;
-import org.zkoss.zss.model.impl.AbstractCellAdv;
-import org.zkoss.zss.model.impl.ColumnPrecedentRefImpl;
-import org.zkoss.zss.model.impl.ColumnRefImpl;
-import org.zkoss.zss.model.impl.IndirectRefImpl;
-import org.zkoss.zss.model.impl.NameRefImpl;
-import org.zkoss.zss.model.impl.NonSerializableHolder;
-import org.zkoss.zss.model.impl.RefImpl;
-import org.zkoss.zss.model.impl.TablePrecedentRefImpl;
+import org.zkoss.zss.model.*;
+import org.zkoss.zss.model.impl.*;
 import org.zkoss.zss.model.impl.sys.DependencyTableAdv;
-import org.zkoss.zss.model.sys.dependency.ColumnPrecedentRef;
-import org.zkoss.zss.model.sys.dependency.ColumnRef;
-import org.zkoss.zss.model.sys.dependency.DependencyTable;
-import org.zkoss.zss.model.sys.dependency.Ref;
+import org.zkoss.zss.model.sys.dependency.*;
 import org.zkoss.zss.model.sys.dependency.Ref.RefType;
-import org.zkoss.zss.model.sys.dependency.TablePrecedentRef;
-import org.zkoss.zss.model.sys.formula.EvaluationResult;
+import org.zkoss.zss.model.sys.formula.*;
 import org.zkoss.zss.model.sys.formula.EvaluationResult.ResultType;
-import org.zkoss.zss.model.sys.formula.FormulaClearContext;
-import org.zkoss.zss.model.sys.formula.FormulaEngine;
-import org.zkoss.zss.model.sys.formula.FormulaEvaluationContext;
-import org.zkoss.zss.model.sys.formula.FormulaExpression;
-import org.zkoss.zss.model.sys.formula.FormulaParseContext;
-import org.zkoss.zss.model.sys.formula.FunctionResolver;
-import org.zkoss.zss.model.sys.formula.FunctionResolverFactory;
+
+import java.io.Serializable;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A formula engine implemented by ZPOI
@@ -493,9 +427,9 @@ public class FormulaEngineImpl implements FormulaEngine {
 			(NonSerializableHolder<Map<String, EvalContext>>)bookSeries.getAttribute(KEY_EVALUATORS);
 		return holder == null ? null : holder.getObject();
 	}
-	
 
-	protected EvaluationResult evaluateFormula(FormulaExpression expr, FormulaEvaluationContext context, EvalBook evalBook, WorkbookEvaluator evaluator) throws FormulaParseException, Exception {
+
+    protected EvaluationResult evaluateFormula(FormulaExpression expr, FormulaEvaluationContext context, EvalBook evalBook, WorkbookEvaluator evaluator) throws Exception {
 
 		// do evaluate
 		SBook book = context.getBook();
@@ -691,8 +625,13 @@ public class FormulaEngineImpl implements FormulaEngine {
 		//ZSS-747
 		private Ptg[] ptgs;
 		private boolean multipleArea;
-		
-		/**
+
+        @SuppressWarnings("unused")
+        public FormulaExpressionImpl() {
+            // Required for serialization.
+        }
+
+        /**
 		 * @param ref resolved reference if formula has only one parsed token
 		 */
 		public FormulaExpressionImpl(String formula, Ptg[] ptgs, Ref[] refs) {
@@ -912,13 +851,13 @@ public class FormulaEngineImpl implements FormulaEngine {
 		}
 		return expr;
 	}
-	
-	protected static interface FormulaAdjuster {
-		/**
+
+    protected interface FormulaAdjuster {
+        /**
 		 * @return true if formula modified, denote this formula needs re-render
 		 */
-		public boolean process(int sheetIndex, Ptg[] tokens, ParsingBook parsingBook, FormulaParseContext context);
-	}
+        boolean process(int sheetIndex, Ptg[] tokens, ParsingBook parsingBook, FormulaParseContext context);
+    }
 	
 	@Override
 	public FormulaExpression move(String formula, final SheetRegion region, final int rowOffset, final int columnOffset, FormulaParseContext context) {
