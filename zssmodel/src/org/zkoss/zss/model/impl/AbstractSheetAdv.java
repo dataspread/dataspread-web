@@ -42,10 +42,12 @@ public abstract class AbstractSheetAdv implements SSheet,LinkedModelObject,Seria
 //	/*package*/ abstract int getColumnIndex(ColumnAdv column);
 	
 	/*package*/ abstract AbstractCellAdv getCell(int rowIdx, int columnIdx, boolean proxy);
-	/*package*/ abstract AbstractCellAdv getOrCreateCell(int rowIdx, int columnIdx);
-	
-	
-	/*package*/ abstract void copyTo(AbstractSheetAdv sheet, Connection connection, boolean updateToDB);
+
+    /*package*/
+    abstract AbstractCellAdv createCell(int rowIdx, int columnIdx);
+
+
+    /*package*/ abstract void copyTo(AbstractSheetAdv sheet, Connection connection, boolean updateToDB);
 
 	/*package*/
 	abstract void setSheetName(String name, boolean updateToDB);

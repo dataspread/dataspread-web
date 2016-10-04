@@ -47,8 +47,8 @@ public class SheetImpl extends AbstractSheetAdv {
 	private static final long serialVersionUID = 1L;
 	private static final Log _logger = Log.lookup(SheetImpl.class);
     //Mangesh
-    static final private int PreFetchRows = 5;
-	static final private int PreFetchColumns = 2;
+    static final private int PreFetchRows = 100;
+    static final private int PreFetchColumns = 20;
     /**
      * internal use only for developing/test state, should remove when stable
      */
@@ -60,7 +60,7 @@ public class SheetImpl extends AbstractSheetAdv {
         }
     }
 
-    final int CACHE_SIZE = 50;
+    final int CACHE_SIZE = 10000;
     private final String _id;
 	private final IndexPool<AbstractRowAdv> _rows = new IndexPool<AbstractRowAdv>(){
 		private static final long serialVersionUID = 1L;
@@ -425,12 +425,15 @@ public class SheetImpl extends AbstractSheetAdv {
 		}
 	}
 
-
 	@Override
-	AbstractCellAdv getOrCreateCell(int rowIdx, int columnIdx) {
-        AbstractRowAdv rowObj = getOrCreateRow(rowIdx);
-        AbstractCellAdv cell = rowObj.getOrCreateCell(columnIdx);
-		return cell;
+    AbstractCellAdv createCell(int rowIdx, int columnIdx) {
+        AbstractCellAdv cell = new CellImpl();
+        cell.setRow(rowIdx);
+        cell.setColumn(columnIdx);
+        cell.setSheet(this);
+        CellRegion cellRegion = new CellRegion(rowIdx, columnIdx);
+        sheetDataCache.put(cellRegion, cell);
+        return cell;
 	}
 
 	public int getStartRowIndex() {

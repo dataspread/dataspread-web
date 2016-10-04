@@ -54,15 +54,8 @@ class CellProxy extends AbstractCellAdv {
 		_sheet = sheet;
     }
 
-	private void loadProxy() {
-		if (_proxy == null) {
-			_proxy = ((AbstractSheetAdv) getSheet()).getCell(_rowIdx, _columnIdx, false);
-		}
-	}
-
 	@Override
 	public boolean isNull() {
-		loadProxy();
 		//if any data in data grid and it is not null, you should handle it.
 		if(_proxy==null){
 			return true;
@@ -73,7 +66,6 @@ class CellProxy extends AbstractCellAdv {
 
 	@Override
 	public CellType getType() {
-		loadProxy();
 		if(_proxy==null){
 			return CellType.BLANK;
 		}else{
@@ -83,7 +75,6 @@ class CellProxy extends AbstractCellAdv {
 
 	@Override
 	public int getRowIndex() {
-		loadProxy();
 		return _proxy == null ? _rowIdx : _proxy.getRowIndex();
 	}
 
@@ -94,7 +85,6 @@ class CellProxy extends AbstractCellAdv {
 
 	@Override
 	public int getColumnIndex() {
-		loadProxy();
 		return _proxy == null ? _columnIdx : _proxy.getColumnIndex();
 	}
 
@@ -105,26 +95,18 @@ class CellProxy extends AbstractCellAdv {
 
 	@Override
 	public void setFormulaValue(String formula, Connection connection, boolean updateToDB) {
-		loadProxy();
-		if (_proxy == null) {
-			_proxy = ((AbstractSheetAdv) getSheet()).getOrCreateRow(
-					_rowIdx).getOrCreateCell(_columnIdx);
-			_proxy.setFormulaValue(formula, connection, updateToDB);
-		} else if (_proxy != null) {
-			_proxy.setFormulaValue(formula,connection, updateToDB);
-		}
+		if (_proxy == null)
+			_proxy = _sheet.createCell(_rowIdx, _columnIdx);
+		_proxy.setFormulaValue(formula, connection, updateToDB);
+
 	}
 
 	//ZSS-565: Support input with Swedish locale into Formula
 	@Override
 	public void setFormulaValue(String formula, Locale locale, Connection connection, boolean updateToDB) {
-		if (_proxy == null) {
-            _proxy = new CellImpl();
-            _proxy.setRow(_rowIdx);
-            _proxy.setColumn(_columnIdx);
-            _proxy.setSheet(_sheet);
-        }
-        _proxy.setFormulaValue(formula, locale, connection, updateToDB);
+		if (_proxy == null)
+			_proxy = _sheet.createCell(_rowIdx, _columnIdx);
+		_proxy.setFormulaValue(formula, locale, connection, updateToDB);
 
 	}
 
@@ -136,14 +118,9 @@ class CellProxy extends AbstractCellAdv {
 	//ZSS-853
 	@Override
 	protected void setValue(Object value, boolean aString, Connection connection, boolean updateToDB) {
-		//loadProxy();
 		if (_proxy == null && value != null) {
-            // Create a new cell object
-            _proxy = new CellImpl();
-            _proxy.setRow(_rowIdx);
-            _proxy.setColumn(_columnIdx);
-            _proxy.setSheet(_sheet);
-            _proxy.setValue(value, aString, connection, updateToDB);
+			_proxy = _sheet.createCell(_rowIdx, _columnIdx);
+			_proxy.setValue(value, aString, connection, updateToDB);
 		} else if (_proxy != null) {
 			_proxy.setValue(value, aString, connection, updateToDB);
 		}
@@ -151,7 +128,6 @@ class CellProxy extends AbstractCellAdv {
 
 	@Override
 	public Object getValue() {
-		loadProxy();
 		if(_proxy==null){
 			return null;
 		}else{
@@ -161,7 +137,6 @@ class CellProxy extends AbstractCellAdv {
 
 	@Override
 	public String getReferenceString() {
-		loadProxy();
 		return _proxy == null ? new CellRegion(_rowIdx, _columnIdx).getReferenceString() : _proxy.getReferenceString();
 	}
 
@@ -172,17 +147,13 @@ class CellProxy extends AbstractCellAdv {
 
 	@Override
 	public void setCellStyle(SCellStyle cellStyle) {
-		loadProxy();
-		if (_proxy == null) {
-			_proxy = ((AbstractSheetAdv) getSheet()).getOrCreateRow(
-					_rowIdx).getOrCreateCell(_columnIdx);
-		}
+		if (_proxy == null)
+			_proxy = _sheet.createCell(_rowIdx, _columnIdx);
 		_proxy.setCellStyle(cellStyle);
 	}
 
 	@Override
 	public SCellStyle getCellStyle(boolean local) {
-		loadProxy();
 		if (_proxy != null) {
 			return _proxy.getCellStyle(local);
 		}
@@ -208,46 +179,39 @@ class CellProxy extends AbstractCellAdv {
 
 	@Override
 	public CellType getFormulaResultType() {
-		loadProxy();
 		return _proxy == null ? null : _proxy.getFormulaResultType();
 	}
 
 	@Override
 	public void clearValue(Connection connection, boolean updateToDB) {
-		loadProxy();
 		if (_proxy != null)
 			_proxy.clearValue(connection, updateToDB);
 	}
 
 	@Override
 	public void clearFormulaResultCache() {
-		loadProxy();
 		if (_proxy != null)
 			_proxy.clearFormulaResultCache();
 	}
 
 	@Override
 	protected void evalFormula() {
-		loadProxy();
 		if (_proxy != null)
 			_proxy.evalFormula();
 	}
 
 	@Override
     public Object getValue(boolean eval) {
-        loadProxy();
 		return _proxy == null ? null : _proxy.getValue(eval);
 	}
 
 	@Override
 	public SHyperlink getHyperlink() {
-		loadProxy();
 		return _proxy == null ? null : _proxy.getHyperlink();
 	}
 
 	@Override
 	public void setHyperlink(SHyperlink hyperlink) {
-		loadProxy();
 		if (_proxy == null) {
 			_proxy = ((AbstractSheetAdv) getSheet()).getOrCreateRow(
 					_rowIdx).getOrCreateCell(_columnIdx);
@@ -257,13 +221,11 @@ class CellProxy extends AbstractCellAdv {
 
 	@Override
 	public SComment getComment() {
-		loadProxy();
 		return _proxy == null ? null : _proxy.getComment();
 	}
 
 	@Override
 	public void setComment(SComment comment) {
-		loadProxy();
 		if (_proxy == null) {
 			_proxy = ((AbstractSheetAdv) getSheet()).getOrCreateRow(
 					_rowIdx).getOrCreateCell(_columnIdx);
@@ -273,7 +235,6 @@ class CellProxy extends AbstractCellAdv {
 
 	@Override
 	public boolean isFormulaParsingError() {
-		loadProxy();
 		return _proxy != null && _proxy.isFormulaParsingError();
 	}
 
@@ -296,7 +257,6 @@ class CellProxy extends AbstractCellAdv {
 
 	@Override
 	public void setFormulaResultValue(ValueEval value) {
-		loadProxy();
 		if (_proxy != null) {
 			_proxy.setFormulaResultValue(value);
 		}
@@ -304,7 +264,6 @@ class CellProxy extends AbstractCellAdv {
 
 	@Override
 	public void deleteComment() {
-		loadProxy();
 		if (_proxy != null) {
 			_proxy.deleteComment();
 		}
@@ -312,7 +271,6 @@ class CellProxy extends AbstractCellAdv {
 
 	@Override
 	public FormulaExpression getFormulaExpression() {
-		loadProxy();
 		if (_proxy != null) {
 			return _proxy.getFormulaExpression();
 		}
