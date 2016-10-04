@@ -17,8 +17,6 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 package org.zkoss.zss.model.impl;
 
 import java.util.Arrays;
-
-import org.zkoss.zss.model.SColor;
 /**
  * 
  * @author dennis
@@ -26,13 +24,19 @@ import org.zkoss.zss.model.SColor;
  */
 public class ColorImpl extends AbstractColorAdv {
 	private static final long serialVersionUID = 1L;
-	private final byte[] _rgb;
+    private byte[] _rgb;
 
 	public static final AbstractColorAdv WHITE = new ColorImpl("#FFFFFF");
 	public static final AbstractColorAdv BLACK = new ColorImpl("#000000");
 	public static final AbstractColorAdv RED = new ColorImpl("#FF0000");
 	public static final AbstractColorAdv GREEN = new ColorImpl("#00FF00");
 	public static final AbstractColorAdv BLUE = new ColorImpl("#0000FF");
+
+
+    @SuppressWarnings("unused")
+    private ColorImpl() {
+        // Required for serialization.
+    }
 
 	public ColorImpl(byte[] rgb) {
 		if (rgb == null) {
@@ -42,6 +46,7 @@ public class ColorImpl extends AbstractColorAdv {
 		}
 		this._rgb = rgb;
 	}
+
 
 	public ColorImpl(byte r, byte g, byte b) {
 		this._rgb = new byte[] { r, g, b };
@@ -100,12 +105,10 @@ public class ColorImpl extends AbstractColorAdv {
 		if (getClass() != obj.getClass())
 			return false;
 		ColorImpl other = (ColorImpl) obj;
-		if (!Arrays.equals(_rgb, other._rgb))
-			return false;
-		return true;
-	}
-	
-	public String toString(){
+        return Arrays.equals(_rgb, other._rgb);
+    }
+
+    public String toString(){
 		return getHtmlColor();
 	}
 }
