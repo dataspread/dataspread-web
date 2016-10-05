@@ -1,12 +1,12 @@
 package org.zkoss.poi.ss.formula.functions;
 
-import org.zkoss.poi.ss.formula.LazyAreaEval;
+import org.zkoss.poi.ss.formula.SheetRefEvaluator;
 import org.zkoss.poi.ss.formula.TwoDEval;
 import org.zkoss.poi.ss.formula.eval.*;
 
 import java.util.Arrays;
 
-import static org.zkoss.poi.ss.formula.functions.CountUtils.*;
+import static org.zkoss.poi.ss.formula.functions.CountUtils.I_MatchPredicate;
 
 /**
  * Abstract class which holds all of the relational operator functions.
@@ -23,7 +23,7 @@ public abstract class RelationalOperatorFunction implements Function {
     public static final Function UNION = new TwoRangeFunction() {
         
         @Override
-        protected ValueEval evaluate(AreaEval range1, AreaEval range2) {
+        protected ValueEval evaluate(ArrayEval range1, ArrayEval range2, int srcRowIndex, int srcColumnIndex) {
             
             try {
                 
@@ -47,15 +47,16 @@ public abstract class RelationalOperatorFunction implements Function {
                 }
 
                 boolean[] indicesToKeep = getDistinctIndices(combinedRows);
-                Row[] resultRows = getRowsToKeep(indicesToKeep, combinedRows);              
-                
-                return evalHelper(resultRows);
+                Row[] resultRows = getRowsToKeep(indicesToKeep, combinedRows);
+
+                //return evalHelper(resultRows);
+                return Row.getArrayEval(resultRows, srcRowIndex, srcColumnIndex, range1.getRefEvaluator());
                 
             }
             catch (EvaluationException e) {
-                
-                return e.getErrorEval();
-                
+
+                return e.getErrorEval();                
+
             }
         }
 
@@ -97,7 +98,7 @@ public abstract class RelationalOperatorFunction implements Function {
     public static final Function DIFFERENCE = new TwoRangeFunction() {
         
         @Override
-        protected ValueEval evaluate(AreaEval range1, AreaEval range2) {
+        protected ValueEval evaluate(ArrayEval range1, ArrayEval range2, int srcRowIndex, int srcColumnIndex) {
 
             try {
 
@@ -108,8 +109,9 @@ public abstract class RelationalOperatorFunction implements Function {
                 
                 boolean[] indicesToKeep = getIndicesNotInRows2(rows1, rows2);
                 Row[] resultRows = getRowsToKeep(indicesToKeep, rows1);
-                
-                return evalHelper(resultRows);                
+
+                //return evalHelper(resultRows);                
+                return Row.getArrayEval(resultRows, srcRowIndex, srcColumnIndex, range1.getRefEvaluator());                
 
             }
             catch (EvaluationException e) {
@@ -160,7 +162,7 @@ public abstract class RelationalOperatorFunction implements Function {
     public static final Function INTERSECTION = new TwoRangeFunction() {
         
         @Override
-        protected ValueEval evaluate(AreaEval range1, AreaEval range2) {
+        protected ValueEval evaluate(ArrayEval range1, ArrayEval range2, int srcRowIndex, int srcColumnIndex) {
 
             try {
 
@@ -172,7 +174,9 @@ public abstract class RelationalOperatorFunction implements Function {
                 boolean[] indicesToKeep = getMatchingIndices(rows1, rows2);
                 Row[] resultRows = getRowsToKeep(indicesToKeep, rows1);
 
-                return evalHelper(resultRows);
+                //return evalHelper(resultRows);
+                return Row.getArrayEval(resultRows, srcRowIndex, srcColumnIndex, range1.getRefEvaluator());
+                
 
             }
             catch (EvaluationException e) {
@@ -217,7 +221,7 @@ public abstract class RelationalOperatorFunction implements Function {
     public static final Function CROSSPRODUCT = new TwoRangeFunction() {
         
         @Override
-        protected ValueEval evaluate(AreaEval range1, AreaEval range2) {
+        protected ValueEval evaluate(ArrayEval range1, ArrayEval range2, int srcRowIndex, int srcColumnIndex) {
 
             try {
 
@@ -237,7 +241,9 @@ public abstract class RelationalOperatorFunction implements Function {
                     }
                 }
 
-                return evalHelper(resultRows);
+                //return evalHelper(resultRows);
+                return Row.getArrayEval(resultRows, srcRowIndex, srcColumnIndex, range1.getRefEvaluator());
+                
 
             }
             catch (EvaluationException e) {
@@ -254,7 +260,10 @@ public abstract class RelationalOperatorFunction implements Function {
         //select with no conditions
         @Override
         protected ValueEval evaluate(AreaEval range) {
-            return new StringEval("not implemented");
+
+            Row[] rows = Row.getRowsFromArea(range);
+            return evalHelper(rows);
+            
         }
 
         //select with conditions
@@ -438,6 +447,28 @@ public abstract class RelationalOperatorFunction implements Function {
             }
             
             return new Row(combinedRow);
+
+        }
+
+
+        public static ArrayEval getArrayEval(Row[] rows, int firstRow, int firstColumn, SheetRefEvaluator evaluator) {
+
+            int height = rows.length;
+            ValueEval[][] values = new ValueEval[height][];
+
+            for (int r = 0; r < height; r++) {
+
+                Row row = rows[r];
+
+                int width = row.getLength();
+                values[r] = new ValueEval[width];
+
+                for (int c = 0; c < width; c++) {
+                    values[r][c] = row.getValue(c);
+                }
+            }
+
+            return new ArrayEval(values, firstRow, firstColumn, firstRow + values.length - 1, firstColumn + values[0].length - 1, evaluator);
             
         }
 

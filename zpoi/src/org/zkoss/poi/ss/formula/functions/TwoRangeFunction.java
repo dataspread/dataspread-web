@@ -9,33 +9,6 @@ import org.zkoss.poi.ss.formula.eval.*;
  * Created by Danny on 9/22/2016.
  */
 public abstract class TwoRangeFunction implements Function {
-    
-    
-    public final ValueEval evaluate (ValueEval[] args, int srcCellRow, int srcCellCol) {
-        
-        try {
-            
-            if(args.length != 2) {
-                
-                return ErrorEval.VALUE_INVALID;
-            
-            }
-            
-            AreaEval range1 = convertRangeArg(args[0]);
-            AreaEval range2 = convertRangeArg(args[1]);
-            
-            ValueEval result = evaluate(range1, range2);   
-            return result;
-            
-        }
-        catch (EvaluationException e) {
-            return e.getErrorEval();
-        }
-        
-    }
-
-    
-    protected abstract ValueEval evaluate(AreaEval range1, AreaEval range2);
 
 
     /**
@@ -52,9 +25,63 @@ public abstract class TwoRangeFunction implements Function {
             return (AreaEval) eval;
         }
         if (eval instanceof RefEval) {
-            return ((RefEval)eval).offset(0, 0, 0, 0);
+            return ((RefEval) eval).offset(0, 0, 0, 0);
         }
         throw new EvaluationException(ErrorEval.VALUE_INVALID);
+    }
+
+    public final ValueEval evaluate(ValueEval[] args, int srcRowIndex, int srcColumnIndex) {
+        
+        try {
+            
+            if(args.length != 2) {
+                
+                return ErrorEval.VALUE_INVALID;
+            
+            }
+
+            AreaEval area1 = convertRangeArg(args[0]);
+            AreaEval area2 = convertRangeArg(args[1]);
+            ArrayEval array1 = convertToArray(area1);
+            ArrayEval array2 = convertToArray(area2);
+
+            ValueEval result = evaluate(array1, array2, srcRowIndex, srcColumnIndex);   
+            return result;
+            
+        }
+        catch (EvaluationException e) {
+            return e.getErrorEval();
+        }
+        
+    }
+
+    protected abstract ValueEval evaluate(ArrayEval range1, ArrayEval range2, int srcRowIndex, int srcColumnIndex);
+
+    /**
+     * Parts of function taken from Fixed1ArgFunction.java
+     * @param area
+     * @return
+     */
+    //ZSS-852
+    private ArrayEval convertToArray(AreaEval area) {
+
+        final int width = area.getWidth();
+        final int height = area.getHeight();
+
+        ValueEval[][] results = new ValueEval[height][];
+
+        for (int r = 0; r < height; ++r) {
+
+            results[r] = new ValueEval[width];
+
+            for (int c = 0; c < width; ++c) {
+
+                final ValueEval ve = area.getRelativeValue(r, c);
+                results[r][c] = ve;
+            }
+        }
+
+        return new ArrayEval(results, area.getFirstRow(), area.getFirstColumn(), area.getLastRow(), area.getLastColumn(), area.getRefEvaluator()); //ZSS-962
     }
     
 }
