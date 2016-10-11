@@ -17,13 +17,9 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 package org.zkoss.zss.model.impl;
 
 import org.zkoss.lang.Objects;
-import org.zkoss.zss.model.SBorder;
-import org.zkoss.zss.model.SCellStyle;
-import org.zkoss.zss.model.SColor;
-import org.zkoss.zss.model.SFill;
-import org.zkoss.zss.model.SFill.FillPattern;
+import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.SBorder.BorderType;
-import org.zkoss.zss.model.SFont;
+import org.zkoss.zss.model.SFill.FillPattern;
 import org.zkoss.zss.model.util.Validations;
 /**
  * 
@@ -51,6 +47,11 @@ public class CellStyleImpl extends AbstractCellStyleAdv {
 	private boolean _hidden = false;
 	private int _rotation; //ZSS-918
 	private int _indention; //ZSS-915
+
+    @SuppressWarnings("unused")
+    private CellStyleImpl() {
+        // Required for serialization.
+    }
 
 	public CellStyleImpl(AbstractFontAdv font){
 		this._font = font;

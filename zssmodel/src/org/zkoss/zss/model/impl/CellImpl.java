@@ -80,8 +80,8 @@ public class CellImpl extends AbstractCellAdv {
             e.printStackTrace();
             // data that cannot be parsed is considered as a string value.
 			cellImpl = new CellImpl();
-//			cellImpl.setCellValue(new CellValue(new String(inByteArray)), false, null, false);
-		}
+            cellImpl.setCellValue(new CellValue(new String(inByteArray)), false, null, false);
+        }
 		kryoPool.release(kryo);
 		return cellImpl;
 	}
