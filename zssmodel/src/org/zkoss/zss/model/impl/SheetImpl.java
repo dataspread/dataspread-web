@@ -25,6 +25,7 @@ import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.SAutoFilter.FilterOp;
 import org.zkoss.zss.model.SAutoFilter.NFilterColumn;
 import org.zkoss.zss.model.SPicture.Format;
+import org.zkoss.zss.model.impl.sys.formula.FormulaEngineImpl;
 import org.zkoss.zss.model.sys.EngineFactory;
 import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.dependency.ObjectRef.ObjectType;
@@ -348,10 +349,10 @@ public class SheetImpl extends AbstractSheetAdv {
 	private void preFetchCells(CellRegion cellRegion)
 	{
 		int minRow = Math.max(0,cellRegion.getRow()- PreFetchRows);
-		int maxRow = minRow + PreFetchRows * 2 - 1;
+		int maxRow = minRow + PreFetchRows * 2;
 
 		int minColumn = Math.max(0,cellRegion.getColumn()- PreFetchColumns);
-		int maxColumn = minColumn + PreFetchColumns * 2 - 1;
+		int maxColumn = minColumn + PreFetchColumns * 2;
 
 		CellRegion fetchRange = new CellRegion(minRow, minColumn, maxRow, maxColumn);
 
@@ -361,6 +362,13 @@ public class SheetImpl extends AbstractSheetAdv {
 			Collection<AbstractCellAdv> cells = dataModel.getCells(dbContext, fetchRange);
 			//Update book reference for the cells.
 			cells.stream().forEach(e -> e.setSheet(this));
+
+
+			cells.stream()
+					.filter(e -> e.getType() == SCell.CellType.FORMULA)
+					.forEach(e ->
+							e.setFormulaValue(((FormulaEngineImpl.FormulaExpressionImpl) e.getValue(false))
+									.getFormulaString(), connection, false));
 
             cells.stream().forEach(e->sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
         }
@@ -1182,6 +1190,10 @@ public class SheetImpl extends AbstractSheetAdv {
         cellsToShift.stream()
                 .filter(e -> e.getColumnIndex() >= columnIdx)
                 .forEach(e -> e.setColumn(e.getColumnIndex() + size));
+
+		sheetDataCache.clear();
+		cellsToShift.stream()
+				.forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
 
 
 		//ZSS-619, should clear formula for entire effected region
