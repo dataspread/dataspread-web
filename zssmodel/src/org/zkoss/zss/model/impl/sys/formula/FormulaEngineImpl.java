@@ -615,7 +615,7 @@ public class FormulaEngineImpl implements FormulaEngine {
 		}
 	}
 
-	protected static class FormulaExpressionImpl implements FormulaExpression, Serializable {
+	public static class FormulaExpressionImpl implements FormulaExpression, Serializable {
 		private static final long serialVersionUID = -8532826169759927711L;
 		private String formula;
 		private Ref[] refs;
