@@ -613,61 +613,34 @@ public class SheetImpl extends AbstractSheetAdv {
 
 	@Override
 	public void insertRow(int rowIdx, int lastRowIdx) {
-		checkOrphan();
 		if(rowIdx>lastRowIdx){
 			throw new IllegalArgumentException(rowIdx+">"+lastRowIdx);
 		}
 		int size = lastRowIdx-rowIdx+1;
 
-		if (getBook().hasSchema()) {
-			// Shift Cells in DB
-			String bookTable = getBook().getId();
-			// Workaround for shifting.
-			// Counted btree should remove this.
-			String shiftRows = "UPDATE " + bookTable + "_sheetdata " +
-					" SET row = (row + ?) * -1" +
-					" WHERE sheetid = ?" +
-					" AND   row >= ?";
-
-			String shiftRows1 = "UPDATE " + bookTable + "_sheetdata " +
-					" SET row = row  * -1" +
-					" WHERE sheetid = ?" +
-					" AND   row < 0";
-
-
-			try (Connection connection = DBHandler.instance.getConnection();
-				 Statement stmt = connection.createStatement();
-				 PreparedStatement shiftRowsStmt = connection.prepareStatement(shiftRows);
-				 PreparedStatement shiftRowsStmt1 = connection.prepareStatement(shiftRows1)) {
-				shiftRowsStmt.setInt(1, size);
-				shiftRowsStmt.setInt(2, getDBId());
-				shiftRowsStmt.setInt(3, rowIdx);
-				shiftRowsStmt.execute();
-
-				shiftRowsStmt1.setInt(1, getDBId());
-				shiftRowsStmt1.execute();
-				connection.commit();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
+		//TODO: Store row based attributes
+		try (Connection connection = DBHandler.instance.getConnection()) {
+			DBContext dbContext = new DBContext(connection);
+			dataModel.insertRows(dbContext, rowIdx, size);
+			connection.commit();
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
-		_rows.insert(rowIdx, size);
+
+		// Update Column numbers for cached cells
+		List<AbstractCellAdv> cellsToShift = new LinkedList<>(sheetDataCache.values());
+		cellsToShift.stream()
+				.filter(e -> e.getRowIndex() >= rowIdx)
+				.forEach(e -> e.setRow(e.getRowIndex() + size));
+
+		sheetDataCache.clear();
+		cellsToShift.stream()
+				.forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
 
 
-		//destroy the row that exceed the max size
-		int maxSize = getBook().getMaxRowSize();
-		Collection<AbstractRowAdv> exceeds = new ArrayList<AbstractRowAdv>(_rows.subValues(maxSize, Integer.MAX_VALUE));
-		if(exceeds.size()>0){
-			_rows.trim(maxSize);
-		}
-		for(AbstractRowAdv row:exceeds){
-			row.destroy();
-		}
 		//ZSS-619, should clear formula for entire effected region
-		//here we clear whole sheet because of we don't have a efficient way to get the effected cell in the effected region
-		//NOTE, in current formula-engine, it clears all formula cache in non-cell case.
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
-		
+
 		Map<String,Object> dataBefore = shiftBeforeRowInsert(rowIdx,lastRowIdx);
 		ModelUpdateUtil.addInsertDeleteUpdate(this, true, true, rowIdx, lastRowIdx);
 		shiftAfterRowInsert(dataBefore,rowIdx,lastRowIdx);
@@ -1169,7 +1142,6 @@ public class SheetImpl extends AbstractSheetAdv {
 
 	@Override
 	public void insertColumn(int columnIdx, int lastColumnIdx) {
-		checkOrphan();
 		if(columnIdx>lastColumnIdx){
 			throw new IllegalArgumentException(columnIdx+">"+lastColumnIdx);
 		}
@@ -1198,7 +1170,7 @@ public class SheetImpl extends AbstractSheetAdv {
 
 		//ZSS-619, should clear formula for entire effected region
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
-		
+
 		Map<String,Object> dataBefore = shiftBeforeColumnInsert(columnIdx,lastColumnIdx);
 		ModelUpdateUtil.addInsertDeleteUpdate(this, true, false, columnIdx, lastColumnIdx);
 		shiftAfterColumnInsert(dataBefore,columnIdx,lastColumnIdx);

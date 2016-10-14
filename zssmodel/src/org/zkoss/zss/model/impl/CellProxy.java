@@ -80,7 +80,7 @@ class CellProxy extends AbstractCellAdv {
 
 	@Override
 	public void setRow(int row) {
-        throw new UnsupportedOperationException("readonly");
+        _rowIdx = row;
 	}
 
 	@Override
