@@ -36,8 +36,8 @@ import org.zkoss.zss.model.util.Validations;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 
@@ -619,13 +619,15 @@ public class SheetImpl extends AbstractSheetAdv {
 		int size = lastRowIdx-rowIdx+1;
 
 		//TODO: Store row based attributes
-		try (Connection connection = DBHandler.instance.getConnection()) {
-			DBContext dbContext = new DBContext(connection);
-			dataModel.insertRows(dbContext, rowIdx, size);
-			connection.commit();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+        if (dataModel != null) {
+            try (Connection connection = DBHandler.instance.getConnection()) {
+                DBContext dbContext = new DBContext(connection);
+                dataModel.insertRows(dbContext, rowIdx, size);
+                connection.commit();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
 
 		// Update Column numbers for cached cells
 		List<AbstractCellAdv> cellsToShift = new LinkedList<>(sheetDataCache.values());
@@ -706,51 +708,35 @@ public class SheetImpl extends AbstractSheetAdv {
 
 	@Override
 	public void deleteRow(int rowIdx, int lastRowIdx) {
-		checkOrphan();
 		if(rowIdx>lastRowIdx){
 			throw new IllegalArgumentException(rowIdx+">"+lastRowIdx);
 		}
-		
-		//clear before move relation
-		for(AbstractRowAdv row:_rows.subValues(rowIdx,lastRowIdx)){
-			row.destroy();
-		}
+
 		int size = lastRowIdx-rowIdx+1;
+        if (dataModel != null) {
+            try (Connection connection = DBHandler.instance.getConnection()) {
+                DBContext dbContext = new DBContext(connection);
+                dataModel.deleteRows(dbContext, rowIdx, size);
+                connection.commit();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
 
-		if (getBook().hasSchema()) {
-			// Shift Cells in DB
-			String bookTable = getBook().getId();
-			// Workaround for shifting.
-			// Counted btree should remove this.
-			String shiftRows = "UPDATE " + bookTable + "_sheetdata " +
-					" SET row = (row - ?) * -1" +
-					" WHERE sheetid = ?" +
-					" AND   row >= ?";
+        // Update Column numbers for cached cells
+        List<AbstractCellAdv> cellsToShift = sheetDataCache.values()
+                .stream()
+                .filter(e -> e.getRowIndex() < rowIdx || e.getRowIndex() > lastRowIdx)
+                .collect(Collectors.toList());
 
-			String shiftRows1 = "UPDATE " + bookTable + "_sheetdata " +
-					" SET row = row  * -1" +
-					" WHERE sheetid = ?" +
-					" AND   row < 0";
+        cellsToShift.stream()
+                .filter(e -> e.getRowIndex() >= rowIdx)
+                .forEach(e -> e.setRow(e.getRowIndex() - size));
 
+        sheetDataCache.clear();
+        cellsToShift.stream()
+                .forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
 
-			try (Connection connection = DBHandler.instance.getConnection();
-				 Statement stmt = connection.createStatement();
-				 PreparedStatement shiftRowsStmt = connection.prepareStatement(shiftRows);
-				 PreparedStatement shiftRowsStmt1 = connection.prepareStatement(shiftRows1)) {
-				shiftRowsStmt.setInt(1, size);
-				shiftRowsStmt.setInt(2, getDBId());
-				shiftRowsStmt.setInt(3, rowIdx);
-				shiftRowsStmt.execute();
-
-				shiftRowsStmt1.setInt(1, getDBId());
-				shiftRowsStmt1.execute();
-				connection.commit();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-		}
-		_rows.delete(rowIdx, size);
-		
 		//ZSS-619, should clear formula for entire effected region
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
 		
@@ -1148,13 +1134,14 @@ public class SheetImpl extends AbstractSheetAdv {
 
 		int size = lastColumnIdx - columnIdx + 1;
         //TODO: Store column based attributes
-        try (Connection connection = DBHandler.instance.getConnection()) {
-
-            DBContext dbContext = new DBContext(connection);
-            dataModel.insertCols(dbContext, columnIdx, size);
-            connection.commit();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        if (dataModel != null) {
+            try (Connection connection = DBHandler.instance.getConnection()) {
+                DBContext dbContext = new DBContext(connection);
+                dataModel.insertCols(dbContext, columnIdx, size);
+                connection.commit();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
 
         // Update Column numbers for cached cells
@@ -1325,16 +1312,35 @@ public class SheetImpl extends AbstractSheetAdv {
 
 	@Override
 	public void deleteColumn(int columnIdx, int lastColumnIdx) {
-		checkOrphan();
 		if(columnIdx>lastColumnIdx){
 			throw new IllegalArgumentException(columnIdx+">"+lastColumnIdx);
 		}
 		int size = lastColumnIdx - columnIdx + 1;
-		deleteAndShrinkColumnArray(columnIdx,size);
-		
-		for(AbstractRowAdv row:_rows.values()){
-			row.deleteCell(columnIdx,size);
-		}
+
+        if (dataModel != null) {
+            try (Connection connection = DBHandler.instance.getConnection()) {
+                DBContext dbContext = new DBContext(connection);
+                dataModel.deleteCols(dbContext, columnIdx, size);
+                connection.commit();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Update Column numbers for cached cells
+        List<AbstractCellAdv> cellsToShift = sheetDataCache.values()
+                .stream()
+                .filter(e -> e.getColumnIndex() < columnIdx || e.getColumnIndex() > lastColumnIdx)
+                .collect(Collectors.toList());
+
+        cellsToShift.stream()
+                .filter(e -> e.getColumnIndex() >= columnIdx)
+                .forEach(e -> e.setColumn(e.getColumnIndex() - size));
+
+        sheetDataCache.clear();
+        cellsToShift.stream()
+                .forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
+
 		
 		//ZSS-619, should clear formula for entire effected region
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
