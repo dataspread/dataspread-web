@@ -164,13 +164,24 @@ public class BookImpl extends AbstractBookAdv{
 		try (Connection connection = DBHandler.instance.getConnection();
 			 Statement stmt = connection.createStatement()) {
 			DBContext dbContext = new DBContext(connection);
+
+			//add check bookname
+			String checkBook = "SELECT bookname FROM books WHERE bookname like ?" +
+					" AND LENGTH(bookname) = (SELECT MAX(LENGTH(bookname))" +
+					" FROM books WHERE bookname like ?) LIMIT 1";
+			PreparedStatement checkBookStmt = dbContext.getConnection().prepareStatement(checkBook);
+			checkBookStmt.setString(1, getBookName() + "%");
+			checkBookStmt.setString(2, getBookName() + "%");
+			ResultSet rs = checkBookStmt.executeQuery();
+			if(rs.next())
+				_bookName = rs.getString(1) + "_";
+			checkBookStmt.close();
+
 			String createBookRelation = "CREATE TABLE " + bookTable + "_workbook (" +
 					"  sheetid       INTEGER," +
 					"  sheetindex    INTEGER," +
 					"  sheetname     TEXT," +
 					"  modelname     TEXT," +
-					"  maxrow        INTEGER," +
-					"  maxcolumn     INTEGER," +
 					"  PRIMARY KEY (sheetid))";
 			stmt.execute(createBookRelation);
 
@@ -182,7 +193,7 @@ public class BookImpl extends AbstractBookAdv{
             insertBookStmt.close();
 
 
-			String insertSheets = "INSERT INTO " + bookTable + "_workbook VALUES(?, ?, ?, ?, ?, ?)";
+			String insertSheets = "INSERT INTO " + bookTable + "_workbook VALUES(?, ?, ?, ?)";
 			PreparedStatement insertSheetStmt = connection.prepareStatement(insertSheets);
 			for (SSheet sheet:getSheets()) {
 				String modelName = bookTable + sheet.getDBId();
@@ -191,8 +202,6 @@ public class BookImpl extends AbstractBookAdv{
 				insertSheetStmt.setInt(2, _sheets.indexOf(sheet));
 				insertSheetStmt.setString(3, sheet.getSheetName());
 				insertSheetStmt.setString(4, modelName);
-				insertSheetStmt.setInt(5, sheet.getEndRowIndex());
-				insertSheetStmt.setInt(6, sheet.getEndColumnIndex());
 				insertSheetStmt.execute();
 			}
 			insertSheetStmt.close();
@@ -328,7 +337,7 @@ public class BookImpl extends AbstractBookAdv{
 		{
 			String bookTable=getId();
 			String insertSheets = "INSERT INTO " + bookTable + "_workbook " +
-					" SELECT max(sheetid) +  1, ?, ?, ?, ? " +
+					" SELECT max(sheetid) +  1, ?, ? " +
 					" FROM " +  bookTable + "_workbook  " +
 					" RETURNING sheetid";
 			try (Connection connection = DBHandler.instance.getConnection();
@@ -336,8 +345,6 @@ public class BookImpl extends AbstractBookAdv{
 			{
 				stmt.setInt(1,_sheets.indexOf(sheet));
 				stmt.setString(2,sheet.getSheetName());
-				stmt.setInt(3,sheet.getEndRowIndex());
-				stmt.setInt(4,sheet.getEndColumnIndex());
 				ResultSet rs = stmt.executeQuery();
 				if (rs.next())
 					sheet.setDBId(rs.getInt("sheetid"));

@@ -623,7 +623,8 @@ public class FormulaEngineImpl implements FormulaEngine {
 		private String errorMessage;
 
 		//ZSS-747
-		private Ptg[] ptgs;
+		//TODO: For now do not store parsed formulae.
+		transient private Ptg[] ptgs;
 		private boolean multipleArea;
 
         @SuppressWarnings("unused")
