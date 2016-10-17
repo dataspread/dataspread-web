@@ -391,7 +391,7 @@ public class CellImpl extends AbstractCellAdv {
 					Connection localConnection = connection == null ? DBHandler.instance.getConnection() : connection;
 					Collection<AbstractCellAdv> cells = new LinkedList<>();
 					cells.add(this);
-					getSheet().getDataModel().updateCells(new DBContext(connection), cells);
+					getSheet().getDataModel().updateCells(new DBContext(localConnection), cells);
 					//TODO: Handle cell delete.
 
 					if (connection == null) {

@@ -146,7 +146,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 				SSheet sheet = book.getSheet(i);
 				Sheet poiSheet = workbook.getSheetAt(i);
 				for (Row poiRow : poiSheet) {
-					importRow(poiRow, sheet, null, false);
+					importRow(poiRow, sheet, null, true);
 				}
 				importColumn(poiSheet, sheet);
 				importMergedRegions(poiSheet, sheet);
