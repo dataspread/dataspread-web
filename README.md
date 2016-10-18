@@ -26,7 +26,8 @@
 	<Resource name="jdbc/ibd" auth="Container"
 	          type="javax.sql.DataSource" driverClassName="org.postgresql.Driver"
 	          url="jdbc:postgresql://127.0.0.1:5432/ibd"
-	          username="<your_username>" password="<your_password>:" maxTotal="20" maxIdle="10" maxWaitMillis="-1" defaultAutoCommit="false" accessToUnderlyingConnectionAllowed="true"/>
+	          username="<your_username>" password="<your_password>"
+                  maxTotal="20" maxIdle="10" maxWaitMillis="-1" defaultAutoCommit="false" accessToUnderlyingConnectionAllowed="true"/>
 	```
 
 	Replace `<your_username>` and `<your_password>` with your user name and password created in Postgres.
@@ -35,7 +36,4 @@
 
 6. Configure the Application server to Tomcat.
 
-7. Choose Module SDK to be 1.8.
-   Select Language level to be "8-lambdas".
-
-8. Now you are ready to run the program!
+7. Now you are ready to run the program!

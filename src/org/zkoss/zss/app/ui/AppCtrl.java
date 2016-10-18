@@ -11,30 +11,11 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.app.ui;
 
-import java.io.*;
-import java.net.URLDecoder;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.sql.PooledConnection;
-
 import com.opencsv.CSVReader;
 import org.apache.tomcat.dbcp.dbcp2.DelegatingConnection;
-import org.postgresql.PGConnection;
 import org.postgresql.copy.CopyIn;
 import org.postgresql.copy.CopyManager;
-import org.postgresql.core.BaseConnection;
 import org.postgresql.jdbc.PgConnection;
-import org.postgresql.jdbc2.optional.PoolingDataSource;
 import org.zkoss.image.AImage;
 import org.zkoss.lang.Library;
 import org.zkoss.lang.Strings;
@@ -49,18 +30,21 @@ import org.zkoss.zk.ui.select.annotation.Wire;
 import org.zkoss.zk.ui.util.Clients;
 import org.zkoss.zk.ui.util.DesktopCleanup;
 import org.zkoss.zss.api.*;
-import org.zkoss.zss.api.model.*;
+import org.zkoss.zss.api.model.Book;
 import org.zkoss.zss.api.model.Book.BookType;
+import org.zkoss.zss.api.model.Chart;
+import org.zkoss.zss.api.model.Hyperlink;
 import org.zkoss.zss.api.model.Hyperlink.HyperlinkType;
+import org.zkoss.zss.api.model.Sheet;
 import org.zkoss.zss.app.BookInfo;
+import org.zkoss.zss.app.BookManager;
 import org.zkoss.zss.app.BookRepository;
 import org.zkoss.zss.app.CollaborationInfo;
-import org.zkoss.zss.app.CollaborationInfo.CollaborationEventListener;
-import org.zkoss.zss.app.impl.CollaborationInfoImpl;
 import org.zkoss.zss.app.CollaborationInfo.CollaborationEvent;
-import org.zkoss.zss.app.repository.*;
-import org.zkoss.zss.app.BookManager;
+import org.zkoss.zss.app.CollaborationInfo.CollaborationEventListener;
 import org.zkoss.zss.app.impl.BookManagerImpl;
+import org.zkoss.zss.app.impl.CollaborationInfoImpl;
+import org.zkoss.zss.app.repository.BookRepositoryFactory;
 import org.zkoss.zss.app.repository.impl.BookUtil;
 import org.zkoss.zss.app.repository.impl.SimpleBookInfo;
 import org.zkoss.zss.app.ui.dlg.*;
@@ -70,17 +54,26 @@ import org.zkoss.zss.model.ModelEvents;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.DBHandler;
 import org.zkoss.zss.ui.*;
+import org.zkoss.zss.ui.Version;
 import org.zkoss.zss.ui.event.Events;
 import org.zkoss.zss.ui.event.SyncFriendFocusEvent;
 import org.zkoss.zss.ui.impl.DefaultUserActionManagerCtrl;
 import org.zkoss.zss.ui.impl.Focus;
 import org.zkoss.zss.ui.sys.UndoableActionManager;
-import org.zkoss.zul.Filedownload;
-import org.zkoss.zul.Fileupload;
-import org.zkoss.zul.Html;
-import org.zkoss.zul.Messagebox;
-import org.zkoss.zul.Popup;
-import org.zkoss.zul.Script;
+import org.zkoss.zul.*;
+
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.net.URLDecoder;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
 
 /**
  * 
@@ -481,6 +474,7 @@ public class AppCtrl extends CtrlBase<Component>{
 
 
 	private void importCSVSheet(String name, InputStream csv) throws IOException {
+		//TODO: Update for models
 		CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(csv)));
 		String[] nextLine;
 		loadedBook.getInternalBook().checkDBSchema();
@@ -510,8 +504,9 @@ public class AppCtrl extends CtrlBase<Component>{
 				if (row % 1000 == 0)
 					System.out.println("Importing " + name + " " + row + " loaded");
 			}
-			newSheet.setEndColumnIndex(maxcol, connection, true);
-			newSheet.setEndRowIndex(row, connection, true);
+			//TODO: Remove this
+			//newSheet.setEndColumnIndex(maxcol, connection, true);
+			//newSheet.setEndRowIndex(row, connection, true);
 			connection.commit();
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -558,8 +553,9 @@ public class AppCtrl extends CtrlBase<Component>{
 				cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
 			cpIN.endCopy();
 			rawConn.commit();
-			newSheet.setEndRowIndex(row - 1, connection, true);
-			newSheet.setEndColumnIndex(maxcol-1, connection, true);
+			//TODO: Mangesh - Update this
+			//newSheet.setEndRowIndex(row - 1, connection, true);
+			//newSheet.setEndColumnIndex(maxcol-1, connection, true);
 			connection.commit();
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -1177,7 +1173,7 @@ public class AppCtrl extends CtrlBase<Component>{
 	}
 	
 	interface AsyncFunction {
-		public void invoke();
+		void invoke();
 	}
 	
 	enum UnsavedAlertState {

@@ -32,6 +32,8 @@ import org.zkoss.zss.model.util.Validations;
  * @author dennis
  * @since 3.5.0
  */
+
+//TODO: Mangesh - Use row impl to sotre row properties
 public class RowImpl extends AbstractRowAdv {
 	private static final long serialVersionUID = 1L;
 
@@ -43,7 +45,7 @@ public class RowImpl extends AbstractRowAdv {
 
 		@Override
 		void resetIndex(int newidx, SCell obj) {
-			((AbstractCellAdv)obj).setIndex(newidx);
+	//		((AbstractCellAdv)obj).setIndex(newidx);
 		}};
 
 	private AbstractCellStyleAdv cellStyle;
@@ -93,7 +95,7 @@ public class RowImpl extends AbstractRowAdv {
 			if(columnIdx > getSheet().getBook().getMaxColumnIndex()){
 				throw new IllegalStateException("can't create the cell that exceeds max column size "+getSheet().getBook().getMaxColumnIndex());
 			}
-			cellObj = new CellImpl(this, columnIdx);
+			//cellObj = new CellImpl(this, columnIdx);
 			cells.put(columnIdx, cellObj);
 		}
 		return cellObj;
@@ -113,7 +115,7 @@ public class RowImpl extends AbstractRowAdv {
 	public void clearCell(int start, int end) {
 		// clear before move relation
 		for (SCell cell : cells.subValues(start, end)) {
-			((AbstractCellAdv) cell).destroy();
+		//	((AbstractCellAdv) cell).destroy();
 		}
 		cells.clear(start, end);
 	}
@@ -132,7 +134,7 @@ public class RowImpl extends AbstractRowAdv {
 			cells.trim(maxSize);
 		}
 		for(SCell cell:exceeds){
-			((AbstractCellAdv) cell).destroy();
+		//	((AbstractCellAdv) cell).destroy();
 		}
 	}
 
@@ -143,7 +145,7 @@ public class RowImpl extends AbstractRowAdv {
 		
 		// clear before move relation
 		for (SCell cell : cells.subValues(cellIdx, cellIdx + size - 1)) {
-			((AbstractCellAdv) cell).destroy();
+		//	((AbstractCellAdv) cell).destroy();
 		}
 
 		cells.delete(cellIdx, size);
@@ -159,9 +161,6 @@ public class RowImpl extends AbstractRowAdv {
 	@Override
 	public void destroy() {
 		checkOrphan();
-		for (SCell cell : cells.values()) {
-			((AbstractCellAdv) cell).destroy();
-		}
 		_sheet = null;
 	}
 
@@ -249,7 +248,7 @@ public class RowImpl extends AbstractRowAdv {
 		int oldIdx = _index;
 		this._index = newidx;
 		for(SCell cell:cells.values()){
-			((AbstractCellAdv) cell).setRow(oldIdx,this);//set this row again to trigger rebuildFormulaDependency
+		//	((AbstractCellAdv) cell).setRow(oldIdx,this);//set this row again to trigger rebuildFormulaDependency
 		}
 	}
 
@@ -266,7 +265,7 @@ public class RowImpl extends AbstractRowAdv {
 			//clear the cell in different target range first
 			Collection<SCell> toReplace = ((RowImpl)target).cells.clear(start+offset, end+offset);
 			for(SCell cell:toReplace){
-				((AbstractCellAdv) cell).destroy();
+			//	((AbstractCellAdv) cell).destroy();
 			}
 		}
 		
@@ -275,10 +274,10 @@ public class RowImpl extends AbstractRowAdv {
 		for(SCell cell:toMove){
 			int newidx = cell.getColumnIndex()+offset;
 			SCell old = ((RowImpl)target).cells.put(newidx, cell);
-			((AbstractCellAdv) cell).setIndex(newidx);
-			((AbstractCellAdv) cell).setRow(oldRowIdx,target);
+		//	((AbstractCellAdv) cell).setIndex(newidx);
+		//	((AbstractCellAdv) cell).setRow(oldRowIdx,target);
 			if(old!=null){
-				((AbstractCellAdv) old).destroy();
+			//	((AbstractCellAdv) old).destroy();
 			}
 		}
 		
@@ -295,7 +294,8 @@ public class RowImpl extends AbstractRowAdv {
 		final RowImpl tgt = new RowImpl(sheet, this._index);
 		
 		for (SCell cell : this.cells.values()) {
-			tgt.cells.put(cell.getColumnIndex(), ((CellImpl)cell).cloneCell(tgt, connection, updateToDB));
+			/* TODO Mangesh - Cleanup clone code */
+			//tgt.cells.put(cell.getColumnIndex(), ((CellImpl)cell).cloneCell(tgt, connection, updateToDB));
 		}
 
 		tgt.cellStyle = this.cellStyle;

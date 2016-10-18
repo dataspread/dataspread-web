@@ -16,44 +16,10 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
-
 import org.zkoss.lang.Objects;
-import org.zkoss.poi.ss.SpreadsheetVersion;
 import org.zkoss.util.logging.Log;
 import org.zkoss.zk.ui.Executions;
-import org.zkoss.zss.model.EventQueueModelEventListener;
-import org.zkoss.zss.model.InvalidModelOpException;
-import org.zkoss.zss.model.ModelEvent;
-import org.zkoss.zss.model.ModelEventListener;
-import org.zkoss.zss.model.ModelEvents;
-import org.zkoss.zss.model.SBookSeries;
-import org.zkoss.zss.model.SCell;
-import org.zkoss.zss.model.SCellStyle;
-import org.zkoss.zss.model.SColor;
-import org.zkoss.zss.model.SColumnArray;
-import org.zkoss.zss.model.SFont;
-import org.zkoss.zss.model.SName;
-import org.zkoss.zss.model.SPicture;
-import org.zkoss.zss.model.SPictureData;
-import org.zkoss.zss.model.SRow;
-import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.model.SNamedStyle;
-import org.zkoss.zss.model.STable;
-import org.zkoss.zss.model.STableColumn;
+import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.impl.sys.DependencyTableAdv;
 import org.zkoss.zss.model.impl.sys.formula.ParsingBook;
 import org.zkoss.zss.model.sys.EngineFactory;
@@ -66,62 +32,49 @@ import org.zkoss.zss.model.util.CellStyleMatcher;
 import org.zkoss.zss.model.util.FontMatcher;
 import org.zkoss.zss.model.util.Strings;
 import org.zkoss.zss.model.util.Validations;
-import org.zkoss.zss.range.impl.NotifyChangeHelper;
 import org.zkoss.zss.range.impl.StyleUtil;
+
+import java.sql.*;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author dennis
  * @since 3.5.0
  */
 public class BookImpl extends AbstractBookAdv{
+	/**
+	 * the sheet which is destroying now.
+	 */
+	/*package*/ final static ThreadLocal<SSheet> destroyingSheet = new ThreadLocal<SSheet>();
 	private static final long serialVersionUID = 1L;
-
 	private static final Log _logger = Log.lookup(BookImpl.class);
-
-	private String _bookName;
-	
-	private String _shareScope;
-	
-	private SBookSeries _bookSeries;
-	
+	private final static Random _random = new Random(System.currentTimeMillis());
+	private final static AtomicInteger _bookCount = new AtomicInteger();
 	private final List<AbstractSheetAdv> _sheets = new ArrayList<AbstractSheetAdv>();
-	private List<AbstractNameAdv> _names;
-	
-	private final List<SCellStyle> _cellStyles = new ArrayList<SCellStyle>(); 
+	private final List<SCellStyle> _cellStyles = new ArrayList<SCellStyle>();
 	private final Map<String, SNamedStyle> _namedStyles = new HashMap<String, SNamedStyle>(); //ZSS-854
 	private final List<SCellStyle> _defaultCellStyles = new ArrayList<SCellStyle>(); //ZSS-854
 	private final List<AbstractFontAdv> _fonts = new ArrayList<AbstractFontAdv>();
 	private final AbstractFontAdv _defaultFont;
 	private final HashMap<AbstractColorAdv,AbstractColorAdv> _colors = new LinkedHashMap<AbstractColorAdv,AbstractColorAdv>();
-	
-	private final static Random _random = new Random(System.currentTimeMillis());
-	private final static AtomicInteger _bookCount = new AtomicInteger();
-	private String _bookId;
-	
 	private final HashMap<String,AtomicInteger> _objIdCounter = new HashMap<String,AtomicInteger>();
 	private final int _maxRowSize = Integer.MAX_VALUE;
 	private final int _maxColumnSize = Integer.MAX_VALUE;
-	
+	boolean schemaPresent = false;
+	private String _bookName;
+	private String _shareScope;
+	private SBookSeries _bookSeries;
+	private List<AbstractNameAdv> _names;
+	private String _bookId;
 	private EventListenerAdaptor _listeners;
 	private EventListenerAdaptor _queueListeners;
-	
 	private HashMap<String,Object> _attributes;
-	
 	private EvaluationContributor _evalContributor;
-	
 	private ArrayList<SPictureData> _picDatas; //since 3.6.0
-	
 	private boolean _dirty = false;
-	
 	//ZSS-855
 	private HashMap<String, STable> _tables; //since 3.8.0
-
-	boolean schemaPresent=false;
-	
-	/**
-	 * the sheet which is destroying now.
-	 */
-	/*package*/ final static ThreadLocal<SSheet> destroyingSheet = new ThreadLocal<SSheet>(); 
 	
 	public BookImpl(String bookName){
 		Validations.argNotNull(bookName);
@@ -138,6 +91,22 @@ public class BookImpl extends AbstractBookAdv{
 		_bookId = ((char)('a'+_random.nextInt(26))) + Long.toString(System.currentTimeMillis()+_bookCount.getAndIncrement(), Character.MAX_RADIX) ;
 		_tables = new HashMap<String, STable>(0);
 	}
+
+	public static void deleteBook(String bookName, String bookTable) {
+		String deleteBookEntry = "DELETE FROM books WHERE bookname = ?";
+		try (Connection connection = DBHandler.instance.getConnection();
+			 Statement stmt = connection.createStatement();
+			 PreparedStatement deleteBookStmt = connection.prepareStatement(deleteBookEntry)) {
+			//TODO: Delete sheet
+			//stmt.execute("DROP TABLE " + bookTable + "_sheetdata");
+			stmt.execute("DROP TABLE " + bookTable + "_workbook");
+			deleteBookStmt.setString(1, bookName);
+			deleteBookStmt.execute();
+			connection.commit();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
 	
 	public void initDefaultCellStyles() {
 		AbstractCellStyleAdv defaultCellStyle = new CellStyleImpl(_defaultFont);
@@ -149,7 +118,12 @@ public class BookImpl extends AbstractBookAdv{
 	public SBookSeries getBookSeries(){
 		return _bookSeries;
 	}
-	
+
+	@Override
+	void setBookSeries(SBookSeries bookSeries) {
+		this._bookSeries = bookSeries;
+	}
+
 	@Override
 	public String getBookName(){
 		return _bookName;
@@ -181,26 +155,6 @@ public class BookImpl extends AbstractBookAdv{
 		return true;
 	}
 
-
-	public static void deleteBook(String bookName, String bookTable)
-	{
-		String deleteBookEntry = "DELETE FROM books WHERE bookname = ?";
-		try (Connection connection = DBHandler.instance.getConnection();
-			 Statement stmt = connection.createStatement();
-			 PreparedStatement deleteBookStmt = connection.prepareStatement(deleteBookEntry))
-		{
-			stmt.execute("DROP TABLE " + bookTable + "_sheetdata");
-			stmt.execute("DROP TABLE " + bookTable + "_workbook");
-			deleteBookStmt.setString(1, bookName);
-			deleteBookStmt.execute();
-			connection.commit();
-		}
-		catch (SQLException e)
-		{
-			e.printStackTrace();
-		}
-	}
-
 	@Override
 	public void checkDBSchema() {
 		if (schemaPresent)
@@ -208,28 +162,26 @@ public class BookImpl extends AbstractBookAdv{
 		String bookTable=getId();
 
 		try (Connection connection = DBHandler.instance.getConnection();
-			 Statement stmt = connection.createStatement())
-		{
-			String createTable = "CREATE  UNLOGGED  TABLE " + bookTable + "_sheetdata (\n" +
-					"  sheetid       INTEGER              NOT NULL,\n" +
-					"  col           INTEGER              NOT NULL,\n" +
-					"  row           INTEGER              NOT NULL,\n" +
-					"  value         TEXT,\n" +
-					"  formula       TEXT,\n" +
-					"  query TEXT,\n" +
-					"  type          SMALLINT,\n" +
-					"  value_numeric NUMERIC DEFAULT 0,\n" +
-					"  updatedby     INTEGER DEFAULT (-1) NOT NULL,\n" +
-					"  parent_col    INTEGER,\n" +
-					"  parent_row    INTEGER,\n" +
-					"  PRIMARY KEY (sheetid, row, col))";
-			stmt.execute(createTable);
+			 Statement stmt = connection.createStatement()) {
+			DBContext dbContext = new DBContext(connection);
+
+			//add check bookname
+			String checkBook = "SELECT bookname FROM books WHERE bookname like ?" +
+					" AND LENGTH(bookname) = (SELECT MAX(LENGTH(bookname))" +
+					" FROM books WHERE bookname like ?) LIMIT 1";
+			PreparedStatement checkBookStmt = dbContext.getConnection().prepareStatement(checkBook);
+			checkBookStmt.setString(1, getBookName() + "%");
+			checkBookStmt.setString(2, getBookName() + "%");
+			ResultSet rs = checkBookStmt.executeQuery();
+			if(rs.next())
+				_bookName = rs.getString(1) + "_";
+			checkBookStmt.close();
+
 			String createBookRelation = "CREATE TABLE " + bookTable + "_workbook (" +
 					"  sheetid       INTEGER," +
 					"  sheetindex    INTEGER," +
 					"  sheetname     TEXT," +
-					"  maxrow        INTEGER," +
-					"  maxcolumn     INTEGER," +
+					"  modelname     TEXT," +
 					"  PRIMARY KEY (sheetid))";
 			stmt.execute(createBookRelation);
 
@@ -238,17 +190,18 @@ public class BookImpl extends AbstractBookAdv{
 			insertBookStmt.setString(1, getBookName());
 			insertBookStmt.setString(2, getId());
 			insertBookStmt.execute();
+            insertBookStmt.close();
 
 
-			String insertSheets = "INSERT INTO " + bookTable + "_workbook VALUES(?, ?, ?, ?, ?)";
+			String insertSheets = "INSERT INTO " + bookTable + "_workbook VALUES(?, ?, ?, ?)";
 			PreparedStatement insertSheetStmt = connection.prepareStatement(insertSheets);
-			for (SSheet sheet:getSheets())
-			{
+			for (SSheet sheet:getSheets()) {
+				String modelName = bookTable + sheet.getDBId();
+				sheet.createModel(dbContext, modelName);
 				insertSheetStmt.setInt(1, sheet.getDBId());
 				insertSheetStmt.setInt(2, _sheets.indexOf(sheet));
 				insertSheetStmt.setString(3, sheet.getSheetName());
-				insertSheetStmt.setInt(4, sheet.getEndRowIndex());
-				insertSheetStmt.setInt(5, sheet.getEndColumnIndex());
+				insertSheetStmt.setString(4, modelName);
 				insertSheetStmt.execute();
 			}
 			insertSheetStmt.close();
@@ -261,7 +214,7 @@ public class BookImpl extends AbstractBookAdv{
 		}
 
 	}
-
+	
 	@Override
 	public SSheet getSheet(int i){
 		return _sheets.get(i);
@@ -291,12 +244,13 @@ public class BookImpl extends AbstractBookAdv{
 		}
 		return null;
 	}
-	
+
 	protected void checkOwnership(SSheet sheet){
 		if(!_sheets.contains(sheet)){
 			throw new IllegalStateException("doesn't has ownership "+ sheet);
 		}
 	}
+
 	protected void checkOwnership(SName name){
 		if(_names==null || !_names.contains(name)){
 			throw new IllegalStateException("doesn't has ownership "+ name);
@@ -308,14 +262,14 @@ public class BookImpl extends AbstractBookAdv{
 		if(_listeners!=null){
 			_listeners.sendModelEvent(event);
 		}
-		
+
 		if(_queueListeners!=null &&
 			// System thread doesn't have execution so that it will throw IllegalStateException
 			// e.g. Background Thread created by Executor
 			Executions.getCurrent() != null){
 			_queueListeners.sendModelEvent(event);
 		}
-		
+
 		if(!ModelEvents.isCustomEvent(event)) {
 			if(!_dirty) {
 				_dirty = true;
@@ -328,8 +282,7 @@ public class BookImpl extends AbstractBookAdv{
 			}
 		}
 	}
-
-
+	
 	private SSheet createExistingSheet(String name, int dbId) {
 		AbstractSheetAdv sheet = new SheetImpl(this,nextObjId("sheet"));
 		sheet.setDBId(dbId);
@@ -347,7 +300,7 @@ public class BookImpl extends AbstractBookAdv{
 	public SSheet createSheet(String name) {
 		return createSheet(name,null);
 	}
-	
+
 	@Override
 	String nextObjId(String type){
 		StringBuilder sb = new StringBuilder(_bookId);
@@ -373,7 +326,7 @@ public class BookImpl extends AbstractBookAdv{
 		checkLegalSheetName(name);
 		if(src!=null)
 			checkOwnership(src);
-		
+
 
 		AbstractSheetAdv sheet = new SheetImpl(this,nextObjId("sheet"));
 		sheet.setSheetName(name, false);
@@ -384,7 +337,7 @@ public class BookImpl extends AbstractBookAdv{
 		{
 			String bookTable=getId();
 			String insertSheets = "INSERT INTO " + bookTable + "_workbook " +
-					" SELECT max(sheetid) +  1, ?, ?, ?, ? " +
+					" SELECT max(sheetid) +  1, ?, ? " +
 					" FROM " +  bookTable + "_workbook  " +
 					" RETURNING sheetid";
 			try (Connection connection = DBHandler.instance.getConnection();
@@ -392,8 +345,6 @@ public class BookImpl extends AbstractBookAdv{
 			{
 				stmt.setInt(1,_sheets.indexOf(sheet));
 				stmt.setString(2,sheet.getSheetName());
-				stmt.setInt(3,sheet.getEndRowIndex());
-				stmt.setInt(4,sheet.getEndColumnIndex());
 				ResultSet rs = stmt.executeQuery();
 				if (rs.next())
 					sheet.setDBId(rs.getInt("sheetid"));
@@ -434,7 +385,7 @@ public class BookImpl extends AbstractBookAdv{
 				}
 			}
 		}
-		
+
 		//create formula cache for any sheet, sheet name, position change
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
 
@@ -446,42 +397,42 @@ public class BookImpl extends AbstractBookAdv{
 	protected Ref getRef() {
 		return new RefImpl(this);
 	}
-
+	
 	@Override
 	public void setSheetName(SSheet sheet, String newname) {
 		checkLegalSheetName(newname);
 		checkOwnership(sheet);
-		
+
 		int index = getSheetIndex(sheet);
 		String oldname = sheet.getSheetName();
 		((AbstractSheetAdv) sheet).setSheetName(newname, true);
-		
+
 		//create formula cache for any sheet, sheet name, position change
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
-		
+
 		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new RefImpl(this.getBookName(),newname, index));//to clear the cache of formula that has unexisted name
 		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new RefImpl(this.getBookName(),oldname, index));
-		
+
 		renameSheetFormula(oldname,newname,index);
 	}
-	
+
 	private void renameSheetFormula(String oldName, String newName, int index){
 		AbstractBookSeriesAdv bs = (AbstractBookSeriesAdv)getBookSeries();
 		DependencyTable dt = bs.getDependencyTable();
 		Set<Ref> dependents = dt.getDirectDependents(new RefImpl(getBookName(),oldName,index));
 		if(dependents.size()>0){
-			
+
 			//clear the dependents dependency before rename it's sheet name
 			for(Ref dependent:dependents){
 				dt.clearDependents(dependent);
 			}
-			
+
 			//rebuild the the formula by tuner
 			FormulaTunerHelper tuner = new FormulaTunerHelper(bs);
 			tuner.renameSheet(this,oldName,newName,dependents);
 		}
 	}
-
+	
 	private void checkLegalSheetName(String name) {
 		if(Strings.isBlank(name)){
 			throw new InvalidModelOpException("sheet name '"+name+"' is not legal");
@@ -490,7 +441,7 @@ public class BookImpl extends AbstractBookAdv{
 			throw new InvalidModelOpException("sheet name '"+name+"' is duplicated");
 		}
 	}
-	
+
 	private void checkLegalNameName(String name,String sheetName) {
 		if(Strings.isBlank(name)){
 			throw new InvalidModelOpException("name '"+name+"' is not legal");
@@ -511,13 +462,13 @@ public class BookImpl extends AbstractBookAdv{
 		if (name.length() > 255) {
 			throw new InvalidModelOpException("name '"+name+"' is not legal: cannot exceed 255 characters");
 		}
-		
+
 		//1st character must be a letter, underscore, or backslash
 		char c1 = name.charAt(0);
 		if (!Character.isLetter(c1) && c1 != '_' && c1 != '\\') {
 			throw new InvalidModelOpException("name '"+name+"' is not legal: first character must be a letter, an underscore, or a backslash");
 		}
-		
+
 		boolean invalid = c1 == '_' || c1 == '\\' || c1 == '?' || c1 == '.'; //impossible be a valid cell reference
 		int colIndex = invalid ? -2 : Character.getNumericValue(c1) - 9;
 		if (!invalid) {
@@ -528,7 +479,7 @@ public class BookImpl extends AbstractBookAdv{
 		for (int j = 1, len = name.length(); j < len; ++j) {
 			char ch = name.charAt(j);
 			if (Character.isLetter(ch)) { //analyze colIndex
-				if (invalid) continue;  
+				if (invalid) continue;
 				if (rowIndex >= 0) { //letter -> digit -> letter
 					invalid = true;
 					continue;
@@ -540,7 +491,7 @@ public class BookImpl extends AbstractBookAdv{
 				}
 				colIndex = colIndex * 26 + c;
 			} else if (Character.isDigit(ch)) { //analyze rowIndex
-				if (invalid) continue; 
+				if (invalid) continue;
 				if (rowIndex < 0) {
 					rowIndex = Character.getNumericValue(ch);
 				} else {
@@ -552,12 +503,12 @@ public class BookImpl extends AbstractBookAdv{
 				invalid = true; // '.' or '-' or '?' or '\', impossible to be a valid cell reference
 			}
 		}
-		
+
 		//cannot be a valid cell reference address
 		if (!invalid && colIndex >= 0 && colIndex <= getMaxColumnSize() && rowIndex >= 0 && rowIndex < getMaxRowSize()) {
 			throw new InvalidModelOpException("name '"+name+"' is not legal: cannot be a cell reference");
 		}
-			
+
 		//cannot be 'C' or 'R'
 		if (name.equalsIgnoreCase("C") || name.equalsIgnoreCase("R")) {
 			throw new InvalidModelOpException("name '"+name+"' is not legal: cannot be 'C', 'c', 'R', or 'r'");
@@ -567,9 +518,9 @@ public class BookImpl extends AbstractBookAdv{
 	@Override
 	public void deleteSheet(SSheet sheet) {
 		checkOwnership(sheet);
-		
+
 		final String bookName = sheet.getBook().getBookName();
-		
+
 		destroyingSheet.set(sheet);
 		try{
 			((AbstractSheetAdv)sheet).destroy();
@@ -579,17 +530,17 @@ public class BookImpl extends AbstractBookAdv{
 		String oldName = sheet.getSheetName();
 		int index = _sheets.indexOf(sheet);
 		_sheets.remove(index);
-		
+
 		//create formula cache for any sheet, sheet name, position change
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
-		
-//		sendModelInternalEvent(ModelInternalEvents.createModelInternalEvent(ModelInternalEvents.ON_SHEET_DELETED, 
+
+//		sendModelInternalEvent(ModelInternalEvents.createModelInternalEvent(ModelInternalEvents.ON_SHEET_DELETED,
 //				this,ModelInternalEvents.createDataMap(ModelInternalEvents.PARAM_SHEET_OLD_INDEX, index)));
-		
+
 		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new RefImpl(this.getBookName(),sheet.getSheetName(), index));
-		
+
 		renameSheetFormula(oldName, null, index);
-		
+
 		//ZSS-815
 		// adjust sheet index
 		adjustSheetIndex(bookName, index);
@@ -603,7 +554,7 @@ public class BookImpl extends AbstractBookAdv{
 			String deleteSheetData = "DELETE FROM " + bookTable + "_sheetdata WHERE sheetid = ?";
 			try (Connection connection = DBHandler.instance.getConnection();
 				 PreparedStatement deleteSheetstmt = connection.prepareStatement(deleteSheet);
-				 PreparedStatement deleteSheetDatastmt = connection.prepareStatement(deleteSheetData);)
+				 PreparedStatement deleteSheetDatastmt = connection.prepareStatement(deleteSheetData))
 			{
 				deleteSheetstmt.setInt(1,sheet.getDBId());
 				deleteSheetstmt.execute();
@@ -624,7 +575,7 @@ public class BookImpl extends AbstractBookAdv{
 		DependencyTableAdv dt = (DependencyTableAdv) bs.getDependencyTable();
 		dt.adjustSheetIndex(bookName, index, -1);
 	}
-		
+
 	@Override
 	public void moveSheetTo(SSheet sheet, int index) {
 		checkOwnership(sheet);
@@ -664,12 +615,13 @@ public class BookImpl extends AbstractBookAdv{
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
 
 		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new RefImpl(this.getBookName(),sheet.getSheetName(), index));
-		//ZSS-1049: should consider formulas that referred to the old index 
+		//ZSS-1049: should consider formulas that referred to the old index
 		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new RefImpl(this.getBookName(),sheet.getSheetName(), oldindex));
-		
+
 		// adjust sheet index
 		moveSheetIndex(getBookName(), oldindex, index);
 	}
+
 	//ZSS-820
 	private void moveSheetIndex(String bookName, int oldIndex, int newIndex) {
 		AbstractBookSeriesAdv bs = (AbstractBookSeriesAdv)getBookSeries();
@@ -692,18 +644,18 @@ public class BookImpl extends AbstractBookAdv{
 		return getDefaultCellStyle(0);
 	}
 
-	//ZSS-854
-	@Override
-	public SCellStyle getDefaultCellStyle(int index) {
-		return _defaultCellStyles.get(index);
-	}
-
 	@Override
 	public void setDefaultCellStyle(SCellStyle cellStyle) {
 		if (cellStyle == null) return;
 		AbstractCellStyleAdv defaultCellStyle = (AbstractCellStyleAdv) cellStyle;
 		_defaultCellStyles.set(0, defaultCellStyle);
 		_cellStyles.set(0, defaultCellStyle);
+	}
+
+	//ZSS-854
+	@Override
+	public SCellStyle getDefaultCellStyle(int index) {
+		return _defaultCellStyles.get(index);
 	}
 
 	@Override
@@ -720,11 +672,11 @@ public class BookImpl extends AbstractBookAdv{
 		if(src!=null){
 			style.copyFrom(src);
 		}
-		
+
 		if(inStyleTable){
 			_cellStyles.add(style);
 		}
-		
+
 		return style;
 	}
 	
@@ -737,8 +689,7 @@ public class BookImpl extends AbstractBookAdv{
 		}
 		return null;
 	}
-	
-	
+
 	@Override
 	public SFont getDefaultFont() {
 		return _defaultFont;
@@ -758,11 +709,11 @@ public class BookImpl extends AbstractBookAdv{
 		if(src!=null){
 			font.copyFrom(src);
 		}
-		
+
 		if(inFontTable){
 			_fonts.add(font);
 		}
-		
+
 		return font;
 	}
 	
@@ -775,7 +726,7 @@ public class BookImpl extends AbstractBookAdv{
 		}
 		return null;
 	}
-	
+
 	@Override
 	public int getMaxRowSize() {
 		return _maxRowSize;
@@ -791,16 +742,16 @@ public class BookImpl extends AbstractBookAdv{
 		HashMap<String,SCellStyle> stylePool = new LinkedHashMap<String,SCellStyle>();
 		_cellStyles.clear();
 		_fonts.clear();
-		
+
 		SCellStyle defaultStyle = getDefaultCellStyle();
 		SFont defaultFont = getDefaultFont();
 		stylePool.put(((AbstractCellStyleAdv)defaultStyle).getStyleKey(), defaultStyle);
-		
-		for(SSheet sheet:_sheets){
-			Iterator<SRow> rowIter = sheet.getRowIterator(); 
+
+		for(SSheet sheet:_sheets) {
+			Iterator<SRow> rowIter = sheet.getRowIterator();
 			while(rowIter.hasNext()){
 				SRow row = rowIter.next();
-				
+
 				row.setCellStyle(hitStyle(defaultStyle,row.getCellStyle(),stylePool));
 				Iterator<SCell> cellIter = sheet.getCellIterator(row.getIndex());
 				while(cellIter.hasNext()){
@@ -814,11 +765,11 @@ public class BookImpl extends AbstractBookAdv{
 				colarr.setCellStyle(hitStyle(defaultStyle,colarr.getCellStyle(),stylePool));
 			}
 		}
-		
+
 		_cellStyles.addAll((Collection)stylePool.values());
 		String key;
 		HashMap<String,SFont> fontPool = new LinkedHashMap<String,SFont>();
-		
+
 		fontPool.put(((AbstractFontAdv)defaultFont).getStyleKey(), defaultFont);
 		for(SCellStyle style:_cellStyles){
 			SFont font = style.getFont();
@@ -827,22 +778,22 @@ public class BookImpl extends AbstractBookAdv{
 				fontPool.put(key, font);
 			}
 		}
-		
+
 		_fonts.addAll((Collection)fontPool.values());
-		
+
 		_colors.clear();//color is immutable, just clear it.
 	}
-	
-	
+
 	@SuppressWarnings("unchecked")
 	public List<SCellStyle> getCellStyleTable(){
 		return Collections.unmodifiableList((List)_cellStyles);
 	}
+
 	@SuppressWarnings("unchecked")
 	public List<SFont> getFontTable(){
 		return Collections.unmodifiableList((List)_fonts);
 	}
-	
+
 	private SCellStyle hitStyle(SCellStyle defaultStyle,SCellStyle currSytle,
 			HashMap<String, SCellStyle> stylePool) {
 		String key;
@@ -877,6 +828,7 @@ public class BookImpl extends AbstractBookAdv{
 			_listeners.addEventListener(listener);
 		}
 	}
+
 	@Override
 	public void removeEventListener(ModelEventListener listener){
 		if(listener instanceof EventQueueModelEventListener && _queueListeners!=null){
@@ -932,20 +884,22 @@ public class BookImpl extends AbstractBookAdv{
 	public List<SSheet> getSheets() {
 		return Collections.unmodifiableList((List)_sheets);
 	}
+
 	@Override
 	public SName createName(String namename) {
 		return createName(namename,null);
 	}
+
 	@Override
 	public SName createName(String namename,String sheetName) {
 		checkLegalNameName(namename,sheetName);
 
 		AbstractNameAdv name = new NameImpl(this,nextObjId("name"),namename,sheetName);
-		
+
 		if(_names==null){
 			_names = new ArrayList<AbstractNameAdv>();
 		}
-		
+
 		_names.add(name);
 		return name;
 	}
@@ -954,32 +908,33 @@ public class BookImpl extends AbstractBookAdv{
 	public void setNameName(SName name, String newname) {
 		setNameName(name,newname,null);
 	}
+
 	public void setNameName(SName name, String newname, String sheetName) {
 		checkLegalNameName(newname,sheetName);
 		checkOwnership(name);
-		
+
 		//create formula cache for name, currently, we can just clear all of book.
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
-		
+
 		//notify the (old) name is change before update name
 		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new NameRefImpl((AbstractNameAdv)name));
-		
+
 		final String oldName = name.getName(); // ZSS-661
-		
+
 		//ZSS-966: notify the (old) table name is change before update name
 		if (name instanceof TableNameImpl) {
 			ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(), new TablePrecedentRefImpl(this.getBookName(), oldName));
 		}
-		
+
 		((AbstractNameAdv)name).setName(newname,sheetName); //will change Table's name if the name is a TableName
 		//don't need to notify new name precedent update, since Name handle it itself
-		
+
 		//Rename formula that contains this name
 		renameNameFormula(name, oldName, newname, sheetName); // ZSS-661
-		
+
 		//Rename formula that contains this table name
 		if (name instanceof TableNameImpl) {
-			//ZSS-966: reput Table; must do this first or renameTableName() 
+			//ZSS-966: reput Table; must do this first or renameTableName()
 			//cannot find the correct table
 			STable tb = removeTable(oldName);
 			if (tb != null)
@@ -988,12 +943,12 @@ public class BookImpl extends AbstractBookAdv{
 			renameTableNameFormula(name, oldName, newname);
 		}
 	}
-	
+
 	private void renameNameFormula(SName name, String oldName, String newName, String sheetName) {
 		AbstractBookSeriesAdv bs = (AbstractBookSeriesAdv)getBookSeries();
 		FormulaTunerHelper tuner = new FormulaTunerHelper(bs);
 		DependencyTable dt = bs.getDependencyTable();
-		final 
+		final
 		Ref ref = new NameRefImpl(name.getBook().getBookName(),name.getApplyToSheetName(), oldName); //old name
 		Set<Ref> dependents = dt.getDirectDependents(ref);
 		if(dependents.size()>0){
@@ -1001,7 +956,7 @@ public class BookImpl extends AbstractBookAdv{
 			for(Ref dependent:dependents){
 				dt.clearDependents(dependent);
 			}
-			
+
 			int sheetIndex = sheetName == null ? -1 : getSheetIndex(sheetName);
 			//rebuild the the formula by tuner
 			tuner.renameName(this, oldName, newName, dependents, sheetIndex);
@@ -1011,13 +966,13 @@ public class BookImpl extends AbstractBookAdv{
 	@Override
 	public void deleteName(SName name) {
 		checkOwnership(name);
-		
+
 		((AbstractNameAdv)name).destroy();
-		
+
 		int index = _names.indexOf(name);
 		_names.remove(index);
-		
-//		sendEvent(ModelEvents.ON_NAME_DELETED, 
+
+//		sendEvent(ModelEvents.ON_NAME_DELETED,
 //				ModelEvents.PARAM_NAME, sheet,
 //				ModelEvents.PARAM_SHEET_OLD_INDEX, index);
 	}
@@ -1039,6 +994,7 @@ public class BookImpl extends AbstractBookAdv{
 	public SName getNameByName(String namename) {
 		return getNameByName(namename,null);
 	}
+
 	public SName getNameByName(String namename, String sheetName) {
 		if(_names==null)
 			return null;
@@ -1063,7 +1019,7 @@ public class BookImpl extends AbstractBookAdv{
 	public int getSheetIndex(SSheet sheet) {
 		return _sheets.indexOf(sheet);
 	}
-	
+
 	@Override
 	public int getSheetIndex(String sheetName) {
 		int i=0;
@@ -1077,9 +1033,14 @@ public class BookImpl extends AbstractBookAdv{
 	}
 
 	@Override
+	public String getShareScope() {
+		return _shareScope;
+	}
+
+	@Override
 	public void setShareScope(String scope) {
 		if(!Objects.equals(this._shareScope,scope)){
-			
+
 			if("disable".equals(scope)){
 				if(_listeners!=null){
 					_listeners.clear();
@@ -1089,23 +1050,13 @@ public class BookImpl extends AbstractBookAdv{
 				}
 				return;
 			}
-			
+
 			if(_queueListeners!=null && _queueListeners.size()>0){
 				throw new IllegalStateException("can't change share scope after registed any queue model event listener");
 			}
-			
+
 			this._shareScope = scope;
 		}
-	}
-
-	@Override
-	public String getShareScope() {
-		return _shareScope;
-	}
-
-	@Override
-	void setBookSeries(SBookSeries bookSeries) {
-		this._bookSeries = bookSeries;
 	}
 
 	@Override
@@ -1148,8 +1099,7 @@ public class BookImpl extends AbstractBookAdv{
 			 while (rs.next())
 			 {
 				SSheet sheet =  createExistingSheet(rs.getString("sheetname"), rs.getInt("sheetid"));
-				sheet.setEndRowIndex(rs.getInt("maxrow"), null, false);
-				sheet.setEndColumnIndex(rs.getInt("maxcolumn"), null, false);
+				 sheet.setDataModel(rs.getString("modelname"));
 			 }
 		}
 		catch (SQLException e)
@@ -1281,7 +1231,7 @@ public class BookImpl extends AbstractBookAdv{
 	//ZSS-854
 	@Override
 	public int addDefaultCellStyle(SCellStyle cellStyle) {
-		_defaultCellStyles.add((AbstractCellStyleAdv)cellStyle);
+		_defaultCellStyles.add(cellStyle);
 		return _defaultCellStyles.size() - 1;
 	}
 	

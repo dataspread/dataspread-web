@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="reflectasm-1.10.1-shaded">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/local_lib/reflectasm-1.10.1-shaded.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

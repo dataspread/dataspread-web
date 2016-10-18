@@ -16,13 +16,13 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
-import java.io.Serializable;
-import java.sql.Connection;
-import java.util.Set;
-
 import org.zkoss.zss.model.SColumn;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.STable;
+
+import java.io.Serializable;
+import java.sql.Connection;
+import java.util.Set;
 /**
  * 
  * @author dennis
@@ -42,14 +42,16 @@ public abstract class AbstractSheetAdv implements SSheet,LinkedModelObject,Seria
 //	/*package*/ abstract int getColumnIndex(ColumnAdv column);
 	
 	/*package*/ abstract AbstractCellAdv getCell(int rowIdx, int columnIdx, boolean proxy);
-	/*package*/ abstract AbstractCellAdv getOrCreateCell(int rowIdx, int columnIdx);
-	
-	
-	/*package*/ abstract void copyTo(AbstractSheetAdv sheet, Connection connection, boolean updateToDB);
+
+    /*package*/
+    abstract AbstractCellAdv createCell(int rowIdx, int columnIdx);
+
+
+    /*package*/ abstract void copyTo(AbstractSheetAdv sheet, Connection connection, boolean updateToDB);
 
 	/*package*/
 	abstract void setSheetName(String name, boolean updateToDB);
-	
+
 //	/*package*/ abstract void onModelInternalEvent(ModelInternalEvent event);
 	
 	//ZSS-855

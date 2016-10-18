@@ -16,45 +16,29 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
-import java.io.Serializable;
-import java.sql.Connection;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.LinkedHashSet;
-import java.util.Locale;
-import java.util.Set;
-
 import org.zkoss.poi.ss.formula.eval.ValueEval;
-import org.zkoss.poi.ss.usermodel.Hyperlink;
 import org.zkoss.poi.ss.usermodel.ZssContext;
-import org.zkoss.zss.model.ErrorValue;
-import org.zkoss.zss.model.InvalidModelOpException;
-import org.zkoss.zss.model.SCell;
-import org.zkoss.zss.model.SCellStyle;
-import org.zkoss.zss.model.SComment;
-import org.zkoss.zss.model.SHyperlink;
-import org.zkoss.zss.model.SRichText;
-import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.SHyperlink.HyperlinkType;
 import org.zkoss.zss.model.sys.EngineFactory;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.format.FormatContext;
 import org.zkoss.zss.model.sys.format.FormatEngine;
-import org.zkoss.zss.model.sys.formula.FormulaEngine;
 import org.zkoss.zss.model.sys.formula.FormulaExpression;
-import org.zkoss.zss.model.sys.formula.FormulaParseContext;
 import org.zkoss.zss.model.sys.input.InputEngine;
 import org.zkoss.zss.model.sys.input.InputParseContext;
 import org.zkoss.zss.model.sys.input.InputResult;
-import org.zkoss.zss.model.util.Validations;
-import org.zkoss.zss.range.impl.StyleUtil;
+
+import java.io.Serializable;
+import java.sql.Connection;
+import java.util.*;
 
 /**
  * 
  * @author dennis
  * @since 3.5.0
  */
-public abstract class AbstractCellAdv implements SCell,LinkedModelObject,Serializable{
+public abstract class AbstractCellAdv implements SCell,Serializable{
 	private static final long serialVersionUID = 1L;
 	
 	protected void checkType(CellType... types){
@@ -81,9 +65,11 @@ public abstract class AbstractCellAdv implements SCell,LinkedModelObject,Seriali
 	}
 	
 	/*package*/ abstract void evalFormula();
-	/*package*/ abstract Object getValue(boolean evaluatedVal);
-	
-	@Override
+
+    /*package*/
+    public abstract Object getValue(boolean evaluatedVal);
+
+    @Override
 	public Object getValue(){
 		return getValue(true);
 	}
@@ -247,16 +233,10 @@ public abstract class AbstractCellAdv implements SCell,LinkedModelObject,Seriali
 		return comment;
 	}
 	
-	/*package*/ abstract void setIndex(int newidx);
-	/*package*/ abstract void setRow(int oldRowIdx, AbstractRowAdv row);
 	/*package*/ abstract Ref getRef();
 
 	//ZSS-565: Support input with Swedish locale into formula 
 	public abstract void setFormulaValue(String formula, Locale locale, Connection connection, boolean updateToDB);
-	
-	//ZSS-688
-	//@since 3.6.0
-	/*package*/ abstract AbstractCellAdv cloneCell(AbstractRowAdv row, Connection connection, boolean updateToDB);
 	
 	//ZSS-818
 	//@since 3.7.0
@@ -330,7 +310,13 @@ public abstract class AbstractCellAdv implements SCell,LinkedModelObject,Seriali
 			default:
 				setValue(resultVal, connection, updateToDB);
 		}
-
-
 	}
+
+	protected abstract byte[] toBytes();
+
+	public abstract void setRow(int row);
+
+	public abstract void setColumn(int column);
+
+    public abstract void setSheet(AbstractSheetAdv sheet);
 }
