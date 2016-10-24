@@ -17,21 +17,21 @@
 
 package org.zkoss.poi.ss.formula;
 
+import org.zkoss.poi.ss.SpreadsheetVersion;
+import org.zkoss.poi.ss.format.Formatters;
+import org.zkoss.poi.ss.formula.constant.ErrorConstant;
+import org.zkoss.poi.ss.formula.function.FunctionMetadata;
+import org.zkoss.poi.ss.formula.function.FunctionMetadataRegistry;
+import org.zkoss.poi.ss.formula.ptg.*;
+import org.zkoss.poi.ss.usermodel.ErrorConstants;
+import org.zkoss.poi.ss.util.AreaReference;
+import org.zkoss.poi.ss.util.CellReference;
+import org.zkoss.poi.ss.util.CellReference.NameType;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
-
-import org.zkoss.poi.ss.format.Formatters;
-import org.zkoss.poi.ss.formula.ptg.*;
-import org.zkoss.poi.ss.formula.constant.ErrorConstant;
-import org.zkoss.poi.ss.formula.function.FunctionMetadata;
-import org.zkoss.poi.ss.formula.function.FunctionMetadataRegistry;
-import org.zkoss.poi.ss.usermodel.ErrorConstants;
-import org.zkoss.poi.ss.SpreadsheetVersion;
-import org.zkoss.poi.ss.util.AreaReference;
-import org.zkoss.poi.ss.util.CellReference;
-import org.zkoss.poi.ss.util.CellReference.NameType;
 
 /**
  * This class parses a formula string into a List of tokens in RPN order.
@@ -58,109 +58,37 @@ import org.zkoss.poi.ss.util.CellReference.NameType;
  *  @author Henri Chen (henrichen at zkoss dot org) - Sheet1:Sheet3!xxx 3d reference
  */
 public final class FormulaParser {
-	private static final class Identifier {
-		private final String _name;
-		private final boolean _isQuoted;
-
-		public Identifier(String name, boolean isQuoted) {
-			_name = name;
-			_isQuoted = isQuoted;
-		}
-		public String getName() {
-			return _name;
-		}
-		public boolean isQuoted() {
-			return _isQuoted;
-		}
-		public String toString() {
-			StringBuffer sb = new StringBuffer(64);
-			sb.append(getClass().getName());
-			sb.append(" [");
-			if (_isQuoted) {
-				sb.append("'").append(_name).append("'");
-			} else {
-				sb.append(_name);
-			}
-			sb.append("]");
-			return sb.toString();
-		}
-	}
-	private static final class SheetIdentifier {
-
-
-		private final String _bookName;
-		private final Identifier _sheetIdentifier;
-		public SheetIdentifier(String bookName, Identifier sheetIdentifier, FormulaParsingWorkbook book) {
-			if (bookName == null && sheetIdentifier.isQuoted()) { //might be '[Book.xls]Sheet 1'!
-				final String name = sheetIdentifier.getName();
-				if (name.charAt(0) == '[') {
-					int j = name.indexOf(']');
-					if (j > 1) {
-						bookName = name.substring(1, j);
-						sheetIdentifier = new Identifier(name.substring(j+1), true);
-					}
-				}
-			}
-			String realname = null; //20120117, henrichen@zkoss.org: ZSS-81
-			if (bookName != null) {
-				realname = book.getBookNameFromExternalLinkIndex(bookName);
-				if (realname == null) {
-					realname = bookName;
-				}
-			}
-			_bookName = realname; //20120117, henrichen@zkoss.org: ZSS-81
-			_sheetIdentifier = sheetIdentifier;
-		}
-		public String getBookName() {
-			return _bookName;
-		}
-		public Identifier getSheetIdentifier() {
-			return _sheetIdentifier;
-		}
-		public String toString() {
-			StringBuffer sb = new StringBuffer(64);
-			sb.append(getClass().getName());
-			sb.append(" [");
-			if (_bookName != null) {
-				sb.append(" [").append(_sheetIdentifier.getName()).append("]");
-			}
-			if (_sheetIdentifier.isQuoted()) {
-				sb.append("'").append(_sheetIdentifier.getName()).append("'");
-			} else {
-				sb.append(_sheetIdentifier.getName());
-			}
-			sb.append("]");
-			return sb.toString();
-		}
-		public String getSheetName() { //ZSS-790
-			return _sheetIdentifier.getName();
-		}
-	}
-
-	private final String _formulaString;
-	private final int _formulaLength;
-	/** points at the next character to be read (after the {@link #look} char) */
-	private int _pointer;
-
-	private ParseNode _rootNode;
-
 	private final static char TAB = '\t'; // HSSF + XSSF
 	private final static char CR = '\r';  // Normally just XSSF
 	private final static char LF = '\n';  // Normally just XSSF
-
+	/**
+	 * Matches a zero or one letter-runs followed by zero or one digit-runs.
+	 * Either or both runs man optionally be prefixed with a single '$'.
+	 * (copied+modified from {@link org.zkoss.poi.ss.util.CellReference#CELL_REF_PATTERN})
+	 */
+	private static final Pattern CELL_REF_PATTERN = Pattern.compile("(\\$?[A-Za-z]+)?(\\$?[0-9]+)?");
+	private static final Pattern OP_FORMULA_PATTERN = Pattern.compile("(TABLE|COL)_\\d+");
+	private final String _formulaString;
+	private final int _formulaLength;
+	//ZSS-565
+	//See http://office.microsoft.com/en-us/excel-help/issue-array-constants-may-unexpectedly-contain-backslash-characters-HA010222558.aspx
+	final private char _decimalPoint; //default to '.'
+	final private char _argComma; //default to ','
+	final private char _arrayComma; //default to ','
+	final private char _arraySemicolon; //default to ';'
+	/** points at the next character to be read (after the {@link #look} char) */
+	private int _pointer;
+	private ParseNode _rootNode;
 	/**
 	 * Lookahead Character.
 	 * gets value '\0' when the input string is exhausted
 	 */
 	private char look;
-
 	private FormulaParsingWorkbook _book;
 	private SpreadsheetVersion _ssVersion;
-
 	private int _sheetIndex;
 	private int _rowIdx;
 	private int _colIdx;
-
 	/**
 	 * Create the formula parser, with the string that is to be
 	 *  parsed against the supplied workbook.
@@ -189,7 +117,6 @@ public final class FormulaParser {
 		_rowIdx = rowIdx;
 		_colIdx = colIdx;
 	}
-
 	//ZSS-855
 	private FormulaParser(String formula, FormulaParsingWorkbook book, int sheetIndex, Locale locale, int rowIdx, int colIdx){
 		_formulaString = formula;
@@ -212,7 +139,6 @@ public final class FormulaParser {
 		_rowIdx = rowIdx;
 		_colIdx = colIdx;
 	}
-
 	/**
 	 * Create the formula parser, with the string that is to be
 	 *  parsed against the supplied workbook.
@@ -228,13 +154,6 @@ public final class FormulaParser {
 	private FormulaParser(String formula, FormulaParsingWorkbook book, int sheetIndex){
 		this(formula, book, sheetIndex, /*rowIdx*/ -1, /*rowIdx*/ -1);
 	}
-
-	//ZSS-565
-	//See http://office.microsoft.com/en-us/excel-help/issue-array-constants-may-unexpectedly-contain-backslash-characters-HA010222558.aspx
-	final private char _decimalPoint; //default to '.'
-	final private char _argComma; //default to ','
-	final private char _arrayComma; //default to ','
-	final private char _arraySemicolon; //default to ';'
 	private FormulaParser(String formula, FormulaParsingWorkbook book, int sheetIndex, Locale locale){
 		_formulaString = formula;
 		_pointer=0;
@@ -307,31 +226,18 @@ public final class FormulaParser {
 		return fp.getRPNPtg(formulaType);
 	}
 
-	/** Read New Character From Input Stream */
-	private void GetChar() {
-		// Check to see if we've walked off the end of the string.
-		if (_pointer > _formulaLength) {
-			throw new FormulaParseException("string format is not correct");
-		}
-		if (_pointer < _formulaLength) {
-			look=_formulaString.charAt(_pointer);
-		} else {
-			// Just return if so and reset 'look' to something to keep
-			// SkipWhitespace from spinning
-			look = (char)0;
-		}
-		_pointer++;
-		//System.out.println("Got char: "+ look);
+	/**
+	 * Recognize an Alpha Character
+	 */
+	private static boolean IsAlpha(char c) {
+		return Character.isLetter(c) || c == '$' || c == '_';
 	}
-	private void resetPointer(int ptr) {
-		_pointer = ptr;
-		if (_pointer <= _formulaLength) {
-			look=_formulaString.charAt(_pointer-1);
-		} else {
-			// Just return if so and reset 'look' to something to keep
-			// SkipWhitespace from spinning
-			look = (char)0;
-		}
+
+	/**
+	 * Recognize a Decimal Digit
+	 */
+	private static boolean IsDigit(char c) {
+		return Character.isDigit(c);
 	}
 
 	/** Report What Was Expected */
@@ -349,74 +255,10 @@ public final class FormulaParser {
 		return new FormulaParseException(msg);
 	}
 */
-	/** Recognize an Alpha Character */
-	private static boolean IsAlpha(char c) {
-		return Character.isLetter(c) || c == '$' || c=='_';
-	}
-
-	/** Recognize a Decimal Digit */
-	private static boolean IsDigit(char c) {
-		return Character.isDigit(c);
-	}
 
 	/** Recognize White Space */
 	private static boolean IsWhite( char c) {
 		return  c ==' ' || c== TAB || c == CR || c == LF;
-	}
-
-	/** Skip Over Leading White Space */
-	private void SkipWhite() {
-		while (IsWhite(look)) {
-			GetChar();
-		}
-	}
-
-	/**
-	 *  Consumes the next input character if it is equal to the one specified otherwise throws an
-	 *  unchecked exception. This method does <b>not</b> consume whitespace (before or after the
-	 *  matched character).
-	 */
-	private void Match(char x) {
-		if (look != x) {
-			throw expected("'" + x + "'");
-		}
-		GetChar();
-	}
-
-	/** Get a Number */
-	private String GetNum() {
-		StringBuffer value = new StringBuffer();
-
-		while (IsDigit(this.look)){
-			value.append(this.look);
-			GetChar();
-		}
-		return value.length() == 0 ? null : value.toString();
-	}
-
-	private ParseNode parseRangeExpression() {
-		ParseNode result = parseRangeable();
-		boolean hasRange = false;
-		while (look == ':') {
-			int pos = _pointer;
-			GetChar();
-			ParseNode nextPart = parseRangeable();
-			// Note - no range simplification here. An expr like "A1:B2:C3:D4:E5" should be
-			// grouped into area ref pairs like: "(A1:B2):(C3:D4):E5"
-			// Furthermore, Excel doesn't seem to simplify
-			// expressions like "Sheet1!A1:Sheet1:B2" into "Sheet1!A1:B2"
-
-			checkValidRangeOperand("LHS", pos, result);
-			checkValidRangeOperand("RHS", pos, nextPart);
-
-			ParseNode[] children = { result, nextPart, };
-			result = new ParseNode(RangePtg.instance, children);
-			hasRange = true;
-		}
-		if (hasRange) {
-			return augmentWithMemPtg(result);
-		}
-		return result;
 	}
 
 	private static ParseNode augmentWithMemPtg(ParseNode root) {
@@ -428,6 +270,7 @@ public final class FormulaParser {
 		}
 		return new ParseNode(memPtg, root);
 	}
+
 	/**
 	 * From OOO doc: "Whenever one operand of the reference subexpression is a function,
 	 *  a defined name, a 3D reference, or an external reference (and no error occurs),
@@ -458,11 +301,8 @@ public final class FormulaParser {
 		if (token instanceof OperandPtg) {
 			return false;
 		}
-		if (token instanceof OperationPtg) {
-			return true;
-		}
+		return token instanceof OperationPtg;
 
-		return false;
 	}
 
 	/**
@@ -516,6 +356,200 @@ public final class FormulaParser {
 		return false;
 	}
 
+	/**
+	 * @return <code>true</code> if the specified character may be used in a defined name
+	 */
+	private static boolean isValidDefinedNameChar(char ch) {
+		if (Character.isLetterOrDigit(ch)) {
+			return true;
+		}
+		switch (ch) {
+			case '.':
+			case '_':
+			case '?':
+			case '\\': // of all things
+				return true;
+		}
+		return false;
+	}
+
+	private static AreaReference createAreaRef(SimpleRangePart part1, SimpleRangePart part2) {
+		if (!part1.isCompatibleForArea(part2)) {
+			throw new FormulaParseException("has incompatible parts: '"
+					+ part1.getRep() + "' and '" + part2.getRep() + "'.");
+		}
+		if (part1.isRow()) {
+			return AreaReference.getWholeRow(part1.getRep(), part2.getRep());
+		}
+		if (part1.isColumn()) {
+			return AreaReference.getWholeColumn(part1.getRep(), part2.getRep());
+		}
+		return new AreaReference(part1.getCellReference(), part2.getCellReference());
+	}
+
+	/**
+	 * very similar to {@link SheetNameFormatter#isSpecialChar(char)}
+	 */
+	private static boolean isUnquotedSheetNameChar(char ch) {
+		if (Character.isLetterOrDigit(ch)) {
+			return true;
+		}
+		switch (ch) {
+			case '.': // dot is OK
+			case '_': // underscore is OK
+			case ':': // colon is OK
+				return true;
+		}
+		return false;
+	}
+
+	private static Double convertArrayNumber(Ptg ptg, boolean isPositive) {
+		double value;
+		if (ptg instanceof IntPtg) {
+			value = ((IntPtg) ptg).getValue();
+		} else if (ptg instanceof NumberPtg) {
+			value = ((NumberPtg) ptg).getValue();
+		} else {
+			throw new RuntimeException("Unexpected ptg (" + ptg.getClass().getName() + ")");
+		}
+		if (!isPositive) {
+			value = -value;
+		}
+		return new Double(value);
+	}
+
+	/**
+	 * Get a PTG for an integer from its string representation.
+	 * return Int or Number Ptg based on size of input
+	 */
+	private static Ptg getNumberPtgFromString(String number1, String number2, String exponent) {
+		StringBuffer number = new StringBuffer();
+
+		if (number2 == null) {
+			number.append(number1);
+
+			if (exponent != null) {
+				number.append('E');
+				number.append(exponent);
+			}
+
+			String numberStr = number.toString();
+			int intVal;
+			try {
+				intVal = Integer.parseInt(numberStr);
+			} catch (NumberFormatException e) {
+				return new NumberPtg(numberStr);
+			}
+			if (IntPtg.isInRange(intVal)) {
+				return new IntPtg(intVal);
+			}
+			return new NumberPtg(numberStr);
+		}
+
+		if (number1 != null) {
+			number.append(number1);
+		}
+
+		number.append('.');
+		number.append(number2);
+
+		if (exponent != null) {
+			number.append('E');
+			number.append(exponent);
+		}
+
+		return new NumberPtg(number.toString());
+	}
+
+	/**
+	 * Read New Character From Input Stream
+	 */
+	private void GetChar() {
+		// Check to see if we've walked off the end of the string.
+		if (_pointer > _formulaLength) {
+			throw new FormulaParseException("string format is not correct");
+		}
+		if (_pointer < _formulaLength) {
+			look = _formulaString.charAt(_pointer);
+		} else {
+			// Just return if so and reset 'look' to something to keep
+			// SkipWhitespace from spinning
+			look = (char) 0;
+		}
+		_pointer++;
+		//System.out.println("Got char: "+ look);
+	}
+
+	private void resetPointer(int ptr) {
+		_pointer = ptr;
+		if (_pointer <= _formulaLength) {
+			look = _formulaString.charAt(_pointer - 1);
+		} else {
+			// Just return if so and reset 'look' to something to keep
+			// SkipWhitespace from spinning
+			look = (char) 0;
+		}
+	}
+
+	/**
+	 * Skip Over Leading White Space
+	 */
+	private void SkipWhite() {
+		while (IsWhite(look)) {
+			GetChar();
+		}
+	}
+
+	/**
+	 * Consumes the next input character if it is equal to the one specified otherwise throws an
+	 * unchecked exception. This method does <b>not</b> consume whitespace (before or after the
+	 * matched character).
+	 */
+	private void Match(char x) {
+		if (look != x) {
+			throw expected("'" + x + "'");
+		}
+		GetChar();
+	}
+
+	/**
+	 * Get a Number
+	 */
+	private String GetNum() {
+		StringBuffer value = new StringBuffer();
+
+		while (IsDigit(this.look)) {
+			value.append(this.look);
+			GetChar();
+		}
+		return value.length() == 0 ? null : value.toString();
+	}
+
+	private ParseNode parseRangeExpression() {
+		ParseNode result = parseRangeable();
+		boolean hasRange = false;
+		while (look == ':') {
+			int pos = _pointer;
+			GetChar();
+			ParseNode nextPart = parseRangeable();
+			// Note - no range simplification here. An expr like "A1:B2:C3:D4:E5" should be
+			// grouped into area ref pairs like: "(A1:B2):(C3:D4):E5"
+			// Furthermore, Excel doesn't seem to simplify
+			// expressions like "Sheet1!A1:Sheet1:B2" into "Sheet1!A1:B2"
+
+			checkValidRangeOperand("LHS", pos, result);
+			checkValidRangeOperand("RHS", pos, nextPart);
+
+			ParseNode[] children = {result, nextPart,};
+			result = new ParseNode(RangePtg.instance, children);
+			hasRange = true;
+		}
+		if (hasRange) {
+			return augmentWithMemPtg(result);
+		}
+		return result;
+	}
+	
 	/**
 	 * Parses area refs (things which could be the operand of ':') and simple factors
 	 * Examples
@@ -641,6 +675,12 @@ public final class FormulaParser {
 				return parseNonRange(savePointer);
 			}
 
+			//if we're parsing an argument for relational operator formulas
+			//e.g. T_1.Col_1
+			if (part1.isRef() && part2.isRef()) {
+				return createConditionParseNode(part1, part2);
+			}
+
 			if (part1.isRowOrColumn() || part2.isRowOrColumn()) {
 				if (dotCount != 2) {
 					//henrichen@zkoss.org: shall return #NAME?
@@ -649,6 +689,7 @@ public final class FormulaParser {
 					return parseNonRange(savePointer);
 				}
 			}
+			
 			return createAreaRefParseNode(sheetIden, part1, part2);
 		}
 		if (part1.isCell() && isValidCellReference(part1.getRep())) {
@@ -661,9 +702,7 @@ public final class FormulaParser {
 
 		return parseNonRange(savePointer);
 	}
-
-
-
+	
 	/**
 	 * Parses simple factors that are not primitive ranges or range components
 	 * i.e. '!', ':'(and equiv '...') do not appear
@@ -719,9 +758,10 @@ public final class FormulaParser {
 		if (evalName == null) {
 			return new ParseNode(createPtgForNonExistedName(_book, name, null));
 		}
+		
 		return new ParseNode(evalName.createPtg()); 
 	}
-
+	
 	private String parseName() {
 		// from now on we can only be dealing with non-quoted identifiers
 		// which will either be named ranges or functions
@@ -842,7 +882,7 @@ public final class FormulaParser {
 		SkipWhite();
 		return specifiers.toArray(new Object[specifiers.size()]);
 	}
-	
+
 	//ZSS-960
 	private Object parseSpecifier() {
 		if (look != '[') {
@@ -914,7 +954,7 @@ public final class FormulaParser {
 			++j;
 		}
 	}
-	
+
 	//ZSS-796, ZSS-960
 	private ParseNode createTableRefParseNode(String tableName, Object[] specifiers, int sheetIndex) {
 		//ZSS-966 use name of that Table
@@ -936,27 +976,16 @@ public final class FormulaParser {
 		// + "' is completely unknown in the current workbook");
 		if(_book.isAllowedDeferredNamePtg()){
 			return new DeferredNamePtg(nonExistedName);
-		}else{
+		} else {
 			return _book.getName(nonExistedName, sheetName).createPtg();
 		}
 	}
-	
-	/**
-	 *
-	 * @return <code>true</code> if the specified character may be used in a defined name
-	 */
-	private static boolean isValidDefinedNameChar(char ch) {
-		if (Character.isLetterOrDigit(ch)) {
-			return true;
-		}
-		switch (ch) {
-			case '.':
-			case '_':
-			case '?':
-			case '\\': // of all things
-				return true;
-		}
-		return false;
+
+	private ParseNode createConditionParseNode(SimpleRangePart part1, SimpleRangePart part2) {
+		
+		Ptg ptg = new ConditionPtg(part1.getRep(), part2.getRep());
+		return new ParseNode(ptg);
+		
 	}
 
 	/**
@@ -999,27 +1028,6 @@ public final class FormulaParser {
 		return new ParseNode(ptg);
 	}
 
-	private static AreaReference createAreaRef(SimpleRangePart part1, SimpleRangePart part2) {
-		if (!part1.isCompatibleForArea(part2)) {
-			throw new FormulaParseException("has incompatible parts: '"
-					+ part1.getRep() + "' and '" + part2.getRep() + "'.");
-		}
-		if (part1.isRow()) {
-			return AreaReference.getWholeRow(part1.getRep(), part2.getRep());
-		}
-		if (part1.isColumn()) {
-			return AreaReference.getWholeColumn(part1.getRep(), part2.getRep());
-		}
-		return new AreaReference(part1.getCellReference(), part2.getCellReference());
-	}
-
-	/**
-	 * Matches a zero or one letter-runs followed by zero or one digit-runs.
-	 * Either or both runs man optionally be prefixed with a single '$'.
-	 * (copied+modified from {@link org.zkoss.poi.ss.util.CellReference#CELL_REF_PATTERN})
-	 */
-	private static final Pattern CELL_REF_PATTERN = Pattern.compile("(\\$?[A-Za-z]+)?(\\$?[0-9]+)?");
-
 	/**
 	 * Parses out a potential LHS or RHS of a ':' intended to produce a plain AreaRef.  Normally these are
 	 * proper cell references but they could also be row or column refs like "$AC" or "10"
@@ -1029,23 +1037,43 @@ public final class FormulaParser {
 		int ptr = _pointer-1; // TODO avoid StringIndexOutOfBounds
 		boolean hasDigits = false;
 		boolean hasLetters = false;
+		boolean hasUnder = false;	//for form of Table_1 or Col_1 in rel operator formula
+		boolean hasDot = false;
 		while (ptr < _formulaLength) {
 			char ch = _formulaString.charAt(ptr);
 			if (Character.isDigit(ch)) {
 				hasDigits = true;
 			} else if (Character.isLetter(ch)) {
 				hasLetters = true;
-			} else if (ch =='$' || ch =='_') {
+			} else if (ch == '_') {
+				hasUnder = true;
+			} else if (ch == '$' ){
 				//
+			} else if (ch == '.') {
+				hasDot = true;
+				break;
 			} else {
 				break;
 			}
 			ptr++;
 		}
-		if (ptr <= _pointer-1) {
+		if (ptr <= _pointer - 1) {
 			return null;
 		}
-		String rep = _formulaString.substring(_pointer-1, ptr);
+
+		String rep = _formulaString.substring(_pointer - 1, ptr);
+
+		//set _pointer and look so the 'Col1' part of Table_1.Col_1 will be parsed
+		if (hasDot) {
+			resetPointer(ptr);
+			GetChar();
+		}
+
+		if (hasLetters && hasDigits && hasUnder) {
+			if (OP_FORMULA_PATTERN.matcher(rep.toUpperCase()).matches()) {
+				return new SimpleRangePart(rep, hasLetters, hasDigits, hasUnder);
+			}
+		}
 		if (!CELL_REF_PATTERN.matcher(rep).matches()) {
 			return null;
 		}
@@ -1075,80 +1103,7 @@ public final class FormulaParser {
 
 
 		resetPointer(ptr+1); // stepping forward
-		return new SimpleRangePart(rep, hasLetters, hasDigits);
-	}
-
-
-	/**
-	 * A1, $A1, A$1, $A$1, A, 1
-	 */
-	private static final class SimpleRangePart {
-		private enum Type {
-			CELL, ROW, COLUMN;
-
-			public static Type get(boolean hasLetters, boolean hasDigits) {
-				if (hasLetters) {
-					return hasDigits ? CELL : COLUMN;
-				}
-				if (!hasDigits) {
-					throw new IllegalArgumentException("must have either letters or numbers");
-				}
-				return ROW;
-			}
-		}
-
-		private final Type _type;
-		private final String _rep;
-
-		public SimpleRangePart(String rep, boolean hasLetters, boolean hasNumbers) {
-			_rep = rep;
-			_type = Type.get(hasLetters, hasNumbers);
-		}
-
-		public boolean isCell() {
-			return _type == Type.CELL;
-		}
-
-		public boolean isRowOrColumn() {
-			return _type != Type.CELL;
-		}
-
-		public CellReference getCellReference() {
-			if (_type != Type.CELL) {
-				throw new IllegalStateException("Not applicable to this type");
-			}
-			return new CellReference(_rep);
-		}
-
-		public boolean isColumn() {
-			return _type == Type.COLUMN;
-		}
-
-		public boolean isRow() {
-			return _type == Type.ROW;
-		}
-
-		public String getRep() {
-			return _rep;
-		}
-
-		/**
-		 * @return <code>true</code> if the two range parts can be combined in an
-		 * {@link AreaPtg} ( Note - the explicit range operator (:) may still be valid
-		 * when this method returns <code>false</code> )
-		 */
-		public boolean isCompatibleForArea(SimpleRangePart part2) {
-			return _type == part2._type;
-		}
-
-		@Override
-		public String toString() {
-			StringBuilder sb = new StringBuilder(64);
-			sb.append(getClass().getName()).append(" [");
-			sb.append(_rep);
-			sb.append("]");
-			return sb.toString();
-		}
+		return new SimpleRangePart(rep, hasLetters, hasDigits, hasUnder);
 	}
 
 	/**
@@ -1215,22 +1170,6 @@ public final class FormulaParser {
 	}
 
 	/**
-	 * very similar to {@link SheetNameFormatter#isSpecialChar(char)}
-	 */
-	private static boolean isUnquotedSheetNameChar(char ch) {
-		if(Character.isLetterOrDigit(ch)) {
-			return true;
-		}
-		switch(ch) {
-			case '.': // dot is OK
-			case '_': // underscore is OK
-			case ':': // colon is OK
-				return true;
-		}
-		return false;
-	}
-
-	/**
 	 * @return <code>true</code> if the specified name is a valid cell reference
 	 */
 	private boolean isValidCellReference(String str) {
@@ -1258,7 +1197,6 @@ public final class FormulaParser {
 		}
 		return result;
 	}
-
 
 	/**
 	 * Note - Excel function names are 'case aware but not case sensitive'.  This method may end
@@ -1356,7 +1294,7 @@ public final class FormulaParser {
 		}
 		return new ParseNode(retval, args);
 	}
-	
+
 	//ZSS-852: Multiply inside SUMPRODUCT must do array calc
 	private void setMultiplyOperator(ParseNode node) {
 		if (node.getToken() instanceof MultiplyPtg) {
@@ -1368,7 +1306,7 @@ public final class FormulaParser {
 			}
 		}
 	}
-
+	
 	private void validateNumArgs(int numArgs, FunctionMetadata fm) {
 		if(numArgs < fm.getMinParams()) {
 			String msg = "Too few arguments to function '" + fm.getName() + "'. ";
@@ -1475,7 +1413,6 @@ public final class FormulaParser {
 		}
 	}
 
-
 	/**
 	 * factors (without ^ or % )
 	 */
@@ -1511,7 +1448,6 @@ public final class FormulaParser {
 		}
 		throw expected("cell reference or constant literal");
 	}
-
 
 	private ParseNode parseUnary(boolean isPlus) {
 
@@ -1563,6 +1499,7 @@ public final class FormulaParser {
 
 		return new ParseNode(new ArrayPtg(values2d));
 	}
+
 	private void checkRowLengths(Object[][] values2d, int nColumns) {
 		for (int i = 0; i < values2d.length; i++) {
 			int rowLen = values2d[i].length;
@@ -1620,21 +1557,6 @@ public final class FormulaParser {
 		throw expected("'TRUE' or 'FALSE'");
 	}
 
-	private static Double convertArrayNumber(Ptg ptg, boolean isPositive) {
-		double value;
-		if (ptg instanceof IntPtg) {
-			value = ((IntPtg)ptg).getValue();
-		} else  if (ptg instanceof NumberPtg) {
-			value = ((NumberPtg)ptg).getValue();
-		} else {
-			throw new RuntimeException("Unexpected ptg (" + ptg.getClass().getName() + ")");
-		}
-		if (!isPositive) {
-			value = -value;
-		}
-		return new Double(value);
-	}
-
 	private Ptg parseNumber() {
 		String number2 = null;
 		String exponent = null;
@@ -1669,7 +1591,6 @@ public final class FormulaParser {
 
 		return getNumberPtgFromString(number1, number2, exponent);
 	}
-
 
 	private int parseErrorLiteral() {
 		Match('#');
@@ -1743,50 +1664,6 @@ public final class FormulaParser {
 		return sb.toString();
 	}
 
-	/**
-	 * Get a PTG for an integer from its string representation.
-	 * return Int or Number Ptg based on size of input
-	 */
-	private static Ptg getNumberPtgFromString(String number1, String number2, String exponent) {
-		StringBuffer number = new StringBuffer();
-
-		if (number2 == null) {
-			number.append(number1);
-
-			if (exponent != null) {
-				number.append('E');
-				number.append(exponent);
-			}
-
-			String numberStr = number.toString();
-			int intVal;
-			try {
-				intVal = Integer.parseInt(numberStr);
-			} catch (NumberFormatException e) {
-				return new NumberPtg(numberStr);
-			}
-			if (IntPtg.isInRange(intVal)) {
-				return new IntPtg(intVal);
-			}
-			return new NumberPtg(numberStr);
-		}
-
-		if (number1 != null) {
-			number.append(number1);
-		}
-
-		number.append('.');
-		number.append(number2);
-
-		if (exponent != null) {
-			number.append('E');
-			number.append(exponent);
-		}
-
-		return new NumberPtg(number.toString());
-	}
-
-
 	private String parseStringLiteral() {
 		Match('"');
 
@@ -1826,6 +1703,7 @@ public final class FormulaParser {
 			result = new ParseNode(operator, result, other);
 		}
 	}
+
 	private ParseNode unionExpression() {
 		ParseNode result = comparisonExpression();
 		boolean hasUnions = false;
@@ -1888,7 +1766,6 @@ public final class FormulaParser {
 		return LessThanPtg.instance;
 	}
 
-
 	private ParseNode concatExpression() {
 		ParseNode result = additiveExpression();
 		while (true) {
@@ -1902,7 +1779,6 @@ public final class FormulaParser {
 		}
 		return result;
 	}
-
 
 	/** Parse and Translate an Expression */
 	private ParseNode additiveExpression() {
@@ -1927,20 +1803,6 @@ public final class FormulaParser {
 		}
 	}
 
-	//{--------------------------------------------------------------}
-	//{ Parse and Translate an Assignment Statement }
-	/**
-procedure Assignment;
-var Name: string[8];
-begin
-   Name := GetName;
-   Match('=');
-   Expression;
-
-end;
-	 **/
-
-
 	/**
 	 *  API call to execute the parsing of the formula
 	 *
@@ -1963,7 +1825,7 @@ end;
 		oct.transformFormula(_rootNode);
 		return ParseNode.toTokenArray(_rootNode);
 	}
-	
+
 	//20101214, henrichen@zkoss.org: make parse error more end user readable
 	private RuntimeException expected(String s) {
 		String msg;
@@ -1973,16 +1835,197 @@ end;
 				+ "' cannot starts with two equals signs.";
 		} else {
 			msg = "The specified formula '" + _formulaString
-				+ "' contains an error. Expects " + s + ".";
+					+ "' contains an error. Expects " + s + ".";
 		}
 		return new FormulaParseException(msg);
 	}
-	
+
+	//{--------------------------------------------------------------}
+	//{ Parse and Translate an Assignment Statement }
+
+	/**
+	 procedure Assignment;
+	 var Name: string[8];
+	 begin
+	 Name := GetName;
+	 Match('=');
+	 Expression;
+
+end;
+	 **/
+
 	//20131204, kuroridoplayer@gmail.com: make parse error more end user readable
 	private RuntimeException unexpected(String expect, String unexpect) {
 		String msg = "The specified formula '" + _formulaString
-				+ "' contains an error. Expects " + expect 
+				+ "' contains an error. Expects " + expect
 				+ (unexpect == null ? "" : "; not " + unexpect) + ".";
 		return new FormulaParseException(msg);
+	}
+
+	private static final class Identifier {
+		private final String _name;
+		private final boolean _isQuoted;
+
+		public Identifier(String name, boolean isQuoted) {
+			_name = name;
+			_isQuoted = isQuoted;
+		}
+
+		public String getName() {
+			return _name;
+		}
+
+		public boolean isQuoted() {
+			return _isQuoted;
+		}
+
+		public String toString() {
+			StringBuffer sb = new StringBuffer(64);
+			sb.append(getClass().getName());
+			sb.append(" [");
+			if (_isQuoted) {
+				sb.append("'").append(_name).append("'");
+			} else {
+				sb.append(_name);
+			}
+			sb.append("]");
+			return sb.toString();
+		}
+	}
+
+	private static final class SheetIdentifier {
+
+
+		private final String _bookName;
+		private final Identifier _sheetIdentifier;
+
+		public SheetIdentifier(String bookName, Identifier sheetIdentifier, FormulaParsingWorkbook book) {
+			if (bookName == null && sheetIdentifier.isQuoted()) { //might be '[Book.xls]Sheet 1'!
+				final String name = sheetIdentifier.getName();
+				if (name.charAt(0) == '[') {
+					int j = name.indexOf(']');
+					if (j > 1) {
+						bookName = name.substring(1, j);
+						sheetIdentifier = new Identifier(name.substring(j + 1), true);
+					}
+				}
+			}
+			String realname = null; //20120117, henrichen@zkoss.org: ZSS-81
+			if (bookName != null) {
+				realname = book.getBookNameFromExternalLinkIndex(bookName);
+				if (realname == null) {
+					realname = bookName;
+				}
+			}
+			_bookName = realname; //20120117, henrichen@zkoss.org: ZSS-81
+			_sheetIdentifier = sheetIdentifier;
+		}
+
+		public String getBookName() {
+			return _bookName;
+		}
+
+		public Identifier getSheetIdentifier() {
+			return _sheetIdentifier;
+		}
+
+		public String toString() {
+			StringBuffer sb = new StringBuffer(64);
+			sb.append(getClass().getName());
+			sb.append(" [");
+			if (_bookName != null) {
+				sb.append(" [").append(_sheetIdentifier.getName()).append("]");
+			}
+			if (_sheetIdentifier.isQuoted()) {
+				sb.append("'").append(_sheetIdentifier.getName()).append("'");
+			} else {
+				sb.append(_sheetIdentifier.getName());
+			}
+			sb.append("]");
+			return sb.toString();
+		}
+
+		public String getSheetName() { //ZSS-790
+			return _sheetIdentifier.getName();
+		}
+	}
+
+	/**
+	 * A1, $A1, A$1, $A$1, A, 1
+	 */
+	private static final class SimpleRangePart {
+		private final Type _type;
+		private final String _rep;
+
+		public SimpleRangePart(String rep, boolean hasLetters, boolean hasNumbers, boolean hasUnder) {
+			_rep = rep;
+			_type = Type.get(hasLetters, hasNumbers, hasUnder);
+		}
+
+		public boolean isRef() {
+			return _type == Type.REF;
+		}
+
+		public boolean isCell() {
+			return _type == Type.CELL;
+		}
+
+		public boolean isRowOrColumn() {
+			return _type != Type.CELL;
+		}
+
+		public CellReference getCellReference() {
+			if (_type != Type.CELL) {
+				throw new IllegalStateException("Not applicable to this type");
+			}
+			return new CellReference(_rep);
+		}
+
+		public boolean isColumn() {
+			return _type == Type.COLUMN;
+		}
+
+		public boolean isRow() {
+			return _type == Type.ROW;
+		}
+
+		public String getRep() {
+			return _rep;
+		}
+
+		/**
+		 * @return <code>true</code> if the two range parts can be combined in an
+		 * {@link AreaPtg} ( Note - the explicit range operator (:) may still be valid
+		 * when this method returns <code>false</code> )
+		 */
+		public boolean isCompatibleForArea(SimpleRangePart part2) {
+			return _type == part2._type;
+		}
+
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder(64);
+			sb.append(getClass().getName()).append(" [");
+			sb.append(_rep);
+			sb.append("]");
+			return sb.toString();
+		}
+
+		private enum Type {
+			CELL, ROW, COLUMN, REF;
+
+			public static Type get(boolean hasLetters, boolean hasDigits, boolean hasUnder) {
+				if (hasUnder) {
+					return REF;
+				}
+				if (hasLetters) {
+					return hasDigits ? CELL : COLUMN;
+				}
+				if (!hasDigits) {
+					throw new IllegalArgumentException("must have either letters or numbers");
+				}
+				return ROW;
+			}
+		}
 	}
 }
