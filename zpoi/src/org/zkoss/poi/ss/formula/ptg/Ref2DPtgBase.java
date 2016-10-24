@@ -28,6 +28,11 @@ abstract class Ref2DPtgBase extends RefPtgBase {
 	private final static int SIZE = 5;
 
 
+    @SuppressWarnings("unused")
+    public Ref2DPtgBase() {
+        // Required for serialization.
+    }
+
 	protected Ref2DPtgBase(int row, int column, boolean isRowRelative, boolean isColumnRelative) {
 		setRow(row);
 		setColumn(column);
