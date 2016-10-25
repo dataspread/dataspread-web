@@ -1064,6 +1064,7 @@ public final class FormulaParser {
 		String rep = _formulaString.substring(_pointer - 1, ptr);
 
 		//set _pointer and look so the 'Col1' part of Table_1.Col_1 will be parsed
+		//only do this if we're parsing something of the form "Table_1"
 		if (hasDot && hasUnder) {
 			resetPointer(ptr);
 			GetChar();
