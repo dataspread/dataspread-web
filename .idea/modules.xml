@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/DataSpread.iml" filepath="$PROJECT_DIR$/DataSpread.iml" />
+      <module fileurl="file://$PROJECT_DIR$/rtree/rtree.iml" filepath="$PROJECT_DIR$/rtree/rtree.iml" />
       <module fileurl="file://$PROJECT_DIR$/zpoi/zpoi.iml" filepath="$PROJECT_DIR$/zpoi/zpoi.iml" />
       <module fileurl="file://$PROJECT_DIR$/zss/zss.iml" filepath="$PROJECT_DIR$/zss/zss.iml" />
       <module fileurl="file://$PROJECT_DIR$/zssmodel/zssmodel.iml" filepath="$PROJECT_DIR$/zssmodel/zssmodel.iml" />
