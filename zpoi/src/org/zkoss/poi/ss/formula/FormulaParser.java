@@ -1038,7 +1038,6 @@ public final class FormulaParser {
 		boolean hasDigits = false;
 		boolean hasLetters = false;
 		boolean hasUnder = false;	//for form of Table_1 or Col_1 in rel operator formula
-		boolean hasDot = false;
 		while (ptr < _formulaLength) {
 			char ch = _formulaString.charAt(ptr);
 			if (Character.isDigit(ch)) {
@@ -1049,9 +1048,6 @@ public final class FormulaParser {
 				hasUnder = true;
 			} else if (ch == '$' ){
 				//
-			} else if (ch == '.') {
-				hasDot = true;
-				break;
 			} else {
 				break;
 			}
@@ -1063,15 +1059,9 @@ public final class FormulaParser {
 
 		String rep = _formulaString.substring(_pointer - 1, ptr);
 
-		//set _pointer and look so the 'Col1' part of Table_1.Col_1 will be parsed
-		//only do this if we're parsing something of the form "Table_1"
-		if (hasDot && hasUnder) {
-			resetPointer(ptr);
-			GetChar();
-		}
-
 		if (hasLetters && hasDigits && hasUnder) {
 			if (OP_FORMULA_PATTERN.matcher(rep.toUpperCase()).matches()) {
+				resetPointer(ptr + 1); // stepping forward
 				return new SimpleRangePart(rep, hasLetters, hasDigits, hasUnder);
 			}
 		}
