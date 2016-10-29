@@ -12,45 +12,6 @@ import java.util.Arrays;
  */
 public abstract class SelectFunction implements Function {
 
-    public final ValueEval evaluate (ValueEval[] args, int srcCellRow, int srcCellCol) {
-        
-        try {
-            
-            if (args.length < 1) {
-                
-                return ErrorEval.VALUE_INVALID;
-                
-            }
-            
-            AreaEval range = convertRangeArg(args[0]);
-            
-            //no conditions
-            if (args.length == 1) {
-                
-                return evaluate(range);
-                
-            }
-            //evaluate with conditions
-            else {
-                
-                ValueEval[] conditions = Arrays.copyOfRange(args, 1, args.length);
-                return evaluate(range, conditions);
-                
-            }           
-            
-        }
-        catch (EvaluationException e) {
-            return e.getErrorEval();
-        }
-        
-    }
-    
-    
-    protected abstract ValueEval evaluate(AreaEval range);    
-    
-    protected abstract ValueEval evaluate(AreaEval range, ValueEval[] args);
-
-
     /**
      * Function taken from Sumif.java
      * convertRangeArg takes a ValueEval and attempts to convert it to
@@ -65,9 +26,49 @@ public abstract class SelectFunction implements Function {
             return (AreaEval) eval;
         }
         if (eval instanceof RefEval) {
-            return ((RefEval)eval).offset(0, 0, 0, 0);
+            return ((RefEval) eval).offset(0, 0, 0, 0);
         }
         throw new EvaluationException(ErrorEval.VALUE_INVALID);
     }
+    
+    public final ValueEval evaluate (ValueEval[] args, int srcCellRow, int srcCellCol) {
+
+        try {
+
+            if (args.length < 1) {
+
+                return ErrorEval.VALUE_INVALID;
+
+            }
+
+            AreaEval range = convertRangeArg(args[0]);
+
+            /** TODO
+             * no need to separate conditions here
+             */
+            //no conditions
+            if (args.length == 1) {
+
+                return evaluate(range);
+
+            }
+            //evaluate with conditions
+            else {
+
+                ValueEval[] conditions = Arrays.copyOfRange(args, 1, args.length);
+                return evaluate(range, conditions);
+
+            }
+
+        }
+        catch (EvaluationException e) {
+            return e.getErrorEval();
+        }
+
+    }
+
+    protected abstract ValueEval evaluate(AreaEval range);
+
+    protected abstract ValueEval evaluate(AreaEval range, ValueEval[] args);
     
 }

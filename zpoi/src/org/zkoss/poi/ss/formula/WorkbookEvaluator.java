@@ -17,64 +17,22 @@
 
 package org.zkoss.poi.ss.formula;
 
-import java.util.*;
-
-import org.zkoss.poi.ss.formula.ptg.Area3DPtg;
-import org.zkoss.poi.ss.formula.ptg.AreaErrPtg;
-import org.zkoss.poi.ss.formula.ptg.AreaPtg;
-import org.zkoss.poi.ss.formula.ptg.ArrayPtg;
-import org.zkoss.poi.ss.formula.ptg.AttrPtg;
-import org.zkoss.poi.ss.formula.ptg.BoolPtg;
-import org.zkoss.poi.ss.formula.ptg.ControlPtg;
-import org.zkoss.poi.ss.formula.ptg.DeletedArea3DPtg;
-import org.zkoss.poi.ss.formula.ptg.DeletedRef3DPtg;
-import org.zkoss.poi.ss.formula.ptg.ErrPtg;
-import org.zkoss.poi.ss.formula.ptg.ExpPtg;
-import org.zkoss.poi.ss.formula.ptg.FuncVarPtg;
-import org.zkoss.poi.ss.formula.ptg.IntPtg;
-import org.zkoss.poi.ss.formula.ptg.MemAreaPtg;
-import org.zkoss.poi.ss.formula.ptg.MemErrPtg;
-import org.zkoss.poi.ss.formula.ptg.MemFuncPtg;
-import org.zkoss.poi.ss.formula.ptg.MissingArgPtg;
-import org.zkoss.poi.ss.formula.ptg.NamePtg;
-import org.zkoss.poi.ss.formula.ptg.NameXPtg;
-import org.zkoss.poi.ss.formula.ptg.NumberPtg;
-import org.zkoss.poi.ss.formula.ptg.OperationPtg;
-import org.zkoss.poi.ss.formula.ptg.DeferredNamePtg;
-import org.zkoss.poi.ss.formula.ptg.Ptg;
-import org.zkoss.poi.ss.formula.ptg.Ref3DPtg;
-import org.zkoss.poi.ss.formula.ptg.RefErrorPtg;
-import org.zkoss.poi.ss.formula.ptg.RefPtg;
-import org.zkoss.poi.ss.formula.ptg.StringPtg;
-import org.zkoss.poi.ss.formula.ptg.TablePtg;
-import org.zkoss.poi.ss.formula.ptg.UnionPtg;
-import org.zkoss.poi.ss.formula.ptg.UnknownPtg;
+import org.zkoss.poi.hssf.util.CellReference;
+import org.zkoss.poi.ss.formula.CollaboratingWorkbooksEnvironment.WorkbookNotFoundException;
 import org.zkoss.poi.ss.formula.atp.AnalysisToolPak;
-import org.zkoss.poi.ss.formula.eval.ArrayEval;
-import org.zkoss.poi.ss.formula.eval.BlankEval;
-import org.zkoss.poi.ss.formula.eval.BoolEval;
-import org.zkoss.poi.ss.formula.eval.ErrorEval;
-import org.zkoss.poi.ss.formula.eval.EvaluationException;
-import org.zkoss.poi.ss.formula.eval.FunctionEval;
-import org.zkoss.poi.ss.formula.eval.MissingArgEval;
-import org.zkoss.poi.ss.formula.eval.NameEval;
-import org.zkoss.poi.ss.formula.eval.NumberEval;
-import org.zkoss.poi.ss.formula.eval.OperandResolver;
-import org.zkoss.poi.ss.formula.eval.StringEval;
-import org.zkoss.poi.ss.formula.eval.ValueEval;
-import org.zkoss.poi.ss.formula.eval.ValuesEval;
+import org.zkoss.poi.ss.formula.eval.*;
 import org.zkoss.poi.ss.formula.functions.Choose;
 import org.zkoss.poi.ss.formula.functions.FreeRefFunction;
 import org.zkoss.poi.ss.formula.functions.Function;
 import org.zkoss.poi.ss.formula.functions.IfFunc;
+import org.zkoss.poi.ss.formula.ptg.*;
 import org.zkoss.poi.ss.formula.udf.AggregatingUDFFinder;
 import org.zkoss.poi.ss.formula.udf.UDFFinder;
-import org.zkoss.poi.hssf.util.CellReference;
-import org.zkoss.poi.ss.formula.CollaboratingWorkbooksEnvironment.WorkbookNotFoundException;
-import org.zkoss.poi.ss.formula.eval.NotImplementedException;
 import org.zkoss.poi.ss.usermodel.Cell;
 import org.zkoss.poi.util.POILogFactory;
 import org.zkoss.poi.util.POILogger;
+
+import java.util.*;
 
 /**
  * Evaluates formula cells.<p/>
@@ -94,34 +52,42 @@ public final class WorkbookEvaluator {
 	private static final POILogger LOG = POILogFactory.getLogger(WorkbookEvaluator.class);
 
     private final EvaluationWorkbook _workbook;
-	private EvaluationCache _cache;
-	/** part of cache entry key (useful when evaluating multiple workbooks) */
-	private int _workbookIx;
-
 	private final IEvaluationListener _evaluationListener;
 	private final Map<EvaluationSheet, Integer> _sheetIndexesBySheet;
 	private final Map<String, Integer> _sheetIndexesByName;
-	private CollaboratingWorkbooksEnvironment _collaboratingWorkbookEnvironment;
 	private final IStabilityClassifier _stabilityClassifier;
 	private final AggregatingUDFFinder _udfFinder;
-	
+	// special logger for formula evaluation output (because of possibly very large output)
+	private final POILogger EVAL_LOG = POILogFactory.getLogger("POI.FormulaEval");
+	private EvaluationCache _cache;
+	/**
+	 * part of cache entry key (useful when evaluating multiple workbooks)
+	 */
+	private int _workbookIx;
+	private CollaboratingWorkbooksEnvironment _collaboratingWorkbookEnvironment;
 	private DependencyTracker _dependencyTracker;
-
     private boolean _ignoreMissingWorkbooks = false;
-
     private CacheManager _cacheManager;
-    
+	/**
+	 * whether print detailed messages about the next formula evaluation
+	 */
+	private boolean dbgEvaluationOutputForNextEval = false;
+	// current indent level for evalution; negative value for no output
+	private int dbgEvaluationOutputIndent = -1;
+	
 	/**
 	 * @param udfFinder pass <code>null</code> for default (AnalysisToolPak only)
 	 */
 	public WorkbookEvaluator(EvaluationWorkbook workbook, IStabilityClassifier stabilityClassifier, UDFFinder udfFinder) {
 		this (workbook, null, stabilityClassifier, udfFinder);
 	}
+	
 	//ZSS-818
 	public WorkbookEvaluator(EvaluationWorkbook workbook, IStabilityClassifier stabilityClassifier, UDFFinder udfFinder, CacheManager cacheManager) {
 		this (workbook, null, stabilityClassifier, udfFinder);
 		_cacheManager = cacheManager;
 	}
+
 	/* package */ WorkbookEvaluator(EvaluationWorkbook workbook, IEvaluationListener evaluationListener,
 			IStabilityClassifier stabilityClassifier, UDFFinder udfFinder) {
 		_workbook = workbook;
@@ -141,11 +107,156 @@ public final class WorkbookEvaluator {
         }
         _udfFinder = defaultToolkit;
 	}
-	
+
+	private static boolean isDebugLogEnabled() {
+		return LOG.check(POILogger.DEBUG);
+	}
+
+	private static boolean isInfoLogEnabled() {
+		return LOG.check(POILogger.INFO);
+	}
+
+	private static void logDebug(String s) {
+		if (isDebugLogEnabled()) {
+			LOG.log(POILogger.DEBUG, s);
+		}
+	}
+
+	private static void logInfo(String s) {
+		if (isInfoLogEnabled()) {
+			LOG.log(POILogger.INFO, s);
+		}
+	}
+
+	/**
+	 * Gets the value from a non-formula cell.
+	 *
+	 * @param cell may be <code>null</code>
+	 * @return {@link BlankEval} if cell is <code>null</code> or blank, never <code>null</code>
+	 */
+	/* package */
+	static ValueEval getValueFromNonFormulaCell(EvaluationCell cell) {
+		if (cell == null) {
+			return BlankEval.instance;
+		}
+		int cellType = cell.getCellType();
+		switch (cellType) {
+			case Cell.CELL_TYPE_NUMERIC:
+				return new NumberEval(cell.getNumericCellValue());
+			case Cell.CELL_TYPE_STRING:
+				return new StringEval(cell.getStringCellValue());
+			case Cell.CELL_TYPE_BOOLEAN:
+				return BoolEval.valueOf(cell.getBooleanCellValue());
+			case Cell.CELL_TYPE_BLANK:
+				return BlankEval.instance;
+			case Cell.CELL_TYPE_ERROR:
+				return ErrorEval.valueOf(cell.getErrorCellValue());
+		}
+		throw new RuntimeException("Unexpected cell type (" + cellType + ")");
+	}
+
+	/**
+	 * Calculates the number of tokens that the evaluator should skip upon reaching a tAttrSkip.
+	 *
+	 * @return the number of tokens (starting from <tt>startIndex+1</tt>) that need to be skipped
+	 * to achieve the specified <tt>distInBytes</tt> skip distance.
+	 */
+	private static int countTokensToBeSkipped(Ptg[] ptgs, int startIndex, int distInBytes) {
+		int remBytes = distInBytes;
+		int index = startIndex;
+		while (remBytes != 0) {
+			index++;
+			remBytes -= ptgs[index].getSize();
+			if (remBytes < 0) {
+				throw new RuntimeException("Bad skip distance (wrong token size calculation).");
+			}
+			if (index >= ptgs.length) {
+				throw new RuntimeException("Skip distance too far (ran out of formula tokens).");
+			}
+		}
+		return index - startIndex;
+	}
+
+	/**
+	 * Dereferences a single value from any AreaEval or RefEval evaluation
+	 * result. If the supplied evaluationResult is just a plain value, it is
+	 * returned as-is.
+	 *
+	 * @return a {@link NumberEval}, {@link StringEval}, {@link BoolEval}, or
+	 * {@link ErrorEval}. Never <code>null</code>. {@link BlankEval} is
+	 * converted to {@link NumberEval#ZERO}
+	 */
+	public static ValueEval dereferenceResult(ValueEval evaluationResult, int srcRowNum, int srcColNum) {
+		ValueEval value;
+		try {
+			// 20130918 hawkchen@potix.com ZSS-441 comment out henri's fix, it causes getting wrong value of array formula
+			// can't figure out why henri did this.
+//			value = OperandResolver.getMultipleValue(evaluationResult, srcRowNum, srcColNum); //20111125, henrichen@zkoss.org: handle array value
+			value = OperandResolver.getSingleValue(evaluationResult, srcRowNum, srcColNum);
+		} catch (EvaluationException e) {
+			return e.getErrorEval();
+		}
+		if (value == BlankEval.instance) {
+			// Note Excel behaviour here. A blank final final value is converted to zero.
+			return NumberEval.ZERO;
+			// Formulas _never_ evaluate to blank.  If a formula appears to have evaluated to
+			// blank, the actual value is empty string. This can be verified with ISBLANK().
+		}
+		return value;
+	}
+
+	/**
+	 * Return a collection of functions that POI can evaluate
+	 *
+	 * @return names of functions supported by POI
+	 */
+	public static Collection<String> getSupportedFunctionNames() {
+		Collection<String> lst = new TreeSet<String>();
+		lst.addAll(FunctionEval.getSupportedFunctionNames());
+		lst.addAll(AnalysisToolPak.getSupportedFunctionNames());
+		return lst;
+	}
+
+	/**
+	 * Return a collection of functions that POI does not support
+	 *
+	 * @return names of functions NOT supported by POI
+	 */
+	public static Collection<String> getNotSupportedFunctionNames() {
+		Collection<String> lst = new TreeSet<String>();
+		lst.addAll(FunctionEval.getNotSupportedFunctionNames());
+		lst.addAll(AnalysisToolPak.getNotSupportedFunctionNames());
+		return lst;
+	}
+
+	/**
+	 * Register a ATP function in runtime.
+	 *
+	 * @param name the function name
+	 * @param func the functoin to register
+	 * @throws IllegalArgumentException if the function is unknown or already  registered.
+	 * @since 3.8 beta6
+	 */
+	public static void registerFunction(String name, FreeRefFunction func) {
+		AnalysisToolPak.registerFunction(name, func);
+	}
+
+	/**
+	 * Register a function in runtime.
+	 *
+	 * @param name the function name
+	 * @param func the functoin to register
+	 * @throws IllegalArgumentException if the function is unknown or already  registered.
+	 * @since 3.8 beta6
+	 */
+	public static void registerFunction(String name, Function func) {
+		FunctionEval.registerFunction(name, func);
+	}
+
 	public void setDependencyTracker(DependencyTracker tracker) {
 		_dependencyTracker = tracker;
 	}
-	
+
 	/**
 	 * also for debug use. Used in toString methods
 	 */
@@ -171,27 +282,12 @@ public final class WorkbookEvaluator {
 		}
 	}
 
-	private static boolean isDebugLogEnabled() {
-		return LOG.check(POILogger.DEBUG);
-	}
-	private static boolean isInfoLogEnabled() {
-		return LOG.check(POILogger.INFO);
-	}
-	private static void logDebug(String s) {
-		if (isDebugLogEnabled()) {
-			LOG.log(POILogger.DEBUG, s);
-		}
-	}
-	private static void logInfo(String s) {
-		if (isInfoLogEnabled()) {
-			LOG.log(POILogger.INFO, s);
-		}
-	}
 	/* package */ void attachToEnvironment(CollaboratingWorkbooksEnvironment collaboratingWorkbooksEnvironment, EvaluationCache cache, int workbookIx) {
 		_collaboratingWorkbookEnvironment = collaboratingWorkbooksEnvironment;
 		_cache = cache;
 		_workbookIx = workbookIx;
 	}
+	
 	/* package */ CollaboratingWorkbooksEnvironment getEnvironment() {
 		return _collaboratingWorkbookEnvironment;
 	}
@@ -205,6 +301,7 @@ public final class WorkbookEvaluator {
 		_cache = new EvaluationCache(_evaluationListener);
 		_workbookIx = 0;
 	}
+
 	/**
 	 * @return the evaluator for another workbook which is part of the same {@link CollaboratingWorkbooksEnvironment}
 	 */
@@ -224,7 +321,7 @@ public final class WorkbookEvaluator {
 	public void clearAllCachedResultValues() {
 		_cache.clear();
 		_sheetIndexesBySheet.clear();
-		_sheetIndexesByName.clear(); // 20131025, paowang@potix.com, ZSS-492: don't forget to clear sheet name cache, or index will be inconsistent after reordering sheets 	
+		_sheetIndexesByName.clear(); // 20131025, paowang@potix.com, ZSS-492: don't forget to clear sheet name cache, or index will be inconsistent after reordering sheets
 	}
 
 	/**
@@ -235,6 +332,7 @@ public final class WorkbookEvaluator {
 		int sheetIndex = getSheetIndex(cell.getSheet());
 		_cache.notifyUpdateCell(_workbookIx, sheetIndex, cell);
 	}
+
 	/**
 	 * Should be called to tell the cell value cache that the specified cell has just been
 	 * deleted.
@@ -243,7 +341,7 @@ public final class WorkbookEvaluator {
 		int sheetIndex = getSheetIndex(cell.getSheet());
 		_cache.notifyDeleteCell(_workbookIx, sheetIndex, cell);
 	}
-	
+
 	private int getSheetIndex(EvaluationSheet sheet) {
 		Integer result = _sheetIndexesBySheet.get(sheet);
 		if (result == null) {
@@ -278,7 +376,7 @@ public final class WorkbookEvaluator {
 		}
 		return result.intValue();
 	}
-	
+
 	/* package */ int getSheetIndexByExternIndex(int externSheetIndex) {
 	   return _workbook.convertFromExternSheetIndex(externSheetIndex);
 	}
@@ -294,8 +392,7 @@ public final class WorkbookEvaluator {
 				int rowIndex, int columnIndex, EvaluationTracker tracker, Object ref) {
 
 		// avoid tracking dependencies to cells that have constant definition
-		boolean shouldCellDependencyBeRecorded = _stabilityClassifier == null ? true
-					: !_stabilityClassifier.isCellFinal(sheetIndex, rowIndex, columnIndex);
+		boolean shouldCellDependencyBeRecorded = _stabilityClassifier == null || !_stabilityClassifier.isCellFinal(sheetIndex, rowIndex, columnIndex);
 		if (srcCell == null || srcCell.getCellType() != Cell.CELL_TYPE_FORMULA) {
 			ValueEval result = getValueFromNonFormulaCell(srcCell);
 			if (shouldCellDependencyBeRecorded) {
@@ -399,31 +496,8 @@ public final class WorkbookEvaluator {
 			return inner; // preserve original exception
 		}
 	}
-	/**
-	 * Gets the value from a non-formula cell.
-	 * @param cell may be <code>null</code>
-	 * @return {@link BlankEval} if cell is <code>null</code> or blank, never <code>null</code>
-	 */
-	/* package */ static ValueEval getValueFromNonFormulaCell(EvaluationCell cell) {
-		if (cell == null) {
-			return BlankEval.instance;
-		}
-		int cellType = cell.getCellType();
-		switch (cellType) {
-			case Cell.CELL_TYPE_NUMERIC:
-				return new NumberEval(cell.getNumericCellValue());
-			case Cell.CELL_TYPE_STRING:
-				return new StringEval(cell.getStringCellValue());
-			case Cell.CELL_TYPE_BOOLEAN:
-				return BoolEval.valueOf(cell.getBooleanCellValue());
-			case Cell.CELL_TYPE_BLANK:
-				return BlankEval.instance;
-			case Cell.CELL_TYPE_ERROR:
-				return ErrorEval.valueOf(cell.getErrorCellValue());
-		}
-		throw new RuntimeException("Unexpected cell type (" + cellType + ")");
-	}
-	//20110324, henrichen@zkoss.org: after process the ValueEval 
+
+	//20110324, henrichen@zkoss.org: after process the ValueEval
 	private ValueEval postProcessValueEval(OperationEvaluationContext ec, ValueEval opResult, boolean eval) {
 		if (_dependencyTracker != null) {
 			opResult = _dependencyTracker.postProcessValueEval(ec, opResult, eval);
@@ -437,22 +511,12 @@ public final class WorkbookEvaluator {
 			_dependencyTracker.addDependency(ec, ptgs);
 		}
 	}
-
-    /**
-     * whether print detailed messages about the next formula evaluation
-     */
-	private boolean dbgEvaluationOutputForNextEval = false;
-
-	// special logger for formula evaluation output (because of possibly very large output)
-	private final POILogger EVAL_LOG = POILogFactory.getLogger("POI.FormulaEval");
-	// current indent level for evalution; negative value for no output
-	private int dbgEvaluationOutputIndent = -1;
-
+	
 	// visibility raised for testing
 	/* package */ ValueEval evaluateFormula(OperationEvaluationContext ec, Ptg[] ptgs, boolean ignoreDependency, boolean ignoreDereference) {
 		if (!ignoreDependency)
 			addDependency(ec, ptgs); //20110324, henrichen@zkoss.org: construct the dependency DAG per this formula (bug#290)
-			
+
 		String dbgIndentStr = "";		// always init. to non-null just for defensive avoiding NPE
 		if (dbgEvaluationOutputForNextEval) {
 			// first evaluation call when ouput is desired, so iit. this evaluator instance
@@ -470,7 +534,7 @@ public final class WorkbookEvaluator {
 			                   + "): " + Arrays.toString(ptgs).replaceAll("\\Qorg.zkoss.poi.ss.formula.ptg.\\E", ""));
 			dbgEvaluationOutputIndent++;
 		}
-		
+
 		Stack<ValueEval> stack = new Stack<ValueEval>();
 		for (int i = 0, iSize = ptgs.length; i < iSize; i++) {
 			ec.setPtgIndex(i); //ZSS-845
@@ -563,6 +627,9 @@ public final class WorkbookEvaluator {
 			if (ptg instanceof OperationPtg) {
 				OperationPtg optg = (OperationPtg) ptg;
 
+				/**
+				 *  All operational algebra calculation should be handled here
+				 */
 //ZSS-933: should process Union operator
 //				if (optg instanceof UnionPtg) { continue; }
 				int numops = optg.getNumberOfOperands();
@@ -571,9 +638,13 @@ public final class WorkbookEvaluator {
 				// storing the ops in reverse order since they are popping
 				for (int j = numops - 1; j >= 0; j--) {
 					ValueEval p = stack.pop();
+					/**
+					 * TODO
+					 * for each stack.pop if conditionalEval dont postprocess
+					 */
 					//20101115, henrichen@zkoss.org: add dependency before operation
 					//FuncVarPtg, the NamePtg(functionname) should be as is
-					
+
 					// 20131230, paowang@potix.com, ZSS-533: FuncVarPtg indicates dynamic arguments function
 					// if it's a external function, the first argument must be the function name in NameEval
 					// so, if it's not a external function, we should also eval. the first argument in post process
@@ -621,56 +692,6 @@ public final class WorkbookEvaluator {
 		return result;
 
 	}
-	/**
-	 * Calculates the number of tokens that the evaluator should skip upon reaching a tAttrSkip.
-	 *
-	 * @return the number of tokens (starting from <tt>startIndex+1</tt>) that need to be skipped
-	 * to achieve the specified <tt>distInBytes</tt> skip distance.
-	 */
-	private static int countTokensToBeSkipped(Ptg[] ptgs, int startIndex, int distInBytes) {
-		int remBytes = distInBytes;
-		int index = startIndex;
-		while (remBytes != 0) {
-			index++;
-			remBytes -= ptgs[index].getSize();
-			if (remBytes < 0) {
-				throw new RuntimeException("Bad skip distance (wrong token size calculation).");
-			}
-			if (index >= ptgs.length) {
-				throw new RuntimeException("Skip distance too far (ran out of formula tokens).");
-			}
-		}
-		return index-startIndex;
-	}
-
-	/**
-	 * Dereferences a single value from any AreaEval or RefEval evaluation
-	 * result. If the supplied evaluationResult is just a plain value, it is
-	 * returned as-is.
-	 *
-	 * @return a {@link NumberEval}, {@link StringEval}, {@link BoolEval}, or
-	 *         {@link ErrorEval}. Never <code>null</code>. {@link BlankEval} is
-	 *         converted to {@link NumberEval#ZERO}
-	 */
-	public static ValueEval dereferenceResult(ValueEval evaluationResult, int srcRowNum, int srcColNum) {
-		ValueEval value;
-		try {
-			// 20130918 hawkchen@potix.com ZSS-441 comment out henri's fix, it causes getting wrong value of array formula
-			// can't figure out why henri did this.
-//			value = OperandResolver.getMultipleValue(evaluationResult, srcRowNum, srcColNum); //20111125, henrichen@zkoss.org: handle array value  
-			value = OperandResolver.getSingleValue(evaluationResult, srcRowNum, srcColNum);
-		} catch (EvaluationException e) {
-			return e.getErrorEval();
-		}
-		if (value == BlankEval.instance) {
-			// Note Excel behaviour here. A blank final final value is converted to zero.
-			return NumberEval.ZERO;
-			// Formulas _never_ evaluate to blank.  If a formula appears to have evaluated to
-			// blank, the actual value is empty string. This can be verified with ISBLANK().
-		}
-		return value;
-	}
-
 
 	/**
 	 * returns an appropriate Eval impl instance for the Ptg. The Ptg must be
@@ -680,7 +701,7 @@ public final class WorkbookEvaluator {
 	 */
 	/*package*/ ValueEval getEvalForPtg(Ptg ptg, OperationEvaluationContext ec) { //20110324, henrichen@zkoss.org: raise access right
 		//  consider converting all these (ptg instanceof XxxPtg) expressions to (ptg.getClass() == XxxPtg.class)
-		
+
 		if (ptg instanceof NamePtg) {
 			int contextSheetIndex = ec.getWorkbook().getSheetIndex(ec.getSheetName());
 			// named ranges, macro functions
@@ -730,9 +751,9 @@ public final class WorkbookEvaluator {
 			final int row2 = aptg.getLastRow();
 			final int col1 = aptg.getFirstColumn();
 			final int col2 = aptg.getLastColumn();
-			
+
 			// ZSS-1013
-			final int extIdx = aptg.getExternSheetIndex(); 
+			final int extIdx = aptg.getExternSheetIndex();
 			return row1 == row2 && col1 == col2 ?
 					ec.getRef3DEval(row1, col1, false, false, extIdx):
 					ec.getArea3DEval(row1, col1, row2, col2,
@@ -752,14 +773,14 @@ public final class WorkbookEvaluator {
 		}
 		if (ptg instanceof RefPtg) {
 			RefPtg rptg = (RefPtg) ptg;
-			return ec.getRefEval(rptg.getRow(), rptg.getColumn(), 
+			return ec.getRefEval(rptg.getRow(), rptg.getColumn(),
 					rptg.isRowRelative(), rptg.isColRelative());
 		}
 		if (ptg instanceof AreaPtg) {
 			AreaPtg aptg = (AreaPtg) ptg;
-			return ec.getAreaEval(aptg.getFirstRow(), aptg.getFirstColumn(), 
+			return ec.getAreaEval(aptg.getFirstRow(), aptg.getFirstColumn(),
 					aptg.getLastRow(), aptg.getLastColumn(),
-					aptg.isFirstRowRelative(), aptg.isFirstColRelative(), 
+					aptg.isFirstRowRelative(), aptg.isFirstColRelative(),
 					aptg.isLastRowRelative(), aptg.isLastColRelative());
 		}
 		if (ptg instanceof UnknownPtg) {
@@ -784,6 +805,7 @@ public final class WorkbookEvaluator {
 		}
 		throw new RuntimeException("Unexpected ptg class (" + ptg.getClass().getName() + ")");
 	}
+
     /**
      * YK: Used by OperationEvaluationContext to resolve indirect names.
      */
@@ -818,7 +840,7 @@ public final class WorkbookEvaluator {
 		}
 		return size > 1 ? new ValuesEval(results) : results[0];
 	}
-	
+
 	public FreeRefFunction findUserDefinedFunction(String functionName) {
 		return _udfFinder.findFunction(functionName);
 	}
@@ -841,54 +863,6 @@ public final class WorkbookEvaluator {
      */
     public void setIgnoreMissingWorkbooks(boolean ignore){
         _ignoreMissingWorkbooks = ignore;
-    }
-
-    /**
-     * Return a collection of functions that POI can evaluate
-     *
-     * @return names of functions supported by POI
-     */
-    public static Collection<String> getSupportedFunctionNames(){
-        Collection<String> lst = new TreeSet<String>();
-        lst.addAll(FunctionEval.getSupportedFunctionNames());
-        lst.addAll(AnalysisToolPak.getSupportedFunctionNames());
-        return lst;
-    }
-
-    /**
-     * Return a collection of functions that POI does not support
-     *
-     * @return names of functions NOT supported by POI
-     */
-    public static Collection<String> getNotSupportedFunctionNames(){
-        Collection<String> lst = new TreeSet<String>();
-        lst.addAll(FunctionEval.getNotSupportedFunctionNames());
-        lst.addAll(AnalysisToolPak.getNotSupportedFunctionNames());
-        return lst;
-    }
-
-    /**
-     * Register a ATP function in runtime.
-     *
-     * @param name  the function name
-     * @param func  the functoin to register
-     * @throws IllegalArgumentException if the function is unknown or already  registered.
-     * @since 3.8 beta6
-     */
-    public static void registerFunction(String name, FreeRefFunction func){
-        AnalysisToolPak.registerFunction(name, func);
-    }
-
-    /**
-     * Register a function in runtime.
-     *
-     * @param name  the function name
-     * @param func  the functoin to register
-     * @throws IllegalArgumentException if the function is unknown or already  registered.
-     * @since 3.8 beta6
-     */
-    public static void registerFunction(String name, Function func){
-        FunctionEval.registerFunction(name, func);
     }
 
 	//20111124, henrichen@zkoss.org: given sheet index, formula text, return evaluated results
@@ -1105,7 +1079,7 @@ public final class WorkbookEvaluator {
 		return result;
 	}
 	
-	public static interface CacheManager {
+	public interface CacheManager {
 		void onUpdateCacheResult(EvaluationCell srcCell, ValueEval result);
 	}
 }

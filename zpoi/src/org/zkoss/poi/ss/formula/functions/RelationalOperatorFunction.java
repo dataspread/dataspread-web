@@ -269,6 +269,10 @@ public abstract class RelationalOperatorFunction implements Function {
         //select with conditions
         @Override
         protected ValueEval evaluate(AreaEval range, ValueEval[] args) {
+            /** TODO
+             *  how to reuse the evaluateFormula function in WorkbookEvaluator class
+             *  just need to replace the value for the conditionPtg
+             */
             return new StringEval("not implemented");
         }
     };

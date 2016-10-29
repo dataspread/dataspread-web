@@ -17,47 +17,17 @@
 
 package org.zkoss.poi.ss.formula;
 
+import org.zkoss.poi.ss.formula.eval.*;
+import org.zkoss.poi.ss.formula.eval.TwoOperandNumericOperation.MultiplyFunc;
+import org.zkoss.poi.ss.formula.function.FunctionMetadataRegistry;
+import org.zkoss.poi.ss.formula.functions.Function;
+import org.zkoss.poi.ss.formula.functions.Indirect;
+import org.zkoss.poi.ss.formula.ptg.*;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.zkoss.poi.ss.formula.ptg.AbstractFunctionPtg;
-import org.zkoss.poi.ss.formula.ptg.AddPtg;
-import org.zkoss.poi.ss.formula.ptg.ConcatPtg;
-import org.zkoss.poi.ss.formula.ptg.DividePtg;
-import org.zkoss.poi.ss.formula.ptg.EqualPtg;
-import org.zkoss.poi.ss.formula.ptg.GreaterEqualPtg;
-import org.zkoss.poi.ss.formula.ptg.GreaterThanPtg;
-import org.zkoss.poi.ss.formula.ptg.IntersectionPtg;
-import org.zkoss.poi.ss.formula.ptg.LessEqualPtg;
-import org.zkoss.poi.ss.formula.ptg.LessThanPtg;
-import org.zkoss.poi.ss.formula.ptg.MultiplyPtg;
-import org.zkoss.poi.ss.formula.ptg.NotEqualPtg;
-import org.zkoss.poi.ss.formula.ptg.OperationPtg;
-import org.zkoss.poi.ss.formula.ptg.PercentPtg;
-import org.zkoss.poi.ss.formula.ptg.PowerPtg;
-import org.zkoss.poi.ss.formula.ptg.RangePtg;
-import org.zkoss.poi.ss.formula.ptg.SubtractPtg;
-import org.zkoss.poi.ss.formula.ptg.UnaryMinusPtg;
-import org.zkoss.poi.ss.formula.ptg.UnaryPlusPtg;
-import org.zkoss.poi.ss.formula.ptg.UnionPtg;
-import org.zkoss.poi.ss.formula.eval.ConcatEval;
-import org.zkoss.poi.ss.formula.eval.FunctionEval;
-import org.zkoss.poi.ss.formula.eval.IntersectionEval;
-import org.zkoss.poi.ss.formula.eval.PercentEval;
-import org.zkoss.poi.ss.formula.eval.RangeEval;
-import org.zkoss.poi.ss.formula.eval.RelationalOperationEval;
-import org.zkoss.poi.ss.formula.eval.TwoOperandNumericOperation;
-import org.zkoss.poi.ss.formula.eval.TwoOperandNumericOperation.MultiplyFunc;
-import org.zkoss.poi.ss.formula.eval.UnaryMinusEval;
-import org.zkoss.poi.ss.formula.eval.UnaryPlusEval;
-import org.zkoss.poi.ss.formula.eval.UnionEval;
-import org.zkoss.poi.ss.formula.eval.ValueEval;
-import org.zkoss.poi.ss.formula.eval.ValuesEval;
-import org.zkoss.poi.ss.formula.function.FunctionMetadataRegistry;
-import org.zkoss.poi.ss.formula.functions.Function;
-import org.zkoss.poi.ss.formula.functions.Indirect;
 /**
  * This class creates <tt>OperationEval</tt> instances to help evaluate <tt>OperationPtg</tt>
  * formula tokens.
@@ -116,6 +86,16 @@ final class OperationEvaluatorFactory {
 		if(ptg == null) {
 			throw new IllegalArgumentException("ptg must not be null");
 		}
+        /**
+         * OperationPtg return evaluate here
+         */
+        /*
+			TODO
+			if (ptg instanceof RelationalOperatorPtg) {
+				return evaluate
+			}
+		 */
+
 		//ZSS-933
 		if (ptg instanceof UnionPtg) {
 			return new UnionEval(args);
