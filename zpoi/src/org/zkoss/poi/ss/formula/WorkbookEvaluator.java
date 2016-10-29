@@ -634,7 +634,9 @@ public final class WorkbookEvaluator {
 			ValueEval opResult;
 			if (ptg instanceof OperationPtg) {
 				OperationPtg optg = (OperationPtg) ptg;
-
+				/**
+				 *  All operational algebra calculation should be handled here
+				 */
 //ZSS-933: should process Union operator
 //				if (optg instanceof UnionPtg) { continue; }
 				int numops = optg.getNumberOfOperands();
@@ -643,6 +645,10 @@ public final class WorkbookEvaluator {
 				// storing the ops in reverse order since they are popping
 				for (int j = numops - 1; j >= 0; j--) {
 					ValueEval p = stack.pop();
+					/**
+					 * TODO
+					 * for each stack.pop if conditionalEval don't do postProcessValueEval
+					 */
 					//20101115, henrichen@zkoss.org: add dependency before operation
 					//FuncVarPtg, the NamePtg(functionname) should be as is
 					
