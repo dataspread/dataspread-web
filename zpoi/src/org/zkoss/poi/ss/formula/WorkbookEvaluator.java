@@ -191,7 +191,7 @@ public final class WorkbookEvaluator {
 		try {
 			// 20130918 hawkchen@potix.com ZSS-441 comment out henri's fix, it causes getting wrong value of array formula
 			// can't figure out why henri did this.
-//			value = OperandResolver.getMultipleValue(evaluationResult, srcRowNum, srcColNum); //20111125, henrichen@zkoss.org: handle array value
+//			value = OperandResolver.getMultipleValue(evaluationResult, srcRowNum, srcColNum); //20111125, henrichen@zkoss.org: handle array value  
 			value = OperandResolver.getSingleValue(evaluationResult, srcRowNum, srcColNum);
 		} catch (EvaluationException e) {
 			return e.getErrorEval();
@@ -321,7 +321,7 @@ public final class WorkbookEvaluator {
 	public void clearAllCachedResultValues() {
 		_cache.clear();
 		_sheetIndexesBySheet.clear();
-		_sheetIndexesByName.clear(); // 20131025, paowang@potix.com, ZSS-492: don't forget to clear sheet name cache, or index will be inconsistent after reordering sheets
+		_sheetIndexesByName.clear(); // 20131025, paowang@potix.com, ZSS-492: don't forget to clear sheet name cache, or index will be inconsistent after reordering sheets 	
 	}
 
 	/**
@@ -497,7 +497,7 @@ public final class WorkbookEvaluator {
 		}
 	}
 
-	//20110324, henrichen@zkoss.org: after process the ValueEval
+	//20110324, henrichen@zkoss.org: after process the ValueEval 
 	private ValueEval postProcessValueEval(OperationEvaluationContext ec, ValueEval opResult, boolean eval) {
 		if (_dependencyTracker != null) {
 			opResult = _dependencyTracker.postProcessValueEval(ec, opResult, eval);
@@ -516,7 +516,7 @@ public final class WorkbookEvaluator {
 	/* package */ ValueEval evaluateFormula(OperationEvaluationContext ec, Ptg[] ptgs, boolean ignoreDependency, boolean ignoreDereference) {
 		if (!ignoreDependency)
 			addDependency(ec, ptgs); //20110324, henrichen@zkoss.org: construct the dependency DAG per this formula (bug#290)
-
+			
 		String dbgIndentStr = "";		// always init. to non-null just for defensive avoiding NPE
 		if (dbgEvaluationOutputForNextEval) {
 			// first evaluation call when ouput is desired, so iit. this evaluator instance
@@ -534,7 +534,9 @@ public final class WorkbookEvaluator {
 			                   + "): " + Arrays.toString(ptgs).replaceAll("\\Qorg.zkoss.poi.ss.formula.ptg.\\E", ""));
 			dbgEvaluationOutputIndent++;
 		}
-
+		
+		
+		
 		Stack<ValueEval> stack = new Stack<ValueEval>();
 		for (int i = 0, iSize = ptgs.length; i < iSize; i++) {
 			ec.setPtgIndex(i); //ZSS-845
@@ -543,6 +545,10 @@ public final class WorkbookEvaluator {
 			if (dbgEvaluationOutputIndent > 0) {
 				EVAL_LOG.log(POILogger.INFO, dbgIndentStr + "  * ptg " + i + ": " + ptg);
 			}
+			//TODO
+			//if (ptg instancoeof conditionptg{
+			// evaluate
+			// }
 			if (ptg instanceof AttrPtg) {
 				AttrPtg attrPtg = (AttrPtg) ptg;
 				if (attrPtg.isSum()) {
@@ -575,6 +581,8 @@ public final class WorkbookEvaluator {
 				}
 				if (attrPtg.isOptimizedIf()) {
 					ValueEval arg0 = stack.pop();
+					//TODO
+					//if arg0 is instanceof condeval then wrap else 
 					boolean evaluatedPredicate;
 					try {
 						evaluatedPredicate = IfFunc.evaluateFirstArg(arg0, ec.getRowIndex(), ec.getColumnIndex());
@@ -627,9 +635,6 @@ public final class WorkbookEvaluator {
 			if (ptg instanceof OperationPtg) {
 				OperationPtg optg = (OperationPtg) ptg;
 
-				/**
-				 *  All operational algebra calculation should be handled here
-				 */
 //ZSS-933: should process Union operator
 //				if (optg instanceof UnionPtg) { continue; }
 				int numops = optg.getNumberOfOperands();
@@ -638,13 +643,9 @@ public final class WorkbookEvaluator {
 				// storing the ops in reverse order since they are popping
 				for (int j = numops - 1; j >= 0; j--) {
 					ValueEval p = stack.pop();
-					/**
-					 * TODO
-					 * for each stack.pop if conditionalEval dont postprocess
-					 */
 					//20101115, henrichen@zkoss.org: add dependency before operation
 					//FuncVarPtg, the NamePtg(functionname) should be as is
-
+					
 					// 20131230, paowang@potix.com, ZSS-533: FuncVarPtg indicates dynamic arguments function
 					// if it's a external function, the first argument must be the function name in NameEval
 					// so, if it's not a external function, we should also eval. the first argument in post process
@@ -701,7 +702,7 @@ public final class WorkbookEvaluator {
 	 */
 	/*package*/ ValueEval getEvalForPtg(Ptg ptg, OperationEvaluationContext ec) { //20110324, henrichen@zkoss.org: raise access right
 		//  consider converting all these (ptg instanceof XxxPtg) expressions to (ptg.getClass() == XxxPtg.class)
-
+		
 		if (ptg instanceof NamePtg) {
 			int contextSheetIndex = ec.getWorkbook().getSheetIndex(ec.getSheetName());
 			// named ranges, macro functions
@@ -751,9 +752,9 @@ public final class WorkbookEvaluator {
 			final int row2 = aptg.getLastRow();
 			final int col1 = aptg.getFirstColumn();
 			final int col2 = aptg.getLastColumn();
-
+			
 			// ZSS-1013
-			final int extIdx = aptg.getExternSheetIndex();
+			final int extIdx = aptg.getExternSheetIndex(); 
 			return row1 == row2 && col1 == col2 ?
 					ec.getRef3DEval(row1, col1, false, false, extIdx):
 					ec.getArea3DEval(row1, col1, row2, col2,
@@ -773,14 +774,14 @@ public final class WorkbookEvaluator {
 		}
 		if (ptg instanceof RefPtg) {
 			RefPtg rptg = (RefPtg) ptg;
-			return ec.getRefEval(rptg.getRow(), rptg.getColumn(),
+			return ec.getRefEval(rptg.getRow(), rptg.getColumn(), 
 					rptg.isRowRelative(), rptg.isColRelative());
 		}
 		if (ptg instanceof AreaPtg) {
 			AreaPtg aptg = (AreaPtg) ptg;
-			return ec.getAreaEval(aptg.getFirstRow(), aptg.getFirstColumn(),
+			return ec.getAreaEval(aptg.getFirstRow(), aptg.getFirstColumn(), 
 					aptg.getLastRow(), aptg.getLastColumn(),
-					aptg.isFirstRowRelative(), aptg.isFirstColRelative(),
+					aptg.isFirstRowRelative(), aptg.isFirstColRelative(), 
 					aptg.isLastRowRelative(), aptg.isLastColRelative());
 		}
 		if (ptg instanceof UnknownPtg) {
