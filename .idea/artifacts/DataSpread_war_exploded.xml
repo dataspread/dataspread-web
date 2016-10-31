@@ -9,6 +9,7 @@
           <element id="module-output" name="zssmodel" />
           <element id="module-output" name="zpoi" />
           <element id="module-output" name="zss" />
+          <element id="module-output" name="rtree" />
         </element>
         <element id="directory" name="lib">
           <element id="library" level="project" name="lib" />
@@ -16,6 +17,11 @@
           <element id="library" level="project" name="reflectasm-1.10.1-shaded" />
           <element id="library" level="project" name="minlog-1.3.0" />
           <element id="library" level="project" name="objenesis-2.1" />
+          <element id="library" level="project" name="Maven: com.github.davidmoten:guava-mini:0.1" />
+          <element id="library" level="project" name="Maven: io.reactivex:rxjava:1.1.4" />
+          <element id="library" level="project" name="Maven: com.vividsolutions:jts-core:1.14.0" />
+          <element id="library" level="project" name="Maven: com.github.davidmoten:rxjava-extras:0.7" />
+          <element id="library" level="project" name="Maven: com.github.davidmoten:flatbuffers-java:1.3.0.1" />
         </element>
       </element>
     </root>
