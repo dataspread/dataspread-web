@@ -1,13 +1,19 @@
 package org.zkoss.zss.model.impl.sys;
-
+import com.github.davidmoten.rtree.Entries;
+import com.github.davidmoten.rtree.RTree;
+import com.github.davidmoten.rtree.geometry.Geometries;
+import com.github.davidmoten.rtree.geometry.Geometry;
+import com.github.davidmoten.rtree.geometry.Rectangle;
 import org.zkoss.util.logging.Log;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SBookSeries;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.dependency.Ref.RefType;
+import rx.*;
 
 import java.util.*;
 import java.util.Map.Entry;
+
 /* DependencyTableImpl.java
 
  Purpose:
@@ -35,6 +41,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 	protected Map<Ref, Set<Ref>> _evaledMap = new LinkedHashMap<Ref, Set<Ref>>();
     protected Map<Ref, Set<Ref>> _backwardMap = new LinkedHashMap<Ref, Set<Ref>>();
     protected SBookSeries _books;
+	protected RTree<Ref, Rectangle> _rtree = RTree.create();
 
 
 	public DependencyTableImpl() {
@@ -47,11 +54,17 @@ public class DependencyTableImpl extends DependencyTableAdv {
 
 	@Override
     public void add(Ref dependant, Ref precedent) {
+		if (dependant.getPrecedents() == null){
+			addForward(dependant, precedent);
+			addBackward(dependant, precedent);
+		}
 
+		/*
         if (_map.get(precedent) == null) {
             addForward(dependant, precedent);
             addBackward(dependant, precedent);
-        } else {
+        }*/
+		else {
             boolean isCyclic = true;
             try {
                 isCyclic = DFSdetectCyclicDependencies(dependant, precedent);
@@ -67,7 +80,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
     }
 
     private boolean DFSdetectCyclicDependencies(Ref target, Ref ref) throws MyOwnException {
-        if (ref.equals(target))
+      /*  if (ref.equals(target))
             throw new MyOwnException("Cyclic dependecies detected!");
         if (ref != null) {
             for (Ref precedent : _map.get(ref)) {
@@ -76,31 +89,55 @@ public class DependencyTableImpl extends DependencyTableAdv {
             }
         }
         return false;
+        */
+		if (ref.equals(target))
+			throw new MyOwnException("Cyclic dependecies detected!");
+		if (ref != null) {
+			for (Ref precedent : ref.getPrecedents()) {
+				if (precedent != null)
+					DFSdetectCyclicDependencies(target, precedent);
+			}
+		}
+		return false;
+
     }
 
     private void addBackward(Ref dependant, Ref precedent) {
-        Set<Ref> dependants = _backwardMap.get(precedent);
+       /* Set<Ref> dependants = _backwardMap.get(precedent);
         if (dependants == null) {
             dependants = new LinkedHashSet<Ref>();
             _backwardMap.put(precedent, dependants);
+			//Update rtree. Only add one entry per precedent.
+			Rectangle region = Geometries.rectangle(
+					precedent.getRow(),precedent.getColumn(),precedent.getLastRow(),precedent.getLastColumn());
+			com.github.davidmoten.rtree.Entry<Ref,Rectangle> entry = Entries.entry(precedent, region);
+			_rtree.add(entry);
         }
-        dependants.add(precedent);
+        dependants.add(dependant);
+       */
+
+		Rectangle region = Geometries.rectangle(
+				precedent.getRow(),precedent.getColumn(),precedent.getLastRow(),precedent.getLastColumn());
+		_rtree.add(dependant, region);
 
     }
 
     private void addForward(Ref dependant, Ref precedent) {
-        Set<Ref> precedents = _map.get(dependant);
+       /*Set<Ref> precedents = _map.get(dependant);
 		if(precedents == null) {
 			precedents = new LinkedHashSet<Ref>();
 			_map.put(dependant, precedents);
 		}
 		precedents.add(precedent);
+		*/
+		dependant.addPrecedent(precedent);
 	}
 
 	public void clear() {
 		_map.clear();
 		_evaledMap.clear();
         _backwardMap.clear();
+		//Need to delete the tree
     }
 
 	@Override
@@ -112,7 +149,12 @@ public class DependencyTableImpl extends DependencyTableAdv {
         Set<Ref> precedents = _map.get(dependant);
         if (precedents != null) {
             for (Ref precedent : precedents) {
-                _backwardMap.remove(precedent);
+                Set<Ref> dependants = _backwardMap.get(precedent);
+				dependants.remove(dependant);
+				if(_backwardMap.get(precedent).size()==0){
+					//delete from the rtree
+				}
+
             }
         }
         _evaledMap.remove(dependant);
@@ -148,6 +190,12 @@ public class DependencyTableImpl extends DependencyTableAdv {
                 return Collections.emptySet();
             }
         }
+
+		Rectangle region = Geometries.rectangle(
+				precedent.getRow(),precedent.getColumn(),precedent.getLastRow(),precedent.getLastColumn());
+		rx.Observable<com.github.davidmoten.rtree.Entry<Ref, Rectangle>> obs =_rtree.search(region);
+
+
         Set<Ref> result = new LinkedHashSet<Ref>();
         return recursivelyGetBackwardDependents(precedent, base, result);
 

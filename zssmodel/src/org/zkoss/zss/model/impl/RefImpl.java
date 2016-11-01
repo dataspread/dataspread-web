@@ -20,6 +20,8 @@ import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
 import java.io.Serializable;
+import java.util.Set;
+
 /**
  * 
  * @author dennis
@@ -37,7 +39,7 @@ public class RefImpl implements Ref, Serializable {
 	private int _lastRow;
 	private int _lastColumn;
 	private int _sheetIdx = -1; // tricky! used in IntervalTree only!
-
+    private Set<Ref> _precedents;
 	@SuppressWarnings("unused")
 	public RefImpl() {
 		// Required for serialization.
@@ -135,6 +137,17 @@ public class RefImpl implements Ref, Serializable {
 	public int getLastColumn() {
 		return _lastColumn;
 	}
+
+	@Override
+	public Set<Ref> getPrecedents(){ return _precedents; }
+
+	@Override
+	public void addPrecedent(Ref precedent){ _precedents.add(precedent);}
+
+	@Override
+	public void deletePrecedent(Ref precedent){ _precedents.remove(precedent);}
+
+
 
 	@Override
 	public int hashCode() {

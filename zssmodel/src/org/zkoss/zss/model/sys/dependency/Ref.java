@@ -1,5 +1,7 @@
 package org.zkoss.zss.model.sys.dependency;
 
+import java.util.Set;
+
 /**
  * 
  * @author dennis
@@ -9,31 +11,36 @@ public interface Ref {
 	/**
 	 * @since 3.5.0
 	 */
-	public enum RefType {
+	enum RefType {
 		CELL, AREA, SHEET, BOOK, NAME, OBJECT, INDIRECT, TABLE, 
 	}
 
-	public RefType getType();
+	RefType getType();
 
-	public String getBookName();
+	String getBookName();
 
-	public String getSheetName();
+	String getSheetName();
 	
-	public String getLastSheetName();
+	String getLastSheetName();
 
-	public int getRow();
+	int getRow();
 
-	public int getColumn();
+	int getColumn();
 
-	public int getLastRow();
+	int getLastRow();
 
-	public int getLastColumn();
-	
-	//ZSS-815
-	//since 3.7.0
-	public int getSheetIndex(); 
+	int getLastColumn();
 	
 	//ZSS-815
 	//since 3.7.0
-	public int getLastSheetIndex();
+	int getSheetIndex();
+	
+	//ZSS-815
+	//since 3.7.0
+	int getLastSheetIndex();
+
+	Set<Ref> getPrecedents();
+
+	void addPrecedent(Ref precedent);
+	void deletePrecedent(Ref precedent);
 }
