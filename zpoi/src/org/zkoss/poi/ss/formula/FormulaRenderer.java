@@ -17,22 +17,12 @@
 
 package org.zkoss.poi.ss.formula;
 
+import org.zkoss.poi.ss.formula.EvaluationWorkbook.ExternalSheet;
+import org.zkoss.poi.ss.formula.ptg.*;
+import org.zkoss.poi.ss.usermodel.ZssContext;
+
 import java.util.Locale;
 import java.util.Stack;
-
-import org.zkoss.poi.ss.formula.EvaluationWorkbook.ExternalSheet;
-import org.zkoss.poi.ss.formula.ptg.AbstractFunctionPtg;
-import org.zkoss.poi.ss.formula.ptg.ArrayPtg;
-import org.zkoss.poi.ss.formula.ptg.AttrPtg;
-import org.zkoss.poi.ss.formula.ptg.MemAreaPtg;
-import org.zkoss.poi.ss.formula.ptg.MemErrPtg;
-import org.zkoss.poi.ss.formula.ptg.MemFuncPtg;
-import org.zkoss.poi.ss.formula.ptg.NumberPtg;
-import org.zkoss.poi.ss.formula.ptg.OperationPtg;
-import org.zkoss.poi.ss.formula.ptg.ParenthesisPtg;
-import org.zkoss.poi.ss.formula.ptg.Ptg;
-import org.zkoss.poi.ss.formula.ptg.TablePtg;
-import org.zkoss.poi.ss.usermodel.ZssContext;
 
 /**
  * Common logic for rendering formulas.<br/>
@@ -103,7 +93,10 @@ public class FormulaRenderer {
                 continue;
             }
             if (! (ptg instanceof OperationPtg)) {
-                stack.push(ptg.toFormulaString());
+                // OpTableRefPtg is is not part of the formula string, so don't add it to the stack
+                if (!(ptg instanceof OpTableRefPtg)) {
+                    stack.push(ptg.toFormulaString());
+                }
                 continue;
             }
 

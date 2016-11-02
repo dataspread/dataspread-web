@@ -273,6 +273,8 @@ public abstract class RelationalOperatorFunction implements Function {
              *  how to reuse the evaluateFormula function in WorkbookEvaluator class
              *  just need to replace the value for the conditionPtg
              */
+
+
             return new StringEval("not implemented");
         }
     };

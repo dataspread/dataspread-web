@@ -982,8 +982,8 @@ public final class FormulaParser {
 	}
 
 	private ParseNode createConditionParseNode(SimpleRangePart part1, SimpleRangePart part2) {
-		
-		Ptg ptg = new ConditionPtg(part1.getRep(), part2.getRep());
+
+		Ptg ptg = new OpTableColRefPtg(part1.getRep(), part2.getRep());
 		return new ParseNode(ptg);
 		
 	}
@@ -1229,10 +1229,29 @@ public final class FormulaParser {
 		}
 
 		Match('(');
-		ParseNode[] args = Arguments();
+		// if the function is a relational operator, we need to know when parsing its arguments
+		ParseNode[] args = Arguments(getNumOperatorTables(name));
 		Match(')');
 
 		return getFunction(name, nameToken, args);
+	}
+
+	/**
+	 * If a function is a relational algebra operator, we need to get the number of tables it has as arguments.
+	 * e.g. Select takes one relation, and Join takes two relations.
+	 * @param name
+	 * @return
+	 */
+	private int getNumOperatorTables(String name) {
+
+		//TODO Change this to use methods that get a function's information? Also add all operators
+		if (name.toUpperCase().equals("SELECT")) {
+			return 1;
+		} else if (name.toUpperCase().equals("JOIN")) {
+			return 2;
+		} else {
+			return 0;
+		}
 	}
 
 	/**
@@ -1338,8 +1357,28 @@ public final class FormulaParser {
 		return ch == _argComma || ch == ')'; //ZSS-565
 	}
 
+
+	/**
+	 * For relational operators, we need to mark all OperationPtg's that are arguments to the relational operator.
+	 * AbstractFunctionPtg's are an exception and not marked.
+	 * Arg and all of its children must be marked.
+	 *
+	 * @param arg
+	 */
+	private void markSpecialPtgs(ParseNode arg) {
+
+		if (arg.getToken() instanceof OperationPtg && !(arg.getToken() instanceof AbstractFunctionPtg)) {
+
+			((OperationPtg) arg.getToken()).setSpecial();
+		}
+
+		for (int i = 0; i < arg.getChildren().length; i++) {
+			markSpecialPtgs(arg.getChildren()[i]);
+		}
+	}
+
 	/** get arguments to a function */
-	private ParseNode[] Arguments() {
+	private ParseNode[] Arguments(int numOperatorTables) {
 		//average 2 args per function
 		List<ParseNode> temp = new ArrayList<ParseNode>(2);
 		SkipWhite();
@@ -1363,7 +1402,24 @@ public final class FormulaParser {
 				missedPrevArg = true;
 				continue;
 			}
-			temp.add(comparisonExpression());
+
+			ParseNode children = comparisonExpression();
+
+			//mark all OperationPtg's that are inside a relational algebra operator formula
+			if (numOperatorTables > 0) {
+				markSpecialPtgs(children);
+			}
+
+			//create the OpTableRefPtg and its children. need '<' since table 1 == arg 0
+			if (numArgs < numOperatorTables) {
+				OpTableRefPtg opTablePtg = new OpTableRefPtg(numArgs);
+				ParseNode tableAndChildren = new ParseNode(opTablePtg, children);
+				temp.add(tableAndChildren);
+			} else {
+				temp.add(children);
+			}
+			
+			
 			numArgs++;
 			missedPrevArg = false;
 			SkipWhite();

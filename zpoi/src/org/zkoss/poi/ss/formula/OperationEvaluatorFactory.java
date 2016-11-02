@@ -86,15 +86,6 @@ final class OperationEvaluatorFactory {
 		if(ptg == null) {
 			throw new IllegalArgumentException("ptg must not be null");
 		}
-        /**
-         * OperationPtg return evaluate here
-         */
-        /*
-			TODO
-			if (ptg instanceof RelationalOperatorPtg) {
-				return evaluate
-			}
-		 */
 
 		//ZSS-933
 		if (ptg instanceof UnionPtg) {

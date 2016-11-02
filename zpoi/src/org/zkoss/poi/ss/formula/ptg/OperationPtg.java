@@ -25,7 +25,8 @@ public abstract class OperationPtg extends Ptg {
     public final static int TYPE_UNARY    = 0;
     public final static int TYPE_BINARY   = 1;
     public final static int TYPE_FUNCTION = 2;
-
+    public static boolean special = false;
+    
     /**
      *  returns a string representation of the operations
      *  the length of the input array should equal the number returned by 
@@ -38,6 +39,14 @@ public abstract class OperationPtg extends Ptg {
      * The number of operands expected by the operations
      */
     public abstract int getNumberOfOperands();
+
+    public void setSpecial() {
+        special = true;
+    }
+
+    public boolean isSpecial() {
+        return special;
+    }
     
     public byte getDefaultOperandClass() {
         return Ptg.CLASS_VALUE;

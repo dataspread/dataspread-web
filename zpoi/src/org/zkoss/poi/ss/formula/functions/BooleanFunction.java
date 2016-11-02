@@ -17,14 +17,8 @@
 
 package org.zkoss.poi.ss.formula.functions;
 
-import org.zkoss.poi.ss.formula.eval.BoolEval;
-import org.zkoss.poi.ss.formula.eval.ErrorEval;
-import org.zkoss.poi.ss.formula.eval.EvaluationException;
-import org.zkoss.poi.ss.formula.eval.MissingArgEval;
-import org.zkoss.poi.ss.formula.eval.OperandResolver;
-import org.zkoss.poi.ss.formula.eval.RefEval;
-import org.zkoss.poi.ss.formula.eval.ValueEval;
 import org.zkoss.poi.ss.formula.TwoDEval;
+import org.zkoss.poi.ss.formula.eval.*;
 
 /**
  * Here are the general rules concerning Boolean functions:
@@ -39,10 +33,56 @@ import org.zkoss.poi.ss.formula.TwoDEval;
  */
 public abstract class BooleanFunction implements Function {
 
+	public static final Function AND = new BooleanFunction() {
+		protected boolean getInitialResultValue() {
+			return true;
+		}
+
+		protected boolean partialEvaluate(boolean cumulativeResult, boolean currentValue) {
+			return cumulativeResult && currentValue;
+		}
+	};
+	public static final Function OR = new BooleanFunction() {
+		protected boolean getInitialResultValue() {
+			return false;
+		}
+
+		protected boolean partialEvaluate(boolean cumulativeResult, boolean currentValue) {
+			return cumulativeResult || currentValue;
+		}
+	};
+	public static final Function FALSE = new Fixed0ArgFunction() {
+		public ValueEval evaluate(int srcRowIndex, int srcColumnIndex) {
+			return BoolEval.FALSE;
+		}
+	};
+	public static final Function TRUE = new Fixed0ArgFunction() {
+		public ValueEval evaluate(int srcRowIndex, int srcColumnIndex) {
+			return BoolEval.TRUE;
+		}
+	};
+	public static final Function NOT = new BooleanFunction.OneArg() {
+		public ValueEval evaluate(int srcRowIndex, int srcColumnIndex, ValueEval arg0) {
+			boolean boolArgVal;
+			try {
+				ValueEval ve = OperandResolver.getSingleValue(arg0, srcRowIndex, srcColumnIndex);
+				Boolean b = OperandResolver.coerceValueToBoolean(ve, false);
+				boolArgVal = b != null && b.booleanValue();
+			} catch (EvaluationException e) {
+				return e.getErrorEval();
+			}
+
+			return BoolEval.valueOf(!boolArgVal);
+		}
+	};
+
 	public final ValueEval evaluate(ValueEval[] args, int srcRow, int srcCol) {
 		if (args.length < 1) {
 			return ErrorEval.VALUE_INVALID;
 		}
+		//check if args[0] is spcecial eval
+//		calculate(1231,args starting from 1);
+		
 		boolean boolResult;
 		try {
 			boolResult = calculate(args);
@@ -101,51 +141,9 @@ public abstract class BooleanFunction implements Function {
 		return result;
 	}
 
-
 	protected abstract boolean getInitialResultValue();
+
 	protected abstract boolean partialEvaluate(boolean cumulativeResult, boolean currentValue);
-
-
-	public static final Function AND = new BooleanFunction() {
-		protected boolean getInitialResultValue() {
-			return true;
-		}
-		protected boolean partialEvaluate(boolean cumulativeResult, boolean currentValue) {
-			return cumulativeResult && currentValue;
-		}
-	};
-	public static final Function OR = new BooleanFunction() {
-		protected boolean getInitialResultValue() {
-			return false;
-		}
-		protected boolean partialEvaluate(boolean cumulativeResult, boolean currentValue) {
-			return cumulativeResult || currentValue;
-		}
-	};
-	public static final Function FALSE = new Fixed0ArgFunction() {
-		public ValueEval evaluate(int srcRowIndex, int srcColumnIndex) {
-			return BoolEval.FALSE;
-		}
-	};
-	public static final Function TRUE = new Fixed0ArgFunction() {
-		public ValueEval evaluate(int srcRowIndex, int srcColumnIndex) {
-			return BoolEval.TRUE;
-		}
-	};
-	public static final Function NOT = new BooleanFunction.OneArg() {
-		public ValueEval evaluate(int srcRowIndex, int srcColumnIndex, ValueEval arg0) {
-			boolean boolArgVal;
-			try {
-				ValueEval ve = OperandResolver.getSingleValue(arg0, srcRowIndex, srcColumnIndex);
-				Boolean b = OperandResolver.coerceValueToBoolean(ve, false);
-				boolArgVal = b == null ? false : b.booleanValue();
-			} catch (EvaluationException e) {
-				return e.getErrorEval();
-			}
-
-			return BoolEval.valueOf(!boolArgVal);
-		}
-	};
 	
 	public static abstract class OneArg extends Fixed1ArgFunction implements Operator {
 		protected OneArg() {

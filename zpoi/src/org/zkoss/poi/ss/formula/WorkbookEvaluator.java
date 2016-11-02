@@ -545,10 +545,20 @@ public final class WorkbookEvaluator {
 			if (dbgEvaluationOutputIndent > 0) {
 				EVAL_LOG.log(POILogger.INFO, dbgIndentStr + "  * ptg " + i + ": " + ptg);
 			}
-			//TODO
-			//if (ptg instancoeof conditionptg{
-			// evaluate
-			// }
+
+			//TODO: When OpTableRefPtg is seen, the area corresponding to it needs to be added to a separate stack 
+			if (ptg instanceof OpTableRefPtg) {
+				//not implemented, so skip to next ptg
+				continue;
+			}
+
+			//TODO: Evaluate TableCol to an area using stack containing TableRef areas
+			//This might need to go somewhere else?
+			if (ptg instanceof OpTableColRefPtg) {
+				//not implemented, so skip to next ptg
+				continue;
+			}
+			
 			if (ptg instanceof AttrPtg) {
 				AttrPtg attrPtg = (AttrPtg) ptg;
 				if (attrPtg.isSum()) {
@@ -581,8 +591,6 @@ public final class WorkbookEvaluator {
 				}
 				if (attrPtg.isOptimizedIf()) {
 					ValueEval arg0 = stack.pop();
-					//TODO
-					//if arg0 is instanceof condeval then wrap else 
 					boolean evaluatedPredicate;
 					try {
 						evaluatedPredicate = IfFunc.evaluateFirstArg(arg0, ec.getRowIndex(), ec.getColumnIndex());
@@ -637,10 +645,18 @@ public final class WorkbookEvaluator {
 				/**
 				 *  All operational algebra calculation should be handled here
 				 */
+
+				boolean isSpecialOpPtg = optg.isSpecial(); 
+				
 //ZSS-933: should process Union operator
 //				if (optg instanceof UnionPtg) { continue; }
 				int numops = optg.getNumberOfOperands();
 				ValueEval[] ops = new ValueEval[numops];
+
+//				if (is andfunction ) {
+//					ops[0] = special eval
+//					j end with 1
+//				}
 
 				// storing the ops in reverse order since they are popping
 				for (int j = numops - 1; j >= 0; j--) {
@@ -648,6 +664,12 @@ public final class WorkbookEvaluator {
 					/**
 					 * TODO
 					 * for each stack.pop if conditionalEval don't do postProcessValueEval
+					 */
+					/**
+					 if p instanceof ...
+					 flag = true
+					 index of this p for ops
+					 get this root instance which should be areaEval and put it as p
 					 */
 					//20101115, henrichen@zkoss.org: add dependency before operation
 					//FuncVarPtg, the NamePtg(functionname) should be as is
@@ -663,6 +685,14 @@ public final class WorkbookEvaluator {
 					}
 					ops[j] = p;
 				}
+				/**
+				 if flag is true 
+				 for loop 
+				 change the ops[index] to a single value
+				 opResult = OperationEvaluatorFactory.evaluate(optg, ops, ec);
+				 opResult = postProcessValueEval(ec, opResult, true);
+				 opResults[i] = opResult
+				 */
 //				logDebug("invoke " + operation + " (nAgs=" + numops + ")");
 				opResult = OperationEvaluatorFactory.evaluate(optg, ops, ec);
 				opResult = postProcessValueEval(ec, opResult, true);
