@@ -645,23 +645,36 @@ public final class WorkbookEvaluator {
 				/**
 				 *  All operational algebra calculation should be handled here
 				 */
-
-				boolean isSpecialOpPtg = optg.isSpecial(); 
 				
 //ZSS-933: should process Union operator
 //				if (optg instanceof UnionPtg) { continue; }
-				int numops = optg.getNumberOfOperands();
-				ValueEval[] ops = new ValueEval[numops];
 
 //				if (is andfunction ) {
-//					ops[0] = special eval
+//					ops[0] = isOverrided eval
 //					j end with 1
 //				}
 
+                //if optg is overrided (it's in relational algebra operator) need to add an OverrideEval to know
+                boolean isOverridedOpPtg = optg.isOverrided();
+
+                int numops = optg.getNumberOfOperands();
+
+                if (isOverridedOpPtg) {
+                    numops++;
+                }
+
+                ValueEval[] ops = new ValueEval[numops];
+
 				// storing the ops in reverse order since they are popping
 				for (int j = numops - 1; j >= 0; j--) {
-					ValueEval p = stack.pop();
-					/**
+
+                    //if is overrided op, we need to put an OverrideEval at first index of ops
+                    if (isOverridedOpPtg && j == 0) {
+                        ops[0] = new OverrideEval();
+                        continue;
+                    }
+                    ValueEval p = stack.pop();
+                    /**
 					 * TODO
 					 * for each stack.pop if conditionalEval don't do postProcessValueEval
 					 */

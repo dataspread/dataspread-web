@@ -1365,17 +1365,23 @@ public final class FormulaParser {
 	 *
 	 * @param arg
 	 */
-	private void markSpecialPtgs(ParseNode arg) {
+    private void markOverridenOpPtgs(ParseNode arg) {
 
 		if (arg.getToken() instanceof OperationPtg && !(arg.getToken() instanceof AbstractFunctionPtg)) {
 
-			((OperationPtg) arg.getToken()).setSpecial();
-		}
+            ((OperationPtg) arg.getToken()).setOverrided();
+        }
+        if (arg.getToken() instanceof AbstractFunctionPtg &&
+                (((AbstractFunctionPtg) arg.getToken()).getName().equals("AND")
+                        || ((AbstractFunctionPtg) arg.getToken()).getName().equals("OR")
+                        || ((AbstractFunctionPtg) arg.getToken()).getName().equals("NOT"))) {
+            ((OperationPtg) arg.getToken()).setOverrided();
+        }
 
 		for (int i = 0; i < arg.getChildren().length; i++) {
-			markSpecialPtgs(arg.getChildren()[i]);
-		}
-	}
+            markOverridenOpPtgs(arg.getChildren()[i]);
+        }
+    }
 
 	/** get arguments to a function */
 	private ParseNode[] Arguments(int numOperatorTables) {
@@ -1407,8 +1413,8 @@ public final class FormulaParser {
 
 			//mark all OperationPtg's that are inside a relational algebra operator formula
 			if (numOperatorTables > 0) {
-				markSpecialPtgs(children);
-			}
+                markOverridenOpPtgs(children);
+            }
 
 			//create the OpTableRefPtg and its children. need '<' since table 1 == arg 0
 			if (numArgs < numOperatorTables) {
