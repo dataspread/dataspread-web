@@ -26,6 +26,7 @@ public abstract class OperationPtg extends Ptg {
     public final static int TYPE_BINARY   = 1;
     public final static int TYPE_FUNCTION = 2;
     public static boolean isOverrided = false;
+    public static int overrideTableNum = 0;
     
     /**
      *  returns a string representation of the operations
@@ -55,5 +56,13 @@ public abstract class OperationPtg extends Ptg {
     //ZSS-565
     public String toInternalFormulaString(String[] operands) {
     	return toFormulaString(operands);
+    }
+
+    public int getOverrideTableNum() {
+        return overrideTableNum;
+    }
+
+    public void setOverrideTableNum(int numOperatorTables) {
+        overrideTableNum = numOperatorTables;
     }
 }

@@ -4,7 +4,9 @@ import org.zkoss.poi.ss.formula.SheetRefEvaluator;
 import org.zkoss.poi.ss.formula.TwoDEval;
 import org.zkoss.poi.ss.formula.eval.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.zkoss.poi.ss.formula.functions.CountUtils.I_MatchPredicate;
 
@@ -28,22 +30,22 @@ public abstract class RelationalOperatorFunction implements Function {
             try {
                 
                 validateUnionCompatible(range1, range2);
-                
-                Row[] rows1 = Row.getRowsFromArea(range1);
-                Row[] rows2 = Row.getRowsFromArea(range2);
-                
-                Row[] combinedRows = new Row[rows1.length + rows2.length];
+
+                List<Row> rows1 = Row.getRowsFromArea(range1);
+                List<Row> rows2 = Row.getRowsFromArea(range2);
+
+                Row[] combinedRows = new Row[rows1.size() + rows2.size()];
                 
                 int insertIndex = 0;
                 
                 //Add all rows from rows1
-                for (int r = 0; r < rows1.length; r++) {                    
-                    combinedRows[insertIndex++] = rows1[r];
+                for (int r = 0; r < rows1.size(); r++) {
+                    combinedRows[insertIndex++] = rows1.get(r);
                 }
                     
                 //Add all rows from rows2
-                for (int r = 0; r < rows2.length; r++) {
-                    combinedRows[insertIndex++] = rows2[r];                                            
+                for (int r = 0; r < rows2.size(); r++) {
+                    combinedRows[insertIndex++] = rows2.get(r);
                 }
 
                 boolean[] indicesToKeep = getDistinctIndices(combinedRows);
@@ -102,10 +104,12 @@ public abstract class RelationalOperatorFunction implements Function {
 
             try {
 
-                validateUnionCompatible(range1, range2);                
-                
-                Row[] rows1 = Row.getRowsFromArea(range1);
-                Row[] rows2 = Row.getRowsFromArea(range2);
+                validateUnionCompatible(range1, range2);
+
+                List<Row> list1 = Row.getRowsFromArea(range1);
+                List<Row> list2 = Row.getRowsFromArea(range2);
+                Row[] rows1 = list1.toArray(new Row[list1.size()]);
+                Row[] rows2 = list1.toArray(new Row[list2.size()]);
                 
                 boolean[] indicesToKeep = getIndicesNotInRows2(rows1, rows2);
                 Row[] resultRows = getRowsToKeep(indicesToKeep, rows1);
@@ -168,8 +172,10 @@ public abstract class RelationalOperatorFunction implements Function {
 
                 validateUnionCompatible(range1, range2);
 
-                Row[] rows1 = Row.getRowsFromArea(range1);
-                Row[] rows2 = Row.getRowsFromArea(range2);
+                List<Row> list1 = Row.getRowsFromArea(range1);
+                List<Row> list2 = Row.getRowsFromArea(range2);
+                Row[] rows1 = list1.toArray(new Row[list1.size()]);
+                Row[] rows2 = list1.toArray(new Row[list2.size()]);
 
                 boolean[] indicesToKeep = getMatchingIndices(rows1, rows2);
                 Row[] resultRows = getRowsToKeep(indicesToKeep, rows1);
@@ -227,8 +233,10 @@ public abstract class RelationalOperatorFunction implements Function {
 
                 validateUnionCompatible(range1, range2);
 
-                Row[] rows1 = Row.getRowsFromArea(range1);
-                Row[] rows2 = Row.getRowsFromArea(range2);
+                List<Row> list1 = Row.getRowsFromArea(range1);
+                List<Row> list2 = Row.getRowsFromArea(range2);
+                Row[] rows1 = list1.toArray(new Row[list1.size()]);
+                Row[] rows2 = list1.toArray(new Row[list2.size()]);
                 
                 Row[] resultRows = new Row[ rows1.length * rows2.length ];
                 int insertIndex = 0;
@@ -261,21 +269,20 @@ public abstract class RelationalOperatorFunction implements Function {
         @Override
         protected ValueEval evaluate(AreaEval range) {
 
-            Row[] rows = Row.getRowsFromArea(range);
+            List<Row> rows = Row.getRowsFromArea(range);
             return evalHelper(rows);
             
         }
 
         //select with conditions
         @Override
-        protected ValueEval evaluate(AreaEval range, ValueEval[] args) {
+        protected ValueEval evaluate(AreaEval range, ValueEval condition) {
             /** TODO
              *  how to reuse the evaluateFormula function in WorkbookEvaluator class
              *  just need to replace the value for the conditionPtg
              */
-
-
-            return new StringEval("not implemented");
+            List<Row> rows = Row.getRowsFromArea(range, condition);
+            return evalHelper(rows);
         }
     };
     
@@ -375,13 +382,13 @@ public abstract class RelationalOperatorFunction implements Function {
      * @param rows
      * @return
      */
-    private static ValueEval evalHelper(Row[] rows) {
+    private static ValueEval evalHelper(List<Row> rows) {
         
         String evalString = "";
-        
-        for (int i = 0; i < rows.length; i++) {
-            
-            Row row = rows[i];
+
+        for (int i = 0; i < rows.size(); i++) {
+
+            Row row = rows.get(i);
             if (row != null) {
                 for (int col = 0; col < row.getLength(); col++) {
                     
@@ -484,26 +491,50 @@ public abstract class RelationalOperatorFunction implements Function {
          * @param range
          * @return
          */
-        public static Row[] getRowsFromArea(AreaEval range) {
-
-            Row[] rows = new Row[range.getHeight()];
-
-            for (int r = 0; r < rows.length; r++) {
-
+        public static List<Row> getRowsFromArea(AreaEval range) {
+            List<Row> rows = new ArrayList<>();
+            for (int r = 0; r < range.getHeight(); r++) {
                 //get all of the ValueEval's for this row
                 TwoDEval row = range.getRow(r);
                 ValueEval[] rowEvals = new ValueEval[row.getWidth()];
-
                 for (int c = 0; c < row.getWidth(); c++) {
                     rowEvals[c] = row.getValue(0, c);
                 }
-
-                rows[r] = new Row(rowEvals);
-
+                rows.add(r, new Row(rowEvals));
             }
-
             return rows;
-            
+        }
+
+
+        /**
+         * Static method to create an array of Row's from an AreaEval
+         *
+         * @param range,conditions
+         * @return
+         */
+        public static List<Row> getRowsFromArea(AreaEval range, ValueEval conditions) {
+            List<Row> rows = new ArrayList<>();
+            if (conditions instanceof BoolEval) {
+                if (!((BoolEval) conditions).getBooleanValue()) return rows;
+                else return getRowsFromArea(range);
+            } else if (conditions instanceof ArrayEval) {
+                ArrayEval cds = (ArrayEval) conditions;
+                for (int r = 0; r < range.getHeight(); r++) {
+                    ValueEval select = cds.getValue(r, 0);
+                    if (select instanceof BoolEval) {
+                        if (((BoolEval) select).getBooleanValue()) {
+                            //get all of the ValueEval's for this row
+                            TwoDEval row = range.getRow(r);
+                            ValueEval[] rowEvals = new ValueEval[row.getWidth()];
+                            for (int c = 0; c < row.getWidth(); c++) {
+                                rowEvals[c] = row.getValue(0, c);
+                            }
+                            rows.add(new Row(rowEvals));
+                        }
+                    }
+                }
+            }
+            return rows;
         }
         
         public ValueEval getValue(int col) {

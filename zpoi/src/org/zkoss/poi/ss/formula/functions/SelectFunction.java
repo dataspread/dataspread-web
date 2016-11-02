@@ -2,8 +2,6 @@ package org.zkoss.poi.ss.formula.functions;
 
 import org.zkoss.poi.ss.formula.eval.*;
 
-import java.util.Arrays;
-
 /**
  * Abstract class to be inherited by select function within RelationalOperatorFunction
  * The inputs should be a region of cells and conditions (if any).
@@ -55,8 +53,8 @@ public abstract class SelectFunction implements Function {
             //evaluate with conditions
             else {
 
-                ValueEval[] conditions = Arrays.copyOfRange(args, 1, args.length);
-                return evaluate(range, conditions);
+                ValueEval condition = args[1];
+                return evaluate(range, condition);
 
             }
 
@@ -69,6 +67,6 @@ public abstract class SelectFunction implements Function {
 
     protected abstract ValueEval evaluate(AreaEval range);
 
-    protected abstract ValueEval evaluate(AreaEval range, ValueEval[] args);
+    protected abstract ValueEval evaluate(AreaEval range, ValueEval args);
     
 }

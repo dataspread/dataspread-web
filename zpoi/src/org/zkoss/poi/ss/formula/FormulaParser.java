@@ -1302,7 +1302,9 @@ public final class FormulaParser {
 		} else {
 			retval = FuncPtg.create(funcIx);
 		}
-		return new ParseNode(retval, args);
+        //TODO change getNumOperatorTables function
+        retval.setOverrideTableNum(getNumOperatorTables(name));
+        return new ParseNode(retval, args);
 	}
 
 	//ZSS-852: Multiply inside SUMPRODUCT must do array calc
@@ -1368,8 +1370,10 @@ public final class FormulaParser {
     private void markOverridenOpPtgs(ParseNode arg) {
 
 		if (arg.getToken() instanceof OperationPtg && !(arg.getToken() instanceof AbstractFunctionPtg)) {
-
-            ((OperationPtg) arg.getToken()).setOverrided();
+            Ptg ptg = arg.getToken();
+            if (!(ptg instanceof GreaterEqualPtg) && !(ptg instanceof GreaterThanPtg) && !(ptg instanceof LessEqualPtg)
+                    && !(ptg instanceof LessThanPtg) && !(ptg instanceof EqualPtg) && !(ptg instanceof NotEqualPtg))
+                ((OperationPtg) arg.getToken()).setOverrided();
         }
         if (arg.getToken() instanceof AbstractFunctionPtg &&
                 (((AbstractFunctionPtg) arg.getToken()).getName().equals("AND")
@@ -1386,8 +1390,8 @@ public final class FormulaParser {
 	/** get arguments to a function */
 	private ParseNode[] Arguments(int numOperatorTables) {
 		//average 2 args per function
-		List<ParseNode> temp = new ArrayList<ParseNode>(2);
-		SkipWhite();
+        List<ParseNode> temp = new ArrayList<>(2);
+        SkipWhite();
 		if(look == ')') {
 			return ParseNode.EMPTY_ARRAY;
 		}
