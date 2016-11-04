@@ -25,8 +25,8 @@ public abstract class OperationPtg extends Ptg {
     public final static int TYPE_UNARY    = 0;
     public final static int TYPE_BINARY   = 1;
     public final static int TYPE_FUNCTION = 2;
-    public static boolean isOverrided = false;
-    public static int overrideTableNum = 0;
+    private boolean isOverrided = false;
+    private int overrideTableNum = 0;
     
     /**
      *  returns a string representation of the operations
@@ -41,12 +41,12 @@ public abstract class OperationPtg extends Ptg {
      */
     public abstract int getNumberOfOperands();
 
-    public void setOverrided() {
-        isOverrided = true;
+    public boolean isOverrided() {
+        return this.isOverrided;
     }
 
-    public boolean isOverrided() {
-        return isOverrided;
+    public void setOverrided(boolean isOverrided) {
+        this.isOverrided = isOverrided;
     }
     
     public byte getDefaultOperandClass() {
@@ -59,10 +59,10 @@ public abstract class OperationPtg extends Ptg {
     }
 
     public int getOverrideTableNum() {
-        return overrideTableNum;
+        return this.overrideTableNum;
     }
 
     public void setOverrideTableNum(int numOperatorTables) {
-        overrideTableNum = numOperatorTables;
+        this.overrideTableNum = numOperatorTables;
     }
 }

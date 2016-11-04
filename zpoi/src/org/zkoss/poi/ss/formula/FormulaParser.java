@@ -1373,14 +1373,14 @@ public final class FormulaParser {
             Ptg ptg = arg.getToken();
             if (!(ptg instanceof GreaterEqualPtg) && !(ptg instanceof GreaterThanPtg) && !(ptg instanceof LessEqualPtg)
                     && !(ptg instanceof LessThanPtg) && !(ptg instanceof EqualPtg) && !(ptg instanceof NotEqualPtg))
-                ((OperationPtg) arg.getToken()).setOverrided();
-        }
+				((OperationPtg) arg.getToken()).setOverrided(true);
+		}
         if (arg.getToken() instanceof AbstractFunctionPtg &&
                 (((AbstractFunctionPtg) arg.getToken()).getName().equals("AND")
                         || ((AbstractFunctionPtg) arg.getToken()).getName().equals("OR")
                         || ((AbstractFunctionPtg) arg.getToken()).getName().equals("NOT"))) {
-            ((OperationPtg) arg.getToken()).setOverrided();
-        }
+			((OperationPtg) arg.getToken()).setOverrided(true);
+		}
 
 		for (int i = 0; i < arg.getChildren().length; i++) {
             markOverridenOpPtgs(arg.getChildren()[i]);

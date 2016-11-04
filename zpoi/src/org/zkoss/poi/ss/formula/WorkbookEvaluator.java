@@ -726,7 +726,12 @@ public final class WorkbookEvaluator {
 					// need to retrieve the reference table from the table stack
 					OpTableColRefPtg tcrPtg = (OpTableColRefPtg) ptg;
 					int table_index = tcrPtg.getTableNum();
-					ValueEval arg = table_list.get(table_index).pop();
+
+					// ValueEval arg = table_list.get(table_index).pop() was throwing exception, 
+					// since area was not being put back on stack after getting first Table_.Col_
+					//use peek() instead
+					ValueEval arg = table_list.get(table_index).peek();
+
 					opResult = getEvalForOpPtg(arg, ptg, ec);
 					opResult = postProcessValueEval(ec, opResult, false);
 				} else {
