@@ -26,7 +26,7 @@ package org.zkoss.poi.ss.formula.ptg;
  *
  * @author fred at stsci dot edu
  */
-public final class LessEqualPtg extends ValueOperatorPtg {
+public final class LessEqualPtg extends ComparisonPtg {
     public final static byte sid = 0x0a;
 
     public static final ValueOperatorPtg instance = new LessEqualPtg();

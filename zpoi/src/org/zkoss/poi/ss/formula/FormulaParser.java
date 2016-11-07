@@ -678,8 +678,8 @@ public final class FormulaParser {
 			//if we're parsing an argument for relational operator formulas
 			//e.g. T_1.Col_1
 			if (part1.isRef() && part2.isRef()) {
-				return createConditionParseNode(part1, part2);
-			}
+                return createTableColumnParseNode(part1, part2);
+            }
 
 			if (part1.isRowOrColumn() || part2.isRowOrColumn()) {
 				if (dotCount != 2) {
@@ -981,7 +981,7 @@ public final class FormulaParser {
 		}
 	}
 
-	private ParseNode createConditionParseNode(SimpleRangePart part1, SimpleRangePart part2) {
+    private ParseNode createTableColumnParseNode(SimpleRangePart part1, SimpleRangePart part2) {
 
 		Ptg ptg = new OpTableColRefPtg(part1.getRep(), part2.getRep());
 		return new ParseNode(ptg);
@@ -1244,8 +1244,8 @@ public final class FormulaParser {
 	 */
 	private int getNumOperatorTables(String name) {
 
-		//TODO Change this to use methods that get a function's information? Also add all operators
-		if (name.toUpperCase().equals("SELECT")) {
+        //TODO Change this to use methods that get a function's information? Also add all operators (
+        if (name.toUpperCase().equals("SELECT")) {
 			return 1;
 		} else if (name.toUpperCase().equals("JOIN")) {
 			return 2;
@@ -1302,7 +1302,7 @@ public final class FormulaParser {
 		} else {
 			retval = FuncPtg.create(funcIx);
 		}
-        //TODO change getNumOperatorTables function
+
         retval.setOverrideTableNum(getNumOperatorTables(name));
         return new ParseNode(retval, args);
 	}
@@ -1371,9 +1371,8 @@ public final class FormulaParser {
 
 		if (arg.getToken() instanceof OperationPtg && !(arg.getToken() instanceof AbstractFunctionPtg)) {
             Ptg ptg = arg.getToken();
-            if (!(ptg instanceof GreaterEqualPtg) && !(ptg instanceof GreaterThanPtg) && !(ptg instanceof LessEqualPtg)
-                    && !(ptg instanceof LessThanPtg) && !(ptg instanceof EqualPtg) && !(ptg instanceof NotEqualPtg))
-				((OperationPtg) arg.getToken()).setOverrided(true);
+            if (!(ptg instanceof ComparisonPtg))
+                ((OperationPtg) arg.getToken()).setOverrided(true);
 		}
         if (arg.getToken() instanceof AbstractFunctionPtg &&
                 (((AbstractFunctionPtg) arg.getToken()).getName().equals("AND")
@@ -1382,7 +1381,8 @@ public final class FormulaParser {
 			((OperationPtg) arg.getToken()).setOverrided(true);
 		}
 
-		for (int i = 0; i < arg.getChildren().length; i++) {
+        // mark all of the children ptgs
+        for (int i = 0; i < arg.getChildren().length; i++) {
             markOverridenOpPtgs(arg.getChildren()[i]);
         }
     }

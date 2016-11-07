@@ -47,14 +47,14 @@ public abstract class SelectFunction implements Function {
             //no conditions
             if (args.length == 1) {
 
-                return evaluate(range);
+                return evaluate(range, srcCellRow, srcCellCol);
 
             }
             //evaluate with conditions
             else {
 
                 ValueEval condition = args[1];
-                return evaluate(range, condition);
+                return evaluate(range, condition, srcCellRow, srcCellCol);
 
             }
 
@@ -65,8 +65,8 @@ public abstract class SelectFunction implements Function {
 
     }
 
-    protected abstract ValueEval evaluate(AreaEval range);
+    protected abstract ValueEval evaluate(AreaEval range, int srcRowIndex, int srcColumnIndex);
 
-    protected abstract ValueEval evaluate(AreaEval range, ValueEval args);
+    protected abstract ValueEval evaluate(AreaEval range, ValueEval condition, int srcRowIndex, int srcColumnIndex);
     
 }

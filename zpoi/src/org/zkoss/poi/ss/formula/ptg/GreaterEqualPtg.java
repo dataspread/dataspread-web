@@ -23,7 +23,7 @@ package org.zkoss.poi.ss.formula.ptg;
  *
  * @author  fred at stsci dot edu
  */
-public final class GreaterEqualPtg extends ValueOperatorPtg {
+public final class GreaterEqualPtg extends ComparisonPtg {
     public final static int  SIZE = 1;
     public final static byte sid  = 0x0c;
 

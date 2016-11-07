@@ -49,7 +49,7 @@ public abstract class RelationalOperatorFunction implements Function {
                 }
 
                 boolean[] indicesToKeep = getDistinctIndices(combinedRows);
-                Row[] resultRows = getRowsToKeep(indicesToKeep, combinedRows);
+                List<Row> resultRows = getRowsToKeep(indicesToKeep, combinedRows);
 
                 //return evalHelper(resultRows);
                 return Row.getArrayEval(resultRows, srcRowIndex, srcColumnIndex, range1.getRefEvaluator());
@@ -112,7 +112,7 @@ public abstract class RelationalOperatorFunction implements Function {
                 Row[] rows2 = list1.toArray(new Row[list2.size()]);
                 
                 boolean[] indicesToKeep = getIndicesNotInRows2(rows1, rows2);
-                Row[] resultRows = getRowsToKeep(indicesToKeep, rows1);
+                List<Row> resultRows = getRowsToKeep(indicesToKeep, rows1);
 
                 //return evalHelper(resultRows);                
                 return Row.getArrayEval(resultRows, srcRowIndex, srcColumnIndex, range1.getRefEvaluator());                
@@ -178,7 +178,7 @@ public abstract class RelationalOperatorFunction implements Function {
                 Row[] rows2 = list1.toArray(new Row[list2.size()]);
 
                 boolean[] indicesToKeep = getMatchingIndices(rows1, rows2);
-                Row[] resultRows = getRowsToKeep(indicesToKeep, rows1);
+                List<Row> resultRows = getRowsToKeep(indicesToKeep, rows1);
 
                 //return evalHelper(resultRows);
                 return Row.getArrayEval(resultRows, srcRowIndex, srcColumnIndex, range1.getRefEvaluator());
@@ -237,14 +237,15 @@ public abstract class RelationalOperatorFunction implements Function {
                 List<Row> list2 = Row.getRowsFromArea(range2);
                 Row[] rows1 = list1.toArray(new Row[list1.size()]);
                 Row[] rows2 = list1.toArray(new Row[list2.size()]);
-                
-                Row[] resultRows = new Row[ rows1.length * rows2.length ];
+
+//                Row[] resultRows = new Row[ rows1.length * rows2.length ];
+                List<Row> resultRows = new ArrayList<>();
                 int insertIndex = 0;
                 
                 for (int r1 = 0; r1 <rows1.length; r1++) {
                     for (int r2 = 0; r2 < rows2.length; r2++) {
-                        
-                        resultRows[insertIndex++] = Row.combineRows(rows1[r1], rows2[r2]);
+
+                        resultRows.add(Row.combineRows(rows1[r1], rows2[r2]));
                         
                     }
                 }
@@ -267,22 +268,27 @@ public abstract class RelationalOperatorFunction implements Function {
         
         //select with no conditions
         @Override
-        protected ValueEval evaluate(AreaEval range) {
+        protected ValueEval evaluate(AreaEval range, int srcRowIndex, int srcColumnIndex) {
 
             List<Row> rows = Row.getRowsFromArea(range);
-            return evalHelper(rows);
+
+            return Row.getArrayEval(rows, srcRowIndex, srcColumnIndex, range.getRefEvaluator());
+
+//            return evalHelper(rows);
             
         }
 
         //select with conditions
         @Override
-        protected ValueEval evaluate(AreaEval range, ValueEval condition) {
+        protected ValueEval evaluate(AreaEval range, ValueEval condition, int srcRowIndex, int srcColumnIndex) {
             /** TODO
              *  how to reuse the evaluateFormula function in WorkbookEvaluator class
              *  just need to replace the value for the conditionPtg
              */
             List<Row> rows = Row.getRowsFromArea(range, condition);
-            return evalHelper(rows);
+
+            return Row.getArrayEval(rows, srcRowIndex, srcColumnIndex, range.getRefEvaluator());
+//            return evalHelper(rows);
         }
     };
     
@@ -290,7 +296,7 @@ public abstract class RelationalOperatorFunction implements Function {
     public static final Function PROJECT = new RangeSchemaFunction() {
         
         @Override
-        protected ValueEval evaluate(AreaEval range, ValueEval[] args) {
+        protected ValueEval evaluate(AreaEval range, ValueEval[] args, int srcRowIndex, int srcColumnIndex) {
             return new StringEval("not implemented");
         }
     };
@@ -299,7 +305,7 @@ public abstract class RelationalOperatorFunction implements Function {
     public static final Function RENAME = new RangeSchemaFunction() {
         
         @Override
-        protected ValueEval evaluate(AreaEval range, ValueEval[] args) {
+        protected ValueEval evaluate(AreaEval range, ValueEval[] args, int srcRowIndex, int srcColumnIndex) {
             return new StringEval("not implemented");
         }
     };   
@@ -308,7 +314,7 @@ public abstract class RelationalOperatorFunction implements Function {
     public static final Function JOIN = new JoinFunction() {
         
         @Override
-        protected ValueEval evaluate(AreaEval range1, AreaEval range2, ValueEval[] args) {
+        protected ValueEval evaluate(AreaEval range1, AreaEval range2, ValueEval[] args, int srcRowIndex, int srcColumnIndex) {
             return new StringEval("not implemented");
         }
     };
@@ -358,17 +364,14 @@ public abstract class RelationalOperatorFunction implements Function {
      * @param rows
      * @return
      */
-    private static Row[] getRowsToKeep(boolean[] indicesToKeep, Row[] rows) {
+    private static List<Row> getRowsToKeep(boolean[] indicesToKeep, Row[] rows) {
 
-        int numToKeep = getNumToKeep(indicesToKeep);
-
-        Row[] rowsToKeep = new Row[numToKeep];
-        int insertIndex = 0;
+        List<Row> rowsToKeep = new ArrayList<>();
 
         for (int r = 0; r < indicesToKeep.length; r++) {
 
             if (indicesToKeep[r]) {
-                rowsToKeep[insertIndex++] = rows[r];
+                rowsToKeep.add(rows[r]);
             }
         }
 
@@ -464,14 +467,14 @@ public abstract class RelationalOperatorFunction implements Function {
         }
 
 
-        public static ArrayEval getArrayEval(Row[] rows, int firstRow, int firstColumn, SheetRefEvaluator evaluator) {
+        public static ArrayEval getArrayEval(List<Row> rows, int firstRow, int firstColumn, SheetRefEvaluator evaluator) {
 
-            int height = rows.length;
+            int height = rows.size();
             ValueEval[][] values = new ValueEval[height][];
 
             for (int r = 0; r < height; r++) {
 
-                Row row = rows[r];
+                Row row = rows.get(r);
 
                 int width = row.getLength();
                 values[r] = new ValueEval[width];

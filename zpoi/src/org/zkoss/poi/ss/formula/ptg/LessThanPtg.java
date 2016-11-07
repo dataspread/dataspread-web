@@ -23,14 +23,12 @@ package org.zkoss.poi.ss.formula.ptg;
  * Table 3.5.7
  * @author Cameron Riley (criley at ekmail.com)
  */
-public final class LessThanPtg extends ValueOperatorPtg {
+public final class LessThanPtg extends ComparisonPtg {
     /** the sid for the less than operator as hex */
-    public final static byte sid  = 0x09;    
-
+    public final static byte sid  = 0x09;
+    public static final ValueOperatorPtg instance = new LessThanPtg();
     /** identifier for LESS THAN char */
     private final static String LESSTHAN = "<";
-
-    public static final ValueOperatorPtg instance = new LessThanPtg();
 
     private LessThanPtg() {
     	// enforce singleton

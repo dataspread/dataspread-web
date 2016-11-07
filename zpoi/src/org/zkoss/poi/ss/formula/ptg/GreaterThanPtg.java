@@ -22,11 +22,10 @@ package org.zkoss.poi.ss.formula.ptg;
  * Greater than operator PTG ">"
  * @author  Cameron Riley (criley at ekmail.com)
  */
-public final class GreaterThanPtg extends ValueOperatorPtg {
+public final class GreaterThanPtg extends ComparisonPtg {
     public final static byte sid  = 0x0D;    
-    private final static String GREATERTHAN = ">";
-
     public static final ValueOperatorPtg instance = new GreaterThanPtg();
+    private final static String GREATERTHAN = ">";
 
     private GreaterThanPtg() {
     	// enforce singleton
