@@ -20,8 +20,13 @@ package org.zkoss.poi.ss.formula;
 import org.zkoss.poi.ss.SpreadsheetVersion;
 import org.zkoss.poi.ss.format.Formatters;
 import org.zkoss.poi.ss.formula.constant.ErrorConstant;
+import org.zkoss.poi.ss.formula.eval.FunctionEval;
 import org.zkoss.poi.ss.formula.function.FunctionMetadata;
 import org.zkoss.poi.ss.formula.function.FunctionMetadataRegistry;
+import org.zkoss.poi.ss.formula.functions.Function;
+import org.zkoss.poi.ss.formula.functions.JoinFunction;
+import org.zkoss.poi.ss.formula.functions.RangeSchemaFunction;
+import org.zkoss.poi.ss.formula.functions.SelectFunction;
 import org.zkoss.poi.ss.formula.ptg.*;
 import org.zkoss.poi.ss.usermodel.ErrorConstants;
 import org.zkoss.poi.ss.util.AreaReference;
@@ -1244,14 +1249,26 @@ public final class FormulaParser {
 	 */
 	private int getNumOperatorTables(String name) {
 
-        //TODO Change this to use methods that get a function's information? Also add all operators (
-        if (name.toUpperCase().equals("SELECT")) {
-			return 1;
-		} else if (name.toUpperCase().equals("JOIN")) {
-			return 2;
-		} else {
-			return 0;
-		}
+        FunctionMetadata fm = FunctionMetadataRegistry.getFunctionByName(name.toUpperCase());
+        int funcIx = fm.getIndex();
+
+        Function fcn = FunctionEval.getBasicFunction(funcIx);
+
+        if (fcn == null) {
+            return 0;
+        } else {
+
+            if (fcn instanceof SelectFunction || fcn instanceof RangeSchemaFunction) {
+                return 1;
+            } else if (fcn instanceof JoinFunction) {
+                return 2;
+            } else {
+                return 0;
+            }
+
+        }
+
+        
 	}
 
 	/**
