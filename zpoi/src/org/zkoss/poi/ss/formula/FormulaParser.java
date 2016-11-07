@@ -23,10 +23,7 @@ import org.zkoss.poi.ss.formula.constant.ErrorConstant;
 import org.zkoss.poi.ss.formula.eval.FunctionEval;
 import org.zkoss.poi.ss.formula.function.FunctionMetadata;
 import org.zkoss.poi.ss.formula.function.FunctionMetadataRegistry;
-import org.zkoss.poi.ss.formula.functions.Function;
-import org.zkoss.poi.ss.formula.functions.JoinFunction;
-import org.zkoss.poi.ss.formula.functions.RangeSchemaFunction;
-import org.zkoss.poi.ss.formula.functions.SelectFunction;
+import org.zkoss.poi.ss.formula.functions.*;
 import org.zkoss.poi.ss.formula.ptg.*;
 import org.zkoss.poi.ss.usermodel.ErrorConstants;
 import org.zkoss.poi.ss.util.AreaReference;
@@ -1258,17 +1255,21 @@ public final class FormulaParser {
             return 0;
         } else {
 
-            if (fcn instanceof SelectFunction || fcn instanceof RangeSchemaFunction) {
-                return 1;
-            } else if (fcn instanceof JoinFunction) {
-                return 2;
-            } else {
-                return 0;
+            if (fcn instanceof OverridableFunction) {
+                Function original = ((OverridableFunction) fcn).get_original();
+                if (original != null) {
+                    if (original instanceof SelectFunction || original instanceof RangeSchemaFunction) {
+                        return 1;
+                    } else if (original instanceof TwoRangeFunction) {
+                        return 2;
+                    } else {
+                        return 0;
+                    }
+                }
             }
 
+            return 0;
         }
-
-        
 	}
 
 	/**
