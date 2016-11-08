@@ -42,5 +42,6 @@ public interface Ref {
 	Set<Ref> getPrecedents();
 
 	void addPrecedent(Ref precedent);
-	void deletePrecedent(Ref precedent);
+
+	void clearDependent();
 }

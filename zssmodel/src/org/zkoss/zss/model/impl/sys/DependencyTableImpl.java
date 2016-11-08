@@ -55,6 +55,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 	@Override
     public void add(Ref dependant, Ref precedent) {
 		if (dependant.getPrecedents() == null){
+
 			addForward(dependant, precedent);
 			addBackward(dependant, precedent);
 		}
@@ -80,16 +81,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
     }
 
     private boolean DFSdetectCyclicDependencies(Ref target, Ref ref) throws MyOwnException {
-      /*  if (ref.equals(target))
-            throw new MyOwnException("Cyclic dependecies detected!");
-        if (ref != null) {
-            for (Ref precedent : _map.get(ref)) {
-                if (precedent != null)
-                    DFSdetectCyclicDependencies(target, precedent);
-            }
-        }
-        return false;
-        */
+
 		if (ref.equals(target))
 			throw new MyOwnException("Cyclic dependecies detected!");
 		if (ref != null) {
@@ -134,35 +126,31 @@ public class DependencyTableImpl extends DependencyTableAdv {
 	}
 
 	public void clear() {
-		_map.clear();
+		//_map.clear();
 		_evaledMap.clear();
-        _backwardMap.clear();
+        //_backwardMap.clear();
 		//Need to delete the tree
     }
 
 	@Override
 	public void clearDependents(Ref dependant) {
-        _map.remove(dependant);
 
-
-        //Clear backward dependents
-        Set<Ref> precedents = _map.get(dependant);
-        if (precedents != null) {
-            for (Ref precedent : precedents) {
-                Set<Ref> dependants = _backwardMap.get(precedent);
-				dependants.remove(dependant);
-				if(_backwardMap.get(precedent).size()==0){
-					//delete from the rtree
-				}
-
-            }
-        }
+        //Clear backward dependents in rtree
+		Set<Ref> precedents = dependant.getPrecedents();
+		for(Ref precedent: precedents) {
+			Rectangle region = Geometries.rectangle(
+					precedent.getRow(), precedent.getColumn(), precedent.getLastRow(), precedent.getLastColumn());
+			_rtree.delete(dependant,region);
+		}
+		//Clear forward map
+		dependant.clearDependent();
         _evaledMap.remove(dependant);
 	}
 
 	@Override
-    public Set<Ref> getBackwardDependents(Ref precedent) {
-        return getBackwardDependents(precedent, _backwardMap);
+	//getBackwardDependents(Ref precedent)
+    public Set<Ref> getDependents(Ref precedent) {
+        return getBackwardDependents(precedent, _rtree);
     }
 
 	@Override
@@ -178,7 +166,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 		}
     }
 
-    private Set<Ref> getBackwardDependents(Ref precedent, Map<Ref, Set<Ref>> base) {
+    private Set<Ref> getBackwardDependents(Ref precedent,RTree<Ref, Rectangle> _rtree) {
 
         if (_regionTypes.contains(precedent.getType())) {
             SBook book = _books.getBook(precedent.getBookName());
@@ -190,23 +178,35 @@ public class DependencyTableImpl extends DependencyTableAdv {
                 return Collections.emptySet();
             }
         }
+		Set<Ref> allDependents = new LinkedHashSet<Ref>();
 
 		Rectangle region = Geometries.rectangle(
 				precedent.getRow(),precedent.getColumn(),precedent.getLastRow(),precedent.getLastColumn());
 		rx.Observable<com.github.davidmoten.rtree.Entry<Ref, Rectangle>> obs =_rtree.search(region);
+		List<com.github.davidmoten.rtree.Entry<Ref, Rectangle>> obsList = obs.toList().toBlocking().single();
+		for(com.github.davidmoten.rtree.Entry<Ref, Rectangle> entry : obsList){
+			allDependents.add(entry.value());
+		}
 
-
-        Set<Ref> result = new LinkedHashSet<Ref>();
-        return recursivelyGetBackwardDependents(precedent, base, result);
+		recursivelyGetBackwardDependents(allDependents,allDependents);
+        return allDependents;
 
     }
 
-    private Set<Ref> recursivelyGetBackwardDependents(Ref precedent, Map<Ref, Set<Ref>> base, Set<Ref> result) {
-        result.addAll(_backwardMap.get(precedent));
-        for (Ref directDependent : _backwardMap.get(precedent)) {
-            result = recursivelyGetBackwardDependents(directDependent, base, result);
-        }
-        return result;
+    private Set<Ref> recursivelyGetBackwardDependents(Set<Ref> search, Set<Ref> all) {
+    	Set<Ref> dependents = new LinkedHashSet<Ref>();
+		for(Ref directDependent : search){
+			Rectangle region = Geometries.rectangle(
+					directDependent.getRow(),directDependent.getColumn(),directDependent.getLastRow(),directDependent.getLastColumn());
+			rx.Observable<com.github.davidmoten.rtree.Entry<Ref, Rectangle>> obs =_rtree.search(region);
+			List<com.github.davidmoten.rtree.Entry<Ref, Rectangle>> obsList = obs.toList().toBlocking().single();
+			for(com.github.davidmoten.rtree.Entry<Ref, Rectangle> entry : obsList){
+				dependents.add(entry.value());
+			}
+			all.addAll(recursivelyGetBackwardDependents(dependents,all));
+		}
+		return dependents;
+
     }
 
 	private Set<Ref> getDependents(Ref precedent,Map<Ref, Set<Ref>> base) {
@@ -253,8 +253,16 @@ public class DependencyTableImpl extends DependencyTableAdv {
 	
 	@Override
 	public Set<Ref> getDirectDependents(Ref precedent) {
-        Set<Ref> directDependents = _backwardMap.get(precedent);
-        return directDependents;
+		Set<Ref> directDependents = new LinkedHashSet<Ref>();
+
+		Rectangle region = Geometries.rectangle(
+				precedent.getRow(),precedent.getColumn(),precedent.getLastRow(),precedent.getLastColumn());
+		rx.Observable<com.github.davidmoten.rtree.Entry<Ref, Rectangle>> obs =_rtree.search(region);
+		List<com.github.davidmoten.rtree.Entry<Ref, Rectangle>> obsList = obs.toList().toBlocking().single();
+		for(com.github.davidmoten.rtree.Entry<Ref, Rectangle> entry : obsList){
+			directDependents.add(entry.value());
+		}
+		return directDependents;
     }
 
     private boolean isMatched(Ref a, Ref b) {
@@ -378,13 +386,23 @@ public class DependencyTableImpl extends DependencyTableAdv {
 		DependencyTableImpl another = (DependencyTableImpl)dependencyTable;
 		_map.putAll(another._map);
 		_evaledMap.putAll(another._evaledMap);
-        _backwardMap.putAll(another._backwardMap);
+		//add _backwardMap
+		_rtree.add(another._rtree.entries());
+
     }
 
     @Override
 	public Set<Ref> searchPrecedents(RefFilter filter){
 		Set<Ref> precedents = new LinkedHashSet<Ref>();
+/*
+		List<com.github.davidmoten.rtree.Entry<Ref, Rectangle>> obsList =_rtree.entries().toList().toBlocking().single();
+		for(com.github.davidmoten.rtree.Entry<Ref, Rectangle> entry : obsList){
 
+			precedents.add(entry.value());
+		}
+
+
+*/
         for (Entry<Ref, Set<Ref>> entry : _backwardMap.entrySet()) {
             Ref pre = entry.getKey();
             if (filter.accept(pre)) {
@@ -407,7 +425,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 	//ZSS-648
 	@Override
 	public Set<Ref> getDirectPrecedents(Ref dependent) {
-		return _map.get(dependent);
+		return dependent.getPrecedents();
 	}
 
     //ZSS-815

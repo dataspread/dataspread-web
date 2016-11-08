@@ -32,7 +32,8 @@ public interface DependencyTable {
 
 	//Set<Ref> getDependents(Ref precedent);
 
-	Set<Ref> getBackwardDependents(Ref precedent);
+	//GetBackwardDependents
+	Set<Ref> getDependents(Ref precedent);
 
 	Set<Ref> getDirectDependents(Ref precedent);
 
