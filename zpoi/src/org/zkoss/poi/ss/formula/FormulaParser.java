@@ -678,7 +678,7 @@ public final class FormulaParser {
 			}
 
 			//if we're parsing an argument for relational operator formulas
-			//e.g. T_1.Col_1
+			//e.g. Table_1.Col_1
 			if (part1.isRef() && part2.isRef()) {
                 return createTableColumnParseNode(part1, part2);
             }

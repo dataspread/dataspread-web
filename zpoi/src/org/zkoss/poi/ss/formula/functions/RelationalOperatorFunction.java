@@ -470,7 +470,14 @@ public abstract class RelationalOperatorFunction implements Function {
         public static ArrayEval getArrayEval(List<Row> rows, int firstRow, int firstColumn, SheetRefEvaluator evaluator) {
 
             int height = rows.size();
+
+            if (height == 0) {
+                ValueEval[][] values = new ValueEval[][]{{BlankEval.instance}};
+                return new ArrayEval(values, firstRow, firstColumn, firstRow, firstColumn, evaluator);
+            }
+
             ValueEval[][] values = new ValueEval[height][];
+
 
             for (int r = 0; r < height; r++) {
 
