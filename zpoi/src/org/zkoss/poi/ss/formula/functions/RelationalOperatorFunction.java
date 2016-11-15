@@ -307,6 +307,11 @@ public abstract class RelationalOperatorFunction implements Function {
         @Override
         protected ValueEval evaluate(AreaEval range, String[] attributes, int srcRowIndex, int srcColumnIndex) {
 
+            //number of attributes must be the same as number of columns
+            if (attributes.length != range.getWidth()) {
+                return ErrorEval.VALUE_INVALID;
+            }
+            
             range.setAttributeNames(attributes);
             return range;
 

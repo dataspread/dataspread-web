@@ -57,13 +57,6 @@ public abstract class RangeSchemaFunction implements Function {
             ArrayEval attributes = convertArrayArg(args[1]);
             String[] attributeNames = extractAttributeNames(attributes);
 
-            //must have the same number of attributes as columns
-            if (attributeNames.length != range.getWidth()) {
-
-                return ErrorEval.VALUE_INVALID;
-
-            }
-
             return evaluate(range, attributeNames, srcCellRow, srcCellCol);            
             
         }
@@ -101,5 +94,5 @@ public abstract class RangeSchemaFunction implements Function {
         return attributeNames;
     }
 
-    protected abstract ValueEval evaluate(AreaEval range, String[] attributes, int srcRowIndex, int srcColumnIndex);
+    protected abstract ValueEval evaluate(AreaEval range, String[] attributes, int srcRowIndex, int srcColumnIndex) throws EvaluationException;
 }
