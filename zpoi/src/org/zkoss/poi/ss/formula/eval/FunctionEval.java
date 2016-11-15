@@ -31,38 +31,20 @@ import java.util.TreeSet;
  */
 public final class FunctionEval {
 	/**
-	 * Some function IDs that require special treatment
-	 */
-	private static final class FunctionID {
-		/** 1 */
-		public static final int IF = FunctionMetadataRegistry.FUNCTION_INDEX_IF;
-		/** 4 */
-		public static final int SUM = FunctionMetadataRegistry.FUNCTION_INDEX_SUM;
-		/** 78 */
-		public static final int OFFSET = 78;
-		/** 100 */
-		public static final int CHOOSE = FunctionMetadataRegistry.FUNCTION_INDEX_CHOOSE;
-		/** 148 */
-		public static final int INDIRECT = FunctionMetadataRegistry.FUNCTION_INDEX_INDIRECT;
-		/** 255 */
-		public static final int EXTERNAL_FUNC = FunctionMetadataRegistry.FUNCTION_INDEX_EXTERNAL;
-	}
-	// convenient access to namespace
-	private static final FunctionID ID = null;
-
-	/**
 	 * Array elements corresponding to unimplemented functions are <code>null</code>
 	 */
 	protected static final Function[] functions = produceFunctions();
+	// convenient access to namespace
+	private static final FunctionID ID = null;
 
 	private static Function[] produceFunctions() {
-		Function[] retval = new Function[376];
+		Function[] retval = new Function[377];
 
 		retval[0] = new Count();
-		retval[ID.IF] = new IfFunc();
+		retval[FunctionID.IF] = new IfFunc();
 		retval[2] = LogicalFunction.ISNA;
 		retval[3] = LogicalFunction.ISERROR;
-		retval[ID.SUM] = AggregateFunction.SUM;
+		retval[FunctionID.SUM] = AggregateFunction.SUM;
 		retval[5] = AggregateFunction.AVERAGE;
 		retval[6] = AggregateFunction.MIN;
 		retval[7] = AggregateFunction.MAX;
@@ -126,13 +108,13 @@ public final class FunctionEval {
 		retval[76] = new Rows();
 		retval[77] = new Columns();
 		retval[82] = TextFunction.SEARCH;
-		retval[ID.OFFSET] = new Offset();
+		retval[FunctionID.OFFSET] = new Offset();
 		retval[82] = TextFunction.SEARCH;
 
 		retval[97] = NumericFunction.ATAN2;
 		retval[98] = NumericFunction.ASIN;
 		retval[99] = NumericFunction.ACOS;
-		retval[ID.CHOOSE] = new Choose();
+		retval[FunctionID.CHOOSE] = new Choose();
 		retval[101] = new Hlookup();
 		retval[102] = new Vlookup();
 
@@ -158,8 +140,8 @@ public final class FunctionEval {
 		retval[129] = LogicalFunction.ISBLANK;
 		retval[130] = new T();
 
-		retval[ID.INDIRECT] = null; // Indirect.evaluate has different signature
-        retval[162] = TextFunction.CLEAN;  //Aniket Banerjee    
+		retval[FunctionID.INDIRECT] = null; // Indirect.evaluate has different signature
+		retval[162] = TextFunction.CLEAN;  //Aniket Banerjee
 		retval[169] = new Counta();
 
 		retval[183] = AggregateFunction.PRODUCT;
@@ -186,7 +168,7 @@ public final class FunctionEval {
 		retval[233] = NumericFunction.ACOSH;
 		retval[234] = NumericFunction.ATANH;
 
-		retval[ID.EXTERNAL_FUNC] = null; // ExternalFunction is a FreeREfFunction
+		retval[FunctionID.EXTERNAL_FUNC] = null; // ExternalFunction is a FreeREfFunction
 
 		retval[261] = new Errortype();
 
@@ -243,6 +225,9 @@ public final class FunctionEval {
 		retval[374] = RelationalOperatorFunction.RENAME;
 		retval[375] = RelationalOperatorFunction.JOIN;
 
+		//temporarily add wrapper function
+		retval[376] = new MultipleArea();
+
 
 
 
@@ -264,10 +249,11 @@ public final class FunctionEval {
 				retval[i] = new NotImplementedFunction(fm.getName());
 			}
 			retval[i] = new OverridableFunction(fm.getName(),retval[i]);
-			
+
 		}
 		return retval;
 	}
+
 	/**
 	 * @return <code>null</code> if the specified functionIndex is for INDIRECT() or any external (add-in) function.
 	 */
@@ -351,4 +337,34 @@ public final class FunctionEval {
         lst.remove("INDIRECT"); // INDIRECT is a special case
         return Collections.unmodifiableCollection(lst);
     }
+
+	/**
+	 * Some function IDs that require special treatment
+	 */
+	private static final class FunctionID {
+		/**
+		 * 1
+		 */
+		public static final int IF = FunctionMetadataRegistry.FUNCTION_INDEX_IF;
+		/**
+		 * 4
+		 */
+		public static final int SUM = FunctionMetadataRegistry.FUNCTION_INDEX_SUM;
+		/**
+		 * 78
+		 */
+		public static final int OFFSET = 78;
+		/**
+		 * 100
+		 */
+		public static final int CHOOSE = FunctionMetadataRegistry.FUNCTION_INDEX_CHOOSE;
+		/**
+		 * 148
+		 */
+		public static final int INDIRECT = FunctionMetadataRegistry.FUNCTION_INDEX_INDIRECT;
+		/**
+		 * 255
+		 */
+		public static final int EXTERNAL_FUNC = FunctionMetadataRegistry.FUNCTION_INDEX_EXTERNAL;
+	}
 }

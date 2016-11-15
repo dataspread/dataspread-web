@@ -297,7 +297,14 @@ public abstract class RelationalOperatorFunction implements Function {
         
         @Override
         protected ValueEval evaluate(AreaEval range, String[] attributes, int srcRowIndex, int srcColumnIndex) {
-            return new StringEval("not implemented");
+            ValueEval[][] values = new ValueEval[range.getHeight()][attributes.length];
+            for (int i = 0; i < attributes.length; i++) {
+                TwoDEval cols = range.getColumnByAttribute(attributes[i]);
+                for (int j = 0; j < range.getHeight(); j++) {
+                    values[j][i] = cols.getValue(j, 0);
+                }
+            }
+            return new ArrayEval(values, range.getFirstRow(), range.getFirstColumn(), range.getLastRow(), range.getFirstColumn() + attributes.length - 1, range.getRefEvaluator());
         }
     };
     
@@ -598,6 +605,5 @@ public abstract class RelationalOperatorFunction implements Function {
         }
         
     }//end Row class
-    
-    
+
 }

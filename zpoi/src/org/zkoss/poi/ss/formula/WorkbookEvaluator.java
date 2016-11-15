@@ -755,7 +755,7 @@ public final class WorkbookEvaluator {
 		}
 		value = postProcessValueEval(ec, value, true); //20101115, henrichen@zkoss.org: might be simple one operand formula
 
-		if (value instanceof AreaEval) {
+		if (value instanceof MultipleEval) {
 			ignoreDereference = true;
 		}
 		ValueEval result = ignoreDereference ? value : dereferenceResult(value, ec.getRowIndex(), ec.getColumnIndex());
