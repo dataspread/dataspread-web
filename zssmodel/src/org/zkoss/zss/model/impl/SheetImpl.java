@@ -339,7 +339,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	public void setDataModel(String model) {
 		try (Connection connection = DBHandler.instance.getConnection()) {
 			DBContext dbContext = new DBContext(connection);
-			dataModel = new RCV_Model(dbContext, model);
+			dataModel = Model.CreateModel(dbContext, model);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -2156,7 +2156,7 @@ public class SheetImpl extends AbstractSheetAdv {
 
     @Override
     public void createModel(DBContext dbContext, String modelName) {
-        dataModel = Model.CreateModel(dbContext, Model.ModelType.RCV_Model, modelName);
+        dataModel = Model.CreateModel(dbContext, modelName);
     }
 
 	//ZSS-855

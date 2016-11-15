@@ -7,18 +7,11 @@ import java.util.Collection;
 public abstract class Model {
     protected String tableName;
 
-    public static Model CreateModel(DBContext context, ModelType modelType, String tableName) {
-        switch (modelType) {
-            case ROM_Model:
-                //    return new ROM_Model(context, tableName);
-            case COM_Model:
-                //    return new COM_Model(context, tableName);
-            case RCV_Model:
+    public static Model CreateModel(DBContext context, String tableName) {
+                //return new ROM_Model(context, tableName);
+                //return new COM_Model(context, tableName);
                 return new RCV_Model(context, tableName);
-            case HYBRID_Model:
-                //    return new Hybrid_Model(context, tableName);
-        }
-        return null;
+                //return new Hybrid_Model(context, tableName);
     }
 
     // Drop the tables created.
