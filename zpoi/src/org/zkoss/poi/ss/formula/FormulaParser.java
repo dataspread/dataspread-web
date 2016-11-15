@@ -23,7 +23,10 @@ import org.zkoss.poi.ss.formula.constant.ErrorConstant;
 import org.zkoss.poi.ss.formula.eval.FunctionEval;
 import org.zkoss.poi.ss.formula.function.FunctionMetadata;
 import org.zkoss.poi.ss.formula.function.FunctionMetadataRegistry;
-import org.zkoss.poi.ss.formula.functions.*;
+import org.zkoss.poi.ss.formula.functions.Function;
+import org.zkoss.poi.ss.formula.functions.OverridableFunction;
+import org.zkoss.poi.ss.formula.functions.SelectFunction;
+import org.zkoss.poi.ss.formula.functions.TwoRangeFunction;
 import org.zkoss.poi.ss.formula.ptg.*;
 import org.zkoss.poi.ss.usermodel.ErrorConstants;
 import org.zkoss.poi.ss.util.AreaReference;
@@ -1061,7 +1064,7 @@ public final class FormulaParser {
 
 		String rep = _formulaString.substring(_pointer - 1, ptr);
 
-		if (hasLetters && hasDigits && hasUnder) {
+		if (hasUnder && (hasDigits || hasLetters)) {
 			if (OP_FORMULA_PATTERN.matcher(rep.toUpperCase()).matches()) {
 				resetPointer(ptr + 1); // stepping forward
 				return new SimpleRangePart(rep, hasLetters, hasDigits, hasUnder);
@@ -1258,8 +1261,8 @@ public final class FormulaParser {
             if (fcn instanceof OverridableFunction) {
                 Function original = ((OverridableFunction) fcn).get_original();
                 if (original != null) {
-                    if (original instanceof SelectFunction || original instanceof RangeSchemaFunction) {
-                        return 1;
+					if (original instanceof SelectFunction) {
+						return 1;
                     } else if (original instanceof TwoRangeFunction) {
                         return 2;
                     } else {
@@ -2099,6 +2102,7 @@ end;
 				if (!hasDigits) {
 					throw new IllegalArgumentException("must have either letters or numbers");
 				}
+
 				return ROW;
 			}
 		}

@@ -59,7 +59,13 @@ public class OpTableColRefPtg extends Ptg {
 
     @Override
     public String toFormulaString() {
-        return "Table_" + Integer.toString(_tableNum + 1) + ".Col_" + Integer.toString(_columnNum + 1);
+        if (_columnNum != -1) {
+            return "Table_" + Integer.toString(_tableNum + 1) + ".Col_" + Integer.toString(_columnNum + 1);
+
+        }
+
+        return "Table_" + Integer.toString(_tableNum + 1) + ".Attr_" + _columnName;
+
     }
 
     @Override
