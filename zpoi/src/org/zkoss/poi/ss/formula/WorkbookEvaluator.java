@@ -754,7 +754,12 @@ public final class WorkbookEvaluator {
 			throw new IllegalStateException("evaluation stack not empty");
 		}
 		value = postProcessValueEval(ec, value, true); //20101115, henrichen@zkoss.org: might be simple one operand formula
+
+		if (value instanceof AreaEval) {
+			ignoreDereference = true;
+		}
 		ValueEval result = ignoreDereference ? value : dereferenceResult(value, ec.getRowIndex(), ec.getColumnIndex());
+
 		if (dbgEvaluationOutputIndent > 0) {
 			EVAL_LOG.log(POILogger.INFO, dbgIndentStr + "finshed eval of "
 							+ new CellReference(ec.getRowIndex(), ec.getColumnIndex()).formatAsString()
@@ -777,8 +782,15 @@ public final class WorkbookEvaluator {
 		if (ptg instanceof OpTableColRefPtg) {
 			OpTableColRefPtg tcrPtg = (OpTableColRefPtg) ptg;
 			int col = tcrPtg.getColumnNum();
-			if (value instanceof TwoDEval) {
-				return ((TwoDEval) value).getColumn(col);
+			if (col == -1) {
+				String colName = tcrPtg.getColumnName();
+				if (value instanceof TwoDEval) {
+					return ((TwoDEval) value).getColumnByAttribute(colName);
+				}
+			} else {
+				if (value instanceof TwoDEval) {
+					return ((TwoDEval) value).getColumn(col);
+				}
 			}
 		}
 		throw new RuntimeException("Unexpected ptg class (" + ptg.getClass().getName() + ")");

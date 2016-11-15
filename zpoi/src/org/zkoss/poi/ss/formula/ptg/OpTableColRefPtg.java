@@ -11,17 +11,22 @@ public class OpTableColRefPtg extends Ptg {
 
     private int _tableNum = -1;
     private int _columnNum = -1;
+    private String _columnName = "";
 
     public OpTableColRefPtg(String arg1, String arg2) {
 
         String[] first = arg1.split("_");
         String[] second = arg2.split("_");
 
-        if (first[0].toUpperCase().equals("TABLE") && second[0].toUpperCase().equals("COL")) {
-
-            //set tableNum and columnNum to 0 if it's 'Table_1.Col_1'
-            _tableNum = Integer.parseInt(first[1]) - 1;
-            _columnNum = Integer.parseInt(second[1]) - 1;
+        if (first[0].toUpperCase().equals("TABLE")) {
+            if (second[0].toUpperCase().equals("COL")) {
+                //set tableNum and columnNum to 0 if it's 'Table_1.Col_1'
+                _tableNum = Integer.parseInt(first[1]) - 1;
+                _columnNum = Integer.parseInt(second[1]) - 1;
+            } else if (second[0].toUpperCase().equals("ATTR")) {
+                _tableNum = Integer.parseInt(first[1]) - 1;
+                _columnName = second[1];
+            }
         } else if (first[0].toUpperCase() == "COL" && second[0].toUpperCase() == "TABLE") {
             _tableNum = Integer.parseInt(second[1]);
             _columnNum = Integer.parseInt(first[1]);
@@ -36,6 +41,10 @@ public class OpTableColRefPtg extends Ptg {
 
     public int getColumnNum() {
         return _columnNum;
+    }
+
+    public String getColumnName() {
+        return _columnName;
     }
 
     @Override

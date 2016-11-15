@@ -69,7 +69,7 @@ public final class FormulaParser {
 	 * (copied+modified from {@link org.zkoss.poi.ss.util.CellReference#CELL_REF_PATTERN})
 	 */
 	private static final Pattern CELL_REF_PATTERN = Pattern.compile("(\\$?[A-Za-z]+)?(\\$?[0-9]+)?");
-	private static final Pattern OP_FORMULA_PATTERN = Pattern.compile("(TABLE|COL)_\\d+");
+	private static final Pattern OP_FORMULA_PATTERN = Pattern.compile("((TABLE|COL)_\\d+)|((ATTR)_[A-Za-z]+)");
 	private final String _formulaString;
 	private final int _formulaLength;
 	//ZSS-565

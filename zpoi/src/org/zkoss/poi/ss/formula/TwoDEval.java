@@ -21,7 +21,7 @@ import org.zkoss.poi.ss.formula.eval.AreaEval;
 import org.zkoss.poi.ss.formula.eval.ValueEval;
 
 /**
- * Common interface of {@link AreaEval} and {@link org.zkoss.poi.hssf.record.formula.eval.AreaEvalBase}
+ * Common interface of {@link AreaEval} and {@link org.zkoss.poi.ss.formula.eval.AreaEvalBase}
  *
  * @author Josh Micich
  */
