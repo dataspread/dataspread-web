@@ -85,6 +85,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 	
 	@Override
 	public void setEvaluated(Ref dependent){
+		//TODO: Mangesh - Remove the notion of evaluated map.
 		Set<Ref> precedents = _map.get(dependent);
 		if(precedents!=null){
 			_evaledMap.put(dependent, precedents);

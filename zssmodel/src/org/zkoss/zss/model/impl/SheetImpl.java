@@ -435,9 +435,7 @@ public class SheetImpl extends AbstractSheetAdv {
 
 	@Override
     AbstractCellAdv createCell(int rowIdx, int columnIdx) {
-        AbstractCellAdv cell = new CellImpl();
-        cell.setRow(rowIdx);
-        cell.setColumn(columnIdx);
+        AbstractCellAdv cell = new CellImpl(rowIdx, columnIdx);
         cell.setSheet(this);
         CellRegion cellRegion = new CellRegion(rowIdx, columnIdx);
         sheetDataCache.put(cellRegion, cell);
@@ -633,7 +631,7 @@ public class SheetImpl extends AbstractSheetAdv {
 		List<AbstractCellAdv> cellsToShift = new LinkedList<>(sheetDataCache.values());
 		cellsToShift.stream()
 				.filter(e -> e.getRowIndex() >= rowIdx)
-				.forEach(e -> e.setRow(e.getRowIndex() + size));
+				.forEach(e -> e.shift(size, 0));
 
 		sheetDataCache.clear();
 		cellsToShift.stream()
@@ -731,7 +729,7 @@ public class SheetImpl extends AbstractSheetAdv {
 
         cellsToShift.stream()
                 .filter(e -> e.getRowIndex() >= rowIdx)
-                .forEach(e -> e.setRow(e.getRowIndex() - size));
+                .forEach(e -> e.shift(-size, 0));
 
         sheetDataCache.clear();
         cellsToShift.stream()
@@ -1148,7 +1146,7 @@ public class SheetImpl extends AbstractSheetAdv {
         List<AbstractCellAdv> cellsToShift = new LinkedList<>(sheetDataCache.values());
         cellsToShift.stream()
                 .filter(e -> e.getColumnIndex() >= columnIdx)
-                .forEach(e -> e.setColumn(e.getColumnIndex() + size));
+                .forEach(e -> e.shift(0, size));
 
 		sheetDataCache.clear();
 		cellsToShift.stream()
@@ -1335,7 +1333,7 @@ public class SheetImpl extends AbstractSheetAdv {
 
         cellsToShift.stream()
                 .filter(e -> e.getColumnIndex() >= columnIdx)
-                .forEach(e -> e.setColumn(e.getColumnIndex() - size));
+                .forEach(e -> e.shift(0, - size));
 
         sheetDataCache.clear();
         cellsToShift.stream()

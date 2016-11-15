@@ -262,9 +262,7 @@ public class RCV_Model extends Model {
             while (rs.next()) {
                 int row_id = rs.getInt(1);
                 int col_id = rs.getInt(2);
-                AbstractCellAdv cell = CellImpl.fromBytes(rs.getBytes(3));
-                cell.setRow(row_map.get(row_id));
-                cell.setColumn(col_map.get(col_id));
+                AbstractCellAdv cell = CellImpl.fromBytes(row_map.get(row_id), col_map.get(col_id), rs.getBytes(3));
                 cells.add(cell);
             }
             rs.close();

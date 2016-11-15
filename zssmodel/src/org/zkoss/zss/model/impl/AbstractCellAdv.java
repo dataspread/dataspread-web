@@ -314,9 +314,7 @@ public abstract class AbstractCellAdv implements SCell,Serializable{
 
 	protected abstract byte[] toBytes();
 
-	public abstract void setRow(int row);
-
-	public abstract void setColumn(int column);
+	public abstract void shift(int rowShift, int colShift);
 
     public abstract void setSheet(AbstractSheetAdv sheet);
 }

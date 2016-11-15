@@ -29,6 +29,7 @@ import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.STableColumn.STotalsRowFunction;
 import org.zkoss.zss.model.impl.sys.formula.FormulaEngineImpl;
 import org.zkoss.zss.model.sys.EngineFactory;
+import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.format.FormatContext;
 import org.zkoss.zss.model.sys.format.FormatEngine;
@@ -70,16 +71,29 @@ public class CellImpl extends AbstractCellAdv {
     //use another object to reduce object reference size
 	private OptFields _opts;
 
-	public static CellImpl fromBytes(byte[] inByteArray) {
+    public CellImpl(int row, int column) {
+        _row = row;
+        _column = column;
+    }
+
+    @SuppressWarnings("unused")
+    public CellImpl(){
+        /* Required for deserialization */
+        this(0,0);
+    }
+
+
+    public static CellImpl fromBytes(int row, int column, byte[] inByteArray) {
 		CellImpl cellImpl;
 		Kryo kryo = kryoPool.borrow();
 		try (Input in = new Input(inByteArray)) {
 			cellImpl = kryo.readObject(in, CellImpl.class);
+            cellImpl._row = row;
+            cellImpl._column = column;
 			in.close();
 		} catch (Exception e) {
-            e.printStackTrace();
             // data that cannot be parsed is considered as a string value.
-			cellImpl = new CellImpl();
+			cellImpl = new CellImpl(row, column);
             cellImpl.setCellValue(new CellValue(new String(inByteArray)), false, null, false);
         }
 		kryoPool.release(kryo);
@@ -126,19 +140,9 @@ public class CellImpl extends AbstractCellAdv {
     }
 
 	@Override
-	public void setRow(int row) {
-		_row = row;
-	}
-
-	@Override
 	public int getColumnIndex() {
         return _column;
     }
-
-	@Override
-	public void setColumn(int column) {
-		_column = column;
-	}
 
 	@Override
 	public String getReferenceString() {
@@ -530,15 +534,9 @@ public class CellImpl extends AbstractCellAdv {
 		opts._comment = null;
 	}
 
-
 	// TODO: Mangesh - Implement shifting logic for formaule refrence
-	/*
 	@Override
-	void setIndex(int newidx) {
-		if(this._index==newidx){
-			return;
-		}
-
+    public void shift(int rowShift, int colShift) {
 		CellType type = getType();
 		String formula = null;
 		DependencyTable table = null;
@@ -549,7 +547,8 @@ public class CellImpl extends AbstractCellAdv {
 			table = ((AbstractBookSeriesAdv) getSheet().getBook().getBookSeries()).getDependencyTable();
 			table.clearDependents(oldRef);
 		}
-		this._index = newidx;
+		this._row += rowShift;
+        this._column += colShift;
 		if(formula!=null){
 			FormulaEngine fe = EngineFactory.getInstance().createFormulaEngine();
 			Ref ref = getRef();
@@ -558,8 +557,8 @@ public class CellImpl extends AbstractCellAdv {
 				table.setEvaluated(ref);
 			}
 		}
-	} */
-	
+	}
+
 	protected Ref getRef(){
 		return new RefImpl(this);
 	}
