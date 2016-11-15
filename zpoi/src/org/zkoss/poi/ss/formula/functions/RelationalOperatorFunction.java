@@ -296,7 +296,7 @@ public abstract class RelationalOperatorFunction implements Function {
     public static final Function PROJECT = new RangeSchemaFunction() {
         
         @Override
-        protected ValueEval evaluate(AreaEval range, ValueEval[] args, int srcRowIndex, int srcColumnIndex) {
+        protected ValueEval evaluate(AreaEval range, String[] attributes, int srcRowIndex, int srcColumnIndex) {
             return new StringEval("not implemented");
         }
     };
@@ -305,8 +305,11 @@ public abstract class RelationalOperatorFunction implements Function {
     public static final Function RENAME = new RangeSchemaFunction() {
         
         @Override
-        protected ValueEval evaluate(AreaEval range, ValueEval[] args, int srcRowIndex, int srcColumnIndex) {
-            return new StringEval("not implemented");
+        protected ValueEval evaluate(AreaEval range, String[] attributes, int srcRowIndex, int srcColumnIndex) {
+
+            range.setAttributeNames(attributes);
+            return range;
+
         }
     };   
     

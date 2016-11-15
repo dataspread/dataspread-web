@@ -60,6 +60,12 @@ public interface TwoDEval extends ValueEval {
 	 */
 	TwoDEval getColumn(int columnIndex);
 
+	/**
+	 * @param attributeName name of column
+	 * @return
+	 */
+	TwoDEval getColumnByAttribute(String attributeName);
+
 
     /**
      * @return true if the  cell at row and col is a subtotal

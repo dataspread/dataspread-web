@@ -2,8 +2,6 @@ package org.zkoss.poi.ss.formula.functions;
 
 import org.zkoss.poi.ss.formula.eval.*;
 
-import java.util.Arrays;
-
 /**
  * Abstract class to be inherited by project and rename functions in RelationalOperatorFunction.
  * Created by Danny on 9/22/2016.
@@ -28,28 +26,80 @@ public abstract class RangeSchemaFunction implements Function {
         }
         throw new EvaluationException(ErrorEval.VALUE_INVALID);
     }
-    
+
+
+    /**
+     * If the second argument is not an array containing attributes, throw an exception.
+     *
+     * @param eval
+     * @return
+     * @throws EvaluationException
+     */
+    private static ArrayEval convertArrayArg(ValueEval eval) throws EvaluationException {
+        if (eval instanceof ArrayEval) {
+            return (ArrayEval) eval;
+        }
+        throw new EvaluationException(ErrorEval.VALUE_INVALID);
+    }
+
+
     public final ValueEval evaluate (ValueEval[] args, int srcCellRow, int srcCellCol) {
-        
+
         try {
 
-            if (args.length < 2) {
+            if (args.length != 2) {
                 
                 return ErrorEval.VALUE_INVALID;
                 
             }
             
             AreaEval range = convertRangeArg(args[0]);
-            ValueEval[] schema = Arrays.copyOfRange(args, 1, args.length);
+            ArrayEval attributes = convertArrayArg(args[1]);
+            String[] attributeNames = extractAttributeNames(attributes);
 
-            return evaluate(range, schema, srcCellRow, srcCellCol);            
+            //must have the same number of attributes as columns
+            if (attributeNames.length != range.getWidth()) {
+
+                return ErrorEval.VALUE_INVALID;
+
+            }
+
+            return evaluate(range, attributeNames, srcCellRow, srcCellCol);            
             
         }
         catch (EvaluationException e) {
             return e.getErrorEval();
-        }        
-        
+        }
+
     }
 
-    protected abstract ValueEval evaluate(AreaEval range, ValueEval[] args, int srcRowIndex, int srcColumnIndex);
+
+    /**
+     * Extract the attribute names from the ArrayEval containing them.
+     *
+     * @param attributes
+     * @return
+     * @throws EvaluationException
+     */
+    private String[] extractAttributeNames(ArrayEval attributes) throws EvaluationException {
+
+        int height = attributes.getHeight();
+        int width = attributes.getWidth();
+        String[] attributeNames = new String[width];
+
+        //input should be a 1-D array of attributes
+        if (height != 1) {
+            throw new EvaluationException(ErrorEval.VALUE_INVALID);
+        }
+
+        int row = 0;
+        for (int col = 0; col < width; col++) {
+            StringEval attr = (StringEval) attributes.getValue(row, col);
+            attributeNames[col] = attr.getStringValue();
+        }
+
+        return attributeNames;
+    }
+
+    protected abstract ValueEval evaluate(AreaEval range, String[] attributes, int srcRowIndex, int srcColumnIndex);
 }
