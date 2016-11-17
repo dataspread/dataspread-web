@@ -337,7 +337,7 @@ public class BookImpl extends AbstractBookAdv{
 		{
 			String bookTable=getId();
 			String insertSheets = "INSERT INTO " + bookTable + "_workbook " +
-					" SELECT max(sheetid) +  1, ?, ? " +
+					" SELECT max(sheetid) +  1, ?, ?, '" + bookTable + "' || (max(sheetid) +  1)" +
 					" FROM " +  bookTable + "_workbook  " +
 					" RETURNING sheetid";
 			try (Connection connection = DBHandler.instance.getConnection();
@@ -349,6 +349,9 @@ public class BookImpl extends AbstractBookAdv{
 				if (rs.next())
 					sheet.setDBId(rs.getInt("sheetid"));
 				rs.close();
+				DBContext dbContext = new DBContext(connection);
+				String modelName = bookTable + sheet.getDBId();
+				sheet.createModel(dbContext, modelName);
 				connection.commit();
 			}
 			catch (SQLException e)
