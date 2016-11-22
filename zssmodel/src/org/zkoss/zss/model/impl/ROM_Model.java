@@ -1,7 +1,13 @@
 package org.zkoss.zss.model.impl;
 
+import com.opencsv.CSVReader;
+import org.apache.tomcat.dbcp.dbcp2.DelegatingConnection;
+import org.postgresql.copy.CopyIn;
+import org.postgresql.copy.CopyManager;
+import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.CellRegion;
 
+import java.io.*;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
@@ -291,7 +297,7 @@ public class ROM_Model extends Model {
 
         StringBuffer select = new StringBuffer("SELECT row");
         for (int i = 0; i < colIds.length; i++)
-            select.append(", col_")
+            select.append(",col_")
                     .append(colIds[i]);
 
         select.append(" FROM ")
@@ -338,5 +344,61 @@ public class ROM_Model extends Model {
     public void clearCache(DBContext context) {
         rowMapping.clearCache(context);
         colMapping.clearCache(context);
+    }
+
+    @Override
+    public void importSheet(Reader reader, char delimiter) throws IOException {
+        final int COMMIT_SIZE_BYTES = 8 * 1000;
+        CSVReader csvReader = new CSVReader(reader, delimiter);
+        String[] nextLine;
+        int importedRows = 0;
+        int importedColumns = 0;
+
+        try (Connection connection = DBHandler.instance.getConnection()) {
+            DBContext dbContext = new DBContext(connection);
+            Connection rawConn = ((DelegatingConnection) connection).getInnermostDelegate();
+            CopyManager cm = ((PgConnection) rawConn).getCopyAPI();
+            CopyIn cpIN = null;
+
+            StringBuffer sb = new StringBuffer();
+            while ((nextLine = csvReader.readNext()) != null)
+            {
+                ++importedRows;
+                if (cpIN == null)
+                {
+                    // Use the first line to fix the number of columns
+                    importedColumns = nextLine.length;
+                    insertCols(dbContext, 0, importedColumns);
+                    StringBuffer copyCommand = new StringBuffer("COPY ");
+                    copyCommand.append(tableName);
+                    copyCommand.append("(row");
+                    for (int i = 1; i <= importedColumns; i++)
+                        copyCommand.append(", col_")
+                                .append(i);
+                    copyCommand.append(") FROM STDIN WITH DELIMITER '|'");
+                    cpIN = cm.copyIn(copyCommand.toString());
+                }
+
+                sb.append(importedRows);
+                for (int col = 0; col < importedColumns; col++)
+                    sb.append('|').append(nextLine[col]);
+                sb.append('\n');
+
+                if (sb.length() >= COMMIT_SIZE_BYTES) {
+                    cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
+                    sb = new StringBuffer();
+                }
+            }
+            if (sb.length() > 0)
+                cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
+            cpIN.endCopy();
+            rawConn.commit();
+            insertRows(dbContext, 0, importedRows);
+            connection.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+
     }
 }

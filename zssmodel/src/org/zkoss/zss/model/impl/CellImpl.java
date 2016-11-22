@@ -94,7 +94,7 @@ public class CellImpl extends AbstractCellAdv {
 		} catch (Exception e) {
             // data that cannot be parsed is considered as a string value.
 			cellImpl = new CellImpl(row, column);
-            cellImpl.setCellValue(new CellValue(new String(inByteArray)), false, null, false);
+			cellImpl._localValue = new CellValue(new String(inByteArray));
         }
 		kryoPool.release(kryo);
 		return cellImpl;

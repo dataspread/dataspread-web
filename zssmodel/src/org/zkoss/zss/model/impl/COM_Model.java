@@ -2,6 +2,9 @@ package org.zkoss.zss.model.impl;
 
 import org.zkoss.zss.model.CellRegion;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
@@ -77,6 +80,11 @@ public class COM_Model extends Model {
     @Override
     public void clearCache(DBContext context) {
         rom_model.clearCache(context);
+    }
+
+    @Override
+    public void importSheet(Reader reader, char delimiter) throws IOException {
+        throw new RuntimeException("Not Supported");
     }
 
     private CellRegion transpose(CellRegion range) {

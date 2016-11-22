@@ -2,6 +2,9 @@ package org.zkoss.zss.model.impl;
 
 import org.zkoss.zss.model.CellRegion;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 import java.util.Collection;
 
 public abstract class Model {
@@ -59,6 +62,10 @@ public abstract class Model {
     public String getTableName() {
         return tableName;
     }
+
+    // Import a sheet from a inputStream
+    // Gets a connection from handler and commits.
+    public abstract void importSheet(Reader reader, char delimiter) throws IOException;
 
     //
     public enum ModelType {

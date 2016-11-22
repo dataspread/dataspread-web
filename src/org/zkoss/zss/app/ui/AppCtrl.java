@@ -87,7 +87,7 @@ public class AppCtrl extends CtrlBase<Component>{
 	private static final String UNSAVED_MESSAGE = "Do you want to leave this book without save??";
 	private static final String UTF8 = "UTF-8";
 	private static final boolean DISABLE_BOOKMARK = Boolean.valueOf(Library.getProperty("zssapp.bookmark.disable", "false"));
-	private static final int COMMIT_SIZE = 100000;
+
 
 	private static BookRepository repo = BookRepositoryFactory.getInstance().getRepository();
 	private static CollaborationInfo collaborationInfo = CollaborationInfoImpl.getInstance();
@@ -472,98 +472,6 @@ public class AppCtrl extends CtrlBase<Component>{
 			doImportBook0();
 	}
 
-
-	private void importCSVSheet(String name, InputStream csv) throws IOException {
-		//TODO: Update for models
-		CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(csv)));
-		String[] nextLine;
-		loadedBook.getInternalBook().checkDBSchema();
-		SSheet newSheet = loadedBook.getInternalBook().createSheet(name);
-		int sheetId = newSheet.getDBId();
-		int row = 0;
-		int maxcol = 0;
-
-		String bookTable = loadedBook.getInternalBook().getId();
-		String insertQuery = "INSERT INTO " + bookTable + "_sheetdata " +
-				"(sheetid,row,col,value) VALUES (?, ?, ?, ?)";
-
-		try (Connection connection = DBHandler.instance.getConnection();
-			 PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
-			while ((nextLine = reader.readNext()) != null) {
-				if (maxcol < nextLine.length)
-					maxcol = nextLine.length;
-				for (int col = 0; col < nextLine.length; col++) {
-					insertStmt.setInt(1, sheetId);
-					insertStmt.setInt(2, row);
-					insertStmt.setInt(3, col);
-					insertStmt.setString(4, nextLine[col]);
-					insertStmt.execute();
-
-				}
-				++row;
-				if (row % 1000 == 0)
-					System.out.println("Importing " + name + " " + row + " loaded");
-			}
-			//TODO: Remove this
-			//newSheet.setEndColumnIndex(maxcol, connection, true);
-			//newSheet.setEndRowIndex(row, connection, true);
-			connection.commit();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-
-	// Import using Copy command
-	// Postgres specific, fast performance.
-	private void importCSVSheetCopy(String name, InputStream csv, char delimiter) throws IOException {
-		CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(csv)), delimiter);
-		String[] nextLine;
-		loadedBook.getInternalBook().checkDBSchema();
-		SSheet newSheet = loadedBook.getInternalBook().createSheet(name);
-		int sheetId = newSheet.getDBId();
-		int row = 0;
-		int maxcol = 0;
-
-		String bookTable = loadedBook.getInternalBook().getId();
-
-		try (Connection connection = DBHandler.instance.getConnection()) {
-			Connection rawConn = ((DelegatingConnection) connection).getInnermostDelegate();
-			CopyManager cm = ((PgConnection) rawConn).getCopyAPI();
-
-			CopyIn cpIN = cm.copyIn("COPY " + bookTable + "_sheetdata (sheetid,row,col,value)" +
-					" FROM STDIN WITH DELIMITER '|'");
-
-			StringBuffer sb = new StringBuffer();
-			while ((nextLine = reader.readNext()) != null) {
-				if (maxcol < nextLine.length)
-					maxcol = nextLine.length;
-				for (int col = 0; col < nextLine.length; col++) {
-					sb.append(sheetId).append('|');
-					sb.append(row).append('|');
-					sb.append(col).append('|');
-					sb.append(nextLine[col]).append('\n');
-				}
-				++row;
-				if (row % COMMIT_SIZE == 0) {
-					cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
-					sb = new StringBuffer();
-				}
-			}
-			if (sb.length() > 0)
-				cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
-			cpIN.endCopy();
-			rawConn.commit();
-			//TODO: Mangesh - Update this
-			//newSheet.setEndRowIndex(row - 1, connection, true);
-			//newSheet.setEndColumnIndex(maxcol-1, connection, true);
-			connection.commit();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-
-
-
 	private void doImportBook0(){
 		Fileupload.get(1,new SerializableEventListener<UploadEvent>() {
 			private static final long serialVersionUID = -8173538106339815887L;
@@ -578,21 +486,26 @@ public class AppCtrl extends CtrlBase<Component>{
 				Media[] ms = event.getMedias();
 				if(ms.length > 0) {
 					Media m = event.getMedias()[0];
-					if (m.isBinary()){
 						String name = m.getName();
 						if (name.endsWith(".csv") || name.endsWith(".tsv") || name.endsWith(".ssv")) {
 							if (!isBookLoaded())
 								doOpenNewBook0(false);
 							String sheetName = name.substring(0,name.lastIndexOf('.'));
 							char delimiter = name.endsWith(".csv")?',':name.endsWith(".ssv")?'\t':' ';
-							importCSVSheetCopy(sheetName, m.getStreamData(), delimiter);
+
+							// Create a new Sheet and import file
+							loadedBook.getInternalBook().checkDBSchema();
+							SSheet newSheet = loadedBook.getInternalBook().createSheet(sheetName);
+							newSheet.getDataModel().importSheet(
+									m.isBinary()?new BufferedReader(new InputStreamReader(m.getStreamData())):
+									m.getReaderData(), delimiter);
+
 							Messagebox.show("File imported", "DataSpread",
 									Messagebox.OK, Messagebox.INFORMATION, null);
 
-							Book bookhere = loadedBook;
-							if (isBookLoaded())
-								doCloseBook(false);
-							doOpenExistingBook(bookhere);
+							initSaveNotification(loadedBook);
+							pushAppEvent(AppEvts.ON_CHANGED_SPREADSHEET, ss);
+							updatePageInfo();
 							ss.setSelectedSheet(sheetName);
 							return;
 						}
@@ -610,7 +523,7 @@ public class AppCtrl extends CtrlBase<Component>{
 						updatePageInfo();
 						
 						return;
-					}
+					//}
 				}
 
 				UiUtil.showWarnMessage("Fail to import the specified file" + (ms.length > 0 ? ": " + ms[0].getName() : "."));
