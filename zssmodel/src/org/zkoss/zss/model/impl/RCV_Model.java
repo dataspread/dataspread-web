@@ -319,7 +319,7 @@ public class RCV_Model extends Model {
                     importedColumns = nextLine.length;
                 for (int col = 0; col < nextLine.length; col++) {
                     sb.append(importedRows).append('|');
-                    sb.append(col).append('|');
+                    sb.append(col+1).append('|');
                     sb.append(nextLine[col]).append('\n');
                 }
 
