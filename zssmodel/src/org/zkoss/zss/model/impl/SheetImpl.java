@@ -49,7 +49,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	private static final Log _logger = Log.lookup(SheetImpl.class);
     //Mangesh
     static final private int PreFetchRows = 100;
-    static final private int PreFetchColumns = 20;
+    static final private int PreFetchColumns = 30;
     /**
      * internal use only for developing/test state, should remove when stable
      */
@@ -61,7 +61,7 @@ public class SheetImpl extends AbstractSheetAdv {
         }
     }
 
-    final int CACHE_SIZE = 10000;
+    final int CACHE_SIZE = 50000;
     private final String _id;
 	private final IndexPool<AbstractRowAdv> _rows = new IndexPool<AbstractRowAdv>(){
 		private static final long serialVersionUID = 1L;
