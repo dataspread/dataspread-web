@@ -109,7 +109,7 @@ public abstract class RelationalOperatorFunction implements Function {
                 List<Row> list1 = Row.getRowsFromArea(range1);
                 List<Row> list2 = Row.getRowsFromArea(range2);
                 Row[] rows1 = list1.toArray(new Row[list1.size()]);
-                Row[] rows2 = list1.toArray(new Row[list2.size()]);
+                Row[] rows2 = list2.toArray(new Row[list2.size()]);
                 
                 boolean[] indicesToKeep = getIndicesNotInRows2(rows1, rows2);
                 List<Row> resultRows = getRowsToKeep(indicesToKeep, rows1);
@@ -175,7 +175,7 @@ public abstract class RelationalOperatorFunction implements Function {
                 List<Row> list1 = Row.getRowsFromArea(range1);
                 List<Row> list2 = Row.getRowsFromArea(range2);
                 Row[] rows1 = list1.toArray(new Row[list1.size()]);
-                Row[] rows2 = list1.toArray(new Row[list2.size()]);
+                Row[] rows2 = list2.toArray(new Row[list2.size()]);
 
                 boolean[] indicesToKeep = getMatchingIndices(rows1, rows2);
                 List<Row> resultRows = getRowsToKeep(indicesToKeep, rows1);
@@ -229,37 +229,24 @@ public abstract class RelationalOperatorFunction implements Function {
         @Override
         protected ValueEval evaluate(ArrayEval range1, ArrayEval range2, int srcRowIndex, int srcColumnIndex) {
 
-            try {
-
-                validateUnionCompatible(range1, range2);
-
-                List<Row> list1 = Row.getRowsFromArea(range1);
-                List<Row> list2 = Row.getRowsFromArea(range2);
-                Row[] rows1 = list1.toArray(new Row[list1.size()]);
-                Row[] rows2 = list1.toArray(new Row[list2.size()]);
+            List<Row> list1 = Row.getRowsFromArea(range1);
+            List<Row> list2 = Row.getRowsFromArea(range2);
+            Row[] rows1 = list1.toArray(new Row[list1.size()]);
+            Row[] rows2 = list2.toArray(new Row[list2.size()]);
 
 //                Row[] resultRows = new Row[ rows1.length * rows2.length ];
-                List<Row> resultRows = new ArrayList<>();
-                int insertIndex = 0;
-                
-                for (int r1 = 0; r1 <rows1.length; r1++) {
-                    for (int r2 = 0; r2 < rows2.length; r2++) {
+            List<Row> resultRows = new ArrayList<>();
 
-                        resultRows.add(Row.combineRows(rows1[r1], rows2[r2]));
-                        
-                    }
+            for (int r1 = 0; r1 < rows1.length; r1++) {
+                for (int r2 = 0; r2 < rows2.length; r2++) {
+
+                    resultRows.add(Row.combineRows(rows1[r1], rows2[r2]));
+
                 }
-
-                //return evalHelper(resultRows);
-                return Row.getArrayEval(resultRows, srcRowIndex, srcColumnIndex, range1.getRefEvaluator());
-                
-
             }
-            catch (EvaluationException e) {
 
-                return e.getErrorEval();
-
-            }
+            //return evalHelper(resultRows);
+            return Row.getArrayEval(resultRows, srcRowIndex, srcColumnIndex, range1.getRefEvaluator());
         }
     };
     
