@@ -3,7 +3,6 @@ package org.zkoss.zss.model.impl;
 import org.zkoss.zss.model.CellRegion;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Reader;
 import java.util.Collection;
 
@@ -16,6 +15,8 @@ public abstract class Model {
                 return new RCV_Model(context, tableName);
                 //return new Hybrid_Model(context, tableName);
     }
+
+    public abstract void deleteModel(DBContext context);
 
     // Drop the tables created.
     public abstract void dropSchema(DBContext context);
