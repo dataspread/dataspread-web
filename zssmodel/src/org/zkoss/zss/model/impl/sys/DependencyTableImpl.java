@@ -1,12 +1,16 @@
 package org.zkoss.zss.model.impl.sys;
 import com.github.davidmoten.rtree.Entries;
+import com.github.davidmoten.rtree.Node;
+import com.github.davidmoten.rtree.NonLeaf;
 import com.github.davidmoten.rtree.RTree;
 import com.github.davidmoten.rtree.geometry.Geometries;
 import com.github.davidmoten.rtree.geometry.Geometry;
 import com.github.davidmoten.rtree.geometry.Rectangle;
+import com.github.davidmoten.rtree.internal.NonLeafDefault;
 import org.zkoss.util.logging.Log;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SBookSeries;
+import org.zkoss.zss.model.impl.DBContext;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.dependency.Ref.RefType;
 import rx.*;
@@ -36,12 +40,14 @@ public class DependencyTableImpl extends DependencyTableAdv {
 			RefType.CELL, RefType.TABLE);
     private static final long serialVersionUID = 1L;
     private static final Log _logger = Log.lookup(DependencyTableImpl.class.getName());
+	private String tableName;
+	private DBContext dbcontext;
     /** Map<dependant, precedent> */
 	protected Map<Ref, Set<Ref>> _map = new LinkedHashMap<Ref, Set<Ref>>();
 	protected Map<Ref, Set<Ref>> _evaledMap = new LinkedHashMap<Ref, Set<Ref>>();
     protected Map<Ref, Set<Ref>> _backwardMap = new LinkedHashMap<Ref, Set<Ref>>();
     protected SBookSeries _books;
-	protected RTree<Ref, Rectangle> _rtree = RTree.create();
+	protected RTree<Ref, Rectangle> _rtree = new RTree(dbcontext,tableName);
 
 
 	public DependencyTableImpl() {
@@ -110,7 +116,8 @@ public class DependencyTableImpl extends DependencyTableAdv {
 
 		Rectangle region = Geometries.rectangle(
 				precedent.getRow(),precedent.getColumn(),precedent.getLastRow(),precedent.getLastColumn());
-		_rtree.add(dependant, region);
+
+		_rtree.add(dependant, region,dbcontext);
 
     }
 
@@ -140,7 +147,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 		for(Ref precedent: precedents) {
 			Rectangle region = Geometries.rectangle(
 					precedent.getRow(), precedent.getColumn(), precedent.getLastRow(), precedent.getLastColumn());
-			_rtree.delete(dependant,region);
+			_rtree.delete(dependant,region,dbcontext);
 		}
 		//Clear forward map
 		dependant.clearDependent();
@@ -387,7 +394,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 		_map.putAll(another._map);
 		_evaledMap.putAll(another._evaledMap);
 		//add _backwardMap
-		_rtree.add(another._rtree.entries());
+		_rtree.add(another._rtree.entries(),dbcontext);
 
     }
 

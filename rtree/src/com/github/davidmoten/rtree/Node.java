@@ -6,14 +6,23 @@ import com.github.davidmoten.rtree.geometry.Geometry;
 import com.github.davidmoten.rtree.geometry.HasGeometry;
 import com.github.davidmoten.rtree.internal.NodeAndEntries;
 
+import com.github.davidmoten.rtree.internal.NonLeafDefault;
+import org.zkoss.zss.model.impl.BTree;
+import org.zkoss.zss.model.impl.BlockStore;
+import org.zkoss.zss.model.impl.DBContext;
 import rx.Subscriber;
 import rx.functions.Func1;
 
-public interface Node<T, S extends Geometry> extends HasGeometry {
+public abstract class Node<T, S extends Geometry> implements HasGeometry {
 
-    List<Node<T, S>> add(Entry<? extends T, ? extends S> entry);
+    /**
+     * This block's index
+     */
 
-    NodeAndEntries<T, S> delete(Entry<? extends T, ? extends S> entry, boolean all);
+    public int id;
+    abstract public List<Node<T, S>> add(Entry<? extends T, ? extends S> entry, DBContext dbcontext, BlockStore bs);
+
+    abstract public NodeAndEntries<T, S> delete(Entry<? extends T, ? extends S> entry, boolean all, DBContext dbcontext, BlockStore bs);
 
     /**
      * Run when a search requests Long.MAX_VALUE results. This is the
@@ -24,11 +33,16 @@ public interface Node<T, S extends Geometry> extends HasGeometry {
      * @param subscriber
      *            the subscriber to report search findings to
      */
-    void searchWithoutBackpressure(Func1<? super Geometry, Boolean> criterion,
+    abstract public void searchWithoutBackpressure(Func1<? super Geometry, Boolean> criterion,
             Subscriber<? super Entry<T, S>> subscriber);
 
-    int count();
+    abstract public int count();
 
-    Context<T, S> context();
+    abstract public Context<T, S> context();
+
+    abstract public void update(BlockStore bs);
+
+
+
 
 }

@@ -76,6 +76,16 @@
             <artifactId>flatbuffers-java</artifactId>
             <version>1.3.0.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.zkoss.poi</groupId>
+            <artifactId>zpoi</artifactId>
+            <version>3.9.8</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zkoss.zss</groupId>
+            <artifactId>zssmodel</artifactId>
+            <version>3.8.1</version>
+        </dependency>
     </dependencies>
 
     <build>
