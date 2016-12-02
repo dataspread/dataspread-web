@@ -16,8 +16,6 @@ public abstract class Model {
                 //return new Hybrid_Model(context, tableName);
     }
 
-    public abstract void deleteModel(DBContext context);
-
     // Drop the tables created.
     public abstract void dropSchema(DBContext context);
 
