@@ -586,27 +586,19 @@ public class SheetImpl extends AbstractSheetAdv {
 		}
 
 		//Delete from DB
-		String bookTable = getBook().getId();
-		String updateWorkbook = "DELETE FROM  " + bookTable + "_sheetdata WHERE sheetid = ? " +
-				" AND row BETWEEN  ? AND ? " +
-				" AND col BETWEEN  ? AND ? ";
 
-		try (Connection connection = DBHandler.instance.getConnection();
-			 PreparedStatement stmt = connection.prepareStatement(updateWorkbook)) {
-			stmt.setInt(1, getDBId());
-			stmt.setInt(2, rowStart);
-			stmt.setInt(3, rowEnd);
-			stmt.setInt(4, columnStart);
-			stmt.setInt(5, columnEnd);
-			stmt.execute();
-			connection.commit();
-		}
-		catch (SQLException e)
-		{
-			e.printStackTrace();
+		CellRegion deleted_region = new CellRegion(rowStart, columnStart, rowEnd, columnEnd);
+		if (dataModel != null) {
+			try (Connection connection = DBHandler.instance.getConnection()) {
+				DBContext dbContext = new DBContext(connection);
+				dataModel.deleteCells(dbContext, deleted_region);
+				connection.commit();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
-
+		sheetDataCache.remove(deleted_region);
 	}
 
 	@Override
@@ -1652,6 +1644,7 @@ public class SheetImpl extends AbstractSheetAdv {
 		_dataValidations.clear();
 		
 		_book = null;
+
 		//TODO all 
 		
 	}
@@ -1891,7 +1884,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	public Iterator<SCell> getCellIterator(int row) {
-		return (Iterator)((AbstractRowAdv)getRow(row)).getCellIterator(false);
+		return ((AbstractRowAdv) getRow(row)).getCellIterator(false);
 	}
 	
 	@Override
@@ -2156,8 +2149,13 @@ public class SheetImpl extends AbstractSheetAdv {
 
     @Override
     public void createModel(DBContext dbContext, String modelName) {
-        dataModel = Model.CreateModel(dbContext, modelName);
-    }
+		dataModel = Model.CreateModel(dbContext, modelName);
+	}
+
+	@Override
+	public void deleteModel(DBContext dbContext) {
+		dataModel.dropSchema(dbContext);
+	}
 
 	//ZSS-855
 	@Override
