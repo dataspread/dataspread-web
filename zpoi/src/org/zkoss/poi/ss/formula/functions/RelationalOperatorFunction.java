@@ -33,19 +33,16 @@ public abstract class RelationalOperatorFunction implements Function {
 
                 List<Row> rows1 = Row.getRowsFromArea(range1);
                 List<Row> rows2 = Row.getRowsFromArea(range2);
-
-                Row[] combinedRows = new Row[rows1.size() + rows2.size()];
+                Row[] combinedRows = new Row[rows1.size() + rows2.size()];                
                 
                 int insertIndex = 0;
-                
                 //Add all rows from rows1
-                for (int r = 0; r < rows1.size(); r++) {
-                    combinedRows[insertIndex++] = rows1.get(r);
-                }
-                    
+                for (Row r : rows1) {
+                    combinedRows[insertIndex++] = r;
+                }                    
                 //Add all rows from rows2
-                for (int r = 0; r < rows2.size(); r++) {
-                    combinedRows[insertIndex++] = rows2.get(r);
+                for (Row r : rows2) {
+                    combinedRows[insertIndex++] = r;
                 }
 
                 boolean[] indicesToKeep = getDistinctIndices(combinedRows);
@@ -56,9 +53,7 @@ public abstract class RelationalOperatorFunction implements Function {
                 
             }
             catch (EvaluationException e) {
-
-                return e.getErrorEval();                
-
+                return e.getErrorEval();
             }
         }
 
@@ -74,17 +69,12 @@ public abstract class RelationalOperatorFunction implements Function {
             Arrays.fill(indicesToKeep, true);
 
             for (int r1 = 0; r1 < rows.length; r1++) {
-                for (int r2 = r1 + 1; r2 < rows.length; r2++) {
-
-                    Row row1 = rows[r1];
+                Row row1 = rows[r1];
+                for (int r2 = r1 + 1; r2 < rows.length; r2++) {                    
                     Row row2 = rows[r2];
-
                     if (row1.matches(row2)) {
-
                         indicesToKeep[r2] = false;
-
                     }
-
                 }//end r2 for loop
             }//end r1 for loop
 
@@ -110,53 +100,66 @@ public abstract class RelationalOperatorFunction implements Function {
                 List<Row> list2 = Row.getRowsFromArea(range2);
                 Row[] rows1 = list1.toArray(new Row[list1.size()]);
                 Row[] rows2 = list2.toArray(new Row[list2.size()]);
-                
-                boolean[] indicesToKeep = getIndicesNotInRows2(rows1, rows2);
-                List<Row> resultRows = getRowsToKeep(indicesToKeep, rows1);
+
+                List<Row> resultRows = new ArrayList<>();
+                //get all rows in rows1 that don't have matching rows in rows2
+                for (Row row1 : rows1) {
+                    boolean keepRow = true;
+                    for (Row row2 : rows2) {
+                        //this row exists in the other range, so don't include it
+                        if (row1.matches(row2)) {
+                            keepRow = false;
+                            break;
+                        }
+                    }//end r2 for loop
+                    if (keepRow) {
+                        resultRows.add(row1);
+                    }
+                }//end r1 for loop
+
+//                boolean[] indicesToKeep = getIndicesNotInRows2(rows1, rows2);
+//                List<Row> resultRows = getRowsToKeep(indicesToKeep, rows1);
 
                 //return evalHelper(resultRows);                
                 return Row.getArrayEval(resultRows, srcRowIndex, srcColumnIndex, range1.getRefEvaluator());                
 
-            }
-            catch (EvaluationException e) {
-                
+            } catch (EvaluationException e) {                
                 return e.getErrorEval();
-
             }
         }
 
 
-        /**
-         * Helper function for getRows1DiffRows2 to find the indices in rows1 that don't have
-         * matching rows in rows2.
-         * @param rows1
-         * @param rows2
-         * @return
-         */
-        private boolean[] getIndicesNotInRows2(Row[] rows1, Row[] rows2) {
-
-            boolean[] indicesToKeep = new boolean[rows1.length];
-            Arrays.fill(indicesToKeep, true);
-
-            for (int r1 = 0; r1 < rows1.length; r1++) {
-                for (int r2 = 0; r2 < rows1.length; r2++) {
-
-                    Row row1 = rows1[r1];
-                    Row row2 = rows2[r2];
-
-                    //this row exists in the other range, so don't include it
-                    if (row1.matches(row2)) {
-
-                        indicesToKeep[r1] = false;
-                        break;
-
-                    }
-                }//end r2 for loop
-            }//end r1 for loop
-
-            return indicesToKeep;
-
-        }
+//        /**
+//         * Helper function to find the indices in rows1 that don't have
+//         * matching rows in rows2.
+//         * @param rows1
+//         * @param rows2
+//         * @return
+//         */
+//        private boolean[] getIndicesNotInRows2(Row[] rows1, Row[] rows2) {
+//
+//            boolean[] indicesToKeep = new boolean[rows1.length];
+//            Arrays.fill(indicesToKeep, true);
+//
+//            for (int r1 = 0; r1 < rows1.length; r1++) {
+//                for (int r2 = 0; r2 < rows1.length; r2++) {
+//
+//                    Row row1 = rows1[r1];
+//                    Row row2 = rows2[r2];
+//
+//                    //this row exists in the other range, so don't include it
+//                    if (row1.matches(row2)) {
+//
+//                        indicesToKeep[r1] = false;
+//                        break;
+//
+//                    }
+//                }//end r2 for loop
+//            }//end r1 for loop
+//
+//            return indicesToKeep;
+//
+//        }
     };
 
 
@@ -177,8 +180,20 @@ public abstract class RelationalOperatorFunction implements Function {
                 Row[] rows1 = list1.toArray(new Row[list1.size()]);
                 Row[] rows2 = list2.toArray(new Row[list2.size()]);
 
-                boolean[] indicesToKeep = getMatchingIndices(rows1, rows2);
-                List<Row> resultRows = getRowsToKeep(indicesToKeep, rows1);
+                List<Row> resultRows = new ArrayList<>();
+
+                //get rows that match
+                for (Row row1 : rows1) {
+                    for (Row row2 : rows2) {
+                        if (row1.matches(row2)) {
+                            resultRows.add(row1);
+                            break;
+                        }
+                    }
+                }
+
+//                boolean[] indicesToKeep = getMatchingIndices(rows1, rows2);
+//                List<Row> resultRows = getRowsToKeep(indicesToKeep, rows1);
 
                 //return evalHelper(resultRows);
                 return Row.getArrayEval(resultRows, srcRowIndex, srcColumnIndex, range1.getRefEvaluator());
@@ -186,41 +201,40 @@ public abstract class RelationalOperatorFunction implements Function {
 
             }
             catch (EvaluationException e) {
-
                 return e.getErrorEval();
-
             }
         }
 
 
-        /**
-         * Helper method for INTERSECTION to find the indices in rows1 that have matching rows in rows2
-         * @param rows1
-         * @param rows2
-         * @return
-         */
-        private boolean[] getMatchingIndices(Row[] rows1, Row[] rows2) {
-
-            boolean[] indicesToKeep = new boolean[rows1.length];
-            Arrays.fill(indicesToKeep, false);
-
-            for (int r1 = 0; r1 < rows1.length; r1++) {
-                for (int r2 = 0; r2 < rows2.length; r2++) {
-
-                    Row row1 = rows1[r1];
-                    Row row2 = rows2[r2];
-
-                    if (row1.matches(row2)) {
-                        indicesToKeep[r1] = true;
-                        break;
-                    }
-
-                }
-            }
-
-            return indicesToKeep;
-
-        }
+//        /**
+//         * Helper method for INTERSECTION to find the indices in rows1 that have matching rows in rows2
+//         * @param rows1
+//         * @param rows2
+//         * @return
+//         */
+//        private boolean[] getMatchingIndices(Row[] rows1, Row[] rows2) {
+//
+//            boolean[] indicesToKeep = new boolean[rows1.length];
+//            Arrays.fill(indicesToKeep, false);
+//            
+//            //get rows that match
+//            for (int r1 = 0; r1 < rows1.length; r1++) {
+//                for (int r2 = 0; r2 < rows2.length; r2++) {
+//
+//                    Row row1 = rows1[r1];
+//                    Row row2 = rows2[r2];
+//
+//                    if (row1.matches(row2)) {
+//                        indicesToKeep[r1] = true;
+//                        break;
+//                    }
+//
+//                }
+//            }
+//
+//            return indicesToKeep;
+//
+//        }
     };
     
     
@@ -237,11 +251,9 @@ public abstract class RelationalOperatorFunction implements Function {
 //                Row[] resultRows = new Row[ rows1.length * rows2.length ];
             List<Row> resultRows = new ArrayList<>();
 
-            for (int r1 = 0; r1 < rows1.length; r1++) {
-                for (int r2 = 0; r2 < rows2.length; r2++) {
-
-                    resultRows.add(Row.combineRows(rows1[r1], rows2[r2]));
-
+            for (Row aRows1 : rows1) {
+                for (Row aRows2 : rows2) {
+                    resultRows.add(Row.combineRows(aRows1, aRows2));
                 }
             }
 
@@ -259,9 +271,9 @@ public abstract class RelationalOperatorFunction implements Function {
 
             List<Row> rows = Row.getRowsFromArea(range);
 
-            return Row.getArrayEval(rows, srcRowIndex, srcColumnIndex, range.getRefEvaluator());
+//            return Row.getArrayEval(rows, srcRowIndex, srcColumnIndex, range.getRefEvaluator());
 
-//            return evalHelper(rows);
+            return evalHelper(rows);
             
         }
 

@@ -43,6 +43,10 @@ public class OpTableColRefPtg extends Ptg {
         return _columnNum;
     }
 
+    public void setColumnNum(int newNum) {
+        _columnNum = newNum;
+    }
+
     public String getColumnName() {
         return _columnName;
     }
