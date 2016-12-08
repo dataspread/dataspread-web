@@ -13,6 +13,7 @@ class DependencyGraph
 {
     Map<CellRegion, Set<CellRegion>> forwardMap; //Depends -> DependOn
     Map<CellRegion, Set<CellRegion>> reverseMap; // DependsOn -> Depends
+    static int count;
 
     public DependencyGraph()
     {
@@ -52,27 +53,25 @@ class DependencyGraph
         return reverseMap.get(dependsOn);
     }
 
-    public Set<CellRegion> dependsSet()
+    public Set<CellRegion> getDependsSet()
     {
-        return forwardMap.keySet();
+        return Collections.unmodifiableSet(forwardMap.keySet());
     }
 
 
-    public Set<CellRegion> dependsOnSet()
+    public Set<CellRegion> getDependsOnSet()
     {
-        return reverseMap.keySet();
+        return Collections.unmodifiableSet(reverseMap.keySet());
 
     }
 
-
-    public void mergeDependsOn(Set<CellRegion> dependsOnSet)
-    {
+    /* Return the bounded box */
+    public CellRegion mergeDependsOn(Set<CellRegion> dependsOnSet) {
 
         Set<CellRegion> dependsSet = new HashSet<>();
         CellRegion boundingBox=null;
 
-        for (CellRegion dependsOn:dependsOnSet)
-        {
+        for (CellRegion dependsOn:dependsOnSet) {
             dependsSet.addAll(deleteDependsOn(dependsOn));
             if (boundingBox==null)
                 boundingBox = dependsOn;
@@ -81,25 +80,40 @@ class DependencyGraph
         }
         for (CellRegion depends:dependsSet)
             put(depends, boundingBox);
+        return boundingBox;
+
+    }
+
+    public CellRegion mergeTwoDependsOn(CellRegion region1, CellRegion region2) {
+
+        Set<CellRegion> toMerge = new HashSet<>();
+        toMerge.add(region1);
+        toMerge.add(region2);
+        return mergeDependsOn(toMerge);
+    }
+
+    /* Remove value and if the list is empty remove key */
+    private void removeValue(Map<CellRegion, Set<CellRegion>> map, CellRegion key, CellRegion value) {
+        Set<CellRegion> valueSet = map.get(key);
+        valueSet.remove(value);
+        if (valueSet.isEmpty())
+            map.remove(key);
 
     }
 
     public Set<CellRegion> deleteDependsOn(CellRegion dependsOn)
     {
-        Set<CellRegion> depends = reverseMap.remove(dependsOn);
-        depends.stream().forEach(e->forwardMap.get(e).remove(dependsOn));
-        return depends;
+        Set<CellRegion> dependsSet = reverseMap.remove(dependsOn);
+        dependsSet.stream().forEach(e -> removeValue(forwardMap, e, dependsOn));
+        return dependsSet;
     }
 
     public Set<CellRegion> deleteDepends(CellRegion depends)
     {
-        Set<CellRegion> dependsOn = forwardMap.remove(depends);
-
-
-        dependsOn.stream().forEach(e->reverseMap.get(e).remove(depends));
-        return dependsOn;
+        Set<CellRegion> dependsOnSet = forwardMap.remove(depends);
+        dependsOnSet.stream().forEach(e -> removeValue(reverseMap, e, depends));
+        return dependsOnSet;
     }
-
 
 
     public DependencyGraph copy()
@@ -124,6 +138,7 @@ public class DTOpt {
     // Dependency graph
     static DependencyGraph originalGraph;
     static DependencyGraph dt;
+    static int count;
 
     public static void main(String[] args) throws IOException {
         originalGraph = new DependencyGraph();
@@ -134,7 +149,7 @@ public class DTOpt {
         String s;
         while ((s = br.readLine()) != null) {
             if (s.startsWith("#"))
-                    continue;
+                continue;
             System.out.println(s);
             String formula[]=s.split("=");
             String tokens[] = formula[1].split("[ \t*+-/()<>!,]");
@@ -147,41 +162,57 @@ public class DTOpt {
 
         dt = originalGraph.copy();
 
-        for(CellRegion region:dt.dependsSet())
-            System.out.println(region.toString() + " " +  dt.getDependsOn(region));
-
-        // Merge two values.
-        Set<CellRegion> toMerge = new HashSet<>();
-        toMerge.add(new CellRegion("A1:A100"));
-        toMerge.add(new CellRegion("A90:A110"));
-        dt.mergeDependsOn(toMerge);
-        System.out.println("After Merge");
-        for(CellRegion region:dt.dependsSet())
+        for (CellRegion region : dt.getDependsSet())
             System.out.println(region.toString() + " " +  dt.getDependsOn(region));
 
 
-        // First focus on merging the RHS only.
-        System.out.println("FPRate " + FPRate(originalGraph, dt));
-        System.out.println("depends " + dt.getDependsOn(new CellRegion("C3")));
+        count = 0;
+        traverse(dt, originalGraph);
 
+    }
+
+    static void traverse(DependencyGraph newGraph, DependencyGraph originalGraph) {
+
+        List<CellRegion> dependsOnList = new ArrayList<>(newGraph.getDependsOnSet());
+
+        System.out.println(++count + " FP rate " + FPRate(originalGraph, newGraph) + " " + dependsOnList.size());
+
+
+        for (int i = 0; i < dependsOnList.size() - 1; i++) {
+            Set<CellRegion> region1Depends = newGraph.getDepends(dependsOnList.get(i));
+            for (int j = i + 1; j < dependsOnList.size(); j++) {
+
+                Set<CellRegion> region2Depends = newGraph.getDepends(dependsOnList.get(j));
+
+                CellRegion mergedRegion = newGraph.mergeTwoDependsOn(dependsOnList.get(i), dependsOnList.get(j));
+
+                traverse(newGraph, originalGraph);
+
+                //Revert the merge
+                newGraph.deleteDependsOn(mergedRegion);
+                for (CellRegion depends : region1Depends)
+                    newGraph.put(depends, dependsOnList.get(i));
+                for (CellRegion depends : region2Depends)
+                    newGraph.put(depends, dependsOnList.get(j));
+
+
+            }
+        }
     }
 
     static double FPRate(DependencyGraph originalGraph,
                   DependencyGraph newGraph)
     {
         // Sum up the FP rates for each of the formula
-        double fprate=0.0;
         int original_cells = 0;
         int new_cells = 0;
-        for(CellRegion depends:originalGraph.dependsSet())
+        for (CellRegion depends : originalGraph.getDependsSet())
         {
             original_cells += originalGraph.getDependsOn(depends)
                     .stream().mapToInt(e->e.getCellCount()).sum();
             new_cells += newGraph.getDependsOn(depends)
                     .stream().mapToInt(e->e.getCellCount()).sum();
         }
-        System.out.println("original_cells " + original_cells);
-        System.out.println("new_cells " + new_cells);
         return (double) (new_cells - original_cells) / new_cells;
     }
 
