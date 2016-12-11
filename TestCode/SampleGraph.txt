@@ -1,5 +1,5 @@
 #LHS should not have any overlaps.
-#C1=A1+B1
+C1=A1+B1
 C2=A1:A100
 C3=A90:A110
 C4=A100:A200

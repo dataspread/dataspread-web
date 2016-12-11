@@ -1,8 +1,8 @@
-import org.zkoss.poi.ss.usermodel.Cell;
 import org.zkoss.zss.model.CellRegion;
 
 import java.io.*;
 import java.util.*;
+import java.util.stream.*;
 
 /**
  * Created by Mangesh on 11/26/2016.
@@ -11,6 +11,8 @@ import java.util.*;
 
 class DependencyGraph
 {
+
+    //TODO: avoid creating multiple copies of the graph.
     Map<CellRegion, Set<CellRegion>> forwardMap; //Depends -> DependOn
     Map<CellRegion, Set<CellRegion>> reverseMap; // DependsOn -> Depends
     static int count;
@@ -127,18 +129,18 @@ class DependencyGraph
                 newGraph.put(forwardEntry.getKey(), dependsOn);
             }
         }
-
         return newGraph;
     }
 
 
+    public int dependsOnSize() {
+        return reverseMap.size();
+    }
 }
 
 public class DTOpt {
     // Dependency graph
     static DependencyGraph originalGraph;
-    static DependencyGraph dt;
-    static int count;
 
     public static void main(String[] args) throws IOException {
         originalGraph = new DependencyGraph();
@@ -160,19 +162,116 @@ public class DTOpt {
         }
         System.out.println(originalGraph);
 
-        dt = originalGraph.copy();
 
-        for (CellRegion region : dt.getDependsSet())
-            System.out.println(region.toString() + " " +  dt.getDependsOn(region));
+        //traverse(dt, originalGraph);
+        getSpace(originalGraph).forEach(e -> System.out.println("Size " + e.dependsOnSize() + " FP " + FPRate(originalGraph, e)));
 
-
-        count = 0;
-        traverse(dt, originalGraph);
+        int memoryBudget = 3;
+        DependencyGraph sol = getSpace(originalGraph)
+                .filter(e -> e.dependsOnSize() <= memoryBudget)
+                .min(Comparator.comparingDouble(e -> FPRate(originalGraph, e))).get();
+        System.out.println("Solution");
+        System.out.println("Size " + sol.dependsOnSize() + " FP Rate " + FPRate(originalGraph, sol));
+        for (CellRegion region : sol.getDependsSet())
+            System.out.println(region.toString() + " " + sol.getDependsOn(region));
 
     }
 
+    static Stream<DependencyGraph> getSpace(DependencyGraph inputGraph) {
+        Iterator<DependencyGraph> dependencyGraphIterator = new Iterator<DependencyGraph>() {
+
+            boolean first;
+            boolean pullNextSubSolution;
+            // Index within the sub solution
+            int subIndex;
+
+            DependencyGraph subSolution;
+            List<CellRegion> subSolutionDependsOnList;
+
+            // This is the graph with one node removed
+            DependencyGraph partial;
+
+            // Removed region
+            CellRegion removedDependsOn = null;
+            Set<CellRegion> removedDependsSet = null;
+
+            Iterator<DependencyGraph> subSet = null;
+
+            {
+                first = true;
+                pullNextSubSolution = true;
+
+
+                //Remove first node
+                //TODO: Avoid making a copy.
+                partial = inputGraph.copy();
+                //TODO: Check if we can do it in a streaming way.
+                removedDependsOn = partial.getDependsOnSet().stream().findAny().orElse(null);
+
+                if (removedDependsOn != null) {
+                    removedDependsSet = partial.deleteDependsOn(removedDependsOn);
+                    subSet = getSpace(partial).iterator();
+                }
+                //System.out.println("Removed subset " + subSet);
+
+            }
+
+
+            @Override
+            public boolean hasNext() {
+                if (first)
+                    return true;
+                if (subSet == null)
+                    return false;
+                if (pullNextSubSolution)
+                    return subSet.hasNext();
+                else
+                    return true;
+            }
+
+            @Override
+            public DependencyGraph next() {
+                first = false;
+                if (subSet == null)
+                    return inputGraph;
+
+                if (pullNextSubSolution) {
+                    subSolution = subSet.next();
+                    subSolutionDependsOnList = subSolution.getDependsOnSet()
+                            .stream().collect(Collectors.toCollection(ArrayList::new));
+                    subIndex = -1;
+                    pullNextSubSolution = false;
+                }
+
+                DependencyGraph solution = subSolution.copy();
+                for (CellRegion depends : removedDependsSet)
+                    solution.put(depends, removedDependsOn);
+                if (subIndex >= 0)
+                    solution.mergeTwoDependsOn(removedDependsOn, subSolutionDependsOnList.get(subIndex));
+                subIndex++;
+
+                if (subIndex == subSolutionDependsOnList.size())
+                    pullNextSubSolution = true;
+                return solution;
+
+
+            }
+        };
+
+
+        return StreamSupport.stream(
+                Spliterators.spliteratorUnknownSize(
+                        dependencyGraphIterator, Spliterator.DISTINCT), false);
+
+
+    }
+
+
+
+
     static void traverse(DependencyGraph newGraph, DependencyGraph originalGraph) {
 
+        int count = 0;
         List<CellRegion> dependsOnList = new ArrayList<>(newGraph.getDependsOnSet());
 
         System.out.println(++count + " FP rate " + FPRate(originalGraph, newGraph) + " " + dependsOnList.size());
