@@ -8,9 +8,18 @@ class DependencyGraph {
     Map<CellRegion, Set<CellRegion>> forwardMap; //Depends -> DependOn
     Map<CellRegion, Set<CellRegion>> reverseMap; // DependsOn -> Depends
 
+    Map<CellRegion, Set<CellRegion>> formulaMapping; // Region -> Set of formulae
+
+
+    // To compute areas we need to keep reference to the formulae.
+    // We should consider the weight of the formula.
+
+    long dependsOnArea;
+
     public DependencyGraph() {
         forwardMap = new HashMap();
         reverseMap = new HashMap();
+        dependsOnArea = 0;
     }
 
     public void put(CellRegion depends, CellRegion dependsOn) {
@@ -27,7 +36,15 @@ class DependencyGraph {
             reverseMap.put(dependsOn, keys);
         }
         keys.add(depends);
+        dependsOnArea += dependsOn.getCellCount();
+    }
 
+    //
+    public long area() {
+        //TODO: if we try to merge the LHS then we need to find a different way to find the area.
+        // We need to consider the area per formula.
+
+        return dependsOnArea;
     }
 
     public Set<CellRegion> getDependsOn(CellRegion depends) {
@@ -65,6 +82,7 @@ class DependencyGraph {
         }
         for (CellRegion depends : dependsSet)
             put(depends, boundingBox);
+
         return boundingBox;
 
     }
@@ -89,12 +107,16 @@ class DependencyGraph {
     public Set<CellRegion> deleteDependsOn(CellRegion dependsOn) {
         Set<CellRegion> dependsSet = reverseMap.remove(dependsOn);
         dependsSet.stream().forEach(e -> removeValue(forwardMap, e, dependsOn));
+        dependsOnArea -= dependsOn.getCellCount() * dependsSet.size(); // TODO: This will not longer be valid when merging LHS
         return dependsSet;
     }
 
     public Set<CellRegion> deleteDepends(CellRegion depends) {
         Set<CellRegion> dependsOnSet = forwardMap.remove(depends);
-        dependsOnSet.stream().forEach(e -> removeValue(reverseMap, e, depends));
+        dependsOnSet.stream().forEach(e -> {
+            removeValue(reverseMap, e, depends);
+            dependsOnArea -= e.getCellCount();
+        });
         return dependsOnSet;
     }
 
@@ -110,7 +132,23 @@ class DependencyGraph {
         return newGraph;
     }
 
-    public int dependsOnSize() {
-        return reverseMap.size();
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (CellRegion depends : getDependsSet()) {
+            sb.append(depends.getReferenceString())
+                    .append("->");
+            for (CellRegion dependsOn : getDependsOn(depends))
+                sb.append(dependsOn.getReferenceString()).append(' ');
+            sb.append(System.lineSeparator());
+        }
+        return sb.toString();
+    }
+
+    public int size() {
+        // Size of the graph is total number of nodes.
+        // Although we need to only account for reverse graph,
+        // the nodes form the forward graph need to be stored.
+        return reverseMap.size() + forwardMap.size();
     }
 }
