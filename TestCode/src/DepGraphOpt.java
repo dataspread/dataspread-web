@@ -2,6 +2,7 @@ import org.zkoss.zss.model.CellRegion;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.*;
 
 
@@ -134,8 +135,9 @@ public class DepGraphOpt {
             String formula[] = s.split("=");
             String tokens[] = formula[1].split("[ \t*+-/()<>!,]");
             for (String token : tokens)
-                originalGraph.put(new CellRegion(formula[0]),
-                        new CellRegion(token));
+                if (token.matches("[A-Z]+[0-9]+:[A-Z]+[0-9]+") || token.matches("[A-Z]+[0-9]+"))
+                    originalGraph.put(new CellRegion(formula[0]),
+                            new CellRegion(token));
 
         }
         System.out.println("Original Graph ");
