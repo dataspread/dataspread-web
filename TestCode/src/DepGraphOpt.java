@@ -10,11 +10,34 @@ public class DepGraphOpt {
     // Dependency graph
     DependencyGraph originalGraph;
     private int candidatesGenerated;
+    private double FPwithinBudget;
+    private int memoryBudget;
 
     DepGraphOpt(DependencyGraph originalGraph) {
         this.originalGraph = originalGraph;
+        FPwithinBudget = 1.0;
 
     }
+
+    DependencyGraph getOptimalGraph(int memoryBudget) {
+        this.memoryBudget = memoryBudget;
+        Stream<DependencyGraph> dependencyGraphStream = StreamSupport.stream(
+                Spliterators.spliteratorUnknownSize(
+                        getAllCandidates(), Spliterator.DISTINCT), false);
+
+        // dependencyGraphStream.forEach(e-> System.out.println(" Candidate:- " + e) );
+
+
+        return dependencyGraphStream
+                .filter(e -> e.size() <= memoryBudget)
+                .filter(e -> {
+                    FPwithinBudget = Math.min(FPRate(e), FPwithinBudget);
+                    return FPRate(e) <= FPwithinBudget;
+                })
+                .min(Comparator.comparingDouble(e -> FPRate(e))).get();
+
+    }
+
 
 
     public int getCandidatesGenerated() {
@@ -23,15 +46,12 @@ public class DepGraphOpt {
 
     public Iterator<DependencyGraph> getAllCandidates() {
         candidatesGenerated = 0;
-        return getAllCandidates(originalGraph);
+        return getAllCandidates(originalGraph, true);
     }
 
 
-    public Iterator<DependencyGraph> getAllCandidates(DependencyGraph inputGraph) {
+    public Iterator<DependencyGraph> getAllCandidates(DependencyGraph inputGraph, boolean outerCall) {
         Iterator<DependencyGraph> dependencyGraphIterator = new Iterator<DependencyGraph>() {
-
-            // Are we getting the fist solution?
-            boolean first;
             // Pull the next sub solution
             boolean pullNextSubSolution;
             // Index within the sub solution
@@ -43,72 +63,103 @@ public class DepGraphOpt {
             // This is the graph with one node removed
             DependencyGraph partial;
 
-            // Removed region
+            // Removed nodes.
             CellRegion removedDependsOn = null;
             Set<CellRegion> removedDependsSet = null;
 
+
+            // Next solution to return.
+            DependencyGraph nextSolution;
+
+            // Sub solutions.
             Iterator<DependencyGraph> subSet = null;
 
             {
-                first = true;
-                pullNextSubSolution = true;
-
-
                 //Remove first node
-                //TODO: Avoid making a copy.
                 partial = inputGraph.copy();
-                //TODO: Check if we can do it in a streaming way.
                 removedDependsOn = partial.getDependsOnSet().stream().findAny().orElse(null);
 
                 if (removedDependsOn != null) {
                     removedDependsSet = partial.deleteDependsOn(removedDependsOn);
-                    subSet = getAllCandidates(partial);
+                    subSet = getAllCandidates(partial, false);
+                    pullNextSubSolution = true;
+                    nextSolution = getNextCandidate();
+                }
+                else {
+                    // Base case, empty graph.
+                    nextSolution = inputGraph;
                 }
 
             }
 
 
+            private DependencyGraph getNextCandidate() {
+                // Base case
+                if (subSet == null)
+                    return null;
+
+
+                DependencyGraph nextCandidate = null;
+                while (nextCandidate == null) {
+                    if (pullNextSubSolution) {
+                        if (subSet.hasNext()) {
+                            subSolution = subSet.next();
+                            subSolutionDependsOnList = subSolution.getDependsOnSet()
+                                    .stream().collect(Collectors.toCollection(ArrayList::new));
+                            subIndex = -1; // First candidate, where regions are not combined.
+                            pullNextSubSolution = false;
+                        } else {
+                            // All done
+                            break;
+                        }
+                    }
+
+                    DependencyGraph solution = subSolution.copy();
+                    for (CellRegion depends : removedDependsSet)
+                        solution.put(depends, removedDependsOn);
+                    if (subIndex >= 0)
+                        solution.mergeTwoDependsOn(removedDependsOn, subSolutionDependsOnList.get(subIndex));
+
+                    subIndex++;
+
+                    if (subIndex == subSolutionDependsOnList.size())
+                        pullNextSubSolution = true;
+
+
+                    if (isCandidateGood(solution))
+                        nextCandidate = solution;
+                }
+                return nextCandidate;
+            }
+
+            private boolean isCandidateGood(DependencyGraph solution) {
+                // Do not consider sub-solutions that violate memory budget
+                if (solution.size() > memoryBudget)
+                    return false;
+
+                // For filtering using
+                if (FPRate(solution) > FPwithinBudget)
+                    return false;
+
+                return true;
+            }
+
             @Override
             public boolean hasNext() {
-                if (first)
-                    return true;
-                if (subSet == null)
-                    return false;
-                if (pullNextSubSolution)
-                    return subSet.hasNext();
-                else
-                    return true;
+                return nextSolution == null ? false : true;
             }
 
             @Override
             public DependencyGraph next() {
-                //  Number of candidate
-                candidatesGenerated++;
-                // not longer is the first
-                first = false;
+                //  Number of candidate fetched in the final call
+                if (outerCall)
+                    candidatesGenerated++;
 
-                // Base case
-                if (subSet == null)
-                    return inputGraph;
+                // Get the next solution
+                DependencyGraph solutionToReturn = nextSolution;
+                nextSolution = getNextCandidate();
+                return solutionToReturn;
 
-                if (pullNextSubSolution) {
-                    subSolution = subSet.next();
-                    subSolutionDependsOnList = subSolution.getDependsOnSet()
-                            .stream().collect(Collectors.toCollection(ArrayList::new));
-                    subIndex = -1; // First candidate, where regions are not combined.
-                    pullNextSubSolution = false;
-                }
-
-                DependencyGraph solution = subSolution.copy();
-                for (CellRegion depends : removedDependsSet)
-                    solution.put(depends, removedDependsOn);
-                if (subIndex >= 0)
-                    solution.mergeTwoDependsOn(removedDependsOn, subSolutionDependsOnList.get(subIndex));
-                subIndex++;
-
-                if (subIndex == subSolutionDependsOnList.size())
-                    pullNextSubSolution = true;
-                return solution;
             }
         };
 
@@ -144,17 +195,10 @@ public class DepGraphOpt {
         System.out.println(originalGraph);
 
 
-        //traverse(dt, originalGraph);
+        int memoryBudget = 9;
         DepGraphOpt depGraphOpt = new DepGraphOpt(originalGraph);
+        DependencyGraph sol = depGraphOpt.getOptimalGraph(memoryBudget);
 
-        Stream<DependencyGraph> dependencyGraphStream = StreamSupport.stream(
-                Spliterators.spliteratorUnknownSize(
-                        depGraphOpt.getAllCandidates(), Spliterator.DISTINCT), false);
-
-        int memoryBudget = 10;
-        DependencyGraph sol = dependencyGraphStream
-                .filter(e -> e.size() <= memoryBudget)
-                .min(Comparator.comparingDouble(e -> depGraphOpt.FPRate(e))).get();
 
         System.out.println("Solution");
         System.out.println("Candidates " + depGraphOpt.getCandidatesGenerated());
