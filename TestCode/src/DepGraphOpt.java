@@ -10,6 +10,10 @@ public class DepGraphOpt {
     // Dependency graph
     DependencyGraph originalGraph;
     private int candidatesGenerated;
+    final boolean pruning = true;
+
+
+    private int graphsExplored; // This includes the sub graphs explored
     private double FPwithinBudget;
     private int memoryBudget;
 
@@ -17,6 +21,10 @@ public class DepGraphOpt {
         this.originalGraph = originalGraph;
         FPwithinBudget = 1.0;
 
+    }
+
+    public int getGraphsExplored() {
+        return graphsExplored;
     }
 
     DependencyGraph getOptimalGraph(int memoryBudget) {
@@ -46,6 +54,7 @@ public class DepGraphOpt {
 
     public Iterator<DependencyGraph> getAllCandidates() {
         candidatesGenerated = 0;
+        graphsExplored = 0;
         return getAllCandidates(originalGraph, true);
     }
 
@@ -104,8 +113,15 @@ public class DepGraphOpt {
                     if (pullNextSubSolution) {
                         if (subSet.hasNext()) {
                             subSolution = subSet.next();
+
+                            //TODO: Get a list based on distance from removedDependsOn
                             subSolutionDependsOnList = subSolution.getDependsOnSet()
-                                    .stream().collect(Collectors.toCollection(ArrayList::new));
+                                    .stream()
+                                    //The order here is important as it can reduce the number of candidates.
+                                    //TODO: think of a better way  to organizes
+                                    .sorted(Comparator.comparing(e -> e.getRow()))
+                                    .collect(Collectors.toCollection(ArrayList::new));
+
                             subIndex = -1; // First candidate, where regions are not combined.
                             pullNextSubSolution = false;
                         } else {
@@ -119,6 +135,9 @@ public class DepGraphOpt {
                         solution.put(depends, removedDependsOn);
                     if (subIndex >= 0)
                         solution.mergeTwoDependsOn(removedDependsOn, subSolutionDependsOnList.get(subIndex));
+                    //TODO: before mearging check its impact on the FP rate.
+                    // Maintin a strucutre that stores bad combinations.
+
 
                     subIndex++;
 
@@ -133,11 +152,16 @@ public class DepGraphOpt {
             }
 
             private boolean isCandidateGood(DependencyGraph solution) {
+                if (!pruning)
+                    return true;
                 // Do not consider sub-solutions that violate memory budget
                 if (solution.size() > memoryBudget)
                     return false;
 
-                // For filtering using
+                // Use the anti-monotonicity property.
+                // Need to check if the pruning is correct.
+                // This FP rate is for the sub solution, while comparing it with the original graph.
+                // FPwithinBudget - The best complete solution seen till now.
                 if (FPRate(solution) > FPwithinBudget)
                     return false;
 
@@ -153,7 +177,8 @@ public class DepGraphOpt {
             public DependencyGraph next() {
                 //  Number of candidate fetched in the final call
                 if (outerCall)
-                    candidatesGenerated++;
+                    ++candidatesGenerated;
+                ++graphsExplored;
 
                 // Get the next solution
                 DependencyGraph solutionToReturn = nextSolution;
@@ -171,6 +196,31 @@ public class DepGraphOpt {
     {
         return (double) (newGraph.area() - originalGraph.area()) / newGraph.area();
     }
+
+    public DependencyGraph greedyMerge(int memoryBudget) {
+        // Greedily merge two areas the have the least impact on FP rate.
+        DependencyGraph current = originalGraph.copy();
+        while (current.size() > memoryBudget) {
+            List<CellRegion> dependsOnList = current.getDependsOnSet()
+                    .stream()
+                    .collect(Collectors.toCollection(ArrayList::new));
+            DependencyGraph bestMerged = null;
+            double bestFPRate = 1.0;
+            for (int i = 0; i < dependsOnList.size() - 1; ++i) {
+                for (int j = i + 1; j < dependsOnList.size(); ++j) {
+                    DependencyGraph reducedGraph = current.copy();
+                    reducedGraph.mergeTwoDependsOn(dependsOnList.get(i), dependsOnList.get(j));
+                    if (FPRate(reducedGraph) < bestFPRate) {
+                        bestMerged = reducedGraph;
+                        bestFPRate = FPRate(reducedGraph);
+                    }
+                }
+            }
+            current = bestMerged;
+        }
+        return current;
+    }
+
 
     public static void main(String[] args) throws IOException {
         DependencyGraph originalGraph;
@@ -195,17 +245,22 @@ public class DepGraphOpt {
         System.out.println(originalGraph);
 
 
-        int memoryBudget = 9;
+        int memoryBudget = 14;
         DepGraphOpt depGraphOpt = new DepGraphOpt(originalGraph);
         DependencyGraph sol = depGraphOpt.getOptimalGraph(memoryBudget);
 
 
         System.out.println("Solution");
         System.out.println("Candidates " + depGraphOpt.getCandidatesGenerated());
+        System.out.println("Graphs Explored  " + depGraphOpt.getGraphsExplored());
+
         System.out.println("Size " + sol.size() + " FP Rate " + depGraphOpt.FPRate(sol));
         System.out.println(sol);
-    }
 
+        DependencyGraph greedySol = depGraphOpt.greedyMerge(memoryBudget);
+        System.out.println("Size " + greedySol.size() + " FP Rate " + depGraphOpt.FPRate(greedySol));
+        System.out.println(greedySol);
+    }
 
 
 }

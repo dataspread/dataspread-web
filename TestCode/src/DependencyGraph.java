@@ -1,3 +1,4 @@
+import org.apache.commons.collections.comparators.ComparableComparator;
 import org.zkoss.zss.model.CellRegion;
 
 import java.util.*;
@@ -135,13 +136,16 @@ class DependencyGraph {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        for (CellRegion depends : getDependsSet()) {
-            sb.append(depends.getReferenceString())
-                    .append("->");
-            for (CellRegion dependsOn : getDependsOn(depends))
-                sb.append(dependsOn.getReferenceString()).append(' ');
-            sb.append(System.lineSeparator());
-        }
+        getDependsSet().stream()
+                .sorted((r1, r2) -> String.CASE_INSENSITIVE_ORDER
+                        .compare(r1.getReferenceString(), r2.getReferenceString()))
+                .forEach(depends -> {
+                    sb.append(depends.getReferenceString())
+                            .append("->");
+                    for (CellRegion dependsOn : getDependsOn(depends))
+                        sb.append(dependsOn.getReferenceString()).append(' ');
+                    sb.append(System.lineSeparator());
+                });
         return sb.toString();
     }
 
