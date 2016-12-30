@@ -42,7 +42,7 @@ public class DepGraphOpt {
                     FPwithinBudget = Math.min(FPRate(e), FPwithinBudget);
                     return FPRate(e) <= FPwithinBudget;
                 })
-                .min(Comparator.comparingDouble(e -> FPRate(e))).get();
+                .min(Comparator.comparingDouble(e -> FPRate(e))).orElse(null);
 
     }
 
@@ -201,11 +201,14 @@ public class DepGraphOpt {
         // Greedily merge two areas the have the least impact on FP rate.
         DependencyGraph current = originalGraph.copy();
         while (current.size() > memoryBudget) {
+            DependencyGraph bestMerged = null;
+            double bestFPRate = 1.0;
+
+            // Try merging dependsOn
             List<CellRegion> dependsOnList = current.getDependsOnSet()
                     .stream()
                     .collect(Collectors.toCollection(ArrayList::new));
-            DependencyGraph bestMerged = null;
-            double bestFPRate = 1.0;
+
             for (int i = 0; i < dependsOnList.size() - 1; ++i) {
                 for (int j = i + 1; j < dependsOnList.size(); ++j) {
                     DependencyGraph reducedGraph = current.copy();
@@ -216,6 +219,23 @@ public class DepGraphOpt {
                     }
                 }
             }
+
+            // Try merging depends
+            List<CellRegion> dependsList = current.getDependsSet()
+                    .stream()
+                    .collect(Collectors.toCollection(ArrayList::new));
+
+            for (int i = 0; i < dependsList.size() - 1; ++i) {
+                for (int j = i + 1; j < dependsList.size(); ++j) {
+                    DependencyGraph reducedGraph = current.copy();
+                    reducedGraph.mergeTwoDepends(dependsList.get(i), dependsList.get(j));
+                    if (FPRate(reducedGraph) < bestFPRate) {
+                        bestMerged = reducedGraph;
+                        bestFPRate = FPRate(reducedGraph);
+                    }
+                }
+            }
+
             current = bestMerged;
         }
         return current;
@@ -242,24 +262,30 @@ public class DepGraphOpt {
 
         }
         System.out.println("Original Graph ");
-        System.out.println(originalGraph);
+        System.out.print(originalGraph);
+        System.out.println();
 
 
-        int memoryBudget = 14;
+        int memoryBudget = 19;
         DepGraphOpt depGraphOpt = new DepGraphOpt(originalGraph);
         DependencyGraph sol = depGraphOpt.getOptimalGraph(memoryBudget);
 
+        if (sol != null) {
+            System.out.println("DP Solution");
+            System.out.println("Candidates " + depGraphOpt.getCandidatesGenerated());
+            System.out.println("Graphs Explored  " + depGraphOpt.getGraphsExplored());
 
-        System.out.println("Solution");
-        System.out.println("Candidates " + depGraphOpt.getCandidatesGenerated());
-        System.out.println("Graphs Explored  " + depGraphOpt.getGraphsExplored());
 
-        System.out.println("Size " + sol.size() + " FP Rate " + depGraphOpt.FPRate(sol));
-        System.out.println(sol);
+            System.out.println("FP Rate " + depGraphOpt.FPRate(sol));
+            System.out.println(sol);
+        }
 
         DependencyGraph greedySol = depGraphOpt.greedyMerge(memoryBudget);
-        System.out.println("Size " + greedySol.size() + " FP Rate " + depGraphOpt.FPRate(greedySol));
+        System.out.println("Greedy Solution");
+        System.out.println("FP Rate " + depGraphOpt.FPRate(greedySol));
         System.out.println(greedySol);
+
+
     }
 
 
