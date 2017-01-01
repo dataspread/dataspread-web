@@ -31,7 +31,7 @@ public class DepGraphOpt {
         this.memoryBudget = memoryBudget;
         Stream<DependencyGraph> dependencyGraphStream = StreamSupport.stream(
                 Spliterators.spliteratorUnknownSize(
-                        getAllCandidates(), Spliterator.DISTINCT), false);
+                        getAllCandidates(DependencyGraph.Side.DEPENDSON), Spliterator.DISTINCT), false);
 
         // dependencyGraphStream.forEach(e-> System.out.println(" Candidate:- " + e) );
 
@@ -52,14 +52,16 @@ public class DepGraphOpt {
         return candidatesGenerated;
     }
 
-    public Iterator<DependencyGraph> getAllCandidates() {
+    public Iterator<DependencyGraph> getAllCandidates(DependencyGraph.Side side) {
         candidatesGenerated = 0;
         graphsExplored = 0;
-        return getAllCandidates(originalGraph, true);
+        return getAllCandidates(originalGraph, side, true);
     }
 
 
-    public Iterator<DependencyGraph> getAllCandidates(DependencyGraph inputGraph, boolean outerCall) {
+    public Iterator<DependencyGraph> getAllCandidates(DependencyGraph inputGraph,
+                                                      DependencyGraph.Side side,
+                                                      boolean outerCall) {
         Iterator<DependencyGraph> dependencyGraphIterator = new Iterator<DependencyGraph>() {
             // Pull the next sub solution
             boolean pullNextSubSolution;
@@ -90,7 +92,7 @@ public class DepGraphOpt {
 
                 if (removedDependsOn != null) {
                     removedDependsSet = partial.deleteDependsOn(removedDependsOn);
-                    subSet = getAllCandidates(partial, false);
+                    subSet = getAllCandidates(partial, side, false);
                     pullNextSubSolution = true;
                     nextSolution = getNextCandidate();
                 }
@@ -266,7 +268,7 @@ public class DepGraphOpt {
         System.out.println();
 
 
-        int memoryBudget = 19;
+        int memoryBudget = 5;
         DepGraphOpt depGraphOpt = new DepGraphOpt(originalGraph);
         DependencyGraph sol = depGraphOpt.getOptimalGraph(memoryBudget);
 
@@ -284,6 +286,9 @@ public class DepGraphOpt {
         System.out.println("Greedy Solution");
         System.out.println("FP Rate " + depGraphOpt.FPRate(greedySol));
         System.out.println(greedySol);
+
+        System.out.println(greedySol.getMergeOperations());
+
 
 
     }

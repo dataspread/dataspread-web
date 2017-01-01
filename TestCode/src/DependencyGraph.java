@@ -1,3 +1,4 @@
+import org.zkoss.poi.ss.usermodel.Cell;
 import org.zkoss.zss.model.CellRegion;
 
 import java.util.*;
@@ -14,8 +15,37 @@ class DependencyGraph {
     // Ideally we do not require  a list but rather a weight or a count of formulae.
     Map<CellRegion, Set<CellRegion>> formulaMapping; // Depends -> Set of formulae
 
+    public List<MergeOperation> getMergeOperations() {
+        return Collections.unmodifiableList(mergeOperations);
+    }
+
     // To compute areas we need to keep reference to the formulae.
     // We should consider the weight of the formula.
+
+    public enum Side {DEPENDS, DEPENDSON}
+
+    class MergeOperation {
+        Side side;
+        Set<CellRegion> mergedRegions;
+
+        MergeOperation(Side side, Set<CellRegion> mergedRegions) {
+            this.side = side;
+            this.mergedRegions = mergedRegions;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append(side.name()).append(' ');
+            sb.append(mergedRegions
+                    .stream()
+                    .map(e -> e.getReferenceString())
+                    .collect(Collectors.joining(",")));
+            return sb.toString();
+        }
+    }
+
+    List<MergeOperation> mergeOperations;
 
     long dependsOnArea;
 
@@ -24,6 +54,7 @@ class DependencyGraph {
         reverseMap = new HashMap();
         formulaMapping = new HashMap<>();
         dependsOnArea = 0;
+        mergeOperations = new LinkedList<>();
     }
 
     public void put(CellRegion depends, CellRegion dependsOn) {
@@ -105,6 +136,8 @@ class DependencyGraph {
         for (CellRegion dependsOn : dependsOnSet)
             put(boundingBox, dependsOn, true);
 
+
+        mergeOperations.add(new MergeOperation(Side.DEPENDS, dependsSet));
         return boundingBox;
 
     }
@@ -125,6 +158,7 @@ class DependencyGraph {
         for (CellRegion depends : dependsSet)
             put(depends, boundingBox, true);
 
+        mergeOperations.add(new MergeOperation(Side.DEPENDSON, dependsOnSet));
         return boundingBox;
 
     }
@@ -193,6 +227,8 @@ class DependencyGraph {
                         .put(e.getKey(), e.getValue()
                                 .stream().collect(Collectors.toSet())));
 
+        newGraph.mergeOperations.addAll(mergeOperations);
+
         newGraph.dependsOnArea = dependsOnArea;
 
         return newGraph;
@@ -202,27 +238,25 @@ class DependencyGraph {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         getDependsSet().stream()
-                .sorted((r1, r2) -> String.CASE_INSENSITIVE_ORDER
-                        .compare(r1.getReferenceString(), r2.getReferenceString()))
-                .forEach(depends -> {
-                    sb.append(depends.getReferenceString())
-                            .append("->");
-                    for (CellRegion dependsOn : getDependsOn(depends))
-                        sb.append(dependsOn.getReferenceString()).append(' ');
-                    sb.append(System.lineSeparator());
-                });
+                .sorted(Comparator.comparingInt(e -> e.getRow()))
+                .forEach(depends ->
+                        sb.append(depends.getReferenceString())
+                                .append("->")
+                                .append(getDependsOn(depends)
+                                        .stream()
+                                        .map(e -> e.getReferenceString())
+                                        .collect(Collectors.joining(",")))
+                                .append(System.lineSeparator()));
 
         sb.append("Formulae Mapping\n");
-        formulaMapping.entrySet().stream().forEach(
-                e -> {
-                    sb.append(e.getKey().getReferenceString())
-                            .append("->");
-                    e.getValue().stream().forEach(
-                            f -> sb.append(f.getReferenceString())
-                                    .append(" "));
-                    sb.append(System.lineSeparator());
-                }
-        );
+        formulaMapping.entrySet().stream()
+                .sorted(Comparator.comparingInt(e -> e.getKey().getRow()))
+                .forEach(e -> sb.append(e.getKey().getReferenceString())
+                        .append("->")
+                        .append(e.getValue()
+                                .stream()
+                                .map(f -> f.getReferenceString()).collect(Collectors.joining(",")))
+                        .append(System.lineSeparator()));
         sb.append("Area:").append(area()).append(System.lineSeparator());
         sb.append("Size:").append(size()).append(System.lineSeparator());
         return sb.toString();
