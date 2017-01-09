@@ -216,8 +216,18 @@ class DependencyGraph {
 
     public CellRegion mergeTwo(Side side, CellRegion region1, CellRegion region2) {
         Set<CellRegion> toMerge = new HashSet<>();
-        toMerge.add(region1);
-        toMerge.add(region2);
+        // While merging the DEPENDS, merge everything that is within
+        // the bounding box of the two regions
+        if (side == Side.DEPENDS) {
+            CellRegion boundingBox = region1.getBoundingBox(region2);
+            forwardMap.keySet()
+                    .stream()
+                    .filter(e -> boundingBox.overlaps(e))
+                    .forEach(e -> toMerge.add(e));
+        } else {
+            toMerge.add(region1);
+            toMerge.add(region2);
+        }
         return merge(side, toMerge);
     }
 

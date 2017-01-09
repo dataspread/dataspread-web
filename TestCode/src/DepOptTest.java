@@ -34,7 +34,7 @@ public class DepOptTest {
         System.out.println();
 
 
-        int memoryBudget = 5;
+        int memoryBudget = 8;
         DepGraphOpt depGraphOpt = new DepGraphOpt();
         DependencyGraph sol = depGraphOpt.getOptimalGraph(originalGraph, memoryBudget);
 
