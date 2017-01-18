@@ -96,20 +96,23 @@ public class DepGraphOpt {
             Iterator<DependencyGraph> subSet = null;
 
             {
-                //Remove first node
-                partial = inputGraph.copy();
-                removedCellRegion = partial.getFullSet(side).stream().findAny().orElse(null);
+                if (inputGraph != null) {
+                    //Remove first node
+                    partial = inputGraph.copy();
+                    removedCellRegion = partial.getFullSet(side).stream().findAny().orElse(null);
 
-                if (removedCellRegion != null) {
-                    removedCorrespondingSet = partial.delete(side, removedCellRegion);
-                    subSet = getAllCandidates(partial, side, false);
-                    pullNextSubSolution = true;
-                    nextSolution = getNextCandidate();
+                    if (removedCellRegion != null) {
+                        removedCorrespondingSet = partial.delete(side, removedCellRegion);
+                        subSet = getAllCandidates(partial, side, false);
+                        pullNextSubSolution = true;
+                        nextSolution = getNextCandidate();
+                    } else {
+                        // Base case, empty graph.
+                        nextSolution = inputGraph;
+                    }
                 } else {
-                    // Base case, empty graph.
-                    nextSolution = inputGraph;
+                    nextSolution = null;
                 }
-
             }
 
 
@@ -213,6 +216,7 @@ public class DepGraphOpt {
         // Greedily merge two areas the have the least impact on FP rate.
         DependencyGraph current = originalGraph.copy();
         while (current.size() > memoryBudget) {
+            //System.out.println("Current Size " + current.size());
             DependencyGraph bestMerged = null;
             double bestFPRate = 1.0;
 
@@ -223,6 +227,7 @@ public class DepGraphOpt {
 
             for (int i = 0; i < dependsOnList.size() - 1; ++i) {
                 for (int j = i + 1; j < dependsOnList.size(); ++j) {
+                    //TODO:  eliminate copy
                     DependencyGraph reducedGraph = current.copy();
                     reducedGraph.mergeTwo(DependencyGraph.Side.DEPENDSON,
                             dependsOnList.get(i), dependsOnList.get(j));
@@ -240,6 +245,7 @@ public class DepGraphOpt {
 
             for (int i = 0; i < dependsList.size() - 1; ++i) {
                 for (int j = i + 1; j < dependsList.size(); ++j) {
+                    //TODO:  eliminate copy
                     DependencyGraph reducedGraph = current.copy();
                     reducedGraph.mergeTwo(DependencyGraph.Side.DEPENDS,
                             dependsList.get(i), dependsList.get(j));
