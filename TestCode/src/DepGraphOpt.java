@@ -151,7 +151,7 @@ public class DepGraphOpt {
                         else
                             solution.put(removedCellRegion, depends);
                     if (subIndex >= 0)
-                        solution.mergeTwo(side, removedCellRegion, subSolutionDependsOnList.get(subIndex));
+                        solution.reversibleMergeTwo(side, removedCellRegion, subSolutionDependsOnList.get(subIndex));
 
                     subIndex++;
 
@@ -213,49 +213,78 @@ public class DepGraphOpt {
 
     public DependencyGraph greedyMerge(DependencyGraph originalGraph, int memoryBudget) {
         this.originalGraph = originalGraph;
-        // Greedily merge two areas the have the least impact on FP rate.
+        // Greedily reversibleMerge two areas the have the least impact on FP rate.
         DependencyGraph current = originalGraph.copy();
         while (current.size() > memoryBudget) {
-            //System.out.println("Current Size " + current.size());
-            DependencyGraph bestMerged = null;
+            System.out.println("Current Size " + current.size());
+
+            // Record best merge step.
+            DependencyGraph.MergeOperation bestMerge = null;
             double bestFPRate = 1.0;
+            // Current FP rate
+            double currentFPRate = FPRate(current);
+
 
             // Try merging dependsOn
             List<CellRegion> dependsOnList = current.getFullSet(DependencyGraph.Side.DEPENDSON)
                     .stream()
                     .collect(Collectors.toCollection(ArrayList::new));
 
+            DependsOn:
             for (int i = 0; i < dependsOnList.size() - 1; ++i) {
                 for (int j = i + 1; j < dependsOnList.size(); ++j) {
-                    //TODO:  eliminate copy
-                    DependencyGraph reducedGraph = current.copy();
-                    reducedGraph.mergeTwo(DependencyGraph.Side.DEPENDSON,
+                    current.reversibleMergeTwo(DependencyGraph.Side.DEPENDSON,
                             dependsOnList.get(i), dependsOnList.get(j));
-                    if (FPRate(reducedGraph) < bestFPRate) {
-                        bestMerged = reducedGraph;
-                        bestFPRate = FPRate(reducedGraph);
+                    double reducedGraphFPRate = FPRate(current);
+                    current.reverseLastMerge();
+
+                    if (reducedGraphFPRate < bestFPRate) {
+                        Set<CellRegion> mergedRegions = new HashSet<>();
+                        mergedRegions.add(dependsOnList.get(i));
+                        mergedRegions.add(dependsOnList.get(j));
+
+                        bestMerge = new DependencyGraph.MergeOperation(DependencyGraph.Side.DEPENDSON,
+                                mergedRegions);
+                        bestFPRate = reducedGraphFPRate;
                     }
+                    if (reducedGraphFPRate == currentFPRate)
+                        break DependsOn;
                 }
             }
+
 
             // Try merging depends
             List<CellRegion> dependsList = current.getFullSet(DependencyGraph.Side.DEPENDS)
                     .stream()
                     .collect(Collectors.toCollection(ArrayList::new));
 
+            Depends:
             for (int i = 0; i < dependsList.size() - 1; ++i) {
                 for (int j = i + 1; j < dependsList.size(); ++j) {
-                    //TODO:  eliminate copy
-                    DependencyGraph reducedGraph = current.copy();
-                    reducedGraph.mergeTwo(DependencyGraph.Side.DEPENDS,
+                    current.reversibleMergeTwo(DependencyGraph.Side.DEPENDS,
                             dependsList.get(i), dependsList.get(j));
-                    if (FPRate(reducedGraph) < bestFPRate) {
-                        bestMerged = reducedGraph;
-                        bestFPRate = FPRate(reducedGraph);
+                    double reducedGraphFPRate = FPRate(current);
+                    current.reverseLastMerge();
+
+
+                    if (reducedGraphFPRate < bestFPRate) {
+                        Set<CellRegion> mergedRegions = new HashSet<>();
+                        mergedRegions.add(dependsList.get(i));
+                        mergedRegions.add(dependsList.get(j));
+
+                        bestMerge = new DependencyGraph.MergeOperation(DependencyGraph.Side.DEPENDS, mergedRegions);
+                        bestFPRate = reducedGraphFPRate;
+
                     }
+                    if (reducedGraphFPRate == currentFPRate)
+                        break Depends;
                 }
             }
-            current = bestMerged;
+
+            // Make changes
+            Iterator<CellRegion> mergedIterator = bestMerge.mergedRegions.iterator();
+            current.reversibleMergeTwo(bestMerge.side, mergedIterator.next(),
+                    mergedIterator.next());
         }
         return current;
     }

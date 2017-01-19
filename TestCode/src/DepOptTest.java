@@ -12,9 +12,10 @@ import java.sql.*;
 public class DepOptTest {
 
     public static void main(String[] args) throws IOException, SQLException, ClassNotFoundException {
+        long startTime, endTime;
         DependencyGraph originalGraph;
-        //originalGraph = getGraphFile();
-        originalGraph = getGraphDB();
+        originalGraph = getGraphFile();
+        //originalGraph = getGraphDB();
 
 
         System.out.println("Original Graph ");
@@ -22,9 +23,12 @@ public class DepOptTest {
         System.out.println();
 
 
-        int memoryBudget = 100;
+        int memoryBudget = 8;
         DepGraphOpt depGraphOpt = new DepGraphOpt();
-        DependencyGraph sol = null;//depGraphOpt.getOptimalGraph(originalGraph, memoryBudget);
+        startTime = System.currentTimeMillis();
+        DependencyGraph sol = depGraphOpt.getOptimalGraph(originalGraph, memoryBudget);
+        endTime = System.currentTimeMillis();
+        System.out.println("TIme taken " + (endTime - startTime));
 
         if (sol != null) {
             System.out.println("DP Solution");
@@ -36,10 +40,13 @@ public class DepOptTest {
             System.out.println(sol);
         }
 
+        startTime = System.currentTimeMillis();
         DependencyGraph greedySol = depGraphOpt.greedyMerge(originalGraph, memoryBudget);
+        endTime = System.currentTimeMillis();
         System.out.println("Greedy Solution");
         System.out.println("FP Rate " + depGraphOpt.FPRate(greedySol));
         System.out.println(greedySol);
+        System.out.println("TIme taken " + (endTime - startTime));
 
         System.out.println(greedySol.getMergeOperations());
 
