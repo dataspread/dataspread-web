@@ -25,7 +25,8 @@ class DependencyGraph {
     Map<CellRegion, Set<CellRegion>> mergedFormulaMapping;
     Side lastMergeSide;
 
-    CellRegion boundingBox;
+    // Merged region
+    CellRegion mergedBoundingBox;
 
 
     public DependencyGraph() {
@@ -80,10 +81,10 @@ class DependencyGraph {
     }
 
     /* Return the bounded box  */
-    public CellRegion reversibleMerge(Side side, Set<CellRegion> dependsSet) {
+    private CellRegion reversibleMerge(Side side, Set<CellRegion> dependsSet) {
         // Update graph
         Set<CellRegion> dependsOnSet = new HashSet<>();
-        boundingBox = null;
+        mergedBoundingBox = null;
         mergedRegions = new HashMap<>();
         mergedFormulaMapping = new HashMap<>();
         lastMergeSide = side;
@@ -96,10 +97,10 @@ class DependencyGraph {
             mergedRegions.put(depends, removedRegionSet);
             dependsOnSet.addAll(removedRegionSet);
 
-            if (boundingBox == null)
-                boundingBox = depends;
+            if (mergedBoundingBox == null)
+                mergedBoundingBox = depends;
             else
-                boundingBox = boundingBox.getBoundingBox(depends);
+                mergedBoundingBox = mergedBoundingBox.getBoundingBox(depends);
             if (side == Side.DEPENDS) {
                 Set<CellRegion> removedFormulaMapping = formulaMapping.remove(depends);
                 mergedFormulaMapping.put(depends, removedFormulaMapping);
@@ -109,20 +110,20 @@ class DependencyGraph {
 
         if (side == Side.DEPENDS) {
             // Update formula mapping only if merging Depends.
-            formulaMapping.put(boundingBox, formulaSet);
-            dependsOnSet.forEach(e -> put(boundingBox, e, true));
+            formulaMapping.put(mergedBoundingBox, formulaSet);
+            dependsOnSet.forEach(e -> put(mergedBoundingBox, e, true));
         } else {
-            dependsOnSet.forEach(e -> put(e, boundingBox, true));
+            dependsOnSet.forEach(e -> put(e, mergedBoundingBox, true));
         }
         mergeOperations.add(new MergeOperation(side, dependsSet));
-        return boundingBox;
+        return mergedBoundingBox;
     }
 
     public void reverseLastMerge() {
-        delete(lastMergeSide, boundingBox);
+        delete(lastMergeSide, mergedBoundingBox);
         if (lastMergeSide == Side.DEPENDS) {
             //  Revert formula mapping merge - Need to update this first as put will refer to this.
-            formulaMapping.remove(boundingBox);
+            formulaMapping.remove(mergedBoundingBox);
             mergedFormulaMapping.entrySet().forEach(e -> formulaMapping.put(e.getKey(), e.getValue()));
             mergedRegions.entrySet().forEach(e -> e.getValue().forEach(f -> put(e.getKey(), f, true)));
         } else {

@@ -14,8 +14,8 @@ public class DepOptTest {
     public static void main(String[] args) throws IOException, SQLException, ClassNotFoundException {
         long startTime, endTime;
         DependencyGraph originalGraph;
-        originalGraph = getGraphFile();
-        //originalGraph = getGraphDB();
+        //originalGraph = getGraphFile();
+        originalGraph = getGraphDB();
 
 
         System.out.println("Original Graph ");
@@ -23,10 +23,10 @@ public class DepOptTest {
         System.out.println();
 
 
-        int memoryBudget = 8;
+        int memoryBudget = 300;
         DepGraphOpt depGraphOpt = new DepGraphOpt();
         startTime = System.currentTimeMillis();
-        DependencyGraph sol = depGraphOpt.getOptimalGraph(originalGraph, memoryBudget);
+        DependencyGraph sol = null;//depGraphOpt.getOptimalGraph(originalGraph, memoryBudget);
         endTime = System.currentTimeMillis();
         System.out.println("TIme taken " + (endTime - startTime));
 
