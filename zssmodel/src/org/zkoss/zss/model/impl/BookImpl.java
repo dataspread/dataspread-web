@@ -556,15 +556,13 @@ public class BookImpl extends AbstractBookAdv{
 		{
 			String bookTable=getId();
 			String deleteSheet = "DELETE FROM " + bookTable + "_workbook WHERE sheetid = ?";
-			String deleteSheetData = "DELETE FROM " + bookTable + "_sheetdata WHERE sheetid = ?";
 			try (Connection connection = DBHandler.instance.getConnection();
-				 PreparedStatement deleteSheetstmt = connection.prepareStatement(deleteSheet);
-				 PreparedStatement deleteSheetDatastmt = connection.prepareStatement(deleteSheetData))
+				 PreparedStatement deleteSheetstmt = connection.prepareStatement(deleteSheet))
 			{
 				deleteSheetstmt.setInt(1,sheet.getDBId());
 				deleteSheetstmt.execute();
-				deleteSheetDatastmt.setInt(1,sheet.getDBId());
-				deleteSheetDatastmt.execute();
+				DBContext dbContext = new DBContext(connection);
+				sheet.deleteModel(dbContext);
 				connection.commit();
 			}
 			catch (SQLException e)
@@ -771,7 +769,7 @@ public class BookImpl extends AbstractBookAdv{
 			}
 		}
 
-		_cellStyles.addAll((Collection)stylePool.values());
+		_cellStyles.addAll(stylePool.values());
 		String key;
 		HashMap<String,SFont> fontPool = new LinkedHashMap<String,SFont>();
 

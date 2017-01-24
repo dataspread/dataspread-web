@@ -3,7 +3,6 @@ package org.zkoss.zss.model.impl;
 import org.zkoss.zss.model.CellRegion;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Reader;
 import java.util.Collection;
 
