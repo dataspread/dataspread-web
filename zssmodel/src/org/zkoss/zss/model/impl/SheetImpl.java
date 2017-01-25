@@ -340,6 +340,7 @@ public class SheetImpl extends AbstractSheetAdv {
 		try (Connection connection = DBHandler.instance.getConnection()) {
 			DBContext dbContext = new DBContext(connection);
 			dataModel = Model.CreateModel(dbContext, model);
+			connection.commit();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -443,7 +444,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	}
 
 	public int getStartRowIndex() {
-		return _rows.firstKey();
+		return 0;
 	}
 
 	public int getEndRowIndex() {
@@ -462,7 +463,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	}
 
 	public int getStartColumnIndex() {
-		return _columnArrays.size()>0?_columnArrays.firstFirstKey():-1;
+		return 0;
 	}
 
 	public int getEndColumnIndex() {

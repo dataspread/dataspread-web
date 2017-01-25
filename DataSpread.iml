@@ -23,7 +23,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="lib" level="project" />
+    <orderEntry type="library" exported="" name="lib" level="project" />
     <orderEntry type="library" name="Java EE 6-Java EE 6" level="project" />
     <orderEntry type="module" module-name="zpoi" exported="" />
     <orderEntry type="module" module-name="zss" exported="" />
@@ -31,5 +31,6 @@
     <orderEntry type="library" scope="PROVIDED" name="postgresql-9.4.1208" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="tomcat-dbcp" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="tomcat-jdbc" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="tomcat-juli" level="project" />
   </component>
 </module>
