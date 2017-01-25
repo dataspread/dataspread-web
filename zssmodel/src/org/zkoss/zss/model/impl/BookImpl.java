@@ -1101,9 +1101,11 @@ public class BookImpl extends AbstractBookAdv{
 			 ResultSet rs = stmt.executeQuery()) {
 			 while (rs.next())
 			 {
-				SSheet sheet =  createExistingSheet(rs.getString("sheetname"), rs.getInt("sheetid"));
+				 SSheet sheet = createExistingSheet(rs.getString("sheetname"), rs.getInt("sheetid"));
 				 sheet.setDataModel(rs.getString("modelname"));
 			 }
+			rs.close();
+			connection.commit();
 		}
 		catch (SQLException e)
 		{

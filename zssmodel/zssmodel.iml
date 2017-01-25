@@ -31,5 +31,7 @@
     <orderEntry type="library" name="Maven: javax.servlet:servlet-api:2.4" level="project" />
     <orderEntry type="library" name="tomcat-dbcp" level="project" />
     <orderEntry type="library" name="postgresql-9.4.1208" level="project" />
+    <orderEntry type="library" name="lib" level="project" />
+    <orderEntry type="library" name="tomcat-jdbc" level="project" />
   </component>
 </module>
