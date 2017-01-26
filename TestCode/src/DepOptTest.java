@@ -1,5 +1,3 @@
-import org.zkoss.zss.model.CellRegion;
-
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -14,19 +12,27 @@ public class DepOptTest {
     public static void main(String[] args) throws IOException, SQLException, ClassNotFoundException {
         long startTime, endTime;
         DependencyGraph originalGraph;
-        //originalGraph = getGraphFile();
-        originalGraph = getGraphDB();
+        originalGraph = getGraphFile();
+        //originalGraph = getGraphDB();
 
 
         System.out.println("Original Graph ");
         System.out.print(originalGraph);
         System.out.println();
+        ///////////////////////
+        originalGraph.reversibleMergeTwo(DependencyGraph.Side.DEPENDSON, new CellRegionRef("A1"), new CellRegionRef("A2"));
+
+        System.out.println("Merged");
+        System.out.print(originalGraph);
+        System.out.println();
 
 
-        int memoryBudget = 300;
+        ///////////////////////
+
+        int memoryBudget = 4;
         DepGraphOpt depGraphOpt = new DepGraphOpt();
         startTime = System.currentTimeMillis();
-        DependencyGraph sol = null;//depGraphOpt.getOptimalGraph(originalGraph, memoryBudget);
+        DependencyGraph sol = depGraphOpt.getOptimalGraph(originalGraph, memoryBudget);
         endTime = System.currentTimeMillis();
         System.out.println("TIme taken " + (endTime - startTime));
 
@@ -67,8 +73,8 @@ public class DepOptTest {
             String tokens[] = formula[1].split("[ \t*+-/()<>!,]");
             for (String token : tokens)
                 if (token.matches("[A-Z]+[0-9]+:[A-Z]+[0-9]+") || token.matches("[A-Z]+[0-9]+"))
-                    dependencyGraph.put(new CellRegion(formula[0]),
-                            new CellRegion(token));
+                    dependencyGraph.put(new CellRegionRef(formula[0]),
+                            new CellRegionRef(token));
 
         }
         return dependencyGraph;
@@ -97,9 +103,9 @@ public class DepOptTest {
                 String tokens[] = formula.split("[ \t*+-/()<>!,]");
                 for (String token : tokens)
                     if (token.matches("[A-Z]+[0-9]+:[A-Z]+[0-9]+") || token.matches("[A-Z]+[0-9]+"))
-                        dependencyGraph.put(new CellRegion(rs.getInt("row")
+                        dependencyGraph.put(new CellRegionRef(rs.getInt("row")
                                         , rs.getInt("col")),
-                                new CellRegion(token));
+                                new CellRegionRef(token));
             }
         }
         return dependencyGraph;

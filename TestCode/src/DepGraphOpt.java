@@ -1,5 +1,3 @@
-import org.zkoss.zss.model.CellRegion;
-
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -79,14 +77,14 @@ public class DepGraphOpt {
             int subIndex;
 
             DependencyGraph subSolution;
-            List<CellRegion> subSolutionDependsOnList;
+            List<CellRegionRef> subSolutionDependsOnList;
 
             // This is the graph with one node removed
             DependencyGraph partial;
 
             // Removed nodes.
-            CellRegion removedCellRegion = null;    //  DependsOn / Depends
-            Set<CellRegion> removedCorrespondingSet = null;   // removedCorrespondingSet  / removedDependsOnSet
+            CellRegionRef removedCellRegionRef = null;    //  DependsOn / Depends
+            Set<CellRegionRef> removedCorrespondingSet = null;   // removedCorrespondingSet  / removedDependsOnSet
 
 
             // Next solution to return.
@@ -99,10 +97,10 @@ public class DepGraphOpt {
                 if (inputGraph != null) {
                     //Remove first node
                     partial = inputGraph.copy();
-                    removedCellRegion = partial.getFullSet(side).stream().findAny().orElse(null);
+                    removedCellRegionRef = partial.getFullSet(side).stream().findAny().orElse(null);
 
-                    if (removedCellRegion != null) {
-                        removedCorrespondingSet = partial.delete(side, removedCellRegion);
+                    if (removedCellRegionRef != null) {
+                        removedCorrespondingSet = partial.delete(side, removedCellRegionRef);
                         subSet = getAllCandidates(partial, side, false);
                         pullNextSubSolution = true;
                         nextSolution = getNextCandidate();
@@ -128,7 +126,7 @@ public class DepGraphOpt {
                         if (subSet.hasNext()) {
                             subSolution = subSet.next();
 
-                            //TODO: Get a list based on distance from removedCellRegion
+                            //TODO: Get a list based on distance from removedCellRegionRef
                             subSolutionDependsOnList = subSolution.getFullSet(side)
                                     .stream()
                                     //The order here is important as it can reduce the number of candidates.
@@ -145,13 +143,13 @@ public class DepGraphOpt {
                     }
 
                     DependencyGraph solution = subSolution.copy();
-                    for (CellRegion depends : removedCorrespondingSet)
+                    for (CellRegionRef depends : removedCorrespondingSet)
                         if (side == DependencyGraph.Side.DEPENDSON)
-                            solution.put(depends, removedCellRegion);
+                            solution.put(depends, removedCellRegionRef);
                         else
-                            solution.put(removedCellRegion, depends);
+                            solution.put(removedCellRegionRef, depends);
                     if (subIndex >= 0)
-                        solution.reversibleMergeTwo(side, removedCellRegion, subSolutionDependsOnList.get(subIndex));
+                        solution.reversibleMergeTwo(side, removedCellRegionRef, subSolutionDependsOnList.get(subIndex));
 
                     subIndex++;
 
@@ -177,15 +175,12 @@ public class DepGraphOpt {
                 // This FP rate is for the sub solution,
                 //      while comparing it with the original graph.
                 // FPWithinBudget - The best complete solution seen till now.
-                if (FPRate(solution) > FPWithinBudget)
-                    return false;
-
-                return true;
+                return !(FPRate(solution) > FPWithinBudget);
             }
 
             @Override
             public boolean hasNext() {
-                return nextSolution == null ? false : true;
+                return nextSolution != null;
             }
 
             @Override
@@ -233,7 +228,7 @@ public class DepGraphOpt {
 
             for (DependencyGraph.Side side : sides) {
                 // Try merging dependsOn
-                List<CellRegion> dependsOnList = current.getFullSet(side)
+                List<CellRegionRef> dependsOnList = current.getFullSet(side)
                         .stream()
                         .collect(Collectors.toCollection(ArrayList::new));
 
@@ -246,7 +241,7 @@ public class DepGraphOpt {
                         current.reverseLastMerge();
 
                         if (reducedGraphFPRate < bestFPRate) {
-                            Set<CellRegion> mergedRegions = new HashSet<>();
+                            Set<CellRegionRef> mergedRegions = new HashSet<>();
                             mergedRegions.add(dependsOnList.get(i));
                             mergedRegions.add(dependsOnList.get(j));
 
@@ -261,7 +256,7 @@ public class DepGraphOpt {
             }
 
             // Make changes
-            Iterator<CellRegion> mergedIterator = bestMerge.mergedRegions.iterator();
+            Iterator<CellRegionRef> mergedIterator = bestMerge.mergedRegions.iterator();
             current.reversibleMergeTwo(bestMerge.side, mergedIterator.next(),
                     mergedIterator.next());
         }
