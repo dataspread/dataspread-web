@@ -7,7 +7,6 @@ class DependencyGraph {
     Map<CellRegionRef, Set<CellRegionRef>> forwardMap; //Depends -> DependOn
     Map<CellRegionRef, Set<CellRegionRef>> reverseMap; // DependsOn -> Depends
 
-
     // To maintain the formulae corresponding to the each Depends.
     // Ideally we do not require  a list but rather a weight or a count of formulae.
     Map<CellRegionRef, Set<CellRegionRef>> formulaMapping; // Depends -> Set of formulae
@@ -16,16 +15,6 @@ class DependencyGraph {
     // To compute areas we need to keep reference to the formulae.
     // We should consider the weight of the formula.
     long dependsOnArea;
-
-    // Remember last merge operation
-    //Set<CellRegionRef> mergedRegions;
-    Map<CellRegionRef, Set<CellRegionRef>> mergedRegions;
-    Map<CellRegionRef, Set<CellRegionRef>> mergedFormulaMapping;
-    Side lastMergeSide;
-
-    // Merged region
-    CellRegionRef mergedBoundingBox;
-
 
     public DependencyGraph() {
         forwardMap = new HashMap();
@@ -36,27 +25,25 @@ class DependencyGraph {
     }
 
     public List<MergeOperation> getMergeOperations() {
-        return Collections.unmodifiableList(mergeOperations);
+        return Collections.unmodifiableList((List) mergeOperations);
     }
 
     public void put(CellRegionRef depends, CellRegionRef dependsOn) {
-        put(depends, dependsOn, false);
+        // If the regions are single celled, we mark them as one to one.
+        // Later on grouping has to decide on the relation
+        if (depends.isSingle() && dependsOn.isSingle()) {
+            depends.refType = dependsOn.refType
+                    = CellRegionRef.RefType.One2One;
+        }
+        put(depends, dependsOn, false, depends.refType);
     }
 
-    private void put(CellRegionRef depends, CellRegionRef dependsOn, boolean isMerge) {
-        Set<CellRegionRef> values = forwardMap.get(depends);
-        if (values == null) {
-            values = new HashSet();
-            forwardMap.put(depends, values);
-        }
-        values.add(dependsOn);
+    private void put(CellRegionRef depends, CellRegionRef dependsOn, boolean isMerge, CellRegionRef.RefType refType) {
 
-        Set<CellRegionRef> keys = reverseMap.get(dependsOn);
-        if (keys == null) {
-            keys = new HashSet();
-            reverseMap.put(dependsOn, keys);
-        }
-        keys.add(depends);
+
+        forwardMap.computeIfAbsent(depends, e -> new HashSet<>()).add(dependsOn);
+        reverseMap.computeIfAbsent(dependsOn, e -> new HashSet<>()).add(depends);
+
         // If this is not a reversibleMerge update formulae map.
         if (!isMerge) {
             Set<CellRegionRef> dependsSet = new HashSet<>();
@@ -64,8 +51,8 @@ class DependencyGraph {
             formulaMapping.put(depends, dependsSet);
         }
         // For one to one do we do not need to consider the formula
-        if (dependsOn.refType == CellRegionRef.RefType.One2One)
-            dependsOnArea += dependsOn.getCellCount();
+        if (refType == CellRegionRef.RefType.One2One)
+            dependsOnArea += formulaMapping.get(depends).size();
         else
             dependsOnArea += formulaMapping.get(depends).size() * dependsOn.getCellCount();
     }
@@ -83,14 +70,17 @@ class DependencyGraph {
     }
 
     /* Return the bounded box  */
-    private CellRegionRef reversibleMerge(Side side, Set<CellRegionRef> dependsSet) {
+    private CellRegionRef reversibleMerge(Side side, Set<CellRegionRef> dependsSet, CellRegionRef.RefType refType) {
         // Update graph
         Set<CellRegionRef> dependsOnSet = new HashSet<>();
-        mergedBoundingBox = null;
-        mergedRegions = new HashMap<>();
-        mergedFormulaMapping = new HashMap<>();
-        lastMergeSide = side;
 
+        //Set<CellRegionRef> mergedRegions;
+        Map<CellRegionRef, Set<CellRegionRef>> mergedRegions = new HashMap<>();
+        Map<CellRegionRef, Set<CellRegionRef>> mergedFormulaMapping = new HashMap<>();
+
+        // Merged region
+        CellRegionRef boundingBox = dependsSet.stream().reduce((a, b) -> a.getBoundingBox(b)).get();
+        boundingBox.refType = refType;
         Set<CellRegionRef> formulaSet = new HashSet<>();
 
         for (CellRegionRef depends : dependsSet) {
@@ -99,10 +89,6 @@ class DependencyGraph {
             mergedRegions.put(depends, removedRegionSet);
             dependsOnSet.addAll(removedRegionSet);
 
-            if (mergedBoundingBox == null)
-                mergedBoundingBox = depends;
-            else
-                mergedBoundingBox = mergedBoundingBox.getBoundingBox(depends);
             if (side == Side.DEPENDS) {
                 Set<CellRegionRef> removedFormulaMapping = formulaMapping.remove(depends);
                 mergedFormulaMapping.put(depends, removedFormulaMapping);
@@ -112,26 +98,36 @@ class DependencyGraph {
 
         if (side == Side.DEPENDS) {
             // Update formula mapping only if merging Depends.
-            formulaMapping.put(mergedBoundingBox, formulaSet);
-            dependsOnSet.forEach(e -> put(mergedBoundingBox, e, true));
+            formulaMapping.put(boundingBox, formulaSet);
+            dependsOnSet.forEach(e -> put(boundingBox, e, true, refType));
         } else {
-            dependsOnSet.forEach(e -> put(e, mergedBoundingBox, true));
+            dependsOnSet.forEach(e -> put(e, boundingBox, true, refType));
         }
-        mergeOperations.add(new MergeOperation(side, dependsSet));
-        return mergedBoundingBox;
+        mergeOperations.add(new MergeOperation(side, mergedRegions, mergedFormulaMapping, boundingBox));
+        return boundingBox;
     }
 
     public void reverseLastMerge() {
-        delete(lastMergeSide, mergedBoundingBox);
-        if (lastMergeSide == Side.DEPENDS) {
+        MergeOperation lastMerge = mergeOperations.removeLast();
+
+        delete(lastMerge.side, lastMerge.boundingBox);
+        if (lastMerge.side == Side.DEPENDS) {
+            // System.out.println("Reversing " + lastMerge.boundingBox + " " + lastMerge.mergedRegions.entrySet() );
+
             //  Revert formula mapping merge - Need to update this first as put will refer to this.
-            formulaMapping.remove(mergedBoundingBox);
-            mergedFormulaMapping.entrySet().forEach(e -> formulaMapping.put(e.getKey(), e.getValue()));
-            mergedRegions.entrySet().forEach(e -> e.getValue().forEach(f -> put(e.getKey(), f, true)));
+            formulaMapping.remove(lastMerge.boundingBox);
+            lastMerge.mergedFormulaMapping.entrySet()
+                    .forEach(e -> formulaMapping.put(e.getKey(), e.getValue()));
+
+
+            lastMerge.mergedRegions.entrySet()
+                    .forEach(e -> e.getValue().forEach(f -> put(e.getKey(), f, true,
+                            lastMerge.boundingBox.refType)));
         } else {
-            mergedRegions.entrySet().forEach(e -> e.getValue().forEach(f -> put(f, e.getKey(), true)));
+            lastMerge.mergedRegions.entrySet()
+                    .forEach(e -> e.getValue().forEach(f -> put(f, e.getKey(), true,
+                            lastMerge.boundingBox.refType)));
         }
-        mergeOperations.removeLast();
 
     }
 
@@ -144,22 +140,29 @@ class DependencyGraph {
 
     }
 
-    public Set<CellRegionRef> delete(Side side, CellRegionRef CellRegionRef) {
+    public Set<CellRegionRef> delete(Side side, CellRegionRef cellRegionRef) {
         if (side == Side.DEPENDS) {
-            Set<CellRegionRef> dependsOnSet = forwardMap.remove(CellRegionRef);
-            dependsOnSet.stream().forEach(e -> {
-                removeValue(reverseMap, e, CellRegionRef);
-                dependsOnArea -= e.getCellCount() * formulaMapping.get(CellRegionRef).size();
+            Set<CellRegionRef> dependsOnSet = forwardMap.remove(cellRegionRef);
+            dependsOnSet.forEach(e -> {
+                removeValue(reverseMap, e, cellRegionRef);
+
+                if (e.refType == CellRegionRef.RefType.One2One)
+                    dependsOnArea -= formulaMapping.get(cellRegionRef).size();
+                else
+                    dependsOnArea -= e.getCellCount() * formulaMapping.get(cellRegionRef).size();
             });
             return dependsOnSet;
         } else {
-            Set<CellRegionRef> dependsSet = reverseMap.remove(CellRegionRef);
-            dependsSet.stream().forEach(e ->
+            Set<CellRegionRef> dependsSet = reverseMap.remove(cellRegionRef);
+            dependsSet.forEach(e ->
             {
-                removeValue(forwardMap, e, CellRegionRef);
+                removeValue(forwardMap, e, cellRegionRef);
                 // Right now we consider each formulae as one.
                 // Might be we can add weights later on.
-                dependsOnArea -= CellRegionRef.getCellCount() * formulaMapping.get(e).size();
+                if (cellRegionRef.refType == CellRegionRef.RefType.One2One)
+                    dependsOnArea -= formulaMapping.get(e).size();
+                else
+                    dependsOnArea -= cellRegionRef.getCellCount() * formulaMapping.get(e).size();
             });
             return dependsSet;
         }
@@ -169,20 +172,17 @@ class DependencyGraph {
     public DependencyGraph copy() {
         DependencyGraph newGraph = new DependencyGraph();
         forwardMap.entrySet()
-                .stream()
                 .forEach(e -> newGraph.forwardMap
                         .put(e.getKey(), e.getValue()
                                 .stream().collect(Collectors.toSet())));
 
         reverseMap.entrySet()
-                .stream()
                 .forEach(e -> newGraph.reverseMap
                         .put(e.getKey(), e.getValue()
                                 .stream().collect(Collectors.toSet())));
 
 
         formulaMapping.entrySet()
-                .stream()
                 .forEach(e -> newGraph.formulaMapping
                         .put(e.getKey(), e.getValue()
                                 .stream().collect(Collectors.toSet())));
@@ -203,7 +203,8 @@ class DependencyGraph {
                                 .append("->")
                                 .append(forwardMap.get(depends)
                                         .stream()
-                                        .map(e -> e.getReferenceString())
+                                        .map(e -> e.getReferenceString()
+                                                + (e.refType == CellRegionRef.RefType.One2One ? "*" : ""))
                                         .collect(Collectors.joining(",")))
                                 .append(System.lineSeparator()));
 
@@ -214,7 +215,8 @@ class DependencyGraph {
                         .append("->")
                         .append(e.getValue()
                                 .stream()
-                                .map(f -> f.getReferenceString()).collect(Collectors.joining(",")))
+                                .map(f -> f.getReferenceString())
+                                .collect(Collectors.joining(",")))
                         .append(System.lineSeparator()));
         sb.append("Area:").append(area()).append(System.lineSeparator());
         sb.append("Size: Depends: ")
@@ -243,7 +245,74 @@ class DependencyGraph {
                 reverseMap.values().stream().mapToInt(e -> e.size()).sum();
     }
 
+    // Returns true - if merge is successful, else false.
+    private boolean mergeOne2One(CellRegionRef region1, CellRegionRef region2) {
+        MergeType mergeType = MergeType.Invalid;
+        int r1Rows = -1, r2Rows = -1;
+        int r1Columns = -1, r2Columns = -1;
+
+        // If columns match, their lengths should be same
+        if (region1.getColumn() == region2.getColumn() &&
+                region1.getLastColumn() == region2.getLastColumn()) {
+            mergeType = MergeType.Vertical;
+            r1Rows = region1.getRowCount();
+            r2Rows = region2.getRowCount();
+        }
+
+        if (region1.getRow() == region2.getRow() &&
+                region1.getLastRow() == region2.getLastRow()) {
+            mergeType = MergeType.Horizontal;
+            r1Columns = region1.getColumnCount();
+            r2Columns = region2.getColumnCount();
+        }
+
+        if (mergeType == MergeType.Invalid)
+            return false;
+
+        // Check for the dependsOn to merge corresponding areas.
+        LinkedList<CellRegionRef> r1DependsOn = forwardMap.get(region1)
+                .stream()
+                .filter(e -> e.refType == CellRegionRef.RefType.One2One)
+                .collect(Collectors.toCollection(LinkedList::new));
+
+        LinkedList<CellRegionRef> r2DependsOn = forwardMap.get(region2)
+                .stream()
+                .filter(e -> e.refType == CellRegionRef.RefType.One2One)
+                .collect(Collectors.toCollection(LinkedList::new));
+
+        //System.out.println("Merge One 2 One " + region1.getReferenceString() + " " + region2.getReferenceString());
+        for (CellRegionRef r1 : r1DependsOn) {
+            for (CellRegionRef r2 : r2DependsOn) {
+                if ((mergeType == MergeType.Vertical &&
+                        r1.getColumn() == r2.getColumn() &&
+                        r1.getLastColumn() == r2.getLastColumn() &&
+                        r1.getRow() != r2.getRow() &&
+                        r1.getRowCount() == r1Rows &&
+                        r2.getRowCount() == r2Rows)
+                        ||
+                        (mergeType == MergeType.Horizontal &&
+                                r1.getRow() == r2.getRow() &&
+                                r1.getLastRow() == r2.getLastRow()) &&
+                                r1.getColumn() != r2.getColumn() &&
+                                r1.getColumnCount() == r1Columns &&
+                                r2.getColumnCount() == r2Columns) {
+                    reversibleMergeTwo(Side.DEPENDSON, r1, r2, CellRegionRef.RefType.One2One)
+                            .refType = CellRegionRef.RefType.One2One;
+                    //System.out.println("   Sub merge  " + r1.getReferenceString() + " " + r2.getReferenceString());
+
+                }
+            }
+        }
+        return true;
+    }
+
     public CellRegionRef reversibleMergeTwo(Side side, CellRegionRef region1, CellRegionRef region2) {
+        return reversibleMergeTwo(side, region1, region2, CellRegionRef.RefType.One2Many);
+    }
+
+    private CellRegionRef reversibleMergeTwo(Side side, CellRegionRef region1, CellRegionRef region2,
+                                             CellRegionRef.RefType refType) {
+
         Set<CellRegionRef> toMerge = new HashSet<>();
         // While merging the DEPENDS, reversibleMerge everything that is within
         // the bounding box of the two regions
@@ -253,31 +322,49 @@ class DependencyGraph {
                     .stream()
                     .filter(e -> boundingBox.overlaps(e))
                     .forEach(e -> toMerge.add(e));
+
+            //////////// One to One merge  ////////
+            // Handle simple case of merging two nearby regions.
+            // Might be this merge is not reversible.
+            if (toMerge.size() == 2)
+                if (mergeOne2One(region1, region2))
+                    refType = CellRegionRef.RefType.One2One;
+            ///////////////////////////////////////
+
         } else {
             toMerge.add(region1);
             toMerge.add(region2);
         }
-        return reversibleMerge(side, toMerge);
+        return reversibleMerge(side, toMerge, refType);
     }
+
+    enum MergeType {Invalid, Vertical, Horizontal}
 
     public enum Side {DEPENDS, DEPENDSON}
 
     static class MergeOperation {
         Side side;
-        Set<CellRegionRef> mergedRegions;
+        Map<CellRegionRef, Set<CellRegionRef>> mergedRegions;
+        Map<CellRegionRef, Set<CellRegionRef>> mergedFormulaMapping;
+        CellRegionRef boundingBox;
 
-        MergeOperation(Side side, Set<CellRegionRef> mergedRegions) {
+
+        MergeOperation(Side side, Map<CellRegionRef, Set<CellRegionRef>> mergedRegions,
+                       Map<CellRegionRef, Set<CellRegionRef>> mergedFormulaMapping,
+                       CellRegionRef boundingBox) {
             this.side = side;
             this.mergedRegions = mergedRegions;
+            this.mergedFormulaMapping = mergedFormulaMapping;
+            this.boundingBox = boundingBox;
         }
 
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append(side.name()).append(' ');
-            sb.append(mergedRegions
+            sb.append(mergedRegions.entrySet()
                     .stream()
-                    .map(e -> e.getReferenceString())
+                    .map(e -> e.toString())
                     .collect(Collectors.joining(",")));
             return sb.toString();
         }

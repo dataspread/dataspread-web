@@ -29,10 +29,10 @@ public class DepGraphOpt {
                 .mapToObj(e ->
                         getOptimalGraph(
                                 getOptimalGraph(this.originalGraph, e,
-                                        DependencyGraph.Side.DEPENDSON)
+                                        DependencyGraph.Side.DEPENDS)
                                         .orElse(null),
                                 memoryBudget - e,
-                                DependencyGraph.Side.DEPENDS)
+                                DependencyGraph.Side.DEPENDSON)
                                 .orElse(null))
                 .filter(Objects::nonNull)
                 .min(Comparator.comparingDouble(e -> FPRate(e)))
@@ -219,7 +219,8 @@ public class DepGraphOpt {
                     + " %");
 
             // Record best merge step.
-            DependencyGraph.MergeOperation bestMerge = null;
+            CellRegionRef bestMergeRegion[] = new CellRegionRef[2];
+            DependencyGraph.Side bestMergeSide = null;
             double bestFPRate = 1.0;
             // Current FP rate
             double currentFPRate = FPRate(current);
@@ -235,19 +236,18 @@ public class DepGraphOpt {
                 DependsOn:
                 for (int i = 0; i < dependsOnList.size() - 1; ++i) {
                     for (int j = i + 1; j < dependsOnList.size(); ++j) {
+                        int mergeLength = current.getMergeOperations().size();
                         current.reversibleMergeTwo(side,
                                 dependsOnList.get(i), dependsOnList.get(j));
                         double reducedGraphFPRate = FPRate(current);
-                        current.reverseLastMerge();
+                        while (current.getMergeOperations().size() > mergeLength)
+                            current.reverseLastMerge();
 
                         if (reducedGraphFPRate < bestFPRate) {
-                            Set<CellRegionRef> mergedRegions = new HashSet<>();
-                            mergedRegions.add(dependsOnList.get(i));
-                            mergedRegions.add(dependsOnList.get(j));
-
-                            bestMerge = new DependencyGraph.MergeOperation(side,
-                                    mergedRegions);
+                            bestMergeRegion[0] = dependsOnList.get(i);
+                            bestMergeRegion[1] = dependsOnList.get(j);
                             bestFPRate = reducedGraphFPRate;
+                            bestMergeSide = side;
                         }
                         if (reducedGraphFPRate == currentFPRate)
                             break DependsOn;
@@ -255,10 +255,10 @@ public class DepGraphOpt {
                 }
             }
 
+            //System.out.println("Current Size" + current.size());
             // Make changes
-            Iterator<CellRegionRef> mergedIterator = bestMerge.mergedRegions.iterator();
-            current.reversibleMergeTwo(bestMerge.side, mergedIterator.next(),
-                    mergedIterator.next());
+            if (bestMergeSide != null)
+                current.reversibleMergeTwo(bestMergeSide, bestMergeRegion[0], bestMergeRegion[1]);
         }
         System.out.println();
         return current;

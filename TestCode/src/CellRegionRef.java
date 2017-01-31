@@ -4,8 +4,6 @@ import org.zkoss.zss.model.CellRegion;
  * Created by Mangesh on 1/25/2017.
  */
 public class CellRegionRef extends CellRegion {
-    public enum RefType {One2One, One2Many}
-
     public RefType refType;
 
     public CellRegionRef(int row, int column) {
@@ -20,13 +18,23 @@ public class CellRegionRef extends CellRegion {
         super(row, column, lastRow, lastColumn);
     }
 
+    public RefType getRefType() {
+        return refType;
+    }
+
+    public void setRefType(RefType refType) {
+        this.refType = refType;
+    }
+
     public CellRegionRef getBoundingBox(CellRegionRef cellRegionRef2) {
         CellRegion boundingBox = super.getBoundingBox(cellRegionRef2);
         CellRegionRef cellRegionRef = new CellRegionRef(boundingBox.row, boundingBox.column,
                 boundingBox.lastRow, boundingBox.lastColumn);
-        cellRegionRef.refType = refType == RefType.One2One
-                && cellRegionRef2.refType == RefType.One2One
-                ? RefType.One2One : RefType.One2Many;
+        // By default merge results in a many to many
+        // Update later on if merge results in a one to one.
+        cellRegionRef.refType = RefType.One2Many;
         return cellRegionRef;
     }
+
+    public enum RefType {One2One, One2Many}
 }
