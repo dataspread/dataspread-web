@@ -145,9 +145,9 @@ public class DepGraphOpt {
                     DependencyGraph solution = subSolution.copy();
                     for (CellRegionRef depends : removedCorrespondingSet)
                         if (side == DependencyGraph.Side.DEPENDSON)
-                            solution.put(depends, removedCellRegionRef);
+                            solution.put(depends, removedCellRegionRef, true);
                         else
-                            solution.put(removedCellRegionRef, depends);
+                            solution.put(removedCellRegionRef, depends, true);
                     if (subIndex >= 0)
                         solution.reversibleMergeTwo(side, removedCellRegionRef, subSolutionDependsOnList.get(subIndex));
 
@@ -225,7 +225,7 @@ public class DepGraphOpt {
             // Current FP rate
             double currentFPRate = FPRate(current);
 
-            DependencyGraph.Side sides[] = {DependencyGraph.Side.DEPENDSON, DependencyGraph.Side.DEPENDS};
+            DependencyGraph.Side sides[] = {DependencyGraph.Side.DEPENDS, DependencyGraph.Side.DEPENDSON};
 
             for (DependencyGraph.Side side : sides) {
                 // Try merging dependsOn

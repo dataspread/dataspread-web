@@ -29,13 +29,17 @@ class DependencyGraph {
     }
 
     public void put(CellRegionRef depends, CellRegionRef dependsOn) {
+        put(depends, dependsOn, false);
+    }
+
+    public void put(CellRegionRef depends, CellRegionRef dependsOn, boolean isMerge) {
         // If the regions are single celled, we mark them as one to one.
         // Later on grouping has to decide on the relation
         if (depends.isSingle() && dependsOn.isSingle()) {
             depends.refType = dependsOn.refType
                     = CellRegionRef.RefType.One2One;
         }
-        put(depends, dependsOn, false, depends.refType);
+        put(depends, dependsOn, isMerge, depends.refType);
     }
 
     private void put(CellRegionRef depends, CellRegionRef dependsOn, boolean isMerge, CellRegionRef.RefType refType) {
@@ -104,6 +108,7 @@ class DependencyGraph {
             dependsOnSet.forEach(e -> put(e, boundingBox, true, refType));
         }
         mergeOperations.add(new MergeOperation(side, mergedRegions, mergedFormulaMapping, boundingBox));
+
         return boundingBox;
     }
 

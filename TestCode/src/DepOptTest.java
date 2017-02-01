@@ -20,17 +20,28 @@ public class DepOptTest {
         System.out.print(originalGraph);
         System.out.println();
         ///////////////////////
-        //originalGraph.reversibleMergeTwo(DependencyGraph.Side.DEPENDS, new CellRegionRef("C1"), new CellRegionRef("C2"));
-        //originalGraph.reversibleMergeTwo(DependencyGraph.Side.DEPENDS, new CellRegionRef("C1:C2"), new CellRegionRef("C3"));
+        originalGraph.reversibleMergeTwo(DependencyGraph.Side.DEPENDS, new CellRegionRef("C1"), new CellRegionRef("C3"));
+        // originalGraph.reversibleMergeTwo(DependencyGraph.Side.DEPENDS, new CellRegionRef("C1:C2"), new CellRegionRef("C3"));
+
 
         System.out.println("Merged");
+        System.out.print(originalGraph);
+        System.out.println();
+
+        originalGraph.reverseLastMerge();
+        //originalGraph.reverseLastMerge();
+        // originalGraph.reverseLastMerge();
+        // originalGraph.reverseLastMerge();
+
+
+        System.out.println("final");
         System.out.print(originalGraph);
         System.out.println();
 
 
         ///////////////////////
 
-        int memoryBudget = 12;
+        int memoryBudget = 8;
         DepGraphOpt depGraphOpt = new DepGraphOpt();
         startTime = System.currentTimeMillis();
         DependencyGraph sol = depGraphOpt.getOptimalGraph(originalGraph, memoryBudget);
