@@ -19,29 +19,8 @@ public class DepOptTest {
         System.out.println("Original Graph ");
         System.out.print(originalGraph);
         System.out.println();
-        ///////////////////////
-        originalGraph.reversibleMergeTwo(DependencyGraph.Side.DEPENDS, new CellRegionRef("C1"), new CellRegionRef("C3"));
-        // originalGraph.reversibleMergeTwo(DependencyGraph.Side.DEPENDS, new CellRegionRef("C1:C2"), new CellRegionRef("C3"));
 
-
-        System.out.println("Merged");
-        System.out.print(originalGraph);
-        System.out.println();
-
-        originalGraph.reverseLastMerge();
-        //originalGraph.reverseLastMerge();
-        // originalGraph.reverseLastMerge();
-        // originalGraph.reverseLastMerge();
-
-
-        System.out.println("final");
-        System.out.print(originalGraph);
-        System.out.println();
-
-
-        ///////////////////////
-
-        int memoryBudget = 8;
+        int memoryBudget = 5;
         DepGraphOpt depGraphOpt = new DepGraphOpt();
         startTime = System.currentTimeMillis();
         DependencyGraph sol = depGraphOpt.getOptimalGraph(originalGraph, memoryBudget);
@@ -64,9 +43,9 @@ public class DepOptTest {
         System.out.println("Greedy Solution");
         System.out.println("FP Rate " + depGraphOpt.FPRate(greedySol));
         System.out.println(greedySol);
-        System.out.println("TIme taken " + (endTime - startTime));
+        System.out.println("Time taken " + (endTime - startTime));
 
-        System.out.println(greedySol.getMergeOperations());
+        //System.out.println(greedySol.getMergeOperations());
 
     }
 

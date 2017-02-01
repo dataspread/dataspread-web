@@ -236,6 +236,7 @@ public class DepGraphOpt {
                 DependsOn:
                 for (int i = 0; i < dependsOnList.size() - 1; ++i) {
                     for (int j = i + 1; j < dependsOnList.size(); ++j) {
+
                         int mergeLength = current.getMergeOperations().size();
                         current.reversibleMergeTwo(side,
                                 dependsOnList.get(i), dependsOnList.get(j));
@@ -255,7 +256,6 @@ public class DepGraphOpt {
                 }
             }
 
-            //System.out.println("Current Size" + current.size());
             // Make changes
             if (bestMergeSide != null)
                 current.reversibleMergeTwo(bestMergeSide, bestMergeRegion[0], bestMergeRegion[1]);
