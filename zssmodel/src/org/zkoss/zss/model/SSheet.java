@@ -412,6 +412,11 @@ public interface SSheet {
 	 */
 	void createModel(DBContext dbContext, String modelName);
 
+    /**
+     * Create a model for the sheet
+     */
+    void deleteModel(DBContext dbContext);
+
 	/**
 	 * Add a new table
 	 * @param table

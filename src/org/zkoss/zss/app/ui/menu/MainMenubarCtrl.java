@@ -11,7 +11,6 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.app.ui.menu;
 
-import java.util.Date;
 import org.zkoss.lang.Library;
 import org.zkoss.util.resource.Labels;
 import org.zkoss.zk.ui.Component;
@@ -23,8 +22,8 @@ import org.zkoss.zk.ui.select.annotation.Wire;
 import org.zkoss.zk.ui.util.Clients;
 import org.zkoss.zss.api.model.Sheet;
 import org.zkoss.zss.app.BookInfo;
-import org.zkoss.zss.app.ui.CtrlBase;
 import org.zkoss.zss.app.ui.AppEvts;
+import org.zkoss.zss.app.ui.CtrlBase;
 import org.zkoss.zss.app.ui.UiUtil;
 import org.zkoss.zss.ui.Spreadsheet;
 import org.zkoss.zss.ui.Version;
@@ -32,6 +31,8 @@ import org.zkoss.zss.ui.sys.UndoableActionManager;
 import org.zkoss.zul.Menu;
 import org.zkoss.zul.Menubar;
 import org.zkoss.zul.Menuitem;
+
+import java.util.Date;
 /**
  * 
  * @author dennis
@@ -43,12 +44,8 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 	 * 
 	 */
 	private static final long serialVersionUID = 7588544342697212954L;
-
-	public MainMenubarCtrl() {
-		super(true);
-	}
-	
-	@Wire
+    private static final String ZSS_PREFIX = "DataSpread ";
+    @Wire
 	Menuitem newFile;
 	@Wire
 	Menuitem openManageFile;
@@ -94,10 +91,12 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 	Menu freezeCols;
 	@Wire
 	Menu insertMenu;
-	
-	private static final String ZSS_PREFIX = "DataSpread ";
-	
-	@Override
+
+    public MainMenubarCtrl() {
+        super(true);
+    }
+
+    @Override
 	public void doAfterCompose(Menubar comp) throws Exception {
 		super.doAfterCompose(comp);
 	}
@@ -159,9 +158,9 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 		shareBook.setDisabled(!isEE || collabDisabled == Boolean.TRUE);
 		
 		// set about url
-		about.setHref(Library.getProperty("zssapp.menu.about.url", "http://www.zkoss.org/product/zkspreadsheet"));
-		
-		// zss title
+        about.setHref(Library.getProperty("zssapp.menu.about.url", "http://dataspread.github.io"));
+
+        // zss title
 		if(evalOnly == null) 
 			evalOnly = Boolean.FALSE;
 		if(!evalOnly && Boolean.valueOf(Library.getProperty("zssapp.menu.zssmark.hidden")) == Boolean.TRUE) {

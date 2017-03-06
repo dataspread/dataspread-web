@@ -49,7 +49,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	private static final Log _logger = Log.lookup(SheetImpl.class);
     //Mangesh
     static final private int PreFetchRows = 100;
-    static final private int PreFetchColumns = 20;
+    static final private int PreFetchColumns = 30;
     /**
      * internal use only for developing/test state, should remove when stable
      */
@@ -61,7 +61,7 @@ public class SheetImpl extends AbstractSheetAdv {
         }
     }
 
-    final int CACHE_SIZE = 10000;
+    final int CACHE_SIZE = 50000;
     private final String _id;
 	private final IndexPool<AbstractRowAdv> _rows = new IndexPool<AbstractRowAdv>(){
 		private static final long serialVersionUID = 1L;
@@ -339,7 +339,8 @@ public class SheetImpl extends AbstractSheetAdv {
 	public void setDataModel(String model) {
 		try (Connection connection = DBHandler.instance.getConnection()) {
 			DBContext dbContext = new DBContext(connection);
-			dataModel = new RCV_Model(dbContext, model);
+			dataModel = Model.CreateModel(dbContext, model);
+			connection.commit();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -435,9 +436,7 @@ public class SheetImpl extends AbstractSheetAdv {
 
 	@Override
     AbstractCellAdv createCell(int rowIdx, int columnIdx) {
-        AbstractCellAdv cell = new CellImpl();
-        cell.setRow(rowIdx);
-        cell.setColumn(columnIdx);
+        AbstractCellAdv cell = new CellImpl(rowIdx, columnIdx);
         cell.setSheet(this);
         CellRegion cellRegion = new CellRegion(rowIdx, columnIdx);
         sheetDataCache.put(cellRegion, cell);
@@ -445,7 +444,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	}
 
 	public int getStartRowIndex() {
-		return _rows.firstKey();
+		return 0;
 	}
 
 	public int getEndRowIndex() {
@@ -464,7 +463,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	}
 
 	public int getStartColumnIndex() {
-		return _columnArrays.size()>0?_columnArrays.firstFirstKey():-1;
+		return 0;
 	}
 
 	public int getEndColumnIndex() {
@@ -588,27 +587,19 @@ public class SheetImpl extends AbstractSheetAdv {
 		}
 
 		//Delete from DB
-		String bookTable = getBook().getId();
-		String updateWorkbook = "DELETE FROM  " + bookTable + "_sheetdata WHERE sheetid = ? " +
-				" AND row BETWEEN  ? AND ? " +
-				" AND col BETWEEN  ? AND ? ";
 
-		try (Connection connection = DBHandler.instance.getConnection();
-			 PreparedStatement stmt = connection.prepareStatement(updateWorkbook)) {
-			stmt.setInt(1, getDBId());
-			stmt.setInt(2, rowStart);
-			stmt.setInt(3, rowEnd);
-			stmt.setInt(4, columnStart);
-			stmt.setInt(5, columnEnd);
-			stmt.execute();
-			connection.commit();
-		}
-		catch (SQLException e)
-		{
-			e.printStackTrace();
+		CellRegion deleted_region = new CellRegion(rowStart, columnStart, rowEnd, columnEnd);
+		if (dataModel != null) {
+			try (Connection connection = DBHandler.instance.getConnection()) {
+				DBContext dbContext = new DBContext(connection);
+				dataModel.deleteCells(dbContext, deleted_region);
+				connection.commit();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
-
+		sheetDataCache.remove(deleted_region);
 	}
 
 	@Override
@@ -633,7 +624,7 @@ public class SheetImpl extends AbstractSheetAdv {
 		List<AbstractCellAdv> cellsToShift = new LinkedList<>(sheetDataCache.values());
 		cellsToShift.stream()
 				.filter(e -> e.getRowIndex() >= rowIdx)
-				.forEach(e -> e.setRow(e.getRowIndex() + size));
+				.forEach(e -> e.shift(size, 0));
 
 		sheetDataCache.clear();
 		cellsToShift.stream()
@@ -731,7 +722,7 @@ public class SheetImpl extends AbstractSheetAdv {
 
         cellsToShift.stream()
                 .filter(e -> e.getRowIndex() >= rowIdx)
-                .forEach(e -> e.setRow(e.getRowIndex() - size));
+                .forEach(e -> e.shift(-size, 0));
 
         sheetDataCache.clear();
         cellsToShift.stream()
@@ -1148,7 +1139,7 @@ public class SheetImpl extends AbstractSheetAdv {
         List<AbstractCellAdv> cellsToShift = new LinkedList<>(sheetDataCache.values());
         cellsToShift.stream()
                 .filter(e -> e.getColumnIndex() >= columnIdx)
-                .forEach(e -> e.setColumn(e.getColumnIndex() + size));
+                .forEach(e -> e.shift(0, size));
 
 		sheetDataCache.clear();
 		cellsToShift.stream()
@@ -1335,7 +1326,7 @@ public class SheetImpl extends AbstractSheetAdv {
 
         cellsToShift.stream()
                 .filter(e -> e.getColumnIndex() >= columnIdx)
-                .forEach(e -> e.setColumn(e.getColumnIndex() - size));
+                .forEach(e -> e.shift(0, - size));
 
         sheetDataCache.clear();
         cellsToShift.stream()
@@ -1654,6 +1645,7 @@ public class SheetImpl extends AbstractSheetAdv {
 		_dataValidations.clear();
 		
 		_book = null;
+
 		//TODO all 
 		
 	}
@@ -1893,7 +1885,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	public Iterator<SCell> getCellIterator(int row) {
-		return (Iterator)((AbstractRowAdv)getRow(row)).getCellIterator(false);
+		return ((AbstractRowAdv) getRow(row)).getCellIterator(false);
 	}
 	
 	@Override
@@ -2158,8 +2150,13 @@ public class SheetImpl extends AbstractSheetAdv {
 
     @Override
     public void createModel(DBContext dbContext, String modelName) {
-        dataModel = Model.CreateModel(dbContext, Model.ModelType.RCV_Model, modelName);
-    }
+		dataModel = Model.CreateModel(dbContext, modelName);
+	}
+
+	@Override
+	public void deleteModel(DBContext dbContext) {
+		dataModel.dropSchema(dbContext);
+	}
 
 	//ZSS-855
 	@Override

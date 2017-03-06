@@ -1,7 +1,13 @@
 package org.zkoss.zss.model.impl;
 
+import com.opencsv.CSVReader;
+import org.apache.tomcat.dbcp.dbcp2.DelegatingConnection;
+import org.postgresql.copy.CopyIn;
+import org.postgresql.copy.CopyManager;
+import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.CellRegion;
 
+import java.io.*;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
@@ -262,9 +268,7 @@ public class RCV_Model extends Model {
             while (rs.next()) {
                 int row_id = rs.getInt(1);
                 int col_id = rs.getInt(2);
-                AbstractCellAdv cell = CellImpl.fromBytes(rs.getBytes(3));
-                cell.setRow(row_map.get(row_id));
-                cell.setColumn(col_map.get(col_id));
+                AbstractCellAdv cell = CellImpl.fromBytes(row_map.get(row_id), col_map.get(col_id), rs.getBytes(3));
                 cells.add(cell);
             }
             rs.close();
@@ -290,6 +294,51 @@ public class RCV_Model extends Model {
     public void clearCache(DBContext context) {
         rowMapping.clearCache(context);
         colMapping.clearCache(context);
+    }
+
+    @Override
+    public void importSheet(Reader reader, char delimiter) throws IOException {
+        final int COMMIT_SIZE_BYTES = 8 * 1000;
+        CSVReader csvReader = new CSVReader(reader, delimiter);
+        String[] nextLine;
+        int importedRows = 0;
+        int importedColumns = 0;
+
+
+        try (Connection connection = DBHandler.instance.getConnection()) {
+            Connection rawConn = ((DelegatingConnection) connection).getInnermostDelegate();
+            CopyManager cm = ((PgConnection) rawConn).getCopyAPI();
+
+            CopyIn cpIN = cm.copyIn("COPY " + tableName + " (row,col,data)" +
+                    " FROM STDIN WITH DELIMITER '|'");
+
+            StringBuffer sb = new StringBuffer();
+            while ((nextLine = csvReader.readNext()) != null) {
+                ++importedRows;
+                if (importedColumns < nextLine.length)
+                    importedColumns = nextLine.length;
+                for (int col = 0; col < nextLine.length; col++) {
+                    sb.append(importedRows).append('|');
+                    sb.append(col+1).append('|');
+                    sb.append(nextLine[col]).append('\n');
+                }
+
+                if (sb.length() >= COMMIT_SIZE_BYTES) {
+                    cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
+                    sb = new StringBuffer();
+                }
+            }
+            if (sb.length() > 0)
+                cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
+            cpIN.endCopy();
+            rawConn.commit();
+            DBContext dbContext = new DBContext(connection);
+            insertRows(dbContext, 0, importedRows);
+            insertCols(dbContext, 0, importedColumns);
+            connection.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     private static class MetaDataBlock {

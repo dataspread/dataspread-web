@@ -79,19 +79,9 @@ class CellProxy extends AbstractCellAdv {
 	}
 
 	@Override
-	public void setRow(int row) {
-        _rowIdx = row;
-	}
-
-	@Override
 	public int getColumnIndex() {
 		return _proxy == null ? _columnIdx : _proxy.getColumnIndex();
 	}
-
-	@Override
-	public void setColumn(int column) {
-        _columnIdx = column;
-    }
 
 	@Override
 	public void setFormulaValue(String formula, Connection connection, boolean updateToDB) {
@@ -280,5 +270,11 @@ class CellProxy extends AbstractCellAdv {
 	@Override
 	protected byte[] toBytes() {
 		return new byte[0];
+	}
+
+	@Override
+	public void shift(int rowShift, int colShift) {
+		_rowIdx += rowShift;
+		_columnIdx += colShift;
 	}
 }

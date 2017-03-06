@@ -337,7 +337,7 @@ public class BookImpl extends AbstractBookAdv{
 		{
 			String bookTable=getId();
 			String insertSheets = "INSERT INTO " + bookTable + "_workbook " +
-					" SELECT max(sheetid) +  1, ?, ? " +
+					" SELECT max(sheetid) +  1, ?, ?, '" + bookTable + "' || (max(sheetid) +  1)" +
 					" FROM " +  bookTable + "_workbook  " +
 					" RETURNING sheetid";
 			try (Connection connection = DBHandler.instance.getConnection();
@@ -349,6 +349,9 @@ public class BookImpl extends AbstractBookAdv{
 				if (rs.next())
 					sheet.setDBId(rs.getInt("sheetid"));
 				rs.close();
+				DBContext dbContext = new DBContext(connection);
+				String modelName = bookTable + sheet.getDBId();
+				sheet.createModel(dbContext, modelName);
 				connection.commit();
 			}
 			catch (SQLException e)
@@ -361,6 +364,8 @@ public class BookImpl extends AbstractBookAdv{
 			sheet.setDBId(nextIntObjId("dbsheet"));
 		}
 
+
+		//TODO: Mangesh -- Fix the code below
 		if(src instanceof AbstractSheetAdv){
 			((AbstractSheetAdv)src).copyTo(sheet, null, false);
 
@@ -551,15 +556,13 @@ public class BookImpl extends AbstractBookAdv{
 		{
 			String bookTable=getId();
 			String deleteSheet = "DELETE FROM " + bookTable + "_workbook WHERE sheetid = ?";
-			String deleteSheetData = "DELETE FROM " + bookTable + "_sheetdata WHERE sheetid = ?";
 			try (Connection connection = DBHandler.instance.getConnection();
-				 PreparedStatement deleteSheetstmt = connection.prepareStatement(deleteSheet);
-				 PreparedStatement deleteSheetDatastmt = connection.prepareStatement(deleteSheetData))
+				 PreparedStatement deleteSheetstmt = connection.prepareStatement(deleteSheet))
 			{
 				deleteSheetstmt.setInt(1,sheet.getDBId());
 				deleteSheetstmt.execute();
-				deleteSheetDatastmt.setInt(1,sheet.getDBId());
-				deleteSheetDatastmt.execute();
+				DBContext dbContext = new DBContext(connection);
+				sheet.deleteModel(dbContext);
 				connection.commit();
 			}
 			catch (SQLException e)
@@ -766,7 +769,7 @@ public class BookImpl extends AbstractBookAdv{
 			}
 		}
 
-		_cellStyles.addAll((Collection)stylePool.values());
+		_cellStyles.addAll(stylePool.values());
 		String key;
 		HashMap<String,SFont> fontPool = new LinkedHashMap<String,SFont>();
 
@@ -1098,9 +1101,11 @@ public class BookImpl extends AbstractBookAdv{
 			 ResultSet rs = stmt.executeQuery()) {
 			 while (rs.next())
 			 {
-				SSheet sheet =  createExistingSheet(rs.getString("sheetname"), rs.getInt("sheetid"));
+				 SSheet sheet = createExistingSheet(rs.getString("sheetname"), rs.getInt("sheetid"));
 				 sheet.setDataModel(rs.getString("modelname"));
 			 }
+			rs.close();
+			connection.commit();
 		}
 		catch (SQLException e)
 		{
