@@ -1,4 +1,4 @@
-package org.zkoss.zss.model.impl;
+package org.model;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

@@ -1,4 +1,4 @@
-package org.zkoss.zss.model.impl;
+package org.model;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -6,7 +6,7 @@ import java.sql.SQLException;
 public class DBContext {
     private Connection connection;
 
-    DBContext(Connection connection) {
+    public DBContext(Connection connection) {
         this.connection = connection;
     }
 

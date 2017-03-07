@@ -69,7 +69,7 @@ To host DataSpread locally you can either use one of the pre-build war files, av
     1. `web.xml` by adding the following text at the end of the file before the closing XML tag.   
 	```
 	<listener>
-	    <listener-class>org.zkoss.zss.model.impl.DBHandler</listener-class>
+	    <listener-class>org.model.DBHandler</listener-class>
 	</listener>
 	```
     2. `context.xml` by adding the following text at the end of the file before the closing XML tag.   

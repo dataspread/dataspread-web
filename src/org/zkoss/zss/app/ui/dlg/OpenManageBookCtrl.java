@@ -41,7 +41,7 @@ import org.zkoss.zss.app.impl.BookManagerImpl;
 import org.zkoss.zss.app.repository.impl.BookUtil;
 import org.zkoss.zss.app.ui.UiUtil;
 import org.zkoss.zss.model.impl.BookImpl;
-import org.zkoss.zss.model.impl.DBHandler;
+import org.model.DBHandler;
 import org.zkoss.zul.Button;
 import org.zkoss.zul.Fileupload;
 import org.zkoss.zul.ListModelList;
