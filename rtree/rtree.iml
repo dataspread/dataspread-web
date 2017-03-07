@@ -9,6 +9,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" exported="" name="lib" level="project" />
     <orderEntry type="library" name="Maven: com.github.davidmoten:guava-mini:0.1" level="project" />
     <orderEntry type="library" name="Maven: io.reactivex:rxjava:1.1.4" level="project" />
     <orderEntry type="library" name="Maven: com.vividsolutions:jts-core:1.14.0" level="project" />
@@ -34,7 +35,5 @@
     <orderEntry type="library" name="Maven: org.zkoss.common:zweb:7.0.3" level="project" />
     <orderEntry type="library" name="Maven: org.jsoup:jsoup:1.7.3" level="project" />
     <orderEntry type="library" name="Maven: javax.servlet:servlet-api:2.4" level="project" />
-=======
-    <orderEntry type="library" exported="" name="lib" level="project" />
   </component>
 </module>
