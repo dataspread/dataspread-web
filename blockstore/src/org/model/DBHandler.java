@@ -1,7 +1,6 @@
-package org.zkoss.zss.model.impl;
+package org.model;
 
 import org.apache.tomcat.jdbc.pool.PoolProperties;
-import org.zkoss.util.logging.Log;
 
 import javax.naming.InitialContext;
 import javax.servlet.ServletContextEvent;
@@ -15,7 +14,6 @@ import java.sql.Statement;
  * Created by Mangesh Bendre on 4/22/2016.
  */
 public class DBHandler implements ServletContextListener {
-    private static final Log _logger = Log.lookup(DBHandler.class);
     public static DBHandler instance;
     private DataSource ds;
 

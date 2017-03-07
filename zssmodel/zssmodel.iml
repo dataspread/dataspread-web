@@ -9,7 +9,6 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="kryo-4.0.0" level="project" />
     <orderEntry type="module" module-name="zpoi" />
     <orderEntry type="library" name="Maven: org.zkoss.common:zcommon:7.0.3" level="project" />
     <orderEntry type="library" name="Maven: commons-fileupload:commons-fileupload:1.2.2" level="project" />
@@ -33,5 +32,6 @@
     <orderEntry type="library" name="postgresql-9.4.1208" level="project" />
     <orderEntry type="library" name="lib" level="project" />
     <orderEntry type="library" name="tomcat-jdbc" level="project" />
+    <orderEntry type="module" module-name="blockstore" />
   </component>
 </module>

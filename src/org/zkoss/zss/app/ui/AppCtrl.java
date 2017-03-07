@@ -11,11 +11,6 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.app.ui;
 
-import com.opencsv.CSVReader;
-import org.apache.tomcat.dbcp.dbcp2.DelegatingConnection;
-import org.postgresql.copy.CopyIn;
-import org.postgresql.copy.CopyManager;
-import org.postgresql.jdbc.PgConnection;
 import org.zkoss.image.AImage;
 import org.zkoss.lang.Library;
 import org.zkoss.lang.Strings;
@@ -52,7 +47,7 @@ import org.zkoss.zss.model.ModelEvent;
 import org.zkoss.zss.model.ModelEventListener;
 import org.zkoss.zss.model.ModelEvents;
 import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.model.impl.DBHandler;
+import org.model.DBHandler;
 import org.zkoss.zss.ui.*;
 import org.zkoss.zss.ui.Version;
 import org.zkoss.zss.ui.event.Events;
@@ -67,9 +62,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URLDecoder;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
