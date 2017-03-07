@@ -16,7 +16,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model;
 
-import org.zkoss.zss.model.impl.DBContext;
+import org.model.DBContext;
 import org.zkoss.zss.model.impl.Model;
 
 import java.util.Iterator;

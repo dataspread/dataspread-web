@@ -28,5 +28,6 @@
     <orderEntry type="library" scope="PROVIDED" name="tomcat-dbcp" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="tomcat-jdbc" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="tomcat-juli" level="project" />
+    <orderEntry type="module" module-name="blockstore" />
   </component>
 </module>

@@ -36,7 +36,7 @@ import org.zkoss.zss.model.PasteOption;
 import org.zkoss.zss.model.SheetRegion;
 import org.zkoss.zss.model.SCell.CellType;
 import org.zkoss.zss.model.PasteOption.PasteType;
-import org.zkoss.zss.model.impl.DBHandler;
+import org.model.DBHandler;
 import org.zkoss.zss.model.sys.EngineFactory;
 import org.zkoss.zss.model.sys.format.FormatContext;
 import org.zkoss.zss.model.sys.format.FormatEngine;
