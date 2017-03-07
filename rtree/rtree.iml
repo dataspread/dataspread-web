@@ -30,10 +30,10 @@
     <orderEntry type="library" name="Maven: org.apache.poi:ooxml-schemas:1.1" level="project" />
     <orderEntry type="library" name="Maven: junit:junit:4.8.1" level="project" />
     <orderEntry type="library" name="Maven: commons-codec:commons-codec:1.5" level="project" />
-    <orderEntry type="module" module-name="zssmodel" />
     <orderEntry type="library" name="Maven: org.zkoss.zk:zk:7.0.3" level="project" />
     <orderEntry type="library" name="Maven: org.zkoss.common:zweb:7.0.3" level="project" />
     <orderEntry type="library" name="Maven: org.jsoup:jsoup:1.7.3" level="project" />
     <orderEntry type="library" name="Maven: javax.servlet:servlet-api:2.4" level="project" />
+    <orderEntry type="module" module-name="blockstore" />
   </component>
 </module>

@@ -33,5 +33,6 @@
     <orderEntry type="library" name="lib" level="project" />
     <orderEntry type="library" name="tomcat-jdbc" level="project" />
     <orderEntry type="module" module-name="blockstore" />
+    <orderEntry type="module" module-name="rtree" />
   </component>
 </module>

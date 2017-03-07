@@ -10,8 +10,8 @@ import com.github.davidmoten.rtree.Leaf;
 import com.github.davidmoten.rtree.Node;
 import com.github.davidmoten.rtree.NonLeaf;
 import com.github.davidmoten.rtree.geometry.Geometry;
-import org.zkoss.zss.model.impl.BlockStore;
-import org.zkoss.zss.model.impl.DBContext;
+import org.model.BlockStore;
+import org.model.DBContext;
 
 public final class FactoryDefault<T, S extends Geometry> implements Factory<T, S> {
 

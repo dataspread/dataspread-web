@@ -3,8 +3,8 @@ package com.github.davidmoten.rtree;
 import java.util.List;
 
 import com.github.davidmoten.rtree.geometry.Geometry;
-import org.zkoss.zss.model.impl.BlockStore;
-import org.zkoss.zss.model.impl.DBContext;
+import org.model.BlockStore;
+import org.model.DBContext;
 
 public interface NonLeafFactory<T, S extends Geometry> {
 

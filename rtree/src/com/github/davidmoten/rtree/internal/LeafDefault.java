@@ -9,9 +9,9 @@ import com.github.davidmoten.rtree.Node;
 import com.github.davidmoten.rtree.geometry.Geometry;
 import com.github.davidmoten.rtree.geometry.Rectangle;
 
-import org.zkoss.zss.model.impl.BTree;
-import org.zkoss.zss.model.impl.BlockStore;
-import org.zkoss.zss.model.impl.DBContext;
+
+import org.model.BlockStore;
+import org.model.DBContext;
 import rx.Subscriber;
 import rx.functions.Func1;
 

@@ -7,9 +7,8 @@ import com.github.davidmoten.rtree.geometry.HasGeometry;
 import com.github.davidmoten.rtree.internal.NodeAndEntries;
 
 import com.github.davidmoten.rtree.internal.NonLeafDefault;
-import org.zkoss.zss.model.impl.BTree;
-import org.zkoss.zss.model.impl.BlockStore;
-import org.zkoss.zss.model.impl.DBContext;
+import org.model.BlockStore;
+import org.model.DBContext;
 import rx.Subscriber;
 import rx.functions.Func1;
 

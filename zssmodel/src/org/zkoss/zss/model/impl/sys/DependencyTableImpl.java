@@ -10,7 +10,7 @@ import com.github.davidmoten.rtree.internal.NonLeafDefault;
 import org.zkoss.util.logging.Log;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SBookSeries;
-import org.zkoss.zss.model.impl.DBContext;
+import org.model.DBContext;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.dependency.Ref.RefType;
 import rx.*;
