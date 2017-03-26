@@ -13,6 +13,7 @@ import org.zkoss.zss.model.SBookSeries;
 import org.model.DBContext;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.dependency.Ref.RefType;
+import com.github.davidmoten.guavamini.Optional;
 import rx.*;
 
 import java.util.*;
@@ -47,7 +48,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 	protected Map<Ref, Set<Ref>> _evaledMap = new LinkedHashMap<Ref, Set<Ref>>();
     protected Map<Ref, Set<Ref>> _backwardMap = new LinkedHashMap<Ref, Set<Ref>>();
     protected SBookSeries _books;
-	protected RTree<Ref, Rectangle> _rtree = new RTree(dbcontext,tableName);
+	protected RTree<Ref, Rectangle> _rtree = RTree.createWithDb(dbcontext,tableName);
 
 
 	public DependencyTableImpl() {
@@ -91,10 +92,12 @@ public class DependencyTableImpl extends DependencyTableAdv {
 		if (ref.equals(target))
 			throw new MyOwnException("Cyclic dependecies detected!");
 		if (ref != null) {
-			for (Ref precedent : ref.getPrecedents()) {
-				if (precedent != null)
-					DFSdetectCyclicDependencies(target, precedent);
-			}
+		    if (ref.getPrecedents() != null) {
+                for (Ref precedent : ref.getPrecedents()) {
+                    if (precedent != null)
+                        DFSdetectCyclicDependencies(target, precedent);
+                }
+            }
 		}
 		return false;
 

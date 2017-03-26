@@ -88,6 +88,11 @@ public final class RTree<T, S extends Geometry> {
         }
     }
 
+    public void setupBlockStore(DBContext dbcontext, String tableName) {
+            bs = new BlockStore(dbcontext, tableName);
+            loadMetaData(dbcontext);
+    }
+
 
     /**
      * Constructor.
@@ -138,6 +143,8 @@ public final class RTree<T, S extends Geometry> {
      */
 
     public static <T, S extends Geometry> RTree<T, S> create() {return new Builder().create();}
+
+    public static <T, S extends Geometry> RTree<T, S> createWithDb(DBContext dbcontext, String tableName) {return new Builder().createWithDb(dbcontext, tableName);}
 
 
     /**
@@ -329,6 +336,33 @@ public final class RTree<T, S extends Geometry> {
          * @return RTree
          */
         @SuppressWarnings("unchecked")
+        public <T, S extends Geometry> RTree<T, S> createWithDb(DBContext dbcontext, String tableName) {
+            if (!maxChildren.isPresent())
+                if (star)
+                    maxChildren = of(MAX_CHILDREN_DEFAULT_STAR);
+                else
+                    maxChildren = of(MAX_CHILDREN_DEFAULT_GUTTMAN);
+            if (!minChildren.isPresent())
+                minChildren = of((int) Math.round(maxChildren.get() * DEFAULT_FILLING_FACTOR));
+
+            RTree<T, S> ret = new RTree<T, S>(Optional.absent(), 0,
+                    new Context<T, S>(minChildren.get(), maxChildren.get(), selector, splitter,
+                            (Factory<T, S>) factory));
+            ret.setupBlockStore(dbcontext, tableName);
+            return ret;
+        }
+
+
+        /**
+         * Builds the {@link RTree} that has a dbcontext.
+         *
+         * @param <T>
+         *            value type
+         * @param <S>
+         *            geometry type
+         * @return RTree
+         */
+        @SuppressWarnings("unchecked")
         public <T, S extends Geometry> RTree<T, S> create() {
             if (!maxChildren.isPresent())
                 if (star)
@@ -342,7 +376,12 @@ public final class RTree<T, S extends Geometry> {
                             (Factory<T, S>) factory));
         }
 
+
     }
+
+
+
+
 
     /**
      * Returns an immutable copy of the RTree with the addition of given entry.
