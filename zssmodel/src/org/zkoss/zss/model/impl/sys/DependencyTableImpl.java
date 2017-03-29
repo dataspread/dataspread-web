@@ -1,20 +1,14 @@
 package org.zkoss.zss.model.impl.sys;
-import com.github.davidmoten.rtree.Entries;
-import com.github.davidmoten.rtree.Node;
-import com.github.davidmoten.rtree.NonLeaf;
 import com.github.davidmoten.rtree.RTree;
 import com.github.davidmoten.rtree.geometry.Geometries;
-import com.github.davidmoten.rtree.geometry.Geometry;
 import com.github.davidmoten.rtree.geometry.Rectangle;
-import com.github.davidmoten.rtree.internal.NonLeafDefault;
 import org.zkoss.util.logging.Log;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SBookSeries;
 import org.model.DBContext;
+import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.dependency.Ref.RefType;
-import com.github.davidmoten.guavamini.Optional;
-import rx.*;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -47,6 +41,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 	protected Map<Ref, Set<Ref>> _map = new LinkedHashMap<Ref, Set<Ref>>();
 	protected Map<Ref, Set<Ref>> _evaledMap = new LinkedHashMap<Ref, Set<Ref>>();
     protected Map<Ref, Set<Ref>> _backwardMap = new LinkedHashMap<Ref, Set<Ref>>();
+    //protected DependencyTable;
     protected SBookSeries _books;
 	protected RTree<Ref, Rectangle> _rtree = RTree.createWithDb(dbcontext,tableName);
 
@@ -135,6 +130,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 		dependant.addPrecedent(precedent);
 	}
 
+	/* not used anywhere, I think unnecessary*/
 	public void clear() {
 		//_map.clear();
 		_evaledMap.clear();
