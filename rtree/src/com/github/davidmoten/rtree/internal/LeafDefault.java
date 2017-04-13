@@ -24,11 +24,12 @@ public final class LeafDefault<T, S extends Geometry> extends Leaf<T, S> {
 
 
     public LeafDefault(List<Entry<T, S>> entries, Context<T, S> context, DBContext dbcontext, BlockStore bs) {
+        // TODO change id when we have context
         this.entries = entries;
         this.context = context;
         this.mbr = Util.mbr(entries);
-        this.id = bs.getNewBlockID(dbcontext);
-        bs.putObject(id, this);
+        this.id = 0;//bs.getNewBlockID(dbcontext);
+        //bs.putObject(id, this);
     }
 
     @Override

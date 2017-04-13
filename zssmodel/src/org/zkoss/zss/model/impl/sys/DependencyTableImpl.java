@@ -43,7 +43,8 @@ public class DependencyTableImpl extends DependencyTableAdv {
     protected Map<Ref, Set<Ref>> _backwardMap = new LinkedHashMap<Ref, Set<Ref>>();
     //protected DependencyTable;
     protected SBookSeries _books;
-	protected RTree<Ref, Rectangle> _rtree = RTree.createWithDb(dbcontext,tableName);
+	protected RTree<Ref, Rectangle> _rtree = RTree.createWithDb(dbcontext,tableName); // keep track of the backwards map
+    // forwards map is kept track of within the Ref object itself
 
 
 	public DependencyTableImpl() {
@@ -115,7 +116,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 		Rectangle region = Geometries.rectangle(
 				precedent.getRow(),precedent.getColumn(),precedent.getLastRow(),precedent.getLastColumn());
 
-		_rtree.add(dependant, region,dbcontext);
+		_rtree = _rtree.add(dependant, region,dbcontext);
 
     }
 
@@ -161,16 +162,17 @@ public class DependencyTableImpl extends DependencyTableAdv {
 
 	@Override
 	public Set<Ref> getEvaluatedDependents(Ref precedent) {
-		return getDependents(precedent,_evaledMap);
+		return getBackwardDependents(precedent, _rtree);
 	}
 
 	@Override
 	public void setEvaluated(Ref dependent){
 		//TODO: Mangesh - Remove the notion of evaluated map.
-		Set<Ref> precedents = _map.get(dependent);
+		/*Set<Ref> precedents = _map.get(dependent);
 		if(precedents!=null){
 			_evaledMap.put(dependent, precedents);
-		}
+		}*/
+        //Set<Ref> precedents = dependent.getPrecedents();
     }
 
     private Set<Ref> getBackwardDependents(Ref precedent,RTree<Ref, Rectangle> _rtree) {
@@ -369,6 +371,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 	}
 
 	@Override
+    // TODO: Kelly, change so it looks at forward map
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		for(Entry<Ref, Set<Ref>> entry : _map.entrySet()) {
@@ -382,6 +385,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 	}
 
 	@Override
+    // TODO: Kelly, instead of map and eval map have forward and backward map, btw you need to do a cycle check
 	public void merge(DependencyTableAdv dependencyTable) {
 		if(!(dependencyTable instanceof DependencyTableImpl)) {
 			// just in case
@@ -421,6 +425,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 	}
 	
 	public void dump(){
+	    // TODO: Kelly, do forward or backward map for this one
 		for(Entry<Ref, Set<Ref>> entry : _map.entrySet()) {
 			System.out.println("["+entry.getKey()+"] depends on");
 			for(Ref ref:entry.getValue()){

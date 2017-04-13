@@ -401,15 +401,15 @@ public final class RTree<T, S extends Geometry> {
                 node = context.factory().createNonLeaf(nodes, context, dbcontext,bs);
             }
 
-            metaDataBlock.elementCount++;
-            bs.flushDirtyBlocks(dbcontext);
+            //metaDataBlock.elementCount++;
+            //bs.flushDirtyBlocks(dbcontext);
             return new RTree<T, S>(node, size + 1, context);
         } else {
             Leaf<T, S> node = context.factory().createLeaf(Lists.newArrayList((Entry<T, S>) entry),
                     context,dbcontext,bs);
 
-            metaDataBlock.elementCount++;
-            bs.flushDirtyBlocks(dbcontext);
+            //metaDataBlock.elementCount++;
+            //bs.flushDirtyBlocks(dbcontext);
             return new RTree<T, S>(node, size + 1, context);
         }
     }
