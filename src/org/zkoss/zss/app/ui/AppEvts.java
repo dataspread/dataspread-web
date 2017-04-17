@@ -51,4 +51,6 @@ public class AppEvts {
 	public static String ON_INSERT_PICTURE = "onInsertPicture";
 	public static String ON_INSERT_CHART = "onInsertChart";
 	public static String ON_INSERT_HYPERLINK = "onInsertHyperlink";
+
+    public static String ON_CREATE_TABLE = "onCreateTable";
 }

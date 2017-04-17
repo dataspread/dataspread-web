@@ -129,6 +129,12 @@
 					forward='mainMenubar.onInsertHyperlink()' sclass="zsmenuitem-app appmenu" />
 			</menupopup>
 		</menu>
+		<menu id="table" label="${c:l('zssapp.mainMenu.table')}" sclass="zsmenu-app">
+			<menupopup>
+				<menuitem id="createTable" label="${c:l('zssapp.mainMenu.table.create')}"
+						  sclass="zsmenuitem-app appmenu"></menuitem>
+			</menupopup>
+		</menu>
 		<menu id="helpMenu" label="${c:l('zssapp.mainMenu.help')}" sclass="zsmenu-app">
 			<menupopup>
 				<menuitem id="about" label="${c:l('zssapp.mainMenu.help.about')}"

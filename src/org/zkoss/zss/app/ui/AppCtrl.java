@@ -43,11 +43,12 @@ import org.zkoss.zss.app.repository.BookRepositoryFactory;
 import org.zkoss.zss.app.repository.impl.BookUtil;
 import org.zkoss.zss.app.repository.impl.SimpleBookInfo;
 import org.zkoss.zss.app.ui.dlg.*;
+import org.zkoss.zss.app.ui.table.table;
+import org.zkoss.zss.app.ui.table.TableCtrl;
 import org.zkoss.zss.model.ModelEvent;
 import org.zkoss.zss.model.ModelEventListener;
 import org.zkoss.zss.model.ModelEvents;
 import org.zkoss.zss.model.SSheet;
-import org.model.DBHandler;
 import org.zkoss.zss.ui.*;
 import org.zkoss.zss.ui.Version;
 import org.zkoss.zss.ui.event.Events;
@@ -916,6 +917,20 @@ public class AppCtrl extends CtrlBase<Component>{
 			UiUtil.showWarnMessage("Can't export the book: " + e.getMessage());
 		}
 	}
+
+	private void doCreateTable(Spreadsheet ss) {
+
+		TableCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
+			private static final long serialVersionUID = 7753635062865984294L;
+
+			public void onEvent(DlgCallbackEvent event) throws Exception {
+				if (TableCtrl.ON_OPEN.equals(event.getName())) {
+					pushAppEvent(AppEvts.ON_CREATE_TABLE, ss);
+				}
+			}
+		}, ss);
+
+	}
 	
 	@Override
 	protected void onAppEvent(String event,Object data){
@@ -963,6 +978,10 @@ public class AppCtrl extends CtrlBase<Component>{
 			setupUsername(true);
 		} else if (AppEvts.ON_SHARE_BOOK.equals(event)) {
 			shareBook();
+		} else if (AppEvts.ON_CREATE_TABLE.equals(event)) {
+			//AreaRef selection = ss.getSelection();
+			//Sheet sheet = ss.getSelectedSheet();
+			doCreateTable(ss);
 		}
 	}
 

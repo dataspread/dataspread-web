@@ -92,6 +92,9 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 	@Wire
 	Menu insertMenu;
 
+    @Wire
+    Menuitem createTable;
+
     public MainMenubarCtrl() {
         super(true);
     }
@@ -320,4 +323,9 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 	public void onInsertHyperlink(ForwardEvent event) {
 		pushAppEvent(AppEvts.ON_INSERT_HYPERLINK);
 	}
+
+    @Listen("onClick=#createTable")
+    public void oncreateTable() {
+        pushAppEvent(AppEvts.ON_CREATE_TABLE);
+    }
 }
