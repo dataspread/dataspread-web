@@ -2,7 +2,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.zkoss.zss</groupId>
+
+	<groupId>io.github.dataspread</groupId>
 	<artifactId>zss</artifactId>
 	<properties>
 		<zk.version>7.0.3</zk.version>
@@ -13,47 +14,20 @@
 	<version>3.8.1</version>
 	<packaging>jar</packaging>
 	<name>ZK Spreadsheet</name>
-	<url>http://www.zkoss.org/zss</url>
 	<description>ZK Spreadsheet</description>
-	<licenses>
-		<license>
-			<name>GNU General Public License, Version 3.0</name>
-			<url>http://www.gnu.org/licenses/gpl.html</url>
-			<distribution>repo</distribution>
-		</license>
-	</licenses>
-	<repositories>
-		<repository>
-			<id>zk repository</id>
-			<url>http://mavensync.zkoss.org/maven2</url>
-		</repository>
-	</repositories>
-	<pluginRepositories>
-		<pluginRepository>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-			<id>snapshots</id>
-			<name>Maven Central Plugins Development Repository</name>
-			<url>http://snapshots.maven.codehaus.org/maven2</url>
-		</pluginRepository>
-		<pluginRepository>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-			<id>central</id>
-			<name>Maven Plugin Repository</name>
-			<url>http://repo1.maven.org/maven2</url>
-		</pluginRepository>
-	</pluginRepositories>
 	<dependencies>
 		<dependency>
-			<groupId>org.zkoss.zss</groupId>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.8.1</version>
+		</dependency>
+		<dependency>
+			<groupId>io.github.dataspread</groupId>
 			<artifactId>zssmodel</artifactId>
 			<version>${project.version}</version>
 		</dependency>	
 		<dependency>
-			<groupId>org.zkoss.poi</groupId>
+			<groupId>io.github.dataspread</groupId>
 			<artifactId>zpoi</artifactId>
 			<version>${zpoi.version}</version>
 		</dependency>
@@ -88,18 +62,6 @@
 			</resource>
 		</resources>
 		<plugins>
-			<!--<plugin>
-				<groupId>org.zkoss.maven</groupId>
-				<artifactId>yuicompressor-maven-plugin-zk</artifactId>
-				<version>1.1.4</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>compress</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin> -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
