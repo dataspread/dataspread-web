@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Created by Albatool on 4/16/2017.
  */
-public class table {
+public class Table {
 
 
     private String url = "jdbc:postgresql://localhost:5432/test";
@@ -20,13 +20,12 @@ public class table {
     Connection connection = null;
 
     //-----------------------------------------------------------------------Table-as-Unit
-    protected void create(List<String> attrs) throws SQLException {
+    protected void create(String tableName, List<String> attrs) throws SQLException {
 
-//        connection = DBHandler.instance.getConnection();
         connection = connect();
         stmt = connection.createStatement();
-
-        String tableName = "test";
+//        connection = DBHandler.instance.getConnection();
+//        String tableName = "test";
 
         StringBuilder builder = new StringBuilder();
         builder.append("CREATE TABLE IF NOT EXISTS " + tableName + " (");
@@ -44,23 +43,20 @@ public class table {
 
     }
 
-    private void drop() throws SQLException {
+    public void drop(String tableName, String range) throws SQLException {
 
-        /*
-        TODO:
+        //        Connection connection = DBHandler.instance.getConnection();
 
-        input: Range name matching a table name
+        connection = connect();
+        stmt = connection.createStatement();
 
-        1) drop table from the DB
-        2) clear range content
+        String sql = "DROP TABLE IF EXISTS " + tableName;
 
-         */
+        int x = stmt.executeUpdate(sql);
 
+        connection.close();
 
-//        Connection connection = DBHandler.instance.getConnection();
-//
-//        connection.commit();
-//        connection.close();
+//        rangeToTable(range);
 
     }
 
@@ -111,16 +107,15 @@ public class table {
     }
     //-----------------------------------------------------------------------Rows: Table Content
 
-    protected void insertRows(List<List<String>> recs) throws SQLException {
+    protected void insertRows(String tableName, List<List<String>> recs) throws SQLException {
 //        connection = DBHandler.instance.getConnection();
 
         connection = connect();
         stmt = connection.createStatement();
 
-        String tableName = "test";
+//        String tableName = "test";
 
         int attrsNo = recs.get(0).size();
-
 
         StringBuilder builder = new StringBuilder();
 
@@ -133,7 +128,6 @@ public class table {
         String sql = builder.toString();
 
         PreparedStatement pStmt = connection.prepareStatement(sql);
-
 
         for (int i = 0; i < recs.size(); i++) {
             List<String> record = recs.get(i);
@@ -149,15 +143,55 @@ public class table {
                 pStmt.executeBatch();
             }
         }
-
         connection.close();
-
-
     }
 
     private void deleteRows() // Delete in Batches
     {
 
+    }
+
+    //-----------------------------------------------------------------------rangeToTable Referencing
+    public String checkRangeToTable(String range) throws SQLException {
+
+        connection = connect();
+        stmt = connection.createStatement();
+
+        String sql = "SELECT * FROM rangeToTable WHERE range='" + range + "'";
+
+        ResultSet result = stmt.executeQuery(sql);
+
+        if (result.next()) {
+            String name = result.getObject("tableName").toString();
+            connection.close();
+            return name;
+        }
+        connection.close();
+        return null;
+    }
+
+    public void insertRangeToTable(String tableName, String range) throws SQLException {
+
+        connection = connect();
+        stmt = connection.createStatement();
+
+        String sql = "INSERT INTO rangeToTable VALUES('" + tableName + "','" + range + "')";
+
+        int x = stmt.executeUpdate(sql);
+
+        connection.close();
+    }
+
+    public void deleteRangeToTable(String range) throws SQLException {
+
+        connection = connect();
+        stmt = connection.createStatement();
+
+        String sql = "DELETE FROM rangeToTable WHERE range='" + range + "'";
+
+        int x = stmt.executeUpdate(sql);
+
+        connection.close();
     }
 
     //-----------------------------------------------------------------------

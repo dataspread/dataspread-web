@@ -94,6 +94,8 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 
     @Wire
     Menuitem createTable;
+    @Wire
+    Menuitem deleteTable;
 
     public MainMenubarCtrl() {
         super(true);
@@ -327,5 +329,10 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
     @Listen("onClick=#createTable")
     public void oncreateTable() {
         pushAppEvent(AppEvts.ON_CREATE_TABLE);
+    }
+
+    @Listen("onClick=#deleteTable")
+    public void ondeleteTable() {
+        pushAppEvent(AppEvts.ON_DELETE_TABLE);
     }
 }

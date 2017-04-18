@@ -133,6 +133,8 @@
 			<menupopup>
 				<menuitem id="createTable" label="${c:l('zssapp.mainMenu.table.create')}"
 						  sclass="zsmenuitem-app appmenu"></menuitem>
+				<menuitem id="deleteTable" label="${c:l('zssapp.mainMenu.table.delete')}"
+						  sclass="zsmenuitem-app appmenu"></menuitem>
 			</menupopup>
 		</menu>
 		<menu id="helpMenu" label="${c:l('zssapp.mainMenu.help')}" sclass="zsmenu-app">
