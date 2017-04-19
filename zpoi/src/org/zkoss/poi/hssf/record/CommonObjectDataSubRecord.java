@@ -503,7 +503,7 @@ public final class CommonObjectDataSubRecord extends SubRecord {
     }
 
     /**
-     * Set whether the application is expected to choose the object’s size.
+     * Set whether the application is expected to choose the object's size.
      */
     public void setDefaultSize(boolean value)
     {
@@ -511,7 +511,7 @@ public final class CommonObjectDataSubRecord extends SubRecord {
     }
 
     /** 
-     * whether the application is expected to choose the object’s size     
+     * whether the application is expected to choose the object's size
      * @return  the defaultSize field value.
      */
     public boolean isDefaultSize()

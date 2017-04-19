@@ -2,7 +2,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.zkoss.poi</groupId>
+
+	<groupId>io.github.dataspread</groupId>
 	<artifactId>zpoi</artifactId>
 	<properties>
 		<zk.version>7.0.3</zk.version>
@@ -18,42 +19,7 @@
 	<version>3.9.8</version>
 	<packaging>jar</packaging>
 	<name>ZK Spreadsheet POI</name>
-	<url>http://www.zkoss.org/zss</url>
 	<description>Adapted Apache POI library for ZK Spreadsheet</description>
-	<licenses>
-		<license>
-		<name>Apache License, Version 2.0</name>
-		<url>http://www.apache.org/licenses/LICENSE-2.0</url>
-		<distribution>repo</distribution>
-		</license>
-	</licenses>
-	<scm>
-		<url>https://zkspreadsheet.googlecode.com/releases/${project.version}/zpoi</url>
-	</scm>
-	<repositories>
-		<repository>
-			<id>zk repository</id>
-			<url>http://mavensync.zkoss.org/maven2</url>
-		</repository>
-	</repositories>
-	<pluginRepositories>
-		<pluginRepository>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-			<id>snapshots</id>
-			<name>Maven Central Plugins Development Repository</name>
-			<url>http://snapshots.maven.codehaus.org/maven2</url>
-		</pluginRepository>
-		<pluginRepository>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-			<id>central</id>
-			<name>Maven Plugin Repository</name>
-			<url>http://repo1.maven.org/maven2</url>
-		</pluginRepository>
-	</pluginRepositories>
 	<dependencies>
 		<dependency>
 			<groupId>org.zkoss.common</groupId>
@@ -95,13 +61,6 @@
 			<groupId>org.apache.poi</groupId>
 			<artifactId>ooxml-schemas</artifactId>
 			<version>${ooxml-schemas.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>${junit.version}</version>
-			<scope>test</scope>
-			<optional>true</optional>
 		</dependency>
 		<dependency>
 		   <groupId>commons-codec</groupId>
