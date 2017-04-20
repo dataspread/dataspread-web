@@ -27,8 +27,8 @@ public final class NonLeafDefault<T, S extends Geometry> extends NonLeaf<T, S> {
         this.context = context;
         this.children = children;
         this.mbr = Util.mbr(children);
-        this.id = bs.getNewBlockID(dbcontext);
-        bs.putObject(id, this);
+        // this.id = bs.getNewBlockID(dbcontext);
+        // bs.putObject(id, this);
     }
 
     @Override
