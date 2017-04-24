@@ -111,3 +111,5 @@ MIT
 [warlink]: https://github.com/dataspread/releases/releases
 [dataspread-github]: http://dataspread.github.io
 [dataspread-site]: http://data-people.cs.illinois.edu/dataspread.pdf
+[maven]: https://maven.apache.org/install.html
+
