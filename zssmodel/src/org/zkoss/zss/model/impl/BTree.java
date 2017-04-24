@@ -6,6 +6,8 @@ import org.zkoss.util.logging.Log;
 
 import java.util.Arrays;
 
+import java.util.Arrays;
+import java.util.logging.Logger;
 /**
  * An implementation of a B+ Tree
  */
@@ -17,7 +19,7 @@ public class BTree implements PosMapping {
     /**
      * Logging
      */
-    private static final Log _logger = Log.lookup(BlockStore.class);
+    // private static final Log _logger = Log.lookup(BlockStore.class);
     /**
      * b div 2
      */
@@ -144,9 +146,10 @@ public class BTree implements PosMapping {
             newRoot.children[0] = metaDataBlock.ri;
             newRoot.keys[0] = key;
             newRoot.children[1] = w.id;
-
-            /* Update children count */
+            //Update the parent
             Node leftNode = Node.get(context, bs, metaDataBlock.ri);
+            leftNode.parent = newRoot.id;
+            /* Update children count */
             if (leftNode.isLeaf()) {
                 newRoot.childrenCount[0] = leftNode.size();
             } else {
@@ -211,7 +214,7 @@ public class BTree implements PosMapping {
         u.update(bs);
 
         if (u.isFull()) {
-            Node splitNode = u.split(context, bs);
+            Node splitNode = u.split(context, bs, true);
             u.update(bs);
             return splitNode;
         } else
@@ -251,6 +254,7 @@ public class BTree implements PosMapping {
             newroot.children[0] = metaDataBlock.ri;
             newroot.children[1] = w.id;
             Node leftNode = Node.get(context, bs, metaDataBlock.ri);
+            leftNode.parent = newroot.id;
             if (leftNode.isLeaf()) {
                 newroot.childrenCount[0] = leftNode.valueSize();
             } else {
@@ -321,7 +325,7 @@ public class BTree implements PosMapping {
         }
 
         if (u.isFullByCount()) {
-            Node splitNode = u.split(context, bs);
+            Node splitNode = u.split(context, bs, true);
             u.update(bs);
             return splitNode;
         } else
@@ -330,6 +334,11 @@ public class BTree implements PosMapping {
 
     }
 
+    public int removeByKey(DBContext context, int key){
+        Node w = Node.get(context,bs,key);
+
+        return 0;
+    }
     public int removeByCount(DBContext context, long pos) {
         return removeByCount(context, pos, true);
     }
@@ -1284,7 +1293,7 @@ public class BTree implements PosMapping {
 
 
         /**
-         * Remove the i'th value from this block - don't affect this block's
+         * Remove the i'th value in the keys from this block - don't affect this block's
          * children
          *
          * @param i the index of the element to remove
@@ -1315,9 +1324,10 @@ public class BTree implements PosMapping {
          *
          * @return the newly created block, which has the larger keys
          */
-        protected Node split(DBContext context, BlockStore bs) {
+        protected Node split(DBContext context, BlockStore bs, boolean haveParent) {
             Node w = Node.create(context, bs);
-
+            if (haveParent)
+                w.parent = this.parent;
             int j = keys.length / 2;
             System.arraycopy(keys, j, w.keys, 0, keys.length - j);
             Arrays.fill(keys, j, keys.length, -1);
@@ -1331,11 +1341,16 @@ public class BTree implements PosMapping {
             } else {
                 w.children = new int[b + 1];
                 Arrays.fill(w.children, 0, w.children.length, -1);
-
                 // Copy Children
                 System.arraycopy(children, j + 1, w.children, 0, children.length - j - 1);
                 Arrays.fill(children, j + 1, children.length, -1);
-
+                //update w's parent
+                if(haveParent) {
+                    for (int childrenID : w.children) {
+                        Node child = get(context, bs, childrenID);
+                        child.parent = w.id;
+                    }
+                }
                 //Create child counts
                 w.childrenCount = new long[b + 1];
                 Arrays.fill(w.childrenCount, 0, w.childrenCount.length, 0);

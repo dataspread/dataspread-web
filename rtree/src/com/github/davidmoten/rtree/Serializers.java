@@ -10,7 +10,6 @@ import java.nio.charset.Charset;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.github.davidmoten.guavamini.Preconditions;
-import com.github.davidmoten.rtree.fbs.SerializerFlatBuffers;
 import com.github.davidmoten.rtree.geometry.Geometry;
 import com.github.davidmoten.rtree.kryo.SerializerKryo;
 import com.github.davidmoten.rx.Functions;
@@ -123,7 +122,7 @@ public final class Serializers {
                 if (deserializer == null) {
                     deserializer = (Func1<byte[], T>) javaIoDeserializer();
                 }
-                return SerializerFlatBuffers.create(serializer, deserializer);
+                return null; // Not suppported
             } else {
                 return SerializerKryo.create(serializer, deserializer, kryoFactory);
             }

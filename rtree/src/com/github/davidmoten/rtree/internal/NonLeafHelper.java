@@ -14,6 +14,8 @@ import com.github.davidmoten.rtree.NonLeaf;
 import com.github.davidmoten.rtree.geometry.Geometry;
 import com.github.davidmoten.rtree.geometry.ListPair;
 
+import org.model.BlockStore;
+import org.model.DBContext;
 import rx.Subscriber;
 import rx.functions.Func1;
 
@@ -40,32 +42,32 @@ public final class NonLeafHelper {
     }
 
     public static <T, S extends Geometry> List<Node<T, S>> add(
-            Entry<? extends T, ? extends S> entry, NonLeaf<T, S> node) {
+            Entry<? extends T, ? extends S> entry, NonLeaf<T, S> node,DBContext dbcontext, BlockStore bs) {
         Context<T, S> context = node.context();
         List<Node<T, S>> children = node.children();
         final Node<T, S> child = context.selector().select(entry.geometry().mbr(), children);
-        List<Node<T, S>> list = child.add(entry);
+        List<Node<T, S>> list = child.add(entry,dbcontext,bs);
         List<? extends Node<T, S>> children2 = Util.replace(children, child, list);
         if (children2.size() <= context.maxChildren())
             return Collections.singletonList(
-                    (Node<T, S>) context.factory().createNonLeaf(children2, context));
+                    context.factory().createNonLeaf(children2, context,dbcontext, bs));
         else {
             ListPair<? extends Node<T, S>> pair = context.splitter().split(children2,
                     context.minChildren());
-            return makeNonLeaves(pair, context);
+            return makeNonLeaves(pair, context,dbcontext, bs);
         }
     }
 
     private static <T, S extends Geometry> List<Node<T, S>> makeNonLeaves(
-            ListPair<? extends Node<T, S>> pair, Context<T, S> context) {
+            ListPair<? extends Node<T, S>> pair, Context<T, S> context,DBContext dbcontext, BlockStore bs) {
         List<Node<T, S>> list = new ArrayList<Node<T, S>>();
-        list.add(context.factory().createNonLeaf(pair.group1().list(), context));
-        list.add(context.factory().createNonLeaf(pair.group2().list(), context));
+        list.add(context.factory().createNonLeaf(pair.group1().list(), context,dbcontext, bs));
+        list.add(context.factory().createNonLeaf(pair.group2().list(), context,dbcontext, bs));
         return list;
     }
 
     public static <T, S extends Geometry> NodeAndEntries<T, S> delete(
-            Entry<? extends T, ? extends S> entry, boolean all, NonLeaf<T, S> node) {
+            Entry<? extends T, ? extends S> entry, boolean all, NonLeaf<T, S> node,DBContext dbcontext, BlockStore bs) {
         // the result of performing a delete of the given entry from this node
         // will be that zero or more entries will be needed to be added back to
         // the root of the tree (because num entries of their node fell below
@@ -81,7 +83,7 @@ public final class NonLeafHelper {
         List<? extends Node<T, S>> children = node.children();
         for (final Node<T, S> child : children) {
             if (entry.geometry().intersects(child.geometry().mbr())) {
-                final NodeAndEntries<T, S> result = child.delete(entry, all);
+                final NodeAndEntries<T, S> result = child.delete(entry, all,dbcontext,bs);
                 if (result.node().isPresent()) {
                     if (result.node().get() != child) {
                         // deletion occurred and child is above minChildren so
@@ -106,15 +108,15 @@ public final class NonLeafHelper {
             }
         }
         if (removeTheseNodes.isEmpty())
-            return new NodeAndEntries<T, S>(of(node), Collections.<Entry<T, S>> emptyList(), 0);
+            return new NodeAndEntries<T, S>(of(node), Collections.emptyList(), 0);
         else {
             List<Node<T, S>> nodes = Util.remove(children, removeTheseNodes);
             nodes.addAll(addTheseNodes);
             if (nodes.size() == 0)
-                return new NodeAndEntries<T, S>(Optional.<Node<T, S>> absent(), addTheseEntries,
+                return new NodeAndEntries<T, S>(Optional.absent(), addTheseEntries,
                         countDeleted);
             else {
-                NonLeaf<T, S> nd = node.context().factory().createNonLeaf(nodes, node.context());
+                NonLeaf<T, S> nd = node.context().factory().createNonLeaf(nodes, node.context(),dbcontext, bs);
                 return new NodeAndEntries<T, S>(of(nd), addTheseEntries, countDeleted);
             }
         }
