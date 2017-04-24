@@ -44,16 +44,17 @@ To host DataSpread locally you can either use one of the pre-build war files, av
 * [PostgreSQL][posrgres] >= 9.5
 * [PostgreSQL JDBC driver][jdbc] - 9.4.1208
 * [Apache Tomcat][tomcat] >= 8.5.4
+* [Apache Maven][maven] >= 3.5.0
 
 
 ### Building Instructions (To generate a war file)
 
 1. Clone the DataSpread repository. Alternatively, you can download the source as a zip or tar.gz. 
 
-2. Use Ant to build the `war` file using the following command.  After the build completes the war is available at `out/artifacts/DataSpread_war`. 
+2. Use maven to build the `war` file using the following command.  After the build completes the war is available at `webapp/target/DataSpread.war`. 
 
 	```
-	ant
+	mvn clean install
 	```
 
 ### Deploying DataSpread locally. 
@@ -110,3 +111,5 @@ MIT
 [warlink]: https://github.com/dataspread/releases/releases
 [dataspread-github]: http://dataspread.github.io
 [dataspread-site]: http://data-people.cs.illinois.edu/dataspread.pdf
+[maven]: https://maven.apache.org/install.html
+

@@ -6,6 +6,7 @@
       <module fileurl="file://$PROJECT_DIR$/blockstore/blockstore.iml" filepath="$PROJECT_DIR$/blockstore/blockstore.iml" />
       <module fileurl="file://$PROJECT_DIR$/guavamini.iml" filepath="$PROJECT_DIR$/guavamini.iml" />
       <module fileurl="file://$PROJECT_DIR$/rtree/rtree.iml" filepath="$PROJECT_DIR$/rtree/rtree.iml" />
+      <module fileurl="file://$PROJECT_DIR$/webapp/webapp.iml" filepath="$PROJECT_DIR$/webapp/webapp.iml" />
       <module fileurl="file://$PROJECT_DIR$/zpoi/zpoi.iml" filepath="$PROJECT_DIR$/zpoi/zpoi.iml" />
       <module fileurl="file://$PROJECT_DIR$/zss/zss.iml" filepath="$PROJECT_DIR$/zss/zss.iml" />
       <module fileurl="file://$PROJECT_DIR$/zssmodel/zssmodel.iml" filepath="$PROJECT_DIR$/zssmodel/zssmodel.iml" />
