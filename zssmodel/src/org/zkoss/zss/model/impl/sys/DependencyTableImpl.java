@@ -212,6 +212,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 			for(com.github.davidmoten.rtree.Entry<Ref, Rectangle> entry : obsList){
 				dependents.add(entry.value());
 			}
+			all.addAll(dependents);
 			all.addAll(recursivelyGetBackwardDependents(dependents,all));
 		}
 		return dependents;
