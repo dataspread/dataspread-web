@@ -4,9 +4,9 @@ import java.util.List;
 
 import com.github.davidmoten.rtree.geometry.Geometry;
 
-public abstract class NonLeaf<T, S extends Geometry> extends Node<T, S> {
+public interface NonLeaf<T, S extends Geometry> extends Node<T, S> {
 
-    abstract public Node<T, S> child(int i);
+    Node<T, S> child(int i);
 
     /**
      * Returns a list of children nodes. For accessing individual children the
@@ -15,6 +15,6 @@ public abstract class NonLeaf<T, S extends Geometry> extends Node<T, S> {
      * 
      * @return list of children nodes
      */
-    abstract public List<Node<T, S>> children();
+    List<Node<T, S>> children();
 
 }

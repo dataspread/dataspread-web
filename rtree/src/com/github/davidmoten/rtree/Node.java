@@ -6,22 +6,14 @@ import com.github.davidmoten.rtree.geometry.Geometry;
 import com.github.davidmoten.rtree.geometry.HasGeometry;
 import com.github.davidmoten.rtree.internal.NodeAndEntries;
 
-import com.github.davidmoten.rtree.internal.NonLeafDefault;
-import org.model.BlockStore;
-import org.model.DBContext;
 import rx.Subscriber;
 import rx.functions.Func1;
 
-public abstract class Node<T, S extends Geometry> implements HasGeometry {
+public interface Node<T, S extends Geometry> extends HasGeometry {
 
-    /**
-     * This block's index
-     */
+    List<Node<T, S>> add(Entry<? extends T, ? extends S> entry);
 
-    public int id;
-    abstract public List<Node<T, S>> add(Entry<? extends T, ? extends S> entry, DBContext dbcontext, BlockStore bs);
-
-    abstract public NodeAndEntries<T, S> delete(Entry<? extends T, ? extends S> entry, boolean all, DBContext dbcontext, BlockStore bs);
+    NodeAndEntries<T, S> delete(Entry<? extends T, ? extends S> entry, boolean all);
 
     /**
      * Run when a search requests Long.MAX_VALUE results. This is the
@@ -32,16 +24,11 @@ public abstract class Node<T, S extends Geometry> implements HasGeometry {
      * @param subscriber
      *            the subscriber to report search findings to
      */
-    abstract public void searchWithoutBackpressure(Func1<? super Geometry, Boolean> criterion,
+    void searchWithoutBackpressure(Func1<? super Geometry, Boolean> criterion,
             Subscriber<? super Entry<T, S>> subscriber);
 
-    abstract public int count();
+    int count();
 
-    abstract public Context<T, S> context();
-
-    abstract public void update(BlockStore bs);
-
-
-
+    Context<T, S> context();
 
 }

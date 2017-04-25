@@ -30,28 +30,22 @@ import java.util.Set;
  */
 public interface DependencyTable {
 
-	//Set<Ref> getDependents(Ref precedent);
-
-	//GetBackwardDependents
-	Set<Ref> getDependents(Ref precedent);
-
-	Set<Ref> getDirectDependents(Ref precedent);
-
-	Set<Ref> getEvaluatedDependents(Ref precedent);
-
-	void add(Ref dependent, Ref precedent);
-
-	void setEvaluated(Ref dependent);
-
-	void clearDependents(Ref dependant);
-
-	Set<Ref> searchPrecedents(RefFilter filter);
 	/**
 	 * @since 3.5.0
 	 */
-	interface RefFilter {
-		boolean accept(Ref ref);
+	public interface RefFilter{
+		public boolean accept(Ref ref);
 	}
+	
+	public Set<Ref> getDependents(Ref precedent);
+	public Set<Ref> getDirectDependents(Ref precedent);
+	public Set<Ref> getEvaluatedDependents(Ref precedent);	
+	
+	public void add(Ref dependent, Ref precedent);
+	public void setEvaluated(Ref dependent);
+	
+	public void clearDependents(Ref dependant);
+	public Set<Ref> searchPrecedents(RefFilter filter);
 	
 //	to merge dependency for book series.
 //	public void mergeTable(DependencyTable another);

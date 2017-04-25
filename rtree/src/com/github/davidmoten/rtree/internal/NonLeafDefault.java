@@ -10,25 +10,20 @@ import com.github.davidmoten.rtree.NonLeaf;
 import com.github.davidmoten.rtree.geometry.Geometry;
 import com.github.davidmoten.rtree.geometry.Rectangle;
 
-import org.model.BlockStore;
-import org.model.DBContext;
 import rx.Subscriber;
 import rx.functions.Func1;
 
-public final class NonLeafDefault<T, S extends Geometry> extends NonLeaf<T, S> {
+public final class NonLeafDefault<T, S extends Geometry> implements NonLeaf<T, S> {
 
     private final List<? extends Node<T, S>> children;
     private final Rectangle mbr;
     private final Context<T, S> context;
 
-
-    public NonLeafDefault(List<? extends Node<T, S>> children, Context<T, S> context, DBContext dbcontext, BlockStore bs) {
+    public NonLeafDefault(List<? extends Node<T, S>> children, Context<T, S> context) {
         Preconditions.checkArgument(!children.isEmpty());
         this.context = context;
         this.children = children;
         this.mbr = Util.mbr(children);
-        // this.id = bs.getNewBlockID(dbcontext);
-        // bs.putObject(id, this);
     }
 
     @Override
@@ -48,13 +43,13 @@ public final class NonLeafDefault<T, S extends Geometry> extends NonLeaf<T, S> {
     }
 
     @Override
-    public List<Node<T, S>> add(Entry<? extends T, ? extends S> entry,DBContext dbcontext, BlockStore bs) {
-        return NonLeafHelper.add(entry, this,dbcontext,bs);
+    public List<Node<T, S>> add(Entry<? extends T, ? extends S> entry) {
+        return NonLeafHelper.add(entry, this);
     }
 
     @Override
-    public NodeAndEntries<T, S> delete(Entry<? extends T, ? extends S> entry, boolean all,DBContext dbcontext, BlockStore bs ) {
-        return NonLeafHelper.delete(entry, all, this, dbcontext,bs);
+    public NodeAndEntries<T, S> delete(Entry<? extends T, ? extends S> entry, boolean all) {
+        return NonLeafHelper.delete(entry, all, this);
     }
 
     @Override
@@ -72,8 +67,4 @@ public final class NonLeafDefault<T, S extends Geometry> extends NonLeaf<T, S> {
     public List<Node<T, S>> children() {
         return (List<Node<T, S>>) children;
     }
-
-    @Override
-    public void update(BlockStore bs){ bs.putObject(id, this);}
-
 }
