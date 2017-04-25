@@ -97,16 +97,8 @@ public class FormulaEngineImpl implements FormulaEngine {
 			}
 			return new ResultValueEval(array, value); //ZSS-810
 		} else if (value instanceof AreaEval) {
-			// covert all values into an array
-			List<Object> list = new ArrayList<Object>();
-			AreaEval area = (AreaEval) value;
-			for (int r = 0; r < area.getHeight(); ++r) {
-				for (int c = 0; c < area.getWidth(); ++c) {
-					ValueEval v = area.getValue(r, c);
-					list.add(getResolvedValue(v).value); //ZSS-810
-				}
-			}
-			return new ResultValueEval(list, value); //ZSS-810
+			// Don't convert the value into one array. Keep it a 2D object.
+			return new ResultValueEval(value, value);
 		} else if (value instanceof RefEval) {
 			ValueEval ve = ((RefEval) value).getInnerValueEval();
 			Object v = getResolvedValue(ve).value; //ZSS-810

@@ -37,7 +37,8 @@ public interface SCell extends CellStyleHolder,FormulaContent{
 		FORMULA(2),
 		NUMBER(0),
 		BOOLEAN(4),		
-		ERROR(5);
+		ERROR(5),
+		COLLECTION(6);
 		
 		private int value;
 	    private CellType(int value) {

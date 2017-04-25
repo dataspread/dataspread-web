@@ -257,7 +257,7 @@ public abstract class RelationalOperatorFunction implements Function {
                 }
             }
 
-            //return evalHelper(resultRows);
+
             return Row.getArrayEval(resultRows, srcRowIndex, srcColumnIndex, range1.getRefEvaluator());
         }
     };
@@ -271,9 +271,7 @@ public abstract class RelationalOperatorFunction implements Function {
 
             List<Row> rows = Row.getRowsFromArea(range);
 
-//            return Row.getArrayEval(rows, srcRowIndex, srcColumnIndex, range.getRefEvaluator());
-
-            return evalHelper(rows);
+            return Row.getArrayEval(rows, srcRowIndex, srcColumnIndex, range.getRefEvaluator());
             
         }
 
@@ -391,34 +389,6 @@ public abstract class RelationalOperatorFunction implements Function {
 
         return rowsToKeep;
 
-    }
-
-
-    /**
-     * Method to convert the array of rows to a StringEval
-     * @param rows
-     * @return
-     */
-    private static ValueEval evalHelper(List<Row> rows) {
-        
-        String evalString = "";
-
-        for (int i = 0; i < rows.size(); i++) {
-
-            Row row = rows.get(i);
-            if (row != null) {
-                for (int col = 0; col < row.getLength(); col++) {
-                    
-                    evalString += getStringVal(row.getValue(col));
-                    evalString += " ";
-
-                }
-                
-                evalString += " | ";
-            }            
-        }
-        
-        return new StringEval(evalString);
     }
 
     

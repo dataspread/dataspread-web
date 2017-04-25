@@ -68,20 +68,25 @@ public abstract class TwoRangeFunction implements Function {
         final int width = area.getWidth();
         final int height = area.getHeight();
 
-        ValueEval[][] results = new ValueEval[height][];
+        if (width == 1 && height == 1 && area.getRelativeValue(0, 0) instanceof ArrayEval) {
+            return (ArrayEval) area.getRelativeValue(0, 0);
+        } else {
 
-        for (int r = 0; r < height; ++r) {
+            ValueEval[][] results = new ValueEval[height][];
 
-            results[r] = new ValueEval[width];
+            for (int r = 0; r < height; ++r) {
 
-            for (int c = 0; c < width; ++c) {
+                results[r] = new ValueEval[width];
 
-                final ValueEval ve = area.getRelativeValue(r, c);
-                results[r][c] = ve;
+                for (int c = 0; c < width; ++c) {
+
+                    final ValueEval ve = area.getRelativeValue(r, c);
+                    results[r][c] = ve;
+                }
             }
-        }
 
-        return new ArrayEval(results, area.getFirstRow(), area.getFirstColumn(), area.getLastRow(), area.getLastColumn(), area.getRefEvaluator()); //ZSS-962
+            return new ArrayEval(results, area.getFirstRow(), area.getFirstColumn(), area.getLastRow(), area.getLastColumn(), area.getRefEvaluator()); //ZSS-962
+        }
     }
     
 }

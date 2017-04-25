@@ -63,7 +63,8 @@ public final class OperandResolver {
 		if (arg instanceof RefEval) {
 			result = ((RefEval) arg).getInnerValueEval();
 		} else if (arg instanceof AreaEval) {
-			result = chooseSingleElementFromArea((AreaEval) arg, srcCellRow, srcCellCol);
+			// Take the result as a whole, instead of sampling one value
+			result = arg;
 		} else if (arg instanceof UnionEval) { //ZSS-933
 			result = ErrorEval.VALUE_INVALID;
 		} else {
