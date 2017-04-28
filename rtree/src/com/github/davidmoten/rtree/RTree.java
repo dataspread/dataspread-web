@@ -19,9 +19,6 @@ import com.github.davidmoten.rtree.internal.Comparators;
 import com.github.davidmoten.rtree.internal.NodeAndEntries;
 import com.github.davidmoten.rtree.internal.operators.OperatorBoundedPriorityQueue;
 
-
-import org.model.BlockStore;
-import org.model.DBContext;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.functions.Func2;
@@ -36,8 +33,8 @@ import rx.functions.Func2;
  */
 public final class RTree<T, S extends Geometry> {
 
-    private Optional<? extends Node<T, S>> root;
-    private  Context<T, S> context;
+    private final Optional<? extends Node<T, S>> root;
+    private final Context<T, S> context;
 
     /**
      * Benchmarks show that this is a good choice for up to O(10,000) entries
@@ -54,64 +51,24 @@ public final class RTree<T, S extends Geometry> {
     /**
      * Current size in Entries of the RTree.
      */
-    private int size;
-
-    /**
-     * The ID of the meta data node
-     */
-    protected final int METADATA_BLOCK_ID = 0;
-    /**
-     * The block storage mechanism
-     */
-    protected BlockStore bs;
-    private MetaDataBlock metaDataBlock;
-
-    /*Create a RTree*/
-    public RTree(DBContext dbcontext, String tableName) {
-        bs = new BlockStore(dbcontext, tableName);
-        loadMetaData(dbcontext);
-    }
-
-
-    private void loadMetaData(DBContext dbcontext) {
-        metaDataBlock = bs.getObject(dbcontext, METADATA_BLOCK_ID, MetaDataBlock.class);
-        if (metaDataBlock == null) {
-            metaDataBlock = new MetaDataBlock();
-            this.root = Optional.absent();
-            //root.id = 0
-            bs.putObject(0, this);
-            metaDataBlock.ri = 0;
-            metaDataBlock.elementCount = 0;
-            metaDataBlock.maxValue = 0;
-            bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
-            bs.flushDirtyBlocks(dbcontext);
-        }
-    }
-
-    public void setupBlockStore(DBContext dbcontext, String tableName) {
-            bs = new BlockStore(dbcontext, tableName);
-            loadMetaData(dbcontext);
-    }
-
+    private final int size;
 
     /**
      * Constructor.
-     *
+     * 
      * @param root
      *            the root node of the tree if present
      * @param context
      *            options for the R-tree
      */
-
     private RTree(Optional<? extends Node<T, S>> root, int size, Context<T, S> context) {
         this.root = root;
         this.size = size;
         this.context = context;
     }
 
-
     private RTree() {
-        this(Optional.absent(), 0, null);
+        this(Optional.<Node<T, S>> absent(), 0, null);
     }
 
     /**
@@ -141,11 +98,9 @@ public final class RTree<T, S extends Geometry> {
      *            the geometry type of the entries in the tree
      * @return a new RTree instance
      */
-
-    public static <T, S extends Geometry> RTree<T, S> create() {return new Builder().create();}
-
-    public static <T, S extends Geometry> RTree<T, S> createWithDb(DBContext dbcontext, String tableName) {return new Builder().createWithDb(dbcontext, tableName);}
-
+    public static <T, S extends Geometry> RTree<T, S> create() {
+        return new Builder().create();
+    }
 
     /**
      * The tree is scanned for depth and the depth returned. This involves
@@ -336,33 +291,6 @@ public final class RTree<T, S extends Geometry> {
          * @return RTree
          */
         @SuppressWarnings("unchecked")
-        public <T, S extends Geometry> RTree<T, S> createWithDb(DBContext dbcontext, String tableName) {
-            if (!maxChildren.isPresent())
-                if (star)
-                    maxChildren = of(MAX_CHILDREN_DEFAULT_STAR);
-                else
-                    maxChildren = of(MAX_CHILDREN_DEFAULT_GUTTMAN);
-            if (!minChildren.isPresent())
-                minChildren = of((int) Math.round(maxChildren.get() * DEFAULT_FILLING_FACTOR));
-
-            RTree<T, S> ret = new RTree<T, S>(Optional.absent(), 0,
-                    new Context<T, S>(minChildren.get(), maxChildren.get(), selector, splitter,
-                            (Factory<T, S>) factory));
-            ret.setupBlockStore(dbcontext, tableName);
-            return ret;
-        }
-
-
-        /**
-         * Builds the {@link RTree} that has a dbcontext.
-         *
-         * @param <T>
-         *            value type
-         * @param <S>
-         *            geometry type
-         * @return RTree
-         */
-        @SuppressWarnings("unchecked")
         public <T, S extends Geometry> RTree<T, S> create() {
             if (!maxChildren.isPresent())
                 if (star)
@@ -371,17 +299,12 @@ public final class RTree<T, S extends Geometry> {
                     maxChildren = of(MAX_CHILDREN_DEFAULT_GUTTMAN);
             if (!minChildren.isPresent())
                 minChildren = of((int) Math.round(maxChildren.get() * DEFAULT_FILLING_FACTOR));
-            return new RTree<T, S>(Optional.absent(), 0,
+            return new RTree<T, S>(Optional.<Node<T, S>> absent(), 0,
                     new Context<T, S>(minChildren.get(), maxChildren.get(), selector, splitter,
                             (Factory<T, S>) factory));
         }
 
-
     }
-
-
-
-
 
     /**
      * Returns an immutable copy of the RTree with the addition of given entry.
@@ -391,25 +314,19 @@ public final class RTree<T, S extends Geometry> {
      * @return a new immutable R-tree including the new entry
      */
     @SuppressWarnings("unchecked")
-    public RTree<T, S> add(Entry<? extends T, ? extends S> entry, DBContext dbcontext) {
+    public RTree<T, S> add(Entry<? extends T, ? extends S> entry) {
         if (root.isPresent()) {
-            List<Node<T, S>> nodes = root.get().add(entry,dbcontext,bs);
+            List<Node<T, S>> nodes = root.get().add(entry);
             Node<T, S> node;
             if (nodes.size() == 1)
                 node = nodes.get(0);
             else {
-                node = context.factory().createNonLeaf(nodes, context, dbcontext,bs);
+                node = context.factory().createNonLeaf(nodes, context);
             }
-
-            //metaDataBlock.elementCount++;
-            //bs.flushDirtyBlocks(dbcontext);
             return new RTree<T, S>(node, size + 1, context);
         } else {
             Leaf<T, S> node = context.factory().createLeaf(Lists.newArrayList((Entry<T, S>) entry),
-                    context,dbcontext,bs);
-
-            //metaDataBlock.elementCount++;
-            //bs.flushDirtyBlocks(dbcontext);
+                    context);
             return new RTree<T, S>(node, size + 1, context);
         }
     }
@@ -424,8 +341,8 @@ public final class RTree<T, S extends Geometry> {
      *            the geometry of the {@link Entry} to be added
      * @return a new immutable R-tree including the new entry
      */
-    public RTree<T, S> add(T value, S geometry, DBContext dbcontext) {
-        return add(context.factory().createEntry(value, geometry), dbcontext);
+    public RTree<T, S> add(T value, S geometry) {
+        return add(context.factory().createEntry(value, geometry));
     }
 
     /**
@@ -436,10 +353,10 @@ public final class RTree<T, S extends Geometry> {
      *            entries to add
      * @return R-tree with entries added
      */
-    public RTree<T, S> add(Iterable<Entry<T, S>> entries,DBContext dbcontext) {
+    public RTree<T, S> add(Iterable<Entry<T, S>> entries) {
         RTree<T, S> tree = this;
         for (Entry<T, S> entry : entries)
-            tree = tree.add(entry,dbcontext);
+            tree = tree.add(entry);
         return tree;
     }
 
@@ -451,12 +368,12 @@ public final class RTree<T, S extends Geometry> {
      *            the entries to add
      * @return a sequence of trees
      */
-    public Observable<RTree<T, S>> add(Observable<Entry<T, S>> entries, DBContext dbcontext) {
+    public Observable<RTree<T, S>> add(Observable<Entry<T, S>> entries) {
         return entries.scan(this, new Func2<RTree<T, S>, Entry<T, S>, RTree<T, S>>() {
 
             @Override
             public RTree<T, S> call(RTree<T, S> tree, Entry<T, S> entry) {
-                return tree.add(entry,dbcontext);
+                return tree.add(entry);
             }
         });
     }
@@ -471,12 +388,12 @@ public final class RTree<T, S extends Geometry> {
      *            if true delete all matching otherwise just first matching
      * @return a sequence of trees
      */
-    public Observable<RTree<T, S>> delete(Observable<Entry<T, S>> entries, final boolean all,DBContext dbcontext) {
+    public Observable<RTree<T, S>> delete(Observable<Entry<T, S>> entries, final boolean all) {
         return entries.scan(this, new Func2<RTree<T, S>, Entry<T, S>, RTree<T, S>>() {
 
             @Override
             public RTree<T, S> call(RTree<T, S> tree, Entry<T, S> entry) {
-                return tree.delete(entry, all, dbcontext);
+                return tree.delete(entry, all);
             }
         });
     }
@@ -492,10 +409,10 @@ public final class RTree<T, S extends Geometry> {
      *            if false deletes one if exists else deletes all
      * @return R-tree with entries deleted
      */
-    public RTree<T, S> delete(Iterable<Entry<T, S>> entries, boolean all,DBContext dbcontext) {
+    public RTree<T, S> delete(Iterable<Entry<T, S>> entries, boolean all) {
         RTree<T, S> tree = this;
         for (Entry<T, S> entry : entries)
-            tree = tree.delete(entry, all, dbcontext);
+            tree = tree.delete(entry, all);
         return tree;
     }
 
@@ -508,10 +425,10 @@ public final class RTree<T, S extends Geometry> {
      * @return R-tree with entries deleted up to one matching occurence per
      *         entry
      */
-    public RTree<T, S> delete(Iterable<Entry<T, S>> entries, DBContext dbcontext) {
+    public RTree<T, S> delete(Iterable<Entry<T, S>> entries) {
         RTree<T, S> tree = this;
         for (Entry<T, S> entry : entries)
-            tree = tree.delete(entry,dbcontext);
+            tree = tree.delete(entry);
         return tree;
     }
 
@@ -532,8 +449,8 @@ public final class RTree<T, S extends Geometry> {
      *         specified entry if it exists otherwise returns the original RTree
      *         object
      */
-    public RTree<T, S> delete(T value, S geometry, boolean all, DBContext dbcontext) {
-        return delete(context.factory().createEntry(value, geometry), all, dbcontext);
+    public RTree<T, S> delete(T value, S geometry, boolean all) {
+        return delete(context.factory().createEntry(value, geometry), all);
     }
 
     /**
@@ -548,8 +465,8 @@ public final class RTree<T, S extends Geometry> {
      * @return an immutable RTree without one entry (if found) matching the
      *         given value and geometry
      */
-    public RTree<T, S> delete(T value, S geometry,DBContext dbcontext) {
-        return delete(context.factory().createEntry(value, geometry), false, dbcontext);
+    public RTree<T, S> delete(T value, S geometry) {
+        return delete(context.factory().createEntry(value, geometry), false);
     }
 
     /**
@@ -566,22 +483,15 @@ public final class RTree<T, S extends Geometry> {
      * @return a new immutable R-tree without one instance of the specified
      *         entry
      */
-    public RTree<T, S> delete(Entry<? extends T, ? extends S> entry, boolean all,DBContext dbcontext) {
+    public RTree<T, S> delete(Entry<? extends T, ? extends S> entry, boolean all) {
         if (root.isPresent()) {
-            NodeAndEntries<T, S> nodeAndEntries = root.get().delete(entry, all,dbcontext, bs);
-            if (nodeAndEntries.node().isPresent() && nodeAndEntries.node().get() == root.get()) {
-                metaDataBlock.elementCount--;
-                bs.flushDirtyBlocks(dbcontext);
+            NodeAndEntries<T, S> nodeAndEntries = root.get().delete(entry, all);
+            if (nodeAndEntries.node().isPresent() && nodeAndEntries.node().get() == root.get())
                 return this;
-            }
-            else {
-                metaDataBlock.elementCount--;
-                bs.flushDirtyBlocks(dbcontext);
+            else
                 return new RTree<T, S>(nodeAndEntries.node(),
                         size - nodeAndEntries.countDeleted() - nodeAndEntries.entriesToAdd().size(),
-                        context).add(nodeAndEntries.entriesToAdd(), dbcontext);
-
-            }
+                        context).add(nodeAndEntries.entriesToAdd());
         } else
             return this;
     }
@@ -597,8 +507,8 @@ public final class RTree<T, S extends Geometry> {
      * @return a new immutable R-tree without one instance of the specified
      *         entry
      */
-    public RTree<T, S> delete(Entry<? extends T, ? extends S> entry,DBContext dbcontext) {
-        return delete(entry, false, dbcontext);
+    public RTree<T, S> delete(Entry<? extends T, ? extends S> entry) {
+        return delete(entry, false);
     }
 
     /**
@@ -797,7 +707,7 @@ public final class RTree<T, S extends Geometry> {
     public Observable<Entry<T, S>> nearest(final Rectangle r, final double maxDistance,
             int maxCount) {
         return search(r, maxDistance).lift(new OperatorBoundedPriorityQueue<Entry<T, S>>(maxCount,
-                Comparators.ascendingDistance(r)));
+                Comparators.<T, S> ascendingDistance(r)));
     }
 
     /**
@@ -860,7 +770,7 @@ public final class RTree<T, S extends Geometry> {
     }
 
     private Rectangle calculateMaxView(RTree<T, S> tree) {
-        return tree.entries().reduce(Optional.absent(),
+        return tree.entries().reduce(Optional.<Rectangle> absent(),
                 new Func2<Optional<Rectangle>, Entry<T, S>, Optional<Rectangle>>() {
 
                     @Override
@@ -969,12 +879,4 @@ public final class RTree<T, S extends Geometry> {
         return s.toString();
     }
 
-    private static class MetaDataBlock {
-        // The ID of the root node
-        int ri;
-        // Maximum key value for data
-        int maxValue;
-        // Number of elements
-        int elementCount;
-    }
 }

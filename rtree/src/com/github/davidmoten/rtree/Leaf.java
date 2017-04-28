@@ -4,9 +4,9 @@ import java.util.List;
 
 import com.github.davidmoten.rtree.geometry.Geometry;
 
-public abstract class Leaf<T, S extends Geometry> extends Node<T, S> {
+public interface Leaf<T, S extends Geometry> extends Node<T, S> {
 
-    abstract public List<Entry<T, S>> entries();
+    List<Entry<T, S>> entries();
 
     /**
      * Returns the ith entry (0-based). This method should be preferred for
@@ -16,9 +16,7 @@ public abstract class Leaf<T, S extends Geometry> extends Node<T, S> {
      * @param i
      *            0-based index
      * @return ith entry
-     **/
-   abstract public Entry<T, S> entry(int i);
-
-
+     */
+    Entry<T, S> entry(int i);
 
 }

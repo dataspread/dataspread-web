@@ -10,8 +10,6 @@ import com.github.davidmoten.rtree.Leaf;
 import com.github.davidmoten.rtree.Node;
 import com.github.davidmoten.rtree.NonLeaf;
 import com.github.davidmoten.rtree.geometry.Geometry;
-import org.model.BlockStore;
-import org.model.DBContext;
 
 public final class FactoryDefault<T, S extends Geometry> implements Factory<T, S> {
 
@@ -25,13 +23,13 @@ public final class FactoryDefault<T, S extends Geometry> implements Factory<T, S
     }
 
     @Override
-    public Leaf<T, S> createLeaf(List<Entry<T, S>> entries, Context<T, S> context, DBContext dbContext, BlockStore bs) {
-        return new LeafDefault<T, S>(entries, context,dbContext,bs);
+    public Leaf<T, S> createLeaf(List<Entry<T, S>> entries, Context<T, S> context) {
+        return new LeafDefault<T, S>(entries, context);
     }
 
     @Override
-    public NonLeaf<T, S> createNonLeaf(List<? extends Node<T, S>> children, Context<T, S> context, DBContext dbcontext, BlockStore bs) {
-        return new NonLeafDefault<T, S>(children, context, dbcontext, bs);
+    public NonLeaf<T, S> createNonLeaf(List<? extends Node<T, S>> children, Context<T, S> context) {
+        return new NonLeafDefault<T, S>(children, context);
     }
 
     @Override

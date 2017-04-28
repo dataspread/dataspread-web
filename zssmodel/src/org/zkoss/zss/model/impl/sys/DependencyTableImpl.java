@@ -37,7 +37,6 @@ public class DependencyTableImpl extends DependencyTableAdv {
 
 	/** Map<dependant, precedent> */
 	protected Map<Ref, Set<Ref>> _map = new LinkedHashMap<Ref, Set<Ref>>();
-	//protected Map<Ref, Set<Ref>> _evaledMap = new LinkedHashMap<Ref, Set<Ref>>();
 	protected SBookSeries _books;
 
 	public DependencyTableImpl() {
@@ -60,13 +59,11 @@ public class DependencyTableImpl extends DependencyTableAdv {
 
 	public void clear() {
 		_map.clear();
-		//_evaledMap.clear();
 	}
 
 	@Override
 	public void clearDependents(Ref dependant) {
 		_map.remove(dependant);
-		//_evaledMap.remove(dependant);
 	}
 
 	@Override
@@ -118,7 +115,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 
 	@Override
 	public Set<Ref> getDirectDependents(Ref precedent) {
-		// search direct dependents
+		// search direct dependents 
 		Set<Ref> result = new LinkedHashSet<Ref>();
 		RefType precedentType = precedent.getType();
 		for(Entry<Ref, Set<Ref>> entry : _map.entrySet()) {
@@ -260,9 +257,6 @@ public class DependencyTableImpl extends DependencyTableAdv {
 		// simply, just put everything in
 		DependencyTableImpl another = (DependencyTableImpl)dependencyTable;
 		_map.putAll(another._map);
-		//_evaledMap.putAll(another._evaledMap);
-	}
-
 	@Override
 	public Set<Ref> searchPrecedents(RefFilter filter){
 		Set<Ref> precedents = new LinkedHashSet<Ref>();
@@ -302,4 +296,3 @@ public class DependencyTableImpl extends DependencyTableAdv {
 	public void moveSheetIndex(String bookName, int oldIndex, int newIndex) {
 		// do nothing
 	}
-}
