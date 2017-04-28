@@ -37,11 +37,7 @@ public interface DependencyTable {
 
 	Set<Ref> getDirectDependents(Ref precedent);
 
-	Set<Ref> getEvaluatedDependents(Ref precedent);
-
 	void add(Ref dependent, Ref precedent);
-
-	void setEvaluated(Ref dependent);
 
 	void clearDependents(Ref dependant);
 

@@ -74,20 +74,6 @@ public class DependencyTableImpl extends DependencyTableAdv {
 		return getDependents(precedent,_map);
 	}
 
-	@Override
-	public Set<Ref> getEvaluatedDependents(Ref precedent) {
-		//return getDependents(precedent,_evaledMap);
-		return getDependents(precedent,_map);
-	}
-
-	@Override
-	public void setEvaluated(Ref dependent){
-		/*Set<Ref> precedents = _map.get(dependent);
-		if(precedents!=null){
-			_evaledMap.put(dependent, precedents);
-		}*/
-	}
-
 	private Set<Ref> getDependents(Ref precedent,Map<Ref, Set<Ref>> base) {
 		// ZSS-818
 		if (_regionTypes.contains(precedent.getType())) {
