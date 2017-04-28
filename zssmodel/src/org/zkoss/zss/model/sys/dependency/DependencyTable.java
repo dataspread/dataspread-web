@@ -30,6 +30,17 @@ import java.util.Set;
  */
 public interface DependencyTable {
 
+	//GetBackwardDependents
+	Set<Ref> getDependents(Ref precedent);
+
+	Set<Ref> getDirectDependents(Ref precedent);
+
+	void add(Ref dependent, Ref precedent);
+
+	void clearDependents(Ref dependant);
+
+	Set<Ref> searchPrecedents(RefFilter filter);
+
 	/**
 	 * @since 3.5.0
 	 */
