@@ -248,15 +248,17 @@ public class DependencyTableImpl extends DependencyTableAdv {
 
 	@Override
 	public void merge(DependencyTableAdv dependencyTable) {
-		if(!(dependencyTable instanceof DependencyTableImpl)) {
+		if (!(dependencyTable instanceof DependencyTableImpl)) {
 			// just in case
 			_logger.error("can't merge different type of dependency table: " + dependencyTable.getClass().getName());
 			return;
 		}
 
 		// simply, just put everything in
-		DependencyTableImpl another = (DependencyTableImpl)dependencyTable;
+		DependencyTableImpl another = (DependencyTableImpl) dependencyTable;
 		_map.putAll(another._map);
+	}
+
 	@Override
 	public Set<Ref> searchPrecedents(RefFilter filter){
 		Set<Ref> precedents = new LinkedHashSet<Ref>();
@@ -296,3 +298,4 @@ public class DependencyTableImpl extends DependencyTableAdv {
 	public void moveSheetIndex(String bookName, int oldIndex, int newIndex) {
 		// do nothing
 	}
+}
