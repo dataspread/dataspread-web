@@ -39,7 +39,6 @@ To host DataSpread locally you can either use one of the pre-build war files, av
 
 ### Required Software
 
-* [Apache Ant][ant] >= 1.6
 * [Java Platform (JDK)][java] >= 8
 * [PostgreSQL][posrgres] >= 9.5
 * [PostgreSQL JDBC driver][jdbc] - 9.4.1208
@@ -89,7 +88,7 @@ To host DataSpread locally you can either use one of the pre-build war files, av
  
 6. Deploy the war file within Tomcat. This can be done via Tomcat's web interface or by manually copying the war file in the `webapps` folder under `TOMCAT_HOME`.
 
-7. Now you are ready to run the program. Visit the url where Tomcat is installed. It will be typically [http://localhost:8080/DataSpread_war/][install_loc] for a local install.
+7. Now you are ready to run the program. Visit the url where Tomcat is installed. It will be typically [http://localhost:8080/DataSpread/][install_loc] for a local install.
 
 
 License
