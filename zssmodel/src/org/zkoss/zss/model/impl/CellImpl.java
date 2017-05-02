@@ -16,30 +16,16 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
-import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.Date;
-import java.util.Locale;
-
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import com.esotericsoftware.kryo.pool.KryoFactory;
+import com.esotericsoftware.kryo.pool.KryoPool;
 import org.zkoss.poi.ss.formula.eval.EvaluationException;
 import org.zkoss.poi.ss.formula.eval.ValueEval;
 import org.zkoss.poi.ss.usermodel.ZssContext;
 import org.zkoss.poi.util.Internal;
-import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.ErrorValue;
-import org.zkoss.zss.model.InvalidFormulaException;
-import org.zkoss.zss.model.SBook;
-import org.zkoss.zss.model.SBookSeries;
-import org.zkoss.zss.model.SCellStyle;
-import org.zkoss.zss.model.SColumnArray;
-import org.zkoss.zss.model.SComment;
-import org.zkoss.zss.model.SHyperlink;
-import org.zkoss.zss.model.SRichText;
-import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.model.STable;
-import org.zkoss.zss.model.STableColumn;
+import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.STableColumn.STotalsRowFunction;
 import org.zkoss.zss.model.impl.sys.formula.FormulaEngineImpl;
 import org.zkoss.zss.model.sys.EngineFactory;
@@ -48,13 +34,17 @@ import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.format.FormatContext;
 import org.zkoss.zss.model.sys.format.FormatEngine;
 import org.zkoss.zss.model.sys.format.FormatResult;
-import org.zkoss.zss.model.sys.formula.EvaluationResult;
-import org.zkoss.zss.model.sys.formula.FormulaClearContext;
-import org.zkoss.zss.model.sys.formula.FormulaEngine;
-import org.zkoss.zss.model.sys.formula.FormulaEvaluationContext;
-import org.zkoss.zss.model.sys.formula.FormulaExpression;
-import org.zkoss.zss.model.sys.formula.FormulaParseContext;
+import org.zkoss.zss.model.sys.formula.*;
 import org.zkoss.zss.model.util.Validations;
+
+import java.io.ByteArrayOutputStream;
+import java.io.Serializable;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Collection;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.Locale;
 //import org.zkoss.zss.ngmodel.InvalidateModelValueException;
 /**
  * 
@@ -63,31 +53,74 @@ import org.zkoss.zss.model.util.Validations;
  */
 public class CellImpl extends AbstractCellAdv {
 	private static final long serialVersionUID = 1L;
-	private AbstractRowAdv _row;
-	private int _index;
+	private static KryoFactory factory = new KryoFactory() {
+		public Kryo create() {
+			Kryo kryo = new Kryo();
+			// configure kryo instance, customize settings
+			kryo.register(CellImpl.class, 0);
+			return kryo;
+		}
+	};
+	private final static KryoPool kryoPool = new KryoPool.Builder(factory).softReferences().build();
+	transient private int _row;
+	transient private int _column;
 	private CellValue _localValue = null;
 	private AbstractCellStyleAdv _cellStyle;
 	transient private FormulaResultCellValue _formulaResultValue;// cache
-	
-	
-	//use another object to reduce object reference size
+    transient private AbstractSheetAdv _sheet;
+    //use another object to reduce object reference size
 	private OptFields _opts;
-	
-	private static class OptFields implements Serializable{
-		private AbstractHyperlinkAdv _hyperlink;
-		private AbstractCommentAdv _comment;
+
+    public CellImpl(int row, int column) {
+        _row = row;
+        _column = column;
+    }
+
+    @SuppressWarnings("unused")
+    public CellImpl(){
+        /* Required for deserialization */
+        this(0,0);
+    }
+
+
+    public static CellImpl fromBytes(int row, int column, byte[] inByteArray) {
+		CellImpl cellImpl;
+		Kryo kryo = kryoPool.borrow();
+		try (Input in = new Input(inByteArray)) {
+			cellImpl = kryo.readObject(in, CellImpl.class);
+            cellImpl._row = row;
+            cellImpl._column = column;
+			in.close();
+		} catch (Exception e) {
+            // data that cannot be parsed is considered as a string value.
+			cellImpl = new CellImpl(row, column);
+			cellImpl._localValue = new CellValue(new String(inByteArray));
+        }
+		kryoPool.release(kryo);
+		return cellImpl;
 	}
 
+	private static boolean valueEquals(Object val1, Object val2) {
+		return val1 == val2 || (val1 != null && val1.equals(val2));
+	}
+
+	@Override
+	public byte[] toBytes() {
+		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+		Output out = new Output(byteArrayOutputStream);
+		Kryo kryo = kryoPool.borrow();
+		kryo.writeObject(out, this);
+		byte[] outByteArray = out.toBytes();
+		out.close();
+		kryoPool.release(kryo);
+		return outByteArray;
+	}
+	
 	private OptFields getOpts(boolean create){
 		if(_opts==null && create){
 			_opts = new OptFields();
 		}
 		return _opts;
-	}
-
-	public CellImpl(AbstractRowAdv row, int index) {
-		this._row = row;
-		this._index = index;
 	}
 
 	@Override
@@ -103,15 +136,13 @@ public class CellImpl extends AbstractCellAdv {
 
 	@Override
 	public int getRowIndex() {
-		checkOrphan();
-		return _row.getIndex();
-	}
+        return _row;
+    }
 
 	@Override
 	public int getColumnIndex() {
-		checkOrphan();
-		return _index;
-	}
+        return _column;
+    }
 
 	@Override
 	public String getReferenceString() {
@@ -119,26 +150,14 @@ public class CellImpl extends AbstractCellAdv {
 	}
 
 	@Override
-	public void checkOrphan() {
-		if (_row == null) {
-			throw new IllegalStateException("doesn't connect to parent");
-		}
-	}
-
-	@Override
 	public SSheet getSheet() {
-		checkOrphan();
-		return _row.getSheet();
-	}
+        return _sheet;
+    }
 
-	@Override
-	public void destroy() {
-		checkOrphan();
-		//ZSS-985: when delete table cell, it causes side effect to 
-		//     rename column name; thus use a boolean to distinguish the case
-		clearValue0(true, null, false);
-		_row = null;
-	}
+    @Override
+    public void setSheet(AbstractSheetAdv sheet) {
+        this._sheet = sheet;
+    }
 
 	@Override
 	public SCellStyle getCellStyle() {
@@ -146,33 +165,38 @@ public class CellImpl extends AbstractCellAdv {
 	}
 
 	@Override
+	public void setCellStyle(SCellStyle cellStyle) {
+		if (cellStyle != null) {
+			Validations.argInstance(cellStyle, AbstractCellStyleAdv.class);
+		}
+		this._cellStyle = (AbstractCellStyleAdv) cellStyle;
+		addCellUpdate(CellAttribute.STYLE); //ZSS-939
+	}
+
+	@Override
 	public SCellStyle getCellStyle(boolean local) {
 		if (local || _cellStyle != null) {
 			return _cellStyle;
 		}
-		checkOrphan();
+
+        return _sheet.getBook().getDefaultCellStyle();
+        //TODO: Maitain row and sheet level styles
+        /*
+        checkOrphan();
 		_cellStyle = (AbstractCellStyleAdv) _row.getCellStyle(true);
 		AbstractSheetAdv sheet = (AbstractSheetAdv)_row.getSheet();
 		if (_cellStyle == null) {
 			SColumnArray array = sheet.getColumnArray(getColumnIndex());
 			if(array!=null){
-				_cellStyle = (AbstractCellStyleAdv)((AbstractColumnArrayAdv)array).getCellStyle(true);
+				_cellStyle = (AbstractCellStyleAdv) array.getCellStyle(true);
 			}
 		}
 		if (_cellStyle == null) {
 			_cellStyle = (AbstractCellStyleAdv) sheet.getBook()
 					.getDefaultCellStyle();
 		}
-		return _cellStyle;
-	}
 
-	@Override
-	public void setCellStyle(SCellStyle cellStyle) {
-		if(cellStyle!=null){
-			Validations.argInstance(cellStyle, AbstractCellStyleAdv.class);
-		}
-		this._cellStyle = (AbstractCellStyleAdv) cellStyle;
-		addCellUpdate(CellAttribute.STYLE); //ZSS-939
+		return _cellStyle; */
 	}
 
 	@Override
@@ -216,7 +240,6 @@ public class CellImpl extends AbstractCellAdv {
 		clearValue0(false, connection, updateToDB); //ZSS-985
 	}
 	private void clearValue0(boolean destroy, Connection connection, boolean updateToDB) {
-		checkOrphan();
 		clearFormulaDependency();
 		clearFormulaResultCache();
 		
@@ -226,7 +249,7 @@ public class CellImpl extends AbstractCellAdv {
 		if(opts!=null){
 			// clear for value, don't clear hyperlink
 //			opts.hyperlink = null;
-		};
+		}
 		//don't update when sheet is destroying
 		if(BookImpl.destroyingSheet.get()!=getSheet()){
 			addCellUpdate(CellAttribute.TEXT); //ZSS-939
@@ -246,7 +269,6 @@ public class CellImpl extends AbstractCellAdv {
 	// ZSS-565: Support input with Swedish locale into Formula
 	@Override
 	public void setFormulaValue(String formula, Locale locale, Connection connection, boolean updateToDB) {
-		checkOrphan();
 		Validations.argNotNull(formula);
 		
 		//ZSS-967
@@ -280,7 +302,7 @@ public class CellImpl extends AbstractCellAdv {
 		if(opts!=null){
 			// Clear value only, don't clear hyperlink
 //			opts.hyperlink = null;
-		};
+		}
 	}
 
 	@Override
@@ -324,13 +346,10 @@ public class CellImpl extends AbstractCellAdv {
 	}
 	
 	private CellValue getCellValue(){
-		checkOrphan();
 		return _localValue;
 	}
 	
 	private void setCellValue(CellValue value, boolean destroy, Connection connection, boolean updateToDB){ //ZSS-985
-		checkOrphan();
-		
 		this._localValue = value!=null&&value.getType()==CellType.BLANK?null:value;
 		
 		//clear the dependent's formula result cache
@@ -369,52 +388,15 @@ public class CellImpl extends AbstractCellAdv {
 				}
 			}
 
-			if (getSheet().getEndRowIndex()<getRowIndex())
-				getSheet().setEndRowIndex(getRowIndex(), connection, updateToDB);
-			if (getSheet().getEndColumnIndex()<getColumnIndex())
-				getSheet().setEndColumnIndex(getColumnIndex(), connection, updateToDB);
-
 			if (updateToDB)
 			{
 				getSheet().getBook().checkDBSchema();
 				try {
 					Connection localConnection = connection == null ? DBHandler.instance.getConnection() : connection;
-					String bookTable = getSheet().getBook().getId();
-					if (_localValue==null)
-					{
-						//Delete
-						PreparedStatement deleteStmt = localConnection.prepareStatement("DELETE FROM " + bookTable + "_sheetdata WHERE sheetid = ? AND row = ? AND col = ?");
-						deleteStmt.setInt(1,getSheet().getDBId());
-						deleteStmt.setInt(2, getRowIndex());
-						deleteStmt.setInt(3, getColumnIndex());
-						deleteStmt.execute();
-					}
-					else
-					{
-						//Update
-						PreparedStatement insertStmt = localConnection.prepareStatement("INSERT INTO " + bookTable + "_sheetdata (sheetid,row,col,value) VALUES (?, ?, ?, ?) " +
-								" ON CONFLICT (sheetid, row, col) DO UPDATE" +
-								" SET value = ? WHERE " + bookTable + "_sheetdata.sheetid = ? " +
-								"AND " + bookTable + "_sheetdata.row = ? " +
-								"AND " + bookTable + "_sheetdata.col = ?");
-						insertStmt.setInt(1, getSheet().getDBId());
-						insertStmt.setInt(2, getRowIndex());
-						insertStmt.setInt(3, getColumnIndex());
-						if (getType()==CellType.FORMULA) {
-							insertStmt.setString(4, "=" + getFormulaValue());
-							insertStmt.setString(5, "=" + getFormulaValue());
-						}
-						else
-						{
-							insertStmt.setString(4, getValue().toString());
-							insertStmt.setString(5, getValue().toString());
-						}
-						insertStmt.setInt(6, getSheet().getDBId());
-						insertStmt.setInt(7, getRowIndex());
-						insertStmt.setInt(8, getColumnIndex());
-						insertStmt.execute();
-
-					}
+					Collection<AbstractCellAdv> cells = new LinkedList<>();
+					cells.add(this);
+					getSheet().getDataModel().updateCells(new DBContext(localConnection), cells);
+					//TODO: Handle cell delete.
 
 					if (connection == null) {
 						localConnection.commit();
@@ -456,26 +438,22 @@ public class CellImpl extends AbstractCellAdv {
 		tbCol.setTotalsRowFunction(func);
 	}
 	
-	private static boolean valueEuqals(Object val1, Object val2){
-		return val1==val2||(val1!=null && val1.equals(val2));
-	}
-	
 	@Override
 	public void setValue(Object newVal, Connection connection, boolean updateToDB) {
 		setValue(newVal, false, connection, updateToDB); //ZSS-853
 	}
-	
+
 	//ZSS-853
 	@Override
 	protected void setValue(Object newVal, boolean aString, Connection connection, boolean updateToDB) {
 		CellValue oldVal = getCellValue();
 		if( (oldVal==null && newVal==null) ||
-			(oldVal != null && valueEuqals(oldVal.getValue(),newVal))) {
+				(oldVal != null && valueEquals(oldVal.getValue(), newVal))) {
 			return;
 		}
-		
+
 		CellType newType;
-		
+
 		if (newVal == null) {
 			newType = CellType.BLANK;
 		} else if (newVal instanceof String) {
@@ -509,16 +487,16 @@ public class CellImpl extends AbstractCellAdv {
 							+ ", supports NULL, String, Date, Number and Byte(as Error Code)");
 		}
 
-		
+
 		CellValue newCellVal = new InnerCellValue(newType,newVal);
-		//ZSS-747. 
+		//ZSS-747.
 		//20140828, henrichen: clear if previous is a formula; update dependency table if a formula
 		clearValueForSet(oldVal!=null && oldVal.getType()==CellType.FORMULA);
 		if (newType == CellType.FORMULA) {
 			FormulaParseContext context = new FormulaParseContext(this, getRef());
 			EngineFactory.getInstance().createFormulaEngine().updateDependencyTable((FormulaExpression)newVal, context);
 		}
-			
+
 		setCellValue(newCellVal, false, connection, updateToDB); //ZSS-985
 	}
 
@@ -534,7 +512,7 @@ public class CellImpl extends AbstractCellAdv {
 		getOpts(true)._hyperlink = (AbstractHyperlinkAdv)hyperlink;
 		addCellUpdate(CellAttribute.TEXT); //ZSS-939
 	}
-	
+
 	@Override
 	public SComment getComment() {
 		OptFields opts = getOpts(false);
@@ -547,7 +525,7 @@ public class CellImpl extends AbstractCellAdv {
 		getOpts(true)._comment = (AbstractCommentAdv)comment;
 		addCellUpdate(CellAttribute.COMMENT); //ZSS-939
 	}
-	
+
 	//ZSS-848
 	@Override
 	public void deleteComment() {
@@ -555,13 +533,10 @@ public class CellImpl extends AbstractCellAdv {
 		if (opts == null) return;
 		opts._comment = null;
 	}
-	
+
+	// TODO: Mangesh - Implement shifting logic for formaule refrence
 	@Override
-	void setIndex(int newidx) {
-		if(this._index==newidx){
-			return;
-		}
-		
+    public void shift(int rowShift, int colShift) {
 		CellType type = getType();
 		String formula = null;
 		DependencyTable table = null;
@@ -569,10 +544,11 @@ public class CellImpl extends AbstractCellAdv {
 			formula = getFormulaValue();
 			//clear the old dependency
 			Ref oldRef = getRef();
-			table = ((AbstractBookSeriesAdv) getSheet().getBook().getBookSeries()).getDependencyTable(); 
+			table = ((AbstractBookSeriesAdv) getSheet().getBook().getBookSeries()).getDependencyTable();
 			table.clearDependents(oldRef);
 		}
-		this._index = newidx;
+		this._row += rowShift;
+        this._column += colShift;
 		if(formula!=null){
 			FormulaEngine fe = EngineFactory.getInstance().createFormulaEngine();
 			Ref ref = getRef();
@@ -582,45 +558,9 @@ public class CellImpl extends AbstractCellAdv {
 			}
 		}
 	}
-	
-	@Override
-	void setRow(int oldRowIdx, AbstractRowAdv row){
-		if(oldRowIdx==row.getIndex() && this._row==row){
-			return;
-		}
-		
-		CellType type = getType();
-		String formula = null;
-		DependencyTable table = null;
-		if(type == CellType.FORMULA){
-			formula = getFormulaValue();
-			//clear the old dependency
-			SSheet sheet = getSheet();
-			Ref oldRef = new RefImpl(sheet.getBook().getBookName(),sheet.getSheetName(),oldRowIdx,getColumnIndex());
-			table = ((AbstractBookSeriesAdv) getSheet().getBook().getBookSeries()).getDependencyTable(); 
-			table.clearDependents(oldRef);
-		}
-		this._row = row;
-		if(formula!=null){
-			FormulaEngine fe = EngineFactory.getInstance().createFormulaEngine();
-			Ref ref = getRef();
-			fe.parse(formula, new FormulaParseContext(this ,ref));//rebuild the expression to make new dependency with current row,column
-			if(_formulaResultValue!=null){
-				table.setEvaluated(ref);
-			}
-		}
-	}
-	
 
 	protected Ref getRef(){
 		return new RefImpl(this);
-	}
-	
-	private static class InnerCellValue extends CellValue{
-		private static final long serialVersionUID = 1L;
-		private InnerCellValue(CellType type, Object value){
-			super(type,value);
-		}
 	}
 	
 	public String toString(){
@@ -629,40 +569,7 @@ public class CellImpl extends AbstractCellAdv {
 		return sb.toString();
 	}
 	
-	//ZSS-688
-	//@since 3.6.0
-	@Override
-	/*package*/ AbstractCellAdv cloneCell(AbstractRowAdv row, Connection connection, boolean updateToDB) {
-		final CellImpl tgt = new CellImpl(row, this._index);
-		
-		if (_localValue != null) {
-			Object newVal = _localValue.getValue();
-			if (newVal instanceof SRichText) {
-				newVal = ((AbstractRichTextAdv)newVal).clone();
-			} else if (newVal instanceof FormulaExpression) {
-				newVal = "="+((FormulaExpression)newVal).getFormulaString();
-			}
-			tgt.setValue(newVal, connection, updateToDB);
-		}
-		
-		tgt._cellStyle = this._cellStyle;
-		
-		// do not clone _formulaResultValue
-		//transient private FormulaResultCellValue _formulaResultValue;// cache
-		
-		if (this._opts != null) {
-			final OptFields opts = tgt.getOpts(true);
-			if (this._opts._comment != null) {
-				opts._comment = this._opts._comment.clone();
-			}
-			if (this._opts._hyperlink != null) {
-				opts._hyperlink = this._opts._hyperlink.clone();
-			}
-		}
-		
-		return tgt;
-	}
-	
+
 	//ZSS-818
 	//@since 3.7.0
 	public void setFormulaResultValue(ValueEval value) {
@@ -670,14 +577,14 @@ public class CellImpl extends AbstractCellAdv {
 			_formulaResultValue = new FormulaResultCellValue(FormulaEngineImpl.convertToEvaluationResult(value));
 		} catch (EvaluationException e) {
 			// ignore it!
-		}		
+		}
 	}
 	
 	//ZSS-873
 	//@since 3.7.0
 	public FormulaExpression getFormulaExpression() {
-		return _localValue != null && _localValue.getType() == CellType.FORMULA ? 
-				(FormulaExpression) _localValue.getValue() : null; 
+		return _localValue != null && _localValue.getType() == CellType.FORMULA ?
+				(FormulaExpression) _localValue.getValue() : null;
 	}
 	
 	//ZSS-967
@@ -694,5 +601,23 @@ public class CellImpl extends AbstractCellAdv {
 	@Internal
 	public Object getFromulaResultValue() {
 		return _formulaResultValue;
+	}
+
+	private static class OptFields implements Serializable {
+		private AbstractHyperlinkAdv _hyperlink;
+		private AbstractCommentAdv _comment;
+	}
+
+	private static class InnerCellValue extends CellValue {
+		private static final long serialVersionUID = 1L;
+
+        InnerCellValue() {
+            super();
+        }
+
+
+		private InnerCellValue(CellType type, Object value) {
+			super(type, value);
+		}
 	}
 }

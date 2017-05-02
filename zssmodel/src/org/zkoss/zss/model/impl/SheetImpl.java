@@ -16,35 +16,29 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.function.Supplier;
-
 import org.zkoss.lang.Library;
 import org.zkoss.poi.ss.util.CellReference;
 import org.zkoss.poi.ss.util.SheetUtil;
 import org.zkoss.poi.ss.util.WorkbookUtil;
-import org.zkoss.poi.util.SystemOutLogger;
 import org.zkoss.util.logging.Log;
 import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.SAutoFilter.FilterOp;
 import org.zkoss.zss.model.SAutoFilter.NFilterColumn;
 import org.zkoss.zss.model.SPicture.Format;
+import org.zkoss.zss.model.impl.sys.formula.FormulaEngineImpl;
 import org.zkoss.zss.model.sys.EngineFactory;
 import org.zkoss.zss.model.sys.dependency.DependencyTable;
-import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.dependency.ObjectRef.ObjectType;
+import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.formula.FormulaClearContext;
 import org.zkoss.zss.model.util.Validations;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.stream.Collectors;
+
 /**
  * 
  * @author dennis
@@ -53,26 +47,22 @@ import org.zkoss.zss.model.util.Validations;
 public class SheetImpl extends AbstractSheetAdv {
 	private static final long serialVersionUID = 1L;
 	private static final Log _logger = Log.lookup(SheetImpl.class);
-			
-	private AbstractBookAdv _book;
-	private String _name;
-	private final String _id;
-	private int _dbid;
-	
-	private boolean _protected; //whether this sheet is protected
-	private short _password; //hashed password
-	
-	private SAutoFilter _autoFilter;
-	
-	private SSheetProtection _sheetProtection;
-	private SheetVisible _visible = SheetVisible.VISIBLE; //default value
-	
-	//ZSS-1063
-	private String _hashValue;
-	private String _spinCount;
-	private String _algName;
-	private String _saltValue;
-	
+    //Mangesh
+    static final private int PreFetchRows = 100;
+    static final private int PreFetchColumns = 30;
+    /**
+     * internal use only for developing/test state, should remove when stable
+     */
+    private static boolean COLUMN_ARRAY_CHECK = false;
+
+    static {
+        if ("true".equalsIgnoreCase(Library.getProperty("org.zkoss.zss.model.internal.CollumnArrayCheck"))) {
+            COLUMN_ARRAY_CHECK = true;
+        }
+    }
+
+    final int CACHE_SIZE = 50000;
+    private final String _id;
 	private final IndexPool<AbstractRowAdv> _rows = new IndexPool<AbstractRowAdv>(){
 		private static final long serialVersionUID = 1L;
 		@Override
@@ -81,37 +71,39 @@ public class SheetImpl extends AbstractSheetAdv {
 		}};
 //	private final BiIndexPool<ColumnAdv> columns = new BiIndexPool<ColumnAdv>();
 	private final ColumnArrayPool _columnArrays = new ColumnArrayPool();
-	
-	
 	private final List<AbstractPictureAdv> _pictures = new LinkedList<AbstractPictureAdv>();
 	private final List<AbstractChartAdv> _charts = new LinkedList<AbstractChartAdv>();
 	private final List<AbstractDataValidationAdv> _dataValidations = new ArrayList<AbstractDataValidationAdv>();
-	
 	private final List<CellRegion> _mergedRegions = new LinkedList<CellRegion>();
-	
 	//to store some lowpriority view info
 	private final SSheetViewInfo _viewInfo = new SheetViewInfoImpl();
-	
 	private final SPrintSetup _printSetup = new PrintSetupImpl();
-	
-	private HashMap<String,Object> _attributes;
+    //ZSS-855
+    private final List<STable> _tables = new ArrayList<STable>();
+    Model dataModel;
+    LruCache<CellRegion, AbstractCellAdv> sheetDataCache;
+    private AbstractBookAdv _book;
+    private String _name;
+    private int _dbid;
+    private boolean _protected; //whether this sheet is protected
+    private short _password; //hashed password
+    private SAutoFilter _autoFilter;
+    private SSheetProtection _sheetProtection;
+    private SheetVisible _visible = SheetVisible.VISIBLE; //default value
+    //ZSS-1063
+    private String _hashValue;
+    private String _spinCount;
+    private String _algName;
+    private String _saltValue;
+    private HashMap<String,Object> _attributes;
 	private int _defaultColumnWidth = 64; //in pixel
 	private int _defaultRowHeight = 20;//in pixel
 
-
-	//Mangesh
-	static final private int PreFetchSize = 200;
-	private int _maxColumnIndex=-1;
-	private int _maxRowIndex=-1;
-
-
-	//ZSS-855
-	private final List<STable> _tables = new ArrayList<STable>();
-	
 	public SheetImpl(AbstractBookAdv book,String id){
 		this._book = book;
 		this._id = id;
-	}
+        sheetDataCache = new LruCache<>(CACHE_SIZE);
+    }
 	
 	protected void checkOwnership(SPicture picture){
 		if(!_pictures.contains(picture)){
@@ -124,13 +116,13 @@ public class SheetImpl extends AbstractSheetAdv {
 			throw new IllegalStateException("doesn't has ownership "+ chart);
 		}
 	}
-	
+
 	protected void checkOwnership(SDataValidation validation){
 		if(!_dataValidations.contains(validation)){
 			throw new IllegalStateException("doesn't has ownership "+ validation);
 		}
 	}
-	
+
 	public SBook getBook() {
 		checkOrphan();
 		return _book;
@@ -143,6 +135,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	public SRow getRow(int rowIdx) {
 		return getRow(rowIdx,true);
 	}
+
 	@Override
 	AbstractRowAdv getRow(int rowIdx, boolean proxy) {
 		AbstractRowAdv rowObj = _rows.get(rowIdx);
@@ -151,7 +144,8 @@ public class SheetImpl extends AbstractSheetAdv {
 		}
 		return proxy?new RowProxy(this,rowIdx):null;
 	}
-	@Override
+
+    @Override
 	AbstractRowAdv getOrCreateRow(int rowIdx){
 		AbstractRowAdv rowObj = _rows.get(rowIdx);
 		if(rowObj == null){
@@ -167,25 +161,8 @@ public class SheetImpl extends AbstractSheetAdv {
 
 	@Override
 	public SColumn getColumn(int columnIdx) {
-		return getColumn(columnIdx,true);
-	}
-	
-	SColumn getColumn(int columnIdx, boolean proxy) {
-		SColumnArray array = getColumnArray(columnIdx);
-		if(array==null && !proxy){
-			return null;
-		}
-		return new ColumnProxy(this,columnIdx);
-	}
-	@Override
-	public SColumnArray getColumnArray(int columnIdx) {
-		if(_columnArrays.hasLastKey(columnIdx)){
-			return null;
-		}
-		SortedMap<Integer, AbstractColumnArrayAdv> submap = _columnArrays.lastSubMap(columnIdx);
-		
-		return submap.size()>0?submap.get(submap.firstKey()):null;
-	}
+		return getColumn(columnIdx, true);
+    }
 //	@Override
 //	ColumnAdv getColumn(int columnIdx, boolean proxy) {
 //		ColumnAdv colObj = columns.get(columnIdx);
@@ -194,13 +171,23 @@ public class SheetImpl extends AbstractSheetAdv {
 //		}
 //		return proxy?new ColumnProxy(this,columnIdx):null;
 //	}
-	
-	/**internal use only for developing/test state, should remove when stable*/
-	private static boolean COLUMN_ARRAY_CHECK = false;
-	static{
-		if("true".equalsIgnoreCase(Library.getProperty("org.zkoss.zss.model.internal.CollumnArrayCheck"))){
-			COLUMN_ARRAY_CHECK = true;
+
+    SColumn getColumn(int columnIdx, boolean proxy) {
+		SColumnArray array = getColumnArray(columnIdx);
+		if(array==null && !proxy){
+			return null;
 		}
+		return new ColumnProxy(this,columnIdx);
+	}
+
+	@Override
+	public SColumnArray getColumnArray(int columnIdx) {
+		if(_columnArrays.hasLastKey(columnIdx)){
+			return null;
+		}
+		SortedMap<Integer, AbstractColumnArrayAdv> submap = _columnArrays.lastSubMap(columnIdx);
+
+		return submap.size()>0?submap.get(submap.firstKey()):null;
 	}
 	
 	private void checkColumnArrayStatus(){
@@ -344,34 +331,59 @@ public class SheetImpl extends AbstractSheetAdv {
 //	}
 
 	// Mangesh
-	private void preFetchRows(int row)
-	{
-		int minRow = Math.max(0,row-PreFetchSize);
-		int maxRow = minRow+PreFetchSize*2-1;
+	public Model getDataModel() {
+		return dataModel;
+	}
 
-		String bookTable = getBook().getId();
-		String query ="SELECT * FROM "+ bookTable +"_sheetdata WHERE sheetid = ? AND row BETWEEN ? AND ?";
-		for (int i=minRow;i<=maxRow;i++)
-			getOrCreateRow(i);
-
-		try (Connection connection = DBHandler.instance.getConnection();
-			 PreparedStatement stmt = ((Supplier<PreparedStatement>)() -> {
-				 try {
-					 PreparedStatement s = connection.prepareStatement(query);
-					 s.setInt(1, getDBId());
-					 s.setInt(2, minRow);
-					 s.setInt(3, maxRow);
-					 return s;
-				 } catch (SQLException e) { throw new RuntimeException(e); }
-			 }).get();
-			 ResultSet rs = stmt.executeQuery()) {
-			while (rs.next())
-				getOrCreateCell(rs.getInt("row"), rs.getInt("col")).setValueParse(rs.getString("value"), null, false);
+	@Override
+	public void setDataModel(String model) {
+		try (Connection connection = DBHandler.instance.getConnection()) {
+			DBContext dbContext = new DBContext(connection);
+			dataModel = Model.CreateModel(dbContext, model);
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
+	}
+
+
+	private void preFetchCells(CellRegion cellRegion)
+	{
+		int minRow = Math.max(0,cellRegion.getRow()- PreFetchRows);
+		int maxRow = minRow + PreFetchRows * 2;
+
+		int minColumn = Math.max(0,cellRegion.getColumn()- PreFetchColumns);
+		int maxColumn = minColumn + PreFetchColumns * 2;
+
+		CellRegion fetchRange = new CellRegion(minRow, minColumn, maxRow, maxColumn);
+
+		try (Connection connection = DBHandler.instance.getConnection())
+		{
+			DBContext dbContext = new DBContext(connection);
+			Collection<AbstractCellAdv> cells = dataModel.getCells(dbContext, fetchRange);
+			//Update book reference for the cells.
+			cells.stream().forEach(e -> e.setSheet(this));
+
+
+			cells.stream()
+					.filter(e -> e.getType() == SCell.CellType.FORMULA)
+					.forEach(e ->
+							e.setFormulaValue(((FormulaEngineImpl.FormulaExpressionImpl) e.getValue(false))
+									.getFormulaString(), connection, false));
+
+            cells.stream().forEach(e->sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
+        }
 		catch (SQLException e)
 		{
 			e.printStackTrace();
 		}
+
+        for (int row=fetchRange.getRow();row<=fetchRange.getLastRow();++row) {
+            for (int col = fetchRange.getColumn(); col <= fetchRange.getLastColumn(); ++col) {
+				CellRegion cellRange = new CellRegion(row, col);
+                if (!sheetDataCache.containsKey(cellRange))
+                    sheetDataCache.put(cellRange, new CellProxy(this, row, col));
+            }
+        }
 	}
 
 
@@ -390,22 +402,44 @@ public class SheetImpl extends AbstractSheetAdv {
 	
 	@Override
 	AbstractCellAdv getCell(int rowIdx, int columnIdx, boolean proxy) {
-		AbstractRowAdv rowObj = (AbstractRowAdv) getRow(rowIdx,false);
-		if(rowObj!=null){
-			return rowObj.getCell(columnIdx,proxy);
+		CellRegion cellRegion = new CellRegion(rowIdx, columnIdx);
+        AbstractCellAdv cell = sheetDataCache.get(cellRegion);
+		if (cell == null) {
+			//Data not cached.
+			// Cache Data.
+			if (getBook().hasSchema()) {
+				preFetchCells(cellRegion);
+				// After prefetch assume this can get a cell.
+				return getCell(rowIdx, columnIdx, proxy);
+			} else {
+                if (proxy) {
+                    CellProxy cellProxy = new CellProxy(this, rowIdx, columnIdx);
+                    sheetDataCache.put(cellRegion, cellProxy);
+                    return cellProxy;
+                } else {
+                    return null;
+                }
+            }
 		}
-		else if (getBook().hasSchema())
-		{
-			preFetchRows(rowIdx);
-			return getCell(rowIdx, columnIdx, proxy);
+		else {
+			if (proxy) {
+				return cell;
+			} else {
+				if (cell instanceof CellProxy)
+					return null;
+				else
+					return cell;
+			}
 		}
-		return proxy?new CellProxy(this, rowIdx,columnIdx):null;
 	}
+
 	@Override
-	AbstractCellAdv getOrCreateCell(int rowIdx, int columnIdx){
-		AbstractRowAdv rowObj = (AbstractRowAdv)getOrCreateRow(rowIdx);
-		AbstractCellAdv cell = rowObj.getOrCreateCell(columnIdx);
-		return cell;
+    AbstractCellAdv createCell(int rowIdx, int columnIdx) {
+        AbstractCellAdv cell = new CellImpl(rowIdx, columnIdx);
+        cell.setSheet(this);
+        CellRegion cellRegion = new CellRegion(rowIdx, columnIdx);
+        sheetDataCache.put(cellRegion, cell);
+        return cell;
 	}
 
 	public int getStartRowIndex() {
@@ -413,40 +447,18 @@ public class SheetImpl extends AbstractSheetAdv {
 	}
 
 	public int getEndRowIndex() {
-		return _maxRowIndex;
-	}
-
-	private void updateMaxValuestoDB(Connection connection)
-	{
-		// Assuming connection is present.
-		String bookTable = getBook().getId();
-		String updateWorkbook = "UPDATE " + bookTable + "_workbook SET maxrow = ?, maxcolumn = ?" +
-				" WHERE sheetid = ?";
-
-		try  {
-			Connection localConnection = connection == null ? DBHandler.instance.getConnection() : connection;
-			PreparedStatement stmt = localConnection.prepareStatement(updateWorkbook);
-			stmt.setInt(1, _maxRowIndex);
-			stmt.setInt(2, _maxColumnIndex);
-			stmt.setInt(3, getDBId());
-			stmt.execute();
-			stmt.close();
-			if (connection==null)
-			{
-				localConnection.commit();
+		if (dataModel != null) {
+			Connection localConnection = DBHandler.instance.getConnection();
+			CellRegion cellRegion = dataModel.getBounds(new DBContext(localConnection));
+			if (cellRegion != null)
+				return cellRegion.getLastRow();
+			try {
 				localConnection.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
 			}
 		}
-		catch (SQLException e)
-		{
-			e.printStackTrace();
-		}
-	}
-
-	public void setEndRowIndex(int newEndRowIndex, Connection connection, boolean updatetoDB) {
-		this._maxRowIndex=newEndRowIndex;
-		if (updatetoDB)
-			updateMaxValuestoDB(connection);
+		return -1;
 	}
 
 	public int getStartColumnIndex() {
@@ -454,20 +466,25 @@ public class SheetImpl extends AbstractSheetAdv {
 	}
 
 	public int getEndColumnIndex() {
-		return _maxColumnIndex;
-	}
-
-	public void setEndColumnIndex(int newEndColumnIndex, Connection connection,  boolean updatetoDB) {
-		this._maxColumnIndex = newEndColumnIndex;
-		if (updatetoDB)
-			updateMaxValuestoDB(connection);
+		if (dataModel != null) {
+			Connection localConnection = DBHandler.instance.getConnection();
+			CellRegion cellRegion = dataModel.getBounds(new DBContext(localConnection));
+			if (cellRegion != null)
+				return cellRegion.getLastColumn();
+			try {
+				localConnection.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		return -1;
 	}
 
 
 	public int getStartCellIndex(int rowIdx) {
 		int idx1 = -1;
-		AbstractRowAdv rowObj = (AbstractRowAdv) getRow(rowIdx,false);
-		if(rowObj!=null){
+        AbstractRowAdv rowObj = getRow(rowIdx,false);
+        if(rowObj!=null){
 			idx1 = rowObj.getStartCellIndex();
 		}
 		return idx1;
@@ -476,8 +493,8 @@ public class SheetImpl extends AbstractSheetAdv {
 
 	public int getEndCellIndex(int rowIdx) {
 		int idx1 = -1;
-		AbstractRowAdv rowObj = (AbstractRowAdv) getRow(rowIdx,false);
-		if(rowObj!=null){
+        AbstractRowAdv rowObj = getRow(rowIdx,false);
+        if(rowObj!=null){
 			idx1 = rowObj.getEndCellIndex();
 		}
 		return idx1;
@@ -569,88 +586,53 @@ public class SheetImpl extends AbstractSheetAdv {
 		}
 
 		//Delete from DB
-		String bookTable = getBook().getId();
-		String updateWorkbook = "DELETE FROM  " + bookTable + "_sheetdata WHERE sheetid = ? " +
-				" AND row BETWEEN  ? AND ? " +
-				" AND col BETWEEN  ? AND ? ";
 
-		try (Connection connection = DBHandler.instance.getConnection();
-			 PreparedStatement stmt = connection.prepareStatement(updateWorkbook)) {
-			stmt.setInt(1, getDBId());
-			stmt.setInt(2, rowStart);
-			stmt.setInt(3, rowEnd);
-			stmt.setInt(4, columnStart);
-			stmt.setInt(5, columnEnd);
-			stmt.execute();
-			connection.commit();
-		}
-		catch (SQLException e)
-		{
-			e.printStackTrace();
-		}
-
-
-	}
-
-	@Override
-	public void insertRow(int rowIdx, int lastRowIdx) {
-		checkOrphan();
-		if(rowIdx>lastRowIdx){
-			throw new IllegalArgumentException(rowIdx+">"+lastRowIdx);
-		}
-		int size = lastRowIdx-rowIdx+1;
-
-		if (getBook().hasSchema()) {
-			// Shift Cells in DB
-			String bookTable = getBook().getId();
-			// Workaround for shifting.
-			// Counted btree should remove this.
-			String shiftRows = "UPDATE " + bookTable + "_sheetdata " +
-					" SET row = (row + ?) * -1" +
-					" WHERE sheetid = ?" +
-					" AND   row >= ?";
-
-			String shiftRows1 = "UPDATE " + bookTable + "_sheetdata " +
-					" SET row = row  * -1" +
-					" WHERE sheetid = ?" +
-					" AND   row < 0";
-
-
-			try (Connection connection = DBHandler.instance.getConnection();
-				 Statement stmt = connection.createStatement();
-				 PreparedStatement shiftRowsStmt = connection.prepareStatement(shiftRows);
-				 PreparedStatement shiftRowsStmt1 = connection.prepareStatement(shiftRows1)) {
-				shiftRowsStmt.setInt(1, size);
-				shiftRowsStmt.setInt(2, getDBId());
-				shiftRowsStmt.setInt(3, rowIdx);
-				shiftRowsStmt.execute();
-
-				shiftRowsStmt1.setInt(1, getDBId());
-				shiftRowsStmt1.execute();
-				setEndRowIndex(_maxRowIndex + size, connection, true);
-
+		CellRegion deleted_region = new CellRegion(rowStart, columnStart, rowEnd, columnEnd);
+		if (dataModel != null) {
+			try (Connection connection = DBHandler.instance.getConnection()) {
+				DBContext dbContext = new DBContext(connection);
+				dataModel.deleteCells(dbContext, deleted_region);
 				connection.commit();
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
 		}
-		_rows.insert(rowIdx, size);
+
+		sheetDataCache.remove(deleted_region);
+	}
+
+	@Override
+	public void insertRow(int rowIdx, int lastRowIdx) {
+		if(rowIdx>lastRowIdx){
+			throw new IllegalArgumentException(rowIdx+">"+lastRowIdx);
+		}
+		int size = lastRowIdx-rowIdx+1;
+
+		//TODO: Store row based attributes
+        if (dataModel != null) {
+            try (Connection connection = DBHandler.instance.getConnection()) {
+                DBContext dbContext = new DBContext(connection);
+                dataModel.insertRows(dbContext, rowIdx, size);
+                connection.commit();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+		// Update Column numbers for cached cells
+		List<AbstractCellAdv> cellsToShift = new LinkedList<>(sheetDataCache.values());
+		cellsToShift.stream()
+				.filter(e -> e.getRowIndex() >= rowIdx)
+				.forEach(e -> e.shift(size, 0));
+
+		sheetDataCache.clear();
+		cellsToShift.stream()
+				.forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
 
 
-		//destroy the row that exceed the max size
-		int maxSize = getBook().getMaxRowSize();
-		Collection<AbstractRowAdv> exceeds = new ArrayList<AbstractRowAdv>(_rows.subValues(maxSize, Integer.MAX_VALUE));
-		if(exceeds.size()>0){
-			_rows.trim(maxSize);
-		}
-		for(AbstractRowAdv row:exceeds){
-			row.destroy();
-		}
 		//ZSS-619, should clear formula for entire effected region
-		//here we clear whole sheet because of we don't have a efficient way to get the effected cell in the effected region
-		//NOTE, in current formula-engine, it clears all formula cache in non-cell case.
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
-		
+
 		Map<String,Object> dataBefore = shiftBeforeRowInsert(rowIdx,lastRowIdx);
 		ModelUpdateUtil.addInsertDeleteUpdate(this, true, true, rowIdx, lastRowIdx);
 		shiftAfterRowInsert(dataBefore,rowIdx,lastRowIdx);
@@ -716,53 +698,35 @@ public class SheetImpl extends AbstractSheetAdv {
 
 	@Override
 	public void deleteRow(int rowIdx, int lastRowIdx) {
-		checkOrphan();
 		if(rowIdx>lastRowIdx){
 			throw new IllegalArgumentException(rowIdx+">"+lastRowIdx);
 		}
-		
-		//clear before move relation
-		for(AbstractRowAdv row:_rows.subValues(rowIdx,lastRowIdx)){
-			row.destroy();
-		}
+
 		int size = lastRowIdx-rowIdx+1;
+        if (dataModel != null) {
+            try (Connection connection = DBHandler.instance.getConnection()) {
+                DBContext dbContext = new DBContext(connection);
+                dataModel.deleteRows(dbContext, rowIdx, size);
+                connection.commit();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
 
-		if (getBook().hasSchema()) {
-			// Shift Cells in DB
-			String bookTable = getBook().getId();
-			// Workaround for shifting.
-			// Counted btree should remove this.
-			String shiftRows = "UPDATE " + bookTable + "_sheetdata " +
-					" SET row = (row - ?) * -1" +
-					" WHERE sheetid = ?" +
-					" AND   row >= ?";
+        // Update Column numbers for cached cells
+        List<AbstractCellAdv> cellsToShift = sheetDataCache.values()
+                .stream()
+                .filter(e -> e.getRowIndex() < rowIdx || e.getRowIndex() > lastRowIdx)
+                .collect(Collectors.toList());
 
-			String shiftRows1 = "UPDATE " + bookTable + "_sheetdata " +
-					" SET row = row  * -1" +
-					" WHERE sheetid = ?" +
-					" AND   row < 0";
+        cellsToShift.stream()
+                .filter(e -> e.getRowIndex() >= rowIdx)
+                .forEach(e -> e.shift(-size, 0));
 
+        sheetDataCache.clear();
+        cellsToShift.stream()
+                .forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
 
-			try (Connection connection = DBHandler.instance.getConnection();
-				 Statement stmt = connection.createStatement();
-				 PreparedStatement shiftRowsStmt = connection.prepareStatement(shiftRows);
-				 PreparedStatement shiftRowsStmt1 = connection.prepareStatement(shiftRows1)) {
-				shiftRowsStmt.setInt(1, size);
-				shiftRowsStmt.setInt(2, getDBId());
-				shiftRowsStmt.setInt(3, rowIdx);
-				shiftRowsStmt.execute();
-
-				shiftRowsStmt1.setInt(1, getDBId());
-				shiftRowsStmt1.execute();
-				setEndRowIndex(_maxRowIndex - size, connection, true);
-
-				connection.commit();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-		}
-		_rows.delete(rowIdx, size);
-		
 		//ZSS-619, should clear formula for entire effected region
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
 		
@@ -1154,21 +1118,36 @@ public class SheetImpl extends AbstractSheetAdv {
 
 	@Override
 	public void insertColumn(int columnIdx, int lastColumnIdx) {
-		checkOrphan();
 		if(columnIdx>lastColumnIdx){
 			throw new IllegalArgumentException(columnIdx+">"+lastColumnIdx);
 		}
 
 		int size = lastColumnIdx - columnIdx + 1;
-		insertAndSplitColumnArray(columnIdx,size);
-		
-		for(AbstractRowAdv row:_rows.values()){
-			row.insertCell(columnIdx,size);
-		}
-		
+        //TODO: Store column based attributes
+        if (dataModel != null) {
+            try (Connection connection = DBHandler.instance.getConnection()) {
+                DBContext dbContext = new DBContext(connection);
+                dataModel.insertCols(dbContext, columnIdx, size);
+                connection.commit();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Update Column numbers for cached cells
+        List<AbstractCellAdv> cellsToShift = new LinkedList<>(sheetDataCache.values());
+        cellsToShift.stream()
+                .filter(e -> e.getColumnIndex() >= columnIdx)
+                .forEach(e -> e.shift(0, size));
+
+		sheetDataCache.clear();
+		cellsToShift.stream()
+				.forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
+
+
 		//ZSS-619, should clear formula for entire effected region
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
-		
+
 		Map<String,Object> dataBefore = shiftBeforeColumnInsert(columnIdx,lastColumnIdx);
 		ModelUpdateUtil.addInsertDeleteUpdate(this, true, false, columnIdx, lastColumnIdx);
 		shiftAfterColumnInsert(dataBefore,columnIdx,lastColumnIdx);
@@ -1323,16 +1302,35 @@ public class SheetImpl extends AbstractSheetAdv {
 
 	@Override
 	public void deleteColumn(int columnIdx, int lastColumnIdx) {
-		checkOrphan();
 		if(columnIdx>lastColumnIdx){
 			throw new IllegalArgumentException(columnIdx+">"+lastColumnIdx);
 		}
 		int size = lastColumnIdx - columnIdx + 1;
-		deleteAndShrinkColumnArray(columnIdx,size);
-		
-		for(AbstractRowAdv row:_rows.values()){
-			row.deleteCell(columnIdx,size);
-		}
+
+        if (dataModel != null) {
+            try (Connection connection = DBHandler.instance.getConnection()) {
+                DBContext dbContext = new DBContext(connection);
+                dataModel.deleteCols(dbContext, columnIdx, size);
+                connection.commit();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Update Column numbers for cached cells
+        List<AbstractCellAdv> cellsToShift = sheetDataCache.values()
+                .stream()
+                .filter(e -> e.getColumnIndex() < columnIdx || e.getColumnIndex() > lastColumnIdx)
+                .collect(Collectors.toList());
+
+        cellsToShift.stream()
+                .filter(e -> e.getColumnIndex() >= columnIdx)
+                .forEach(e -> e.shift(0, - size));
+
+        sheetDataCache.clear();
+        cellsToShift.stream()
+                .forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
+
 		
 		//ZSS-619, should clear formula for entire effected region
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
@@ -1646,6 +1644,7 @@ public class SheetImpl extends AbstractSheetAdv {
 		_dataValidations.clear();
 		
 		_book = null;
+
 		//TODO all 
 		
 	}
@@ -1885,23 +1884,23 @@ public class SheetImpl extends AbstractSheetAdv {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	public Iterator<SCell> getCellIterator(int row) {
-		return (Iterator)((AbstractRowAdv)getRow(row)).getCellIterator(false);
+		return ((AbstractRowAdv) getRow(row)).getCellIterator(false);
 	}
 	
 	@Override
 	public int getDefaultRowHeight() {
 		return _defaultRowHeight;
-	}
+    }
 
-	@Override
-	public int getDefaultColumnWidth() {
-		return _defaultColumnWidth;
-	}
+    @Override
+    public void setDefaultRowHeight(int height) {
+        _defaultRowHeight = height;
+    }
 
-	@Override
-	public void setDefaultRowHeight(int height) {
-		_defaultRowHeight = height;
-	}
+    @Override
+    public int getDefaultColumnWidth() {
+        return _defaultColumnWidth;
+    }
 
 	@Override
 	public void setDefaultColumnWidth(int width) {
@@ -1947,9 +1946,14 @@ public class SheetImpl extends AbstractSheetAdv {
 	@Override
 	public short getHashedPassword() {
 		return this._password;
-	}
+    }
 
-	@Override
+    @Override
+    public void setHashedPassword(short hashpass) {
+        _password = hashpass;
+    }
+
+    @Override
 	public SSheetViewInfo getViewInfo(){
 		return _viewInfo;
 	}
@@ -1958,11 +1962,12 @@ public class SheetImpl extends AbstractSheetAdv {
 	public SPrintSetup getPrintSetup(){
 		return _printSetup;
 	}
-	
+
 	@Override
 	public SDataValidation addDataValidation(CellRegion region) {
 		return addDataValidation(region,null);
 	}
+
 	public SDataValidation addDataValidation(CellRegion region, SDataValidation src) {
 		checkOrphan();
 		Validations.argInstance(src, AbstractDataValidationAdv.class);
@@ -1976,6 +1981,7 @@ public class SheetImpl extends AbstractSheetAdv {
 		}
 		return validation;
 	}
+
 	@Override
 	public SDataValidation getDataValidation(String validationid){
 		for(SDataValidation validation:_dataValidations){
@@ -1985,7 +1991,8 @@ public class SheetImpl extends AbstractSheetAdv {
 		}
 		return null;
 	}
-	@Override
+
+    @Override
 	public void deleteDataValidation(SDataValidation validationid) {
 		checkOrphan();
 		checkOwnership(validationid);
@@ -1997,7 +2004,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	public void removeDataValidationRegion(CellRegion region) {
 		deleteDataValidationRegion(region);
 	}
-	
+
 	@Override
 	public List<SDataValidation> deleteDataValidationRegion(CellRegion region) {
 		List<SDataValidation> dels = new ArrayList<SDataValidation>();
@@ -2013,7 +2020,6 @@ public class SheetImpl extends AbstractSheetAdv {
 		return dels;
 	}
 
-
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public List<SDataValidation> getDataValidations() {
 		return Collections.unmodifiableList((List)_dataValidations);
@@ -2024,11 +2030,11 @@ public class SheetImpl extends AbstractSheetAdv {
 		return _dataValidations.size();
 	}
 
-	@Override
+    @Override
 	public SDataValidation getDataValidation(int idx) {
 		return _dataValidations.get(idx);
 	}
-	
+
 	@Override
 	public SDataValidation getDataValidation(int rowIdx,int columnIdx) {
 		for(SDataValidation validation:_dataValidations){
@@ -2046,16 +2052,16 @@ public class SheetImpl extends AbstractSheetAdv {
 		return _autoFilter;
 	}
 
-	@Override
+    @Override
 	public SAutoFilter createAutoFilter(CellRegion region) {
 		Validations.argNotNull(region);
-		
+
 		_autoFilter = new AutoFilterImpl(region);
 		final int left = region.getColumn();
         final int top = region.getRow();
         final int right = region.getLastColumn();
         final int bottom = region.getLastRow();
-        
+
 		//refer from XSSFSheet impl
 		//handle the showButton on merged cell
 		for (CellRegion mrng:getMergedRegions()) {
@@ -2063,19 +2069,19 @@ public class SheetImpl extends AbstractSheetAdv {
 	        final int b = mrng.getLastRow();
 	        final int l = mrng.getColumn();
 	        final int r = mrng.getLastColumn();
-	        
+
 	        if (t == top && l <= right && l >= left) { // to be add filter column to hide button
 	        	for(int c = l; c < r; ++c) {
-		        	final int colId = c - left; 
-		        	final NFilterColumn col = _autoFilter.getFilterColumn(colId, true);
+                    final int colId = c - left;
+                    final NFilterColumn col = _autoFilter.getFilterColumn(colId, true);
 		        	col.setProperties(FilterOp.AND, null, null, false);
 	        	}
-	        }
+            }
 		}
-		
+
 		//ZSS-555
 		addIntoDependency(_autoFilter);
-		
+
 		return _autoFilter;
 	}
 	
@@ -2086,24 +2092,24 @@ public class SheetImpl extends AbstractSheetAdv {
 		String sheetName = getSheetName();
 		Ref dependent = new ObjectRefImpl(bookName, sheetName, "AUTO_FILTER", ObjectType.AUTO_FILTER);
 		CellRegion rgn = filter.getRegion();
-		final DependencyTable dt = 
-			((AbstractBookSeriesAdv) book.getBookSeries()).getDependencyTable();
+        final DependencyTable dt =
+                ((AbstractBookSeriesAdv) book.getBookSeries()).getDependencyTable();
 		// prepare a dummy CellRef to enforce AutoFilter reference dependency
-		Ref dummy = new RefImpl(bookName, sheetName, 
-				rgn.row, rgn.column, rgn.lastRow, rgn.lastColumn);
+        Ref dummy = new RefImpl(bookName, sheetName,
+                rgn.row, rgn.column, rgn.lastRow, rgn.lastColumn);
 		dt.add(dependent, dummy);
 		ModelUpdateUtil.addRefUpdate(dependent);
 	}
-	
+
 	//ZSS-555: delete from dependency table
 	private void deleteFromDependency() {
 		SBook book = getBook();
 		String bookName = book.getBookName();
 		String sheetName = getSheetName();
 		Ref dependent = new ObjectRefImpl(bookName, sheetName, "AUTO_FILTER", ObjectType.AUTO_FILTER);
-		DependencyTable dt = 
-			((AbstractBookSeriesAdv) book.getBookSeries()).getDependencyTable();
-			
+        DependencyTable dt =
+                ((AbstractBookSeriesAdv) book.getBookSeries()).getDependencyTable();
+
 		dt.clearDependents(dependent);
 	}
 
@@ -2118,12 +2124,11 @@ public class SheetImpl extends AbstractSheetAdv {
 		_autoFilter = null;
 	}
 
-
-	@Override
+    @Override
 	public CellRegion pasteCell(SheetRegion src, CellRegion dest, PasteOption option) {
 		return new PasteCellHelper(this).pasteCell(src,dest,option);
 	}
-	
+
 	@Override
 	public SSheetProtection getSheetProtection() {
 		if (_sheetProtection == null) {
@@ -2133,18 +2138,23 @@ public class SheetImpl extends AbstractSheetAdv {
 	}
 
 	@Override
-	public void setHashedPassword(short hashpass) {
-		_password = hashpass;
-	}
-
-	@Override
 	public SheetVisible getSheetVisible() {
 		return _visible;
 	}
 
 	@Override
 	public void setSheetVisible(SheetVisible state) {
-		_visible = state; 
+		_visible = state;
+    }
+
+    @Override
+    public void createModel(DBContext dbContext, String modelName) {
+		dataModel = Model.CreateModel(dbContext, modelName);
+	}
+
+	@Override
+	public void deleteModel(DBContext dbContext) {
+		dataModel.dropSchema(dbContext);
 	}
 
 	//ZSS-855
@@ -2193,8 +2203,8 @@ public class SheetImpl extends AbstractSheetAdv {
 		
 		SColumnArray colArray = getColumnArray(colIdx);
 		//null means the column is in default width and status
-		return colArray == null ? false : colArray.isHidden();
-	}
+        return colArray != null && colArray.isHidden();
+    }
 	
 	//ZSS-985
 	@Override
@@ -2221,41 +2231,45 @@ public class SheetImpl extends AbstractSheetAdv {
 	@Override
 	public void clearTables() {
 		_tables.clear();
-	}
+    }
+
+    public String getHashValue() {
+        return _hashValue;
+    }
 
 	//ZSS-1063
 	@Override
 	public void setHashValue(String hashValue) {
 		_hashValue  = hashValue;
-	}
-	public String getHashValue() {
-		return _hashValue;
-	}
+    }
+
+    public String getSpinCount() {
+        return  _spinCount;
+    }
 
 	//ZSS-1063
 	@Override
 	public void setSpinCount(String spinCount) {
 		_spinCount = spinCount;
-	}
-	public String getSpinCount() {
-		return  _spinCount;
-	}
+    }
+
+    public String getSaltValue() {
+        return _saltValue;
+    }
 
 	//ZSS-1063
 	@Override
 	public void setSaltValue(String saltValue) {
 		_saltValue = saltValue;
-	}
-	public String getSaltValue() {
-		return _saltValue;
-	}
+    }
+
+    public String getAlgName() {
+        return _algName;
+    }
 
 	//ZSS-1063
 	@Override
 	public void setAlgName(String algName) {
 		_algName = algName;
-	}
-	public String getAlgName() {
-		return _algName;
 	}
 }

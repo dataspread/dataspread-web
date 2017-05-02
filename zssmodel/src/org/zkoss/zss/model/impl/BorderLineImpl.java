@@ -28,7 +28,13 @@ public class BorderLineImpl extends AbstractBorderLineAdv implements SBorderLine
 	private SColor color;
 	private boolean showUp;
 	private boolean showDown;
-	
+
+
+    @SuppressWarnings("unused")
+    private BorderLineImpl() {
+        // Required for serialization.
+    }
+
 	//ZSS-977
 	public BorderLineImpl(BorderType type, String htmlColor) {
 		this(type, htmlColor == null ? ColorImpl.BLACK : new ColorImpl(htmlColor), false, false);

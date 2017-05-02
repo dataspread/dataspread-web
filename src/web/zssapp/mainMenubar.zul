@@ -132,9 +132,9 @@
 		<menu id="helpMenu" label="${c:l('zssapp.mainMenu.help')}" sclass="zsmenu-app">
 			<menupopup>
 				<menuitem id="about" label="${c:l('zssapp.mainMenu.help.about')}"
-					href="http://www.zkoss.org/product/zkspreadsheet" target="_blank" sclass="zsmenuitem-app appmenu" />
-				<menuitem id="contact" label="${c:l('zssapp.mainMenu.help.contact')}"
-					href="http://www.zkoss.org/support/about/contact" target="_blank" sclass="zsmenuitem-app appmenu" />
+					href="http://dataspread.github.io/" target="_blank" sclass="zsmenuitem-app appmenu" />
+				<!--<menuitem id="contact" label="${c:l('zssapp.mainMenu.help.contact')}"-->
+					<!--href="http://www.zkoss.org/support/about/contact" target="_blank" sclass="zsmenuitem-app appmenu" />-->
 			</menupopup>
 		</menu>
 		<menuitem id="zssmark" label="ZK Spreadsheet (Evaluation)" disabled="true"/>
