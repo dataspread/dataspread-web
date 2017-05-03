@@ -19,6 +19,7 @@ package org.zkoss.zss.model.sys;
 import org.zkoss.lang.Library;
 import org.zkoss.util.logging.Log;
 import org.zkoss.zss.model.impl.sys.CalendarUtilImpl;
+import org.zkoss.zss.model.impl.sys.DependencyTableRtreeImpl;
 import org.zkoss.zss.model.impl.sys.DependencyTableImpl;
 import org.zkoss.zss.model.impl.sys.FormatEngineImpl;
 import org.zkoss.zss.model.impl.sys.InputEngineImpl;
@@ -131,7 +132,7 @@ public class EngineFactory {
 			_logger.error(e.getMessage(), e);
 			dependencyTableClazz = null;
 		}
-		return new DependencyTableImpl();
+		return new DependencyTableRtreeImpl();//DependencyTableImpl();
 	}
 	
 	static FormatEngine _formatEngine;

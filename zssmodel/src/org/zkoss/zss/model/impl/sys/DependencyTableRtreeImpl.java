@@ -126,14 +126,16 @@ public class DependencyTableRtreeImpl extends DependencyTableAdv {
     public void clearDependents(Ref dependant) {
         //Clear backward dependents in rtree
         Set<Ref> precedents = dependant.getPrecedents();
-        for(Ref precedent: precedents) {
-            Rectangle region = Geometries.rectangle(
-                    precedent.getRow(), precedent.getColumn(), precedent.getLastRow(), precedent.getLastColumn());
-            _rtree.delete(dependant,region);
+        if(precedents != null) {
+            for (Ref precedent : precedents) {
+                Rectangle region = Geometries.rectangle(
+                        precedent.getRow(), precedent.getColumn(), precedent.getLastRow(), precedent.getLastColumn());
+                _rtree.delete(dependant, region);
+            }
+            //Clear forward map
+            dependant.clearDependent();
+            _map.remove(dependant);
         }
-        //Clear forward map
-        dependant.clearDependent();
-        _map.remove(dependant);
     }
 
     @Override
