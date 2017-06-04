@@ -96,6 +96,8 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
     Menuitem createTable;
     @Wire
     Menuitem deleteTable;
+	@Wire
+	Menuitem toggleTableBar;
 
     public MainMenubarCtrl() {
         super(true);
@@ -335,4 +337,10 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
     public void ondeleteTable() {
         pushAppEvent(AppEvts.ON_DELETE_TABLE);
     }
+
+	@Listen("onToggleTableBar=#mainMenubar")
+	public void onToggleTableBar(){
+		pushAppEvent(AppEvts.ON_TOGGLE_TABLE_BAR);
+	}
 }
+

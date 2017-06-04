@@ -131,6 +131,10 @@
 		</menu>
 		<menu id="table" label="${c:l('zssapp.mainMenu.table')}" sclass="zsmenu-app">
 			<menupopup>
+				<menuitem id="toggleTableBar"
+						  label="${c:l('zssapp.mainMenu.table.tableBar')}" forward="mainMenubar.onToggleTableBar"
+						  autocheck="true" checked="false" sclass="zsmenuitem-app appmenu" />
+				<menuseparator />
 				<menuitem id="createTable" label="${c:l('zssapp.mainMenu.table.create')}"
 						  sclass="zsmenuitem-app appmenu"></menuitem>
 				<menuitem id="deleteTable" label="${c:l('zssapp.mainMenu.table.delete')}"

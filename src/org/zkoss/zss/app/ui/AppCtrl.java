@@ -45,7 +45,7 @@ import org.zkoss.zss.app.repository.impl.BookUtil;
 import org.zkoss.zss.app.repository.impl.SimpleBookInfo;
 import org.zkoss.zss.app.ui.dlg.*;
 import org.zkoss.zss.app.ui.table.Table;
-import org.zkoss.zss.app.ui.table.TableCtrl;
+import org.zkoss.zss.app.ui.table.createTableCtrl;
 import org.zkoss.zss.model.ModelEvent;
 import org.zkoss.zss.model.ModelEventListener;
 import org.zkoss.zss.model.ModelEvents;
@@ -923,55 +923,92 @@ public class AppCtrl extends CtrlBase<Component> {
 
     private void doCreateTable(Spreadsheet ss) {
 
-        TableCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
+        createTableCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
             private static final long serialVersionUID = 7753635062865984294L;
 
             public void onEvent(DlgCallbackEvent event) throws Exception {
-                if (TableCtrl.ON_OPEN.equals(event.getName())) {
+                if (createTableCtrl.ON_OPEN.equals(event.getName())) {
                     pushAppEvent(AppEvts.ON_CREATE_TABLE, ss);
                 }
             }
         }, ss);
-
     }
 
     private void doDeleteTable(Spreadsheet ss) {
 
+        String bookName=ss.getBook().getBookName();
         Sheet sheet = ss.getSelectedSheet();
         AreaRef selection = ss.getSelection();
 
         Range src = Ranges.range(sheet, selection);
 
-        String ref = Ranges.getAreaRefString(sheet, selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
+        String rangeRef = Ranges.getAreaRefString(sheet, selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
 
         Table tableObj = new Table();
 
         try {
-            String checkedTable = tableObj.checkRangeToTable(ref);
+            String checkedTable = tableObj.checkUserTable(bookName,rangeRef);
             if (checkedTable != null) {
-                tableObj.drop(checkedTable, ref);
-                tableObj.deleteRangeToTable(ref);
+                tableObj.drop(checkedTable);
+                tableObj.deleteUserTable(checkedTable);
                 CellOperationUtil.clearAll(src);
                 CellOperationUtil.clearContents(src);
+
                 CellOperationUtil.clearStyles(src);
-                Messagebox.show("Table was deleted", "Delete Table",
+
+                Messagebox.show("Table was Deleted from the Database", "Delete Table",
                         Messagebox.OK, Messagebox.INFORMATION);
             } else {
-                Messagebox.show("Table does not exist.", "Delete Table",
+                Messagebox.show("Selected Range is Not a Table", "Delete Table",
                         Messagebox.OK, Messagebox.ERROR);
             }
 
+            refreshTableBar();
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
+    }
 
-//		Messagebox.show("You reached delete table", "Table Deletion",
-//        Messagebox.OK, Messagebox.INFORMATION);
-//
-////		Range src = Ranges.range(ss.getSelectedSheet(), selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
+    private void doToggleTablebar() {
 
+        Panel panel= (Panel) getAppComp().query("panel");
+
+        if(!panel.isVisible())
+        {
+            refreshTableBar();
+        }
+        panel.setVisible(!panel.isVisible());
+    }
+
+
+    private void refreshTableBar()
+    {
+        Table obj=new Table();
+        Panel panel= (Panel) getAppComp().query("panel");
+        try {
+
+            Panelchildren panelChild=panel.getPanelchildren();
+            Grid tableGrid= (Grid) panelChild.getFirstChild();
+
+            ListModelList<String> tables=obj.userTables(ss.getBook().getBookName());
+
+            tableGrid.setModel(tables);
+
+            tableGrid.setRowRenderer(new RowRenderer() {
+
+                @Override
+                public void render(Row row, Object data, int i) throws Exception {
+
+                    final String table= (String) data;
+                    new Label(table).setParent(row);
+                }
+            });
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -1024,6 +1061,8 @@ public class AppCtrl extends CtrlBase<Component> {
             doCreateTable(ss);
         } else if (AppEvts.ON_DELETE_TABLE.equals(event)) {
             doDeleteTable(ss);
+        }else if (AppEvts.ON_TOGGLE_TABLE_BAR.equals(event)) {
+            doToggleTablebar();
         }
     }
 
