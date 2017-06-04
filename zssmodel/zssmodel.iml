@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" type="JAVA_MODULE" version="4">
-  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8" inherit-compiler-output="false">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8">
     <output url="file://$MODULE_DIR$/target/classes" />
     <output-test url="file://$MODULE_DIR$/target/test-classes" />
     <content url="file://$MODULE_DIR$">
@@ -9,6 +9,11 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="tomcat-dbcp" level="project" />
+    <orderEntry type="library" name="postgresql-9.4.1208" level="project" />
+    <orderEntry type="library" name="lib" level="project" />
+    <orderEntry type="library" name="tomcat-jdbc" level="project" />
+    <orderEntry type="module" module-name="blockstore" />
     <orderEntry type="module" module-name="zpoi" />
     <orderEntry type="library" name="Maven: org.zkoss.common:zcommon:7.0.3" level="project" />
     <orderEntry type="library" name="Maven: commons-fileupload:commons-fileupload:1.2.2" level="project" />
@@ -28,10 +33,5 @@
     <orderEntry type="library" name="Maven: org.zkoss.common:zweb:7.0.3" level="project" />
     <orderEntry type="library" name="Maven: org.jsoup:jsoup:1.7.3" level="project" />
     <orderEntry type="library" name="Maven: javax.servlet:servlet-api:2.4" level="project" />
-    <orderEntry type="library" name="tomcat-dbcp" level="project" />
-    <orderEntry type="library" name="postgresql-9.4.1208" level="project" />
-    <orderEntry type="library" name="lib" level="project" />
-    <orderEntry type="library" name="tomcat-jdbc" level="project" />
-    <orderEntry type="module" module-name="blockstore" />
   </component>
 </module>
