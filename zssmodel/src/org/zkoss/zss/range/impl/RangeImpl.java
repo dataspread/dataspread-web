@@ -17,24 +17,21 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 package org.zkoss.zss.range.impl;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 
+import org.model.DBHandler;
 import org.zkoss.lang.Strings;
 import org.zkoss.poi.ss.usermodel.ZssContext;
 import org.zkoss.poi.ss.util.SheetUtil;
 import org.zkoss.poi.ss.util.WorkbookUtil;
 import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.ErrorValue;
 import org.zkoss.zss.model.InvalidModelOpException;
 import org.zkoss.zss.model.PasteOption;
 import org.zkoss.zss.model.SAutoFilter;
@@ -43,7 +40,6 @@ import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SBookSeries;
 import org.zkoss.zss.model.SBorder.BorderType;
 import org.zkoss.zss.model.SCell;
-import org.zkoss.zss.model.SCell.CellType;
 import org.zkoss.zss.model.SCellStyle;
 import org.zkoss.zss.model.SChart;
 import org.zkoss.zss.model.SChart.ChartGrouping;
@@ -78,7 +74,6 @@ import org.zkoss.zss.model.sys.dependency.Ref.RefType;
 import org.zkoss.zss.model.sys.format.FormatContext;
 import org.zkoss.zss.model.sys.format.FormatEngine;
 import org.zkoss.zss.model.sys.input.InputEngine;
-import org.zkoss.zss.model.sys.input.InputParseContext;
 import org.zkoss.zss.model.sys.input.InputResult;
 import org.zkoss.zss.model.util.FontMatcher;
 import org.zkoss.zss.model.util.ReadWriteTask;
@@ -221,7 +216,7 @@ public class RangeImpl implements SRange {
 				SSheet sheet = r.getSheet();
 				CellRegion region = r.getRegion();
 				handleCellNotifyContentChange(new SheetRegion(sheet,region), getCellAttr()); //ZSS-939
-				handleRefNotifyContentChange(bookSeries, table.getEvaluatedDependents(new RefImpl(sheet.getBook().getBookName(),sheet.getSheetName(),
+				handleRefNotifyContentChange(bookSeries, table.getDependents(new RefImpl(sheet.getBook().getBookName(),sheet.getSheetName(),
 						region.getRow(),region.getColumn(),region.getLastRow(),region.getLastColumn())), getCellAttr()); //ZSS-939
 				
 			}
@@ -368,7 +363,7 @@ public class RangeImpl implements SRange {
 					boolean wholeSheet = region.row==0 && region.lastRow>=book.getMaxRowIndex() 
 							&& region.column==0 && region.lastColumn>=book.getMaxColumnIndex();
 					if(!wholeSheet){//no need to notify again if it is whole sheet already
-						handleRefNotifyContentChange(bookSeries, table.getEvaluatedDependents(new RefImpl(sheet.getBook().getBookName(),sheet.getSheetName(),
+						handleRefNotifyContentChange(bookSeries, table.getDependents(new RefImpl(sheet.getBook().getBookName(),sheet.getSheetName(),
 							region.row,region.column,region.lastRow,region.lastColumn)), CellAttribute.TEXT); //ZSS-939
 					}
 				}
@@ -420,7 +415,7 @@ public class RangeImpl implements SRange {
 					new ClearCellHelper(new RangeImpl(sheet,region)).clearCellStyle();
 					
 					handleCellNotifyContentChange(new SheetRegion(sheet,region), CellAttribute.ALL); //ZSS-939
-					handleRefNotifyContentChange(bookSeries, table.getEvaluatedDependents(new RefImpl(sheet.getBook().getBookName(),sheet.getSheetName(),
+					handleRefNotifyContentChange(bookSeries, table.getDependents(new RefImpl(sheet.getBook().getBookName(),sheet.getSheetName(),
 							region.getRow(),region.getColumn(),region.getLastRow(),region.getLastColumn())), CellAttribute.ALL); //ZSS-939
 				}
 				return null;
@@ -581,7 +576,7 @@ public class RangeImpl implements SRange {
 			boolean wholeSheet = region.row==0 && region.lastRow>=book.getMaxRowIndex() 
 					&& region.column==0 && region.lastColumn>=book.getMaxColumnIndex();
 			if(notifyDependent && !wholeSheet){
-				notifySet.addAll(table.getEvaluatedDependents(pre));
+				notifySet.addAll(table.getDependents(pre));
 			}
 		}
 		handleRefNotifyContentChange(bookSeries,notifySet,cellAttr); //ZSS-939
@@ -621,7 +616,7 @@ public class RangeImpl implements SRange {
 						for(Ref pre:precedents){
 							cacheCleaner.clearByPrecedent(pre);
 							notifySet.add(pre);
-							notifySet.addAll(table.getEvaluatedDependents(pre));
+							notifySet.addAll(table.getDependents(pre));
 						}
 						
 					}
@@ -1069,7 +1064,7 @@ public class RangeImpl implements SRange {
 		Set<Ref> refSet = new HashSet<Ref>(1); // normally it's a continuous segment
 		for (SheetRegion sheetRegion : notifySet) {
 			SSheet sheet = sheetRegion.getSheet();
-			refSet.addAll(table.getEvaluatedDependents(new RefImpl(sheet.getBook().getBookName(), sheet.getSheetName(),
+			refSet.addAll(table.getDependents(new RefImpl(sheet.getBook().getBookName(), sheet.getSheetName(),
 					sheetRegion.getRow(), sheetRegion.getColumn(), sheetRegion.getLastRow(), sheetRegion.getLastColumn())));
 		}
 		
@@ -1940,7 +1935,7 @@ public class RangeImpl implements SRange {
 		// have to notify those cells.
 		final AbstractBookSeriesAdv series = (AbstractBookSeriesAdv) getBookSeries();
 		final DependencyTable table = series.getDependencyTable();
-		handleRefNotifyContentChange(series, table.getEvaluatedDependents(new NameRefImpl((AbstractNameAdv)name)), CellAttribute.ALL); //ZSS-939
+		handleRefNotifyContentChange(series, table.getDependents(new NameRefImpl((AbstractNameAdv)name)), CellAttribute.ALL); //ZSS-939
 	}
 	
 	private static final SRange EMPTY_RANGE = new EmptyNRange();

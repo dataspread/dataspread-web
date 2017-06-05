@@ -1,11 +1,14 @@
-package org.zkoss.zss.model.impl;
+package org.model;
 
-import org.zkoss.util.logging.Log;
+import org.apache.tomcat.jdbc.pool.PoolProperties;
+
 import javax.naming.InitialContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.sql.DataSource;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 /**
  * Created by Mangesh Bendre on 4/22/2016.
@@ -13,7 +16,20 @@ import java.sql.*;
 public class DBHandler implements ServletContextListener {
     public static DBHandler instance;
     private DataSource ds;
-    private static final Log _logger = Log.lookup(DBHandler.class);
+
+    public static void connectToDB(String url, String driver, String userName, String password) {
+        DBHandler.instance = new DBHandler();
+        PoolProperties p = new PoolProperties();
+        p.setUrl(url);
+        p.setDriverClassName(driver);
+        p.setDefaultAutoCommit(false);
+        p.setUsername(userName);
+        p.setPassword(password);
+        org.apache.tomcat.jdbc.pool.DataSource datasource
+                = new org.apache.tomcat.jdbc.pool.DataSource();
+        datasource.setPoolProperties(p);
+        instance.ds = datasource;
+    }
 
     public Connection getConnection()
     {
@@ -37,7 +53,6 @@ public class DBHandler implements ServletContextListener {
             throw new Exception("Data source not found!");
         }
     }
-
 
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {

@@ -4,12 +4,7 @@
     <root id="archive" name="DataSpread_war.war">
       <element id="artifact" artifact-name="DataSpread:war exploded" />
       <element id="directory" name="WEB-INF">
-        <element id="directory" name="lib">
-          <element id="library" level="project" name="kryo-4.0.0" />
-          <element id="library" level="project" name="reflectasm-1.10.1-shaded" />
-          <element id="library" level="project" name="minlog-1.3.0" />
-          <element id="library" level="project" name="objenesis-2.1" />
-        </element>
+        <element id="directory" name="lib" />
       </element>
     </root>
   </artifact>

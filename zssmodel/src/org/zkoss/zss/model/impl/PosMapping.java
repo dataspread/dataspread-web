@@ -1,5 +1,7 @@
 package org.zkoss.zss.model.impl;
 
+import org.model.DBContext;
+
 /* Store mapping between logical pos and ID */
 public interface PosMapping {
 

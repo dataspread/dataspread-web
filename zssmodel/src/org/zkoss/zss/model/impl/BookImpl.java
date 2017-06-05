@@ -16,6 +16,8 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
+import org.model.DBContext;
+import org.model.DBHandler;
 import org.zkoss.lang.Objects;
 import org.zkoss.util.logging.Log;
 import org.zkoss.zk.ui.Executions;
@@ -1101,9 +1103,11 @@ public class BookImpl extends AbstractBookAdv{
 			 ResultSet rs = stmt.executeQuery()) {
 			 while (rs.next())
 			 {
-				SSheet sheet =  createExistingSheet(rs.getString("sheetname"), rs.getInt("sheetid"));
+				 SSheet sheet = createExistingSheet(rs.getString("sheetname"), rs.getInt("sheetid"));
 				 sheet.setDataModel(rs.getString("modelname"));
 			 }
+			rs.close();
+			connection.commit();
 		}
 		catch (SQLException e)
 		{

@@ -1,7 +1,7 @@
 <component name="libraryTable">
-  <library name="objenesis-2.1">
+  <library name="tomcat-jdbc">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/local_lib/objenesis-2.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/local_lib/tomcat-jdbc.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

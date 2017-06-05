@@ -2,10 +2,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.zkoss.zss</groupId>
+
+	<groupId>io.github.dataspread</groupId>
 	<artifactId>zssmodel</artifactId>
 	<properties>
 		<zk.version>7.0.3</zk.version>
+        <blockstore.version>1.0.0</blockstore.version>
+        <rtree.version>1.0.0</rtree.version>
 		<zpoi.version>3.9.8</zpoi.version>
 		<jsoup.version>1.7.3</jsoup.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -13,48 +16,20 @@
 	<version>3.8.1</version>
 	<packaging>jar</packaging>
 	<name>ZK Spreadsheet Model</name>
-	<url>http://www.zkoss.org/zss</url>
 	<description>ZK Spreadsheet</description>
-	<licenses>
-		<license>
-			<name>GNU General Public License, Version 3.0</name>
-			<url>http://www.gnu.org/licenses/gpl.html</url>
-			<distribution>repo</distribution>
-		</license>
-	</licenses>
-	<repositories>
-		<repository>
-			<id>zk repository</id>
-			<url>http://mavensync.zkoss.org/maven2</url>
-		</repository>
-	</repositories>
-	<pluginRepositories>
-		<pluginRepository>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-			<id>snapshots</id>
-			<name>Maven Central Plugins Development Repository</name>
-			<url>http://snapshots.maven.codehaus.org/maven2</url>
-		</pluginRepository>
-		<pluginRepository>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-			<id>central</id>
-			<name>Maven Plugin Repository</name>
-			<url>http://repo1.maven.org/maven2</url>
-		</pluginRepository>
-	</pluginRepositories>
 	<dependencies>
-		<!-- <dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.8.1</version>
-			<scope>test</scope>
-		</dependency> -->		
-		<dependency>
-			<groupId>org.zkoss.poi</groupId>
+        <dependency>
+            <groupId>io.github.dataspread</groupId>
+            <artifactId>rtree</artifactId>
+            <version>${rtree.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.dataspread</groupId>
+            <artifactId>blockstore</artifactId>
+            <version>${blockstore.version}</version>
+        </dependency>
+        <dependency>
+			<groupId>io.github.dataspread</groupId>
 			<artifactId>zpoi</artifactId>
 			<version>${zpoi.version}</version>
 		</dependency>
@@ -73,6 +48,16 @@
 			<artifactId>servlet-api</artifactId>
 			<version>2.4</version>
 		</dependency>
+		<dependency>
+			<groupId>com.esotericsoftware</groupId>
+			<artifactId>kryo</artifactId>
+			<version>4.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>9.4.1208</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<sourceDirectory>${project.basedir}/src</sourceDirectory>
@@ -82,18 +67,6 @@
 			</resource>
 		</resources>
 		<plugins>
-			<!--<plugin>
-				<groupId>org.zkoss.maven</groupId>
-				<artifactId>yuicompressor-maven-plugin-zk</artifactId>
-				<version>1.1.4</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>compress</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin> -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -101,14 +74,6 @@
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-checkstyle-plugin</artifactId>
-				<version>2.10</version>
-				<configuration>
-					<configLocation>../../zss-src-3.8.1/zssmodel/checkstyle.xml</configLocation>
 				</configuration>
 			</plugin>
 		</plugins>

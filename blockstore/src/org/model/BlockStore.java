@@ -1,9 +1,8 @@
-package org.zkoss.zss.model.impl;
+package org.model;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import org.zkoss.util.logging.Log;
 
 import java.io.ByteArrayOutputStream;
 import java.sql.PreparedStatement;
@@ -18,11 +17,10 @@ import java.util.Set;
 /**
  * This class represents an external memory block storage system.
  */
-class BlockStore {
+public class BlockStore {
     /**
      * Logging
      */
-    private static final Log _logger = Log.lookup(BlockStore.class);
     final int CACHE_SIZE = 1000;
     /* Table that persists the block store */
     private String dataStore;
@@ -43,7 +41,7 @@ class BlockStore {
     }
 
     // On DB block store.
-    BlockStore(DBContext context, String dataStore) {
+    public BlockStore(DBContext context, String dataStore) {
         dirtyBlocks = new HashMap<>();
         deletedBlocks = new HashSet<>();
         kryo = new Kryo();

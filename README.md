@@ -39,21 +39,21 @@ To host DataSpread locally you can either use one of the pre-build war files, av
 
 ### Required Software
 
-* [Apache Ant][ant] >= 1.6
 * [Java Platform (JDK)][java] >= 8
 * [PostgreSQL][posrgres] >= 9.5
 * [PostgreSQL JDBC driver][jdbc] - 9.4.1208
 * [Apache Tomcat][tomcat] >= 8.5.4
+* [Apache Maven][maven] >= 3.5.0
 
 
 ### Building Instructions (To generate a war file)
 
 1. Clone the DataSpread repository. Alternatively, you can download the source as a zip or tar.gz. 
 
-2. Use Ant to build the `war` file using the following command.  After the build completes the war is available at `out/artifacts/DataSpread_war`. 
+2. Use maven to build the `war` file using the following command.  After the build completes the war is available at `webapp/target/DataSpread.war`. 
 
 	```
-	ant
+	mvn clean install
 	```
 
 ### Deploying DataSpread locally. 
@@ -69,7 +69,7 @@ To host DataSpread locally you can either use one of the pre-build war files, av
     1. `web.xml` by adding the following text at the end of the file before the closing XML tag.   
 	```
 	<listener>
-	    <listener-class>org.zkoss.zss.model.impl.DBHandler</listener-class>
+	    <listener-class>org.model.DBHandler</listener-class>
 	</listener>
 	```
     2. `context.xml` by adding the following text at the end of the file before the closing XML tag.   
@@ -88,7 +88,7 @@ To host DataSpread locally you can either use one of the pre-build war files, av
  
 6. Deploy the war file within Tomcat. This can be done via Tomcat's web interface or by manually copying the war file in the `webapps` folder under `TOMCAT_HOME`.
 
-7. Now you are ready to run the program. Visit the url where Tomcat is installed. It will be typically [http://localhost:8080/DataSpread_war/][install_loc] for a local install.
+7. Now you are ready to run the program. Visit the url where Tomcat is installed. It will be typically [http://localhost:8080/DataSpread/][install_loc] for a local install.
 
 
 License
@@ -110,3 +110,5 @@ MIT
 [warlink]: https://github.com/dataspread/releases/releases
 [dataspread-github]: http://dataspread.github.io
 [dataspread-site]: http://data-people.cs.illinois.edu/dataspread.pdf
+[maven]: https://maven.apache.org/install.html
+
