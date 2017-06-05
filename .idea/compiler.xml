@@ -22,14 +22,19 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
+        <module name="blockstore" />
         <module name="rtree" />
+        <module name="webapp" />
         <module name="zpoi" />
         <module name="zss" />
         <module name="zssmodel" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel target="1.8">
+      <module name="blockstore" target="1.8" />
+      <module name="DataSpread" target="1.8" />
       <module name="rtree" target="1.8" />
+      <module name="webapp" target="1.8" />
       <module name="zpoi" target="1.8" />
       <module name="zss" target="1.8" />
       <module name="zssmodel" target="1.8" />

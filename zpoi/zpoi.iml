@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" type="JAVA_MODULE" version="4">
-  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8" inherit-compiler-output="false">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8">
     <output url="file://$MODULE_DIR$/target/classes" />
     <output-test url="file://$MODULE_DIR$/target/test-classes" />
     <content url="file://$MODULE_DIR$">
@@ -21,7 +21,7 @@
     <orderEntry type="library" name="Maven: stax:stax-api:1.0.1" level="project" />
     <orderEntry type="library" name="Maven: org.apache.xmlbeans:xmlbeans:2.3.0" level="project" />
     <orderEntry type="library" name="Maven: org.apache.poi:ooxml-schemas:1.1" level="project" />
-    <orderEntry type="library" name="Maven: junit:junit:4.8.1" level="project" />
     <orderEntry type="library" name="Maven: commons-codec:commons-codec:1.5" level="project" />
+    <orderEntry type="library" name="Maven: junit:junit:4.8.1" level="project" />
   </component>
 </module>
