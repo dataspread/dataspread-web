@@ -11,14 +11,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.app.ui.dlg;
 
-import java.io.InputStream;
-import java.io.Serializable;
-import java.sql.*;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
+import org.model.DBHandler;
 import org.zkoss.util.logging.Log;
 import org.zkoss.util.media.Media;
 import org.zkoss.zk.ui.Executions;
@@ -31,23 +24,22 @@ import org.zkoss.zk.ui.select.annotation.Wire;
 import org.zkoss.zss.api.Importer;
 import org.zkoss.zss.api.Importers;
 import org.zkoss.zss.api.model.Book;
-import org.zkoss.zss.app.impl.CollaborationInfoImpl;
 import org.zkoss.zss.app.BookInfo;
+import org.zkoss.zss.app.BookManager;
 import org.zkoss.zss.app.BookRepository;
 import org.zkoss.zss.app.CollaborationInfo;
-import org.zkoss.zss.app.repository.BookRepositoryFactory;
-import org.zkoss.zss.app.BookManager;
 import org.zkoss.zss.app.impl.BookManagerImpl;
+import org.zkoss.zss.app.impl.CollaborationInfoImpl;
+import org.zkoss.zss.app.repository.BookRepositoryFactory;
 import org.zkoss.zss.app.repository.impl.BookUtil;
 import org.zkoss.zss.app.ui.UiUtil;
 import org.zkoss.zss.model.impl.BookImpl;
-import org.model.DBHandler;
-import org.zkoss.zul.Button;
-import org.zkoss.zul.Fileupload;
-import org.zkoss.zul.ListModelList;
-import org.zkoss.zul.Listbox;
-import org.zkoss.zul.Messagebox;
-import org.zkoss.zul.Window;
+import org.zkoss.zul.*;
+
+import java.io.InputStream;
+import java.io.Serializable;
+import java.sql.*;
+import java.util.*;
 
 /**
  * 
@@ -55,16 +47,12 @@ import org.zkoss.zul.Window;
  *
  */
 public class OpenManageBookCtrl extends DlgCtrlBase{
-	private static final long serialVersionUID = 1L;
-	
 	public final static String ARG_BOOKINFO = "bookinfo";
 	public final static String ARG_BOOK = "book";
-	
-	private final static String URI = "~./zssapp/dlg/openManageBook.zul";
-	
 	public static final String ON_OPEN = "onOpen";
-	
-	private static final Log log = Log.lookup(OpenManageBookCtrl.class); 
+	private static final long serialVersionUID = 1L;
+	private final static String URI = "~./zssapp/dlg/openManageBook.zul";
+	private static final Log log = Log.lookup(OpenManageBookCtrl.class);
 	@Wire
 	Listbox bookList;
 	@Wire
@@ -96,18 +84,38 @@ public class OpenManageBookCtrl extends DlgCtrlBase{
 	private void reloadBookModel(){
 		bookListModel = new ListModelList<Map<String,Object>>();
 
-		String bookListQuery = "SELECT * FROM books";
+		String bookListQuery = "SELECT booktable FROM users WHERE username = ?;";
+		String fetchBookQuery = "SELECT * FROM books WHERE booktable = ANY(?);";
 		try (Connection connection = DBHandler.instance.getConnection();
-			 Statement stmt = connection.createStatement();
-			 ResultSet resultSet = stmt.executeQuery(bookListQuery))
+			 PreparedStatement getstmt = connection.prepareStatement(bookListQuery);
+			 PreparedStatement stmt = connection.prepareStatement(fetchBookQuery))
 		{
-			while(resultSet.next())
+			ArrayList<String> booklist = new ArrayList<>();
+			getstmt.setString(1, collaborationInfo.getUsername());
+			ResultSet resultSet = getstmt.executeQuery();
+			while (resultSet.next()) {
+				booklist.add(resultSet.getString(1));
+			}
+			String[] list = new String[booklist.size()];
+			int i = 0;
+			for (String name : booklist) {
+				list[i] = name;
+				i++;
+			}
+			Array array = connection.createArrayOf("VARCHAR", list);
+			stmt.setArray(1, array);
+			ResultSet rs = stmt.executeQuery();
+
+			while (rs.next())
 			{
 				Map<String,Object> data = new HashMap<String,Object>();
-				data.put("name", resultSet.getString("bookname"));
-				data.put("booktable", resultSet.getString("booktable"));
+				data.put("name", rs.getString("bookname"));
+				data.put("booktable", rs.getString("booktable"));
 				bookListModel.add(data);
 			}
+			getstmt.close();
+			stmt.close();
+			connection.commit();
 		}
 		catch (SQLException e)
 		{
@@ -242,27 +250,7 @@ public class OpenManageBookCtrl extends DlgCtrlBase{
 		book.getInternalBook().setIdAndLoad(bookTable);
 		return book;
 	}
-	
-	static private class MapAttrComparator implements Comparator<Map<String, Object>>, Serializable {
-		private static final long serialVersionUID = -2889285276678010655L;
-		private final boolean _asc;
-		private final String _attr;
-		
-		public MapAttrComparator(boolean asc,String attr) {
-			_asc = asc;
-			_attr = attr;
-		}
 
-		@Override
-		public int compare(Map<String, Object> o1, Map<String, Object> o2) {
-			if(_asc){
-				return o1.get(_attr).toString().compareTo(o2.get(_attr).toString());
-			}else{
-				return o2.get(_attr).toString().compareTo(o1.get(_attr).toString());
-			}
-		}
-	}
-	
 	public Comparator<Map<String, Object>> getBookNameDescComparator() {
 		return new MapAttrComparator(false, "name");
 	}
@@ -277,6 +265,26 @@ public class OpenManageBookCtrl extends DlgCtrlBase{
 
 	public Comparator<Map<String, Object>> getBookDateAscComparator() {
 		return new MapAttrComparator(true, "lastmodify");
+	}
+
+	static private class MapAttrComparator implements Comparator<Map<String, Object>>, Serializable {
+		private static final long serialVersionUID = -2889285276678010655L;
+		private final boolean _asc;
+		private final String _attr;
+
+		public MapAttrComparator(boolean asc,String attr) {
+			_asc = asc;
+			_attr = attr;
+		}
+
+		@Override
+		public int compare(Map<String, Object> o1, Map<String, Object> o2) {
+			if(_asc){
+				return o1.get(_attr).toString().compareTo(o2.get(_attr).toString());
+			}else{
+				return o2.get(_attr).toString().compareTo(o1.get(_attr).toString());
+			}
+		}
 	}
 	
 }

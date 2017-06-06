@@ -11,28 +11,24 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.app.ui.dlg;
 
-import java.util.Arrays;
-import java.util.Map;
-
 import org.zkoss.lang.Strings;
 import org.zkoss.zk.ui.Executions;
-import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.EventListener;
-import org.zkoss.zk.ui.event.SerializableEventListener;
 import org.zkoss.zk.ui.select.annotation.Listen;
 import org.zkoss.zk.ui.select.annotation.Wire;
 import org.zkoss.zss.api.model.Book;
-import org.zkoss.zss.app.impl.CollaborationInfoImpl;
-import org.zkoss.zss.app.BookRepository;
-import org.zkoss.zss.app.repository.BookRepositoryFactory;
 import org.zkoss.zss.app.BookManager;
+import org.zkoss.zss.app.BookRepository;
+import org.zkoss.zss.app.CollaborationInfo;
 import org.zkoss.zss.app.impl.BookManagerImpl;
-import org.zkoss.zss.app.repository.impl.BookUtil;
-import org.zkoss.zss.app.repository.impl.SimpleBookInfo;
+import org.zkoss.zss.app.impl.CollaborationInfoImpl;
+import org.zkoss.zss.app.repository.BookRepositoryFactory;
 import org.zkoss.zul.Button;
 import org.zkoss.zul.Messagebox;
 import org.zkoss.zul.Textbox;
 import org.zkoss.zul.Window;
+
+import java.util.Map;
 
 /**
  * 
@@ -40,27 +36,22 @@ import org.zkoss.zul.Window;
  *
  */
 public class SaveBookAsCtrl extends DlgCtrlBase{
-	private static final long serialVersionUID = 1L;
-	
 	public final static String ARG_NAME = "name";
 	public final static String BOOK = "book";
+	public static final String ON_SAVE = "onSave";
+	private static final long serialVersionUID = 1L;
 	private static final String TITLE = "title";
 	private static final String OK_BTN_NAME = "okBtnName";
-	
-	public static final String ON_SAVE = "onSave";
-		
+	private final static String URI = "~./zssapp/dlg/saveBookAs.zul";
 	@Wire
 	Textbox bookName;
-	
 	@Wire
 	Button save;
-	
+	CollaborationInfo collaborationInfo = CollaborationInfoImpl.getInstance();
 	private BookRepository repo = BookRepositoryFactory.getInstance().getRepository();
 	private BookManager bookManager = BookManagerImpl.getInstance(repo);
-	private final static String URI = "~./zssapp/dlg/saveBookAs.zul";
-
 	private Book _book;
-	
+
 	public static void show(EventListener<DlgCallbackEvent> callback, String name, Book book) {
 		Map arg = newArg(callback);
 		arg.put(ARG_NAME, name);
@@ -107,9 +98,10 @@ public class SaveBookAsCtrl extends DlgCtrlBase{
 			bookName.setErrorMessage("empty name is not allowed");
 			return;
 		}
-
+		//String bookname = _book.getInternalBook().getBookName();
 		if (_book.getInternalBook().setBookName(bookName.getValue()))
 		{
+			//collaborationInfo.replaceRelationship(bookName.getValue(), bookname);
 			postCallback(ON_SAVE, newMap(newEntry(ARG_NAME, bookName.getValue())));
 			detach();
 		}
