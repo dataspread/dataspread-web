@@ -11,7 +11,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.app.ui;
 
-import com.sun.org.glassfish.external.statistics.RangeStatistic;
+//import com.sun.org.glassfish.external.statistics.RangeStatistic;
 import org.zkoss.image.AImage;
 import org.zkoss.lang.Library;
 import org.zkoss.lang.Strings;
