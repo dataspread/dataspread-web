@@ -129,6 +129,18 @@
 					forward='mainMenubar.onInsertHyperlink()' sclass="zsmenuitem-app appmenu" />
 			</menupopup>
 		</menu>
+		<menu id="table" label="${c:l('zssapp.mainMenu.table')}" sclass="zsmenu-app">
+			<menupopup>
+				<menuitem id="toggleTableBar"
+						  label="${c:l('zssapp.mainMenu.table.tableBar')}" forward="mainMenubar.onToggleTableBar"
+						  autocheck="true" checked="false" sclass="zsmenuitem-app appmenu" />
+				<menuseparator />
+				<menuitem id="createTable" label="${c:l('zssapp.mainMenu.table.create')}"
+						  sclass="zsmenuitem-app appmenu"></menuitem>
+				<menuitem id="deleteTable" label="${c:l('zssapp.mainMenu.table.delete')}"
+						  sclass="zsmenuitem-app appmenu"></menuitem>
+			</menupopup>
+		</menu>
 		<menu id="helpMenu" label="${c:l('zssapp.mainMenu.help')}" sclass="zsmenu-app">
 			<menupopup>
 				<menuitem id="about" label="${c:l('zssapp.mainMenu.help.about')}"

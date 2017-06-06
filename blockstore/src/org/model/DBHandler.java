@@ -64,7 +64,7 @@ public class DBHandler implements ServletContextListener {
             e.printStackTrace();
         }
         createBookTable();
-        createUserTable();
+        createUserTablesTable();
     }
 
     @Override
@@ -95,6 +95,26 @@ public class DBHandler implements ServletContextListener {
             String createTable = "CREATE TABLE  IF NOT  EXISTS  users (" +
                     "username  TEXT NOT NULL," +
                     "booktable   TEXT NOT NULL" +
+                    ");";
+            stmt.execute(createTable);
+            connection.commit();
+        }
+        catch (SQLException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    private void createUserTablesTable()
+    {
+        try (Connection connection = DBHandler.instance.getConnection();
+             Statement stmt = connection.createStatement())
+        {
+            String createTable = "CREATE TABLE  IF NOT  EXISTS  userTables (" +
+                    "tableName  TEXT NOT NULL," +
+                    "bookName  TEXT NOT NULL," +
+                    "rangeRef TEXT NOT NULL," +
+                    "UNIQUE (bookName, rangeRef)" +
                     ");";
             stmt.execute(createTable);
             connection.commit();

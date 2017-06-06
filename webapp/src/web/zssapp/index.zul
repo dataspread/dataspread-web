@@ -4,8 +4,13 @@
 	<window id="mainWin" hflex="1" vflex="1" apply="org.zkoss.zss.app.ui.AppCtrl">
 		<vlayout hflex="1" vflex="1" spacing="0">
 			<include hflex="1" src="~./zssapp/mainMenubar.zul" />
-			<spreadsheet id="ss" hflex="1" vflex="1"
-				showToolbar="true" showFormulabar="true" showSheetbar="true" showContextMenu="true" />
+			<hlayout vflex="1" spacing="0">
+
+				<include vflex="1" src="~./zssapp/TablesBar.zul"></include>
+
+				<spreadsheet id="ss" hflex="1" showToolbar="true" showFormulabar="true" showSheetbar="true" showContextMenu="true" vflex="1"/>
+
+			</hlayout>
 		</vlayout>
 		<script id="confirmMsgWorkaround"><![CDATA[
 			(function(){
