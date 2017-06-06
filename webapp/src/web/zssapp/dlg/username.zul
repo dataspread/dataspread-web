@@ -18,7 +18,7 @@ Copyright (C) 2014 Potix Corporation. All Rights Reserved.
 		apply="org.zkoss.zss.app.ui.dlg.UsernameCtrl" hflex="min" vflex="min">
 		<vbox hflex="1" pack="center" align="center">
 			<label>Please enter your nick name</label>
-			<hbox>			
+            <hbox>
 				<textbox id="username"></textbox>
 				<button id="ok" label="OK" />
 			</hbox>

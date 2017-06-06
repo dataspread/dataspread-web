@@ -17,6 +17,8 @@
 
 package org.zkoss.poi.ss.format;
 
+import org.zkoss.poi.ss.formula.eval.AreaEval;
+import org.zkoss.poi.ss.formula.eval.BlankEval;
 import org.zkoss.poi.ss.formula.eval.ErrorEval;
 import org.zkoss.poi.ss.usermodel.Cell;
 import org.zkoss.util.CacheMap;
@@ -119,7 +121,16 @@ public class CellFormat {
 	                text = CellNumberFormatter.getFormatter(CellNumberFormatter.FormatterType.SIMPLE_NUMBER, locale).format(value);
 	            } else if (value instanceof Boolean) { //20100616, Henri Chen
 	            	text = ((Boolean)value).booleanValue() ? "TRUE" : "FALSE";
-	            } else {
+	            } else if (value instanceof AreaEval) {
+	                // Show the number of rows and columns in the area
+	                int numRow = ((AreaEval) value).getLastRow()-((AreaEval) value).getFirstRow()+1;
+	                int numCol = ((AreaEval) value).getLastColumn()-((AreaEval) value).getFirstColumn()+1;
+	                if (numRow == 1 && numCol == 1 && ((AreaEval) value).getValue(0, 0) instanceof BlankEval) {
+	                    text = "[empty]";
+                    } else {
+                        text = "[" + ((Integer) numRow).toString() + " x " + ((Integer) numCol).toString() + "]";
+                    }
+                } else {
 	                text = value.toString();
 	            }
 	            return new CellFormatResult(true, text, null);

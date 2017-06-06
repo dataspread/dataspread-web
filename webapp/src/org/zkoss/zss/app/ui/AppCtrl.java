@@ -73,6 +73,7 @@ import java.util.Date;
 /**
  * @author dennis
  */
+
 public class AppCtrl extends CtrlBase<Component> {
     private static final Log log = Log.lookup(AppCtrl.class);
     private static final long serialVersionUID = 1L;

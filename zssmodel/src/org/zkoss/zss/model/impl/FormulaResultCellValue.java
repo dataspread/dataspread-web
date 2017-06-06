@@ -3,6 +3,7 @@ package org.zkoss.zss.model.impl;
 import java.io.Serializable;
 import java.util.Collection;
 
+import org.zkoss.poi.ss.formula.eval.AreaEval;
 import org.zkoss.zss.model.ErrorValue;
 import org.zkoss.zss.model.SCell.CellType;
 import org.zkoss.zss.model.sys.formula.EvaluationResult;
@@ -41,11 +42,15 @@ public class FormulaResultCellValue extends CellValue implements Serializable {
 		} else if (val instanceof Boolean) {
 			cellType = CellType.BOOLEAN;
 			value = (Boolean) val;
+		} else if (val instanceof AreaEval) {
+			cellType = CellType.COLLECTION;
+			value = (AreaEval) val;
 		} else if (val instanceof Collection) {
 			// possible a engine return a collection in cell evaluation case?
 			// who should take care array formula?
 			if (((Collection) val).size() > 0) {
-				setByValue(((Collection) val).iterator().next());
+				cellType = CellType.COLLECTION;
+				value = (Collection) val;
 			} else {
 				cellType = CellType.BLANK;
 				value = null;
