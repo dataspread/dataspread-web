@@ -154,7 +154,8 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 		closeFile.setDisabled(disabled);
 		exportFile.setDisabled(disabled);
 		exportPdf.setDisabled(!isEE || disabled);
-		changeUsername.setDisabled(!isEE || collabDisabled == Boolean.TRUE);
+		//changeUsername.setDisabled(!isEE || collabDisabled == Boolean.TRUE);
+		changeUsername.setDisabled(collabDisabled == Boolean.TRUE);
 		shareBook.setDisabled(!isEE || collabDisabled == Boolean.TRUE);
 		
 		// set about url

@@ -133,6 +133,7 @@ public class BookImpl extends AbstractBookAdv{
 
 	@Override
 	public boolean setBookName(String bookName) {
+
 		if (schemaPresent)
 		{
 			String updateBookName = "UPDATE books SET bookname = ? WHERE bookname = ?";
