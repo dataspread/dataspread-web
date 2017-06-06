@@ -13,20 +13,8 @@ Copyright (C) 2010 Potix Corporation. All Rights Reserved.
 
 package org.zkoss.poi.ss.formula;
 
-import org.zkoss.poi.ss.formula.ptg.Area2DPtgBase;
-import org.zkoss.poi.ss.formula.ptg.Area3DPtg;
-import org.zkoss.poi.ss.formula.ptg.AreaErrPtg;
-import org.zkoss.poi.ss.formula.ptg.AreaPtg;
-import org.zkoss.poi.ss.formula.ptg.AreaPtgBase;
-import org.zkoss.poi.ss.formula.ptg.DeletedArea3DPtg;
-import org.zkoss.poi.ss.formula.ptg.DeletedRef3DPtg;
-import org.zkoss.poi.ss.formula.ptg.Ptg;
-import org.zkoss.poi.ss.formula.ptg.Ref3DPtg;
-import org.zkoss.poi.ss.formula.ptg.RefErrorPtg;
-import org.zkoss.poi.ss.formula.ptg.RefPtg;
-import org.zkoss.poi.ss.formula.ptg.RefPtgBase;
-import org.zkoss.poi.ss.formula.ptg.TablePtg;
 import org.zkoss.poi.ss.SpreadsheetVersion;
+import org.zkoss.poi.ss.formula.ptg.*;
 
 /**
  * @author henrichen
@@ -46,6 +34,9 @@ public class PtgShifter {
 	private final int _colAmount;
 	private final SpreadsheetVersion _ver;
 
+	//variable used for updating OpTableColRefPtg
+	private AreaPtgBase _currArea;
+
 	public PtgShifter(int externSheetIndex, int firstRow, int lastRow, int rowAmount, int firstCol, int lastCol, int colAmount, SpreadsheetVersion ver) {
 		if (firstRow > lastRow) {
 			throw new IllegalArgumentException("firstRow("+firstRow+") and lastRow("+lastRow+") out of order");
@@ -62,7 +53,44 @@ public class PtgShifter {
 		_colAmount = colAmount;
 		_ver = ver;
 	}
-	
+
+	public static Ptg createDeletedRef(Ptg ptg) {
+		if (ptg instanceof RefPtg) {
+			return new RefErrorPtg();
+		}
+		if (ptg instanceof Ref3DPtg) {
+			Ref3DPtg rptg = (Ref3DPtg) ptg;
+			return new DeletedRef3DPtg(rptg.getExternSheetIndex());
+		}
+		if (ptg instanceof AreaPtg) {
+			return new AreaErrPtg();
+		}
+		if (ptg instanceof Area3DPtg) {
+			Area3DPtg area3DPtg = (Area3DPtg) ptg;
+			return new DeletedArea3DPtg(area3DPtg.getExternSheetIndex());
+		}
+		//ZSS-985
+		if (ptg instanceof TablePtg) {
+			return new AreaErrPtg();
+		}
+
+		throw new IllegalArgumentException("Unexpected ref ptg class (" + ptg.getClass().getName() + ")");
+	}
+
+	//ZSS-759
+	public static Ptg createDeletedRef3d(String bookName, Ptg ptg) {
+		if (ptg instanceof Ref3DPtg) {
+			Ref3DPtg rptg = (Ref3DPtg) ptg;
+			return new DeletedRef3DPtg(rptg.getExternSheetIndex(), rptg, bookName);
+		}
+		if (ptg instanceof Area3DPtg) {
+			Area3DPtg area3DPtg = (Area3DPtg) ptg;
+			return new DeletedArea3DPtg(area3DPtg.getExternSheetIndex(), area3DPtg, bookName);
+		}
+
+		throw new IllegalArgumentException("Unexpected ref ptg class (" + ptg.getClass().getName() + ")");
+	}
+
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 
@@ -174,7 +202,70 @@ public class PtgShifter {
 				return colMoveAreaPtg(aptg);
 			}
 		}
+		// Update ptgs for Table_x.Col_x
+		if (ptg instanceof OpTableColRefPtg) {
+
+			if (_colAmount != 0 && _currArea != null) {
+				return moveTableColRefPtg((OpTableColRefPtg) ptg);
+			}
+
+		}
 		return null;
+	}
+
+	/**
+	 * Method to update a ptg for Table_x.Col_x for relational algebra formulas.
+	 * Private variable _currArea has the last seen area. _currArea is not null when this method is called.
+	 *
+	 * @param tcptg
+	 * @return
+	 */
+	private Ptg moveTableColRefPtg(OpTableColRefPtg tcptg) {
+		final int aFirstCol = _currArea.getFirstColumn();
+		final int aLastCol = _currArea.getLastColumn();
+
+		if (_colAmount > 0) {
+			//column(s) being inserted in currArea
+			if (_firstCol > aFirstCol && _firstCol <= aLastCol) {
+				int tcIdx = tcptg.getColumnNum() + aFirstCol;
+				if (tcIdx >= _firstCol) {
+					int newTcIdx = tcIdx + _colAmount - aFirstCol;
+					tcptg.setColumnNum(newTcIdx);
+				}
+			}
+		} else if (_colAmount < 0) {
+			//end of deleted columns is in currArea
+			if (_firstCol > aFirstCol && _firstCol <= aLastCol) {
+				int tcIdx = tcptg.getColumnNum() + aFirstCol;
+				//tcptg is a deleted column
+				if (tcIdx >= _firstCol + _colAmount && tcIdx < _firstCol) {
+					tcptg.setColumnNum(-1);
+				} else if (tcIdx >= _firstCol) {
+					//all columns of currArea up to _firstCol are deleted
+					if (_firstCol + _colAmount <= aFirstCol) {
+						int newTcIdx = tcIdx - _firstCol;
+						tcptg.setColumnNum(newTcIdx);
+					}
+					//only some columns in currArea are deleted
+					else {
+						int newTcIdx = tcIdx + _colAmount - aFirstCol;
+						tcptg.setColumnNum(newTcIdx);
+					}
+				}
+			}
+			//end of deleted columns is after currArea and columns in currArea are deleted
+			else if (_firstCol > aLastCol && _firstCol + _colAmount <= aLastCol) {
+				int tcIdx = tcptg.getColumnNum() + aFirstCol;
+				//tcptg is a deleted column
+				if (tcIdx >= _firstCol + _colAmount && tcIdx < _firstCol) {
+					tcptg.setColumnNum(-1);
+				}
+			}
+		}
+
+
+		return tcptg;
+
 	}
 
 	private Ptg rowMoveRefPtg(RefPtgBase rptg) {
@@ -210,6 +301,7 @@ public class PtgShifter {
 		throw new IllegalStateException("Situation not covered: (" + _firstRow + ", " +
 					_lastRow + ", " + _rowAmount + ", " + refRow + ")");
 	}
+	
 	private Ptg rowMoveAreaPtg(AreaPtgBase aptg) {
 		final int aFirstCol = aptg.getFirstColumn();
 		final int aLastCol = aptg.getLastColumn();
@@ -346,7 +438,7 @@ public class PtgShifter {
 		throw new IllegalStateException("Situation not covered: (" + _firstRow + ", " +
 					_lastRow + ", " + _rowAmount + ", " + aFirstRow + ", " + aLastRow + ", "+ destFirstRowIndex + ", " + destLastRowIndex + ")");
 	}
-
+	
 	private Ptg bothMoveRefPtg(RefPtgBase rptg) {
 		final int refCol = rptg.getColumn();
 		final int refRow = rptg.getRow();
@@ -381,7 +473,7 @@ public class PtgShifter {
 					_lastRow + ", " + _rowAmount + ", " + refRow + "), column(" + _firstCol + ", " +
 					_lastCol + ", " + _colAmount + ", " + refCol + ")");
 	}
-	
+
 	private Ptg bothMoveAreaPtg(AreaPtgBase aptg) {
 		final int aFirstCol = aptg.getFirstColumn();
 		final int aLastCol = aptg.getLastColumn();
@@ -446,29 +538,7 @@ public class PtgShifter {
 		}
 		return null;
 	}
-	
-	public static Ptg createDeletedRef(Ptg ptg) {
-		if (ptg instanceof RefPtg) {
-			return new RefErrorPtg();
-		}
-		if (ptg instanceof Ref3DPtg) {
-			Ref3DPtg rptg = (Ref3DPtg) ptg;
-			return new DeletedRef3DPtg(rptg.getExternSheetIndex());
-		}
-		if (ptg instanceof AreaPtg) {
-			return new AreaErrPtg();
-		}
-		if (ptg instanceof Area3DPtg) {
-			Area3DPtg area3DPtg = (Area3DPtg) ptg;
-			return new DeletedArea3DPtg(area3DPtg.getExternSheetIndex());
-		}
-		//ZSS-985
-		if (ptg instanceof TablePtg) {
-			return new AreaErrPtg();
-		}
 
-		throw new IllegalArgumentException("Unexpected ref ptg class (" + ptg.getClass().getName() + ")");
-	}
 	private Ptg colMoveRefPtg(RefPtgBase rptg) {
 		final int refRow = rptg.getRow();
 		if (_firstRow > refRow || refRow > _lastRow) { //out of the boundary
@@ -502,7 +572,10 @@ public class PtgShifter {
 		throw new IllegalStateException("Situation not covered: (" + _firstCol + ", " +
 					_lastCol + ", " + _colAmount + ", " + refCol + ")");
 	}
+
 	private Ptg colMoveAreaPtg(AreaPtgBase aptg) {
+		_currArea = new AreaPtg(aptg.getFirstRow(), aptg.getLastRow(), aptg.getFirstColumn(), aptg.getLastColumn(),
+				aptg.isFirstRowRelative(), aptg.isLastRowRelative(), aptg.isFirstColRelative(), aptg.isLastColRelative());
 		final int aFirstRow = aptg.getFirstRow();
 		final int aLastRow = aptg.getLastRow();
 		if (aFirstRow < _firstRow || aLastRow > _lastRow) { //not total cover
@@ -617,6 +690,7 @@ public class PtgShifter {
 		throw new IllegalStateException("Situation not covered: (" + _firstCol + ", " +
 					_lastRow + ", " + _colAmount + ", " + aFirstCol + ", " + aLastCol + ", " + destFirstColIndex + ", " + destLastColIndex+ ")");
 	}
+
 	private Ptg rptgSetRow(RefPtgBase rptg, int rowNum) {
 		if (rowNum > _ver.getLastRowIndex() || rowNum < 0) {
 			return createDeletedRef(rptg); //out of bound
@@ -625,6 +699,7 @@ public class PtgShifter {
 			return rptg;
 		}
 	}
+
 	private Ptg rptgSetCol(RefPtgBase rptg, int colNum) {
 		if (colNum > _ver.getLastColumnIndex() || colNum < 0) {
 			return createDeletedRef(rptg); //out of bound
@@ -633,6 +708,7 @@ public class PtgShifter {
 			return rptg;
 		}
 	}
+	
 	private Ptg rptgSetRowCol(RefPtgBase rptg, int rowNum, int colNum) {
 		if (rowNum > _ver.getLastRowIndex() || rowNum < 0) {
 			return createDeletedRef(rptg); //out of bound
@@ -646,7 +722,7 @@ public class PtgShifter {
 		}
 		return rptg;
 	}	
-	
+
 	private Ptg aptgSetFirstRow(AreaPtgBase aptg, int rowNum) {
 		if (rowNum > _ver.getLastRowIndex()) {
 			return createDeletedRef(aptg); //out of bound
@@ -657,6 +733,7 @@ public class PtgShifter {
 		}
 		return aptg;
 	}
+
 	private Ptg aptgSetFirstCol(AreaPtgBase aptg, int colNum) {
 		if (colNum > _ver.getLastColumnIndex()) {
 			return createDeletedRef(aptg); //out of bound
@@ -667,6 +744,7 @@ public class PtgShifter {
 		}
 		return aptg;
 	}
+
 	private Ptg aptgSetLastRow(AreaPtgBase aptg, int rowNum) {
 		if (rowNum < 0) {
 			return createDeletedRef(aptg); //out of bound
@@ -677,6 +755,7 @@ public class PtgShifter {
 		}
 		return aptg;
 	}
+
 	private Ptg aptgSetLastCol(AreaPtgBase aptg, int colNum) {
 		if (colNum < 0) {
 			return createDeletedRef(aptg); //out of bound
@@ -687,6 +766,7 @@ public class PtgShifter {
 		}
 		return aptg;
 	}
+
 	private Ptg aptgSetFirstLastRow(AreaPtgBase aptg, int firstRow, int lastRow) {
 		if (firstRow > _ver.getLastRowIndex()) {
 			return createDeletedRef(aptg); //out of bound
@@ -704,6 +784,7 @@ public class PtgShifter {
 		}
 		return aptg;
 	}
+
 	private Ptg aptgSetFirstLastCol(AreaPtgBase aptg, int firstCol, int lastCol) {
 		if (firstCol > _ver.getLastColumnIndex()) {
 			return createDeletedRef(aptg); //out of bound
@@ -721,6 +802,7 @@ public class PtgShifter {
 		}
 		return aptg;
 	}
+	
 	private Ptg aptgSetRowCol(AreaPtgBase aptg, int firstRow, int firstCol, int lastRow, int lastCol) {
 		//first & last columns
 		if (firstCol > _ver.getLastColumnIndex()) {
@@ -753,19 +835,5 @@ public class PtgShifter {
 			aptg.setLastRow(lastRow);
 		}
 		return aptg;
-	}
-	
-	//ZSS-759
-	public static Ptg createDeletedRef3d(String bookName, Ptg ptg) {
-		if (ptg instanceof Ref3DPtg) {
-			Ref3DPtg rptg = (Ref3DPtg) ptg;
-			return new DeletedRef3DPtg(rptg.getExternSheetIndex(), rptg, bookName);
-		}
-		if (ptg instanceof Area3DPtg) {
-			Area3DPtg area3DPtg = (Area3DPtg) ptg;
-			return new DeletedArea3DPtg(area3DPtg.getExternSheetIndex(), area3DPtg, bookName);
-		}
-
-		throw new IllegalArgumentException("Unexpected ref ptg class (" + ptg.getClass().getName() + ")");
 	}
 }
