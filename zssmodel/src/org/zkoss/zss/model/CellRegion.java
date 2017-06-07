@@ -271,6 +271,21 @@ public class CellRegion implements Serializable {
 		return new CellRegion(row1, col1, row2, col2);
 	}
 
+
+	/**
+	 * @return returns the overlapping region between this region and the
+	 * specified region; null if no overlapping.
+	 */
+	public CellRegion getBoundingBox(CellRegion target) {
+		final int row1 = Math.min(this.row, target.row);
+		final int row2 = Math.max(this.lastRow, target.lastRow);
+		final int col1 = Math.min(this.column, target.column);
+		final int col2 = Math.max(this.lastColumn, target.lastColumn);
+		return new CellRegion(row1, col1, row2, col2);
+	}
+
+
+
 	/**
 	 * @return returns the cell count which this region covers 
 	 */
