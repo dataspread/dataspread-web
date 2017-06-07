@@ -64,6 +64,7 @@ public class DBHandler implements ServletContextListener {
             e.printStackTrace();
         }
         createBookTable();
+        createUserTable();
         createUserTablesTable();
     }
 

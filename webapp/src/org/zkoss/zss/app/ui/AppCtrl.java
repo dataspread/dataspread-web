@@ -11,7 +11,6 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.app.ui;
 
-//import com.sun.org.glassfish.external.statistics.RangeStatistic;
 import org.zkoss.image.AImage;
 import org.zkoss.lang.Library;
 import org.zkoss.lang.Strings;
@@ -71,13 +70,14 @@ import java.util.Collection;
 import java.util.Date;
 
 /**
+ *
  * @author dennis
+ *
  */
-
 public class AppCtrl extends CtrlBase<Component> {
+	public static final String ZSS_USERNAME = "zssUsername";
     private static final Log log = Log.lookup(AppCtrl.class);
     private static final long serialVersionUID = 1L;
-    public static final String ZSS_USERNAME = "zssUsername";
     private static final String UNSAVED_MESSAGE = "Do you want to leave this book without save??";
     private static final String UTF8 = "UTF-8";
     private static final boolean DISABLE_BOOKMARK = Boolean.valueOf(Library.getProperty("zssapp.bookmark.disable", "false"));
@@ -86,7 +86,6 @@ public class AppCtrl extends CtrlBase<Component> {
     private static BookRepository repo = BookRepositoryFactory.getInstance().getRepository();
     private static CollaborationInfo collaborationInfo = CollaborationInfoImpl.getInstance();
     private static BookManager bookManager = BookManagerImpl.getInstance(repo);
-    private ModelEventListener dirtyChangeEventListener;
 
     static {
         collaborationInfo.addEvent(new CollaborationEventListener() {
@@ -112,24 +111,19 @@ public class AppCtrl extends CtrlBase<Component> {
         });
     }
 
-    private String username;
-
     @Wire
     Spreadsheet ss;
-
     @Wire
     Script confirmMsgWorkaround;
-
     @Wire
     Script gaScript;
-
     @Wire
     Html usersPopContent; //ZSS-998
-
     BookInfo selectedBookInfo;
     Book loadedBook;
     Desktop desktop = Executions.getCurrent().getDesktop();
-
+	private ModelEventListener dirtyChangeEventListener;
+	private String username;
     private UnsavedAlertState isNeedUnsavedAlert = UnsavedAlertState.DISABLED;
 
     public AppCtrl() {
@@ -310,6 +304,16 @@ public class AppCtrl extends CtrlBase<Component> {
 
         BookInfo bookinfo = getBookInfo(bookName);
         String sheetName = Executions.getCurrent().getParameter("sheet");
+
+		Cookie[] cookies = ((HttpServletRequest) Executions.getCurrent().getNativeRequest()).getCookies();
+		if (cookies != null) {
+			for (Cookie cookie : cookies) {
+				if (cookie.getName().equals(ZSS_USERNAME)) {
+					username = cookie.getValue();
+					break;
+				}
+			}
+		}
         if (bookinfo != null) {
             doLoadBook(bookinfo, null, sheetName, false);
         } else {
@@ -377,8 +381,7 @@ public class AppCtrl extends CtrlBase<Component> {
                             return;
                         }
                     }
-                }
-            }, name, loadedBook, "Save Book for sharing", "Next");
+				}}, name, loadedBook, "Save Book for sharing", "Next");
         } else {
             ShareBookCtrl.show();
         }
@@ -410,7 +413,7 @@ public class AppCtrl extends CtrlBase<Component> {
                         pushAppEvent(AppEvts.ON_AFTER_CHANGED_USERNAME, username);
                     }
                 }
-            }, username == null ? "" : username, message == null ? "" : message);
+			}, username == null ? "admin" : username, message == null ? "" : message);
         } else {
             // already in cookie
             Cookie[] cookies = ((HttpServletRequest) Executions.getCurrent().getNativeRequest()).getCookies();
@@ -575,7 +578,7 @@ public class AppCtrl extends CtrlBase<Component> {
         if (renewState)
             setBookmark("");
 
-        collaborationInfo.removeRelationship(username);
+		collaborationInfo.setRelationship(username, loadedBook);
         ss.setBook(loadedBook);
         initSaveNotification(loadedBook);
         pushAppEvent(AppEvts.ON_CHANGED_FILE_STATE, BookInfo.STATE_UNSAVED);
