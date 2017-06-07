@@ -19,9 +19,13 @@ import com.github.davidmoten.rtree.internal.Comparators;
 import com.github.davidmoten.rtree.internal.NodeAndEntries;
 import com.github.davidmoten.rtree.internal.operators.OperatorBoundedPriorityQueue;
 
+
+import org.model.BlockStore;
+import org.model.DBContext;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.functions.Func2;
+
 
 /**
  * Immutable in-memory 2D R-Tree with configurable splitter heuristic.
@@ -101,6 +105,8 @@ public final class RTree<T, S extends Geometry> {
     public static <T, S extends Geometry> RTree<T, S> create() {
         return new Builder().create();
     }
+
+    public static <T, S extends Geometry> RTree<T, S> createWithDb(DBContext dbcontext, String tableName) {return new Builder().createWithDb(dbcontext, tableName);}
 
     /**
      * The tree is scanned for depth and the depth returned. This involves
@@ -302,6 +308,32 @@ public final class RTree<T, S extends Geometry> {
             return new RTree<T, S>(Optional.<Node<T, S>> absent(), 0,
                     new Context<T, S>(minChildren.get(), maxChildren.get(), selector, splitter,
                             (Factory<T, S>) factory));
+        }
+
+        /**
+         * Builds the {@link RTree}.
+         *
+         * @param <T>
+         *            value type
+         * @param <S>
+         *            geometry type
+         * @return RTree
+         */
+        @SuppressWarnings("unchecked")
+        public <T, S extends Geometry> RTree<T, S> createWithDb(DBContext dbcontext, String tableName) {
+            if (!maxChildren.isPresent())
+                if (star)
+                    maxChildren = of(MAX_CHILDREN_DEFAULT_STAR);
+                else
+                    maxChildren = of(MAX_CHILDREN_DEFAULT_GUTTMAN);
+            if (!minChildren.isPresent())
+                minChildren = of((int) Math.round(maxChildren.get() * DEFAULT_FILLING_FACTOR));
+
+            RTree<T, S> ret = new RTree<T, S>(Optional.absent(), 0,
+                    new Context<T, S>(minChildren.get(), maxChildren.get(), selector, splitter,
+                            (Factory<T, S>) factory));
+            //ret.setupBlockStore(dbcontext, tableName);
+            return ret;
         }
 
     }

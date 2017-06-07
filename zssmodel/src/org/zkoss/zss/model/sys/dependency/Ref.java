@@ -1,5 +1,7 @@
 package org.zkoss.zss.model.sys.dependency;
 
+import java.util.Set;
+
 /**
  * 
  * @author dennis
@@ -36,4 +38,10 @@ public interface Ref {
 	//ZSS-815
 	//since 3.7.0
 	public int getLastSheetIndex();
+
+	Set<Ref> getPrecedents();
+
+	void addPrecedent(Ref precedent);
+
+	void clearDependent();
 }
