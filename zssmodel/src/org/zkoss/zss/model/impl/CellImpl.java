@@ -555,9 +555,6 @@ public class CellImpl extends AbstractCellAdv {
 			FormulaEngine fe = EngineFactory.getInstance().createFormulaEngine();
 			Ref ref = getRef();
 			fe.parse(formula, new FormulaParseContext(this ,ref));//rebuild the expression to make new dependency with current row,column
-			if(_formulaResultValue!=null){
-				table.setEvaluated(ref);
-			}
 		}
 	}
 

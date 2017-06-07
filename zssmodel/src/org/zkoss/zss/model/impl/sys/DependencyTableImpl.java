@@ -17,14 +17,10 @@ import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.dependency.Ref.RefType;
 
 /* DependencyTableImpl.java
-
  Purpose:
-
  Description:
-
  History:
  Nov 22, 2013 Created by Pao Wang
-
  Copyright (C) 2013 Potix Corporation. All Rights Reserved.
  */
 
@@ -41,7 +37,6 @@ public class DependencyTableImpl extends DependencyTableAdv {
 
 	/** Map<dependant, precedent> */
 	protected Map<Ref, Set<Ref>> _map = new LinkedHashMap<Ref, Set<Ref>>();
-	protected Map<Ref, Set<Ref>> _evaledMap = new LinkedHashMap<Ref, Set<Ref>>();
 	protected SBookSeries _books;
 
 	public DependencyTableImpl() {
@@ -64,37 +59,21 @@ public class DependencyTableImpl extends DependencyTableAdv {
 
 	public void clear() {
 		_map.clear();
-		_evaledMap.clear();
 	}
 
 	@Override
 	public void clearDependents(Ref dependant) {
 		_map.remove(dependant);
-		_evaledMap.remove(dependant);
 	}
 
 	@Override
 	public Set<Ref> getDependents(Ref precedent) {
 		return getDependents(precedent,_map);
 	}
-	
-	@Override
-	public Set<Ref> getEvaluatedDependents(Ref precedent) {
-		return getDependents(precedent,_evaledMap);
-	}
-	
-	@Override
-	public void setEvaluated(Ref dependent){
-		//TODO: Mangesh - Remove the notion of evaluated map.
-		Set<Ref> precedents = _map.get(dependent);
-		if(precedents!=null){
-			_evaledMap.put(dependent, precedents);
-		}
-	}
-	
+
 	private Set<Ref> getDependents(Ref precedent,Map<Ref, Set<Ref>> base) {
 		// ZSS-818
-		if (_regionTypes.contains(precedent.getType())) { 
+		if (_regionTypes.contains(precedent.getType())) {
 			SBook book = _books.getBook(precedent.getBookName());
 			if (book == null) { // no such book
 				return Collections.emptySet();
@@ -104,7 +83,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 				return Collections.emptySet();
 			}
 		}
-		
+
 		// search dependents and their dependents recursively
 		Set<Ref> result = new LinkedHashSet<Ref>();
 		Queue<Ref> queue = new LinkedList<Ref>();
@@ -133,7 +112,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 		}
 		return result;
 	}
-	
+
 	@Override
 	public Set<Ref> getDirectDependents(Ref precedent) {
 		// search direct dependents 
@@ -156,7 +135,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 			}
 		}
 		return result;
-	}	
+	}
 
 	private boolean isMatched(Ref a, Ref b) {
 		if(_regionTypes.contains(a.getType()) && _regionTypes.contains(b.getType())) {
@@ -269,18 +248,17 @@ public class DependencyTableImpl extends DependencyTableAdv {
 
 	@Override
 	public void merge(DependencyTableAdv dependencyTable) {
-		if(!(dependencyTable instanceof DependencyTableImpl)) {
+		if (!(dependencyTable instanceof DependencyTableImpl)) {
 			// just in case
 			_logger.error("can't merge different type of dependency table: " + dependencyTable.getClass().getName());
 			return;
 		}
 
 		// simply, just put everything in
-		DependencyTableImpl another = (DependencyTableImpl)dependencyTable;
+		DependencyTableImpl another = (DependencyTableImpl) dependencyTable;
 		_map.putAll(another._map);
-		_evaledMap.putAll(another._evaledMap);
 	}
-	
+
 	@Override
 	public Set<Ref> searchPrecedents(RefFilter filter){
 		Set<Ref> precedents = new LinkedHashSet<Ref>();
@@ -293,7 +271,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 		}
 		return precedents;
 	}
-	
+
 	public void dump(){
 		for(Entry<Ref, Set<Ref>> entry : _map.entrySet()) {
 			System.out.println("["+entry.getKey()+"] depends on");
@@ -302,7 +280,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 			}
 		}
 	}
-	
+
 	//ZSS-648
 	@Override
 	public Set<Ref> getDirectPrecedents(Ref dependent) {

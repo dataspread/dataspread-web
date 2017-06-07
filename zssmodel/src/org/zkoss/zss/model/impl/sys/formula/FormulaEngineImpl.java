@@ -344,9 +344,6 @@ public class FormulaEngineImpl implements FormulaEngine {
 				//evaluator.clearAllCachedResultValues();
 				setXelContext(oldXelCtx);
 			}
-			if(dependant!=null){
-				table.setEvaluated(dependant);
-			}
 		} catch(NotImplementedException e) {
 			_logger.info(e.getMessage() + " when eval " + expr.getFormulaString());
 			result = new EvaluationResultImpl(ResultType.ERROR, new ErrorValue(ErrorValue.INVALID_NAME, e.getMessage()), ErrorEval.NAME_INVALID);
