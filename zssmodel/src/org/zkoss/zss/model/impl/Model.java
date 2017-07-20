@@ -19,11 +19,9 @@ public abstract class Model {
                 return new ROM_Model(context, tableName);
             case COM_Model:
                 return new COM_Model(context, tableName);
+            case HYBRID_Model:
+                return new Hybrid_Model(context, tableName);
         }
-                //return new ROM_Model(context, tableName);
-                //return new COM_Model(context, tableName);
-                //return new RCV_Model(context, tableName);
-                //return new Hybrid_Model(context, tableName);
         return null;
     }
 

@@ -131,7 +131,8 @@ public class Hybrid_Model extends RCV_Model {
 
     @Override
     public void insertRows(DBContext context, int row, int count) {
-        CellRegion rowRange = new CellRegion(row, -1);
+        //TODO: Max Values ...
+        CellRegion rowRange = new CellRegion(row, 1, row, Integer.MAX_VALUE);
         for (int i = 0; i < metaDataBlock.modelEntryList.size(); ++i) {
             CellRegion tableRange = metaDataBlock.modelEntryList.get(i).range;
             Model tableModel = tableModels.get(i);
@@ -152,7 +153,7 @@ public class Hybrid_Model extends RCV_Model {
 
     @Override
     public void insertCols(DBContext context, int col, int count) {
-        CellRegion colRange = new CellRegion(-1, col);
+        CellRegion colRange = new CellRegion(1, col, Integer.MAX_VALUE, col);
         for (int i = 0; i < metaDataBlock.modelEntryList.size(); ++i) {
             CellRegion tableRange = metaDataBlock.modelEntryList.get(i).range;
             Model tableModel = tableModels.get(i);
