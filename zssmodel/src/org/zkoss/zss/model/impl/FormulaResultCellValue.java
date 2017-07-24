@@ -1,23 +1,36 @@
 package org.zkoss.zss.model.impl;
 
-import java.io.Serializable;
-import java.util.Collection;
-
 import org.zkoss.poi.ss.formula.eval.AreaEval;
 import org.zkoss.zss.model.ErrorValue;
 import org.zkoss.zss.model.SCell.CellType;
 import org.zkoss.zss.model.sys.formula.EvaluationResult;
 import org.zkoss.zss.model.sys.formula.EvaluationResult.ResultType;
 
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 /**
  * the formula result cell value
  * @author dennis
  * @since 3.5.0
+ *
+ * Added live value switch for async eval and RWlock for consistency between value and type
+ * by zekun.fan@gmail.com
  */
 public class FormulaResultCellValue extends CellValue implements Serializable {
 	private static final long serialVersionUID = 1L;
+	private ReadWriteLock rwLock;
 
 	public FormulaResultCellValue(EvaluationResult result) {
+		rwLock=new ReentrantReadWriteLock();
+		updateByEvaluationResult(result);
+	}
+
+	// Added by zekun.fan@gmail.com, @WriteLockProtected
+	public void updateByEvaluationResult(EvaluationResult result){
+		rwLock.writeLock().lock();
 		Object val = result.getValue();
 		ResultType type = result.getType();
 		if (type == ResultType.ERROR) {
@@ -27,6 +40,7 @@ public class FormulaResultCellValue extends CellValue implements Serializable {
 		} else if (type == ResultType.SUCCESS) {
 			setByValue(val);
 		}
+		rwLock.writeLock().unlock();
 	}
 
 	private void setByValue(Object val) {
@@ -73,10 +87,16 @@ public class FormulaResultCellValue extends CellValue implements Serializable {
 	}
 
 	public CellType getCellType() {
-		return cellType;
+		rwLock.readLock().lock();
+		CellType res=cellType;
+		rwLock.readLock().unlock();
+		return res;
 	}
 
 	public Object getValue() {
-		return value;
+		rwLock.readLock().lock();
+		Object res=value;
+		rwLock.readLock().unlock();
+		return res;
 	}
 }
