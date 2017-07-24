@@ -292,4 +292,28 @@ public class CellRegion implements Serializable {
 	public int getCellCount() {
 		return getRowCount() * getColumnCount();
 	}
+
+
+	public CellRegion extendRange(int rows, int cols) {
+		return new CellRegion(this.row,
+				this.column,
+				this.lastRow + rows,
+				this.lastColumn + cols);
+	}
+
+
+	public CellRegion shiftedRange(int row_shift, int col_shift) {
+		return new CellRegion(this.row + row_shift,
+				this.column + col_shift,
+				this.lastRow + row_shift,
+				this.lastColumn + col_shift);
+	}
+
+	public int getHeight() {
+		return lastRow - row + 1;
+	}
+
+	public int getLength() {
+		return lastColumn - column + 1;
+	}
 }
