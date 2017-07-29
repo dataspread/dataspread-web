@@ -78,56 +78,58 @@ public class Hybrid_Model extends RCV_Model {
 
     //Construct rom_table on the selected range get from getRomtables
     // Convert to ROM or COM.
-    /*
+
     public boolean convert(DBContext context, ModelType modelType, CellRegion range) {
         //logger.info("Start - Converting HYBRID " + range.toString());
 
         //create a new rom_model
         // Need to update to a better way to handle delete tables
-        String newTableName = tableName + "_" + Integer.toHexString(++metaDataBlock.romTableIdentifier);
-        Model model = Model.CreateModel(context, modelType, newTableName);
+//        String newTableName = tableName + "_" + Integer.toHexString(++metaDataBlock.romTableIdentifier);
+//        Model model = Model.CreateModel(context, modelType, newTableName);
+        TOM_Model model =(TOM_Model) Model.CreateModel(context, modelType, "test");
+        model.preload(context, range.getRow(), range.getColumn());
 
-
-        // Migrate data to the new table
-        model.insertCols(context, 0, range.getLastColumn() - range.getColumn() + 1);
-        model.insertRows(context, 0, range.getLastRow() - range.getRow() + 1);
-
-        // logger.info("Start - Loading Cells");
-
-        // Work in small range
-        for (int i = range.getLastRow() / block_row + 1; i > 0; i--) {
-            int min_row = range.getRow() + (i - 1) * block_row;
-            int max_row = range.getRow() + i * block_row;
-            if (i > range.getLastRow() / block_row) max_row = range.getLastRow();
-            CellRegion work_range = new CellRegion(min_row, range.getColumn(), max_row, range.getLastColumn());
-            Collection<AbstractCellAdv> cells = getCells(context, work_range)
-                    .stream()
-                    .map(e -> e.shiftedCell(-range.getRow(), -range.getColumn())) // Translate
-                    .collect(Collectors.toList());
-            // logger.info("Done - Loading Cells in CellRegion " + work_range.toString());
-
-            // Do a RCV delete
-            deleteCells(context, work_range);
-            //logger.info("Done - Delete from RCV in CellRegion " + work_range.toString());
-            // Insert data into new table
-            model.updateCellsCopy(context, cells);
-            //  logger.info("Done - Insert into new model in CellRegion " + work_range.toString());
-        }
-
-        // Collect a list of models to be deleted
-        tableModels.add(model);
-        MetaDataBlock.ModelEntry modelEntry = new MetaDataBlock.ModelEntry();
-        modelEntry.range = range;
-        modelEntry.modelType = modelType;
-        modelEntry.tableName = newTableName;
-        metaDataBlock.modelEntryList.add(modelEntry);
-        bs.putObject(0, metaDataBlock);
-        bs.flushDirtyBlocks(context);
-
-        super.vaccumTable(context);
+//
+//        // Migrate data to the new table
+//        model.insertCols(context, 0, range.getLastColumn() - range.getColumn() + 1);
+//        model.insertRows(context, 0, range.getLastRow() - range.getRow() + 1);
+//
+//        // logger.info("Start - Loading Cells");
+//
+//        // Work in small range
+//        for (int i = range.getLastRow() / block_row + 1; i > 0; i--) {
+//            int min_row = range.getRow() + (i - 1) * block_row;
+//            int max_row = range.getRow() + i * block_row;
+//            if (i > range.getLastRow() / block_row) max_row = range.getLastRow();
+//            CellRegion work_range = new CellRegion(min_row, range.getColumn(), max_row, range.getLastColumn());
+//            Collection<AbstractCellAdv> cells = getCells(context, work_range)
+//                    .stream()
+////                    .map(e -> e.shiftedCell(-range.getRow(), -range.getColumn())) // Translate
+//                    .collect(Collectors.toList());
+//            // logger.info("Done - Loading Cells in CellRegion " + work_range.toString());
+//
+//            // Do a RCV delete
+//            deleteCells(context, work_range);
+//            //logger.info("Done - Delete from RCV in CellRegion " + work_range.toString());
+//            // Insert data into new table
+////            model.updateCellsCopy(context, cells);
+//            //  logger.info("Done - Insert into new model in CellRegion " + work_range.toString());
+//        }
+//
+//        // Collect a list of models to be deleted
+//        tableModels.add(model);
+//        MetaDataBlock.ModelEntry modelEntry = new MetaDataBlock.ModelEntry();
+//        modelEntry.range = range;
+//        modelEntry.modelType = modelType;
+//        modelEntry.tableName = newTableName;
+//        metaDataBlock.modelEntryList.add(modelEntry);
+//        bs.putObject(0, metaDataBlock);
+//        bs.flushDirtyBlocks(context);
+//
+//        super.vaccumTable(context);
 
         return true;
-    } */
+    }
 
     @Override
     public void insertRows(DBContext context, int row, int count) {

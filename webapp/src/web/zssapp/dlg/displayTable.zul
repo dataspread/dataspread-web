@@ -1,0 +1,28 @@
+<zk>
+    <window id="displayTableDlg" title="Display Table" border="normal" closable="true" mode="modal"
+            apply="org.zkoss.zss.app.ui.table.displayTableCtrl" width="330px" position="center,center" action="show: slideDown;hide: slideUp">
+        <vlayout>
+            <hbox hflex="1" style="padding: 5px 3px 5px 15px;">
+
+                <hbox  hflex="1" >
+                    <label value="Table Name:" style="font-weight:bold"/>
+
+                </hbox>
+                <hbox  hflex="3" >
+                    <combobox id="tablesBox">
+                    </combobox>
+                </hbox>
+            </hbox>
+            <space orient="horizontal"/>
+
+            <hbox hflex="1" pack="center" align="center">
+
+                <button id="cancelButton"  label="Cancel"/>
+                <button id="createButton"  label="OK"/>
+            </hbox>
+
+
+        </vlayout>
+
+    </window>
+</zk>

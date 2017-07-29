@@ -1,5 +1,7 @@
 package org.zkoss.zss.app.ui.table;
 
+import org.model.DBContext;
+import org.model.DBHandler;
 import org.zkoss.zk.ui.Executions;
 import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zk.ui.select.annotation.Listen;
@@ -12,11 +14,13 @@ import org.zkoss.zss.api.model.CellStyle;
 import org.zkoss.zss.api.model.Sheet;
 import org.zkoss.zss.app.ui.dlg.DlgCallbackEvent;
 import org.zkoss.zss.app.ui.dlg.DlgCtrlBase;
+import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.ui.Spreadsheet;
 import org.zkoss.zul.Messagebox;
 import org.zkoss.zul.Textbox;
 import org.zkoss.zul.Window;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,6 +75,20 @@ public class createTableCtrl extends DlgCtrlBase {
 
     }
 
+    private void newCreate()
+    {
+
+        Connection connection = DBHandler.instance.getConnection();
+        DBContext dbContext = new DBContext(connection);
+
+        CellRegion region= new CellRegion(selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
+        sheet.getInternalSheet().getDataModel().getCells(dbContext,region);
+
+
+
+
+    }
+
     @Listen("onClick = #createButton")
     public void create() {
         boolean created=false;
@@ -79,8 +97,8 @@ public class createTableCtrl extends DlgCtrlBase {
             boolean areaOK=tableObj.checkArea(sss);
             if(areaOK)
             {
-                boolean checkOverlap= tableObj.checkOverlap(sss);
-                if (!checkOverlap)
+                String checkOverlap= tableObj.checkOverlap(sss);
+                if (checkOverlap==null)
                 {
                     if (!name.isEmpty()) {
 
@@ -90,7 +108,7 @@ public class createTableCtrl extends DlgCtrlBase {
                         if (checkedTable == null) {
                             created=tableObj.createTable(sss, name);
                             CellOperationUtil.applyBorder(src, Range.ApplyBorderType.FULL, CellStyle.BorderType.THICK, "#000000");
-                            CellOperationUtil.applyBackColor(src, "#deecef");
+                            CellOperationUtil.applyBackColor(src, "#c5f0e7");
 
                         } else {
                             Messagebox.show("Table Name already Exists in the Database.", "Create Table",
@@ -128,7 +146,7 @@ public class createTableCtrl extends DlgCtrlBase {
         createTableDlg.detach();
         if(created)
         {
-            Messagebox.show("Table (" + name + ") was Successfully Created", "Table Creation",
+            Messagebox.show("Table " + name.toUpperCase() + " is Successfully Created", "Table Creation",
                     Messagebox.OK, Messagebox.INFORMATION);
         }
         else

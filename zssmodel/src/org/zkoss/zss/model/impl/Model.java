@@ -19,6 +19,10 @@ public abstract class Model {
                 return new ROM_Model(context, tableName);
             case COM_Model:
                 return new COM_Model(context, tableName);
+            case HYBRID_Model:
+                return new Hybrid_Model(context, tableName);
+            case TOM_Model:
+                return new TOM_Model(context, tableName);
         }
                 //return new ROM_Model(context, tableName);
                 //return new COM_Model(context, tableName);
@@ -79,6 +83,6 @@ public abstract class Model {
 
     //
     public enum ModelType {
-        ROM_Model, COM_Model, RCV_Model, HYBRID_Model
+        ROM_Model, COM_Model, RCV_Model, HYBRID_Model, TOM_Model
     }
 }

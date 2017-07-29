@@ -45,6 +45,7 @@ import org.zkoss.zss.app.repository.impl.SimpleBookInfo;
 import org.zkoss.zss.app.ui.dlg.*;
 import org.zkoss.zss.app.ui.table.Table;
 import org.zkoss.zss.app.ui.table.createTableCtrl;
+import org.zkoss.zss.app.ui.table.displayTableCtrl;
 import org.zkoss.zss.model.ModelEvent;
 import org.zkoss.zss.model.ModelEventListener;
 import org.zkoss.zss.model.ModelEvents;
@@ -65,6 +66,7 @@ import java.io.*;
 import java.net.URLDecoder;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -938,30 +940,63 @@ public class AppCtrl extends CtrlBase<Component> {
         }, ss);
     }
 
+    private void doDisplayTable(Spreadsheet ss) {
+
+        displayTableCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
+            private static final long serialVersionUID = 7753635062865984294L;
+
+            public void onEvent(DlgCallbackEvent event) throws Exception {
+                if (displayTableCtrl.ON_OPEN.equals(event.getName())) {
+                    pushAppEvent(AppEvts.ON_DISPLAY_TABLE, ss);
+                }
+            }
+        }, ss);
+    }
+
     private void doDeleteTable(Spreadsheet ss) {
 
         String bookName=ss.getBook().getBookName();
         Sheet sheet = ss.getSelectedSheet();
         AreaRef selection = ss.getSelection();
 
-        Range src = Ranges.range(sheet, selection);
+//        Range src = Ranges.range(sheet, selection);
 
         String rangeRef = Ranges.getAreaRefString(sheet, selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
 
         Table tableObj = new Table();
 
         try {
-            String checkedTable = tableObj.checkUserTable(bookName,rangeRef);
-            if (checkedTable != null) {
-                tableObj.drop(checkedTable);
-                tableObj.deleteUserTable(checkedTable);
-                CellOperationUtil.clearAll(src);
-                CellOperationUtil.clearContents(src);
+            String tableRange=tableObj.checkOverlap(ss);
 
-                CellOperationUtil.clearStyles(src);
+            if(tableRange!=null) {
 
-                Messagebox.show("Table was Deleted from the Database", "Delete Table",
-                        Messagebox.OK, Messagebox.INFORMATION);
+                String checkedTable = tableObj.checkUserTable(bookName,rangeRef);
+                if (checkedTable != null) {
+                    ArrayList<String> refs=tableObj.getTableRangeRefs(checkedTable,bookName);
+                    tableObj.drop(checkedTable);
+                    tableObj.deleteUserTable(checkedTable);
+
+                    for(int q=0;q<refs.size();q++)
+                    {
+                        Range deleted = Ranges.range(sheet,refs.get(q));
+
+                        CellOperationUtil.clearAll(deleted);
+                        CellOperationUtil.clearContents(deleted);
+                        CellOperationUtil.clearStyles(deleted);
+                        deleted.notifyChange();
+
+                    }
+//                ss.notifyAll();
+//                CellOperationUtil.clearAll(deleted);
+//                CellOperationUtil.clearContents(src);
+//
+//                CellOperationUtil.clearStyles(src);
+
+//                Ranges.range(sheet, src.getRow(), src.getColumn(), src.getLastRow(), src.getLastColumn()).notifyChange();
+
+                    Messagebox.show("Table was Deleted from the Database", "Delete Table",
+                            Messagebox.OK, Messagebox.INFORMATION);
+            }
             } else {
                 Messagebox.show("Selected Range is Not a Table", "Delete Table",
                         Messagebox.OK, Messagebox.ERROR);
@@ -973,6 +1008,30 @@ public class AppCtrl extends CtrlBase<Component> {
             e.printStackTrace();
         }
 
+    }
+
+    private void doExpand(Spreadsheet ss, String type)
+    {
+        try {
+            Table tableObj = new Table();
+            String tableRange=tableObj.checkOverlap(ss);
+
+            if(tableRange!=null)
+            {
+                tableObj.expand(ss, tableRange, type);
+//                    Ranges.range(sheet, src.getRow(), src.getColumn(), src.getLastRow(), src.getLastColumn()).notifyChange();
+//                    Messagebox.show("Table was Deleted from the Database", "Delete Table",
+//                            Messagebox.OK, Messagebox.INFORMATION);
+
+                Messagebox.show("Table Expanded", "Expand Table",
+                        Messagebox.OK, Messagebox.INFORMATION);
+            }else {
+                Messagebox.show("Cannot be Expanded", "Expand Table",
+                        Messagebox.OK, Messagebox.ERROR);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     private void doToggleTablebar() {
@@ -1063,8 +1122,16 @@ public class AppCtrl extends CtrlBase<Component> {
             shareBook();
         } else if (AppEvts.ON_CREATE_TABLE.equals(event)) {
             doCreateTable(ss);
+        }else if (AppEvts.ON_DISPLAY_TABLE.equals(event)) {
+            doDisplayTable(ss);
         } else if (AppEvts.ON_DELETE_TABLE.equals(event)) {
             doDeleteTable(ss);
+        }else if (AppEvts.ON_EXPAND_COLS.equals(event)) {
+            doExpand(ss,"cols");
+        }else if (AppEvts.ON_EXPAND_ROWS.equals(event)) {
+            doExpand(ss,"rows");
+        }else if (AppEvts.ON_EXPAND_ALL.equals(event)) {
+            doExpand(ss,"all");
         }else if (AppEvts.ON_TOGGLE_TABLE_BAR.equals(event)) {
             doToggleTablebar();
         }
