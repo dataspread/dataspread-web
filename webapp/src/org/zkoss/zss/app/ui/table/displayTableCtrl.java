@@ -15,10 +15,7 @@ import org.zkoss.zss.api.model.Sheet;
 import org.zkoss.zss.app.ui.dlg.DlgCallbackEvent;
 import org.zkoss.zss.app.ui.dlg.DlgCtrlBase;
 import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.impl.AbstractCellAdv;
-import org.zkoss.zss.model.impl.CellImpl;
-import org.zkoss.zss.model.impl.Hybrid_Model;
-import org.zkoss.zss.model.impl.Model;
+import org.zkoss.zss.model.impl.*;
 import org.zkoss.zss.ui.Spreadsheet;
 import org.zkoss.zul.*;
 
@@ -201,10 +198,14 @@ public class displayTableCtrl extends DlgCtrlBase {
 
         CellRegion region= new CellRegion(selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
         Hybrid_Model model=(Hybrid_Model)sheet.getInternalSheet().getDataModel();
+//        model.getCells(dbContext, region);
 
 //        model.getCells(dbContext, region);
 
-        model.convert(dbContext, Model.ModelType.TOM_Model,region);
+        model.loadDBTable(dbContext, Model.ModelType.TOM_Model,"mytable",region);
+
+        Ranges.range(sss.getSelectedSheet()).notifyChange();
+
 ////        sheet.notify();
 //
 //        connection.commit();

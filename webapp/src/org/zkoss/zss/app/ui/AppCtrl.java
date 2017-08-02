@@ -11,6 +11,8 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.app.ui;
 
+import org.model.DBContext;
+import org.model.DBHandler;
 import org.zkoss.image.AImage;
 import org.zkoss.lang.Library;
 import org.zkoss.lang.Strings;
@@ -46,10 +48,10 @@ import org.zkoss.zss.app.ui.dlg.*;
 import org.zkoss.zss.app.ui.table.Table;
 import org.zkoss.zss.app.ui.table.createTableCtrl;
 import org.zkoss.zss.app.ui.table.displayTableCtrl;
-import org.zkoss.zss.model.ModelEvent;
-import org.zkoss.zss.model.ModelEventListener;
-import org.zkoss.zss.model.ModelEvents;
-import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.*;
+import org.zkoss.zss.model.impl.AbstractCellAdv;
+import org.zkoss.zss.model.impl.Hybrid_Model;
+import org.zkoss.zss.model.impl.Model;
 import org.zkoss.zss.ui.*;
 import org.zkoss.zss.ui.Version;
 import org.zkoss.zss.ui.event.Events;
@@ -64,6 +66,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URLDecoder;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -940,17 +943,49 @@ public class AppCtrl extends CtrlBase<Component> {
         }, ss);
     }
 
-    private void doDisplayTable(Spreadsheet ss) {
+    private void doDisplayTable(Spreadsheet ss) throws SQLException {
 
-        displayTableCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
-            private static final long serialVersionUID = 7753635062865984294L;
+        AreaRef selection;
+        Sheet sheet;
 
-            public void onEvent(DlgCallbackEvent event) throws Exception {
-                if (displayTableCtrl.ON_OPEN.equals(event.getName())) {
-                    pushAppEvent(AppEvts.ON_DISPLAY_TABLE, ss);
-                }
-            }
-        }, ss);
+        selection = ss.getSelection();
+        sheet = ss.getSelectedSheet();
+
+        Connection connection = DBHandler.instance.getConnection();
+        DBContext dbContext = new DBContext(connection);
+
+        CellRegion region= new CellRegion(selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
+        Hybrid_Model model=(Hybrid_Model)sheet.getInternalSheet().getDataModel();
+//        model.getCells(dbContext, region);
+
+//        model.getCells(dbContext, region);
+
+        model.loadDBTable(dbContext, Model.ModelType.TOM_Model,"employees",region);
+
+        CellRegion regionx= new CellRegion(0, 0, 50, 50);
+//
+        Collection<AbstractCellAdv> xx=model.getCells(dbContext, regionx);
+        Ranges.range(ss.getSelectedSheet(), region.getRow(), region.getColumn(), region.getLastRow(), region.getLastColumn()).notifyChange();
+        Ranges.range(ss.getSelectedSheet()).notifyChange();
+//
+////        pushAppEvent(AppEvts.ON_CHANGED_SPREADSHEET, ss);
+
+
+        initSaveNotification(loadedBook);
+        pushAppEvent(AppEvts.ON_CHANGED_SPREADSHEET, ss);
+        updatePageInfo();
+
+
+
+//        displayTableCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
+//            private static final long serialVersionUID = 7753635062865984294L;
+//
+//            public void onEvent(DlgCallbackEvent event) throws Exception {
+//                if (displayTableCtrl.ON_OPEN.equals(event.getName())) {
+//                    pushAppEvent(AppEvts.ON_DISPLAY_TABLE, ss);
+//                }
+//            }
+//        }, ss);
     }
 
     private void doDeleteTable(Spreadsheet ss) {
@@ -1123,7 +1158,11 @@ public class AppCtrl extends CtrlBase<Component> {
         } else if (AppEvts.ON_CREATE_TABLE.equals(event)) {
             doCreateTable(ss);
         }else if (AppEvts.ON_DISPLAY_TABLE.equals(event)) {
-            doDisplayTable(ss);
+            try {
+                doDisplayTable(ss);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         } else if (AppEvts.ON_DELETE_TABLE.equals(event)) {
             doDeleteTable(ss);
         }else if (AppEvts.ON_EXPAND_COLS.equals(event)) {
