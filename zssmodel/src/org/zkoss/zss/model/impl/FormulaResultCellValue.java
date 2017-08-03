@@ -21,16 +21,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class FormulaResultCellValue extends CellValue implements Serializable {
 	private static final long serialVersionUID = 1L;
-	private ReadWriteLock rwLock;
 
 	public FormulaResultCellValue(EvaluationResult result) {
-		rwLock=new ReentrantReadWriteLock();
 		updateByEvaluationResult(result);
 	}
 
 	// Added by zekun.fan@gmail.com, @WriteLockProtected
 	public void updateByEvaluationResult(EvaluationResult result){
-		rwLock.writeLock().lock();
 		Object val = result.getValue();
 		ResultType type = result.getType();
 		if (type == ResultType.ERROR) {
@@ -40,7 +37,6 @@ public class FormulaResultCellValue extends CellValue implements Serializable {
 		} else if (type == ResultType.SUCCESS) {
 			setByValue(val);
 		}
-		rwLock.writeLock().unlock();
 	}
 
 	private void setByValue(Object val) {
@@ -87,16 +83,10 @@ public class FormulaResultCellValue extends CellValue implements Serializable {
 	}
 
 	public CellType getCellType() {
-		rwLock.readLock().lock();
-		CellType res=cellType;
-		rwLock.readLock().unlock();
-		return res;
+		return cellType;
 	}
 
 	public Object getValue() {
-		rwLock.readLock().lock();
-		Object res=value;
-		rwLock.readLock().unlock();
-		return res;
+		return value;
 	}
 }

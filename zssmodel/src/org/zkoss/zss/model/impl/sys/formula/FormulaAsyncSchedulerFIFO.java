@@ -1,6 +1,8 @@
 package org.zkoss.zss.model.impl.sys.formula;
 
+import org.zkoss.zss.model.impl.CellImpl;
 import org.zkoss.zss.model.impl.FormulaResultCellValue;
+import org.zkoss.zss.model.impl.RefImpl;
 import org.zkoss.zss.model.sys.EngineFactory;
 import org.zkoss.zss.model.sys.formula.*;
 
@@ -15,7 +17,7 @@ import java.util.concurrent.Future;
 public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
 
     private ExecutorService pool;
-    private HashMap<FormulaResultCellValue,Future<?>> futures;
+    private HashMap<CellImpl,Future<?>> futures;
     private final int maxThread=4;
 
     public FormulaAsyncSchedulerFIFO(){
@@ -24,23 +26,20 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
     }
 
     @Override
-    public synchronized void addTask(FormulaResultCellValue target, FormulaExpression expr, FormulaEvaluationContext evalContext) {
+    public synchronized void addTask(CellImpl target, FormulaExpression expr) {
         //new task before last one's end, first cancelIfNotConfirmed as its execution is unordered
+        //interrupt the working thread, removed explicit locking inside for preventing deadlock
+        //Interrupt MAY CAUSE Problem, but can't be covered here.
         Future<?> last=futures.get(target);
         if (last!=null)
-            if (!last.cancel(false))
-                try {
-                    last.get();
-                }catch (Exception ignored){
-                    // Exception can be seen as done.
-                }
+            last.cancel(false);
         if (FormulaAsyncScheduler.uiController!=null)
-            FormulaAsyncScheduler.uiController.confirm(evalContext.getCell());
-        futures.put(target,pool.submit(new FormulaAsyncTask(target,expr,evalContext)));
+            FormulaAsyncScheduler.uiController.confirm(target);
+        futures.put(target,pool.submit(new FormulaAsyncTask(target,expr)));
     }
 
     @Override
-    public synchronized boolean cancelTask(FormulaResultCellValue target) {
+    public synchronized boolean cancelTask(CellImpl target) {
         Future<?> future = futures.get(target);
         //Interrupt not allowed
         if (future != null && future.cancel(false)){
@@ -57,23 +56,24 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
     }
 
     private class FormulaAsyncTask implements Runnable{
-        private FormulaResultCellValue target;
+        private CellImpl target;
         private FormulaExpression expr;
         private FormulaEvaluationContext evalContext;
 
-        FormulaAsyncTask(FormulaResultCellValue target, FormulaExpression expr, FormulaEvaluationContext evalContext) {
+        FormulaAsyncTask(CellImpl target, FormulaExpression expr) {
             this.target = target;
             this.expr = expr;
-            this.evalContext = evalContext;
+            this.evalContext = new FormulaEvaluationContext(target,new RefImpl(target));
         }
 
         @Override
         public void run() {
+            //try {Thread.sleep(5000);}catch (InterruptedException ignored){}
             FormulaEngine fe = EngineFactory.getInstance().createFormulaEngine();
             EvaluationResult result = fe.evaluate(expr,evalContext);
-            target.updateByEvaluationResult(result);
+            target.updateFormulaResultValue(result);
             if (FormulaAsyncScheduler.uiController!=null){
-                FormulaAsyncScheduler.uiController.updateAndRelease(evalContext.getCell());
+                FormulaAsyncScheduler.uiController.updateAndRelease(target);
             }
             futures.remove(target);
         }

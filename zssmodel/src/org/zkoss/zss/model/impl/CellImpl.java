@@ -205,12 +205,12 @@ public class CellImpl extends AbstractCellAdv {
 	}
 
 	@Override
-	protected void evalFormula() {
+	protected  void evalFormula() {
 		//20140731, henrichen: when share the same book, many users might 
 		//populate CellImpl simultaneously; must synchronize it.
 		if(_formulaResultValue != null) return;
 		//20170714, may cause dead lock, mustn't synchronize it!
-		//synchronized (this.getSheet().getBook().getBookSeries()) {
+		// (this.getSheet().getBook().getBookSeries()) {
 			if (_formulaResultValue == null) {
 				CellValue val = getCellValue();
 				if(val!=null &&  val.getType() == CellType.FORMULA){
@@ -231,9 +231,8 @@ public class CellImpl extends AbstractCellAdv {
 						}
 					});
 					FormulaAsyncScheduler.getScheduler()
-							.addTask(_formulaResultValue,(FormulaExpression) val.getValue(),
-									new FormulaEvaluationContext(this,getRef()));
-					/* zekun.fan@gmail.com - Original synchronized implementation by henri
+							.addTask(this,(FormulaExpression) val.getValue());
+					/* zekun.fan@gmail.com - Original  implementation by henri
 					FormulaEngine fe = EngineFactory.getInstance().createFormulaEngine();
 					// ZSS-818
 					// 20141030, henrichen: callback inside FormulaEngine.evaluate() 
@@ -252,13 +251,6 @@ public class CellImpl extends AbstractCellAdv {
 				}
 			}
 		//}
-
-		/*
-		try {
-			int threshold=500;
-			Thread.sleep(threshold);
-		}catch (InterruptedException ignored){}
-		*/
 	}
 
 	@Override
@@ -340,12 +332,12 @@ public class CellImpl extends AbstractCellAdv {
 	}
 
 	@Override
-	public void clearFormulaResultCache() {
+	public  void clearFormulaResultCache() {
 		//ZSS-818: better performance
 		if(_formulaResultValue!=null){
 			//only clear when there is a formula result, or poi will do full cache scan to clean blank.
 			//zekun.fan@gmail.com : cancelTask
-			FormulaAsyncScheduler.getScheduler().cancelTask(_formulaResultValue);
+			FormulaAsyncScheduler.getScheduler().cancelTask(this);
 			EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
 		}
 		_formulaResultValue = null;
@@ -604,10 +596,10 @@ public class CellImpl extends AbstractCellAdv {
 
 	//ZSS-818
 	//@since 3.7.0
-	public void setFormulaResultValue(ValueEval value) {
+	public  void setFormulaResultValue(ValueEval value) {
 		try {
 			//zekun.fan@gmail.com : cancelTask
-			FormulaAsyncScheduler.getScheduler().cancelTask(_formulaResultValue);
+			FormulaAsyncScheduler.getScheduler().cancelTask(this);
 			_formulaResultValue = new FormulaResultCellValue(FormulaEngineImpl.convertToEvaluationResult(value));
 		} catch (EvaluationException e) {
 			// ignore it!
@@ -653,5 +645,10 @@ public class CellImpl extends AbstractCellAdv {
 		private InnerCellValue(CellType type, Object value) {
 			super(type, value);
 		}
+	}
+
+	//zekun.fan@gmail.com - Added interface to update formula result value
+	public  void updateFormulaResultValue(EvaluationResult result){
+		_formulaResultValue.updateByEvaluationResult(result);
 	}
 }

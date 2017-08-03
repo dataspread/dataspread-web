@@ -1,5 +1,6 @@
 package org.zkoss.zss.model.sys.formula;
 
+import org.zkoss.zss.model.impl.CellImpl;
 import org.zkoss.zss.model.impl.FormulaResultCellValue;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerFIFO;
 
@@ -36,13 +37,13 @@ public abstract class FormulaAsyncScheduler {
     * To prevent the presence of stale value. Ensure serial execution.
     * This also enforces one target one task.
     */
-    public abstract void addTask(FormulaResultCellValue target, FormulaExpression expr, FormulaEvaluationContext evalContext);
+    public abstract void addTask(CellImpl target, FormulaExpression expr);
 
     /* cancelTask:
     * 1. If the task is not yet scheduled, it will be canceled, return true
     * 2. If it's in progress, will block until it's finished, return false.
     */
-    public abstract boolean cancelTask(FormulaResultCellValue target);
+    public abstract boolean cancelTask(CellImpl target);
     /* clear:
      * Clear all unscheduled task. Tasks in progress will finish
      */
