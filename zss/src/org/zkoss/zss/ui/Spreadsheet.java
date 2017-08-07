@@ -2784,7 +2784,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 		}
 	}
 
-	private void updateCell(SSheet sheet, int left, int top, int right, int bottom, CellAttribute cellAttr) { //ZSS-939
+	public void updateCell(SSheet sheet, int left, int top, int right, int bottom, CellAttribute cellAttr) { //ZSS-939
 		if (this.isInvalidated())
 			return;// since it is invalidate, we don't need to do anymore
 
@@ -5201,6 +5201,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 			}
 			return;
 		}
+
 
 		Command command = InnerEvts.getCommand(cmd);
 		if (command != null) {

@@ -3,6 +3,7 @@ package org.zkoss.zss.model.sys.formula;
 import org.zkoss.zss.model.impl.CellImpl;
 import org.zkoss.zss.model.impl.FormulaResultCellValue;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerFIFO;
+import org.zkoss.zss.model.sys.dependency.Ref;
 
 /**
  * Created by zekun.fan@gmail.com on 7/11/17.
@@ -30,6 +31,12 @@ public abstract class FormulaAsyncScheduler {
         return _schedulerInstance;
     }
 
+    /*
+    * startTransaction: Increment transaction number on a given object
+    */
+
+    public abstract void startTransaction(Object xsrc);
+
     /* addTask: add an async task.
     * 1. If previous task on same target is not yet scheduled, it will be canceled
     * 2. If it's in progress, will block until it's finished and execute
@@ -37,13 +44,13 @@ public abstract class FormulaAsyncScheduler {
     * To prevent the presence of stale value. Ensure serial execution.
     * This also enforces one target one task.
     */
-    public abstract void addTask(CellImpl target, FormulaExpression expr);
+    public abstract void addTask(Ref target,Object xsrc);
 
     /* cancelTask:
     * 1. If the task is not yet scheduled, it will be canceled, return true
     * 2. If it's in progress, will block until it's finished, return false.
     */
-    public abstract boolean cancelTask(CellImpl target);
+    public abstract void cancelTask(Ref target,Object xsrc);
     /* clear:
      * Clear all unscheduled task. Tasks in progress will finish
      */
