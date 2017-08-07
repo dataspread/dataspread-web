@@ -2829,8 +2829,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 	 * @param right right of block
 	 * @param bottom bottom of block
 	 */
-	@Deprecated
-	/* package */void updateCell(int left, int top, int right, int bottom) {
+	public void updateCell(int left, int top, int right, int bottom) {
 		updateCell(getSelectedSSheet(), left, top, right, bottom, CellAttribute.ALL);
 	}
 	//ZSS-939

@@ -602,6 +602,7 @@ public class SheetImpl extends AbstractSheetAdv {
 			}
 		}
 
+		/*TODO: Check if it works for deleting a region */
 		sheetDataCache.remove(deleted_region);
 	}
 
@@ -1302,6 +1303,16 @@ public class SheetImpl extends AbstractSheetAdv {
 		
 		
 		checkColumnArrayStatus();
+	}
+
+	@Override
+	public void clearCache(CellRegion cellRegion)
+	{
+		List<CellRegion> cellsToRemove = sheetDataCache.keySet()
+				.stream()
+				.filter(e->cellRegion.contains(e))
+				.collect(Collectors.toList());
+		cellsToRemove.stream().forEach(sheetDataCache::remove);
 	}
 
 	@Override

@@ -960,32 +960,9 @@ public class AppCtrl extends CtrlBase<Component> {
         model.loadDBTable(dbContext, Model.ModelType.TOM_Model,"employee",region);
         connection.commit();
 
+        sheet.getInternalSheet().clearCache(region);
+        ss.updateCell(selection.getColumn(), selection.getRow(), selection.getLastColumn(), selection.getLastRow());
 
-
-        Ranges.range(ss.getSelectedSheet(), region.getRow(), region.getColumn(), region.getLastRow(), region.getLastColumn()).notifyChange();
-        Ranges.range(ss.getSelectedSheet()).notifyChange();
-//
-////        pushAppEvent(AppEvts.ON_CHANGED_SPREADSHEET, ss);
-        Spreadsheet ss1;
-     //   ss1.get
-
-       // info.ui.updateCell(cell.getColumnIndex(),cell.getRowIndex(),cell.getColumnIndex(),cell.getRowIndex(), SpreadsheetCtrl.CellAttribute.ALL);
-
-        initSaveNotification(loadedBook);
-        pushAppEvent(AppEvts.ON_CHANGED_SPREADSHEET, ss);
-        updatePageInfo();
-
-
-
-//        displayTableCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
-//            private static final long serialVersionUID = 7753635062865984294L;
-//
-//            public void onEvent(DlgCallbackEvent event) throws Exception {
-//                if (displayTableCtrl.ON_OPEN.equals(event.getName())) {
-//                    pushAppEvent(AppEvts.ON_DISPLAY_TABLE, ss);
-//                }
-//            }
-//        }, ss);
     }
 
     private void doDeleteTable(Spreadsheet ss) {
