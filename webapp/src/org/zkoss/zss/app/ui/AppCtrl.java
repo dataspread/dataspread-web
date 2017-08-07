@@ -956,20 +956,20 @@ public class AppCtrl extends CtrlBase<Component> {
 
         CellRegion region= new CellRegion(selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
         Hybrid_Model model=(Hybrid_Model)sheet.getInternalSheet().getDataModel();
-//        model.getCells(dbContext, region);
 
-//        model.getCells(dbContext, region);
+        model.loadDBTable(dbContext, Model.ModelType.TOM_Model,"employee",region);
+        connection.commit();
 
-        model.loadDBTable(dbContext, Model.ModelType.TOM_Model,"employees",region);
 
-        CellRegion regionx= new CellRegion(0, 0, 50, 50);
-//
-        Collection<AbstractCellAdv> xx=model.getCells(dbContext, regionx);
+
         Ranges.range(ss.getSelectedSheet(), region.getRow(), region.getColumn(), region.getLastRow(), region.getLastColumn()).notifyChange();
         Ranges.range(ss.getSelectedSheet()).notifyChange();
 //
 ////        pushAppEvent(AppEvts.ON_CHANGED_SPREADSHEET, ss);
+        Spreadsheet ss1;
+     //   ss1.get
 
+       // info.ui.updateCell(cell.getColumnIndex(),cell.getRowIndex(),cell.getColumnIndex(),cell.getRowIndex(), SpreadsheetCtrl.CellAttribute.ALL);
 
         initSaveNotification(loadedBook);
         pushAppEvent(AppEvts.ON_CHANGED_SPREADSHEET, ss);

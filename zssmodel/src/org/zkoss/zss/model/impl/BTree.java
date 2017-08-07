@@ -1030,6 +1030,7 @@ public class BTree implements PosMapping {
         return ids;
     }
 
+    // TODO: Do it in batches. offline if possible.
     public Integer[] createDBIDs(DBContext context, int pos, ArrayList<Integer> vals) {
         int count=vals.size();
         Integer[] ids = new Integer[count];

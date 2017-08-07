@@ -21,10 +21,10 @@ public class TOM_Model extends Model {
     private PosMapping rowMapping;
     private PosMapping colMapping;
     private SortedMap<Integer, String> cols;
-    private String pkColumnName;
+    private String pkColumnName = "empno"; /*TODO remove the hardcoding */
     private String pkColumnType;
-    private int startingRow;
-    private int startingCol;
+    //private int startingRow;
+    //private int startingCol;
 
     //Create or load TOM_model.
     TOM_Model(DBContext context, String tableName) {
@@ -33,6 +33,16 @@ public class TOM_Model extends Model {
         this.tableName = tableName;
         createSchema(context);
         cols = new TreeMap<>();
+
+
+        ArrayList<String> columns = tableColumns(context);
+        // Integer ids[] = colMapping.createIDs(context, 0, columns.size());
+
+        Integer ids[] = colMapping.getIDs(context, 0, columns.size());
+        for (int i = 0; i < ids.length; i++) {
+            cols.put(ids[i], columns.get(i));
+        }
+
     }
 
     private void createSchema(DBContext context) {
@@ -67,18 +77,15 @@ public class TOM_Model extends Model {
 
     public CellRegion preload(DBContext context, CellRegion range) {
 
-//        startingRow = row;
-//        startingCol = col;
-
-        startingRow = range.getRow();
-        startingCol = range.getColumn();
-
         ArrayList<String> columns = tableColumns(context);
-        Integer ids[] = colMapping.createIDs(context, 0, columns.size());
+       // Integer ids[] = colMapping.createIDs(context, 0, columns.size());
+
+        Integer ids[] = colMapping.getIDs(context, 0, columns.size());
         for (int i = 0; i < ids.length; i++) {
             cols.put(ids[i], columns.get(i));
         }
 
+        /* Batch processing */
         ArrayList<Integer> PKvalues = PKvalues(context);
         Integer ids2[] = rowMapping.createDBIDs(context, 0, PKvalues);
 
@@ -171,24 +178,24 @@ public class TOM_Model extends Model {
         Integer[] rowIds;
         int rowCounter;
         boolean includeHeader;
-        if (fetchRegion.getRow() == startingRow) // First Row is the header
+        if (fetchRegion.getRow() == 0) // First Row is the header
         {
-            rowIds = rowMapping.getIDs(context, fetchRegion.getRow() - startingRow, fetchRegion.getLastRow() - fetchRegion.getRow());
+            rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow());
             rowCounter = 1;
             includeHeader = true;
         } else {
-            rowIds = rowMapping.getIDs(context, fetchRegion.getRow() - startingRow, fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
+            rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
             rowCounter = 0;
             includeHeader = false;
         }
 
-        Integer[] colIds = colMapping.getIDs(context, fetchRegion.getColumn() - startingCol, fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
+        Integer[] colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
 
         HashMap<Integer, Integer> row_map = new HashMap<>();
         int bound = rowIds.length;
         for (int i1 = 0; i1 < bound; i1++) {
 //            row_map.put(rowIds[i1], fetchRegion.getRow() + i1);
-            row_map.put(rowIds[i1], fetchRegion.getRow() + rowCounter);
+            row_map.put(rowIds[i1], fetchRegion.getRow() + i1 + rowCounter);
         }
 
         HashMap<String, Integer> col_map = new HashMap<>();
@@ -198,6 +205,7 @@ public class TOM_Model extends Model {
             col_map.put(column, fetchRegion.getColumn() + i1);
         }
 
+        /* TODO: select pk ? */
         StringBuffer select = new StringBuffer("SELECT " + cols.get(colIds[0]));
         for (int i = 1; i < colIds.length; i++)
             select.append(", ")
@@ -209,7 +217,9 @@ public class TOM_Model extends Model {
 
 
         try (PreparedStatement stmt = context.getConnection().prepareStatement(select.toString())) {
-            Array inArrayRow = context.getConnection().createArrayOf(pkColumnType, rowIds);
+           // Array inArrayRow = context.getConnection().createArrayOf(pkColumnType, rowIds);
+            /* Assume an int array for now */
+            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
 
             stmt.setArray(1, inArrayRow);
 
@@ -226,7 +236,7 @@ public class TOM_Model extends Model {
                 }
             }
             while (rs.next()) {
-                int pkVal = rs.getInt(1);
+                int pkVal = rs.getInt(1); /* TODO why is the first column the PK */
                 int row = row_map.get(pkVal);
 
                 for (int i = 0; i < colIds.length; i++) {
@@ -266,10 +276,10 @@ public class TOM_Model extends Model {
 
         boolean headerModified = false;
         SortedMap<Integer, AbstractCellAdv> headerRow=null;
-        if (groupedCells.get(startingRow) != null)// if table header is modified
+        if (groupedCells.get(0) != null)// if table header is modified
         {
-            headerRow = groupedCells.get(startingRow);
-            groupedCells.remove(startingRow);
+            headerRow = groupedCells.get(0);
+            groupedCells.remove(0);
             headerModified = true;
             /*
             remove that row from the groupedCells
@@ -281,7 +291,7 @@ public class TOM_Model extends Model {
 //            insertCols(context, colMapping.size(context), columnList.last() - colMapping.size(context) + 1);
 
 
-        Integer[] idsCol = colMapping.getIDs(context, columnList.first() - startingCol,
+        Integer[] idsCol = colMapping.getIDs(context, columnList.first(),
                 columnList.last() - columnList.first() + 1);
 
         Boolean PKincluded = false;
@@ -347,7 +357,7 @@ public class TOM_Model extends Model {
         try (PreparedStatement stmt = context.getConnection().prepareStatement(update.toString())) {
             for (Map.Entry<Integer, SortedMap<Integer, AbstractCellAdv>> _row : groupedCells.entrySet()) {
 
-                int PKvalue = rowMapping.getIDs(context, _row.getKey() - startingRow, 1)[0];
+                int PKvalue = rowMapping.getIDs(context, _row.getKey(), 1)[0];
                 int index2;
 
                 if (!PKincluded) {
@@ -430,7 +440,7 @@ public class TOM_Model extends Model {
         if (rows == 0 || columns == 0)
             return null;
         else //startingRow+rowMapping.size(context)    without -1 to include the header of the table
-            return new CellRegion(startingRow, startingCol, startingRow + rowMapping.size(context), startingCol + colMapping.size(context) - 1);
+            return new CellRegion(0, 0,  rowMapping.size(context),  colMapping.size(context) - 1);
     }
 
 
