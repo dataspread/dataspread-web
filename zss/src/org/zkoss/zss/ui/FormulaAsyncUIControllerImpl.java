@@ -98,7 +98,7 @@ public class FormulaAsyncUIControllerImpl implements FormulaAsyncUIController {
         public void onEvent(AsyncUIUpdateEvent event) throws Exception {
             Object[] data=(Object[]) event.getData();
             CellRegion region=(CellRegion) data[2];
-            ((Spreadsheet)data[0]).updateCell((SSheet)data[1],region.column,region.row,region.lastColumn,region.lastColumn, SpreadsheetCtrl.CellAttribute.ALL);
+            ((Spreadsheet)data[0]).updateCell((SSheet)data[1],region.column,region.row,region.lastColumn,region.lastRow, SpreadsheetCtrl.CellAttribute.ALL);
         }
     };
 

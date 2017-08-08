@@ -230,7 +230,7 @@ public class CellImpl extends AbstractCellAdv {
 							return null;
 						}
 					});
-					FormulaAsyncScheduler.getScheduler().addTask(new RefImpl(getSheet().getBook().getId(),getSheet().getSheetName(),getRowIndex(),getColumnIndex()),this);
+					FormulaAsyncScheduler.getScheduler().addTask(new RefImpl(getSheet().getBook().getId(),getSheet().getSheetName(),getRowIndex(),getColumnIndex()));
 					FormulaAsyncScheduler.getUiController().confirm(this);
 					/* zekun.fan@gmail.com - Original implementation by henri
 					FormulaEngine fe = EngineFactory.getInstance().createFormulaEngine();
@@ -337,7 +337,7 @@ public class CellImpl extends AbstractCellAdv {
 		if(_formulaResultValue!=null){
 			//only clear when there is a formula result, or poi will do full cache scan to clean blank.
 			//zekun.fan@gmail.com : cancelTask
-			FormulaAsyncScheduler.getScheduler().cancelTask(getRef(),this);
+			FormulaAsyncScheduler.getScheduler().cancelTask(getRef());
 			EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
 		}
 		_formulaResultValue = null;
@@ -598,9 +598,9 @@ public class CellImpl extends AbstractCellAdv {
 	//@since 3.7.0
 	public void setFormulaResultValue(ValueEval value) {
 		try {
-			//zekun.fan@gmail.com : cancelTask
-			FormulaAsyncScheduler.getScheduler().cancelTask(getRef(),this);
-			_formulaResultValue = new FormulaResultCellValue(FormulaEngineImpl.convertToEvaluationResult(value));
+			//zekun.fan@gmail.com : no cancelTask, for it is only called after evaluation
+			//FormulaAsyncScheduler.getScheduler().cancelTask(getRef());
+			_formulaResultValue.updateByEvaluationResult(FormulaEngineImpl.convertToEvaluationResult(value));
 		} catch (EvaluationException e) {
 			// ignore it!
 		}
