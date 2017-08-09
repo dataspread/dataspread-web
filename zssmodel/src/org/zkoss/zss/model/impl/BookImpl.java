@@ -24,6 +24,7 @@ import org.zkoss.zk.ui.Executions;
 import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.impl.sys.DependencyTableAdv;
 import org.zkoss.zss.model.impl.sys.formula.ParsingBook;
+import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.EngineFactory;
 import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.dependency.Ref;
@@ -36,6 +37,7 @@ import org.zkoss.zss.model.util.Strings;
 import org.zkoss.zss.model.util.Validations;
 import org.zkoss.zss.range.impl.StyleUtil;
 
+import java.awt.print.Book;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -92,6 +94,8 @@ public class BookImpl extends AbstractBookAdv{
 		
 		_bookId = ((char)('a'+_random.nextInt(26))) + Long.toString(System.currentTimeMillis()+_bookCount.getAndIncrement(), Character.MAX_RADIX) ;
 		_tables = new HashMap<String, STable>(0);
+		//zekun.fan@gmail.com added bindings
+		BookBindings.put(_bookId,this);
 	}
 
 	public static void deleteBook(String bookName, String bookTable) {
@@ -1093,7 +1097,9 @@ public class BookImpl extends AbstractBookAdv{
 	@Override
 	public void setIdAndLoad(String id){
 		schemaPresent = true;
+		BookBindings.remove(_bookId);
 		this._bookId = id;
+		BookBindings.put(_bookId,this);
 
 		// Load Schema
 		String bookTable = getId();
