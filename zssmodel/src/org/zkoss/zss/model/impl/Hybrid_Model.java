@@ -8,16 +8,21 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import org.zkoss.poi.hwpf.usermodel.Range;
+import org.zkoss.poi.ss.usermodel.CellStyle;
 import org.zkoss.zss.model.CellRegion;
+
 
 public class Hybrid_Model extends RCV_Model {
     BlockStore bs;
     private int block_row = 100000;
+
     //Tables on the sheet
 
     private Logger logger = Logger.getLogger(Hybrid_Model.class.getName());
     private MetaDataBlock metaDataBlock;
-    
+
     // This list is synchronized with modelEntryList in metaDataBlock
     private List<Model> tableModels;
 
@@ -26,8 +31,7 @@ public class Hybrid_Model extends RCV_Model {
         loadMetaData(context);
     }
 
-    private void loadMetaData(DBContext context)
-    {
+    private void loadMetaData(DBContext context) {
         tableModels = new ArrayList<>();
         bs = new BlockStore(context, tableName + "_hb_meta");
         metaDataBlock = bs.getObject(context, 0, MetaDataBlock.class);
@@ -81,17 +85,53 @@ public class Hybrid_Model extends RCV_Model {
     //Construct rom_table on the selected range get from getRomtables
     // Convert to ROM or COM.
 
-    public boolean convert(DBContext context, ModelType modelType, CellRegion range) {
+    public boolean convert(DBContext context, ModelType modelType, CellRegion range, String name) throws SQLException {
         //logger.info("Start - Converting HYBRID " + range.toString());
 
-        //create a new rom_model
+        //create a new rom_model or tom_model
         // Need to update to a better way to handle delete tables
-        String newTableName = tableName + "_" + Integer.toHexString(++metaDataBlock.romTableIdentifier);
-        Model model = Model.CreateModel(context, modelType, newTableName);
+
+
+//        boolean emptyRegion = false;
+        String newTableName;
+        Model model;
+
+
+        if (modelType == ModelType.TOM_Model) {
+
+            newTableName = name.toLowerCase();
+
+            model = Model.CreateModel(context, modelType, newTableName);
+            CellRegion tableHeaderRow = new CellRegion(range.getRow(), range.getColumn(), range.getRow(), range.getLastColumn());
+            List<AbstractCellAdv> tableHeaderCells = getCells(context, tableHeaderRow).stream().collect(Collectors.toList());
+            ArrayList<String> columnsNames = new ArrayList<>();
+
+            for (int i = 0; i < tableHeaderCells.size(); i++) {
+                String colName = tableHeaderCells.get(i).getStringValue();
+                if (colName == "")
+                    colName = "column_" + (i + 1);
+
+                columnsNames.add(colName);
+            }
+
+            TOM_Model tomModel = (TOM_Model) model;
+            tomModel.initialize(context, range);
+            tomModel.setCols(columnsNames);
+
+            model.insertRows(context, 0, range.getLastRow() - range.getRow());
+
+            ++range.row;
+
+            deleteCells(context, tableHeaderRow);
+
+        } else {
+            newTableName = tableName + "_" + Integer.toHexString(++metaDataBlock.romTableIdentifier);
+            model = Model.CreateModel(context, modelType, newTableName);
+            model.insertRows(context, 0, range.getLastRow() - range.getRow() + 1);
+        }
 
         // Migrate data to the new table
         model.insertCols(context, 0, range.getLastColumn() - range.getColumn() + 1);
-        model.insertRows(context, 0, range.getLastRow() - range.getRow() + 1);
 
         // logger.info("Start - Loading Cells");
 
@@ -106,12 +146,21 @@ public class Hybrid_Model extends RCV_Model {
 //                    .map(e -> e.shiftedCell(-range.getRow(), -range.getColumn())) // Translate
                     .collect(Collectors.toList());
 
+//            if (cells.size() == 0) {
+//                emptyRegion = true;
+//                break;
+//            }
             // Do a RCV delete
             deleteCells(context, work_range);
             // Insert data into new table
-            // model.updateCellsCopy(context, cells);
+//             model.updateCellsCopy(context, cells);
             model.updateCells(context, cells);
         }
+//        if (emptyRegion)
+//            return false;
+
+        if (modelType == ModelType.TOM_Model)
+            --range.row;
 
         // Collect a list of models to be deleted
         tableModels.add(model);
@@ -128,10 +177,10 @@ public class Hybrid_Model extends RCV_Model {
         return true;
     }
 
-    public void loadDBTable(DBContext context, ModelType modelType, String tableName, CellRegion range) throws SQLException {
+    public CellRegion loadDBTable(DBContext context, ModelType modelType, String tableName, CellRegion range) throws SQLException {
 
-        TOM_Model model =(TOM_Model) Model.CreateModel(context, modelType, tableName);
-        range=model.preload(context, range);
+        TOM_Model model = (TOM_Model) Model.CreateModel(context, modelType, tableName);
+        range = model.preload(context, range);
 
         tableModels.add(model);
         MetaDataBlock.ModelEntry modelEntry = new MetaDataBlock.ModelEntry();
@@ -142,8 +191,8 @@ public class Hybrid_Model extends RCV_Model {
         bs.putObject(0, metaDataBlock);
         bs.flushDirtyBlocks(context);
 
+        return range;
     }
-
 
     @Override
     public void insertRows(DBContext context, int row, int count) {
@@ -253,6 +302,7 @@ public class Hybrid_Model extends RCV_Model {
         Set<AbstractCellAdv> pendingCells = new HashSet<>(cells);
         for (int i = 0; i < metaDataBlock.modelEntryList.size(); ++i) {
             CellRegion tableRange = metaDataBlock.modelEntryList.get(i).range;
+
             List<AbstractCellAdv> cellsInRange = pendingCells
                     .stream()
                     .filter(c -> tableRange.contains(c.getRowIndex(), c.getColumnIndex()))
@@ -261,8 +311,9 @@ public class Hybrid_Model extends RCV_Model {
 
             // Translate
             cellsInRange.stream()
-                    .peek(e->e.shift(-tableRange.getRow(), -tableRange.getColumn()));
+                    .peek(e -> e.shift(-tableRange.getRow(), -tableRange.getColumn()));
             tableModels.get(i).updateCells(context, cellsInRange);
+
         }
         super.updateCells(context, pendingCells);
     }
@@ -288,7 +339,7 @@ public class Hybrid_Model extends RCV_Model {
                     .filter(c -> tableRange.contains(c.getRowIndex(), c.getColumnIndex()))
                     .collect(Collectors.toList());
             tableModels.get(i).deleteCells(context, cellsInRange.stream()
-                    .peek(e->e.shift(-tableRange.getRow(), -tableRange.getLastColumn()))
+                    .peek(e -> e.shift(-tableRange.getRow(), -tableRange.getLastColumn()))
                     .collect(Collectors.toList()));
             pendingCells.removeAll(cellsInRange);
         }
@@ -311,16 +362,16 @@ public class Hybrid_Model extends RCV_Model {
                                                 -metaDataBlock.modelEntryList.get(e).range.getRow(),
                                                 -metaDataBlock.modelEntryList.get(e).range.getColumn()))
                                 .stream()
-                                .peek(c->c.shift(metaDataBlock.modelEntryList.get(e).range.getRow(),
+                                .peek(c -> c.shift(metaDataBlock.modelEntryList.get(e).range.getRow(),
                                         metaDataBlock.modelEntryList.get(e).range.getColumn()))
                                 .collect(Collectors.toList())));
 
         boolean encompass = false;
-        for (MetaDataBlock.ModelEntry m:metaDataBlock.modelEntryList)
+        for (MetaDataBlock.ModelEntry m : metaDataBlock.modelEntryList)
             if (m.range.contains(range))
-                encompass=true;
+                encompass = true;
 
-        if (encompass==false) {
+        if (encompass == false) {
             //  System.out.println("RCV executed ");
             cells.addAll(super.getCells(context, range));
         }
@@ -331,7 +382,7 @@ public class Hybrid_Model extends RCV_Model {
         return Collections.unmodifiableCollection(cells);
     }
 
-    Collection<CellRegion> getTablesRanges() {
+    public Collection<CellRegion> getTablesRanges() {
         return metaDataBlock.modelEntryList.stream().map(e -> e.range).collect(Collectors.toList());
     }
 
@@ -342,16 +393,18 @@ public class Hybrid_Model extends RCV_Model {
     }
 
     public void deleteModel(DBContext dbContext, CellRegion modelRange) {
-        metaDataBlock.modelEntryList.removeIf(e->e.range == modelRange);
+        metaDataBlock.modelEntryList.removeIf(e -> e.range.equals(modelRange) );
     }
 
     private static class MetaDataBlock {
         List<ModelEntry> modelEntryList;
         int romTableIdentifier;
+
         MetaDataBlock() {
             modelEntryList = new ArrayList<>();
             romTableIdentifier = 1;
         }
+
         private static class ModelEntry {
             CellRegion range;
             String tableName;

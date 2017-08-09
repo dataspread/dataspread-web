@@ -20,11 +20,11 @@ public class TOM_Model extends Model {
     private Logger logger = Logger.getLogger(TOM_Model.class.getName());
     private PosMapping rowMapping;
     private PosMapping colMapping;
-    private SortedMap<Integer, String> cols;
-    private String pkColumnName = "empno"; /*TODO remove the hardcoding */
+    public SortedMap<Integer, String> cols;
+    private String pkColumnName;
     private String pkColumnType;
-    //private int startingRow;
-    //private int startingCol;
+    private int startingRow;
+    private int startingCol;
 
     //Create or load TOM_model.
     TOM_Model(DBContext context, String tableName) {
@@ -34,22 +34,21 @@ public class TOM_Model extends Model {
         createSchema(context);
         cols = new TreeMap<>();
 
-
-        ArrayList<String> columns = tableColumns(context);
-        // Integer ids[] = colMapping.createIDs(context, 0, columns.size());
-
-        Integer ids[] = colMapping.getIDs(context, 0, columns.size());
-        for (int i = 0; i < ids.length; i++) {
-            cols.put(ids[i], columns.get(i));
-        }
-
+//        ArrayList<String> columns = tableColumns(context);
+//        // Integer ids[] = colMapping.createIDs(context, 0, columns.size());
+//
+//        Integer ids[] = colMapping.getIDs(context, 0, columns.size());
+//        for (int i = 0; i < ids.length; i++) {
+//            cols.put(ids[i], columns.get(i));
+//        }
     }
 
     private void createSchema(DBContext context) {
         String createTable = (new StringBuffer())
                 .append("CREATE TABLE IF NOT EXISTS ")
                 .append(tableName)
-                .append(" (rowNo SERIAL PRIMARY KEY)")
+                .append("(row INT PRIMARY KEY)")
+//                .append(" (rowNo SERIAL PRIMARY KEY)")
 //                .append(" ()")
                 .toString();
 
@@ -75,28 +74,50 @@ public class TOM_Model extends Model {
         colMapping.dropSchema(context);
     }
 
+    public void initialize(DBContext context, CellRegion range) {
+        startingRow = range.getRow();
+        startingCol = range.getColumn();
+        getDBPkColumnName(context);
+    }
+
+    public void setCols(ArrayList<String> columnsNames) {
+        for (int i = 0; i < columnsNames.size(); i++) {
+            cols.put(i + 1, columnsNames.get(i));
+        }
+    }
+
     public CellRegion preload(DBContext context, CellRegion range) {
 
+        startingRow = range.getRow();
+        startingCol = range.getColumn();
+
         ArrayList<String> columns = tableColumns(context);
-       // Integer ids[] = colMapping.createIDs(context, 0, columns.size());
+        if (columns.contains("row"))
+            columns.remove("row");
 
         Integer ids[] = colMapping.getIDs(context, 0, columns.size());
-        for (int i = 0; i < ids.length; i++) {
-            cols.put(ids[i], columns.get(i));
-        }
+        setCols(columns);
 
         /* Batch processing */
         ArrayList<Integer> PKvalues = PKvalues(context);
         Integer ids2[] = rowMapping.createDBIDs(context, 0, PKvalues);
 
-        CellRegion newRange= new CellRegion(range.getRow(), range.getColumn(), range.getRow()+ids2.length, range.getColumn()+ids.length);
+        CellRegion newRange = new CellRegion(range.getRow(), range.getColumn(), range.getRow() + ids2.length, range.getColumn() + ids.length - 1);
 
-        if(range.contains(newRange))
-        {
+        if (range.contains(newRange)) {
             return newRange;
-        }
-        else{
-            return range;
+        } else {
+
+//            CellRegion returnRange=range.getOverlap(newRange);
+            int lastCol = range.getLastColumn();
+            int lastRow = range.getLastRow();
+
+            if (range.getLastColumn() >= newRange.getLastColumn())
+                lastCol = newRange.getLastColumn();
+
+            if (range.getLastRow() >= newRange.getLastRow())
+                lastCol = newRange.getLastRow();
+            return new CellRegion(range.getRow(), range.getColumn(), lastRow, lastCol);
         }
 
     }
@@ -126,8 +147,7 @@ public class TOM_Model extends Model {
         return columns;
     }
 
-    public ArrayList<Integer> PKvalues(DBContext context) {
-        ArrayList<Integer> PKvalues = new ArrayList<>();
+    public void getDBPkColumnName(DBContext context) {
 
         String findPK = (new StringBuffer())
                 .append("SELECT column_name FROM information_schema.key_column_usage ")
@@ -141,18 +161,32 @@ public class TOM_Model extends Model {
 
             if (set.next()) {
                 pkColumnName = set.getString(1);
-                String getPKcolVals = (new StringBuffer())
-                        .append("SELECT " + pkColumnName)
-                        .append(" FROM " + tableName)
-                        .toString();
+            }
 
-                set = stmt.executeQuery(getPKcolVals);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
 
-                pkColumnType = set.getMetaData().getColumnTypeName(1);
+    }
 
-                while (set.next()) {
-                    PKvalues.add(set.getInt(1));
-                }
+    public ArrayList<Integer> PKvalues(DBContext context) {
+
+        ArrayList<Integer> PKvalues = new ArrayList<>();
+
+        getDBPkColumnName(context);
+
+        String getPKcolVals = (new StringBuffer())
+                .append("SELECT " + pkColumnName)
+                .append(" FROM " + tableName)
+                .append(" ORDER BY " + pkColumnName)
+                .toString();
+
+        try (Statement stmt = context.getConnection().createStatement()) {
+            ResultSet set = stmt.executeQuery(getPKcolVals);
+            pkColumnType = set.getMetaData().getColumnTypeName(1);
+
+            while (set.next()) {
+                PKvalues.add(set.getInt(1));
             }
 
         } catch (SQLException e) {
@@ -206,8 +240,9 @@ public class TOM_Model extends Model {
         }
 
         /* TODO: select pk ? */
-        StringBuffer select = new StringBuffer("SELECT " + cols.get(colIds[0]));
-        for (int i = 1; i < colIds.length; i++)
+//        StringBuffer select = new StringBuffer("SELECT " + cols.get(colIds[0]));
+        StringBuffer select = new StringBuffer("SELECT " + pkColumnName);
+        for (int i = 0; i < colIds.length; i++)
             select.append(", ")
                     .append(cols.get(colIds[i]));
 
@@ -217,7 +252,7 @@ public class TOM_Model extends Model {
 
 
         try (PreparedStatement stmt = context.getConnection().prepareStatement(select.toString())) {
-           // Array inArrayRow = context.getConnection().createArrayOf(pkColumnType, rowIds);
+            // Array inArrayRow = context.getConnection().createArrayOf(pkColumnType, rowIds);
             /* Assume an int array for now */
             Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
 
@@ -241,7 +276,7 @@ public class TOM_Model extends Model {
 
                 for (int i = 0; i < colIds.length; i++) {
                     int col = col_map.get(cols.get(colIds[i]));
-                    byte[] data = rs.getBytes(i + 1);
+                    byte[] data = rs.getBytes(i + 2);
                     if (data != null) {
                         AbstractCellAdv cell = CellImpl.fromBytes(row, col, data);
                         cells.add(cell);
@@ -275,11 +310,11 @@ public class TOM_Model extends Model {
         }
 
         boolean headerModified = false;
-        SortedMap<Integer, AbstractCellAdv> headerRow=null;
-        if (groupedCells.get(0) != null)// if table header is modified
+        SortedMap<Integer, AbstractCellAdv> headerRow = null;
+        if (groupedCells.get(startingRow) != null)// if table header is modified
         {
-            headerRow = groupedCells.get(0);
-            groupedCells.remove(0);
+            headerRow = groupedCells.get(startingRow);
+            groupedCells.remove(startingRow);
             headerModified = true;
             /*
             remove that row from the groupedCells
@@ -291,108 +326,109 @@ public class TOM_Model extends Model {
 //            insertCols(context, colMapping.size(context), columnList.last() - colMapping.size(context) + 1);
 
 
-        Integer[] idsCol = colMapping.getIDs(context, columnList.first(),
+        Integer[] idsCol = colMapping.getIDs(context, columnList.first() - startingCol,
                 columnList.last() - columnList.first() + 1);
 
-        Boolean PKincluded = false;
-        int pkIndex=-1;
-        for (int i = 0; i < idsCol.length; i++) {
-            String value = cols.get(idsCol[i]);
-            if (value == pkColumnName) {
-                PKincluded = true;
-                pkIndex=i;
-                break;
+        if (groupedCells.size() > 0) {
+            Boolean PKincluded = false;
+            int pkIndex = -1;
+            for (int i = 0; i < idsCol.length; i++) {
+                String value = cols.get(idsCol[i]);
+                if (value == pkColumnName) {
+                    PKincluded = true;
+                    pkIndex = i;
+                    break;
+                }
             }
-        }
 //        insert into mytable(id, name, age, color) values (6,'Asmaa','60','brown')
 //        on conflict (id)
 //        do update set (id,name, age, color) = (6,'Asmaa','60','brown')
 //        where mytable.id = 6;
 
-        StringBuffer sqlColumnNames= new StringBuffer("(");
-        for (int i = 0; i < idsCol.length; ++i) {
-            sqlColumnNames.append(cols.get(idsCol[i]));
-            if (i < idsCol.length - 1)
-                sqlColumnNames.append(",");
-        }
-        if(!PKincluded) {
-            sqlColumnNames.append(",")
-                    .append(pkColumnName);
-        }
-        sqlColumnNames.append(")");
+
+            StringBuffer sqlColumnNames = new StringBuffer("(");
+            for (int i = 0; i < idsCol.length; ++i) {
+                sqlColumnNames.append(cols.get(idsCol[i]));
+                if (i < idsCol.length - 1)
+                    sqlColumnNames.append(",");
+            }
+            if (!PKincluded) {
+                sqlColumnNames.append(",")
+                        .append(pkColumnName);
+            }
+            sqlColumnNames.append(")");
 
 
-        StringBuffer sqlValuesPlaceHolders=new StringBuffer("(");
-        for (int i = 0; i < idsCol.length; ++i) {
-            sqlValuesPlaceHolders.append("?");
-            if (i < idsCol.length - 1)
-                sqlValuesPlaceHolders.append(",");
-        }
-        if(!PKincluded)        {
-            sqlValuesPlaceHolders.append(",?");
-        }
-        sqlValuesPlaceHolders.append(")");
+            StringBuffer sqlValuesPlaceHolders = new StringBuffer("(");
+            for (int i = 0; i < idsCol.length; ++i) {
+                sqlValuesPlaceHolders.append("?");
+                if (i < idsCol.length - 1)
+                    sqlValuesPlaceHolders.append(",");
+            }
+            if (!PKincluded) {
+                sqlValuesPlaceHolders.append(",?");
+            }
+            sqlValuesPlaceHolders.append(")");
 
-        StringBuffer update = new StringBuffer("INSERT INTO ")
-                .append(tableName)
-                .append(sqlColumnNames.toString())
-                .append(" VALUES ")
-                .append(sqlValuesPlaceHolders.toString())
-                .append(" ON CONFLICT(")
-                .append(pkColumnName)
-                .append(") DO UPDATE SET ")
-                .append(sqlColumnNames.toString())
-                .append("=")
-                .append(sqlValuesPlaceHolders.toString())
-                .append(") WHERE ")
-                .append(tableName)
-                .append("." + pkColumnName)
-                .append("=?");
+            StringBuffer update = new StringBuffer("INSERT INTO ")
+                    .append(tableName)
+                    .append(sqlColumnNames.toString())
+                    .append(" VALUES ")
+                    .append(sqlValuesPlaceHolders.toString())
+                    .append(" ON CONFLICT(")
+                    .append(pkColumnName)
+                    .append(") DO UPDATE SET ")
+                    .append(sqlColumnNames.toString())
+                    .append("=")
+                    .append(sqlValuesPlaceHolders.toString())
+                    .append(" WHERE ")
+                    .append(tableName)
+                    .append("." + pkColumnName)
+                    .append("=?");
 
 //        insert into mytable(name, age, color,id) values (?,?,?,?)
 //        on conflict (id)
 //        do update set (name, age, color,id) = (?,?,?,?)
 //        where mytable.id = ?;
 
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(update.toString())) {
-            for (Map.Entry<Integer, SortedMap<Integer, AbstractCellAdv>> _row : groupedCells.entrySet()) {
+            try (PreparedStatement stmt = context.getConnection().prepareStatement(update.toString())) {
+                for (Map.Entry<Integer, SortedMap<Integer, AbstractCellAdv>> _row : groupedCells.entrySet()) {
 
-                int PKvalue = rowMapping.getIDs(context, _row.getKey(), 1)[0];
-                int index2;
+                    int PKvalue = rowMapping.getIDs(context, _row.getKey() - startingRow - 1, 1)[0];
+                    int index2;
 
-                if (!PKincluded) {
-                    stmt.setInt(idsCol.length+1, PKvalue); //at insert
-                    stmt.setInt((idsCol.length * 2) +2, PKvalue); // at update
-                    stmt.setInt((idsCol.length * 2) +3, PKvalue); // at where
+                    if (!PKincluded) {
+                        stmt.setInt(idsCol.length + 1, PKvalue); //at insert
+                        stmt.setInt((idsCol.length * 2) + 2, PKvalue); // at update
+                        stmt.setInt((idsCol.length * 2) + 3, PKvalue); // at where
 
-                    index2=idsCol.length+2;
+                        index2 = idsCol.length + 2;
 
-                } else {
+                    } else {
 
-                    if (_row.getValue().get(columnList.first() + pkIndex) != null)
-                    {
-                        stmt.setInt(pkIndex + 1,
-                                _row.getValue().get(columnList.first() + pkIndex).getNumberValue().intValue()); //at insert
-                        stmt.setInt(idsCol.length + pkIndex + 1,
-                                _row.getValue().get(columnList.first() + pkIndex).getNumberValue().intValue()); // at update
+                        if (_row.getValue().get(columnList.first() + pkIndex) != null) {
+                            stmt.setInt(pkIndex + 1,
+                                    _row.getValue().get(columnList.first() + pkIndex).getNumberValue().intValue()); //at insert
+                            stmt.setInt(idsCol.length + pkIndex + 1,
+                                    _row.getValue().get(columnList.first() + pkIndex).getNumberValue().intValue()); // at update
 
-                        // Need to update the Keys!! Missing
+                            // Need to update the Keys!! Missing
 
+                        }
+
+                        stmt.setInt((idsCol.length * 2) + 1, PKvalue); //at where
+
+                        index2 = idsCol.length + 1;
                     }
 
-                    stmt.setInt((idsCol.length * 2)+1, PKvalue); //at where
+                    for (int i = 0; i < idsCol.length; i++) {
+                        if (pkIndex > -1 && i == pkIndex)
+                            continue;
 
-                    index2=idsCol.length+1;
-                }
-
-                for (int i = 0; i < idsCol.length; i++) {
-                    if(pkIndex>-1 && i==pkIndex)
-                        continue;
-
-                    if (_row.getValue().get(columnList.first() + i) == null) {
-                        stmt.setNull(i + 1, Types.NULL);
-                        stmt.setNull(i + index2, Types.NULL);
-                    }else {
+                        if (_row.getValue().get(columnList.first() + i) == null) {
+                            stmt.setNull(i + 1, Types.NULL);
+                            stmt.setNull(i + index2, Types.NULL);
+                        } else {
 //                        String type=_row.getValue().get(columnList.first() + i).getType().name();
 //                        if (type.equalsIgnoreCase("NUMBER")) {
 //                            stmt.setInt(i + 1,
@@ -401,37 +437,45 @@ public class TOM_Model extends Model {
 //                                    _row.getValue().get(columnList.first() + i).getNumberValue().intValue());
 //                        }else
 //                        {
+//                            stmt.setString(i + 1,
+//                                    _row.getValue().get(columnList.first() + i).getStringValue());
+//                            stmt.setString(i + index2,
+//                                    _row.getValue().get(columnList.first() + i).getStringValue());
                             stmt.setString(i + 1,
-                                    _row.getValue().get(columnList.first() + i).getStringValue());
+                                    _row.getValue().get(columnList.first() + i).getValue().toString());
                             stmt.setString(i + index2,
-                                    _row.getValue().get(columnList.first() + i).getStringValue());
+                                    _row.getValue().get(columnList.first() + i).getValue().toString());
 //                        }
+                        }
                     }
+                    stmt.execute();
                 }
-                stmt.execute();
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
+        }
 
-            if(headerModified) {
-                Statement HeaderStmt = context.getConnection().createStatement();
-                for (int i = 0; i < idsCol.length; i++) {
-                    if (headerRow.get(columnList.first() + i) != null)
-                    {
-                        StringBuffer sql= new StringBuffer("ALTER TABLE "+tableName +"  RENAME COLUMN ")
-                                .append(cols.get(idsCol[i]))
-                                .append(" TO ")
-                                .append(headerRow.get(columnList.first() + i).getValue().toString());
-                        HeaderStmt.execute(sql.toString());
+        if (headerModified) {
+            for (int i = 0; i < idsCol.length; i++) {
+                if (headerRow.get(columnList.first() + i) != null) {
+                    String sql = (new StringBuffer())
+                            .append("ALTER TABLE " + tableName + " RENAME COLUMN ")
+                            .append(cols.get(idsCol[i]))
+                            .append(" TO ")
+                            .append(headerRow.get(columnList.first() + i).getValue().toString())
+                            .toString();
 
+                    try (Statement stmt = context.getConnection().createStatement()) {
+                        stmt.execute(sql.toString());
                         // Update the Columns Sorted Set
-                        cols.replace(idsCol[i],cols.get(idsCol[i]),headerRow.get(columnList.first() + i).getValue().toString());
+                        cols.replace(idsCol[i], cols.get(idsCol[i]), headerRow.get(columnList.first() + i).getValue().toString());
+                    } catch (SQLException e) {
+                        e.printStackTrace();
                     }
                 }
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
     }
-
 
     @Override
     public CellRegion getBounds(DBContext context) {
@@ -440,14 +484,14 @@ public class TOM_Model extends Model {
         if (rows == 0 || columns == 0)
             return null;
         else //startingRow+rowMapping.size(context)    without -1 to include the header of the table
-            return new CellRegion(0, 0,  rowMapping.size(context),  colMapping.size(context) - 1);
+            return new CellRegion(0, 0, rowMapping.size(context), colMapping.size(context) - 1);
     }
-
 
     @Override
     public void insertRows(DBContext context, int row, int count) {
         rowMapping.createIDs(context, row, count);
     }
+
 
     @Override
     public void insertCols(DBContext context, int col, int count) {
@@ -456,9 +500,9 @@ public class TOM_Model extends Model {
                 .append(tableName);
         Integer ids[] = colMapping.createIDs(context, col, count);
         for (int i = 0; i < ids.length; i++) {
-            insertColumn.append(" ADD COLUMN col_")
-                    .append(ids[i])
-                    .append(" BYTEA");
+            insertColumn.append(" ADD COLUMN ")
+                    .append(cols.get(ids[i]))
+                    .append(" TEXT");
             if (i < ids.length - 1)
                 insertColumn.append(",");
         }
@@ -503,7 +547,6 @@ public class TOM_Model extends Model {
         }
 
     }
-
 
     @Override
     public void deleteCells(DBContext context, CellRegion range) {
@@ -646,154 +689,3 @@ public class TOM_Model extends Model {
 
     }
 }
-        /*
-        StringBuffer update = new StringBuffer("WITH upsert AS (UPDATE ")
-                .append(tableName)
-                .append(" SET ");
-        for (int i = 0; i < idsCol.length; ++i) {
-            update.append(cols.get(idsCol[i]))
-                    .append("=COALESCE(?,")
-                    .append(cols.get(idsCol[i]))
-                    .append(")");
-            if (i < idsCol.length - 1)
-                update.append(",");
-        }
-        update.append(" WHERE "+pkColumnName+"= ? RETURNING *) ")
-                .append("INSERT INTO ")
-                .append(tableName)
-                .append("( ");
-        for (int i = 0; i < idsCol.length; ++i) {
-            update.append(cols.get(idsCol[i]));
-            if (i < idsCol.length - 1)
-                update.append(",");
-        }
-        update.append(") SELECT ");
-        for (int i = 0; i < idsCol.length; ++i) {
-            update.append("?,");
-            if (i < idsCol.length - 1)
-                update.append(",");
-        }
-
-        update.append(" WHERE NOT EXISTS (SELECT * FROM upsert)");
-*/
-
-
-        /*
-        StringBuffer update = new StringBuffer("INSERT INTO ")
-                .append(tableName)
-                .append("(");
-
-        if(PKincluded) {
-            update.append(pkColumnName)
-                .append(",");
-        }
-        for (int i = 0; i < idsCol.length; ++i) {
-            update.append(cols.get(idsCol[i]));
-            if (i < idsCol.length - 1)
-                update.append(",");
-        }
-        update.append(") VALUES(");
-        if(PKincluded) {
-            update.append("?,");
-        }
-        for (int i = 0; i < idsCol.length; ++i) {
-            update.append("?");
-            if (i < idsCol.length - 1)
-                update.append(",");
-        }
-        update.append(") ON CONFLICT(")
-                .append(pkColumnName)
-                .append(") DO UPDATE SET(");
-
-        for (int i = 0; i < idsCol.length; ++i) {
-            if(idsCol[i]==pkColID)
-                continue;
-
-            update.append(cols.get(idsCol[i]));
-            if (i < idsCol.length - 1)
-                update.append(",");
-        }
-        update.append(") = (");
-        int length=idsCol.length;
-        if(!PKincluded)
-        {
-            length=idsCol.length-1;
-        }
-        for (int i = 0; i < length; ++i) {
-            update.append("?");
-            if (i < idsCol.length - 1)
-                update.append(",");
-        }
-        update.append(") WHERE ")
-                .append(tableName)
-                .append("."+pkColumnName)
-                .append("=?");
-
-
-
-
-        for (int i = 0; i < idsCol.length; ++i) {
-            String column=cols.get(idsCol[i]);
-            if(column==pkColumnName)
-                continue;
-            update.append(cols.get(idsCol[i]));
-            if (i < idsCol.length - 1)
-                update.append(",");
-        }
-        update.append(") VALUES(");
-        if (!PKincluded) {
-            update.append("?,");
-        }
-        for (int i = 0; i < idsCol.length; ++i) {
-            update.append("?");
-            if (i < idsCol.length - 1)
-                update.append(",");
-        }
-        update.append(") ON CONFLICT(")
-                .append(pkColumnName)
-                .append(") DO UPDATE SET(");
-
-        for (int i = 0; i < idsCol.length; ++i) {
-            String column=cols.get(idsCol[i]);
-            if(column==pkColumnName)
-                continue;
-            update.append(cols.get(idsCol[i]));
-            if (i < idsCol.length - 1)
-                update.append(",");
-        }
-        update.append(") = (");
-        int length = idsCol.length;
-        if (PKincluded) {
-            length = idsCol.length - 1;
-        }
-        for (int i = 0; i < length; ++i) {
-            update.append("?");
-            if (i < idsCol.length - 1)
-                update.append(",");
-        }
-        update.append(") WHERE ")
-                .append(tableName)
-                .append("." + pkColumnName)
-                .append("=?");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-         */

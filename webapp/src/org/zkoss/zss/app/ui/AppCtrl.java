@@ -930,7 +930,7 @@ public class AppCtrl extends CtrlBase<Component> {
         }
     }
 
-    private void doCreateTable(Spreadsheet ss) {
+    private void doCreateTable(Spreadsheet ss)  {
 
         createTableCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
             private static final long serialVersionUID = 7753635062865984294L;
@@ -943,26 +943,17 @@ public class AppCtrl extends CtrlBase<Component> {
         }, ss);
     }
 
-    private void doDisplayTable(Spreadsheet ss) throws SQLException {
+    private void doDisplayTable(Spreadsheet ss) {
 
-        AreaRef selection;
-        Sheet sheet;
+        displayTableCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
+            private static final long serialVersionUID = 7753635062865984294L;
 
-        selection = ss.getSelection();
-        sheet = ss.getSelectedSheet();
-
-        Connection connection = DBHandler.instance.getConnection();
-        DBContext dbContext = new DBContext(connection);
-
-        CellRegion region= new CellRegion(selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
-        Hybrid_Model model=(Hybrid_Model)sheet.getInternalSheet().getDataModel();
-
-        model.loadDBTable(dbContext, Model.ModelType.TOM_Model,"employee",region);
-        connection.commit();
-
-        sheet.getInternalSheet().clearCache(region);
-        ss.updateCell(selection.getColumn(), selection.getRow(), selection.getLastColumn(), selection.getLastRow());
-
+            public void onEvent(DlgCallbackEvent event) throws Exception {
+                if (displayTableCtrl.ON_OPEN.equals(event.getName())) {
+                    pushAppEvent(AppEvts.ON_DISPLAY_TABLE, ss);
+                }
+            }
+        }, ss);
     }
 
     private void doDeleteTable(Spreadsheet ss) {
@@ -971,7 +962,7 @@ public class AppCtrl extends CtrlBase<Component> {
         Sheet sheet = ss.getSelectedSheet();
         AreaRef selection = ss.getSelection();
 
-//        Range src = Ranges.range(sheet, selection);
+        CellRegion region = new CellRegion(selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
 
         String rangeRef = Ranges.getAreaRefString(sheet, selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
 
@@ -984,30 +975,21 @@ public class AppCtrl extends CtrlBase<Component> {
 
                 String checkedTable = tableObj.checkUserTable(bookName,rangeRef);
                 if (checkedTable != null) {
-                    ArrayList<String> refs=tableObj.getTableRangeRefs(checkedTable,bookName);
-                    tableObj.drop(checkedTable);
-                    tableObj.deleteUserTable(checkedTable);
 
-                    for(int q=0;q<refs.size();q++)
-                    {
-                        Range deleted = Ranges.range(sheet,refs.get(q));
+                    tableObj.deleteUserTable(checkedTable,rangeRef);
 
-                        CellOperationUtil.clearAll(deleted);
-                        CellOperationUtil.clearContents(deleted);
-                        CellOperationUtil.clearStyles(deleted);
-                        deleted.notifyChange();
+                    Connection connection = DBHandler.instance.getConnection();
+                    DBContext dbContext = new DBContext(connection);
 
-                    }
-//                ss.notifyAll();
-//                CellOperationUtil.clearAll(deleted);
-//                CellOperationUtil.clearContents(src);
-//
-//                CellOperationUtil.clearStyles(src);
+                    Hybrid_Model model = (Hybrid_Model) sheet.getInternalSheet().getDataModel();
 
-//                Ranges.range(sheet, src.getRow(), src.getColumn(), src.getLastRow(), src.getLastColumn()).notifyChange();
+                    model.deleteModel(dbContext,region);
+                    connection.commit();
+                    sheet.getInternalSheet().clearCache(region);
+                    ss.updateCell(selection.getColumn(), selection.getRow(), selection.getLastColumn(), selection.getLastRow());
 
-                    Messagebox.show("Table was Deleted from the Database", "Delete Table",
-                            Messagebox.OK, Messagebox.INFORMATION);
+//                    Messagebox.show("Table was Deleted from the Database", "Delete Table",
+//                            Messagebox.OK, Messagebox.INFORMATION);
             }
             } else {
                 Messagebox.show("Selected Range is Not a Table", "Delete Table",
@@ -1133,13 +1115,9 @@ public class AppCtrl extends CtrlBase<Component> {
         } else if (AppEvts.ON_SHARE_BOOK.equals(event)) {
             shareBook();
         } else if (AppEvts.ON_CREATE_TABLE.equals(event)) {
-            doCreateTable(ss);
+                doCreateTable(ss);
         }else if (AppEvts.ON_DISPLAY_TABLE.equals(event)) {
-            try {
-                doDisplayTable(ss);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+            doDisplayTable(ss);
         } else if (AppEvts.ON_DELETE_TABLE.equals(event)) {
             doDeleteTable(ss);
         }else if (AppEvts.ON_EXPAND_COLS.equals(event)) {

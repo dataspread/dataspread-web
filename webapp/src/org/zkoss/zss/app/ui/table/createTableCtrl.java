@@ -15,6 +15,8 @@ import org.zkoss.zss.api.model.Sheet;
 import org.zkoss.zss.app.ui.dlg.DlgCallbackEvent;
 import org.zkoss.zss.app.ui.dlg.DlgCtrlBase;
 import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.impl.Hybrid_Model;
+import org.zkoss.zss.model.impl.Model;
 import org.zkoss.zss.ui.Spreadsheet;
 import org.zkoss.zul.Messagebox;
 import org.zkoss.zul.Textbox;
@@ -44,7 +46,6 @@ public class createTableCtrl extends DlgCtrlBase {
     private static Spreadsheet sss;
     private AreaRef selection;
     private Sheet sheet;
-    private Range src;
 
     private Table tableObj = new Table();
 
@@ -68,24 +69,9 @@ public class createTableCtrl extends DlgCtrlBase {
         super.doAfterCompose(comp);
         selection = sss.getSelection();
         sheet = sss.getSelectedSheet();
-        src = Ranges.range(sheet, selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
 
         bookName=sss.getBook().getBookName();
         rangeRef = Ranges.getAreaRefString(sheet, selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
-
-    }
-
-    private void newCreate()
-    {
-
-        Connection connection = DBHandler.instance.getConnection();
-        DBContext dbContext = new DBContext(connection);
-
-        CellRegion region= new CellRegion(selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
-        sheet.getInternalSheet().getDataModel().getCells(dbContext,region);
-
-
-
 
     }
 
@@ -106,9 +92,27 @@ public class createTableCtrl extends DlgCtrlBase {
                         String checkedTable = tableObj.checkUserTable(bookName,rangeRef);
 
                         if (checkedTable == null) {
-                            created=tableObj.createTable(sss, name);
-                            CellOperationUtil.applyBorder(src, Range.ApplyBorderType.FULL, CellStyle.BorderType.THICK, "#000000");
-                            CellOperationUtil.applyBackColor(src, "#c5f0e7");
+                            Connection connection = DBHandler.instance.getConnection();
+                            DBContext dbContext = new DBContext(connection);
+
+                            CellRegion region = new CellRegion(selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
+                            Hybrid_Model model = (Hybrid_Model) sheet.getInternalSheet().getDataModel();
+
+                            created=model.convert(dbContext, Model.ModelType.TOM_Model, region,name);
+                            if(created)
+                            {
+                                String rangeRef = Ranges.getAreaRefString(sheet, region.getRow(), region.getColumn(), region.getLastRow(), region.getLastColumn());
+
+                                tableObj.insertUserTable(name,sheet.getBook().getBookName(),rangeRef);
+
+                                Range src=Ranges.range(sheet,rangeRef);
+                                CellOperationUtil.applyBorder(src, Range.ApplyBorderType.FULL, CellStyle.BorderType.THICK, "#000000");
+                                CellOperationUtil.applyBackColor(src, "#c5f0e7");
+
+                                connection.commit();
+                            }
+
+
 
                         } else {
                             Messagebox.show("Table Name already Exists in the Database.", "Create Table",

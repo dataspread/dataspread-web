@@ -27,151 +27,7 @@ public class Table {
     Statement stmt = null;
     Connection connection = null;
 
-    //-----------------------------------------------------------------------CreateTable
-
-    public boolean createTable(Spreadsheet ss, String tableName) throws SQLException {
-        String bookName = ss.getBook().getBookName();
-        Sheet sheet = ss.getSelectedSheet();
-        AreaRef selection = ss.getSelection();
-        String rangeRef = Ranges.getAreaRefString(sheet, selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
-
-        List<String> attributes = new ArrayList<>();
-        List<List<String>> records = new ArrayList<>();
-
-        attributes = extractAttributes(sheet, selection, attributes);
-        records = extractRecords(sheet, selection, records);
-
-        String table = create(tableName, attributes);
-        insertUserTable(table, bookName, rangeRef);
-        insertRows(table, records, attributes);
-        return true;
-    }
-
-    private List<String> extractAttributes(Sheet sheet, AreaRef selection, List<String> attributes) {
-
-        Range src = Ranges.range(sheet, selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
-
-
-        for (int i = 0; i < src.getColumnCount(); i++) {
-            Range attribute = Ranges.range(sheet, selection.getRow(), selection.getColumn() + i);
-            String attributeName = attribute.getCellEditText();
-            if (attributeName.isEmpty()) {
-                attributeName = "Column" + (i + 1);
-                attribute.setCellEditText("Column" + (i + 1));
-            }
-            attributes.add(attributeName);
-        }
-        return attributes;
-
-    }
-
-    private List<List<String>> extractRecords(Sheet sheet, AreaRef selection, List<List<String>> records) {
-
-        Range src = Ranges.range(sheet, selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
-        int rows = src.getRowCount();
-        int cols = src.getColumnCount();
-
-        int record = src.getRow();
-
-        int counter = 1;
-        while (counter < rows) {
-            record++;
-            List<String> values = new ArrayList<>();
-            for (int j = 0; j < cols; j++) {
-                Range cell = Ranges.range(sheet, record, selection.getColumn() + j);
-//                String value = cell.getCellData().getValue().toString();
-                String value = null;
-                boolean nullValue = cell.getCellData().isBlank();
-                if (!nullValue) {
-                    value = cell.getCellValue().toString();
-                }
-                values.add(value);
-            }
-            records.add(values);
-            counter++;
-        }
-
-        return records;
-
-    }
-
-    private String create(String table, List<String> attrs) throws SQLException {
-
-        connection = DBHandler.instance.getConnection();
-//        String tableName = "test";
-//        String tableName = "table" + next();
-        String tableName = table.trim();
-        stmt = connection.createStatement();
-
-        StringBuilder builder = new StringBuilder();
-        builder.append("CREATE TABLE IF NOT EXISTS " + tableName + " (serialNo  SERIAL PRIMARY KEY,");
-        for (int i = 0; i < attrs.size(); i++) {
-            builder.append(attrs.get(i) + " TEXT,");
-        }
-        builder.deleteCharAt(builder.length() - 1); // to delete the last comma
-        builder.append(")");
-
-        String sql = builder.toString();
-
-        int x = stmt.executeUpdate(sql);
-        connection.commit();
-        connection.close();
-        return tableName;
-    }
-
-    private void insertRows(String Table, List<List<String>> recs, List<String> attributes) throws SQLException {
-        connection = DBHandler.instance.getConnection();
-        stmt = connection.createStatement();
-
-        String tableName = Table;
-
-        int attrsNo = recs.get(0).size();
-
-        StringBuilder builder = new StringBuilder();
-
-        builder.append("INSERT INTO " + tableName + "(" + attributes.get(0));
-
-        for (int k = 1; k < attrsNo; k++) {
-            builder.append("," + attributes.get(k));
-        }
-        builder.append(") VALUES (?");
-
-        for (int i = 1; i < attrsNo; i++) {
-            builder.append(",?");
-        }
-        builder.append(")");
-
-        String sql = builder.toString();
-
-        PreparedStatement pStmt = connection.prepareStatement(sql);
-        final int batchSize = 1000;
-        int count = 0;
-
-        for (int i = 0; i < recs.size(); i++) {
-            List<String> record = recs.get(i);
-            for (int j = 0; j < attrsNo; j++) {
-                String value = record.get(j);
-
-                pStmt.setString(j + 1, value);
-
-            }
-            pStmt.addBatch();
-
-            if (++count % batchSize == 0) {
-                pStmt.executeBatch();
-            }
-        }
-        pStmt.executeBatch();
-        connection.commit();
-
-        connection.close();
-    }
     //-----------------------------------------------------------------------DeleteTable
-
-    public void deleteTable(String tableName) throws SQLException {
-        drop(tableName);
-        deleteUserTable(tableName);
-    }
 
     public void drop(String tableName) throws SQLException {
 
@@ -184,54 +40,6 @@ public class Table {
         connection.commit();
         connection.close();
     }
-    //-----------------------------------------------------------------------
-
-    private void rename() throws SQLException {
-
-        /*
-        TODO
-
-        input: name of range of table to be renamed, new Name
-
-        1) rename table in DB
-        2) rename range
-
-         */
-
-    }
-
-    //-----------------------------------------------------------------------Columns
-    private void addCol() throws SQLException {
-
-    }
-
-    private void dropCol() throws SQLException {
-        /*
-        TODO:
-
-        input: Column name
-
-        1) drop column from DB
-        2) clear content of column in the spreadsheet
-        3) apply range border changes
-        4) changes to the named range??
-
-
-         */
-    }
-
-    private void setDataType() throws SQLException {
-
-    }
-
-    private void setDataFormat() throws SQLException {
-
-    }
-
-    private void setConstraint() throws SQLException {
-
-    }
-
     //-----------------------------------------------------------------------rangeToTable Referencing
     public String checkUserTable(String book, String range) throws SQLException {
 
@@ -283,12 +91,12 @@ public class Table {
     }
 
     // When table is dropped, delete related reference
-    public void deleteUserTable(String table) throws SQLException {
+    public void deleteUserTable(String table,String range) throws SQLException {
 
         connection = DBHandler.instance.getConnection();
         stmt = connection.createStatement();
 
-        String sql = "DELETE FROM userTables WHERE tableName='" + table + "'";
+        String sql = "DELETE FROM userTables WHERE tableName='" + table + "' AND rangeref='"+ range +"'";
 
         int x = stmt.executeUpdate(sql);
         connection.commit();
@@ -685,12 +493,7 @@ public class Table {
             }
         }
         return null;
-
     }
-
-
-
-
 }
 
 

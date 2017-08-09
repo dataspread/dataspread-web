@@ -12,6 +12,8 @@ import org.zkoss.zss.api.Range;
 import org.zkoss.zss.api.Ranges;
 import org.zkoss.zss.api.model.CellStyle;
 import org.zkoss.zss.api.model.Sheet;
+import org.zkoss.zss.api.model.impl.*;
+import org.zkoss.zss.api.model.impl.CellStyleImpl;
 import org.zkoss.zss.app.ui.dlg.DlgCallbackEvent;
 import org.zkoss.zss.app.ui.dlg.DlgCtrlBase;
 import org.zkoss.zss.model.CellRegion;
@@ -44,15 +46,13 @@ public class displayTableCtrl extends DlgCtrlBase {
     private static Spreadsheet sss;
     private AreaRef selection;
     private Sheet sheet;
-    private Range src;
 
+    private Table tableObj = new Table();
 
     private String name;
-    private String rangeRef;
-    private String bookName;
+
 
     private ListModelList<String> tablesList = new ListModelList<String>();
-
 
     public static void show(EventListener<DlgCallbackEvent> callback, Spreadsheet ss) {
 
@@ -64,16 +64,12 @@ public class displayTableCtrl extends DlgCtrlBase {
         return;
     }
 
-
     @Override
     public void doAfterCompose(Window comp) throws Exception {
         super.doAfterCompose(comp);
         tablesBox.setModel(getTablesList());
         selection = sss.getSelection();
         sheet = sss.getSelectedSheet();
-        src = Ranges.range(sheet, selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
-
-        kshkool();
 
     }
 
@@ -82,8 +78,8 @@ public class displayTableCtrl extends DlgCtrlBase {
         Connection connection = DBHandler.instance.getConnection();
         Statement stmt = connection.createStatement();
 
-        String sql = "SELECT table_name FROM information_schema.tables  WHERE TABLE_SCHEMA='public' AND table_name NOT IN ('users', 'usertables', 'books') EXCEPT  " +
-                "SELECT table_name FROM information_schema.tables, public.books WHERE table_name LIKE booktable||'%'";
+        String sql = "SELECT table_name FROM information_schema.tables  WHERE TABLE_SCHEMA='public' AND table_name NOT IN ('users', 'usertables', 'books') AND table_name NOT LIKE '%_idx' " +
+                "EXCEPT SELECT table_name FROM information_schema.tables, public.books WHERE table_name LIKE booktable||'%'";
 
         ResultSet result = stmt.executeQuery(sql);
 
@@ -95,54 +91,32 @@ public class displayTableCtrl extends DlgCtrlBase {
         return tablesList;
     }
 
-    private void getSelectedTable()
-    {
-
-    }
-
-
-    @Listen("onClick = #createButton")
-    public void create() {
+    @Listen("onClick = #okButton")
+    public void display() throws SQLException {
 
         name = tablesBox.getSelectedItem().getLabel();
 
         if (!name.isEmpty()) {
 
-            Table tableObj= new Table();
-            try {
-                int rowCount=selection.getLastRow()-selection.getRow()+1;
-                int colCount=selection.getLastColumn()-selection.getColumn()+1;
+            Connection connection = DBHandler.instance.getConnection();
+            DBContext dbContext = new DBContext(connection);
 
-                ArrayList<ArrayList<String>> set=tableObj.getDisplayTable(name,colCount ,rowCount);
+            CellRegion region = new CellRegion(selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
+            Hybrid_Model model = (Hybrid_Model) sheet.getInternalSheet().getDataModel();
 
-//                if(!set.wasNull())
-//                {
-                colCount=set.get(0).size();
-                rowCount=set.size();
+            CellRegion range=model.loadDBTable(dbContext, Model.ModelType.TOM_Model, name, region);
 
-                    for (int row = 0 ; row < rowCount ; row++ ){
+            String rangeRef = Ranges.getAreaRefString(sheet, range.getRow(), range.getColumn(), range.getLastRow(), range.getLastColumn());
 
-                        for (int column  = 0 ; column < colCount ; column++){
+            tableObj.insertUserTable(name,sheet.getBook().getBookName(),rangeRef);
 
-                        Range range = Ranges.range(sheet, row+selection.getRow(), column+selection.getColumn());
-                        range.setAutoRefresh(false);
-                        range.getCellData().setEditText(set.get(row).get(column).toString());
-                        }
-                    }
-                    Range x=Ranges.range(sheet, selection.getRow(), selection.getColumn(), selection.getRow()+rowCount-1, selection.getColumn()+colCount-1);
-                    x.notifyChange();
-                    CellOperationUtil.applyBorder(x, Range.ApplyBorderType.FULL, CellStyle.BorderType.THICK, "#000000");
-                    CellOperationUtil.applyBackColor(x, "#c5f0e7");
+            connection.commit();
+            sheet.getInternalSheet().clearCache(region);
+            sss.updateCell(selection.getColumn(), selection.getRow(), selection.getLastColumn(), selection.getLastRow());
 
-//                }
-                String rangeRef = Ranges.getAreaRefString(sheet, selection.getRow(), selection.getColumn(), selection.getRow()+rowCount-1, selection.getColumn()+colCount-1);
-
-                tableObj.insertUserTable(name,sheet.getBook().getBookName(),rangeRef);
-
-
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+            Range src=Ranges.range(sheet,rangeRef);
+            CellOperationUtil.applyBorder(src, Range.ApplyBorderType.FULL, CellStyle.BorderType.THICK, "#000000");
+            CellOperationUtil.applyBackColor(src, "#c5f0e7");
 
         } else {
             Messagebox.show("Table Name is Required", "Table Name",
@@ -150,8 +124,6 @@ public class displayTableCtrl extends DlgCtrlBase {
 
         }
         displayTableDlg.detach();
-
-
     }
 
     @Listen("onClick = #cancelButton")
@@ -159,129 +131,4 @@ public class displayTableCtrl extends DlgCtrlBase {
 
         displayTableDlg.detach();
     }
-
-
-
-
-
-    private void kshkool() throws SQLException {
-
-
-//        for (int column  = 0 ; column < 5 ; column++){
-//            for (int row = 0 ; row < 6 ; row++ ){
-//                Range range = Ranges.range(sheet, row, column);
-//                range.setAutoRefresh(false);
-//                range.getCellData().setEditText(row+", "+column);
-//                CellOperationUtil.applyFontColor(range, "#0099FF");
-//                CellOperationUtil.applyAlignment(range, CellStyle.Alignment.CENTER);
-//            }
-//        }
-//        Ranges.range(sss.getSelectedSheet(), 0, 0, 5, 5).notifyChange();
-
-
-
-        //        selection.
-//
-//        Connection connection = DBHandler.instance.getConnection();
-//        DBContext dbContext = new DBContext(connection);
-//        CellRegion cr= new CellRegion(selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
-//
-//        cr.
-//
-//        Collection<AbstractCellAdv> cells=sheet.getInternalSheet().getDataModel().getCells(dbContext, cr);
-
-
-
-
-        Connection connection = DBHandler.instance.getConnection();
-        DBContext dbContext = new DBContext(connection);
-
-        CellRegion region= new CellRegion(selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
-        Hybrid_Model model=(Hybrid_Model)sheet.getInternalSheet().getDataModel();
-//        model.getCells(dbContext, region);
-
-//        model.getCells(dbContext, region);
-
-        model.loadDBTable(dbContext, Model.ModelType.TOM_Model,"mytable",region);
-
-        Ranges.range(sss.getSelectedSheet()).notifyChange();
-
-////        sheet.notify();
-//
-//        connection.commit();
-//connection.close();
-//        sheet.getInternalSheet().getDataModel().getCells(dbContext,region);
-
-
-//        sheet.getInternalSheet().getDataModel().getCells()
-
-
-
-//        Connection connection = DBHandler.instance.getConnection();
-//        Statement stmt = connection.createStatement();
-//
-//        String tableName=tablesBox.getSelectedItem().toString();
-//        String sql = "SELECT * FROM "+tableName;
-
-
-
-//        for (int column  = 0 ; column < 5 ; column++){
-//            for (int row = 0 ; row < 6 ; row++ ){
-//                Range range = Ranges.range(sheet, row, column);
-//                range.setAutoRefresh(false);
-//                range.getCellData().setEditText(row+", "+column);
-//                CellOperationUtil.applyFontColor(range, "#0099FF");
-//                CellOperationUtil.applyAlignment(range, CellStyle.Alignment.CENTER);
-//            }
-//        }
-//        Ranges.range(sss.getSelectedSheet(), 0, 0, 5, 5).notifyChange();
-
-
-//        Collection<AbstractCellAdv> cells = new ArrayList<>();
-//
-//        SSheet ssheet= sss.getSelectedSSheet();
-//        SCell scell=ssheet.getCell(3,10);
-//        scell.setValueParse("1991",connection,false);
-//
-//
-//        DBContext dbContext = new DBContext(connection);
-////        CellRegion cr= new CellRegion(selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
-//
-//
-//        AbstractCellAdv acell= (AbstractCellAdv) scell;
-//        cells.add(acell);
-//
-//
-//
-//        //        Collection<AbstractCellAdv> cells=sheet.getInternalSheet().getDataModel().getCells(dbContext, cr);
-//
-//
-//
-//        sheet.getInternalSheet().getDataModel().updateCells(dbContext, cells);
-//
-//
-//
-////        String tableName=tablesBox.getSelectedItem().toString();
-//
-//
-//
-//
-//
-////        String sql = "SELECT * FROM "+tableName;
-//
-////        ResultSet result = stmt.executeQuery(sql);
-////
-//        while (result.next()) {
-//
-//            AbstractCellAdv cell = new CellImpl(1,1);
-//            cell.setValueParse("hello",dbContext.getConnection(),false);
-//        }
-//        connection.commit();
-//        connection.close();
-//
-//        sheet.notify();
-
-
-    }
-
 }
