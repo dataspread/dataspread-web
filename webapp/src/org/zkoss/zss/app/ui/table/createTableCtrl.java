@@ -106,10 +106,14 @@ public class createTableCtrl extends DlgCtrlBase {
                                 tableObj.insertUserTable(name,sheet.getBook().getBookName(),rangeRef);
 
                                 Range src=Ranges.range(sheet,rangeRef);
-                                CellOperationUtil.applyBorder(src, Range.ApplyBorderType.FULL, CellStyle.BorderType.THICK, "#000000");
-                                CellOperationUtil.applyBackColor(src, "#c5f0e7");
+
 
                                 connection.commit();
+                                sheet.getInternalSheet().clearCache(region);
+                                sss.updateCell(selection.getColumn(), selection.getRow(), selection.getLastColumn(), selection.getLastRow());
+
+                                CellOperationUtil.applyBorder(src, Range.ApplyBorderType.FULL, CellStyle.BorderType.THICK, "#000000");
+                                CellOperationUtil.applyBackColor(src, "#c5f0e7");
                             }
 
 

@@ -104,15 +104,35 @@ public class Hybrid_Model extends RCV_Model {
             model = Model.CreateModel(context, modelType, newTableName);
             CellRegion tableHeaderRow = new CellRegion(range.getRow(), range.getColumn(), range.getRow(), range.getLastColumn());
             List<AbstractCellAdv> tableHeaderCells = getCells(context, tableHeaderRow).stream().collect(Collectors.toList());
+
+            SortedMap<Integer, AbstractCellAdv> _row = new TreeMap<>();
+
+            for(int i = 0; i<tableHeaderCells.size(); i++)
+            {
+                _row.put(tableHeaderCells.get(i).getColumnIndex(), tableHeaderCells.get(i));
+            }
+
             ArrayList<String> columnsNames = new ArrayList<>();
 
-            for (int i = 0; i < tableHeaderCells.size(); i++) {
-                String colName = tableHeaderCells.get(i).getStringValue();
+            for (int i = 0; i < _row.size(); i++) {
+                String colName = _row.get(_row.firstKey()+i).getStringValue();
                 if (colName == "")
                     colName = "column_" + (i + 1);
 
                 columnsNames.add(colName);
             }
+
+
+
+//            ArrayList<String> columnsNames = new ArrayList<>();
+//
+//            for (int i = 0; i < tableHeaderCells.size(); i++) {
+//                String colName = tableHeaderCells.get(i).getStringValue();
+//                if (colName == "")
+//                    colName = "column_" + (i + 1);
+//
+//                columnsNames.add(colName);
+//            }
 
             TOM_Model tomModel = (TOM_Model) model;
             tomModel.initialize(context, range);
