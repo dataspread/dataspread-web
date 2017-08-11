@@ -2,22 +2,15 @@ package org.zkoss.zss.model.impl;
 
 import org.model.BlockStore;
 import org.model.DBContext;
-
-import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import org.zkoss.poi.hwpf.usermodel.Range;
-import org.zkoss.poi.ss.usermodel.CellStyle;
 import org.zkoss.zss.model.CellRegion;
-
 
 public class Hybrid_Model extends RCV_Model {
     BlockStore bs;
     private int block_row = 100000;
-
     //Tables on the sheet
 
     private Logger logger = Logger.getLogger(Hybrid_Model.class.getName());
@@ -30,6 +23,7 @@ public class Hybrid_Model extends RCV_Model {
         super(context, tableName);
         loadMetaData(context);
     }
+
 
     private void loadMetaData(DBContext context) {
         tableModels = new ArrayList<>();
@@ -216,7 +210,8 @@ public class Hybrid_Model extends RCV_Model {
 
     @Override
     public void insertRows(DBContext context, int row, int count) {
-        CellRegion rowRange = new CellRegion(row, -1);
+        //TODO: Max Values ...
+        CellRegion rowRange = new CellRegion(row, 1, row, Integer.MAX_VALUE);
         for (int i = 0; i < metaDataBlock.modelEntryList.size(); ++i) {
             CellRegion tableRange = metaDataBlock.modelEntryList.get(i).range;
             Model tableModel = tableModels.get(i);
@@ -237,7 +232,7 @@ public class Hybrid_Model extends RCV_Model {
 
     @Override
     public void insertCols(DBContext context, int col, int count) {
-        CellRegion colRange = new CellRegion(-1, col);
+        CellRegion colRange = new CellRegion(1, col, Integer.MAX_VALUE, col);
         for (int i = 0; i < metaDataBlock.modelEntryList.size(); ++i) {
             CellRegion tableRange = metaDataBlock.modelEntryList.get(i).range;
             Model tableModel = tableModels.get(i);
@@ -322,7 +317,6 @@ public class Hybrid_Model extends RCV_Model {
         Set<AbstractCellAdv> pendingCells = new HashSet<>(cells);
         for (int i = 0; i < metaDataBlock.modelEntryList.size(); ++i) {
             CellRegion tableRange = metaDataBlock.modelEntryList.get(i).range;
-
             List<AbstractCellAdv> cellsInRange = pendingCells
                     .stream()
                     .filter(c -> tableRange.contains(c.getRowIndex(), c.getColumnIndex()))
@@ -331,9 +325,8 @@ public class Hybrid_Model extends RCV_Model {
 
             // Translate
             cellsInRange.stream()
-                    .peek(e -> e.shift(-tableRange.getRow(), -tableRange.getColumn()));
+                    .peek(e->e.shift(-tableRange.getRow(), -tableRange.getColumn()));
             tableModels.get(i).updateCells(context, cellsInRange);
-
         }
         super.updateCells(context, pendingCells);
     }
@@ -359,7 +352,7 @@ public class Hybrid_Model extends RCV_Model {
                     .filter(c -> tableRange.contains(c.getRowIndex(), c.getColumnIndex()))
                     .collect(Collectors.toList());
             tableModels.get(i).deleteCells(context, cellsInRange.stream()
-                    .peek(e -> e.shift(-tableRange.getRow(), -tableRange.getLastColumn()))
+                    .peek(e->e.shift(-tableRange.getRow(), -tableRange.getLastColumn()))
                     .collect(Collectors.toList()));
             pendingCells.removeAll(cellsInRange);
         }
@@ -382,16 +375,16 @@ public class Hybrid_Model extends RCV_Model {
                                                 -metaDataBlock.modelEntryList.get(e).range.getRow(),
                                                 -metaDataBlock.modelEntryList.get(e).range.getColumn()))
                                 .stream()
-                                .peek(c -> c.shift(metaDataBlock.modelEntryList.get(e).range.getRow(),
+                                .peek(c->c.shift(metaDataBlock.modelEntryList.get(e).range.getRow(),
                                         metaDataBlock.modelEntryList.get(e).range.getColumn()))
                                 .collect(Collectors.toList())));
 
         boolean encompass = false;
-        for (MetaDataBlock.ModelEntry m : metaDataBlock.modelEntryList)
+        for (MetaDataBlock.ModelEntry m:metaDataBlock.modelEntryList)
             if (m.range.contains(range))
-                encompass = true;
+                encompass=true;
 
-        if (encompass == false) {
+        if (encompass==false) {
             //  System.out.println("RCV executed ");
             cells.addAll(super.getCells(context, range));
         }
@@ -413,18 +406,16 @@ public class Hybrid_Model extends RCV_Model {
     }
 
     public void deleteModel(DBContext dbContext, CellRegion modelRange) {
-        metaDataBlock.modelEntryList.removeIf(e -> e.range.equals(modelRange) );
+        metaDataBlock.modelEntryList.removeIf(e -> e.range.equals(modelRange));
     }
 
     private static class MetaDataBlock {
         List<ModelEntry> modelEntryList;
         int romTableIdentifier;
-
         MetaDataBlock() {
             modelEntryList = new ArrayList<>();
             romTableIdentifier = 1;
         }
-
         private static class ModelEntry {
             CellRegion range;
             String tableName;

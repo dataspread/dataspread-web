@@ -11,6 +11,7 @@ import org.zkoss.zk.ui.WebApps;
 import org.zkoss.zss.app.BookManager;
 import org.zkoss.zss.app.impl.BookManagerImpl;
 import org.zkoss.zss.app.repository.BookRepositoryFactory;
+import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
 public class ServletContextListenerImpl implements ServletContextListener, Serializable {
 	private static final long serialVersionUID = 7123078891875657326L;
@@ -32,5 +33,7 @@ public class ServletContextListenerImpl implements ServletContextListener, Seria
 				logger.error("Saving all files causes error: " + e.getMessage());
 			}
 		}
+		//TODO save unfinished tasks
+		FormulaAsyncScheduler.getScheduler().shutdown();
 	}
 }

@@ -132,7 +132,9 @@ public class EngineFactory {
 			_logger.error(e.getMessage(), e);
 			dependencyTableClazz = null;
 		}
-		return new DependencyTableRtreeImpl();//DependencyTableImpl();
+		//zekun.fan@gmail.com
+		//Aug.2 Disabled RtreeImpl
+		return new DependencyTableImpl();//DependencyTableImpl();
 	}
 	
 	static FormatEngine _formatEngine;

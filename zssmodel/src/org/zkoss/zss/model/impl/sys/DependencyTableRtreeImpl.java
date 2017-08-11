@@ -165,12 +165,12 @@ public class DependencyTableRtreeImpl extends DependencyTableAdv {
             allDependents.add(entry.value());
         }
 
-        recursivelyGetBackwardDependents(allDependents,allDependents);
+        recursivelyGetBackwardDependents(new ArrayList<Ref>(allDependents) ,allDependents);
         return allDependents;
 
     }
 
-    private Set<Ref> recursivelyGetBackwardDependents(Set<Ref> search, Set<Ref> all) {
+    private Set<Ref> recursivelyGetBackwardDependents(Collection<Ref> search, Set<Ref> all) {
         Set<Ref> dependents = new LinkedHashSet<Ref>();
         for(Ref directDependent : search){
             Rectangle region = Geometries.rectangle(
