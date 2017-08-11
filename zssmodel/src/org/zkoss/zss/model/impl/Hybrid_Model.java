@@ -79,14 +79,12 @@ public class Hybrid_Model extends RCV_Model {
     //Construct rom_table on the selected range get from getRomtables
     // Convert to ROM or COM.
 
-    public boolean convert(DBContext context, ModelType modelType, CellRegion range, String name) throws SQLException {
+    public boolean convert(DBContext context, ModelType modelType, CellRegion range, String name) {
         //logger.info("Start - Converting HYBRID " + range.toString());
 
         //create a new rom_model or tom_model
         // Need to update to a better way to handle delete tables
 
-
-//        boolean emptyRegion = false;
         String newTableName;
         Model model;
 
@@ -115,18 +113,6 @@ public class Hybrid_Model extends RCV_Model {
 
                 columnsNames.add(colName);
             }
-
-
-
-//            ArrayList<String> columnsNames = new ArrayList<>();
-//
-//            for (int i = 0; i < tableHeaderCells.size(); i++) {
-//                String colName = tableHeaderCells.get(i).getStringValue();
-//                if (colName == "")
-//                    colName = "column_" + (i + 1);
-//
-//                columnsNames.add(colName);
-//            }
 
             TOM_Model tomModel = (TOM_Model) model;
             tomModel.initialize(context, range);
@@ -160,18 +146,12 @@ public class Hybrid_Model extends RCV_Model {
 //                    .map(e -> e.shiftedCell(-range.getRow(), -range.getColumn())) // Translate
                     .collect(Collectors.toList());
 
-//            if (cells.size() == 0) {
-//                emptyRegion = true;
-//                break;
-//            }
             // Do a RCV delete
             deleteCells(context, work_range);
             // Insert data into new table
 //             model.updateCellsCopy(context, cells);
             model.updateCells(context, cells);
         }
-//        if (emptyRegion)
-//            return false;
 
         if (modelType == ModelType.TOM_Model)
             --range.row;
@@ -191,7 +171,7 @@ public class Hybrid_Model extends RCV_Model {
         return true;
     }
 
-    public CellRegion loadDBTable(DBContext context, ModelType modelType, String tableName, CellRegion range) throws SQLException {
+    public CellRegion loadDBTable(DBContext context, ModelType modelType, String tableName, CellRegion range){
 
         TOM_Model model = (TOM_Model) Model.CreateModel(context, modelType, tableName);
         range = model.preload(context, range);
