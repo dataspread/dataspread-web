@@ -1,55 +1,69 @@
 package org.zkoss.zss.model.impl;
 
-import com.opencsv.CSVReader;
-import org.apache.tomcat.dbcp.dbcp2.DelegatingConnection;
 import org.model.DBContext;
-import org.model.DBHandler;
-import org.postgresql.copy.CopyIn;
-import org.postgresql.copy.CopyManager;
-import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.SCell;
+import org.zkoss.zss.model.SBorder;
+import org.zkoss.zss.model.SFont;
+import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.range.impl.StyleUtil;
 
 import java.io.*;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
 
+
 public class TOM_Model extends Model {
 
+    // Assume table is already present
     private Logger logger = Logger.getLogger(TOM_Model.class.getName());
     private PosMapping rowMapping;
     private PosMapping colMapping;
-    public SortedMap<Integer, String> cols;
+
+    private SortedMap<Integer, String> columnNames;
     private String pkColumnName;
     private String pkColumnType;
-    private int startingRow;
-    private int startingCol;
+
 
     //Create or load TOM_model.
-    TOM_Model(DBContext context, String tableName) {
+    TOM_Model(DBContext context, SSheet sheet, String tableName) {
+        this.sheet = sheet;
         rowMapping = new BTree(context, tableName + "_row_idx");
         colMapping = new BTree(context, tableName + "_col_idx");
         this.tableName = tableName;
-        createSchema(context);
-        cols = new TreeMap<>();
-
-//        ArrayList<String> columns = tableColumns(context);
-//        // Integer ids[] = colMapping.createIDs(context, 0, columns.size());
-//
-//        Integer ids[] = colMapping.getIDs(context, 0, columns.size());
-//        for (int i = 0; i < ids.length; i++) {
-//            cols.put(ids[i], columns.get(i));
-//        }
+        sheet.setPassword("000000000"); // Locks the sheet
+        // Get columns info
+        loadColumnInfo(context);
+        getDBPkColumnName(context);
     }
 
+    private void loadColumnInfo(DBContext context) {
+        columnNames = new TreeMap<>();
+        String tableCols = (new StringBuffer())
+                .append("SELECT * FROM ")
+                .append(tableName)
+                .append(" WHERE false")
+                .toString();
+
+        try (Statement stmt = context.getConnection().createStatement()) {
+            ResultSet rs = stmt.executeQuery(tableCols.toString());
+            int colCount = rs.getMetaData().getColumnCount();
+            Integer ids[] = colMapping.getIDs(context, 0, colCount);
+
+            for (int i = 0; i < colCount; i++)
+                columnNames.put(ids[i], rs.getMetaData().getColumnName(i+1));
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Make this as a static and get all info to create a table.
     private void createSchema(DBContext context) {
         String createTable = (new StringBuffer())
                 .append("CREATE TABLE IF NOT EXISTS ")
                 .append(tableName)
                 .append("(row INT PRIMARY KEY)")
-//                .append(" (rowNo SERIAL PRIMARY KEY)")
-//                .append(" ()")
                 .toString();
 
         try (Statement stmt = context.getConnection().createStatement()) {
@@ -61,94 +75,42 @@ public class TOM_Model extends Model {
 
     @Override
     public void dropSchema(DBContext context) {
-        String dropTable = (new StringBuffer())
-                .append("DROP TABLE ")
-                .append(tableName)
-                .toString();
-        try (Statement stmt = context.getConnection().createStatement()) {
-            stmt.execute(dropTable);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        // Since the table id not with a sheet, it shoud not be dropped */
+        // TODO: decide the scope of row/col mapping
         rowMapping.dropSchema(context);
         colMapping.dropSchema(context);
     }
 
-    public void initialize(DBContext context, CellRegion range) {
-        startingRow = range.getRow();
-        startingCol = range.getColumn();
-        getDBPkColumnName(context);
-    }
-
-    public void setCols(ArrayList<String> columnsNames) {
-        for (int i = 0; i < columnsNames.size(); i++) {
-            cols.put(i + 1, columnsNames.get(i));
-        }
-    }
 
     public CellRegion preload(DBContext context, CellRegion range) {
-
-        startingRow = range.getRow();
-        startingCol = range.getColumn();
-
-        ArrayList<String> columns = tableColumns(context);
-        if (columns.contains("row"))
-            columns.remove("row");
-
-        Integer ids[] = colMapping.getIDs(context, 0, columns.size());
-        setCols(columns);
-
+        /* TODO: get dimensions based on mappings */
         /* Batch processing */
-        ArrayList<Integer> PKvalues = PKvalues(context);
+        ArrayList<Integer> PKvalues = getPKValues(context);
         Integer ids2[] = rowMapping.createDBIDs(context, 0, PKvalues);
 
-        CellRegion newRange = new CellRegion(range.getRow(), range.getColumn(), range.getRow() + ids2.length, range.getColumn() + ids.length - 1);
+        CellRegion tableSizedRange = new CellRegion(range.getRow(), range.getColumn(),
+                range.getRow() + ids2.length, range.getColumn() + columnNames.size() - 1);
 
-        if (range.contains(newRange)) {
-            return newRange;
+        if (range.contains(tableSizedRange)) {
+            return tableSizedRange;
         } else {
 
-//            CellRegion returnRange=range.getOverlap(newRange);
+//            CellRegion returnRange=range.getOverlap(tableSizedRange);
             int lastCol = range.getLastColumn();
             int lastRow = range.getLastRow();
 
-            if (range.getLastColumn() >= newRange.getLastColumn())
-                lastCol = newRange.getLastColumn();
+            if (range.getLastColumn() >= tableSizedRange.getLastColumn())
+                lastCol = tableSizedRange.getLastColumn();
 
-            if (range.getLastRow() >= newRange.getLastRow())
-                lastCol = newRange.getLastRow();
+            if (range.getLastRow() >= tableSizedRange.getLastRow())
+                lastCol = tableSizedRange.getLastRow();
             return new CellRegion(range.getRow(), range.getColumn(), lastRow, lastCol);
         }
 
     }
 
-    public ArrayList<String> tableColumns(DBContext context) {
-        ArrayList<String> columns = new ArrayList<>();
-
-        String tableCols = (new StringBuffer())
-                .append("SELECT * FROM ")
-                .append(tableName)
-                .append(" WHERE false")
-                .toString();
-
-        try (Statement stmt = context.getConnection().createStatement()) {
-            ResultSet set = stmt.executeQuery(tableCols.toString());
-
-            int colCount = set.getMetaData().getColumnCount();
-
-            for (int i = 0; i < colCount; i++) {
-                columns.add(set.getMetaData().getColumnName(i + 1));
-            }
-
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return columns;
-    }
-
-    public void getDBPkColumnName(DBContext context) {
-
+    private  void getDBPkColumnName(DBContext context) {
+        /* TODO update query */
         String findPK = (new StringBuffer())
                 .append("SELECT column_name FROM information_schema.key_column_usage ")
                 .append("WHERE table_name='")
@@ -157,20 +119,17 @@ public class TOM_Model extends Model {
                 .toString();
 
         try (Statement stmt = context.getConnection().createStatement()) {
-            ResultSet set = stmt.executeQuery(findPK.toString());
-
-            if (set.next()) {
-                pkColumnName = set.getString(1);
+            ResultSet rs = stmt.executeQuery(findPK.toString());
+            if (rs.next()) {
+                pkColumnName = rs.getString(1);
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
     }
 
-    public ArrayList<Integer> PKvalues(DBContext context) {
-
+    private ArrayList<Integer> getPKValues(DBContext context) {
         ArrayList<Integer> PKvalues = new ArrayList<>();
 
         getDBPkColumnName(context);
@@ -197,6 +156,7 @@ public class TOM_Model extends Model {
 
     @Override
     public Collection<AbstractCellAdv> getCells(DBContext context, CellRegion fetchRange) {
+
         // Reduce Range to bounds
         Collection<AbstractCellAdv> cells = new ArrayList<>();
 
@@ -228,23 +188,22 @@ public class TOM_Model extends Model {
         HashMap<Integer, Integer> row_map = new HashMap<>();
         int bound = rowIds.length;
         for (int i1 = 0; i1 < bound; i1++) {
-//            row_map.put(rowIds[i1], fetchRegion.getRow() + i1);
             row_map.put(rowIds[i1], fetchRegion.getRow() + i1 + rowCounter);
         }
 
         HashMap<String, Integer> col_map = new HashMap<>();
         int bound1 = colIds.length;
         for (int i1 = 0; i1 < bound1; i1++) {
-            String column = cols.get(colIds[i1]);
+            String column = columnNames.get(colIds[i1]);
             col_map.put(column, fetchRegion.getColumn() + i1);
         }
 
         /* TODO: select pk ? */
-//        StringBuffer select = new StringBuffer("SELECT " + cols.get(colIds[0]));
+//        StringBuffer select = new StringBuffer("SELECT " + columnNames.get(colIds[0]));
         StringBuffer select = new StringBuffer("SELECT " + pkColumnName);
         for (int i = 0; i < colIds.length; i++)
             select.append(", ")
-                    .append(cols.get(colIds[i]));
+                    .append(columnNames.get(colIds[i]));
 
         select.append(" FROM ")
                 .append(tableName)
@@ -262,11 +221,17 @@ public class TOM_Model extends Model {
 
             if (includeHeader) {
                 for (int i = 0; i < colIds.length; i++) {
-                    int col = col_map.get(cols.get(colIds[i]));
-                    byte[] data = cols.get(colIds[i]).getBytes();
+                    int col = col_map.get(columnNames.get(colIds[i]));
+                    byte[] data = columnNames.get(colIds[i]).getBytes();
                     if (data != null) {
-                        AbstractCellAdv cell = CellImpl.fromBytes(fetchRegion.getRow(), col, data);
+                        AbstractCellAdv cell = CellImpl.fromBytes(sheet, fetchRegion.getRow(), col, data);
                         cells.add(cell);
+
+                        /* Header formatting */
+                        StyleUtil.setBackColor(sheet.getBook(),cell,"#99ccff");
+                        StyleUtil.setFontBoldWeight(sheet.getBook(),cell, SFont.Boldweight.BOLD);
+                        StyleUtil.setBorder(sheet.getBook(),cell, "#000000", SBorder.BorderType.MEDIUM);
+                        cell.getCellStyle().setLocked(true);
                     }
                 }
             }
@@ -275,11 +240,13 @@ public class TOM_Model extends Model {
                 int row = row_map.get(pkVal);
 
                 for (int i = 0; i < colIds.length; i++) {
-                    int col = col_map.get(cols.get(colIds[i]));
+                    int col = col_map.get(columnNames.get(colIds[i]));
                     byte[] data = rs.getBytes(i + 2);
                     if (data != null) {
-                        AbstractCellAdv cell = CellImpl.fromBytes(row, col, data);
+                        AbstractCellAdv cell = CellImpl.fromBytes(sheet, row, col, data);
                         cells.add(cell);
+                        StyleUtil.setBackColor(sheet.getBook(),cell,"#99ccff");
+                        StyleUtil.setBorder(sheet.getBook(),cell, "#000000", SBorder.BorderType.MEDIUM);
                     }
                 }
             }
@@ -309,37 +276,10 @@ public class TOM_Model extends Model {
             columnList.add(cell.getColumnIndex());
         }
 
-        boolean headerModified = false;
-        SortedMap<Integer, AbstractCellAdv> headerRow = null;
-        if (groupedCells.get(startingRow) != null)// if table header is modified
-        {
-            headerRow = groupedCells.get(startingRow);
-            groupedCells.remove(startingRow);
-            headerModified = true;
-            /*
-            remove that row from the groupedCells
-            boolean columnModified=true;
-            at the end of Update.. call function that alter table columns' names
-             */
-        }
-//        if (columnList.last() >= colMapping.size(context))
-//            insertCols(context, colMapping.size(context), columnList.last() - colMapping.size(context) + 1);
-
-
-        Integer[] idsCol = colMapping.getIDs(context, columnList.first() - startingCol,
+        Integer[] idsCol = colMapping.getIDs(context, columnList.first(),
                 columnList.last() - columnList.first() + 1);
 
         if (groupedCells.size() > 0) {
-            Boolean PKincluded = false;
-            int pkIndex = -1;
-            for (int i = 0; i < idsCol.length; i++) {
-                String value = cols.get(idsCol[i]);
-                if (value == pkColumnName) {
-                    PKincluded = true;
-                    pkIndex = i;
-                    break;
-                }
-            }
 //        insert into mytable(id, name, age, color) values (6,'Asmaa','60','brown')
 //        on conflict (id)
 //        do update set (id,name, age, color) = (6,'Asmaa','60','brown')
@@ -348,13 +288,9 @@ public class TOM_Model extends Model {
 
             StringBuffer sqlColumnNames = new StringBuffer("(");
             for (int i = 0; i < idsCol.length; ++i) {
-                sqlColumnNames.append(cols.get(idsCol[i]));
+                sqlColumnNames.append(columnNames.get(idsCol[i]));
                 if (i < idsCol.length - 1)
                     sqlColumnNames.append(",");
-            }
-            if (!PKincluded) {
-                sqlColumnNames.append(",")
-                        .append(pkColumnName);
             }
             sqlColumnNames.append(")");
 
@@ -365,114 +301,31 @@ public class TOM_Model extends Model {
                 if (i < idsCol.length - 1)
                     sqlValuesPlaceHolders.append(",");
             }
-            if (!PKincluded) {
-                sqlValuesPlaceHolders.append(",?");
-            }
             sqlValuesPlaceHolders.append(")");
 
-            StringBuffer update = new StringBuffer("INSERT INTO ")
+            /* Only Update */
+            StringBuffer update = new StringBuffer("UPDATE ")
                     .append(tableName)
-                    .append(sqlColumnNames.toString())
-                    .append(" VALUES ")
-                    .append(sqlValuesPlaceHolders.toString())
-                    .append(" ON CONFLICT(")
-                    .append(pkColumnName)
-                    .append(") DO UPDATE SET ")
+                    .append(" SET ")
                     .append(sqlColumnNames.toString())
                     .append("=")
                     .append(sqlValuesPlaceHolders.toString())
                     .append(" WHERE ")
-                    .append(tableName)
-                    .append("." + pkColumnName)
-                    .append("=?");
-
-//        insert into mytable(name, age, color,id) values (?,?,?,?)
-//        on conflict (id)
-//        do update set (name, age, color,id) = (?,?,?,?)
-//        where mytable.id = ?;
+                    .append(pkColumnName)
+                    .append(" = ?");
 
             try (PreparedStatement stmt = context.getConnection().prepareStatement(update.toString())) {
                 for (Map.Entry<Integer, SortedMap<Integer, AbstractCellAdv>> _row : groupedCells.entrySet()) {
-
-                    int PKvalue = rowMapping.getIDs(context, _row.getKey() - startingRow - 1, 1)[0];
-                    int index2;
-
-                    if (!PKincluded) {
-                        stmt.setInt(idsCol.length + 1, PKvalue); //at insert
-                        stmt.setInt((idsCol.length * 2) + 2, PKvalue); // at update
-                        stmt.setInt((idsCol.length * 2) + 3, PKvalue); // at where
-
-                        index2 = idsCol.length + 2;
-
-                    } else {
-
-                        if (_row.getValue().get(columnList.first() + pkIndex) != null) {
-                            stmt.setInt(pkIndex + 1,
-                                    _row.getValue().get(columnList.first() + pkIndex).getNumberValue().intValue()); //at insert
-                            stmt.setInt(idsCol.length + pkIndex + 1,
-                                    _row.getValue().get(columnList.first() + pkIndex).getNumberValue().intValue()); // at update
-
-                            // Need to update the Keys!! Missing
-
-                        }
-
-                        stmt.setInt((idsCol.length * 2) + 1, PKvalue); //at where
-
-                        index2 = idsCol.length + 1;
-                    }
-
+                    int key = rowMapping.getIDs(context, _row.getKey() - 1, 1)[0];
+                    stmt.setInt(idsCol.length + 1, key); //at insert
                     for (int i = 0; i < idsCol.length; i++) {
-                        if (pkIndex > -1 && i == pkIndex)
-                            continue;
-
-                        if (_row.getValue().get(columnList.first() + i) == null) {
-                            stmt.setNull(i + 1, Types.NULL);
-                            stmt.setNull(i + index2, Types.NULL);
-                        } else {
-//                        String type=_row.getValue().get(columnList.first() + i).getType().name();
-//                        if (type.equalsIgnoreCase("NUMBER")) {
-//                            stmt.setInt(i + 1,
-//                                    _row.getValue().get(columnList.first() + i).getNumberValue().intValue());
-//                            stmt.setInt(i + index2,
-//                                    _row.getValue().get(columnList.first() + i).getNumberValue().intValue());
-//                        }else
-//                        {
-//                            stmt.setString(i + 1,
-//                                    _row.getValue().get(columnList.first() + i).getStringValue());
-//                            stmt.setString(i + index2,
-//                                    _row.getValue().get(columnList.first() + i).getStringValue());
                             stmt.setString(i + 1,
                                     _row.getValue().get(columnList.first() + i).getValue().toString());
-                            stmt.setString(i + index2,
-                                    _row.getValue().get(columnList.first() + i).getValue().toString());
-//                        }
-                        }
                     }
                     stmt.execute();
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
-            }
-        }
-
-        if (headerModified) {
-            for (int i = 0; i < idsCol.length; i++) {
-                if (headerRow.get(columnList.first() + i) != null) {
-                    String sql = (new StringBuffer())
-                            .append("ALTER TABLE " + tableName + " RENAME COLUMN ")
-                            .append(cols.get(idsCol[i]))
-                            .append(" TO ")
-                            .append(headerRow.get(columnList.first() + i).getValue().toString())
-                            .toString();
-
-                    try (Statement stmt = context.getConnection().createStatement()) {
-                        stmt.execute(sql.toString());
-                        // Update the Columns Sorted Set
-                        cols.replace(idsCol[i], cols.get(idsCol[i]), headerRow.get(columnList.first() + i).getValue().toString());
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-                }
             }
         }
     }
@@ -483,7 +336,7 @@ public class TOM_Model extends Model {
         int columns = colMapping.size(context);
         if (rows == 0 || columns == 0)
             return null;
-        else //startingRow+rowMapping.size(context)    without -1 to include the header of the table
+        else //rowMapping.size(context)    without -1 to include the header of the table
             return new CellRegion(0, 0, rowMapping.size(context), colMapping.size(context) - 1);
     }
 
@@ -491,7 +344,6 @@ public class TOM_Model extends Model {
     public void insertRows(DBContext context, int row, int count) {
         rowMapping.createIDs(context, row, count);
     }
-
 
     @Override
     public void insertCols(DBContext context, int col, int count) {
@@ -501,7 +353,7 @@ public class TOM_Model extends Model {
         Integer ids[] = colMapping.createIDs(context, col, count);
         for (int i = 0; i < ids.length; i++) {
             insertColumn.append(" ADD COLUMN ")
-                    .append(cols.get(ids[i]))
+                    .append(columnNames.get(ids[i]))
                     .append(" TEXT");
             if (i < ids.length - 1)
                 insertColumn.append(",");
@@ -637,55 +489,6 @@ public class TOM_Model extends Model {
 
     @Override
     public void importSheet(Reader reader, char delimiter) throws IOException {
-        final int COMMIT_SIZE_BYTES = 8 * 1000;
-        CSVReader csvReader = new CSVReader(reader, delimiter);
-        String[] nextLine;
-        int importedRows = 0;
-        int importedColumns = 0;
-
-        try (Connection connection = DBHandler.instance.getConnection()) {
-            DBContext dbContext = new DBContext(connection);
-            Connection rawConn = ((DelegatingConnection) connection).getInnermostDelegate();
-            CopyManager cm = ((PgConnection) rawConn).getCopyAPI();
-            CopyIn cpIN = null;
-
-            StringBuffer sb = new StringBuffer();
-            while ((nextLine = csvReader.readNext()) != null) {
-                ++importedRows;
-                if (cpIN == null) {
-                    // Use the first line to fix the number of columns
-                    importedColumns = nextLine.length;
-                    insertCols(dbContext, 0, importedColumns);
-                    StringBuffer copyCommand = new StringBuffer("COPY ");
-                    copyCommand.append(tableName);
-                    copyCommand.append("(row");
-                    for (int i = 1; i <= importedColumns; i++)
-                        copyCommand.append(", col_")
-                                .append(i);
-                    copyCommand.append(") FROM STDIN WITH DELIMITER '|'");
-                    cpIN = cm.copyIn(copyCommand.toString());
-                }
-
-                sb.append(importedRows);
-                for (int col = 0; col < importedColumns; col++)
-                    sb.append('|').append(nextLine[col]);
-                sb.append('\n');
-
-                if (sb.length() >= COMMIT_SIZE_BYTES) {
-                    cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
-                    sb = new StringBuffer();
-                }
-            }
-            if (sb.length() > 0)
-                cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
-            cpIN.endCopy();
-            rawConn.commit();
-            insertRows(dbContext, 0, importedRows);
-            connection.commit();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-
+        throw new UnsupportedOperationException();
     }
 }

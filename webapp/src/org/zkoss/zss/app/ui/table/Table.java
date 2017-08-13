@@ -21,6 +21,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Created by Albatool on 4/16/2017.
  */
+/* Mangesh - I think this can be removed
+* Check and delete */
 public class Table {
 
 

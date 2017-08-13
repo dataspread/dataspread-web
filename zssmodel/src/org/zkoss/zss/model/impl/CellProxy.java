@@ -277,4 +277,10 @@ class CellProxy extends AbstractCellAdv {
 		_rowIdx += rowShift;
 		_columnIdx += colShift;
 	}
+
+	@Override
+	public void translate(int rowShift, int colShift) {
+			this._rowIdx += rowShift;
+			this._columnIdx += colShift;
+	}
 }

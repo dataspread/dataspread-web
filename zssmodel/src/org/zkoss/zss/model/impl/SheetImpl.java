@@ -342,7 +342,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	public void setDataModel(String model) {
 		try (Connection connection = DBHandler.instance.getConnection()) {
 			DBContext dbContext = new DBContext(connection);
-			dataModel = Model.CreateModel(dbContext, Model.ModelType.HYBRID_Model, model);
+			dataModel = Model.CreateModel(dbContext, this, Model.ModelType.HYBRID_Model, model);
 			connection.commit();
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -2164,7 +2164,7 @@ public class SheetImpl extends AbstractSheetAdv {
 
     @Override
     public void createModel(DBContext dbContext, String modelName) {
-		dataModel = Model.CreateModel(dbContext, Model.ModelType.HYBRID_Model, modelName);
+		dataModel = Model.CreateModel(dbContext, this, Model.ModelType.HYBRID_Model, modelName);
 	}
 
 	@Override

@@ -12,8 +12,6 @@ import org.zkoss.zss.api.Range;
 import org.zkoss.zss.api.Ranges;
 import org.zkoss.zss.api.model.CellStyle;
 import org.zkoss.zss.api.model.Sheet;
-import org.zkoss.zss.api.model.impl.*;
-import org.zkoss.zss.api.model.impl.CellStyleImpl;
 import org.zkoss.zss.app.ui.dlg.DlgCallbackEvent;
 import org.zkoss.zss.app.ui.dlg.DlgCtrlBase;
 import org.zkoss.zss.model.CellRegion;
@@ -25,7 +23,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.Map;
 
 /**
@@ -47,9 +44,7 @@ public class displayTableCtrl extends DlgCtrlBase {
     private AreaRef selection;
     private Sheet sheet;
 
-    private Table tableObj = new Table();
-
-    private String name;
+    //private Table tableObj = new Table();
 
 
     private ListModelList<String> tablesList = new ListModelList<String>();
@@ -93,31 +88,30 @@ public class displayTableCtrl extends DlgCtrlBase {
 
     @Listen("onClick = #okButton")
     public void display() throws SQLException {
+        String tableName =  tablesBox.getSelectedItem().getLabel();
+        if (tableName!=null && !tableName.isEmpty()) {
+            try(Connection connection = DBHandler.instance.getConnection())
+            {
+                DBContext dbContext = new DBContext(connection);
+                CellRegion region = new CellRegion(selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
+                // Make sure the sheet is saved
+                sheet.getBook().getInternalBook().checkDBSchema();
+                Hybrid_Model model = (Hybrid_Model) sheet.getInternalSheet().getDataModel();
 
-        name = tablesBox.getSelectedItem().getLabel();
 
-        if (!name.isEmpty()) {
+                CellRegion range=model.linkTable(dbContext, tableName, region);
+                String rangeRef = Ranges.getAreaRefString(sheet, range.getRow(), range.getColumn(), range.getLastRow(), range.getLastColumn());
+                //tableObj.insertUserTable(tableName,sheet.getBook().getBookName(),rangeRef);
 
-            Connection connection = DBHandler.instance.getConnection();
-            DBContext dbContext = new DBContext(connection);
+                connection.commit();
 
-            CellRegion region = new CellRegion(selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
-            Hybrid_Model model = (Hybrid_Model) sheet.getInternalSheet().getDataModel();
+                sheet.getInternalSheet().clearCache(region);
+                sss.updateCell(selection.getColumn(), selection.getRow(), selection.getLastColumn(), selection.getLastRow());
 
-            CellRegion range=model.loadDBTable(dbContext, Model.ModelType.TOM_Model, name, region);
-
-            String rangeRef = Ranges.getAreaRefString(sheet, range.getRow(), range.getColumn(), range.getLastRow(), range.getLastColumn());
-
-            tableObj.insertUserTable(name,sheet.getBook().getBookName(),rangeRef);
-
-            connection.commit();
-            sheet.getInternalSheet().clearCache(region);
-            sss.updateCell(selection.getColumn(), selection.getRow(), selection.getLastColumn(), selection.getLastRow());
-
-            Range src=Ranges.range(sheet,rangeRef);
-            CellOperationUtil.applyBorder(src, Range.ApplyBorderType.FULL, CellStyle.BorderType.THICK, "#000000");
-            CellOperationUtil.applyBackColor(src, "#c5f0e7");
-
+//                Range src=Ranges.range(sheet,rangeRef);
+//                CellOperationUtil.applyBorder(src, Range.ApplyBorderType.FULL, CellStyle.BorderType.THICK, "#000000");
+//                CellOperationUtil.applyBackColor(src, "#c5f0e7");
+            }
         } else {
             Messagebox.show("Table Name is Required", "Table Name",
                     Messagebox.OK, Messagebox.ERROR);
