@@ -1,5 +1,7 @@
 package org.zkoss.zss.app.ui.table;
 
+import org.model.DBContext;
+import org.model.DBHandler;
 import org.zkoss.zk.ui.Executions;
 import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zk.ui.select.annotation.Listen;
@@ -12,11 +14,15 @@ import org.zkoss.zss.api.model.CellStyle;
 import org.zkoss.zss.api.model.Sheet;
 import org.zkoss.zss.app.ui.dlg.DlgCallbackEvent;
 import org.zkoss.zss.app.ui.dlg.DlgCtrlBase;
+import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.impl.Hybrid_Model;
+import org.zkoss.zss.model.impl.Model;
 import org.zkoss.zss.ui.Spreadsheet;
 import org.zkoss.zul.Messagebox;
 import org.zkoss.zul.Textbox;
 import org.zkoss.zul.Window;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +46,6 @@ public class createTableCtrl extends DlgCtrlBase {
     private static Spreadsheet sss;
     private AreaRef selection;
     private Sheet sheet;
-    private Range src;
 
     private Table tableObj = new Table();
 
@@ -64,7 +69,6 @@ public class createTableCtrl extends DlgCtrlBase {
         super.doAfterCompose(comp);
         selection = sss.getSelection();
         sheet = sss.getSelectedSheet();
-        src = Ranges.range(sheet, selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
 
         bookName=sss.getBook().getBookName();
         rangeRef = Ranges.getAreaRefString(sheet, selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
@@ -76,49 +80,30 @@ public class createTableCtrl extends DlgCtrlBase {
         boolean created=false;
         name = tableName.getValue();
         try {
-            boolean areaOK=tableObj.checkArea(sss);
-            if(areaOK)
+            if (name.isEmpty()) {
+                Messagebox.show("Table Name is Required", "Table Name",
+                        Messagebox.OK, Messagebox.ERROR);
+                return;
+            }
+
+            CellRegion region = new CellRegion(selection.getRow(), selection.getColumn(),
+                    selection.getLastRow(), selection.getLastColumn());
+            Hybrid_Model model = (Hybrid_Model) sheet.getInternalSheet().getDataModel();
+            if (model.checkOverap(region))
             {
-                boolean checkOverlap= tableObj.checkOverlap(sss);
-                if (!checkOverlap)
-                {
-                    if (!name.isEmpty()) {
-
-                        // Check if table name exists already
-                        String checkedTable = tableObj.checkUserTable(bookName,rangeRef);
-
-                        if (checkedTable == null) {
-                            created=tableObj.createTable(sss, name);
-                            CellOperationUtil.applyBorder(src, Range.ApplyBorderType.FULL, CellStyle.BorderType.THICK, "#000000");
-                            CellOperationUtil.applyBackColor(src, "#deecef");
-
-                        } else {
-                            Messagebox.show("Table Name already Exists in the Database.", "Create Table",
-                                    Messagebox.OK, Messagebox.ERROR);
-                            createTableDlg.detach();
-                            return;
-                        }
-                    } else {
-                        Messagebox.show("Table Name is Required", "Table Name",
-                                Messagebox.OK, Messagebox.ERROR);
-
-                    }
-
-                }
-                else {
-                    Messagebox.show("Table Range Overlaps with Existing Table.", "Create Table",
-                            Messagebox.OK, Messagebox.ERROR);
-                    createTableDlg.detach();
-                    return;
-                }
-
-            }else {
-                Messagebox.show("Selected Range Cannot be Used.", "Create Table",
+                Messagebox.show("Table Range Overlaps with Existing Table.", "Create Table",
                         Messagebox.OK, Messagebox.ERROR);
                 createTableDlg.detach();
                 return;
             }
 
+            Connection connection = DBHandler.instance.getConnection();
+            DBContext dbContext = new DBContext(connection);
+            created=model.convert(dbContext, Model.ModelType.TOM_Model, region,name);
+            connection.commit();
+            sheet.getInternalSheet().clearCache(region);
+            sss.updateCell(selection.getColumn(), selection.getRow(), selection.getLastColumn(),
+                    selection.getLastRow());
 
 
         } catch (SQLException e) {
@@ -128,7 +113,7 @@ public class createTableCtrl extends DlgCtrlBase {
         createTableDlg.detach();
         if(created)
         {
-            Messagebox.show("Table (" + name + ") was Successfully Created", "Table Creation",
+            Messagebox.show("Table " + name.toUpperCase() + " is Successfully Created", "Table Creation",
                     Messagebox.OK, Messagebox.INFORMATION);
         }
         else

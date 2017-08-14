@@ -183,7 +183,12 @@ public interface SSheet {
 	 * delete columns specified by first and last index 
 	 */
 	void deleteColumn(int columnIdx, int lastColumnIdx);
-	
+
+	/**
+	 * Clear the cache
+	 */
+	public void clearCache(CellRegion cellRegion);
+
 	/**
 	 * @see #insertCell(CellRegion, boolean)
 	 */

@@ -49,7 +49,8 @@ public class SheetProtectionImpl implements SSheetProtection, Serializable {
 	int _bits;
 	
 	protected SheetProtectionImpl() {
-		_bits = SEL_UNLOCKED_CELLS | SEL_LOCKED_CELLS;
+		/* Mangesh - Remove SEL_LOCKED_CELLS */
+		_bits = SEL_UNLOCKED_CELLS;
 	}
 	
 	/**

@@ -8,6 +8,7 @@ import org.postgresql.copy.CopyIn;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.SSheet;
 
 import java.io.*;
 import java.sql.*;
@@ -22,7 +23,8 @@ public class ROM_Model extends Model {
 
 
     //Create or load RCV_model.
-    ROM_Model(DBContext context, String tableName) {
+    ROM_Model(DBContext context, SSheet sheet, String tableName) {
+        this.sheet = sheet;
         rowMapping = new BTree(context, tableName + "_row_idx");
         colMapping = new BTree(context, tableName + "_col_idx");
         this.tableName = tableName;
@@ -319,7 +321,7 @@ public class ROM_Model extends Model {
                     int col = col_map.get(colIds[i]);
                     byte[] data = rs.getBytes(i + 2);
                     if (data!=null) {
-                        AbstractCellAdv cell = CellImpl.fromBytes(row, col, data);
+                        AbstractCellAdv cell = CellImpl.fromBytes(sheet, row, col, data);
                         cells.add(cell);
                     }
                 }

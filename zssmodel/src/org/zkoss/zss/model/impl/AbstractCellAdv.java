@@ -316,5 +316,7 @@ public abstract class AbstractCellAdv implements SCell,Serializable{
 
 	public abstract void shift(int rowShift, int colShift);
 
+	public abstract void translate(int rowShift, int colShift);
+
     public abstract void setSheet(AbstractSheetAdv sheet);
 }

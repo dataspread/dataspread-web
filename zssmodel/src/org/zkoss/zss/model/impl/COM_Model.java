@@ -2,6 +2,7 @@ package org.zkoss.zss.model.impl;
 
 import org.model.DBContext;
 import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.SSheet;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -13,9 +14,10 @@ public class COM_Model extends Model {
     ROM_Model rom_model;
 
     //Create a ROM_model and a new empty btree
-    COM_Model(DBContext context, String tableName) {
+    COM_Model(DBContext context, SSheet sheet, String tableName) {
+        this.sheet = sheet;
         this.tableName = tableName;
-        rom_model = new ROM_Model(context, tableName);
+        rom_model = new ROM_Model(context, sheet, tableName);
     }
 
     @Override
@@ -47,7 +49,7 @@ public class COM_Model extends Model {
     public void updateCells(DBContext context, Collection<AbstractCellAdv> cells) {
         rom_model.updateCells(context,
                 cells.stream()
-                        .map(c ->  CellImpl.fromBytes(c.getColumnIndex(), c.getRowIndex(), c.toBytes()))
+                        .map(c ->  CellImpl.fromBytes(sheet, c.getColumnIndex(), c.getRowIndex(), c.toBytes()))
                         .collect(Collectors.toList()));
     }
 
@@ -60,7 +62,7 @@ public class COM_Model extends Model {
     public void deleteCells(DBContext context, Collection<AbstractCellAdv> cells) {
         rom_model.deleteCells(context,
                 cells.stream()
-                        .map(c -> CellImpl.fromBytes(c.getColumnIndex(), c.getRowIndex(), c.toBytes()))
+                        .map(c -> CellImpl.fromBytes(sheet, c.getColumnIndex(), c.getRowIndex(), c.toBytes()))
                         .collect(Collectors.toList()));
     }
 
@@ -68,7 +70,7 @@ public class COM_Model extends Model {
     public Collection<AbstractCellAdv> getCells(DBContext context, CellRegion fetchRange) {
         return rom_model.getCells(context, transpose(fetchRange))
                 .stream()
-                .map(c -> CellImpl.fromBytes(c.getColumnIndex(), c.getRowIndex(), c.toBytes()))
+                .map(c -> CellImpl.fromBytes(sheet, c.getColumnIndex(), c.getRowIndex(), c.toBytes()))
                 .collect(Collectors.toList());
     }
 
