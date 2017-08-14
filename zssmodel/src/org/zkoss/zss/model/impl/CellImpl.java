@@ -205,7 +205,7 @@ public class CellImpl extends AbstractCellAdv {
 	}
 
 	@Override
-	protected  void evalFormula() {
+	protected synchronized void evalFormula() {
 		//20140731, henrichen: when share the same book, many users might 
 		//populate CellImpl simultaneously; must synchronize it.
 		if(_formulaResultValue != null) return;
@@ -254,7 +254,7 @@ public class CellImpl extends AbstractCellAdv {
 	}
 
 	@Override
-	public CellType getFormulaResultType() {
+	public synchronized CellType getFormulaResultType() {
 		checkType(CellType.FORMULA);
 		evalFormula();
 
@@ -332,7 +332,7 @@ public class CellImpl extends AbstractCellAdv {
 	}
 
 	@Override
-	public  void clearFormulaResultCache() {
+	public synchronized void clearFormulaResultCache() {
 		//ZSS-818: better performance
 		if(_formulaResultValue!=null){
 			//only clear when there is a formula result, or poi will do full cache scan to clean blank.
@@ -359,7 +359,7 @@ public class CellImpl extends AbstractCellAdv {
 	}
 
 	@Override
-	public Object getValue(boolean evaluatedVal) {
+	public synchronized Object getValue(boolean evaluatedVal) {
 		CellValue val = getCellValue();
 		if (evaluatedVal && val!=null && val.getType() == CellType.FORMULA) {
 			evalFormula();
@@ -596,7 +596,7 @@ public class CellImpl extends AbstractCellAdv {
 
 	//ZSS-818
 	//@since 3.7.0
-	public void setFormulaResultValue(ValueEval value) {
+	public synchronized void setFormulaResultValue(ValueEval value) {
 		try {
 			//zekun.fan@gmail.com : no cancelTask, for it is only called after evaluation
 			//FormulaAsyncScheduler.getScheduler().cancelTask(getRef());
@@ -625,7 +625,7 @@ public class CellImpl extends AbstractCellAdv {
 	//ZSS-957
 	//@for test only
 	@Internal
-	public Object getFromulaResultValue() {
+	public synchronized Object getFromulaResultValue() {
 		return _formulaResultValue;
 	}
 
@@ -648,7 +648,7 @@ public class CellImpl extends AbstractCellAdv {
 	}
 
 	//zekun.fan@gmail.com - Added interface to update formula result value
-	public  void updateFormulaResultValue(EvaluationResult result){
+	public synchronized void updateFormulaResultValue(EvaluationResult result){
 		_formulaResultValue.updateByEvaluationResult(result);
 	}
 }

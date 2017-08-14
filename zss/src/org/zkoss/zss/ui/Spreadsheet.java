@@ -2413,9 +2413,12 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 			//ZSS-939
 			final Integer cellAttrVal = (Integer) event.getData("cellAttr");
 			final CellAttribute cellAttr = cellAttrVal == null ? CellAttribute.ALL : CellAttribute.values()[cellAttrVal - 1];
-			FormulaAsyncScheduler.getScheduler().startTransaction();
-			updateCell(sheet, left, top, right, bottom, cellAttr);
-			FormulaAsyncScheduler.getScheduler().endTransaction();
+			try {
+				FormulaAsyncScheduler.getScheduler().startTransaction();
+				updateCell(sheet, left, top, right, bottom, cellAttr);
+			}finally {
+				FormulaAsyncScheduler.getScheduler().endTransaction();
+			}
 			updateUnlockInfo();
 			org.zkoss.zk.ui.event.Events.postEvent(new CellAreaEvent(
 					Events.ON_AFTER_CELL_CHANGE, Spreadsheet.this, new SheetImpl(new SimpleRef<SBook>(sheet.getBook()),new SimpleRef<SSheet>(sheet))

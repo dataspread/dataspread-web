@@ -788,7 +788,10 @@ public class CellFormatHelper {
 	//@since 3.8.0
 	//@Internal
 	public FormatResult getFormatResult() {
-		return _cell == null ? null : _formatEngine.format(_cell, new FormatContext(ZssContext.getCurrent().getLocale()));
+		//zekun.fan@gmail.com - Added to prevent race
+		synchronized (_cell) {
+			return _cell == null ? null : _formatEngine.format(_cell, new FormatContext(ZssContext.getCurrent().getLocale()));
+		}
 	}
 	
 	//ZSS-945

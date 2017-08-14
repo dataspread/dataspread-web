@@ -95,9 +95,10 @@ public class FormulaAsyncUIControllerImpl implements FormulaAsyncUIController {
 
     private static EventListener<AsyncUIUpdateEvent> AsyncUIUpdateEventListener=new EventListener<AsyncUIUpdateEvent>() {
         @Override
-        public void onEvent(AsyncUIUpdateEvent event) throws Exception {
+        public void onEvent(AsyncUIUpdateEvent event){
             Object[] data=(Object[]) event.getData();
             CellRegion region=(CellRegion) data[2];
+            //System.out.printf("AsyncUIUpdateEvent %s\n",region.getReferenceString());
             ((Spreadsheet)data[0]).updateCell((SSheet)data[1],region.column,region.row,region.lastColumn,region.lastRow, SpreadsheetCtrl.CellAttribute.ALL);
         }
     };

@@ -23,7 +23,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by zekun.fan@gmail.com on 7/11/17.
- * Todo maybe: load relief. In addTask, don't expand the area immediately.
  */
 public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
 
@@ -39,8 +38,6 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
         xlock=new ReentrantLock();
         //reload required.
         xid=0;
-        
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> pool.shutdownNow()));
     }
 
     @Override
