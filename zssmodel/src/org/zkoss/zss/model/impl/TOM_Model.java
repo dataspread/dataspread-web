@@ -312,7 +312,7 @@ public class TOM_Model extends Model {
                     .append(sqlValuesPlaceHolders.toString())
                     .append(" WHERE ")
                     .append(pkColumnName)
-                    .append(" = ?");
+                    .append("::numeric::integer = ?");
 
             try (PreparedStatement stmt = context.getConnection().prepareStatement(update.toString())) {
                 for (Map.Entry<Integer, SortedMap<Integer, AbstractCellAdv>> _row : groupedCells.entrySet()) {
@@ -328,6 +328,8 @@ public class TOM_Model extends Model {
                 e.printStackTrace();
             }
         }
+
+        TOM_Mapping.instance.pushUpdates(tableName);
     }
 
     @Override

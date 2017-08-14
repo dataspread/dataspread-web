@@ -55,6 +55,12 @@ public class Hybrid_Model extends RCV_Model {
                     .sequential()
                     .forEach(e -> tableModels.add(
                             Model.CreateModel(context, sheet, e.modelType, e.tableName)));
+            metaDataBlock.modelEntryList.stream().filter(e->e.modelType==ModelType.TOM_Model)
+                    .forEach(e->
+                            TOM_Mapping.instance.addMapping(e.tableName, new RefImpl(sheet.getBook().getId(),
+                                    sheet.getSheetName(), e.range.getRow(),e.range.getColumn(),
+                                    e.range.getLastRow(),  e.range.getLastColumn())));
+
         }
     }
 
@@ -239,6 +245,9 @@ public class Hybrid_Model extends RCV_Model {
 
     public CellRegion linkTable(DBContext context, String tableName, CellRegion range){
         TOM_Model model = (TOM_Model) Model.CreateModel(context, sheet, ModelType.TOM_Model, tableName);
+        TOM_Mapping.instance.addMapping(tableName, new RefImpl(sheet.getBook().getId(),
+                sheet.getSheetName(), range.getRow(),range.getColumn(),
+                range.getLastRow(),  range.getLastColumn()));
         range = model.preload(context, range);
 
         tableModels.add(model);
