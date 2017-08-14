@@ -31,7 +31,7 @@ public class TOM_Model extends Model {
         rowMapping = new BTree(context, tableName + "_row_idx");
         colMapping = new BTree(context, tableName + "_col_idx");
         this.tableName = tableName;
-        sheet.setPassword("000000000"); // Locks the sheet
+        //sheet.setPassword("000000000"); // Locks the sheet
         // Get columns info
         loadColumnInfo(context);
         getDBPkColumnName(context);
@@ -199,15 +199,15 @@ public class TOM_Model extends Model {
         }
 
         /* TODO: select pk ? */
-//        StringBuffer select = new StringBuffer("SELECT " + columnNames.get(colIds[0]));
         StringBuffer select = new StringBuffer("SELECT " + pkColumnName);
         for (int i = 0; i < colIds.length; i++)
             select.append(", ")
                     .append(columnNames.get(colIds[i]));
 
+        /* TODO store strings in pos index */
         select.append(" FROM ")
                 .append(tableName)
-                .append(" WHERE " + pkColumnName + " = ANY (?) ");
+                .append(" WHERE " + pkColumnName + "::numeric::integer = ANY (?) ");
 
 
         try (PreparedStatement stmt = context.getConnection().prepareStatement(select.toString())) {
@@ -236,7 +236,7 @@ public class TOM_Model extends Model {
                 }
             }
             while (rs.next()) {
-                int pkVal = rs.getInt(1); /* TODO why is the first column the PK */
+                int pkVal = rs.getInt(1); /* TODO Change that, first column the PK */
                 int row = row_map.get(pkVal);
 
                 for (int i = 0; i < colIds.length; i++) {

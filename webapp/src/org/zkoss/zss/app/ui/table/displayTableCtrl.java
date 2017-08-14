@@ -99,18 +99,12 @@ public class displayTableCtrl extends DlgCtrlBase {
                 Hybrid_Model model = (Hybrid_Model) sheet.getInternalSheet().getDataModel();
 
 
-                CellRegion range=model.linkTable(dbContext, tableName, region);
-                String rangeRef = Ranges.getAreaRefString(sheet, range.getRow(), range.getColumn(), range.getLastRow(), range.getLastColumn());
-                //tableObj.insertUserTable(tableName,sheet.getBook().getBookName(),rangeRef);
-
+                model.linkTable(dbContext, tableName, region);
                 connection.commit();
 
                 sheet.getInternalSheet().clearCache(region);
                 sss.updateCell(selection.getColumn(), selection.getRow(), selection.getLastColumn(), selection.getLastRow());
 
-//                Range src=Ranges.range(sheet,rangeRef);
-//                CellOperationUtil.applyBorder(src, Range.ApplyBorderType.FULL, CellStyle.BorderType.THICK, "#000000");
-//                CellOperationUtil.applyBackColor(src, "#c5f0e7");
             }
         } else {
             Messagebox.show("Table Name is Required", "Table Name",

@@ -80,71 +80,30 @@ public class createTableCtrl extends DlgCtrlBase {
         boolean created=false;
         name = tableName.getValue();
         try {
-            boolean areaOK=tableObj.checkArea(sss);
-            if(areaOK)
+            if (name.isEmpty()) {
+                Messagebox.show("Table Name is Required", "Table Name",
+                        Messagebox.OK, Messagebox.ERROR);
+                return;
+            }
+
+            CellRegion region = new CellRegion(selection.getRow(), selection.getColumn(),
+                    selection.getLastRow(), selection.getLastColumn());
+            Hybrid_Model model = (Hybrid_Model) sheet.getInternalSheet().getDataModel();
+            if (model.checkOverap(region))
             {
-                String checkOverlap= tableObj.checkOverlap(sss);
-                if (checkOverlap==null)
-                {
-                    if (!name.isEmpty()) {
-
-                        // Check if table name exists already
-                        String checkedTable = tableObj.checkUserTable(bookName,rangeRef);
-
-                        if (checkedTable == null) {
-                            Connection connection = DBHandler.instance.getConnection();
-                            DBContext dbContext = new DBContext(connection);
-
-                            CellRegion region = new CellRegion(selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
-                            Hybrid_Model model = (Hybrid_Model) sheet.getInternalSheet().getDataModel();
-
-                            created=model.convert(dbContext, Model.ModelType.TOM_Model, region,name);
-                            if(created)
-                            {
-                                String rangeRef = Ranges.getAreaRefString(sheet, region.getRow(), region.getColumn(), region.getLastRow(), region.getLastColumn());
-
-                                tableObj.insertUserTable(name,sheet.getBook().getBookName(),rangeRef);
-
-                                Range src=Ranges.range(sheet,rangeRef);
-
-
-                                connection.commit();
-                                sheet.getInternalSheet().clearCache(region);
-                                sss.updateCell(selection.getColumn(), selection.getRow(), selection.getLastColumn(), selection.getLastRow());
-
-                                CellOperationUtil.applyBorder(src, Range.ApplyBorderType.FULL, CellStyle.BorderType.THICK, "#000000");
-                                CellOperationUtil.applyBackColor(src, "#c5f0e7");
-                            }
-
-
-
-                        } else {
-                            Messagebox.show("Table Name already Exists in the Database.", "Create Table",
-                                    Messagebox.OK, Messagebox.ERROR);
-                            createTableDlg.detach();
-                            return;
-                        }
-                    } else {
-                        Messagebox.show("Table Name is Required", "Table Name",
-                                Messagebox.OK, Messagebox.ERROR);
-
-                    }
-
-                }
-                else {
-                    Messagebox.show("Table Range Overlaps with Existing Table.", "Create Table",
-                            Messagebox.OK, Messagebox.ERROR);
-                    createTableDlg.detach();
-                    return;
-                }
-
-            }else {
-                Messagebox.show("Selected Range Cannot be Used.", "Create Table",
+                Messagebox.show("Table Range Overlaps with Existing Table.", "Create Table",
                         Messagebox.OK, Messagebox.ERROR);
                 createTableDlg.detach();
                 return;
             }
 
+            Connection connection = DBHandler.instance.getConnection();
+            DBContext dbContext = new DBContext(connection);
+            created=model.convert(dbContext, Model.ModelType.TOM_Model, region,name);
+            connection.commit();
+            sheet.getInternalSheet().clearCache(region);
+            sss.updateCell(selection.getColumn(), selection.getRow(), selection.getLastColumn(),
+                    selection.getLastRow());
 
 
         } catch (SQLException e) {
