@@ -390,6 +390,29 @@ public class SheetImpl extends AbstractSheetAdv {
         }
 	}
 
+	//zekun.fan@gmail.com
+
+
+	@Override
+	public Collection<SCell> getCells(CellRegion region) {
+		int lc=region.getLastColumn(),lr=region.getLastRow();
+		ArrayList<SCell> result=new ArrayList<>(region.getCellCount());
+		for (int i=region.getRow();i<=lr;++i)
+			for (int j=region.getColumn();j<=lc;++j){
+				//...Don't like creating new temporal objects in a loop
+				//but it seems read-only...
+				CellRegion tmp=new CellRegion(i,j);
+				SCell cell=sheetDataCache.get(tmp);
+				if (cell==null) {
+					//one fail, load all, save future time
+					preFetchCells(region);
+					cell=sheetDataCache.get(tmp);
+				}
+				if (cell!=null)
+					result.add(cell);
+			}
+		return result;
+	}
 
 	@Override
 	public SCell getCell(int rowIdx, int columnIdx) {
