@@ -25,6 +25,6 @@ public interface PosMapping {
 
     String getTableName();
 
-    Integer[] createDBIDs(DBContext context, int row, ArrayList<Integer> pKvals);
+    void insertIDs(DBContext context, int row, ArrayList<Integer> ids);
 }
 

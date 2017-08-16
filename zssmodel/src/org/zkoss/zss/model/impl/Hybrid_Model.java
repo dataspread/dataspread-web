@@ -8,7 +8,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.zkoss.zss.model.CellRegion;
@@ -248,7 +247,8 @@ public class Hybrid_Model extends RCV_Model {
         TOM_Mapping.instance.addMapping(tableName, new RefImpl(sheet.getBook().getId(),
                 sheet.getSheetName(), range.getRow(),range.getColumn(),
                 range.getLastRow(),  range.getLastColumn()));
-        range = model.preload(context, range);
+        model.createOIDIndex(context);
+        range = model.indexOIDs(context, range);
 
         tableModels.add(model);
         MetaDataBlock.ModelEntry modelEntry = new MetaDataBlock.ModelEntry();

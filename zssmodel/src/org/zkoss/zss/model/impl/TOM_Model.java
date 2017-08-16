@@ -11,6 +11,8 @@ import java.io.*;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 public class TOM_Model extends Model {
@@ -21,9 +23,6 @@ public class TOM_Model extends Model {
     private PosMapping colMapping;
 
     private SortedMap<Integer, String> columnNames;
-    private String pkColumnName;
-    private String pkColumnType;
-
 
     //Create or load TOM_model.
     TOM_Model(DBContext context, SSheet sheet, String tableName) {
@@ -34,7 +33,6 @@ public class TOM_Model extends Model {
         //sheet.setPassword("000000000"); // Locks the sheet
         // Get columns info
         loadColumnInfo(context);
-        getDBPkColumnName(context);
     }
 
     private void loadColumnInfo(DBContext context) {
@@ -82,15 +80,16 @@ public class TOM_Model extends Model {
     }
 
 
-    public CellRegion preload(DBContext context, CellRegion range) {
-        /* TODO: get dimensions based on mappings */
+    public CellRegion indexOIDs(DBContext context, CellRegion range) {
         /* Batch processing */
-        ArrayList<Integer> PKvalues = getPKValues(context);
-        Integer ids2[] = rowMapping.createDBIDs(context, 0, PKvalues);
+        ArrayList<Integer> oids = getOIDs(context);
+        rowMapping.insertIDs(context, 0, oids);
 
         CellRegion tableSizedRange = new CellRegion(range.getRow(), range.getColumn(),
-                range.getRow() + ids2.length, range.getColumn() + columnNames.size() - 1);
+                range.getRow() + oids.size(), range.getColumn() + columnNames.size() - 1);
 
+        return range.getOverlap(tableSizedRange);
+    /*
         if (range.contains(tableSizedRange)) {
             return tableSizedRange;
         } else {
@@ -105,53 +104,55 @@ public class TOM_Model extends Model {
             if (range.getLastRow() >= tableSizedRange.getLastRow())
                 lastCol = tableSizedRange.getLastRow();
             return new CellRegion(range.getRow(), range.getColumn(), lastRow, lastCol);
-        }
+        } */
 
     }
 
-    private  void getDBPkColumnName(DBContext context) {
+    protected void createOIDIndex(DBContext context) {
         /* TODO update query */
-        String findPK = (new StringBuffer())
-                .append("SELECT column_name FROM information_schema.key_column_usage ")
-                .append("WHERE table_name='")
+        String addOID = (new StringBuffer())
+                .append("ALTER TABLE ")
                 .append(tableName)
-                .append("' AND constraint_name LIKE '%pkey'")
+                .append(" SET WITH OIDS")
+                .toString();
+
+        String indexOID = (new StringBuffer())
+                .append("CREATE UNIQUE INDEX IF NOT EXISTS ")
+                .append(tableName)
+                .append("_oid_key ON ")
+                .append(tableName)
+                .append(" (oid)")
                 .toString();
 
         try (Statement stmt = context.getConnection().createStatement()) {
-            ResultSet rs = stmt.executeQuery(findPK.toString());
-            if (rs.next()) {
-                pkColumnName = rs.getString(1);
-            }
-
+            stmt.executeUpdate(addOID);
+            stmt.executeUpdate(indexOID);
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    private ArrayList<Integer> getPKValues(DBContext context) {
-        ArrayList<Integer> PKvalues = new ArrayList<>();
-
-        getDBPkColumnName(context);
+    private ArrayList<Integer> getOIDs(DBContext context) {
+        ArrayList<Integer> oids = new ArrayList<>();
 
         String getPKcolVals = (new StringBuffer())
-                .append("SELECT " + pkColumnName)
-                .append(" FROM " + tableName)
-                .append(" ORDER BY " + pkColumnName)
+                .append("SELECT oid FROM ")
+                .append(tableName)
+                .append(" ORDER BY oid") /* TODO allow custom order */
                 .toString();
 
         try (Statement stmt = context.getConnection().createStatement()) {
             ResultSet set = stmt.executeQuery(getPKcolVals);
-            pkColumnType = set.getMetaData().getColumnTypeName(1);
 
             while (set.next()) {
-                PKvalues.add(set.getInt(1));
+                /* TODO update in index */
+                oids.add(set.getInt(1));
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return PKvalues;
+        return oids;
     }
 
     @Override
@@ -198,23 +199,19 @@ public class TOM_Model extends Model {
             col_map.put(column, fetchRegion.getColumn() + i1);
         }
 
-        /* TODO: select pk ? */
-        StringBuffer select = new StringBuffer("SELECT " + pkColumnName);
-        for (int i = 0; i < colIds.length; i++)
-            select.append(", ")
-                    .append(columnNames.get(colIds[i]));
-
-        /* TODO store strings in pos index */
-        select.append(" FROM ")
+        StringBuffer select = new StringBuffer("SELECT oid, ")
+                .append(IntStream.range(0,colIds.length)
+                    .mapToObj(i->columnNames.get(colIds[i]))
+                    .collect(Collectors.joining(",")))
+                .append(" FROM ")
                 .append(tableName)
-                .append(" WHERE " + pkColumnName + "::numeric::integer = ANY (?) ");
+                .append(" WHERE oid = ANY (?) ");
 
 
         try (PreparedStatement stmt = context.getConnection().prepareStatement(select.toString())) {
             // Array inArrayRow = context.getConnection().createArrayOf(pkColumnType, rowIds);
             /* Assume an int array for now */
             Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
-
             stmt.setArray(1, inArrayRow);
 
             ResultSet rs = stmt.executeQuery();
@@ -236,8 +233,8 @@ public class TOM_Model extends Model {
                 }
             }
             while (rs.next()) {
-                int pkVal = rs.getInt(1); /* TODO Change that, first column the PK */
-                int row = row_map.get(pkVal);
+                int oid = rs.getInt(1); /* First column is oid */
+                int row = row_map.get(oid);
 
                 for (int i = 0; i < colIds.length; i++) {
                     int col = col_map.get(columnNames.get(colIds[i]));
@@ -310,9 +307,7 @@ public class TOM_Model extends Model {
                     .append(sqlColumnNames.toString())
                     .append("=")
                     .append(sqlValuesPlaceHolders.toString())
-                    .append(" WHERE ")
-                    .append(pkColumnName)
-                    .append("::numeric::integer = ?");
+                    .append(" WHERE oid = ?");
 
             try (PreparedStatement stmt = context.getConnection().prepareStatement(update.toString())) {
                 for (Map.Entry<Integer, SortedMap<Integer, AbstractCellAdv>> _row : groupedCells.entrySet()) {

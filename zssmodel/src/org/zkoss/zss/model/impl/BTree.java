@@ -1031,17 +1031,14 @@ public class BTree implements PosMapping {
     }
 
     // TODO: Do it in batches. offline if possible.
-    public Integer[] createDBIDs(DBContext context, int pos, ArrayList<Integer> vals) {
-        int count=vals.size();
-        Integer[] ids = new Integer[count];
+    public void insertIDs(DBContext context, int pos, ArrayList<Integer> ids) {
+        int count=ids.size();
         for (int i = 0; i < count; i++) {
             ++metaDataBlock.maxValue;
-            ids[i] = vals.get(i);
-            addByCount(context, pos + i, ids[i], false);
+            addByCount(context, pos + i, ids.get(i), false);
         }
         bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
         bs.flushDirtyBlocks(context);
-        return ids;
     }
 
     private static class MetaDataBlock {

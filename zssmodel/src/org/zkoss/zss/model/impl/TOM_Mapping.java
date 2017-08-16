@@ -30,8 +30,8 @@ public class TOM_Mapping {
     {
         for (Ref reference:tableMapping.get(tableName))
         {
-            AbstractBookAdv book=  (AbstractBookAdv) BookBindings.get(reference.getBookName());
-            SSheet sheet=book.getSheetByName(reference.getSheetName());
+            AbstractBookAdv book =  (AbstractBookAdv) BookBindings.get(reference.getBookName());
+            SSheet sheet = book.getSheetByName(reference.getSheetName());
             CellRegion tableRegion = new CellRegion(reference.getRow(), reference.getColumn(),
                     reference.getLastRow(), reference.getLastColumn());
             sheet.clearCache(tableRegion);
