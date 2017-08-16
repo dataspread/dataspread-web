@@ -540,7 +540,8 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 				cellStyle.setDataFormat(dataFormat);
 			}
 			cellStyle.setWrapText(poiCellStyle.getWrapText());
-			cellStyle.setLocked(poiCellStyle.getLocked());
+			cellStyle.setLocked(false); /* Mangesh Temp workaround */
+			//cellStyle.setLocked(poiCellStyle.getLocked());
 			cellStyle.setAlignment(PoiEnumConversion.toHorizontalAlignment(poiCellStyle.getAlignment()));
 			cellStyle.setVerticalAlignment(PoiEnumConversion.toVerticalAlignment(poiCellStyle.getVerticalAlignment()));
 			cellStyle.setRotation(poiCellStyle.getRotation()); //ZSS-918

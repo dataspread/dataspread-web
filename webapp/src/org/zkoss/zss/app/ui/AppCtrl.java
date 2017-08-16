@@ -49,9 +49,7 @@ import org.zkoss.zss.app.ui.table.Table;
 import org.zkoss.zss.app.ui.table.createTableCtrl;
 import org.zkoss.zss.app.ui.table.displayTableCtrl;
 import org.zkoss.zss.model.*;
-import org.zkoss.zss.model.impl.AbstractCellAdv;
-import org.zkoss.zss.model.impl.Hybrid_Model;
-import org.zkoss.zss.model.impl.Model;
+import org.zkoss.zss.model.impl.*;
 import org.zkoss.zss.ui.*;
 import org.zkoss.zss.ui.Version;
 import org.zkoss.zss.ui.event.Events;
@@ -570,8 +568,15 @@ public class AppCtrl extends CtrlBase<Component> {
             SimpleDateFormat ft =
                     new SimpleDateFormat("yyyyMMdd_hhmmss_S");
 
+         //   Book book = new org.zkoss.zss.api.model.impl.BookImpl("New Book_".concat(ft.format(dNow)));
+         //   book.getInternalBook().createSheet("Sheet1");
+         //   book.getInternalBook().createSheet("Sheet2");
+            /* TODO replace below with above, Some issue with Styles */
             Book book = importer.imports(getClass().getResourceAsStream("/web/zssapp/blank.xlsx"),
                     "New Book_".concat(ft.format(dNow)));
+            ((AbstractBookAdv)book.getInternalBook()).initDefaultCellStyles();
+          //  ((AbstractBookAdv)book).initDefaultCellStyles();
+
             book.setShareScope(EventQueues.APPLICATION);
             setBook(book, null);
         } catch (IOException e) {

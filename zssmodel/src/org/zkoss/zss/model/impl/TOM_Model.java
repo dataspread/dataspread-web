@@ -228,7 +228,7 @@ public class TOM_Model extends Model {
                         StyleUtil.setBackColor(sheet.getBook(),cell,"#99ccff");
                         StyleUtil.setFontBoldWeight(sheet.getBook(),cell, SFont.Boldweight.BOLD);
                         StyleUtil.setBorder(sheet.getBook(),cell, "#000000", SBorder.BorderType.MEDIUM);
-                        cell.getCellStyle().setLocked(true);
+                        StyleUtil.setLocked(sheet.getBook(),cell,true);
                     }
                 }
             }

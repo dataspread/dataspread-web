@@ -106,6 +106,7 @@ public class SheetImpl extends AbstractSheetAdv {
 		this._book = book;
 		this._id = id;
         sheetDataCache = new LruCache<>(CACHE_SIZE);
+		setPassword("000000000");
     }
 	
 	protected void checkOwnership(SPicture picture){
