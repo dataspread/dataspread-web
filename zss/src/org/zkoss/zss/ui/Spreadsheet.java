@@ -64,6 +64,7 @@ import org.zkoss.zss.model.impl.AbstractBookAdv;
 import org.zkoss.zss.model.impl.AbstractSheetAdv;
 import org.zkoss.zss.model.impl.AbstractTableAdv;
 import org.zkoss.zss.model.impl.TableImpl.DummyTable;
+import org.zkoss.zss.model.sys.TransactionManager;
 import org.zkoss.zss.model.sys.format.FormatResult;
 import org.zkoss.zss.model.sys.formula.EvaluationContributorContainer;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
@@ -2414,10 +2415,10 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 			final Integer cellAttrVal = (Integer) event.getData("cellAttr");
 			final CellAttribute cellAttr = cellAttrVal == null ? CellAttribute.ALL : CellAttribute.values()[cellAttrVal - 1];
 			try {
-				FormulaAsyncScheduler.getScheduler().startTransaction();
+				TransactionManager.INSTANCE.startTransaction(null);
 				updateCell(sheet, left, top, right, bottom, cellAttr);
 			}finally {
-				FormulaAsyncScheduler.getScheduler().endTransaction();
+				TransactionManager.INSTANCE.endTransaction(null);
 			}
 			updateUnlockInfo();
 			org.zkoss.zk.ui.event.Events.postEvent(new CellAreaEvent(

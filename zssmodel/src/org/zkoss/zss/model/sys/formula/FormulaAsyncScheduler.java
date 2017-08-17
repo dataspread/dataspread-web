@@ -35,10 +35,6 @@ public abstract class FormulaAsyncScheduler {
     * startTransaction: Increment transaction number on a given object
     */
 
-    public abstract void startTransaction();
-
-    public abstract void endTransaction();
-
     /* addTask: add an async task.
     * 1. If previous task on same target is not yet scheduled, it will be canceled
     * 2. If it's in progress, will block until it's finished and execute
@@ -46,13 +42,13 @@ public abstract class FormulaAsyncScheduler {
     * To prevent the presence of stale value. Ensure serial execution.
     * This also enforces one target one task.
     */
-    public abstract boolean addTask(Ref target);
+    public abstract void addTask(Ref target);
 
     /* cancelTask:
     * 1. If the task is not yet scheduled, it will be canceled, return true
     * 2. If it's in progress, will block until it's finished, return false.
     */
-    public abstract boolean cancelTask(Ref target);
+    public abstract void cancelTask(Ref target);
     /* clear:
      * Clear all unscheduled task. Tasks in progress will finish
      */

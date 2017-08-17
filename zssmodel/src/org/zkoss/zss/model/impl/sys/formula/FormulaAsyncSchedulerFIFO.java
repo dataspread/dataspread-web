@@ -9,6 +9,7 @@ import org.zkoss.zss.model.impl.CellImpl;
 import org.zkoss.zss.model.impl.RefImpl;
 import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.EngineFactory;
+import org.zkoss.zss.model.sys.TransactionManager;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.formula.*;
 
@@ -33,41 +34,29 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
     private ExecutorService expander;
     private HashMap<CellImpl,FormulaAsyncTaskInfo> infos;
     private final int maxThread=4;
-    private ReentrantLock xlock;
-    private int xid;
+
 
     public FormulaAsyncSchedulerFIFO(){
         pool=Executors.newFixedThreadPool(maxThread);
         expander=Executors.newSingleThreadExecutor();
         infos =new HashMap<>();
-        xlock=new ReentrantLock();
-        //reload required.
-        xid=0;
     }
 
     @Override
-    public void startTransaction(){
-        xlock.lock();
-        ++xid;
-    }
-
-    public void endTransaction(){
-        xlock.unlock();
-    }
-
-    @Override
-    public boolean addTask(Ref target){
+    public void addTask(Ref target){
         //new task before last one's end, first cancelIfNotConfirmed as its execution is unordered
         //interrupt the working thread, removed explicit locking inside for preventing deadlock
         //Interrupt MAY CAUSE Problem, but can't be covered here.
-        if (!xlock.isHeldByCurrentThread())
-            return false;
+        if (!TransactionManager.INSTANCE.isInTransaction(null))
+            throw new RuntimeException("addTask not within transaction!");
 
         expander.submit(new Runnable() {
             @Override
             public void run() {
                 SBook book;
                 SSheet sheet;
+                int xid=TransactionManager.INSTANCE.getXid(null);
+
                 book=BookBindings.get(target.getBookName());
                 if (book==null){
                     book=new BookImpl(target.getBookName());
@@ -76,6 +65,7 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
                 sheet=book.getSheetByName(target.getSheetName());
                 if (sheet==null)
                     return;
+
                 Collection<SCell> cells=sheet.getCells(new CellRegion(target.getRow(),target.getColumn(),target.getLastRow(),target.getLastColumn()));
                 cells.forEach((sCell)->{
                     //ugly, but works.
@@ -97,18 +87,20 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
                 });
             }
         });
-        return true;
     }
 
     @Override
-    public boolean cancelTask(Ref target) {
-        if (!xlock.isHeldByCurrentThread())
-            return false;
+    public void cancelTask(Ref target) {
+        if (!TransactionManager.INSTANCE.isInTransaction(null))
+            return;
+            //throw new RuntimeException("cancelTask not within transaction!");
         expander.submit(new Runnable() {
             @Override
             public void run() {
                 SBook book;
                 SSheet sheet;
+                int xid=TransactionManager.INSTANCE.getXid(null);
+
                 book=BookBindings.get(target.getBookName());
                 if (book==null)
                     return;
@@ -124,7 +116,6 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
                 });
             }
         });
-        return true;
     }
 
     @Override
