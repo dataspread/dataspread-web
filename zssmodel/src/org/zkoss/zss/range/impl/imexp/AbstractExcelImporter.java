@@ -362,11 +362,11 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 		if (colrng != null) {
 			sps.setRepeatingColumnsTitle(colrng.getFirstColumn(), colrng.getLastColumn());
 		}
-		
-		sheet.setPassword(poiSheet.getProtect()?"":null);
-		
+
+		// Commenting below to avoid resetting password
+		//sheet.setPassword(poiSheet.getProtect()?"":null);
 		//import hashed password directly
-		importPassword(poiSheet, sheet);
+		//importPassword(poiSheet, sheet);
 		
 		//ZSS-832
 		//import sheet visible

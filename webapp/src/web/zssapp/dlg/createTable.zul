@@ -15,9 +15,8 @@
             <space orient="horizontal"/>
 
             <hbox hflex="1" pack="center" align="center">
-
-                <button id="cancelButton"  label="Cancel"/>
                 <button id="createButton"  label="Create"/>
+                <button id="cancelButton"  label="Cancel"/>
             </hbox>
 
 

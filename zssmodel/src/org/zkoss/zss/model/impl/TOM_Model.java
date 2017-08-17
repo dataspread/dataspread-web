@@ -72,11 +72,34 @@ public class TOM_Model extends Model {
     }
 
     @Override
+    public boolean deleteTuples(DBContext context, CellRegion cellRegion)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+
+    @Override
     public void dropSchema(DBContext context) {
         // Since the table id not with a sheet, it shoud not be dropped */
         // TODO: decide the scope of row/col mapping
         rowMapping.dropSchema(context);
         colMapping.dropSchema(context);
+    }
+
+
+    public void deleteTuples(DBContext context, int row, int count) {
+        Integer[] oids = rowMapping.deleteIDs(context, row, count);
+        try (PreparedStatement stmt = context.getConnection().prepareStatement(
+                "DELETE FROM " + tableName + " WHERE oid = ANY(?)")) {
+            Array inArray = context.getConnection().createArrayOf("integer", oids);
+            stmt.setArray(1, inArray);
+            stmt.execute();
+
+            TOM_Mapping.instance.pushUpdates(tableName);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
     }
 
 
@@ -89,23 +112,6 @@ public class TOM_Model extends Model {
                 range.getRow() + oids.size(), range.getColumn() + columnNames.size() - 1);
 
         return range.getOverlap(tableSizedRange);
-    /*
-        if (range.contains(tableSizedRange)) {
-            return tableSizedRange;
-        } else {
-
-//            CellRegion returnRange=range.getOverlap(tableSizedRange);
-            int lastCol = range.getLastColumn();
-            int lastRow = range.getLastRow();
-
-            if (range.getLastColumn() >= tableSizedRange.getLastColumn())
-                lastCol = tableSizedRange.getLastColumn();
-
-            if (range.getLastRow() >= tableSizedRange.getLastRow())
-                lastCol = tableSizedRange.getLastRow();
-            return new CellRegion(range.getRow(), range.getColumn(), lastRow, lastCol);
-        } */
-
     }
 
     protected void createOIDIndex(DBContext context) {
@@ -158,6 +164,7 @@ public class TOM_Model extends Model {
     @Override
     public Collection<AbstractCellAdv> getCells(DBContext context, CellRegion fetchRange) {
 
+        /* TODO: Handle if we do not have enough records  */
         // Reduce Range to bounds
         Collection<AbstractCellAdv> cells = new ArrayList<>();
 
@@ -277,11 +284,6 @@ public class TOM_Model extends Model {
                 columnList.last() - columnList.first() + 1);
 
         if (groupedCells.size() > 0) {
-//        insert into mytable(id, name, age, color) values (6,'Asmaa','60','brown')
-//        on conflict (id)
-//        do update set (id,name, age, color) = (6,'Asmaa','60','brown')
-//        where mytable.id = 6;
-
 
             StringBuffer sqlColumnNames = new StringBuffer("(");
             for (int i = 0; i < idsCol.length; ++i) {
@@ -362,39 +364,16 @@ public class TOM_Model extends Model {
         }
     }
 
+    /* Delete row on a spreadsheet */
     @Override
     public void deleteRows(DBContext context, int row, int count) {
-        Integer[] ids = rowMapping.deleteIDs(context, row, count);
-
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(
-                "DELETE FROM " + tableName + " WHERE row = ANY(?)")) {
-            Array inArray = context.getConnection().createArrayOf("integer", ids);
-            stmt.setArray(1, inArray);
-            stmt.execute();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        /* Do nothing */
     }
 
+    /* Delete column on a spreadsheet */
     @Override
     public void deleteCols(DBContext context, int col, int count) {
-        StringBuffer deleteColumn = (new StringBuffer())
-                .append("ALTER TABLE ")
-                .append(tableName);
-        Integer[] ids = colMapping.deleteIDs(context, col, count);
-        for (int i = 0; i < ids.length - 1; i++)
-            deleteColumn.append(" DROP COLUMN col_")
-                    .append(ids[i])
-                    .append(",");
-        deleteColumn.append(" DROP COLUMN col_")
-                .append(ids[ids.length - 1]);
-
-        try (Statement stmt = context.getConnection().createStatement()) {
-            stmt.execute(deleteColumn.toString());
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
+        /* Do nothing */
     }
 
     @Override

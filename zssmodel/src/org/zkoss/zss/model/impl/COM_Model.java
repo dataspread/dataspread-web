@@ -95,4 +95,9 @@ public class COM_Model extends Model {
                 range.getLastColumn(),
                 range.getLastRow());
     }
+
+    @Override
+    public boolean deleteTuples(DBContext context, CellRegion cellRegion) {
+        throw new UnsupportedOperationException();
+    }
 }

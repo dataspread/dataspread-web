@@ -10,6 +10,9 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import org.zkoss.poi.ss.usermodel.Cell;
+import org.zkoss.util.Pair;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
@@ -23,19 +26,18 @@ public class Hybrid_Model extends RCV_Model {
     private MetaDataBlock metaDataBlock;
 
     // This list is synchronized with modelEntryList in metaDataBlock
-    private List<Model> tableModels;
+    private List<Pair<CellRegion, Model>> tableModels;
 
     Hybrid_Model(DBContext context, SSheet sheet, String tableName) {
         super(context, sheet, tableName);
         loadMetaData(context);
     }
 
-
-    public boolean checkOverap(CellRegion range)
+    public boolean checkOverap(CellRegion cellRegion)
     {
         return metaDataBlock.modelEntryList
                 .stream()
-                .filter(e->e.range.overlaps(range))
+                .filter(e->e.range.overlaps(cellRegion))
                 .findFirst().isPresent();
     }
 
@@ -53,7 +55,8 @@ public class Hybrid_Model extends RCV_Model {
                     .stream()
                     .sequential()
                     .forEach(e -> tableModels.add(
-                            Model.CreateModel(context, sheet, e.modelType, e.tableName)));
+                            new Pair<>(e.range,
+                                       Model.CreateModel(context, sheet, e.modelType, e.tableName))));
             metaDataBlock.modelEntryList.stream().filter(e->e.modelType==ModelType.TOM_Model)
                     .forEach(e->
                             TOM_Mapping.instance.addMapping(e.tableName, new RefImpl(sheet.getBook().getId(),
@@ -65,7 +68,7 @@ public class Hybrid_Model extends RCV_Model {
 
     @Override
     public void dropSchema(DBContext context) {
-        tableModels.stream().forEach(e -> e.dropSchema(context));
+        tableModels.stream().forEach(e -> e.y.dropSchema(context));
         super.dropSchema(context);
         bs.dropSchemaAndClear(context);
     }
@@ -147,7 +150,6 @@ public class Hybrid_Model extends RCV_Model {
     public boolean convert(DBContext context, ModelType modelType, CellRegion range, String name) {
         logger.info("Start - Converting HYBRID " + range.toString());
         String newTableName;
-        Model newModel;
 
         newTableName = name.toLowerCase();
         /* First create table then create model */
@@ -177,7 +179,6 @@ public class Hybrid_Model extends RCV_Model {
         }
         // Delete Header
         super.deleteCells(context, tableHeaderRow);
-
         ++range.row;
 
         // Migrate data to the new table
@@ -231,8 +232,6 @@ public class Hybrid_Model extends RCV_Model {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
-
         --range.row;
 
         // Collect a list of models to be deleted
@@ -250,7 +249,7 @@ public class Hybrid_Model extends RCV_Model {
         model.createOIDIndex(context);
         range = model.indexOIDs(context, range);
 
-        tableModels.add(model);
+        tableModels.add(new Pair<>(range, model));
         MetaDataBlock.ModelEntry modelEntry = new MetaDataBlock.ModelEntry();
         modelEntry.range = range;
         modelEntry.modelType = ModelType.TOM_Model;
@@ -267,7 +266,7 @@ public class Hybrid_Model extends RCV_Model {
         CellRegion rowRange = new CellRegion(row, 1, row, Integer.MAX_VALUE);
         for (int i = 0; i < metaDataBlock.modelEntryList.size(); ++i) {
             CellRegion tableRange = metaDataBlock.modelEntryList.get(i).range;
-            Model tableModel = tableModels.get(i);
+            Model tableModel = tableModels.get(i).y;
             if (tableRange.overlaps(rowRange)) {
                 if (!(tableModel instanceof TOM_Model)) {
                     tableModel.insertRows(context, row - tableRange.getRow(), count);
@@ -290,7 +289,7 @@ public class Hybrid_Model extends RCV_Model {
         CellRegion colRange = new CellRegion(1, col, Integer.MAX_VALUE, col);
         for (int i = 0; i < metaDataBlock.modelEntryList.size(); ++i) {
             CellRegion tableRange = metaDataBlock.modelEntryList.get(i).range;
-            Model tableModel = tableModels.get(i);
+            Model tableModel = tableModels.get(i).y;
             if (tableRange.overlaps(colRange)) {
                 if (!(tableModel instanceof TOM_Model)) {
                     tableModel.insertCols(context, col - tableRange.getColumn(), count);
@@ -307,13 +306,15 @@ public class Hybrid_Model extends RCV_Model {
         super.insertCols(context, col, count);
     }
 
+
+
     @Override
     public void deleteRows(DBContext context, int row, int count) {
         CellRegion rowRange = new CellRegion(row, 0, row + count - 1, Integer.MAX_VALUE);
         int i = 0;
         while (i < metaDataBlock.modelEntryList.size()) {
             CellRegion tableRange = metaDataBlock.modelEntryList.get(i).range;
-            Model tableModel = tableModels.get(i);
+            Model tableModel = tableModels.get(i).y;
             if (rowRange.contains(tableRange)) {
                 // Delete table
                 tableModel.dropSchema(context);
@@ -340,12 +341,39 @@ public class Hybrid_Model extends RCV_Model {
     }
 
     @Override
+    public boolean deleteTuples(DBContext context, CellRegion cellRegion) {
+        List<Pair<CellRegion, Model>> modelEntries = tableModels.stream()
+                .filter(e->e.x.overlaps(cellRegion))
+                .collect(Collectors.toList());
+
+        if (modelEntries.size()!=1)
+            return false;
+
+        if (!(modelEntries.get(0).y instanceof TOM_Model))
+            return false;
+
+
+        CellRegion range = modelEntries.get(0).x;
+
+        if (!range.contains(cellRegion))
+            return false;
+
+        TOM_Model tomModel = (TOM_Model) modelEntries.get(0).y;
+        /* -1 below as top row is header */
+        tomModel.deleteTuples(context, cellRegion.getRow() - range.getRow() - 1, cellRegion.getHeight());
+
+
+        return true;
+    }
+
+
+    @Override
     public void deleteCols(DBContext context, int col, int count) {
         CellRegion colRange = new CellRegion(0, col, Integer.MAX_VALUE, col + count - 1);
         int i = 0;
         while (i < metaDataBlock.modelEntryList.size()) {
             CellRegion tableRange = metaDataBlock.modelEntryList.get(i).range;
-            Model tableModel = tableModels.get(i);
+            Model tableModel = tableModels.get(i).y;
             if (colRange.contains(tableRange)) {
                 // Delete table
                 tableModel.dropSchema(context);
@@ -388,7 +416,7 @@ public class Hybrid_Model extends RCV_Model {
             if (!cellsInRange.isEmpty()) {
                 cellsInRange.stream()
                         .forEach(e -> e.translate(-tableRange.getRow(), -tableRange.getColumn()));
-                tableModels.get(i).updateCells(context, cellsInRange);
+                tableModels.get(i).y.updateCells(context, cellsInRange);
                 cellsInRange.stream()
                         .forEach(e -> e.translate(tableRange.getRow(), tableRange.getColumn()));
             }
@@ -417,7 +445,7 @@ public class Hybrid_Model extends RCV_Model {
                     .stream()
                     .filter(c -> tableRange.contains(c.getRowIndex(), c.getColumnIndex()))
                     .collect(Collectors.toList());
-            tableModels.get(i).deleteCells(context, cellsInRange.stream()
+            tableModels.get(i).y.deleteCells(context, cellsInRange.stream()
                     .peek(e->e.translate(-tableRange.getRow(), -tableRange.getLastColumn()))
                     .collect(Collectors.toList()));
             pendingCells.removeAll(cellsInRange);
@@ -435,7 +463,7 @@ public class Hybrid_Model extends RCV_Model {
         IntStream.range(0, metaDataBlock.modelEntryList.size())
                 .filter(e -> metaDataBlock.modelEntryList.get(e).range.overlaps(range))
                 .forEach(e -> cells.addAll(
-                        tableModels.get(e)
+                        tableModels.get(e).y
                                 .getCells(context, metaDataBlock.modelEntryList.get(e).range.getOverlap(range)
                                         .shiftedRange(
                                                 -metaDataBlock.modelEntryList.get(e).range.getRow(),

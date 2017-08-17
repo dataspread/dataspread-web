@@ -335,6 +335,12 @@ public class ROM_Model extends Model {
     }
 
     @Override
+    public boolean deleteTuples(DBContext context, CellRegion cellRegion) {
+        throw new UnsupportedOperationException();
+    }
+
+
+    @Override
     public CellRegion getBounds(DBContext context) {
         int rows = rowMapping.size(context);
         int columns = colMapping.size(context);

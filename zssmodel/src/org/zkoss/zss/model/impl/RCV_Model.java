@@ -235,6 +235,11 @@ public class RCV_Model extends Model {
     }
 
     @Override
+    public boolean deleteTuples(DBContext context, CellRegion cellRegion) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Collection<AbstractCellAdv> getCells(DBContext context, CellRegion fetchRange) {
         // Reduce Range to bounds
         Collection<AbstractCellAdv> cells = new ArrayList<>();

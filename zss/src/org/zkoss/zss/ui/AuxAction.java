@@ -87,6 +87,8 @@ public enum AuxAction {
 	 UNMERGE_CELL("unmergeCell"),
 	 INSERT_SHIFT_CELL_RIGHT("shiftCellRight"),
 	 INSERT_SHIFT_CELL_DOWN("shiftCellDown"),
+     DELETE_TABLE_ROW("deleteTableRow"),
+	 INSERT_TABLE_ROW("insertTableRow"),
 	 INSERT_SHEET_ROW("insertSheetRow"),
 	 INSERT_SHEET_COLUMN("insertSheetColumn"),
 	 DELETE_SHIFT_CELL_LEFT("shiftCellLeft"),

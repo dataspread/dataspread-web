@@ -43,6 +43,7 @@ public class CellRegion implements Serializable {
 	public CellRegion(){
 		/* For seralization */
 	}
+
 	/**
 	 * Create a region which only contains 1 cell. 
 	 */

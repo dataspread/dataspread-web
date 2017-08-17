@@ -6,7 +6,6 @@
 
                 <hbox  hflex="1" >
                     <label value="Table Name:" style="font-weight:bold"/>
-
                 </hbox>
                 <hbox  hflex="3" >
                     <combobox id="tablesBox">
@@ -16,9 +15,8 @@
             <space orient="horizontal"/>
 
             <hbox hflex="1" pack="center" align="center">
-
-                <button id="cancelButton"  label="Cancel"/>
                 <button id="okButton"  label="OK"/>
+                <button id="cancelButton"  label="Cancel"/>
             </hbox>
 
 
