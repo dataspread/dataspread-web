@@ -57,13 +57,18 @@ public class Hybrid_Model extends RCV_Model {
                     .forEach(e -> tableModels.add(
                             new Pair<>(e.range,
                                        Model.CreateModel(context, sheet, e.modelType, e.tableName))));
-            metaDataBlock.modelEntryList.stream().filter(e->e.modelType==ModelType.TOM_Model)
+            tableModels.stream()
+                    .filter(e->e.y instanceof TOM_Model)
                     .forEach(e->
-                            TOM_Mapping.instance.addMapping(e.tableName, new RefImpl(sheet.getBook().getId(),
-                                    sheet.getSheetName(), e.range.getRow(),e.range.getColumn(),
-                                    e.range.getLastRow(),  e.range.getLastColumn())));
-
+                            TOM_Mapping.instance.addMapping(e.y.tableName, (TOM_Model) e.y, new RefImpl(sheet.getBook().getId(),
+                                    sheet.getSheetName(), e.x.getRow(),e.x.getColumn(),
+                                    e.x.getLastRow(),  e.x.getLastColumn())));
         }
+    }
+
+    public void shrinkRange(Model model, int shrinkRows, int shrinkCols)
+    {
+
     }
 
     @Override
@@ -166,10 +171,8 @@ public class Hybrid_Model extends RCV_Model {
                 .append("CREATE TABLE IF NOT EXISTS ")
                 .append(newTableName)
                 .append(" (")
-                .append(columnList.stream().map(e->e+" TEXT,").collect(Collectors.joining()))
-                .append(" PRIMARY KEY (")
-                .append(columnList.get(0))
-                .append("))")
+                .append(columnList.stream().map(e->e+" TEXT").collect(Collectors.joining(",")))
+                .append(")")
                 .toString();
 
         try (Statement stmt = context.getConnection().createStatement()) {
@@ -243,7 +246,7 @@ public class Hybrid_Model extends RCV_Model {
 
     public CellRegion linkTable(DBContext context, String tableName, CellRegion range){
         TOM_Model model = (TOM_Model) Model.CreateModel(context, sheet, ModelType.TOM_Model, tableName);
-        TOM_Mapping.instance.addMapping(tableName, new RefImpl(sheet.getBook().getId(),
+        TOM_Mapping.instance.addMapping(tableName, model, new RefImpl(sheet.getBook().getId(),
                 sheet.getSheetName(), range.getRow(),range.getColumn(),
                 range.getLastRow(),  range.getLastColumn()));
         model.createOIDIndex(context);
@@ -462,9 +465,26 @@ public class Hybrid_Model extends RCV_Model {
 
         IntStream.range(0, metaDataBlock.modelEntryList.size())
                 .filter(e -> metaDataBlock.modelEntryList.get(e).range.overlaps(range))
+                .filter(e->metaDataBlock.modelEntryList.get(e).modelType != ModelType.TOM_Model)
                 .forEach(e -> cells.addAll(
                         tableModels.get(e).y
                                 .getCells(context, metaDataBlock.modelEntryList.get(e).range.getOverlap(range)
+                                        .shiftedRange(
+                                                -metaDataBlock.modelEntryList.get(e).range.getRow(),
+                                                -metaDataBlock.modelEntryList.get(e).range.getColumn()))
+                                .stream()
+                                .peek(c->c.translate(metaDataBlock.modelEntryList.get(e).range.getRow(),
+                                        metaDataBlock.modelEntryList.get(e).range.getColumn()))
+                                .collect(Collectors.toList())));
+
+        /* For a TOM model call a sepecial function */
+        IntStream.range(0, metaDataBlock.modelEntryList.size())
+                .filter(e -> metaDataBlock.modelEntryList.get(e).range.overlaps(range))
+                .filter(e->metaDataBlock.modelEntryList.get(e).modelType == ModelType.TOM_Model)
+                .forEach(e -> cells.addAll(
+                        ((TOM_Model)tableModels.get(e).y)
+                                .getCellsTOM(context, this,
+                                        metaDataBlock.modelEntryList.get(e).range.getOverlap(range)
                                         .shiftedRange(
                                                 -metaDataBlock.modelEntryList.get(e).range.getRow(),
                                                 -metaDataBlock.modelEntryList.get(e).range.getColumn()))
@@ -479,13 +499,8 @@ public class Hybrid_Model extends RCV_Model {
                 encompass=true;
 
         if (encompass==false) {
-            //  System.out.println("RCV executed ");
             cells.addAll(super.getCells(context, range));
         }
-        // else
-        //   System.out.println("RCV not executed ");
-
-
         return Collections.unmodifiableCollection(cells);
     }
 

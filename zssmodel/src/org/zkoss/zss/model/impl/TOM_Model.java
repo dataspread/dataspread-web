@@ -21,7 +21,6 @@ public class TOM_Model extends Model {
     private Logger logger = Logger.getLogger(TOM_Model.class.getName());
     private PosMapping rowMapping;
     private PosMapping colMapping;
-
     private SortedMap<Integer, String> columnNames;
 
     //Create or load TOM_model.
@@ -30,8 +29,6 @@ public class TOM_Model extends Model {
         rowMapping = new BTree(context, tableName + "_row_idx");
         colMapping = new BTree(context, tableName + "_col_idx");
         this.tableName = tableName;
-        //sheet.setPassword("000000000"); // Locks the sheet
-        // Get columns info
         loadColumnInfo(context);
     }
 
@@ -95,7 +92,7 @@ public class TOM_Model extends Model {
             stmt.setArray(1, inArray);
             stmt.execute();
 
-            TOM_Mapping.instance.pushUpdates(tableName);
+            TOM_Mapping.instance.pushUpdates(context, tableName);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -163,6 +160,11 @@ public class TOM_Model extends Model {
 
     @Override
     public Collection<AbstractCellAdv> getCells(DBContext context, CellRegion fetchRange) {
+        throw new UnsupportedOperationException();
+    }
+
+    // Shrink area of TOM Model
+    public Collection<AbstractCellAdv> getCellsTOM(DBContext context, Hybrid_Model hybridModel, CellRegion fetchRange) {
 
         /* TODO: Handle if we do not have enough records  */
         // Reduce Range to bounds
@@ -178,25 +180,27 @@ public class TOM_Model extends Model {
 
 
         Integer[] rowIds;
-        int rowCounter;
-        boolean includeHeader;
-        if (fetchRegion.getRow() == 0) // First Row is the header
-        {
+        boolean includeHeader = (fetchRegion.getRow() == 0);
+        // First row is always headers
+        //rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow());
+        if (includeHeader)
             rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow());
-            rowCounter = 1;
-            includeHeader = true;
-        } else {
+        else
             rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
-            rowCounter = 0;
-            includeHeader = false;
-        }
+
 
         Integer[] colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
 
-        HashMap<Integer, Integer> row_map = new HashMap<>();
+        HashMap<Integer, Integer> row_map = new HashMap<>(); // Oid -> row number
         int bound = rowIds.length;
         for (int i1 = 0; i1 < bound; i1++) {
-            row_map.put(rowIds[i1], fetchRegion.getRow() + i1 + rowCounter);
+            if (rowIds[i1]==-1) {
+                // Reduce dimension
+            }
+            else
+            {
+                row_map.put(rowIds[i1], fetchRegion.getRow() + i1 + (includeHeader ? 1 : 0));
+            }
         }
 
         HashMap<String, Integer> col_map = new HashMap<>();
@@ -326,7 +330,7 @@ public class TOM_Model extends Model {
             }
         }
 
-        TOM_Mapping.instance.pushUpdates(tableName);
+        TOM_Mapping.instance.pushUpdates(context, tableName);
     }
 
     @Override
@@ -461,6 +465,7 @@ public class TOM_Model extends Model {
     public void clearCache(DBContext context) {
         rowMapping.clearCache(context);
         colMapping.clearCache(context);
+        loadColumnInfo(context);
     }
 
     @Override
