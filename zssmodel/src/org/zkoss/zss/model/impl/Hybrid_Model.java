@@ -3,9 +3,7 @@ package org.zkoss.zss.model.impl;
 import org.model.BlockStore;
 import org.model.DBContext;
 
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -66,7 +64,8 @@ public class Hybrid_Model extends RCV_Model {
         }
     }
 
-    public void shrinkRange(Model model, int shrinkRows, int shrinkCols)
+    /* For All the TOM models that display the range adjust the rnage */
+    public void shrinkRange(String tableName)
     {
 
     }
@@ -224,8 +223,11 @@ public class Hybrid_Model extends RCV_Model {
                 for (SortedMap<Integer, AbstractCellAdv> tuple:groupedCells.values())
                 {
                     for (int j = 0; j < columnCount; j++) {
-                        stmt.setString(j + 1,
-                                tuple.get(j).getValue().toString());
+                        if (tuple.containsKey(j))
+                         stmt.setString(j + 1,
+                                  tuple.get(j).getValue().toString());
+                        else
+                            stmt.setNull(j + 1, Types.VARCHAR);
                     }
                     stmt.execute();
 
@@ -250,7 +252,8 @@ public class Hybrid_Model extends RCV_Model {
                 sheet.getSheetName(), range.getRow(),range.getColumn(),
                 range.getLastRow(),  range.getLastColumn()));
         model.createOIDIndex(context);
-        range = model.indexOIDs(context, range);
+        model.indexOIDs(context);
+        range = getBounds(context).shiftedRange(range.row, range.column).getOverlap(range);
 
         tableModels.add(new Pair<>(range, model));
         MetaDataBlock.ModelEntry modelEntry = new MetaDataBlock.ModelEntry();
@@ -364,8 +367,6 @@ public class Hybrid_Model extends RCV_Model {
         TOM_Model tomModel = (TOM_Model) modelEntries.get(0).y;
         /* -1 below as top row is header */
         tomModel.deleteTuples(context, cellRegion.getRow() - range.getRow() - 1, cellRegion.getHeight());
-
-
         return true;
     }
 
@@ -483,7 +484,7 @@ public class Hybrid_Model extends RCV_Model {
                 .filter(e->metaDataBlock.modelEntryList.get(e).modelType == ModelType.TOM_Model)
                 .forEach(e -> cells.addAll(
                         ((TOM_Model)tableModels.get(e).y)
-                                .getCellsTOM(context, this,
+                                .getCellsTOM(context, sheet,
                                         metaDataBlock.modelEntryList.get(e).range.getOverlap(range)
                                         .shiftedRange(
                                                 -metaDataBlock.modelEntryList.get(e).range.getRow(),
@@ -529,6 +530,7 @@ public class Hybrid_Model extends RCV_Model {
             CellRegion range;
             String tableName;
             ModelType modelType;
+            String orderName;   // Identify an order based for the table.
         }
     }
 }

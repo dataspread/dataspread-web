@@ -29,7 +29,8 @@ public abstract class Model {
                 model =  new Hybrid_Model(context, sheet, tableName);
                 break;
             case TOM_Model:
-                model =  new TOM_Model(context, sheet, tableName);
+                model = TOM_Mapping.instance.createTOMModel(context, tableName);
+               // model =  new TOM_Model(context, sheet, tableName);
                 break;
         }
         model.sheet=sheet;

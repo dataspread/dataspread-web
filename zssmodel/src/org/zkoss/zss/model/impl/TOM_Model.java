@@ -24,8 +24,7 @@ public class TOM_Model extends Model {
     private SortedMap<Integer, String> columnNames;
 
     //Create or load TOM_model.
-    TOM_Model(DBContext context, SSheet sheet, String tableName) {
-        this.sheet = sheet;
+    TOM_Model(DBContext context, String tableName) {
         rowMapping = new BTree(context, tableName + "_row_idx");
         colMapping = new BTree(context, tableName + "_col_idx");
         this.tableName = tableName;
@@ -53,7 +52,7 @@ public class TOM_Model extends Model {
         }
     }
 
-    // Make this as a static and get all info to create a table.
+    //TODO Make this as a static and get all info to create a table.
     private void createSchema(DBContext context) {
         String createTable = (new StringBuffer())
                 .append("CREATE TABLE IF NOT EXISTS ")
@@ -77,12 +76,39 @@ public class TOM_Model extends Model {
 
     @Override
     public void dropSchema(DBContext context) {
-        // Since the table id not with a sheet, it shoud not be dropped */
-        // TODO: decide the scope of row/col mapping
-        rowMapping.dropSchema(context);
-        colMapping.dropSchema(context);
+        // Do nothing
     }
 
+
+    private ArrayList<Integer> getOIDs(DBContext context, String tableName) {
+        ArrayList<Integer> oids = new ArrayList<>();
+
+        String getOids = (new StringBuffer())
+                .append("SELECT oid FROM ")
+                .append(tableName)
+                .append(" ORDER BY oid") /* TODO allow custom order */
+                .toString();
+
+        try (Statement stmt = context.getConnection().createStatement()) {
+            ResultSet set = stmt.executeQuery(getOids);
+
+            while (set.next()) {
+                oids.add(set.getInt(1));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return oids;
+    }
+
+    public void indexOIDs(DBContext context) {
+        /* Batch processing */
+        if (rowMapping.size(context)==0) {
+            ArrayList<Integer> oids = getOIDs(context, tableName);
+            rowMapping.insertIDs(context, 0, oids);
+        }
+    }
 
     public void deleteTuples(DBContext context, int row, int count) {
         Integer[] oids = rowMapping.deleteIDs(context, row, count);
@@ -99,17 +125,6 @@ public class TOM_Model extends Model {
 
     }
 
-
-    public CellRegion indexOIDs(DBContext context, CellRegion range) {
-        /* Batch processing */
-        ArrayList<Integer> oids = getOIDs(context);
-        rowMapping.insertIDs(context, 0, oids);
-
-        CellRegion tableSizedRange = new CellRegion(range.getRow(), range.getColumn(),
-                range.getRow() + oids.size(), range.getColumn() + columnNames.size() - 1);
-
-        return range.getOverlap(tableSizedRange);
-    }
 
     protected void createOIDIndex(DBContext context) {
         /* TODO update query */
@@ -135,28 +150,7 @@ public class TOM_Model extends Model {
         }
     }
 
-    private ArrayList<Integer> getOIDs(DBContext context) {
-        ArrayList<Integer> oids = new ArrayList<>();
 
-        String getPKcolVals = (new StringBuffer())
-                .append("SELECT oid FROM ")
-                .append(tableName)
-                .append(" ORDER BY oid") /* TODO allow custom order */
-                .toString();
-
-        try (Statement stmt = context.getConnection().createStatement()) {
-            ResultSet set = stmt.executeQuery(getPKcolVals);
-
-            while (set.next()) {
-                /* TODO update in index */
-                oids.add(set.getInt(1));
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return oids;
-    }
 
     @Override
     public Collection<AbstractCellAdv> getCells(DBContext context, CellRegion fetchRange) {
@@ -164,7 +158,7 @@ public class TOM_Model extends Model {
     }
 
     // Shrink area of TOM Model
-    public Collection<AbstractCellAdv> getCellsTOM(DBContext context, Hybrid_Model hybridModel, CellRegion fetchRange) {
+    public Collection<AbstractCellAdv> getCellsTOM(DBContext context, SSheet sheet, CellRegion fetchRange) {
 
         /* TODO: Handle if we do not have enough records  */
         // Reduce Range to bounds
@@ -181,12 +175,10 @@ public class TOM_Model extends Model {
 
         Integer[] rowIds;
         boolean includeHeader = (fetchRegion.getRow() == 0);
-        // First row is always headers
-        //rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow());
         if (includeHeader)
             rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow());
         else
-            rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
+            rowIds = rowMapping.getIDs(context, fetchRegion.getRow() - 1, fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
 
 
         Integer[] colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
@@ -194,11 +186,7 @@ public class TOM_Model extends Model {
         HashMap<Integer, Integer> row_map = new HashMap<>(); // Oid -> row number
         int bound = rowIds.length;
         for (int i1 = 0; i1 < bound; i1++) {
-            if (rowIds[i1]==-1) {
-                // Reduce dimension
-            }
-            else
-            {
+            if (rowIds[i1]!=-1) {
                 row_map.put(rowIds[i1], fetchRegion.getRow() + i1 + (includeHeader ? 1 : 0));
             }
         }
