@@ -316,9 +316,13 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 		this.addEventListener("onStopEditingImpl", new SerializableEventListener() {
 			private static final long serialVersionUID = 2412586322103952998L;
 			public void onEvent(Event event) throws Exception {
-
-				Object[] data = (Object[]) event.getData();
-				processStopEditing((String) data[0], (StopEditingEvent) data[1], (String) data[2]);
+				try{
+					TransactionManager.INSTANCE.startTransaction(null);
+					Object[] data = (Object[]) event.getData();
+					processStopEditing((String) data[0], (StopEditingEvent) data[1], (String) data[2]);
+				}finally {
+					TransactionManager.INSTANCE.endTransaction(null);
+				}
 			}
 		});
 		//ZSS-816

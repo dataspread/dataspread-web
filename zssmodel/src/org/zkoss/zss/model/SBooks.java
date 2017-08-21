@@ -17,6 +17,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 package org.zkoss.zss.model;
 
 import org.zkoss.zss.model.impl.BookImpl;
+import org.zkoss.zss.model.sys.BookBindings;
 
 /**
  * Contains factory methods to create a {@link SBook}.
@@ -30,8 +31,12 @@ public class SBooks {
 	 * @param bookName
 	 * @return the book instance
 	 */
-	public static SBook createBook(String bookName){
-		SBook book = new BookImpl(bookName);
+	public static SBook createOrGetBook(String bookName){
+		SBook book = BookBindings.get(bookName);
+		if (book==null){
+			book=new BookImpl(bookName);
+			BookBindings.put(bookName,book);
+		}
 		return book;
 	}
 }

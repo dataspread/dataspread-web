@@ -18,7 +18,6 @@ package org.zkoss.zss.range.impl.imexp;
 
 import java.io.*;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.*;
 
 import org.zkoss.poi.hssf.usermodel.HSSFRichTextString;
@@ -116,7 +115,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 		importedFont.clear();
 
 		workbook = createPoiBook(is);
-		book = SBooks.createBook(bookName);
+		book = SBooks.createOrGetBook(bookName);
 //		book.setDefaultCellStyle(importCellStyle(workbook.getCellStyleAt((short) 0), false)); //ZSS-780
 		//ZSS-854
 		importDefaultCellStyles();

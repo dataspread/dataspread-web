@@ -213,13 +213,12 @@ public class CellImpl extends AbstractCellAdv {
 		//20140731, henrichen: when share the same book, many users might 
 		//populate CellImpl simultaneously; must synchronize it.
 		Ref target=getRef();
-		if(_formulaResultValue != null){
-			if (version<FormulaCacheMasker.INSTANCE.isMaskedUntil(target))
-				_formulaResultValue=FormulaCacheMasker.INSTANCE.getMaskedVal();
-		}
+		if (version<FormulaCacheMasker.INSTANCE.isMaskedUntil(target))
+			_formulaResultValue=FormulaCacheMasker.INSTANCE.getMaskedVal();
+
+		if(_formulaResultValue == null){
 		//20170714, may cause dead lock, mustn't synchronize it!
 		// (this.getSheet().getBook().getBookSeries()) {
-		else {
 			//this code is kept here just in case
 			//they are not supposed to be called
 			CellValue val = getCellValue();
@@ -586,7 +585,7 @@ public class CellImpl extends AbstractCellAdv {
 	protected Ref getRef(){
 		//zekun.fan@gmail.com changed the semantics of Cell Ref.bookname->bookId
 		//Can be risky
-		return new RefImpl(getSheet().getBook().getId(), getSheet().getSheetName(), getRowIndex(), getColumnIndex());
+		return new RefImpl(this);
 	}
 	
 	public String toString(){

@@ -46,7 +46,7 @@ public class BookImpl implements Book{
 	}
 
 	public BookImpl(String bookName){
-		_book = SBooks.createBook(bookName);
+		_book = SBooks.createOrGetBook(bookName);
 	}
 
 	public SBook getNative() {
