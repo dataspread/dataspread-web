@@ -1,5 +1,7 @@
 package org.zkoss.zss.model.sys;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -14,15 +16,19 @@ public enum TransactionManager {
 
     private ReentrantLock xlock;
     private int xid;
+    private Map<Thread,Integer> workers;
 
     private TransactionManager() {
         xlock=new ReentrantLock();
+        workers=new HashMap<>();
         xid=0;//require loading maybe
     }
 
     public void startTransaction(Object target){
         xlock.lock();
-        ++xid;
+        //avoid nesting start messing up xid
+        if (xlock.getHoldCount()==1)
+            ++xid;
     }
 
     public void endTransaction(Object target){
@@ -34,6 +40,17 @@ public enum TransactionManager {
     }
 
     public int getXid(Object target){
-        return xid;
+        if (xlock.isHeldByCurrentThread())
+            return xid;
+        else {
+            Integer res=workers.get(Thread.currentThread());
+            if (res==null)
+                throw new RuntimeException("Undefined Xid");
+            return res;
+        }
+    }
+
+    public void registerWorker(int xid){
+        workers.put(Thread.currentThread(),xid);
     }
 }

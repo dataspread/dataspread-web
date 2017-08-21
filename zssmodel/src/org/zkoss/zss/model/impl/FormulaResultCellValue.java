@@ -27,7 +27,7 @@ public class FormulaResultCellValue extends CellValue implements Serializable {
 	}
 
 	// Added by zekun.fan@gmail.com, @WriteLockProtected
-	public void updateByEvaluationResult(EvaluationResult result){
+	private void updateByEvaluationResult(EvaluationResult result){
 		Object val = result.getValue();
 		ResultType type = result.getType();
 		if (type == ResultType.ERROR) {

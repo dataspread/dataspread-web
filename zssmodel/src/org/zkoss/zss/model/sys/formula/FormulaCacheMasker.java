@@ -1,8 +1,10 @@
 package org.zkoss.zss.model.sys.formula;
 
+import org.zkoss.poi.ss.formula.eval.ValueEval;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.impl.FormulaResultCellValue;
 import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.TransactionManager;
 import org.zkoss.zss.model.sys.dependency.Ref;
@@ -23,6 +25,8 @@ public enum FormulaCacheMasker {
     public void mask(Ref target){
         SBook book;
         SSheet sheet;
+        if (target.getType()!= Ref.RefType.CELL && target.getType()!=Ref.RefType.AREA)
+            return;
         if (!TransactionManager.INSTANCE.isInTransaction(null))
             throw new RuntimeException("Masking not within transaction!");
         book=BookBindings.get(target.getBookName());
@@ -74,16 +78,18 @@ public enum FormulaCacheMasker {
         SBook book;
         SSheet sheet;
         //This code is duplicated for too many time
+        int result=-1;
+        if (target.getType()!=Ref.RefType.CELL && target.getType()!=Ref.RefType.AREA)
+            return result;
         book=BookBindings.get(target.getBookName());
         if (book==null)
-            return 0;
+            return result;
         sheet=book.getSheetByName(target.getSheetName());
         if (sheet==null)
-            return 0;
+            return result;
         Collection<MaskArea> records=mapping.get(sheet);
         if (records==null)
-            return 0;
-        int result=-1;
+            return result;
         for (MaskArea maskArea:records){
             if (result<maskArea.xid && !(
                     maskArea.region.column>target.getLastColumn() ||
@@ -95,6 +101,27 @@ public enum FormulaCacheMasker {
         }
         return result;
     }
+
+    public FormulaResultCellValue getMaskedVal(){
+        return _val;
+    }
+
+    private static FormulaResultCellValue _val=new FormulaResultCellValue(new EvaluationResult() {
+        @Override
+        public ResultType getType() {
+            return ResultType.SUCCESS;
+        }
+
+        @Override
+        public Object getValue() {
+            return "...";
+        }
+
+        @Override
+        public ValueEval getValueEval() {
+            return null;
+        }
+    });
 
     private class MaskArea{
         int xid;

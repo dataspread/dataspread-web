@@ -4,49 +4,44 @@ import org.zkoss.zk.ui.Executions;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncUIController;
 import org.zkoss.zss.ui.sys.SpreadsheetCtrl;
 
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * Created by zekun.fan@gmail.com on 7/19/17.
- * TODO Maybe: ->BookUIBinding
  */
+
 public class FormulaAsyncUIControllerImpl implements FormulaAsyncUIController {
 
-    private HashMap<SCell,AsyncCellInfo> cellUIBinding;
+    private Map<SBook, Set<Spreadsheet>> dataUIBinding;
 
     public FormulaAsyncUIControllerImpl(){
-        cellUIBinding=new HashMap<>();
+        dataUIBinding =new HashMap<>();
     }
 
     @Override
-    public synchronized void prepare(SCell cell, Object spreadsheet){
-        if (cellUIBinding.containsKey(cell)){
-            ++cellUIBinding.get(cell).refcnt;
-        }else{
-            cellUIBinding.put(cell,new AsyncCellInfo((Spreadsheet) spreadsheet,1));
-        }
+    public void bind(SBook book, Object spreadsheet) {
+        Set<Spreadsheet> records=dataUIBinding.computeIfAbsent(book,k->new CopyOnWriteArraySet<>());
+        records.add((Spreadsheet)spreadsheet);
     }
 
     @Override
-    public synchronized void confirm(SCell cell) {
-        //nullptr exception if not used in pre-defined manner.
-        ++cellUIBinding.get(cell).refcnt;
+    public void unbind(SBook book, Object spreadsheet) {
+        Set<Spreadsheet> records=dataUIBinding.get(book);
+        if (records!=null)
+            records.remove(spreadsheet);
     }
 
     @Override
-    public void updateAndRelease(SCell cell){
-        AsyncCellInfo info;
-        synchronized (this) {
-            info = cellUIBinding.get(cell);
-            --info.refcnt;
-            if (info.refcnt==0)
-                cellUIBinding.remove(cell);
-        }
+    public void update(SSheet sheet, CellRegion region){
         /* Method 1 - Not working
         final Map<String, Integer> attrMap = new HashMap<String, Integer>(2);
         attrMap.put("cellAttr", CellAttribute.TEXT.value);
@@ -69,27 +64,13 @@ public class FormulaAsyncUIControllerImpl implements FormulaAsyncUIController {
         Executions.deactivate(info.ui.getDesktop());
         */
 
-        //Method 3
-        Executions.schedule(info.ui.getDesktop(),AsyncUIUpdateEventListener,new AsyncUIUpdateEvent(info.ui,cell.getSheet(),new CellRegion(cell.getRowIndex(),cell.getColumnIndex())));
-    }
-
-    @Override
-    public synchronized void cancelIfNotConfirmed(SCell cell){
-        if (cellUIBinding.containsKey(cell)) {
-            AsyncCellInfo info=cellUIBinding.get(cell);
-            --info.refcnt;
-            if (info.refcnt == 0)
-                cellUIBinding.remove(cell);
-        }
-    }
-
-    private class AsyncCellInfo{
-        Spreadsheet ui;
-        int refcnt;
-
-        AsyncCellInfo(Spreadsheet ui, int refcnt) {
-            this.ui = ui;
-            this.refcnt = refcnt;
+        Set<Spreadsheet> records=dataUIBinding.get(sheet.getBook());
+        if (records!=null) {
+            for (Spreadsheet ui : records) {
+                //Method 3
+                Executions.schedule(ui.getDesktop(), AsyncUIUpdateEventListener,
+                        new AsyncUIUpdateEvent(ui, sheet, region));
+            }
         }
     }
 
@@ -104,7 +85,7 @@ public class FormulaAsyncUIControllerImpl implements FormulaAsyncUIController {
     };
 
     private class AsyncUIUpdateEvent extends Event{
-        public AsyncUIUpdateEvent(Spreadsheet ui, SSheet sheet, CellRegion region) {
+        AsyncUIUpdateEvent(Spreadsheet ui, SSheet sheet, CellRegion region) {
             super("AsyncUIUpdateEvent",null,new Object[] {ui,sheet,region});
         }
     }

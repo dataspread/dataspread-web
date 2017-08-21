@@ -1,9 +1,18 @@
 package org.zkoss.zss.model.sys.formula;
 
+import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
+import org.zkoss.zss.model.SSheet;
 
 /**
  * Created by zekun.fan@gmail.com on 7/20/17.
+ * IoC pattern of design, for such dilemma that:
+ * 1. Implementation class should be aware of Spreadsheet(in zss)
+ * 2. Interface class should be visible to Scheduler(in zssmodel)
+ * 3. zss is dependent on zssmodel.
+ *
+ * <History>
  * Usage: To synchronously update UI after asynchronous formula computation
  * Request handler:
  * 1. prepare, set up UI for future use, but not sure if necessary
@@ -12,14 +21,16 @@ import org.zkoss.zss.model.SCell;
  *
  * FormulaAsyncHandler:
  * 1. updateAndRelease, after computation, update to UI if there exists an UI.
+ * </History>
+ * Now: just bind book with spreadsheet(s) and update each of them.
+ * No longer need delicate mechanism to track lifecycle
  */
 
 public interface FormulaAsyncUIController {
-    void prepare(SCell cell, Object spreadsheet);
 
-    void confirm(SCell cell);
+    void bind(SBook book,Object spreadsheet);
 
-    void updateAndRelease(SCell cell);
+    void unbind(SBook book,Object spreadsheet);
 
-    void cancelIfNotConfirmed(SCell cell);
+    void update(SSheet sheet, CellRegion region);
 }

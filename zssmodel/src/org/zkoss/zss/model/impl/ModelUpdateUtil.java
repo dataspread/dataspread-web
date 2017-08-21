@@ -23,8 +23,10 @@ import org.zkoss.zss.model.SBookSeries;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.STable;
+import org.zkoss.zss.model.sys.TransactionManager;
 import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.dependency.Ref;
+import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 import org.zkoss.zss.model.sys.formula.FormulaCacheMasker;
 import org.zkoss.zss.range.impl.ModelUpdateCollector;
 
@@ -49,22 +51,30 @@ import org.zkoss.zss.range.impl.ModelUpdateCollector;
 			DependencyTable table = ((AbstractBookSeriesAdv)bookSeries).getDependencyTable();
 			dependents = table.getDependents(precedent);
 		}
-		//zekun.fan@gmail.com - Masking and Scheduling
-		if (includePrecedent) { //ZSS-1047
-			addRefUpdate(precedent);
-			FormulaCacheMasker.INSTANCE.mask(precedent);
-
-		}
-		if(dependents!=null && dependents.size()>0){
-			if(clearer!=null){
-				clearer.clear(dependents);
-			}else if(bookSeries.isAutoFormulaCacheClean()){
-				new FormulaCacheClearHelper(bookSeries).clear(dependents);
+		try {
+			TransactionManager.INSTANCE.startTransaction(null);
+			//zekun.fan@gmail.com - Masking and Scheduling
+			if (includePrecedent) { //ZSS-1047
+				addRefUpdate(precedent);
+				FormulaCacheMasker.INSTANCE.mask(precedent);
+				FormulaAsyncScheduler.getScheduler().addTask(precedent);
 			}
-			if(collector!=null){
-				collector.addRefs(dependents);
+			if (dependents != null && dependents.size() > 0) {
+				if (clearer != null) {
+					clearer.clear(dependents);
+				} else if (bookSeries.isAutoFormulaCacheClean()) {
+					new FormulaCacheClearHelper(bookSeries).clear(dependents);
+				}
+				if (collector != null) {
+					collector.addRefs(dependents);
+				}
+				dependents.forEach(v -> {
+					FormulaCacheMasker.INSTANCE.mask(v);
+					FormulaAsyncScheduler.getScheduler().addTask(v);
+				});
 			}
-			dependents.forEach(FormulaCacheMasker.INSTANCE::mask);
+		}finally {
+			TransactionManager.INSTANCE.endTransaction(null);
 		}
 	}
 

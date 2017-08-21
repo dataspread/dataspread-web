@@ -68,6 +68,7 @@ import org.zkoss.zss.model.sys.TransactionManager;
 import org.zkoss.zss.model.sys.format.FormatResult;
 import org.zkoss.zss.model.sys.formula.EvaluationContributorContainer;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
+import org.zkoss.zss.model.sys.formula.FormulaAsyncUIController;
 import org.zkoss.zss.model.util.RichTextHelper;
 import org.zkoss.zss.range.SImporter;
 import org.zkoss.zss.range.SImporters;
@@ -661,6 +662,8 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 			}finally{
 				_book.getBookSeries().getLock().writeLock().unlock();
 			}
+			//zekun.fan@gmail.com
+			FormulaAsyncScheduler.getUiController().unbind(_book,Spreadsheet.this);
 			_book = null;
 		}
 	}
@@ -710,6 +713,8 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 		
 		_book = book;
 		if (_book != null) {
+			//zekun.fan@gmail.com
+			FormulaAsyncScheduler.getUiController().bind(_book,Spreadsheet.this);
 			_book.getBookSeries().getLock().writeLock().lock();
 			try{
 				_book.addEventListener(_modelEventListener);
@@ -3345,7 +3350,6 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 
 			SCell cell = sheet.getCell(row, col);
 			JSONObject attrs = new JSONObject();
-			FormulaAsyncScheduler.getUiController().prepare(cell,Spreadsheet.this);
 			//row num, cell num attr
 //			if (cell != null) {
 //				attrs.put("r", row);
@@ -3522,7 +3526,6 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 					attrs.put("rot", rotate);
 				}
 			}
-			FormulaAsyncScheduler.getUiController().cancelIfNotConfirmed(cell);
 			return attrs;
 		}
 

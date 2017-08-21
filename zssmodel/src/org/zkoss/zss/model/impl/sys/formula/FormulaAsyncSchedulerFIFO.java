@@ -13,17 +13,11 @@ import org.zkoss.zss.model.sys.TransactionManager;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.formula.*;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by zekun.fan@gmail.com on 7/11/17.
@@ -47,16 +41,19 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
         //new task before last one's end, first cancelIfNotConfirmed as its execution is unordered
         //interrupt the working thread, removed explicit locking inside for preventing deadlock
         //Interrupt MAY CAUSE Problem, but can't be covered here.
-        if (!TransactionManager.INSTANCE.isInTransaction(null))
-            throw new RuntimeException("addTask not within transaction!");
+
+        //No longer throws exception as long as it's registered in transaction
+        //if (!TransactionManager.INSTANCE.isInTransaction(null))
+        //    throw new RuntimeException("addTask not within transaction!");
+        if (target.getType()!= Ref.RefType.CELL && target.getType()!=Ref.RefType.AREA)
+            return;
+        int xid=TransactionManager.INSTANCE.getXid(null);
 
         expander.submit(new Runnable() {
             @Override
             public void run() {
                 SBook book;
                 SSheet sheet;
-                int xid=TransactionManager.INSTANCE.getXid(null);
-
                 book=BookBindings.get(target.getBookName());
                 if (book==null){
                     book=new BookImpl(target.getBookName());
@@ -70,19 +67,20 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
                 cells.forEach((sCell)->{
                     //ugly, but works.
                     CellImpl cell=(CellImpl)sCell;
-                    FormulaAsyncTaskInfo info= infos.get(cell);
-                    if (info==null){
+                    FormulaAsyncTaskInfo info=infos.get(cell);
+                    if (info==null)
                         info = new FormulaAsyncTaskInfo();
-                        info.target=cell;
-                    }else if (xid > info.xid)
+                    else if (xid > info.xid)
                         info.ctrl.cancel(false);
+                    info.target=cell;
                     //This might not work, DK if it'll be loaded
                     FormulaExpression expr=cell.getFormulaExpression();
                     //if the cell isn't a formula, expr==null
                     if (expr!=null) {
                         info.xid=xid;
+                        info.expr=expr;
                         infos.put(cell,info);
-                        info.ctrl=pool.submit(new FormulaAsyncTask(cell, expr));
+                        info.ctrl=pool.submit(new FormulaAsyncTask(info));
                     }
                 });
             }
@@ -91,16 +89,17 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
 
     @Override
     public void cancelTask(Ref target) {
-        if (!TransactionManager.INSTANCE.isInTransaction(null))
+        //No longer throws exception as long as it's registered in transaction
+        //if (!TransactionManager.INSTANCE.isInTransaction(null))
+        //throw new RuntimeException("cancelTask not within transaction!");
+        if (target.getType()!= Ref.RefType.CELL && target.getType()!=Ref.RefType.AREA)
             return;
-            //throw new RuntimeException("cancelTask not within transaction!");
+        int xid=TransactionManager.INSTANCE.getXid(null);
         expander.submit(new Runnable() {
             @Override
             public void run() {
                 SBook book;
                 SSheet sheet;
-                int xid=TransactionManager.INSTANCE.getXid(null);
-
                 book=BookBindings.get(target.getBookName());
                 if (book==null)
                     return;
@@ -111,7 +110,7 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
                 cells.forEach((sCell)-> {
                     CellImpl cell=(CellImpl)sCell;
                     FormulaAsyncTaskInfo info= infos.get(cell);
-                    if (info != null && info.xid<=xid && info.ctrl.cancel(false))
+                    if (info != null && info.xid<xid && info.ctrl.cancel(false))
                         infos.remove(cell);
                 });
             }
@@ -125,26 +124,25 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
     }
 
     private class FormulaAsyncTask implements Runnable{
-        private CellImpl target;
-        private FormulaExpression expr;
-        private FormulaEvaluationContext evalContext;
+        private FormulaAsyncTaskInfo info;
 
-        FormulaAsyncTask(CellImpl target, FormulaExpression expr) {
-            this.target = target;
-            this.expr = expr;
-            this.evalContext = new FormulaEvaluationContext(target,new RefImpl(target));
+        FormulaAsyncTask(FormulaAsyncTaskInfo info) {
+            this.info=info;
         }
 
         @Override
         public void run() {
             //try {Thread.sleep(5000);}catch (InterruptedException ignored){}
+            TransactionManager.INSTANCE.registerWorker(info.xid);
+            Ref refTarget=new RefImpl(this.info.target);
+            FormulaEvaluationContext evalContext=new FormulaEvaluationContext(this.info.target,refTarget);
             FormulaEngine fe = EngineFactory.getInstance().createFormulaEngine();
-            EvaluationResult result = fe.evaluate(expr,evalContext);
-            target.updateFormulaResultValue(result);
+            EvaluationResult result = fe.evaluate(info.expr,evalContext);
+            info.target.updateFormulaResultValue(result,info.xid);
             if (FormulaAsyncScheduler.uiController!=null){
-                FormulaAsyncScheduler.uiController.updateAndRelease(target);
+                FormulaAsyncScheduler.uiController.update(info.target.getSheet(),new CellRegion(info.target.getRowIndex(),info.target.getColumnIndex()));
             }
-            infos.remove(target);
+            infos.remove(info.target);
         }
     }
 
@@ -158,5 +156,6 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
         public int xid;
         public CellImpl target;
         public Future<?> ctrl;
+        public FormulaExpression expr;
     }
 }
