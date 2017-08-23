@@ -56,6 +56,7 @@ import java.util.Locale;
  * @since 3.5.0
  *
  * Modified usages of _formulaResultValue by zekun.fan@gmail.com on July 2017
+ * Added version on Aug 2017
  */
 public class CellImpl extends AbstractCellAdv {
 	private static final long serialVersionUID = 1L;
@@ -219,7 +220,7 @@ public class CellImpl extends AbstractCellAdv {
 		if(_formulaResultValue == null){
 		//20170714, may cause dead lock, mustn't synchronize it!
 		// (this.getSheet().getBook().getBookSeries()) {
-			//this code is kept here just in case
+			//zekun.fan@gmail.com - this code is kept here just in case
 			//they are not supposed to be called
 			CellValue val = getCellValue();
 			if(val!=null &&  val.getType() == CellType.FORMULA){

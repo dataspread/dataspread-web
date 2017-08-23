@@ -81,6 +81,8 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
                         info.expr=expr;
                         infos.put(cell,info);
                         info.ctrl=pool.submit(new FormulaAsyncTask(info));
+                    }else{
+                        FormulaCacheMasker.INSTANCE.unmask(new RefImpl(cell),xid);
                     }
                 });
             }
@@ -142,6 +144,7 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
             if (FormulaAsyncScheduler.uiController!=null){
                 FormulaAsyncScheduler.uiController.update(info.target.getSheet(),new CellRegion(info.target.getRowIndex(),info.target.getColumnIndex()));
             }
+            FormulaCacheMasker.INSTANCE.unmask(refTarget,info.xid);
             infos.remove(info.target);
         }
     }
