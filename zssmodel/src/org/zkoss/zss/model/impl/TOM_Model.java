@@ -123,7 +123,7 @@ public class TOM_Model extends Model {
             stmt.setArray(1, inArray);
             stmt.execute();
 
-            TOM_Mapping.instance.pushUpdates(context, tableName);
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -322,18 +322,13 @@ public class TOM_Model extends Model {
                 e.printStackTrace();
             }
         }
-
         TOM_Mapping.instance.pushUpdates(context, tableName);
     }
 
     @Override
     public CellRegion getBounds(DBContext context) {
-        int rows = rowMapping.size(context);
-        int columns = colMapping.size(context);
-        if (rows == 0 || columns == 0)
-            return null;
-        else //rowMapping.size(context)    without -1 to include the header of the table
-            return new CellRegion(0, 0, rowMapping.size(context), colMapping.size(context) - 1);
+        //rowMapping.size(context)    without -1 to include the header of the table
+        return new CellRegion(0, 0, rowMapping.size(context), colMapping.size(context) - 1);
     }
 
     @Override

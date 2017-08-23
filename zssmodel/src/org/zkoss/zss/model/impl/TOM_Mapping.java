@@ -142,4 +142,22 @@ public class TOM_Mapping {
             this.colIdxTable = new BTree(dbContext, colIdxTable);
         }
     }
+
+    public void updateRegion(TOM_Model tomModel, String bookName, String sheetName,
+                             CellRegion oldRegion, CellRegion newRegion)
+    {
+        Set<Pair<Ref, TOM_Model>> tableSet = tableMapping.get(tomModel.getTableName());
+
+        AbstractBookAdv book =  (AbstractBookAdv) BookBindings.get(bookName);
+        SSheet sheet = book.getSheetByName(sheetName);
+        Ref oldRef = new RefImpl(bookName,
+                sheetName, oldRegion.getRow(),oldRegion.getColumn(),
+                oldRegion.getLastRow(),  oldRegion.getLastColumn());
+        Ref newRef = new RefImpl(bookName,
+                sheetName, newRegion.getRow(),newRegion.getColumn(),
+                newRegion.getLastRow(),  newRegion.getLastColumn());
+
+        tableSet.remove(new Pair<>(oldRef, tomModel));
+        tableSet.add(new Pair<>(newRef, tomModel));
+    }
 }

@@ -58,7 +58,8 @@ public class Hybrid_Model extends RCV_Model {
             tableModels.stream()
                     .filter(e->e.y instanceof TOM_Model)
                     .forEach(e->
-                            TOM_Mapping.instance.addMapping(e.y.tableName, (TOM_Model) e.y, new RefImpl(sheet.getBook().getId(),
+                            TOM_Mapping.instance.addMapping(e.y.tableName, (TOM_Model) e.y,
+                                    new RefImpl(sheet.getBook().getId(),
                                     sheet.getSheetName(), e.x.getRow(),e.x.getColumn(),
                                     e.x.getLastRow(),  e.x.getLastColumn())));
         }
@@ -259,18 +260,18 @@ public class Hybrid_Model extends RCV_Model {
 
     public CellRegion linkTable(DBContext context, String tableName, CellRegion range){
         TOM_Model model = (TOM_Model) Model.CreateModel(context, sheet, ModelType.TOM_Model, tableName);
-        TOM_Mapping.instance.addMapping(tableName, model, new RefImpl(sheet.getBook().getId(),
-                sheet.getSheetName(), range.getRow(),range.getColumn(),
-                range.getLastRow(),  range.getLastColumn()));
         model.createOIDIndex(context);
         model.indexOIDs(context);
         range = model.getBounds(context).shiftedRange(range.row, range.column).getOverlap(range);
+        TOM_Mapping.instance.addMapping(tableName, model, new RefImpl(sheet.getBook().getId(),
+                sheet.getSheetName(), range.getRow(),range.getColumn(),
+                range.getLastRow(),  range.getLastColumn()));
 
         tableModels.add(new Pair<>(range, model));
         MetaDataBlock.ModelEntry modelEntry = new MetaDataBlock.ModelEntry();
         modelEntry.range = range;
         modelEntry.modelType = ModelType.TOM_Model;
-        modelEntry.tableName = tableName;
+        modelEntry.tableName = model.getTableName();
         metaDataBlock.modelEntryList.add(modelEntry);
         bs.putObject(0, metaDataBlock);
         bs.flushDirtyBlocks(context);
@@ -370,14 +371,20 @@ public class Hybrid_Model extends RCV_Model {
             return false;
 
 
-        CellRegion range = modelEntries.get(0).x;
+        CellRegion tableRegion = modelEntries.get(0).x;
 
-        if (!range.contains(cellRegion))
+        if (!tableRegion.contains(cellRegion))
             return false;
 
         TOM_Model tomModel = (TOM_Model) modelEntries.get(0).y;
         /* -1 below as top row is header */
-        tomModel.deleteTuples(context, cellRegion.getRow() - range.getRow() - 1, cellRegion.getHeight());
+        tomModel.deleteTuples(context, cellRegion.getRow() - tableRegion.getRow() - 1, cellRegion.getHeight());
+        // For all the regions that are displaying more than my displayed records
+        // Reduce the size.
+
+        shrinkToBound(context, tomModel);
+
+        TOM_Mapping.instance.pushUpdates(context, tomModel.getTableName());
         return true;
     }
 
@@ -549,27 +556,83 @@ public class Hybrid_Model extends RCV_Model {
         return null;
     }
 
+    public void shrinkToBound(DBContext dbContext, TOM_Model tomModel)
+    {
+        CellRegion bounds = tomModel.getBounds(dbContext);
+        for (int i=0;i<tableModels.size();i++) {
+            if (tableModels.get(i).y.getTableName() == tomModel.getTableName())
+            {
+                boolean changed = false;
+                CellRegion originalRegion = tableModels.get(i).x;
+                int newLastRow = originalRegion.getLastRow();
+                int newLastCol = originalRegion.getLastColumn();
+
+                CellRegion shiftedRange = originalRegion.shiftedRange(-originalRegion.getRow(),
+                        -originalRegion.getColumn());
+                if (shiftedRange.getLastRow() >= bounds.getLastRow())
+                {
+                    newLastRow = bounds.getLastRow() + originalRegion.getRow();
+                    changed = true;
+                }
+
+                if (shiftedRange.getLastColumn() >= bounds.getLastColumn())
+                {
+                    newLastCol = bounds.getLastColumn() + originalRegion.getColumn();
+                    changed = true;
+                }
+
+
+                if(changed)
+                {
+                    CellRegion newRegion = new CellRegion(originalRegion.getRow(),
+                            originalRegion.getColumn(),
+                            newLastRow, newLastCol);
+
+                    tableModels.remove(i);
+                    tableModels.add(i, new Pair<>(newRegion, tomModel));
+                    MetaDataBlock.ModelEntry modelEntry = new MetaDataBlock.ModelEntry();
+                    modelEntry.range = newRegion;
+                    modelEntry.modelType = ModelType.TOM_Model;
+                    modelEntry.tableName = tomModel.getTableName();
+                    metaDataBlock.modelEntryList.remove(i);
+                    metaDataBlock.modelEntryList.add(i, modelEntry);
+                    bs.putObject(0, metaDataBlock);
+                    bs.flushDirtyBlocks(dbContext);
+
+
+                    TOM_Mapping.instance.updateRegion(tomModel,
+                            sheet.getBook().getId(), sheet.getSheetName(), originalRegion, newRegion);
+                    sheet.clearCache(originalRegion);
+                }
+            }
+        }
+        TOM_Mapping.instance.pushUpdates(dbContext, tomModel.getTableName());
+    }
+
     // Extend the area of x by cellRegion
-    public void extendRange(DBContext dbContext, CellRegion x, CellRegion cellRegion) {
+    public void extendRange(DBContext dbContext, String tableName, CellRegion oldRegion, CellRegion extendRegion) {
+        CellRegion newRegion = new CellRegion(oldRegion.getRow(), oldRegion.getColumn(),
+                extendRegion.getLastRow(), extendRegion.getLastColumn());
+
         for (int i=0;i<tableModels.size();i++)
         {
-            if (tableModels.get(i).x == x)
+            if (tableModels.get(i).x == oldRegion)
             {
-                CellRegion newRegion = new CellRegion(x.getRow(), x.getColumn(),
-                        cellRegion.getLastRow(), cellRegion.getLastColumn());
-                Model model = tableModels.get(i).y;
+                TOM_Model model = (TOM_Model) tableModels.get(i).y;
                 tableModels.remove(i);
 
                 tableModels.add(new Pair<>(newRegion, model));
                 MetaDataBlock.ModelEntry modelEntry = new MetaDataBlock.ModelEntry();
                 modelEntry.range = newRegion;
                 modelEntry.modelType = ModelType.TOM_Model;
-                modelEntry.tableName = tableName;
+                modelEntry.tableName = model.getTableName();
                 metaDataBlock.modelEntryList.remove(i);
                 metaDataBlock.modelEntryList.add(modelEntry);
                 bs.putObject(0, metaDataBlock);
                 bs.flushDirtyBlocks(dbContext);
 
+                TOM_Mapping.instance.updateRegion(model, sheet.getBook().getId(), sheet.getSheetName(),
+                        oldRegion, newRegion);
                 TOM_Mapping.instance.pushUpdates(dbContext, model.getTableName());
                 return;
             }
