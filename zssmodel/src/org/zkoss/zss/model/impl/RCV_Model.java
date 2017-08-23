@@ -11,7 +11,8 @@ import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SSheet;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.Reader;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
@@ -26,7 +27,7 @@ public class RCV_Model extends Model {
     private MetaDataBlock metaDataBlock;
 
     //Create or load RCV_model.
-    protected RCV_Model(DBContext context, SSheet sheet,  String tableName) {
+    protected RCV_Model(DBContext context, SSheet sheet, String tableName) {
         this.sheet = sheet;
         rowMapping = new BTree(context, tableName + "_row_idx");
         colMapping = new BTree(context, tableName + "_col_idx");

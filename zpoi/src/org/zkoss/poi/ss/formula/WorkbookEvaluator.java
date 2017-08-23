@@ -74,7 +74,7 @@ public final class WorkbookEvaluator {
 	private boolean dbgEvaluationOutputForNextEval = false;
 	// current indent level for evalution; negative value for no output
 	private int dbgEvaluationOutputIndent = -1;
-	
+
 	/**
 	 * @param udfFinder pass <code>null</code> for default (AnalysisToolPak only)
 	 */
@@ -389,7 +389,7 @@ public final class WorkbookEvaluator {
 	 * @return never <code>null</code>, never {@link BlankEval}
 	 */
 	private ValueEval evaluateAny(EvaluationCell srcCell, int sheetIndex,
-				int rowIndex, int columnIndex, EvaluationTracker tracker, Object ref) {
+								  int rowIndex, int columnIndex, EvaluationTracker tracker, Object ref) {
 
 		// avoid tracking dependencies to cells that have constant definition
 		boolean shouldCellDependencyBeRecorded = _stabilityClassifier == null || !_stabilityClassifier.isCellFinal(sheetIndex, rowIndex, columnIndex);
@@ -530,8 +530,8 @@ public final class WorkbookEvaluator {
 			dbgIndentStr = dbgIndentStr.substring(0, Math.min(dbgIndentStr.length(), dbgEvaluationOutputIndent*2));
 			EVAL_LOG.log(POILogger.WARN, dbgIndentStr
 			                   + "- evaluateFormula('" + ec.getRefEvaluatorForCurrentSheet().getSheetName()
-			                   + "'/" + new CellReference(ec.getRowIndex(), ec.getColumnIndex()).formatAsString()
-			                   + "): " + Arrays.toString(ptgs).replaceAll("\\Qorg.zkoss.poi.ss.formula.ptg.\\E", ""));
+					+ "'/" + new CellReference(ec.getRowIndex(), ec.getColumnIndex()).formatAsString()
+					+ "): " + Arrays.toString(ptgs).replaceAll("\\Qorg.zkoss.poi.ss.formula.ptg.\\E", ""));
 			dbgEvaluationOutputIndent++;
 		}
 
@@ -633,7 +633,7 @@ public final class WorkbookEvaluator {
 				/**
 				 *  All operational algebra calculation should be handled here
 				 */
-				
+
 //ZSS-933: should process Union operator
 //				if (optg instanceof UnionPtg) { continue; }
 
@@ -642,28 +642,28 @@ public final class WorkbookEvaluator {
 //					j end with 1
 //				}
 
-                //if optg is overrided (it's in relational algebra operator) need to add an OverrideEval to know
-                boolean isOverridedOpPtg = optg.isOverrided();
+				//if optg is overrided (it's in relational algebra operator) need to add an OverrideEval to know
+				boolean isOverridedOpPtg = optg.isOverrided();
 				int overrideTableNum = optg.getOverrideTableNum();
 
-                int numops = optg.getNumberOfOperands();
+				int numops = optg.getNumberOfOperands();
 
-                if (isOverridedOpPtg) {
-                    numops++;
-                }
+				if (isOverridedOpPtg) {
+					numops++;
+				}
 
                 ValueEval[] ops = new ValueEval[numops];
 
 				// storing the ops in reverse order since they are popping
 				for (int j = numops - 1; j >= 0; j--) {
 
-                    //if is overrided op, we need to put an OverrideEval at first index of ops
-                    if (isOverridedOpPtg && j == 0) {
-                        ops[0] = new OverrideEval();
-                        continue;
-                    }
-                    ValueEval p = stack.pop();
-                    /**
+					//if is overrided op, we need to put an OverrideEval at first index of ops
+					if (isOverridedOpPtg && j == 0) {
+						ops[0] = new OverrideEval();
+						continue;
+					}
+					ValueEval p = stack.pop();
+					/**
 					 * TODO
 					 * for each stack.pop if conditionalEval don't do postProcessValueEval
 					 */
@@ -909,9 +909,9 @@ public final class WorkbookEvaluator {
 		throw new RuntimeException("Unexpected ptg class (" + ptg.getClass().getName() + ")");
 	}
 
-    /**
-     * YK: Used by OperationEvaluationContext to resolve indirect names.
-     */
+	/**
+	 * YK: Used by OperationEvaluationContext to resolve indirect names.
+	 */
 	/*package*/ ValueEval evaluateNameFormula(Ptg[] ptgs, OperationEvaluationContext ec) {
 		if (ptgs.length > 1) {
 			//dennischen@zkoss.org, roll-back to poi 3.9 original code and change to throw not-implement-exception to avoid noisy console log
@@ -1181,7 +1181,7 @@ public final class WorkbookEvaluator {
 		// the top evaluation frame
 		return result;
 	}
-	
+
 	public interface CacheManager {
 		void onUpdateCacheResult(EvaluationCell srcCell, ValueEval result);
 	}

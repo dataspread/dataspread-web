@@ -92,10 +92,10 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 	@Wire
 	Menu insertMenu;
 
-    @Wire
-    Menuitem createTable;
-    @Wire
-    Menuitem deleteTable;
+	@Wire
+	Menuitem createTable;
+	@Wire
+	Menuitem deleteTable;
 	@Wire
 	Menuitem displayTable;
 	@Wire
@@ -272,6 +272,7 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 	}
 	@Listen("onClick=#changeUsername")
 	public void onChangeUsername(){
+		pushAppEvent(AppEvts.ON_CLOSE_BOOK);
 		pushAppEvent(AppEvts.ON_CHANGED_USERNAME);
 	}
 	@Listen("onClick=#shareBook")
@@ -331,36 +332,38 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 		pushAppEvent(AppEvts.ON_INSERT_HYPERLINK);
 	}
 
-    @Listen("onClick=#createTable")
-    public void onCreateTable() {
-        pushAppEvent(AppEvts.ON_CREATE_TABLE);
-    }
+	@Listen("onClick=#createTable")
+	public void onCreateTable() {
+		pushAppEvent(AppEvts.ON_CREATE_TABLE);
+	}
 
 	@Listen("onClick=#displayTable")
 	public void onDisplayTable() {
 		pushAppEvent(AppEvts.ON_DISPLAY_TABLE);
 	}
 
-    @Listen("onClick=#deleteTable")
-    public void onDeleteTable() {
-        pushAppEvent(AppEvts.ON_DELETE_TABLE);
-    }
+	@Listen("onClick=#deleteTable")
+	public void onDeleteTable() {
+		pushAppEvent(AppEvts.ON_DELETE_TABLE);
+	}
 
 	@Listen("onClick=#expandCols")
 	public void onExpandCols() {
 		pushAppEvent(AppEvts.ON_EXPAND_COLS);
 	}
+
 	@Listen("onClick=#expandRows")
 	public void onExpandRows() {
 		pushAppEvent(AppEvts.ON_EXPAND_ROWS);
 	}
+
 	@Listen("onClick=#expandAll")
 	public void onExpandAll() {
 		pushAppEvent(AppEvts.ON_EXPAND_ALL);
 	}
 
 	@Listen("onToggleTableBar=#mainMenubar")
-	public void onToggleTableBar(){
+	public void onToggleTableBar() {
 		pushAppEvent(AppEvts.ON_TOGGLE_TABLE_BAR);
 	}
 }

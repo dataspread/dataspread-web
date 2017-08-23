@@ -9,7 +9,7 @@ import org.zkoss.zss.model.SCell;
  * 1. prepare, set up UI for future use, but not sure if necessary
  * 2. confirm, if the cell has a formula needed to be computed
  * 3. cancelIfNotConfirmed, as it suggests, it release the reference to the cell for future GC.
- *
+ * <p>
  * FormulaAsyncHandler:
  * 1. updateAndRelease, after computation, update to UI if there exists an UI.
  */

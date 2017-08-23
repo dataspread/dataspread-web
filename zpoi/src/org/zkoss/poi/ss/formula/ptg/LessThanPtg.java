@@ -25,7 +25,7 @@ package org.zkoss.poi.ss.formula.ptg;
  */
 public final class LessThanPtg extends ComparisonPtg {
     /** the sid for the less than operator as hex */
-    public final static byte sid  = 0x09;
+    public final static byte sid = 0x09;
     public static final ValueOperatorPtg instance = new LessThanPtg();
     /** identifier for LESS THAN char */
     private final static String LESSTHAN = "<";

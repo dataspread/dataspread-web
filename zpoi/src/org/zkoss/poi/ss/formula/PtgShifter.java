@@ -708,7 +708,7 @@ public class PtgShifter {
 			return rptg;
 		}
 	}
-	
+
 	private Ptg rptgSetRowCol(RefPtgBase rptg, int rowNum, int colNum) {
 		if (rowNum > _ver.getLastRowIndex() || rowNum < 0) {
 			return createDeletedRef(rptg); //out of bound
@@ -721,7 +721,7 @@ public class PtgShifter {
 			rptg.setColumn(colNum);
 		}
 		return rptg;
-	}	
+	}
 
 	private Ptg aptgSetFirstRow(AreaPtgBase aptg, int rowNum) {
 		if (rowNum > _ver.getLastRowIndex()) {
@@ -802,7 +802,7 @@ public class PtgShifter {
 		}
 		return aptg;
 	}
-	
+
 	private Ptg aptgSetRowCol(AreaPtgBase aptg, int firstRow, int firstCol, int lastRow, int lastCol) {
 		//first & last columns
 		if (firstCol > _ver.getLastColumnIndex()) {

@@ -280,7 +280,7 @@ class CellProxy extends AbstractCellAdv {
 
 	@Override
 	public void translate(int rowShift, int colShift) {
-			this._rowIdx += rowShift;
-			this._columnIdx += colShift;
+		this._rowIdx += rowShift;
+		this._columnIdx += colShift;
 	}
 }

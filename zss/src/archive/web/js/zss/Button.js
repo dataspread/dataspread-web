@@ -619,7 +619,7 @@ if (zk.feature.pe) {
 				var uuid = this.uuid;
 				var cnt = this.$supers(zss.ColorbuttonEx, 'domContent_', arguments);
 
-				var out = new Array();
+				var out = [];
 				out.push(cnt);
 				out.push('<div id="' + uuid + '-color" class="zstbtn-color" style="background:' 
 					+ this.getColor() + ';"></div>');
@@ -1551,11 +1551,11 @@ zss.MenupopupFactory = zk.$extends(zk.Object, {
 				sclass: 'insert'
 			}),
 			insertMP = new zss.Menupopup(),
-            tableMenu = new zss.Menu({
-                label: msgzss.action.table,
-                sclass: 'table'
-            }),
-            tableMP = new zss.Menupopup(),
+			tableMenu = new zss.Menu({
+				label: msgzss.action.table,
+				sclass: 'table'
+			}),
+			tableMP = new zss.Menupopup(),
 			deleteMenu = new zss.Menu({
 				label: msgzss.action.del,
 				sclass: 'del'
@@ -1594,11 +1594,11 @@ zss.MenupopupFactory = zk.$extends(zk.Object, {
 		p.appendChild(newActionMenuitem(wgt, 'clearContent'));
 		p.appendChild(new zul.menu.Menuseparator());
 
-        tableMP.appendChild(newActionMenuitem(wgt, 'deleteTableRow'));
-        tableMP.appendChild(newActionMenuitem(wgt, 'appendTableRow'));
-        tableMenu.appendChild(tableMP);
-        p.appendChild(tableMenu);
-        p.appendChild(new zul.menu.Menuseparator());
+		tableMP.appendChild(newActionMenuitem(wgt, 'deleteTableRow'));
+		tableMP.appendChild(newActionMenuitem(wgt, 'appendTableRow'));
+		tableMenu.appendChild(tableMP);
+		p.appendChild(tableMenu);
+		p.appendChild(new zul.menu.Menuseparator());
 
 
 		filterMP.appendChild(newActionMenuitem(wgt, 'reapplyFilter', '/web/zss/img/funnel--arrow.png'));

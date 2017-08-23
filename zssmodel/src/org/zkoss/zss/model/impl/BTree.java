@@ -4,7 +4,6 @@ import org.model.BlockStore;
 import org.model.DBContext;
 import org.zkoss.util.logging.Log;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -1033,7 +1032,7 @@ public class BTree implements PosMapping {
 
     // TODO: Do it in batches. offline if possible.
     public void insertIDs(DBContext context, int pos, List<Integer> ids) {
-        int count=ids.size();
+        int count = ids.size();
         for (int i = 0; i < count; i++) {
             ++metaDataBlock.maxValue;
             addByCount(context, pos + i, ids.get(i), false);

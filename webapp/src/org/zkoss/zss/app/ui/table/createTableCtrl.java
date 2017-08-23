@@ -7,16 +7,12 @@ import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zk.ui.select.annotation.Listen;
 import org.zkoss.zk.ui.select.annotation.Wire;
 import org.zkoss.zss.api.AreaRef;
-import org.zkoss.zss.api.CellOperationUtil;
-import org.zkoss.zss.api.Range;
 import org.zkoss.zss.api.Ranges;
-import org.zkoss.zss.api.model.CellStyle;
 import org.zkoss.zss.api.model.Sheet;
 import org.zkoss.zss.app.ui.dlg.DlgCallbackEvent;
 import org.zkoss.zss.app.ui.dlg.DlgCtrlBase;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.impl.Hybrid_Model;
-import org.zkoss.zss.model.impl.Model;
 import org.zkoss.zss.ui.Spreadsheet;
 import org.zkoss.zul.Messagebox;
 import org.zkoss.zul.Textbox;
@@ -24,26 +20,20 @@ import org.zkoss.zul.Window;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 /**
  * Created by Albatool on 4/11/2017.
  */
 public class createTableCtrl extends DlgCtrlBase {
-    private static final long serialVersionUID = 1L;
-
-    private final static String URI = "~./zssapp/dlg/createTable.zul";
-
     public static final String ON_OPEN = "onOpen";
-
+    private static final long serialVersionUID = 1L;
+    private final static String URI = "~./zssapp/dlg/createTable.zul";
+    private static Spreadsheet sss;
     @Wire
     private Textbox tableName;
     @Wire
     private Window createTableDlg;
-
-    private static Spreadsheet sss;
     private AreaRef selection;
     private Sheet sheet;
 
@@ -70,14 +60,14 @@ public class createTableCtrl extends DlgCtrlBase {
         selection = sss.getSelection();
         sheet = sss.getSelectedSheet();
 
-        bookName=sss.getBook().getBookName();
+        bookName = sss.getBook().getBookName();
         rangeRef = Ranges.getAreaRefString(sheet, selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
 
     }
 
     @Listen("onClick = #createButton")
     public void create() {
-        boolean created=false;
+        boolean created = false;
         name = tableName.getValue();
         try {
             if (name.isEmpty()) {
@@ -89,8 +79,7 @@ public class createTableCtrl extends DlgCtrlBase {
             CellRegion region = new CellRegion(selection.getRow(), selection.getColumn(),
                     selection.getLastRow(), selection.getLastColumn());
             Hybrid_Model model = (Hybrid_Model) sheet.getInternalSheet().getDataModel();
-            if (model.checkOverap(region))
-            {
+            if (model.checkOverap(region)) {
                 Messagebox.show("Table Range Overlaps with Existing Table.", "Create Table",
                         Messagebox.OK, Messagebox.ERROR);
                 createTableDlg.detach();
@@ -100,8 +89,8 @@ public class createTableCtrl extends DlgCtrlBase {
             Connection connection = DBHandler.instance.getConnection();
             DBContext dbContext = new DBContext(connection);
             model.createTable(dbContext, region, name);
-            model.insertTuples(dbContext, new CellRegion(region.getRow()+1, region.getColumn(),
-                    region.getLastRow(), region.getLastColumn()),name);
+            model.insertTuples(dbContext, new CellRegion(region.getRow() + 1, region.getColumn(),
+                    region.getLastRow(), region.getLastColumn()), name);
             model.linkTable(dbContext, name, new CellRegion(region.getRow(), region.getColumn(),
                     region.getLastRow(), region.getLastColumn()));
             connection.commit();
@@ -118,7 +107,6 @@ public class createTableCtrl extends DlgCtrlBase {
 
         }
         createTableDlg.detach();
-
 
 
     }

@@ -7,17 +7,16 @@ import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zk.ui.select.annotation.Listen;
 import org.zkoss.zk.ui.select.annotation.Wire;
 import org.zkoss.zss.api.AreaRef;
-import org.zkoss.zss.api.CellOperationUtil;
-import org.zkoss.zss.api.Range;
-import org.zkoss.zss.api.Ranges;
-import org.zkoss.zss.api.model.CellStyle;
 import org.zkoss.zss.api.model.Sheet;
 import org.zkoss.zss.app.ui.dlg.DlgCallbackEvent;
 import org.zkoss.zss.app.ui.dlg.DlgCtrlBase;
 import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.impl.*;
+import org.zkoss.zss.model.impl.Hybrid_Model;
 import org.zkoss.zss.ui.Spreadsheet;
-import org.zkoss.zul.*;
+import org.zkoss.zul.Combobox;
+import org.zkoss.zul.ListModelList;
+import org.zkoss.zul.Messagebox;
+import org.zkoss.zul.Window;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -29,18 +28,14 @@ import java.util.Map;
  * Created by Albatool on 4/11/2017.
  */
 public class displayTableCtrl extends DlgCtrlBase {
-    private static final long serialVersionUID = 1L;
-
-    private final static String URI = "~./zssapp/dlg/displayTable.zul";
-
     public static final String ON_OPEN = "onOpen";
-
+    private static final long serialVersionUID = 1L;
+    private final static String URI = "~./zssapp/dlg/displayTable.zul";
+    private static Spreadsheet sss;
     @Wire
     private Combobox tablesBox;
     @Wire
     private Window displayTableDlg;
-
-    private static Spreadsheet sss;
     private AreaRef selection;
     private Sheet sheet;
 
@@ -70,8 +65,8 @@ public class displayTableCtrl extends DlgCtrlBase {
 
     private ListModelList<String> getTablesList() throws SQLException {
         try (
-        Connection connection = DBHandler.instance.getConnection();
-        Statement stmt = connection.createStatement();) {
+                Connection connection = DBHandler.instance.getConnection();
+                Statement stmt = connection.createStatement()) {
 
             String sql = "SELECT table_name FROM information_schema.tables  " +
                     "WHERE TABLE_SCHEMA='public' AND " +
@@ -90,16 +85,14 @@ public class displayTableCtrl extends DlgCtrlBase {
 
     @Listen("onClick = #okButton")
     public void display() throws SQLException {
-        if (tablesBox.getSelectedItem()==null)
-        {
+        if (tablesBox.getSelectedItem() == null) {
             Messagebox.show("Table Name is Required", "Table Name",
                     Messagebox.OK, Messagebox.ERROR);
             return;
         }
-        String tableName =  tablesBox.getSelectedItem().getLabel();
-        if (tableName!=null && !tableName.isEmpty()) {
-            try(Connection connection = DBHandler.instance.getConnection())
-            {
+        String tableName = tablesBox.getSelectedItem().getLabel();
+        if (tableName != null && !tableName.isEmpty()) {
+            try (Connection connection = DBHandler.instance.getConnection()) {
                 DBContext dbContext = new DBContext(connection);
                 CellRegion region = new CellRegion(selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
                 // Make sure the sheet is saved

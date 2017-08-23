@@ -66,12 +66,11 @@ public class DBHandler implements ServletContextListener {
         try (Connection connection = DBHandler.instance.getConnection()) {
             DBContext dbContext = new DBContext(connection);
             createBookTable(dbContext);
+            createUserAccountTable(dbContext);
             createUserTable(dbContext);
             createTableOrders(dbContext);
             connection.commit();
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -98,7 +97,7 @@ public class DBHandler implements ServletContextListener {
 
     private void createUserTable(DBContext dbContext) {
         try (Statement stmt = dbContext.getConnection().createStatement()) {
-            String createTable = "CREATE TABLE  IF NOT  EXISTS  users (" +
+            String createTable = "CREATE TABLE IF NOT EXISTS users (" +
                     "username  TEXT NOT NULL," +
                     "booktable   TEXT NOT NULL" +
                     ");";
@@ -110,8 +109,19 @@ public class DBHandler implements ServletContextListener {
         }
     }
 
-    private void createTableOrders(DBContext dbContext)
-    {
+    private void createUserAccountTable(DBContext dbContext) {
+        try (Statement stmt = dbContext.getConnection().createStatement()) {
+            String createTable = "CREATE TABLE IF NOT EXISTS user_account (" +
+                    "username  TEXT NOT NULL," +
+                    "password   TEXT NOT NULL" +
+                    ");";
+            stmt.execute(createTable);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void createTableOrders(DBContext dbContext) {
         try (Statement stmt = dbContext.getConnection().createStatement()) {
             String createTable = "CREATE TABLE  IF NOT  EXISTS  tableorders (" +
                     "tablename  TEXT NOT NULL," +

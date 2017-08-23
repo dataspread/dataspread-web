@@ -16,22 +16,15 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
  */
 package org.zkoss.zss.range.impl.imexp;
 
-import java.io.*;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.*;
-
 import org.zkoss.poi.hssf.usermodel.HSSFRichTextString;
-import org.zkoss.poi.ss.formula.eval.BoolEval;
-import org.zkoss.poi.ss.formula.eval.ErrorEval;
-import org.zkoss.poi.ss.formula.eval.NumberEval;
-import org.zkoss.poi.ss.formula.eval.StringEval;
-import org.zkoss.poi.ss.formula.eval.ValueEval;
+import org.zkoss.poi.ss.formula.eval.*;
 import org.zkoss.poi.ss.formula.ptg.FuncVarPtg;
 import org.zkoss.poi.ss.formula.ptg.Ptg;
 import org.zkoss.poi.ss.usermodel.*;
 import org.zkoss.poi.ss.util.CellRangeAddress;
-import org.zkoss.poi.xssf.usermodel.*;
+import org.zkoss.poi.xssf.usermodel.XSSFCellStyle;
+import org.zkoss.poi.xssf.usermodel.XSSFRichTextString;
+import org.zkoss.poi.xssf.usermodel.XSSFWorkbook;
 import org.zkoss.util.Locales;
 import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.SAutoFilter.NFilterColumn;
@@ -40,6 +33,14 @@ import org.zkoss.zss.model.SPicture.Format;
 import org.zkoss.zss.model.SSheet.SheetVisible;
 import org.zkoss.zss.model.impl.*;
 import org.zkoss.zss.model.sys.formula.FormulaExpression;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.Connection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * Contains common importing behavior for both XLSX and XLS. Spreadsheet
@@ -66,6 +67,10 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 	 */
 	public static final int CHRACTER_WIDTH = 7;
 	/**
+	 * book type key for book attribute
+	 **/
+	protected static String BOOK_TYPE_KEY = "$ZSS.BOOKTYPE$";
+	/**
 	 * <poi CellStyle index, {@link SCellStyle} object> Keep track of imported
 	 * style during importing to avoid creating duplicated style objects.
 	 */
@@ -77,28 +82,38 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 	/** source POI book */
 	protected Workbook workbook;
 	//ZSS-735, poiPictureData -> SPictureData index
-	protected Map<PictureData, Integer> importedPictureData = new HashMap<PictureData, Integer>(); 
-	
-	/** book type key for book attribute **/
-	protected static String BOOK_TYPE_KEY = "$ZSS.BOOKTYPE$";
+	protected Map<PictureData, Integer> importedPictureData = new HashMap<PictureData, Integer>();
+	//ZSS-873: Import formula cache result from an Excel file
+	private boolean _importCache = false;
 
+	/**
+	 * Gets the book-type information ("xls" or "xlsx"), return null if not found
+	 *
+	 * @param book
+	 * @return
+	 */
+	public static String getBookType(SBook book) {
+		return (String) book.getAttribute(BOOK_TYPE_KEY);
+	}
+	
 	//ZSS-854
 	private void importDefaultCellStyles() {
 		((AbstractBookAdv)book).clearDefaultCellStyles();
 		for (CellStyle poiStyle : workbook.getDefaultCellStyles()) {
 			book.addDefaultCellStyle(importCellStyle(poiStyle, false));
 		}
-		// in case of XLS files which we have not support defaultCellStyles 
+		// in case of XLS files which we have not support defaultCellStyles
 		if (book.getDefaultCellStyles().isEmpty()) {
 			((AbstractBookAdv)book).initDefaultCellStyles();
 		}
 	}
+
 	//ZSS-854
 	private void importNamedStyles() {
 		((AbstractBookAdv)book).clearNamedStyles();
 		for (NamedStyle poiStyle : workbook.getNamedStyles()) {
-			SNamedStyle namedStyle = 
-					new NamedStyleImpl(poiStyle.getName(), poiStyle.isCustomBuiltin(), 
+			SNamedStyle namedStyle =
+					new NamedStyleImpl(poiStyle.getName(), poiStyle.isCustomBuiltin(),
 							poiStyle.getBuiltinId(), book, (int) poiStyle.getIndex());
 			book.addNamedCellstyle(namedStyle);
 		}
@@ -110,7 +125,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 	 */
 	@Override
 	public SBook imports(InputStream is, String bookName) throws IOException {
-		
+
 		// clear cache for reuse
 		importedStyle.clear();
 		importedFont.clear();
@@ -121,7 +136,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 		//ZSS-854
 		importDefaultCellStyles();
 		importNamedStyles();
-		
+
 		setBookType(book);
 
 		//ZSS-715: Enforce internal Locale.US Locale so formula is in consistent internal format
@@ -164,22 +179,13 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 	}
 
 	abstract protected Workbook createPoiBook(InputStream is) throws IOException;
-	
-	
+
 	abstract protected void setBookType(SBook book);
-	/**
-	 * Gets the book-type information ("xls" or "xlsx"), return null if not found
-	 * @param book
-	 * @return
-	 */
-	public static String getBookType(SBook book){
-		return (String)book.getAttribute(BOOK_TYPE_KEY);
-	}
 
 	/**
-	 * When a column is hidden with default width, we don't import the width for it's 0. 
+	 * When a column is hidden with default width, we don't import the width for it's 0.
 	 * We also don't import the width that equals to default width for optimization.
-	 * 
+	 *
 	 * @param poiSheet
 	 * @param sheet
 	 */
@@ -189,7 +195,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 	 * If in same column: anchorWidthInFirstColumn + anchor width in
 	 * inter-columns + anchorWidthInLastColumn (dx2) no in same column:
 	 * anchorWidthInLastColumn - offsetInFirstColumn (dx1)
-	 * 
+	 *
 	 */
 	abstract protected int getAnchorWidthInPx(ClientAnchor anchor, Sheet poiSheet);
 
@@ -222,15 +228,12 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 			return true;
 		}
 		// ignore defined name of functions, they are macro functions that we don't support
-		if (definedName.isFunctionName()){
+		if (definedName.isFunctionName()) {
 			return true;
 		}
-		
-		if(definedName.getRefersToFormula() == null) { // ignore defined name with null formula, don't know when will have this case
-			return true;
-		}
-		
-		return false;
+
+		return definedName.getRefersToFormula() == null;
+
 	}
 
 	/**
@@ -240,14 +243,14 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 	 * necessary.
 	 */
 	abstract protected void importExternalBookLinks();
-
+	
 	//ZSS-952
 	protected void importSheetDefaultColumnWidth(Sheet poiSheet, SSheet sheet) {
 		// reference XUtils.getDefaultColumnWidthInPx()
 		int defaultWidth = UnitUtil.defaultColumnWidthToPx(poiSheet.getDefaultColumnWidth(), CHRACTER_WIDTH);
 		sheet.setDefaultColumnWidth(defaultWidth);
 	}
-	
+
 	/*
 	 * import sheet scope content from POI Sheet.
 	 */
@@ -264,7 +267,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 		sheet.getViewInfo().setRowBreaks(poiSheet.getRowBreaks());
 
 		SPrintSetup sps= sheet.getPrintSetup();
-		
+
 		SHeader header = sheet.getViewInfo().getHeader();
 		if (header != null) {
 			header.setCenterText(poiSheet.getHeader().getCenter());
@@ -299,7 +302,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 				sps.setEvenFooter(evenFooter);
 			}
 		}
-		
+
 		if (poiSheet.isDiffFirst()) {
 			Header poiFirstHeader = poiSheet.getFirstHeader();
 			if (poiFirstHeader != null) {
@@ -320,14 +323,14 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 		}
 
 		PrintSetup poips = poiSheet.getPrintSetup();
-		
+
 		sps.setBottomMargin(poiSheet.getMargin(Sheet.BottomMargin));
 		sps.setTopMargin(poiSheet.getMargin(Sheet.TopMargin));
 		sps.setLeftMargin(poiSheet.getMargin(Sheet.LeftMargin));
 		sps.setRightMargin(poiSheet.getMargin(Sheet.RightMargin));
 		sps.setHeaderMargin(poiSheet.getMargin(Sheet.HeaderMargin));
 		sps.setFooterMargin(poiSheet.getMargin(Sheet.FooterMargin));
-		
+
 		sps.setAlignWithMargins(poiSheet.isAlignMargins());
 		sps.setErrorPrintMode(poips.getErrorsMode());
 		sps.setFitHeight(poips.getFitHeight());
@@ -340,13 +343,13 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 		sps.setCommentsMode(poips.getCommentsMode());
 		sps.setPrintGridlines(poiSheet.isPrintGridlines());
 		sps.setPrintHeadings(poiSheet.isPrintHeadings());
-		
+
 		sps.setScale(poips.getScale());
 		sps.setScaleWithDoc(poiSheet.isScaleWithDoc());
 		sps.setDifferentOddEvenPage(poiSheet.isDiffOddEven());
 		sps.setDifferentFirstPage(poiSheet.isDiffFirst());
 		sps.setVCenter(poiSheet.getVerticallyCenter());
-		
+
 		Workbook poiBook = poiSheet.getWorkbook();
 		String area = poiBook.getPrintArea(poiSheetIndex);
 		if (area != null) {
@@ -357,7 +360,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 		if (rowrng != null) {
 			sps.setRepeatingRowsTitle(rowrng.getFirstRow(), rowrng.getLastRow());
 		}
-		
+
 		CellRangeAddress colrng = poiSheet.getRepeatingColumns();
 		if (colrng != null) {
 			sps.setRepeatingColumnsTitle(colrng.getFirstColumn(), colrng.getLastColumn());
@@ -367,7 +370,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 		//sheet.setPassword(poiSheet.getProtect()?"":null);
 		//import hashed password directly
 		//importPassword(poiSheet, sheet);
-		
+
 		//ZSS-832
 		//import sheet visible
 		if (poiBook.isSheetHidden(poiSheetIndex)) {
@@ -377,12 +380,12 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 		} else {
 			sheet.setSheetVisible(SheetVisible.VISIBLE);
 		}
-		
+
 		return sheet;
 	}
 
 	abstract protected void importPassword(Sheet poiSheet, SSheet sheet);
-	
+
 	protected void importMergedRegions(Sheet poiSheet, SSheet sheet) {
 		// merged cells
 		// reference RangeImpl.getMergeAreas()
@@ -394,7 +397,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 	}
 
 	/**
-	 * Drawings includes charts and pictures. 
+	 * Drawings includes charts and pictures.
 	 */
 	abstract protected void importDrawings(Sheet poiSheet, SSheet sheet);
 
@@ -482,7 +485,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 			break;
 
 		}
-		
+
 		Hyperlink poiHyperlink = poiCell.getHyperlink();
 		if (poiHyperlink != null) {
 			String addr = poiHyperlink.getAddress();
@@ -490,14 +493,14 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 			SHyperlink hyperlink = cell.setupHyperlink(PoiEnumConversion.toHyperlinkType(poiHyperlink.getType()),addr==null?"":addr,label==null?"":label);
 			cell.setHyperlink(hyperlink);
 		}
-		
+
 		Comment poiComment = poiCell.getCellComment();
 		if(poiComment != null) {
 			SComment comment = cell.setupComment();
 			comment.setAuthor(poiComment.getAuthor());
 			comment.setVisible(poiComment.isVisible());
 			RichTextString poiRichTextString = poiComment.getString();
-			if (poiRichTextString != null && poiRichTextString.numFormattingRuns() > 0) {			
+			if (poiRichTextString != null && poiRichTextString.numFormattingRuns() > 0) {
 				importRichText(poiCell, poiComment.getString(), comment.setupRichText());
 			} else {
 				comment.setText(poiComment.toString());
@@ -506,7 +509,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 
 		return cell;
 	}
-	
+
 	protected void importRichText(Cell poiCell, RichTextString poiRichTextString, SRichText richText) {
 		String cellValue = poiRichTextString.getString();
 		for (int i = 0; i < poiRichTextString.numFormattingRuns(); i++) {
@@ -518,12 +521,13 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 
 	/**
 	 * Convert CellStyle into NCellStyle
-	 * 
+	 *
 	 * @param poiCellStyle
 	 */
 	protected SCellStyle importCellStyle(CellStyle poiCellStyle) {
 		return importCellStyle(poiCellStyle, true);
 	}
+
 	protected SCellStyle importCellStyle(CellStyle poiCellStyle, boolean inStyleTable) {
 		SCellStyle cellStyle = null;
 //		short idx = poiCellStyle.getIndex(); // ZSS-685
@@ -551,7 +555,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 //			if (fgColor == null && bgColor != null) { //ZSS-797
 //				fgColor = bgColor;
 //			}
-			//ZSS-857: SOLID pattern: switch fillColor and backColor 
+			//ZSS-857: SOLID pattern: switch fillColor and backColor
 			cellStyle.setFillPattern(PoiEnumConversion.toFillPattern(poiCellStyle.getFillPattern()));
 			SColor fgSColor = book.createColor(BookHelper.colorToForegroundHTML(workbook, fgColor));
 			SColor bgSColor = book.createColor(BookHelper.colorToBackgroundHTML(workbook, bgColor));
@@ -604,7 +608,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 		}
 		return font;
 	}
-	
+
 	protected SFont createZssFont(Font poiFont) {
 		SFont font = book.createFont(true);
 		// font
@@ -617,7 +621,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 		font.setHeightPoints(poiFont.getFontHeightInPoints());
 		font.setTypeOffset(PoiEnumConversion.toTypeOffset(poiFont.getTypeOffset()));
 		font.setColor(book.createColor(BookHelper.getFontHTMLColor(workbook, poiFont)));
-		
+
 		return font;
 	}
 
@@ -653,13 +657,13 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 	}
 
 	/**
-	 * POI AutoFilter.getFilterColumn(i) sometimes returns null. A POI FilterColumn object only 
-	 * exists when we have set a criteria on that column. 
-	 * For example, if we enable auto filter on 2 columns, but we only set criteria on 
-	 * 2nd column. Thus, the size of filter column is 1. There is only one FilterColumn 
-	 * object and its column id is 1. Only getFilterColumn(1) will return a FilterColumn, 
+	 * POI AutoFilter.getFilterColumn(i) sometimes returns null. A POI FilterColumn object only
+	 * exists when we have set a criteria on that column.
+	 * For example, if we enable auto filter on 2 columns, but we only set criteria on
+	 * 2nd column. Thus, the size of filter column is 1. There is only one FilterColumn
+	 * object and its column id is 1. Only getFilterColumn(1) will return a FilterColumn,
 	 * other get null.
-	 * 
+	 *
 	 * @param poiSheet source POI sheet
 	 * @param sheet destination sheet
 	 */
@@ -672,7 +676,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 			importAutoFilterColumns(poiAutoFilter, autoFilter, numberOfColumn); //ZSS-1019
 		}
 	}
-	
+
 	//ZSS-1019
 	protected void importAutoFilterColumns(AutoFilter poiFilter, SAutoFilter zssFilter, int numberOfColumn) {
 		for (int i = 0; i < numberOfColumn; i++) {
@@ -692,7 +696,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 		if (font == null) {
 			CellStyle style = cell.getCellStyle();
 			short fontIndex = style != null ? style.getFontIndex() : (short) 0;
-			return book.getFontAt(fontIndex); 
+			return book.getFontAt(fontIndex);
 		}
 		return font;
 	}
@@ -711,22 +715,21 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 	 * @since 3.8.0
 	 */
 	abstract protected void importTables(Sheet poiSheet, SSheet sheet); //ZSS-855
-	
-	//ZSS-873: Import formula cache result from an Excel file
-	private boolean _importCache = false;
-	/**
-	 * Set if import Excel cached value.
-	 * @since 3.7.0
-	 */
-	public void setImportCache(boolean b) {
-		_importCache = b;
-	}
+
 	/**
 	 * Returns if import file cached value.
 	 * @since 3.7.0
 	 */
 	protected boolean isImportCache() {
 		return _importCache;
+	}
+
+	/**
+	 * Set if import Excel cached value.
+	 * @since 3.7.0
+	 */
+	public void setImportCache(boolean b) {
+		_importCache = b;
 	}
 	
 	//ZSS-873

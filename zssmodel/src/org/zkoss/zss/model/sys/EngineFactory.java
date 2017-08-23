@@ -19,7 +19,6 @@ package org.zkoss.zss.model.sys;
 import org.zkoss.lang.Library;
 import org.zkoss.util.logging.Log;
 import org.zkoss.zss.model.impl.sys.CalendarUtilImpl;
-import org.zkoss.zss.model.impl.sys.DependencyTableRtreeImpl;
 import org.zkoss.zss.model.impl.sys.DependencyTableImpl;
 import org.zkoss.zss.model.impl.sys.FormatEngineImpl;
 import org.zkoss.zss.model.impl.sys.InputEngineImpl;
@@ -36,11 +35,63 @@ import org.zkoss.zss.model.sys.input.InputEngine;
 public class EngineFactory {
 
 	private static final Log _logger = Log.lookup(EngineFactory.class.getName());
-	
+	static InputEngine _inputEngine;
+	static Class<?> inputEngineClazz;
+	static Class<?> formulaEngineClazz;
+	//ZSS-815
+	static Class<?> dependencyTableClazz;
+	static FormatEngine _formatEngine;
+	static Class<?> formatEngineClazz;
 	static private EngineFactory _instance;
-	
 	static private CalendarUtil _calendarUtil = new CalendarUtilImpl();
 
+	static {
+		String clz = Library.getProperty("org.zkoss.zss.model.InputEngine.class");
+		if (clz != null) {
+			try {
+				inputEngineClazz = Class.forName(clz);
+			} catch (Exception e) {
+				_logger.error(e.getMessage(), e);
+			}
+		}
+
+	}
+
+	static {
+		String clz = Library.getProperty("org.zkoss.zss.model.FormulaEngine.class");
+		if (clz != null) {
+			try {
+				formulaEngineClazz = Class.forName(clz);
+			} catch (Exception e) {
+				_logger.error(e.getMessage(), e);
+			}
+		}
+
+	}
+
+	static {
+		String clz = Library.getProperty("org.zkoss.zss.model.DependencyTable.class");
+		if (clz != null) {
+			try {
+				dependencyTableClazz = Class.forName(clz);
+			} catch (Exception e) {
+				_logger.error(e.getMessage(), e);
+			}
+		}
+
+	}
+
+	static {
+		String clz = Library.getProperty("org.zkoss.zss.model.FormatEngine.class");
+		if (clz != null) {
+			try {
+				formatEngineClazz = Class.forName(clz);
+			} catch (Exception e) {
+				_logger.error(e.getMessage(), e);
+			}
+		}
+
+	}
 	private EngineFactory() {
 	}
 
@@ -56,19 +107,6 @@ public class EngineFactory {
 		return _instance;
 	}
 
-	static InputEngine _inputEngine;
-	static Class<?> inputEngineClazz;
-	static {
-		String clz = Library.getProperty("org.zkoss.zss.model.InputEngine.class");
-		if(clz!=null){
-			try {
-				inputEngineClazz = Class.forName(clz);
-			} catch(Exception e) {
-				_logger.error(e.getMessage(), e);
-			}			
-		}
-		
-	}
 	public InputEngine createInputEngine() {
 		if (_inputEngine == null) {
 			try {
@@ -84,19 +122,6 @@ public class EngineFactory {
 		return _inputEngine;
 	}
 
-	static Class<?> formulaEngineClazz;
-	static {
-		String clz = Library.getProperty("org.zkoss.zss.model.FormulaEngine.class");
-		if(clz!=null){
-			try {
-				formulaEngineClazz = Class.forName(clz);
-			} catch(Exception e) {
-				_logger.error(e.getMessage(), e);
-			}			
-		}
-		
-	}
-	
 	public FormulaEngine createFormulaEngine() {
 		try {
 			if(formulaEngineClazz != null) {
@@ -109,19 +134,6 @@ public class EngineFactory {
 		return new FormulaEngineImpl();
 	}
 
-	//ZSS-815
-	static Class<?> dependencyTableClazz;
-	static {
-		String clz = Library.getProperty("org.zkoss.zss.model.DependencyTable.class");
-		if(clz!=null){
-			try {
-				dependencyTableClazz = Class.forName(clz);
-			} catch(Exception e) {
-				_logger.error(e.getMessage(), e);
-			}			
-		}
-		
-	}
 	//ZSS-815
 	public DependencyTable createDependencyTable() {
 		try {
@@ -136,20 +148,7 @@ public class EngineFactory {
 		//Aug.2 Disabled RtreeImpl
 		return new DependencyTableImpl();//DependencyTableImpl();
 	}
-	
-	static FormatEngine _formatEngine;
-	static Class<?> formatEngineClazz;
-	static {
-		String clz = Library.getProperty("org.zkoss.zss.model.FormatEngine.class");
-		if(clz!=null){
-			try {
-				formatEngineClazz = Class.forName(clz);
-			} catch(Exception e) {
-				_logger.error(e.getMessage(), e);
-			}			
-		}
-		
-	}
+
 	public FormatEngine createFormatEngine() {
 		if (_formatEngine == null) {
 			try {

@@ -28,8 +28,8 @@ public abstract class SelectFunction implements Function {
         }
         throw new EvaluationException(ErrorEval.VALUE_INVALID);
     }
-    
-    public final ValueEval evaluate (ValueEval[] args, int srcCellRow, int srcCellCol) {
+
+    public final ValueEval evaluate(ValueEval[] args, int srcCellRow, int srcCellCol) {
 
         try {
 
@@ -58,8 +58,7 @@ public abstract class SelectFunction implements Function {
 
             }
 
-        }
-        catch (EvaluationException e) {
+        } catch (EvaluationException e) {
             return e.getErrorEval();
         }
 
@@ -68,5 +67,5 @@ public abstract class SelectFunction implements Function {
     protected abstract ValueEval evaluate(AreaEval range, int srcRowIndex, int srcColumnIndex);
 
     protected abstract ValueEval evaluate(AreaEval range, ValueEval condition, int srcRowIndex, int srcColumnIndex);
-    
+
 }

@@ -16,9 +16,9 @@ Copyright (C) 2014 Potix Corporation. All Rights Reserved.
 
 package org.zkoss.zss.model.impl;
 
-import java.io.Serializable;
-
 import org.zkoss.zss.model.SSheetProtection;
+
+import java.io.Serializable;
 
 /**
  * @author henri
@@ -62,108 +62,17 @@ public class SheetProtectionImpl implements SSheetProtection, Serializable {
 	}
 	
 	/**
+	 * set whether linked objects or embedded objects can be edited.
+	 */
+	public void setObjects(boolean flag) {
+		_bits = setBoolean(OBJECTS, _bits, flag);
+	}
+	
+	/**
 	 * get whether scenarios can be edited.
 	 */
 	public boolean isScenarios() {
 		return (SCENARIOS & _bits) != 0;
-	}
-	
-	/**
-	 * get whether cells can be formatted.
-	 */
-	public boolean isFormatCells() {
-		return (FORMAT_CELLS & _bits) != 0;
-	}
-	
-	/**
-	 * get whether columns can be formatted.
-	 */
-	public boolean isFormatColumns() {
-		return (FORMAT_COLUMNS & _bits) != 0;
-	}
-	
-	/**
-	 * get whether rows can be formatted.
-	 */
-	public boolean isFormatRows() {
-		return (FORMAT_ROWS & _bits) != 0;
-	}
-	
-	/**
-	 * get whether columns can be inserted.
-	 */
-	public boolean isInsertColumns() {
-		return (INSERT_COLUMNS & _bits) != 0;
-	}
-	
-	/**
-	 * get whether rows can be inserted.
-	 */
-	public boolean isInsertRows() {
-		return (INSERT_ROWS & _bits) != 0;
-	}
-	
-	/**
-	 * get whether hyperlinks can be inserted. 
-	 */
-	public boolean isInsertHyperlinks() {
-		return (INSERT_HYPERLINKS & _bits) != 0;
-	}
-	
-	/**
-	 * get whether columns can be deleted.
-	 */
-	public boolean isDeleteColumns() {
-		return (DELETE_COLUMNS & _bits) != 0;
-	}
-	
-	/**
-	 * get whether rows can be deleted. 
-	 */
-	public boolean isDeleteRows() {
-		return (DELETE_ROWS & _bits) != 0;
-	}
-	
-	/**
-	 * get whether locked cells can be selected.
-	 */
-	public boolean isSelectLockedCells() {
-		return (SEL_LOCKED_CELLS & _bits) != 0;
-	}
-	
-	/**
-	 * get whether cells can be sorted.
-	 */
-	public boolean isSort() {
-		return (SORT & _bits) != 0;
-	}
-	
-	/**
-	 * get whether cells can be filtered.
-	 */
-	public boolean isAutoFilter() {
-		return (AUTO_FILTER & _bits) != 0;
-	}
-	
-	/**
-	 * get whether PivotTable reports ccan be created or modified. 
-	 */
-	public boolean isPivotTables() {
-		return (PIVOT_TABLES & _bits) != 0;
-	}
-	
-	/**
-	 * get whether unlocked cells can be selected.
-	 */
-	public boolean isSelectUnlockedCells() {
-		return (SEL_UNLOCKED_CELLS & _bits) != 0;
-	}
-	
-	/**
-	 * set whether linked objects or embedded objects can be edited.
-	 */
-	public void setObjects(boolean flag) {
-	    _bits = setBoolean(OBJECTS, _bits, flag);
 	}
 	
 	/**
@@ -174,10 +83,24 @@ public class SheetProtectionImpl implements SSheetProtection, Serializable {
 	}
 	
 	/**
+	 * get whether cells can be formatted.
+	 */
+	public boolean isFormatCells() {
+		return (FORMAT_CELLS & _bits) != 0;
+	}
+	
+	/**
 	 * set whether cells can be formatted.
 	 */
 	public void setFormatCells(boolean flag) {
 		_bits = setBoolean(FORMAT_CELLS, _bits, flag);
+	}
+	
+	/**
+	 * get whether columns can be formatted.
+	 */
+	public boolean isFormatColumns() {
+		return (FORMAT_COLUMNS & _bits) != 0;
 	}
 	
 	/**
@@ -188,10 +111,24 @@ public class SheetProtectionImpl implements SSheetProtection, Serializable {
 	}
 	
 	/**
+	 * get whether rows can be formatted.
+	 */
+	public boolean isFormatRows() {
+		return (FORMAT_ROWS & _bits) != 0;
+	}
+	
+	/**
 	 * set whether rows can be formatted.
 	 */
 	public void setFormatRows(boolean flag) {
 		_bits = setBoolean(FORMAT_ROWS, _bits, flag);
+	}
+	
+	/**
+	 * get whether columns can be inserted.
+	 */
+	public boolean isInsertColumns() {
+		return (INSERT_COLUMNS & _bits) != 0;
 	}
 	
 	/**
@@ -202,6 +139,13 @@ public class SheetProtectionImpl implements SSheetProtection, Serializable {
 	}
 	
 	/**
+	 * get whether rows can be inserted.
+	 */
+	public boolean isInsertRows() {
+		return (INSERT_ROWS & _bits) != 0;
+	}
+	
+	/**
 	 * set whether rows can be inserted.
 	 */
 	public void setInsertRows(boolean flag) {
@@ -209,10 +153,24 @@ public class SheetProtectionImpl implements SSheetProtection, Serializable {
 	}
 	
 	/**
-	 * set whether hyperlinks can be inserted. 
+	 * get whether hyperlinks can be inserted.
+	 */
+	public boolean isInsertHyperlinks() {
+		return (INSERT_HYPERLINKS & _bits) != 0;
+	}
+	
+	/**
+	 * set whether hyperlinks can be inserted.
 	 */
 	public void setInsertHyperlinks(boolean flag) {
 		_bits = setBoolean(INSERT_HYPERLINKS, _bits, flag);
+	}
+	
+	/**
+	 * get whether columns can be deleted.
+	 */
+	public boolean isDeleteColumns() {
+		return (DELETE_COLUMNS & _bits) != 0;
 	}
 	
 	/**
@@ -223,10 +181,24 @@ public class SheetProtectionImpl implements SSheetProtection, Serializable {
 	}
 	
 	/**
-	 * set whether rows can be deleted. 
+	 * get whether rows can be deleted.
+	 */
+	public boolean isDeleteRows() {
+		return (DELETE_ROWS & _bits) != 0;
+	}
+	
+	/**
+	 * set whether rows can be deleted.
 	 */
 	public void setDeleteRows(boolean flag) {
 		_bits = setBoolean(DELETE_ROWS, _bits, flag);
+	}
+	
+	/**
+	 * get whether locked cells can be selected.
+	 */
+	public boolean isSelectLockedCells() {
+		return (SEL_LOCKED_CELLS & _bits) != 0;
 	}
 	
 	/**
@@ -237,10 +209,24 @@ public class SheetProtectionImpl implements SSheetProtection, Serializable {
 	}
 	
 	/**
+	 * get whether cells can be sorted.
+	 */
+	public boolean isSort() {
+		return (SORT & _bits) != 0;
+	}
+	
+	/**
 	 * set whether cells can be sorted.
 	 */
 	public void setSort(boolean flag) {
 		_bits = setBoolean(SORT, _bits, flag);
+	}
+	
+	/**
+	 * get whether cells can be filtered.
+	 */
+	public boolean isAutoFilter() {
+		return (AUTO_FILTER & _bits) != 0;
 	}
 	
 	/**
@@ -251,10 +237,24 @@ public class SheetProtectionImpl implements SSheetProtection, Serializable {
 	}
 	
 	/**
-	 * set whether PivotTable reports ccan be created or modified. 
+	 * get whether PivotTable reports ccan be created or modified.
+	 */
+	public boolean isPivotTables() {
+		return (PIVOT_TABLES & _bits) != 0;
+	}
+	
+	/**
+	 * set whether PivotTable reports ccan be created or modified.
 	 */
 	public void setPivotTables(boolean flag) {
 		_bits = setBoolean(PIVOT_TABLES, _bits, flag);
+	}
+	
+	/**
+	 * get whether unlocked cells can be selected.
+	 */
+	public boolean isSelectUnlockedCells() {
+		return (SEL_UNLOCKED_CELLS & _bits) != 0;
 	}
 	
 	/**

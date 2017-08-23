@@ -23,23 +23,23 @@ public abstract class RelationalOperatorFunction implements Function {
      * Implementation of the relational algebra operator UNION
      */
     public static final Function UNION = new TwoRangeFunction() {
-        
+
         @Override
         protected ValueEval evaluate(ArrayEval range1, ArrayEval range2, int srcRowIndex, int srcColumnIndex) {
-            
+
             try {
-                
+
                 validateUnionCompatible(range1, range2);
 
                 List<Row> rows1 = Row.getRowsFromArea(range1);
                 List<Row> rows2 = Row.getRowsFromArea(range2);
-                Row[] combinedRows = new Row[rows1.size() + rows2.size()];                
-                
+                Row[] combinedRows = new Row[rows1.size() + rows2.size()];
+
                 int insertIndex = 0;
                 //Add all rows from rows1
                 for (Row r : rows1) {
                     combinedRows[insertIndex++] = r;
-                }                    
+                }
                 //Add all rows from rows2
                 for (Row r : rows2) {
                     combinedRows[insertIndex++] = r;
@@ -50,9 +50,8 @@ public abstract class RelationalOperatorFunction implements Function {
 
                 //return evalHelper(resultRows);
                 return Row.getArrayEval(resultRows, srcRowIndex, srcColumnIndex, range1.getRefEvaluator());
-                
-            }
-            catch (EvaluationException e) {
+
+            } catch (EvaluationException e) {
                 return e.getErrorEval();
             }
         }
@@ -70,7 +69,7 @@ public abstract class RelationalOperatorFunction implements Function {
 
             for (int r1 = 0; r1 < rows.length; r1++) {
                 Row row1 = rows[r1];
-                for (int r2 = r1 + 1; r2 < rows.length; r2++) {                    
+                for (int r2 = r1 + 1; r2 < rows.length; r2++) {
                     Row row2 = rows[r2];
                     if (row1.matches(row2)) {
                         indicesToKeep[r2] = false;
@@ -88,7 +87,7 @@ public abstract class RelationalOperatorFunction implements Function {
      * Implementation of the relational algebra operator SET DIFFERENCE
      */
     public static final Function DIFFERENCE = new TwoRangeFunction() {
-        
+
         @Override
         protected ValueEval evaluate(ArrayEval range1, ArrayEval range2, int srcRowIndex, int srcColumnIndex) {
 
@@ -121,9 +120,9 @@ public abstract class RelationalOperatorFunction implements Function {
 //                List<Row> resultRows = getRowsToKeep(indicesToKeep, rows1);
 
                 //return evalHelper(resultRows);                
-                return Row.getArrayEval(resultRows, srcRowIndex, srcColumnIndex, range1.getRefEvaluator());                
+                return Row.getArrayEval(resultRows, srcRowIndex, srcColumnIndex, range1.getRefEvaluator());
 
-            } catch (EvaluationException e) {                
+            } catch (EvaluationException e) {
                 return e.getErrorEval();
             }
         }
@@ -167,7 +166,7 @@ public abstract class RelationalOperatorFunction implements Function {
      * Implementation of relational algebra operator INTERSECTION
      */
     public static final Function INTERSECTION = new TwoRangeFunction() {
-        
+
         @Override
         protected ValueEval evaluate(ArrayEval range1, ArrayEval range2, int srcRowIndex, int srcColumnIndex) {
 
@@ -197,10 +196,9 @@ public abstract class RelationalOperatorFunction implements Function {
 
                 //return evalHelper(resultRows);
                 return Row.getArrayEval(resultRows, srcRowIndex, srcColumnIndex, range1.getRefEvaluator());
-                
 
-            }
-            catch (EvaluationException e) {
+
+            } catch (EvaluationException e) {
                 return e.getErrorEval();
             }
         }
@@ -236,10 +234,10 @@ public abstract class RelationalOperatorFunction implements Function {
 //
 //        }
     };
-    
-    
+
+
     public static final Function CROSSPRODUCT = new TwoRangeFunction() {
-        
+
         @Override
         protected ValueEval evaluate(ArrayEval range1, ArrayEval range2, int srcRowIndex, int srcColumnIndex) {
 
@@ -261,10 +259,10 @@ public abstract class RelationalOperatorFunction implements Function {
             return Row.getArrayEval(resultRows, srcRowIndex, srcColumnIndex, range1.getRefEvaluator());
         }
     };
-    
-    
+
+
     public static final Function SELECT = new SelectFunction() {
-        
+
         //select with no conditions
         @Override
         protected ValueEval evaluate(AreaEval range, int srcRowIndex, int srcColumnIndex) {
@@ -272,7 +270,7 @@ public abstract class RelationalOperatorFunction implements Function {
             List<Row> rows = Row.getRowsFromArea(range);
 
             return Row.getArrayEval(rows, srcRowIndex, srcColumnIndex, range.getRefEvaluator());
-            
+
         }
 
         //select with conditions
@@ -288,10 +286,10 @@ public abstract class RelationalOperatorFunction implements Function {
 //            return evalHelper(rows);
         }
     };
-    
-    
+
+
     public static final Function PROJECT = new RangeSchemaFunction() {
-        
+
         @Override
         protected ValueEval evaluate(AreaEval range, String[] attributes, int srcRowIndex, int srcColumnIndex) {
             ValueEval[][] values = new ValueEval[range.getHeight()][attributes.length];
@@ -304,10 +302,10 @@ public abstract class RelationalOperatorFunction implements Function {
             return new ArrayEval(values, range.getFirstRow(), range.getFirstColumn(), range.getLastRow(), range.getFirstColumn() + attributes.length - 1, range.getRefEvaluator());
         }
     };
-    
-    
+
+
     public static final Function RENAME = new RangeSchemaFunction() {
-        
+
         @Override
         protected ValueEval evaluate(AreaEval range, String[] attributes, int srcRowIndex, int srcColumnIndex) {
 
@@ -315,16 +313,16 @@ public abstract class RelationalOperatorFunction implements Function {
             if (attributes.length != range.getWidth()) {
                 return ErrorEval.VALUE_INVALID;
             }
-            
+
             range.setAttributeNames(attributes);
             return range;
 
         }
-    };   
-    
-    
+    };
+
+
     public static final Function JOIN = new JoinFunction() {
-        
+
         @Override
         protected ValueEval evaluate(AreaEval range1, AreaEval range2, ValueEval[] args, int srcRowIndex, int srcColumnIndex) {
             return new StringEval("not implemented");
@@ -333,8 +331,9 @@ public abstract class RelationalOperatorFunction implements Function {
 
 
     /**
-     * Method to check that the two ranges are union compatible. 
+     * Method to check that the two ranges are union compatible.
      * i.e. they have same number of columns and same schema
+     *
      * @param range1
      * @param range2
      * @throws EvaluationException
@@ -352,6 +351,7 @@ public abstract class RelationalOperatorFunction implements Function {
 
     /**
      * Helper method for getRowsToKeep to find how many rows are going to be in the result
+     *
      * @param indicesToKeep
      * @return
      */
@@ -372,6 +372,7 @@ public abstract class RelationalOperatorFunction implements Function {
 
     /**
      * Helper method for relational operator functions to get the resulting set of rows
+     *
      * @param indicesToKeep
      * @param rows
      * @return
@@ -391,25 +392,25 @@ public abstract class RelationalOperatorFunction implements Function {
 
     }
 
-    
+
     /**
      * Helper method for evalHelper that gets a string of the value
+     *
      * @param eval
      * @return
      */
-    private static String getStringVal (ValueEval eval) {
-        
+    private static String getStringVal(ValueEval eval) {
+
         if (eval instanceof NumberEval) {
             return ((NumberEval) eval).getStringValue();
-        }
-        else if (eval instanceof StringEval) {
+        } else if (eval instanceof StringEval) {
             return ((StringEval) eval).getStringValue();
         }
-        
+
         //TODO: Check other eval instances
-        
+
         return null;
-        
+
     }
 
 
@@ -417,35 +418,36 @@ public abstract class RelationalOperatorFunction implements Function {
      * Private class used to represent a row (array of ValueEval's)
      */
     private static class Row {
-        
+
         private ValueEval[] values;
-        
+
         public Row(ValueEval[] values) {
-            
+
             this.values = values;
-            
+
         }
 
         /**
          * Static method to combine row1 (a1, ..., an) and row2 (b1, ... , bn) into row3 (a1, ... , an, b1, ... , bn)
+         *
          * @param row1
          * @param row2
          * @return
          */
         public static Row combineRows(Row row1, Row row2) {
-            
-            ValueEval[] combinedRow = new ValueEval[ row1.getLength() + row2.getLength() ];
-            
+
+            ValueEval[] combinedRow = new ValueEval[row1.getLength() + row2.getLength()];
+
             int insertIndex = 0;
-            
+
             for (int c = 0; c < row1.getLength(); c++) {
                 combinedRow[insertIndex++] = row1.getValue(c);
             }
-            
+
             for (int c = 0; c < row2.getLength(); c++) {
                 combinedRow[insertIndex++] = row2.getValue(c);
             }
-            
+
             return new Row(combinedRow);
 
         }
@@ -476,12 +478,13 @@ public abstract class RelationalOperatorFunction implements Function {
             }
 
             return new ArrayEval(values, firstRow, firstColumn, firstRow + values.length - 1, firstColumn + values[0].length - 1, evaluator);
-            
+
         }
 
 
         /**
          * Static method to create an array of Row's from an AreaEval
+         *
          * @param range
          * @return
          */
@@ -530,23 +533,23 @@ public abstract class RelationalOperatorFunction implements Function {
             }
             return rows;
         }
-        
+
         public ValueEval getValue(int col) {
-            
+
             return values[col];
-                        
+
         }
-        
+
         public int getLength() {
-            
+
             return values.length;
-            
+
         }
-        
+
         public boolean matches(Row row2) {
 
             Row row1 = this;
-            
+
             if (row1.getLength() != row2.getLength()) {
                 return false;
             }
@@ -570,9 +573,9 @@ public abstract class RelationalOperatorFunction implements Function {
             }
 
             return matches;
-            
+
         }
-        
+
     }//end Row class
 
 }

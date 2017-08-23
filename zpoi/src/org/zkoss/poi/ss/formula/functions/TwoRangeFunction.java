@@ -3,7 +3,7 @@ package org.zkoss.poi.ss.formula.functions;
 import org.zkoss.poi.ss.formula.eval.*;
 
 /**
- * Abstract class to be inherited by union, intersection, set difference, 
+ * Abstract class to be inherited by union, intersection, set difference,
  * and cartesian product classes within RelationalOperatorFunction.
  * The only inputs should be two regions of cells.
  * Created by Danny on 9/22/2016.
@@ -31,13 +31,13 @@ public abstract class TwoRangeFunction implements Function {
     }
 
     public final ValueEval evaluate(ValueEval[] args, int srcRowIndex, int srcColumnIndex) {
-        
+
         try {
-            
-            if(args.length != 2) {
-                
+
+            if (args.length != 2) {
+
                 return ErrorEval.VALUE_INVALID;
-            
+
             }
 
             AreaEval area1 = convertRangeArg(args[0]);
@@ -45,20 +45,20 @@ public abstract class TwoRangeFunction implements Function {
             ArrayEval array1 = convertToArray(area1);
             ArrayEval array2 = convertToArray(area2);
 
-            ValueEval result = evaluate(array1, array2, srcRowIndex, srcColumnIndex);   
+            ValueEval result = evaluate(array1, array2, srcRowIndex, srcColumnIndex);
             return result;
-            
-        }
-        catch (EvaluationException e) {
+
+        } catch (EvaluationException e) {
             return e.getErrorEval();
         }
-        
+
     }
 
     protected abstract ValueEval evaluate(ArrayEval range1, ArrayEval range2, int srcRowIndex, int srcColumnIndex);
 
     /**
      * Parts of function taken from Fixed1ArgFunction.java
+     *
      * @param area
      * @return
      */
@@ -88,5 +88,5 @@ public abstract class TwoRangeFunction implements Function {
             return new ArrayEval(results, area.getFirstRow(), area.getFirstColumn(), area.getLastRow(), area.getLastColumn(), area.getRefEvaluator()); //ZSS-962
         }
     }
-    
+
 }

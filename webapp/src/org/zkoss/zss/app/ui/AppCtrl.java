@@ -49,7 +49,8 @@ import org.zkoss.zss.app.ui.table.Table;
 import org.zkoss.zss.app.ui.table.createTableCtrl;
 import org.zkoss.zss.app.ui.table.displayTableCtrl;
 import org.zkoss.zss.model.*;
-import org.zkoss.zss.model.impl.*;
+import org.zkoss.zss.model.impl.AbstractBookAdv;
+import org.zkoss.zss.model.impl.Hybrid_Model;
 import org.zkoss.zss.ui.*;
 import org.zkoss.zss.ui.Version;
 import org.zkoss.zss.ui.event.Events;
@@ -67,7 +68,6 @@ import java.net.URLDecoder;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -78,7 +78,7 @@ import java.util.Date;
  *
  */
 public class AppCtrl extends CtrlBase<Component> {
-	public static final String ZSS_USERNAME = "zssUsername";
+    public static final String ZSS_USERNAME = "zssUsername";
     private static final Log log = Log.lookup(AppCtrl.class);
     private static final long serialVersionUID = 1L;
     private static final String UNSAVED_MESSAGE = "Do you want to leave this book without save??";
@@ -125,8 +125,8 @@ public class AppCtrl extends CtrlBase<Component> {
     BookInfo selectedBookInfo;
     Book loadedBook;
     Desktop desktop = Executions.getCurrent().getDesktop();
-	private ModelEventListener dirtyChangeEventListener;
-	private String username;
+    private ModelEventListener dirtyChangeEventListener;
+    private String username;
     private UnsavedAlertState isNeedUnsavedAlert = UnsavedAlertState.DISABLED;
 
     public AppCtrl() {
@@ -384,7 +384,8 @@ public class AppCtrl extends CtrlBase<Component> {
                             return;
                         }
                     }
-				}}, name, loadedBook, "Save Book for sharing", "Next");
+                }
+            }, name, loadedBook, "Save Book for sharing", "Next");
         } else {
             ShareBookCtrl.show();
         }
@@ -416,7 +417,7 @@ public class AppCtrl extends CtrlBase<Component> {
                         pushAppEvent(AppEvts.ON_AFTER_CHANGED_USERNAME, username);
                     }
                 }
-			}, username == null ? "admin" : username, message == null ? "" : message);
+            }, username == null ? "admin" : username, message == null ? "" : message);
         } else {
             // already in cookie
             Cookie[] cookies = ((HttpServletRequest) Executions.getCurrent().getNativeRequest()).getCookies();
@@ -568,14 +569,14 @@ public class AppCtrl extends CtrlBase<Component> {
             SimpleDateFormat ft =
                     new SimpleDateFormat("yyyyMMdd_hhmmss_S");
 
-         //   Book book = new org.zkoss.zss.api.model.impl.BookImpl("New Book_".concat(ft.format(dNow)));
-         //   book.getInternalBook().createSheet("Sheet1");
-         //   book.getInternalBook().createSheet("Sheet2");
+            //   Book book = new org.zkoss.zss.api.model.impl.BookImpl("New Book_".concat(ft.format(dNow)));
+            //   book.getInternalBook().createSheet("Sheet1");
+            //   book.getInternalBook().createSheet("Sheet2");
             /* TODO replace below with above, Some issue with Styles */
             Book book = importer.imports(getClass().getResourceAsStream("/web/zssapp/blank.xlsx"),
                     "New Book_".concat(ft.format(dNow)));
-            ((AbstractBookAdv)book.getInternalBook()).initDefaultCellStyles();
-          //  ((AbstractBookAdv)book).initDefaultCellStyles();
+            ((AbstractBookAdv) book.getInternalBook()).initDefaultCellStyles();
+            //  ((AbstractBookAdv)book).initDefaultCellStyles();
 
             book.setShareScope(EventQueues.APPLICATION);
             setBook(book, null);
@@ -935,7 +936,7 @@ public class AppCtrl extends CtrlBase<Component> {
         }
     }
 
-    private void doCreateTable(Spreadsheet ss)  {
+    private void doCreateTable(Spreadsheet ss) {
 
         createTableCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
             private static final long serialVersionUID = 7753635062865984294L;
@@ -963,7 +964,7 @@ public class AppCtrl extends CtrlBase<Component> {
 
     private void doDeleteTable(Spreadsheet ss) {
 
-        String bookName=ss.getBook().getBookName();
+        String bookName = ss.getBook().getBookName();
         Sheet sheet = ss.getSelectedSheet();
         AreaRef selection = ss.getSelection();
 
@@ -974,28 +975,28 @@ public class AppCtrl extends CtrlBase<Component> {
         Table tableObj = new Table();
 
         try {
-            String tableRange=tableObj.checkOverlap(ss);
+            String tableRange = tableObj.checkOverlap(ss);
 
-            if(tableRange!=null) {
+            if (tableRange != null) {
 
-                String checkedTable = tableObj.checkUserTable(bookName,rangeRef);
+                String checkedTable = tableObj.checkUserTable(bookName, rangeRef);
                 if (checkedTable != null) {
 
-                    tableObj.deleteUserTable(checkedTable,rangeRef);
+                    tableObj.deleteUserTable(checkedTable, rangeRef);
 
                     Connection connection = DBHandler.instance.getConnection();
                     DBContext dbContext = new DBContext(connection);
 
                     Hybrid_Model model = (Hybrid_Model) sheet.getInternalSheet().getDataModel();
 
-                    model.deleteModel(dbContext,region);
+                    model.deleteModel(dbContext, region);
                     connection.commit();
                     sheet.getInternalSheet().clearCache(region);
                     ss.updateCell(selection.getColumn(), selection.getRow(), selection.getLastColumn(), selection.getLastRow());
 
 //                    Messagebox.show("Table was Deleted from the Database", "Delete Table",
 //                            Messagebox.OK, Messagebox.INFORMATION);
-            }
+                }
             } else {
                 Messagebox.show("Selected Range is Not a Table", "Delete Table",
                         Messagebox.OK, Messagebox.ERROR);
@@ -1009,14 +1010,12 @@ public class AppCtrl extends CtrlBase<Component> {
 
     }
 
-    private void doExpand(Spreadsheet ss, String type)
-    {
+    private void doExpand(Spreadsheet ss, String type) {
         try {
             Table tableObj = new Table();
-            String tableRange=tableObj.checkOverlap(ss);
+            String tableRange = tableObj.checkOverlap(ss);
 
-            if(tableRange!=null)
-            {
+            if (tableRange != null) {
                 tableObj.expand(ss, tableRange, type);
 //                    Ranges.range(sheet, src.getRow(), src.getColumn(), src.getLastRow(), src.getLastColumn()).notifyChange();
 //                    Messagebox.show("Table was Deleted from the Database", "Delete Table",
@@ -1024,7 +1023,7 @@ public class AppCtrl extends CtrlBase<Component> {
 
                 Messagebox.show("Table Expanded", "Expand Table",
                         Messagebox.OK, Messagebox.INFORMATION);
-            }else {
+            } else {
                 Messagebox.show("Cannot be Expanded", "Expand Table",
                         Messagebox.OK, Messagebox.ERROR);
             }
@@ -1035,26 +1034,24 @@ public class AppCtrl extends CtrlBase<Component> {
 
     private void doToggleTablebar() {
 
-        Panel panel= (Panel) getAppComp().query("panel");
+        Panel panel = (Panel) getAppComp().query("panel");
 
-        if(!panel.isVisible())
-        {
+        if (!panel.isVisible()) {
             refreshTableBar();
         }
         panel.setVisible(!panel.isVisible());
     }
 
 
-    private void refreshTableBar()
-    {
-        Table obj=new Table();
-        Panel panel= (Panel) getAppComp().query("panel");
+    private void refreshTableBar() {
+        Table obj = new Table();
+        Panel panel = (Panel) getAppComp().query("panel");
         try {
 
-            Panelchildren panelChild=panel.getPanelchildren();
-            Grid tableGrid= (Grid) panelChild.getFirstChild();
+            Panelchildren panelChild = panel.getPanelchildren();
+            Grid tableGrid = (Grid) panelChild.getFirstChild();
 
-            ListModelList<String> tables=obj.userTables(ss.getBook().getBookName());
+            ListModelList<String> tables = obj.userTables(ss.getBook().getBookName());
 
             tableGrid.setModel(tables);
 
@@ -1063,7 +1060,7 @@ public class AppCtrl extends CtrlBase<Component> {
                 @Override
                 public void render(Row row, Object data, int i) throws Exception {
 
-                    final String table= (String) data;
+                    final String table = (String) data;
                     new Label(table).setParent(row);
                 }
             });
@@ -1120,18 +1117,18 @@ public class AppCtrl extends CtrlBase<Component> {
         } else if (AppEvts.ON_SHARE_BOOK.equals(event)) {
             shareBook();
         } else if (AppEvts.ON_CREATE_TABLE.equals(event)) {
-                doCreateTable(ss);
-        }else if (AppEvts.ON_DISPLAY_TABLE.equals(event)) {
+            doCreateTable(ss);
+        } else if (AppEvts.ON_DISPLAY_TABLE.equals(event)) {
             doDisplayTable(ss);
         } else if (AppEvts.ON_DELETE_TABLE.equals(event)) {
             doDeleteTable(ss);
-        }else if (AppEvts.ON_EXPAND_COLS.equals(event)) {
-            doExpand(ss,"cols");
-        }else if (AppEvts.ON_EXPAND_ROWS.equals(event)) {
-            doExpand(ss,"rows");
-        }else if (AppEvts.ON_EXPAND_ALL.equals(event)) {
-            doExpand(ss,"all");
-        }else if (AppEvts.ON_TOGGLE_TABLE_BAR.equals(event)) {
+        } else if (AppEvts.ON_EXPAND_COLS.equals(event)) {
+            doExpand(ss, "cols");
+        } else if (AppEvts.ON_EXPAND_ROWS.equals(event)) {
+            doExpand(ss, "rows");
+        } else if (AppEvts.ON_EXPAND_ALL.equals(event)) {
+            doExpand(ss, "all");
+        } else if (AppEvts.ON_TOGGLE_TABLE_BAR.equals(event)) {
             doToggleTablebar();
         }
     }
@@ -1249,11 +1246,11 @@ public class AppCtrl extends CtrlBase<Component> {
         }, address, display);
     }
 
-    interface AsyncFunction {
-        void invoke();
-    }
-
     enum UnsavedAlertState {
         DISABLED, ENABLED, STOP
+    }
+
+    interface AsyncFunction {
+        void invoke();
     }
 }

@@ -106,9 +106,9 @@ public class SheetImpl extends AbstractSheetAdv {
 		this._book = book;
 		this._id = id;
         sheetDataCache = new LruCache<>(CACHE_SIZE);
-        // TODO: Fix protect  issue
+		// TODO: Fix protect  issue
 		//setPassword("000000000");
-    }
+	}
 	
 	protected void checkOwnership(SPicture picture){
 		if(!_pictures.contains(picture)){
@@ -722,18 +722,18 @@ public class SheetImpl extends AbstractSheetAdv {
 
         // Update Column numbers for cached cells
 		/* TODO: Figure how to reuse cache */
-        //List<AbstractCellAdv> cellsToShift = sheetDataCache.values()
-        //        .stream()
-        //        .filter(e -> e.getRowIndex() < rowIdx || e.getRowIndex() > lastRowIdx)
-        //        .collect(Collectors.toList());
+		//List<AbstractCellAdv> cellsToShift = sheetDataCache.values()
+		//        .stream()
+		//        .filter(e -> e.getRowIndex() < rowIdx || e.getRowIndex() > lastRowIdx)
+		//        .collect(Collectors.toList());
 
-        //cellsToShift.stream()
-        //        .filter(e -> e.getRowIndex() >= rowIdx)
-        //        .forEach(e -> e.shift(-size, 0));
+		//cellsToShift.stream()
+		//        .filter(e -> e.getRowIndex() >= rowIdx)
+		//        .forEach(e -> e.shift(-size, 0));
 
         sheetDataCache.clear();
-        //cellsToShift.stream()
-        //        .forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
+		//cellsToShift.stream()
+		//        .forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
 
 		//ZSS-619, should clear formula for entire effected region
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
@@ -1143,10 +1143,10 @@ public class SheetImpl extends AbstractSheetAdv {
         }
 
         // Update Column numbers for cached cells
-        //List<AbstractCellAdv> cellsToShift = new LinkedList<>(sheetDataCache.values());
-        //cellsToShift.stream()
-        //        .filter(e -> e.getColumnIndex() >= columnIdx)
-        //        .forEach(e -> e.shift(0, size));
+		//List<AbstractCellAdv> cellsToShift = new LinkedList<>(sheetDataCache.values());
+		//cellsToShift.stream()
+		//        .filter(e -> e.getColumnIndex() >= columnIdx)
+		//        .forEach(e -> e.shift(0, size));
 
 		sheetDataCache.clear();
 		//cellsToShift.stream()
@@ -1309,11 +1309,10 @@ public class SheetImpl extends AbstractSheetAdv {
 	}
 
 	@Override
-	public void clearCache(CellRegion cellRegion)
-	{
+	public void clearCache(CellRegion cellRegion) {
 		List<CellRegion> cellsToRemove = sheetDataCache.keySet()
 				.stream()
-				.filter(e->cellRegion.contains(e))
+				.filter(e -> cellRegion.contains(e))
 				.collect(Collectors.toList());
 		cellsToRemove.stream().forEach(sheetDataCache::remove);
 	}
@@ -1336,18 +1335,18 @@ public class SheetImpl extends AbstractSheetAdv {
         }
 
         // Update Column numbers for cached cells
-        //List<AbstractCellAdv> cellsToShift = sheetDataCache.values()
-        //        .stream()
-        //        .filter(e -> e.getColumnIndex() < columnIdx || e.getColumnIndex() > lastColumnIdx)
-        //        .collect(Collectors.toList());
+		//List<AbstractCellAdv> cellsToShift = sheetDataCache.values()
+		//        .stream()
+		//        .filter(e -> e.getColumnIndex() < columnIdx || e.getColumnIndex() > lastColumnIdx)
+		//        .collect(Collectors.toList());
 
-        //cellsToShift.stream()
-        //        .filter(e -> e.getColumnIndex() >= columnIdx)
-        //        .forEach(e -> e.shift(0, - size));
+		//cellsToShift.stream()
+		//        .filter(e -> e.getColumnIndex() >= columnIdx)
+		//        .forEach(e -> e.shift(0, - size));
 
         sheetDataCache.clear();
-        //cellsToShift.stream()
-        //        .forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
+		//cellsToShift.stream()
+		//        .forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
 
 		
 		//ZSS-619, should clear formula for entire effected region

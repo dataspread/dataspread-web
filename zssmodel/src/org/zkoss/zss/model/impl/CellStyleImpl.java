@@ -249,11 +249,6 @@ public class CellStyleImpl extends AbstractCellStyleAdv {
 	}
 	
 	@Override
-	public boolean isDirectDataFormat(){
-		return _directFormat;
-	}
-
-	@Override
 	public void setDataFormat(String dataFormat) {
 		//set to general if null to compatible with 3.0
 		if(dataFormat==null || "".equals(dataFormat.trim())){
@@ -261,6 +256,11 @@ public class CellStyleImpl extends AbstractCellStyleAdv {
 		}
 		this._dataFormat = dataFormat;
 		_directFormat = false;
+	}
+
+	@Override
+	public boolean isDirectDataFormat() {
+		return _directFormat;
 	}
 	
 	@Override
@@ -365,12 +365,6 @@ public class CellStyleImpl extends AbstractCellStyleAdv {
 		return _fill == null ? ColorImpl.WHITE : _fill.getBackColor();
 	}
 
-	//ZSS-780
-	@Deprecated
-	@Override
-	public void setBackgroundColor(SColor backColor) {
-		setBackColor(backColor);
-	}
 	@Override
 	public void setBackColor(SColor backColor) {
 		Validations.argNotNull(backColor);
@@ -378,6 +372,13 @@ public class CellStyleImpl extends AbstractCellStyleAdv {
 			_fill = new FillImpl();
 		}
 		_fill.setBackColor(backColor);
+	}
+
+	//ZSS-780
+	@Deprecated
+	@Override
+	public void setBackgroundColor(SColor backColor) {
+		setBackColor(backColor);
 	}
 
 	//ZSS-841
@@ -454,18 +455,19 @@ public class CellStyleImpl extends AbstractCellStyleAdv {
 	}
 
 	//ZSS-977
+	protected void setBorder(SBorder border) {
+		_border = (AbstractBorderAdv) border;
+	}
+
+	//ZSS-977
 	@Override
 	public SFill getFill() {
 		return _fill;
 	}
 
 	//ZSS-977
-	@Override
-	public void setBorderVertical(BorderType type) {
-		if (_border == null) {
-			_border = new BorderImpl();
-		}
-		_border.setBorderVertical(type);
+	protected void setFill(SFill fill) {
+		_fill = (AbstractFillAdv) fill;
 	}
 
 	//ZSS-977
@@ -480,30 +482,12 @@ public class CellStyleImpl extends AbstractCellStyleAdv {
 
 	//ZSS-977
 	@Override
-	public void setBorderHorizontal(BorderType type) {
-		if (_border == null) {
-			_border = new BorderImpl();
-		}
-		_border.setBorderHorizontal(type);
-	}
-
-	//ZSS-977
-	@Override
 	public void setBorderHorizontal(BorderType type, SColor color) {
 		if (_border == null) {
 			_border = new BorderImpl();
 		}
 		_border.setBorderHorizontal(type);
 		_border.setBorderHorizontalColor(color);
-	}
-
-	//ZSS-977
-	@Override
-	public void setBorderDiagonal(BorderType type) {
-		if (_border == null) {
-			_border = new BorderImpl();
-		}
-		_border.setBorderDiagonal(type);
 	}
 
 	//ZSS-977
@@ -518,35 +502,17 @@ public class CellStyleImpl extends AbstractCellStyleAdv {
 
 	//ZSS-977
 	@Override
-	public void setBorderVerticalColor(SColor color) {
-		if (_border == null) {
-			_border = new BorderImpl();
-		}
-		_border.setBorderVerticalColor(color);
-	}
-
-	//ZSS-977
-	@Override
-	public void setBorderHorizontalColor(SColor color) {
-		if (_border == null) {
-			_border = new BorderImpl();
-		}
-		_border.setBorderHorizontalColor(color);
-	}
-
-	//ZSS-977
-	@Override
-	public void setBorderDiagonalColor(SColor color) {
-		if (_border == null) {
-			_border = new BorderImpl();
-		}
-		_border.setBorderDiagonalColor(color);
-	}
-
-	//ZSS-977
-	@Override
 	public BorderType getBorderVertical() {
 		return _border == null ? BorderType.NONE : _border.getBorderVertical();
+	}
+
+	//ZSS-977
+	@Override
+	public void setBorderVertical(BorderType type) {
+		if (_border == null) {
+			_border = new BorderImpl();
+		}
+		_border.setBorderVertical(type);
 	}
 
 	//ZSS-977
@@ -557,8 +523,26 @@ public class CellStyleImpl extends AbstractCellStyleAdv {
 
 	//ZSS-977
 	@Override
+	public void setBorderHorizontal(BorderType type) {
+		if (_border == null) {
+			_border = new BorderImpl();
+		}
+		_border.setBorderHorizontal(type);
+	}
+
+	//ZSS-977
+	@Override
 	public BorderType getBorderDiagonal() {
 		return _border == null ? BorderType.NONE : _border.getBorderDiagonal();
+	}
+
+	//ZSS-977
+	@Override
+	public void setBorderDiagonal(BorderType type) {
+		if (_border == null) {
+			_border = new BorderImpl();
+		}
+		_border.setBorderDiagonal(type);
 	}
 
 	//ZSS-977
@@ -569,10 +553,28 @@ public class CellStyleImpl extends AbstractCellStyleAdv {
 
 	//ZSS-977
 	@Override
+	public void setBorderVerticalColor(SColor color) {
+		if (_border == null) {
+			_border = new BorderImpl();
+		}
+		_border.setBorderVerticalColor(color);
+	}
+
+	//ZSS-977
+	@Override
 	public SColor getBorderHorizontalColor() {
 		return _border == null ? ColorImpl.BLACK : _border.getBorderHorizontalColor();
 	}
 
+	//ZSS-977
+	@Override
+	public void setBorderHorizontalColor(SColor color) {
+		if (_border == null) {
+			_border = new BorderImpl();
+		}
+		_border.setBorderHorizontalColor(color);
+	}
+	
 	//ZSS-977
 	@Override
 	public SColor getBorderDiagonalColor() {
@@ -580,12 +582,11 @@ public class CellStyleImpl extends AbstractCellStyleAdv {
 	}
 	
 	//ZSS-977
-	protected void setBorder(SBorder border) {
-		_border = (AbstractBorderAdv)border;
-	}
-	
-	//ZSS-977
-	protected void setFill(SFill fill) {
-		_fill = (AbstractFillAdv) fill;
+	@Override
+	public void setBorderDiagonalColor(SColor color) {
+		if (_border == null) {
+			_border = new BorderImpl();
+		}
+		_border.setBorderDiagonalColor(color);
 	}
 }

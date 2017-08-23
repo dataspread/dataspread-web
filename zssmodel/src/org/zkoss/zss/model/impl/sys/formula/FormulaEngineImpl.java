@@ -44,23 +44,70 @@ import java.util.regex.Pattern;
 public class FormulaEngineImpl implements FormulaEngine {
 
 	public final static String KEY_EVALUATORS = "$ZSS_EVALUATORS$";
-
-	private static final Log _logger = Log.lookup(FormulaEngineImpl.class.getName());
-
-	private Map<EvaluationWorkbook, XelContext> _xelContexts = new HashMap<EvaluationWorkbook, XelContext>();
-	
 	// for POI formula evaluator
 	protected final static IStabilityClassifier noCacheClassifier = new IStabilityClassifier() {
 		public boolean isCellFinal(int sheetIndex, int rowIndex, int columnIndex) {
 			return true;
 		}
 	};
-	
+	private static final Log _logger = Log.lookup(FormulaEngineImpl.class.getName());
 	private static Pattern _areaPattern = Pattern.compile("\\([.[^\\(\\)]]*\\)");//match (A1,B1,C1)
-	private static Pattern _searchPattern = Pattern.compile("\\s*((?:(?:'[^!\\(]+'!)|(?:[^'!,\\(]+!))?(?:[$\\w]+:)?[$\\w]+)"); // for search area reference 
+	private static Pattern _searchPattern = Pattern.compile("\\s*((?:(?:'[^!\\(]+'!)|(?:[^'!,\\(]+!))?(?:[$\\w]+:)?[$\\w]+)"); // for search area reference
+	private Map<EvaluationWorkbook, XelContext> _xelContexts = new HashMap<EvaluationWorkbook, XelContext>();
 	
 	private static boolean isMultipleAreaFormula(String formula){
 		return formula.split(",").length > 1 && _areaPattern.matcher(formula).matches(); //ZSS-847
+	}
+
+	//ZSS-818
+	public static EvaluationResult convertToEvaluationResult(ValueEval value) throws EvaluationException {
+		// convert to result
+		if (value instanceof ErrorEval) {
+			int code = ((ErrorEval) value).getErrorCode();
+			return new EvaluationResultImpl(ResultType.ERROR, ErrorValue.valueOf((byte) code), value);
+		} else {
+			try {
+				final ResultValueEval resultEval = getResolvedValue(value);
+				return new EvaluationResultImpl(ResultType.SUCCESS, resultEval.value, resultEval.valueEval); //ZSS-810
+			} catch (EvaluationException x) {
+				//error when resolve value.
+				if (x.getErrorEval() != null) {//ZSS-591 Get console exception after delete sheet
+					return new EvaluationResultImpl(ResultType.ERROR, ErrorValue.valueOf((byte) x.getErrorEval().getErrorCode()), x.getErrorEval());
+				} else {
+					throw x;
+				}
+			}
+		}
+	}
+
+	protected static ResultValueEval getResolvedValue(ValueEval value) throws EvaluationException {
+		if (value instanceof StringEval) {
+			return new ResultValueEval(((StringEval) value).getStringValue(), value); //ZSS-810
+		} else if (value instanceof NumberEval) {
+			return new ResultValueEval(((NumberEval) value).getNumberValue(), value); //ZSS-810
+		} else if (value instanceof BlankEval) {
+			return new ResultValueEval("", value); //ZSS-810
+		} else if (value instanceof BoolEval) {
+			return new ResultValueEval(((BoolEval) value).getBooleanValue(), value); //ZSS-810
+		} else if (value instanceof ValuesEval) {
+			ValueEval[] values = ((ValuesEval) value).getValueEvals();
+			Object[] array = new Object[values.length];
+			for (int i = 0; i < values.length; ++i) {
+				array[i] = getResolvedValue(values[i]).value; //ZSS-810
+			}
+			return new ResultValueEval(array, value); //ZSS-810
+		} else if (value instanceof AreaEval) {
+			// Don't convert the value into one array. Keep it a 2D object.
+			return new ResultValueEval(value, value);
+		} else if (value instanceof RefEval) {
+			ValueEval ve = ((RefEval) value).getInnerValueEval();
+			Object v = getResolvedValue(ve).value; //ZSS-810
+			return new ResultValueEval(v, value); //ZSS-810
+		} else if (value instanceof ErrorEval) {
+			throw new EvaluationException((ErrorEval) value);
+		} else {
+			throw new EvaluationException(null, "no matched type: " + value); // FIXME
+		}
 	}
 	
 	private String[] unwrapeAreaFormula(String formula){
@@ -229,7 +276,7 @@ public class FormulaEngineImpl implements FormulaEngine {
 	protected Ptg[] parse(String formula, FormulaParsingWorkbook book, int sheetIndex, FormulaParseContext context) {
 		return FormulaParser.parse(formula, book, FormulaType.CELL, sheetIndex);
 	}
-	
+
 	protected String renderFormula(ParsingBook parsingBook, String formula, Ptg[] tokens, boolean always) {
 		return always ?
 			FormulaRenderer.toFormulaString(parsingBook, tokens) :
@@ -470,57 +517,6 @@ public class FormulaEngineImpl implements FormulaEngine {
 		return convertToEvaluationResult(value);
 	}
 
-	//ZSS-818
-	public static EvaluationResult convertToEvaluationResult(ValueEval value) throws EvaluationException {
-		// convert to result
-		if(value instanceof ErrorEval) {
-			int code = ((ErrorEval)value).getErrorCode();
-			return new EvaluationResultImpl(ResultType.ERROR, ErrorValue.valueOf((byte)code), value);
-		} else {
-			try{
-				final ResultValueEval resultEval = getResolvedValue(value);
-				return new EvaluationResultImpl(ResultType.SUCCESS, resultEval.value, resultEval.valueEval); //ZSS-810
-			}catch(EvaluationException x){
-				//error when resolve value.
-				if(x.getErrorEval()!=null){//ZSS-591 Get console exception after delete sheet
-					return new EvaluationResultImpl(ResultType.ERROR, ErrorValue.valueOf((byte)x.getErrorEval().getErrorCode()), x.getErrorEval());
-				}else{
-					throw x;
-				}
-			}
-		}
-	}
-
-	protected static ResultValueEval getResolvedValue(ValueEval value) throws EvaluationException {
-		if(value instanceof StringEval) {
-			return new ResultValueEval(((StringEval)value).getStringValue(), value); //ZSS-810
-		} else if(value instanceof NumberEval) {
-			return new ResultValueEval(((NumberEval)value).getNumberValue(), value); //ZSS-810
-		} else if(value instanceof BlankEval) {
-			return new ResultValueEval("", value); //ZSS-810
-		} else if(value instanceof BoolEval) {
-			return new ResultValueEval(((BoolEval)value).getBooleanValue(), value); //ZSS-810
-		} else if(value instanceof ValuesEval) {
-			ValueEval[] values = ((ValuesEval)value).getValueEvals();
-			Object[] array = new Object[values.length];
-			for(int i = 0; i < values.length; ++i) {
-				array[i] = getResolvedValue(values[i]).value; //ZSS-810
-			}
-			return new ResultValueEval(array, value); //ZSS-810
-		} else if(value instanceof AreaEval) {
-			// Don't convert the value into one array. Keep it a 2D object.
-			return new ResultValueEval(value, value);
-		} else if(value instanceof RefEval) {
-			ValueEval ve = ((RefEval)value).getInnerValueEval();
-			Object v = getResolvedValue(ve).value; //ZSS-810
-			return new ResultValueEval(v, value); //ZSS-810
-		} else if(value instanceof ErrorEval) {
-			throw new EvaluationException((ErrorEval)value);
-		} else {
-			throw new EvaluationException(null, "no matched type: " + value); // FIXME
-		}
-	}
-
 	protected Object getXelContext() {
 		return null; // do nothing
 	}
@@ -614,187 +610,6 @@ public class FormulaEngineImpl implements FormulaEngine {
 		}
 	}
 
-	public static class FormulaExpressionImpl implements FormulaExpression, Serializable {
-		private static final long serialVersionUID = -8532826169759927711L;
-		private String formula;
-		private Ref[] refs;
-		private boolean error;
-		private String errorMessage;
-
-		//ZSS-747
-		//TODO: For now do not store parsed formulae.
-		transient private Ptg[] ptgs;
-		private boolean multipleArea;
-
-        @SuppressWarnings("unused")
-        public FormulaExpressionImpl() {
-            // Required for serialization.
-        }
-
-        /**
-		 * @param refs resolved reference if formula has only one parsed token
-		 */
-		public FormulaExpressionImpl(String formula, Ptg[] ptgs, Ref[] refs) {
-			this(formula, ptgs,refs,false,null, false);
-		}
-		public FormulaExpressionImpl(String formula, Ptg[] ptgs, Ref[] refs, boolean error, String errorMessage, boolean multipleArea) {
-			this.formula = formula;
-			if(refs!=null){
-				for(Ref ref:refs){
-					if( ref.getType() == RefType.AREA || ref.getType() == RefType.CELL){
-						continue;
-					}
-					this.error = true;
-					this.errorMessage = errorMessage==null?"wrong area reference":errorMessage;
-					return;
-				}
-			}
-			this.ptgs = ptgs;
-			this.refs = refs;
-			this.error = error;
-			this.errorMessage = errorMessage;
-			this.multipleArea = multipleArea;
-			
-		}
-//		public FormulaExpressionImpl(String formula, Ref[] refs) {
-//			this(formula,refs,false,null);
-//		}
-//		public FormulaExpressionImpl(String formula, Ref[] refs, boolean error, String errorMessage) {
-//			this.formula = formula;
-//			if(refs!=null){
-//				for(Ref ref:refs){
-//					if( ref.getType() == RefType.AREA || ref.getType() == RefType.CELL){
-//						continue;
-//					}
-//					this.error = true;
-//					this.errorMessage = errorMessage==null?"wrong area reference":errorMessage;
-//					return;
-//				}
-//			}
-//			this.refs = refs;
-//			this.error = error;
-//			this.errorMessage = errorMessage;
-//			
-//		}
-
-		@Override
-		public boolean hasError() {
-			return error;
-		}
-		
-		@Override
-		public String getErrorMessage(){
-			return errorMessage;
-		}
-
-		@Override
-		public String getFormulaString() {
-			return formula;
-		}
-
-		@Override
-		public boolean isAreaRefs() {
-			return refs != null && refs.length>0;
-		}
-		
-		@Override
-		public Ref[] getAreaRefs() {
-			return refs;
-		}
-		
-		//ZSS-747
-		@Override
-		public Ptg[] getPtgs() {
-			return ptgs;
-		}
-		
-		//ZSS-747
-		@Override
-		public boolean isMultipleAreaFormula() {
-			return multipleArea;
-		}
-	}
-
-	protected static class EvaluationResultImpl implements EvaluationResult {
-
-		private ResultType type;
-		private Object value;
-		private ValueEval valueEval; //ZSS-810
-
-		public EvaluationResultImpl(ResultType type, Object value, ValueEval valueEval) {
-			this.type = type;
-			this.value = value;
-			this.valueEval = valueEval;
-		}
-
-		@Override
-		public ResultType getType() {
-			return type;
-		}
-
-		@Override
-		public Object getValue() {
-			return value;
-		}
-		
-		//ZSS-810
-		@Override
-		public ValueEval getValueEval() {
-			return valueEval;
-		}
-
-	}
-
-	protected static class EvalContext {
-		private EvalBook book;
-		private WorkbookEvaluator evaluator;
-
-		public EvalContext(EvalBook book, WorkbookEvaluator evaluator) {
-			this.book = book;
-			this.evaluator = evaluator;
-		}
-
-		public EvalBook getBook() {
-			return book;
-		}
-
-		public WorkbookEvaluator getEvaluator() {
-			return evaluator;
-		}
-
-		@Override
-		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + ((book == null) ? 0 : book.hashCode());
-			result = prime * result + ((evaluator == null) ? 0 : evaluator.hashCode());
-			return result;
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if(this == obj)
-				return true;
-			if(obj == null)
-				return false;
-			if(getClass() != obj.getClass())
-				return false;
-			EvalContext other = (EvalContext)obj;
-			if(book == null) {
-				if(other.book != null)
-					return false;
-			} else if(!book.equals(other.book))
-				return false;
-			if(evaluator == null) {
-				if(other.evaluator != null)
-					return false;
-			} else if(!evaluator.equals(other.evaluator))
-				return false;
-			return true;
-		}
-
-	}
-	
 	private FormulaExpression adjustMultipleArea(String formula, FormulaParseContext context, FormulaAdjuster adjuster) {
 		if(!isMultipleAreaFormula(formula)){
 			return null;
@@ -852,13 +667,6 @@ public class FormulaEngineImpl implements FormulaEngine {
 		return expr;
 	}
 
-    protected interface FormulaAdjuster {
-        /**
-		 * @return true if formula modified, denote this formula needs re-render
-		 */
-        boolean process(int sheetIndex, Ptg[] tokens, ParsingBook parsingBook, FormulaParseContext context);
-    }
-	
 	@Override
 	public FormulaExpression move(String formula, final SheetRegion region, final int rowOffset, final int columnOffset, FormulaParseContext context) {
 		formula = formula.trim();
@@ -1016,7 +824,7 @@ public class FormulaEngineImpl implements FormulaEngine {
 			}
 		};
 	}
-	
+
 	private boolean isValidRowIndex(SBook book, int rowIndex) {
 		return 0 <= rowIndex && rowIndex <= book.getMaxRowIndex();
 	}
@@ -1209,7 +1017,7 @@ public class FormulaEngineImpl implements FormulaEngine {
 	public FormulaExpression transposePtgs(FormulaExpression fe, final int rowOrigin, final int columnOrigin, FormulaParseContext context) {
 		return transpose(fe.getFormulaString(), rowOrigin, columnOrigin, context);
 	}
-	
+
 	//ZSS-747
 	@Override
 	public FormulaExpression renameSheetPtgs(FormulaExpression fe, final SBook targetBook, final String oldSheetName, final String newSheetName, FormulaParseContext context) {
@@ -1287,17 +1095,6 @@ public class FormulaEngineImpl implements FormulaEngine {
 		return evaluator.evaluate(sheetIndex, expr.getFormulaString(), ignoreDereference, dependent);
 	}
 
-	//ZSS-810
-	private static class ResultValueEval {
-		final Object value;
-		final ValueEval valueEval;
-		
-		ResultValueEval(Object value, ValueEval valueEval) {
-			this.value = value;
-			this.valueEval = valueEval;
-		}
-	}
-
 	//ZSS-820
 	private FormulaExpression adjustMultipleAreaPtgs(Ptg[] ptgs0, String formula, FormulaParseContext context, FormulaAdjuster adjuster) {
 		if(!isMultipleAreaFormula(formula)){
@@ -1332,7 +1129,6 @@ public class FormulaEngineImpl implements FormulaEngine {
 		return new FormulaExpressionImpl(formula, tokens.toArray(new Ptg[tokens.size()]),  areaRefs.size()==0?null:areaRefs.toArray(new Ref[areaRefs.size()]));
 	}
 
-	//ZSS-820
 	/**
 	 * adjust formula through specific adjuster
 	 */
@@ -1403,5 +1199,206 @@ public class FormulaEngineImpl implements FormulaEngine {
 			FormulaParseContext context) {
 		// TODO
 		return fexpr;
+	}
+
+	//ZSS-820
+	protected interface FormulaAdjuster {
+		/**
+		 * @return true if formula modified, denote this formula needs re-render
+		 */
+		boolean process(int sheetIndex, Ptg[] tokens, ParsingBook parsingBook, FormulaParseContext context);
+	}
+
+	public static class FormulaExpressionImpl implements FormulaExpression, Serializable {
+		private static final long serialVersionUID = -8532826169759927711L;
+		private String formula;
+		private Ref[] refs;
+		private boolean error;
+		private String errorMessage;
+
+		//ZSS-747
+		//TODO: For now do not store parsed formulae.
+		transient private Ptg[] ptgs;
+		private boolean multipleArea;
+
+		@SuppressWarnings("unused")
+		public FormulaExpressionImpl() {
+			// Required for serialization.
+		}
+
+		/**
+		 * @param refs resolved reference if formula has only one parsed token
+		 */
+		public FormulaExpressionImpl(String formula, Ptg[] ptgs, Ref[] refs) {
+			this(formula, ptgs, refs, false, null, false);
+		}
+
+		public FormulaExpressionImpl(String formula, Ptg[] ptgs, Ref[] refs, boolean error, String errorMessage, boolean multipleArea) {
+			this.formula = formula;
+			if (refs != null) {
+				for (Ref ref : refs) {
+					if (ref.getType() == RefType.AREA || ref.getType() == RefType.CELL) {
+						continue;
+					}
+					this.error = true;
+					this.errorMessage = errorMessage == null ? "wrong area reference" : errorMessage;
+					return;
+				}
+			}
+			this.ptgs = ptgs;
+			this.refs = refs;
+			this.error = error;
+			this.errorMessage = errorMessage;
+			this.multipleArea = multipleArea;
+
+		}
+//		public FormulaExpressionImpl(String formula, Ref[] refs) {
+//			this(formula,refs,false,null);
+//		}
+//		public FormulaExpressionImpl(String formula, Ref[] refs, boolean error, String errorMessage) {
+//			this.formula = formula;
+//			if(refs!=null){
+//				for(Ref ref:refs){
+//					if( ref.getType() == RefType.AREA || ref.getType() == RefType.CELL){
+//						continue;
+//					}
+//					this.error = true;
+//					this.errorMessage = errorMessage==null?"wrong area reference":errorMessage;
+//					return;
+//				}
+//			}
+//			this.refs = refs;
+//			this.error = error;
+//			this.errorMessage = errorMessage;
+//
+//		}
+
+		@Override
+		public boolean hasError() {
+			return error;
+		}
+
+		@Override
+		public String getErrorMessage() {
+			return errorMessage;
+		}
+
+		@Override
+		public String getFormulaString() {
+			return formula;
+		}
+
+		@Override
+		public boolean isAreaRefs() {
+			return refs != null && refs.length > 0;
+		}
+
+		@Override
+		public Ref[] getAreaRefs() {
+			return refs;
+		}
+
+		//ZSS-747
+		@Override
+		public Ptg[] getPtgs() {
+			return ptgs;
+		}
+
+		//ZSS-747
+		@Override
+		public boolean isMultipleAreaFormula() {
+			return multipleArea;
+		}
+	}
+
+	protected static class EvaluationResultImpl implements EvaluationResult {
+
+		private ResultType type;
+		private Object value;
+		private ValueEval valueEval; //ZSS-810
+
+		public EvaluationResultImpl(ResultType type, Object value, ValueEval valueEval) {
+			this.type = type;
+			this.value = value;
+			this.valueEval = valueEval;
+		}
+
+		@Override
+		public ResultType getType() {
+			return type;
+		}
+
+		@Override
+		public Object getValue() {
+			return value;
+		}
+
+		//ZSS-810
+		@Override
+		public ValueEval getValueEval() {
+			return valueEval;
+		}
+
+	}
+
+	protected static class EvalContext {
+		private EvalBook book;
+		private WorkbookEvaluator evaluator;
+
+		public EvalContext(EvalBook book, WorkbookEvaluator evaluator) {
+			this.book = book;
+			this.evaluator = evaluator;
+		}
+
+		public EvalBook getBook() {
+			return book;
+		}
+
+		public WorkbookEvaluator getEvaluator() {
+			return evaluator;
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((book == null) ? 0 : book.hashCode());
+			result = prime * result + ((evaluator == null) ? 0 : evaluator.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			EvalContext other = (EvalContext) obj;
+			if (book == null) {
+				if (other.book != null)
+					return false;
+			} else if (!book.equals(other.book))
+				return false;
+			if (evaluator == null) {
+				if (other.evaluator != null)
+					return false;
+			} else if (!evaluator.equals(other.evaluator))
+				return false;
+			return true;
+		}
+
+	}
+
+	//ZSS-810
+	private static class ResultValueEval {
+		final Object value;
+		final ValueEval valueEval;
+
+		ResultValueEval(Object value, ValueEval valueEval) {
+			this.value = value;
+			this.valueEval = valueEval;
+		}
 	}
 }

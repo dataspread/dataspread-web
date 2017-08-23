@@ -16,71 +16,30 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.api.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.locks.ReadWriteLock;
-
-import org.zkoss.zss.api.CellVisitor;
-import org.zkoss.zss.api.IllegalFormulaException;
-import org.zkoss.zss.api.Range;
-import org.zkoss.zss.api.RangeRunner;
-import org.zkoss.zss.api.Ranges;
-import org.zkoss.zss.api.SheetAnchor;
-import org.zkoss.zss.api.model.Book;
-import org.zkoss.zss.api.model.CellData;
-import org.zkoss.zss.api.model.CellStyle;
+import org.zkoss.zss.api.*;
+import org.zkoss.zss.api.model.*;
 import org.zkoss.zss.api.model.CellStyle.BorderType;
-import org.zkoss.zss.api.model.Chart;
 import org.zkoss.zss.api.model.Chart.Grouping;
 import org.zkoss.zss.api.model.Chart.LegendPosition;
 import org.zkoss.zss.api.model.Chart.Type;
-import org.zkoss.zss.api.model.Hyperlink;
 import org.zkoss.zss.api.model.Font.Boldweight;
 import org.zkoss.zss.api.model.Font.TypeOffset;
 import org.zkoss.zss.api.model.Font.Underline;
 import org.zkoss.zss.api.model.Hyperlink.HyperlinkType;
-import org.zkoss.zss.api.model.Picture;
 import org.zkoss.zss.api.model.Picture.Format;
-import org.zkoss.zss.api.model.Color;
-import org.zkoss.zss.api.model.Font;
-import org.zkoss.zss.api.model.Sheet;
-import org.zkoss.zss.api.model.SheetProtection;
-import org.zkoss.zss.api.model.Validation;
 import org.zkoss.zss.api.model.Validation.AlertStyle;
 import org.zkoss.zss.api.model.Validation.OperatorType;
 import org.zkoss.zss.api.model.Validation.ValidationType;
-import org.zkoss.zss.api.model.impl.BookImpl;
-import org.zkoss.zss.api.model.impl.CellDataImpl;
-import org.zkoss.zss.api.model.impl.CellStyleImpl;
-import org.zkoss.zss.api.model.impl.ChartImpl;
-import org.zkoss.zss.api.model.impl.EnumUtil;
-import org.zkoss.zss.api.model.impl.FontImpl;
-import org.zkoss.zss.api.model.impl.HyperlinkImpl;
-import org.zkoss.zss.api.model.impl.ModelRef;
-import org.zkoss.zss.api.model.impl.PictureImpl;
-import org.zkoss.zss.api.model.impl.SheetImpl;
-import org.zkoss.zss.api.model.impl.SimpleRef;
-import org.zkoss.zss.api.model.impl.SheetProtectionImpl;
-import org.zkoss.zss.api.model.impl.ValidationImpl;
-import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.InvalidFormulaException;
-import org.zkoss.zss.model.SBook;
-import org.zkoss.zss.model.SCell;
-import org.zkoss.zss.model.SCellStyle;
-import org.zkoss.zss.model.SChart;
-import org.zkoss.zss.model.SDataValidation;
-import org.zkoss.zss.model.SFont;
-import org.zkoss.zss.model.SHyperlink;
-import org.zkoss.zss.model.SPicture;
-import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.model.SSheetProtection;
-import org.zkoss.zss.model.STable;
-import org.zkoss.zss.model.ViewAnchor;
-import org.zkoss.zss.model.util.FontMatcher;
+import org.zkoss.zss.api.model.impl.*;
+import org.zkoss.zss.model.*;
+import org.zkoss.zss.model.impl.AbstractSheetAdv;
 import org.zkoss.zss.range.SRange;
 import org.zkoss.zss.range.SRanges;
 import org.zkoss.zss.range.impl.imexp.BookHelper;
-import org.zkoss.zss.model.impl.AbstractSheetAdv;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * 1.Range does not handle the protection issue. By calling 
@@ -91,26 +50,19 @@ import org.zkoss.zss.model.impl.AbstractSheetAdv;
  * @since 3.0.0
  */
 public class RangeImpl implements Range{
-	
-	private SRange _range;
-	
-	private CellStyleHelper _cellStyleHelper;
-	private CellData _cellData;
+
 	private static int DEFAULT_CHART_WIDTH = 600;
 	private static int DEFAULT_CHART_HEIGHT = 480;
-	
-	/**
-	 * @deprecated since 3.5 it is always synchronized on book by a read write lock.
-	 */
-	public void setSyncLevel(SyncLevel syncLevel){
-	}
-	
+	private SRange _range;
+	private CellStyleHelper _cellStyleHelper;
+	private CellData _cellData;
 	private SharedContext _sharedCtx;
 	
 	public RangeImpl(SRange range,Sheet sheet) {
 		this._range = range;
 		_sharedCtx = new SharedContext(sheet);
 	}
+
 	//ZSS-966
 	public RangeImpl(SRange range,Book book) {
 		this._range = range;
@@ -119,6 +71,12 @@ public class RangeImpl implements Range{
 	private RangeImpl(SRange range,SharedContext ctx) {
 		this._range = range;
 		_sharedCtx = ctx;
+	}
+
+	/**
+	 * @deprecated since 3.5 it is always synchronized on book by a read write lock.
+	 */
+	public void setSyncLevel(SyncLevel syncLevel) {
 	}
 	
 	public ReadWriteLock getLock(){
@@ -143,29 +101,6 @@ public class RangeImpl implements Range{
 		return _range;
 	}
 
-	
-	private static class SharedContext{
-		Sheet _sheet;
-		Book _book; //ZSS-966
-		
-		private SharedContext(Sheet sheet){
-			this._sheet = sheet;
-		}
-		//ZSS-966
-		private SharedContext(Book book) {
-			this._sheet = null;
-			this._book = book;
-		}
-		public Sheet getSheet(){
-			return _sheet;
-		}
-		
-		public Book getBook(){
-			return _book == null ? _sheet.getBook() : _book;
-		}
-	}
-	
-	
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -173,6 +108,7 @@ public class RangeImpl implements Range{
 		result = prime * result + ((_range == null) ? 0 : _range.hashCode());
 		return result;
 	}
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -194,68 +130,64 @@ public class RangeImpl implements Range{
 	public boolean isProtected() {
 		return _range.isProtected();
 	}
-	
+
 	@Override
 	public boolean isSheetProtected() {
 		return _range.isSheetProtected();
-	}	
-
+	}
+	
 	public boolean isAnyCellProtected(){
 		return _range.isAnyCellProtected();
 	}
-	
-	public Range paste(Range dest, boolean cut) { 
+
+	public Range paste(Range dest, boolean cut) {
 		SRange r = _range.copy(((RangeImpl)dest).getNative(), cut);
 		return new RangeImpl(r, dest.getSheet());
 	}
-
+	
 	/* short-cut for pasteSpecial, it is original Range.copy*/
-	public Range paste(Range dest) { 
+	public Range paste(Range dest) {
 		SRange r = _range.copy(((RangeImpl)dest).getNative());
 		return new RangeImpl(r, dest.getSheet());
 	}
-	
-	public Range pasteSpecial(Range dest,PasteType type,PasteOperation op,boolean skipBlanks,boolean transpose) { 
+
+	public Range pasteSpecial(Range dest, PasteType type, PasteOperation op, boolean skipBlanks, boolean transpose) {
 		SRange r = _range.pasteSpecial(((RangeImpl)dest).getNative(), EnumUtil.toRangePasteTypeNative(type), EnumUtil.toRangePasteOpNative(op), skipBlanks, transpose);
 		return new RangeImpl(r, dest.getSheet());
 	}
 
-
-	public void clearContents() { 
+	public void clearContents() {
 		_range.clearContents();
 	}
-	
-	public void clearAll() { 
+
+	public void clearAll() {
 		_range.clearAll();
 	}
 	
 	public Sheet getSheet(){
 		return _sharedCtx.getSheet();
 	}
-
- 
+	
 	public void clearStyles() {
-		_range.clearCellStyles();	
+		_range.clearCellStyles();
 	}
-
-	public void setCellStyle(final CellStyle nstyle) { 
-		_range.setCellStyle(nstyle==null?null:((CellStyleImpl)nstyle).getNative());
-	}
-
 
 	public int getColumn() {
 		return _range.getColumn();
 	}
+
 	public int getRow() {
 		return _range.getRow();
 	}
+
 	public int getLastColumn() {
 		return _range.getLastColumn();
 	}
+
 	public int getLastRow() {
 		return _range.getLastRow();
 	}
-	
+
 	public void sync(RangeRunner run){
 		ReadWriteLock lock = _range.getLock();
 		lock.writeLock().lock();
@@ -266,9 +198,10 @@ public class RangeImpl implements Range{
 		}
 		return;
 	}
+
 	/**
-	 * visit all cells in this range, make sure you call this in a limited range, 
-	 * don't use it for all row/column selection, it will spend much time to iterate the cell 
+	 * visit all cells in this range, make sure you call this in a limited range,
+	 * don't use it for all row/column selection, it will spend much time to iterate the cell
 	 * @param visitor the visitor
 	 */
 	public void visit(final CellVisitor visitor){
@@ -276,7 +209,7 @@ public class RangeImpl implements Range{
 		final int lr=getLastRow();
 		final int c=getColumn();
 		final int lc=getLastColumn();
-		
+
 		Runnable run = new Runnable(){
 			public void run(){
 				for(int i=r;i<=lr;i++){
@@ -287,7 +220,7 @@ public class RangeImpl implements Range{
 				}
 			}
 		};
-		
+
 		ReadWriteLock lock = _range.getLock();
 		lock.writeLock().lock();
 		try{
@@ -319,11 +252,10 @@ public class RangeImpl implements Range{
 	public void applyBordersAround(BorderType borderType,String htmlColor){
 		applyBorders(ApplyBorderType.OUTLINE,borderType, htmlColor);
 	}
-	
-	public void applyBorders(ApplyBorderType type,BorderType borderType,String htmlColor){ 
+
+	public void applyBorders(ApplyBorderType type, BorderType borderType, String htmlColor){
 		_range.setBorders(EnumUtil.toRangeApplyBorderType(type), EnumUtil.toRangeBorderType(borderType), htmlColor);
 	}
-
 	
 	public boolean hasMergedCell(){
 		CellRegion curr = new CellRegion(getRow(),getColumn(),getLastRow(),getLastColumn());
@@ -343,107 +275,90 @@ public class RangeImpl implements Range{
 		}
 		return false;
 	}
-	
-	
-	static private class Result<T> {
-		T r;
-		Result(){}
-		Result(T r){
-			this.r = r;
-		}
-		
-		public T get(){
-			return r;
-		}
-		
-		public void set(T r){
-			this.r = r;
-		}
-	}
 
-	public void merge(boolean across){ 
+	public void merge(boolean across){
 		_range.merge(across);
 	}
-	
-	public void unmerge(){ 
+
+	public void unmerge(){
 		_range.unmerge();
 	}
 
-	
-	public RangeImpl toShiftedRange(int rowOffset,int colOffset){ 
+	public RangeImpl toShiftedRange(int rowOffset, int colOffset){
 		RangeImpl offsetRange = new RangeImpl(_range.getOffset(rowOffset, colOffset),_sharedCtx);
 		return offsetRange;
 	}
-	
-	
+
 	public RangeImpl toCellRange(int rowOffset,int colOffset){
 		RangeImpl cellRange = new RangeImpl(SRanges.range(_range.getSheet(),getRow()+rowOffset,getColumn()+colOffset),_sharedCtx);
 		return cellRange;
 	}
 	
 	/** get the top-left cell range of this range**/
-	public RangeImpl getLeftTop() { 
+	public RangeImpl getLeftTop() {
 		return toCellRange(0,0);
 	}
-	
+
 	/**
 	 *  Return a range that represents all columns and between the first-row and last-row of this range
 	 **/
-	public RangeImpl toRowRange(){ 
+	public RangeImpl toRowRange(){
 		return new RangeImpl(_range.getRows(),_sharedCtx);
 	}
 	
 	/**
 	 *  Return a range that represents all rows and between the first-column and last-column of this range
 	 **/
-	public RangeImpl toColumnRange(){ 
+	public RangeImpl toColumnRange(){
 		return new RangeImpl(_range.getColumns(),_sharedCtx);
 	}
-	
+
 	/**
-	 * Check if this range represents a whole column, which mean all rows are included, 
+	 * Check if this range represents a whole column, which mean all rows are included,
 	 */
-	public boolean isWholeColumn(){ 
+	public boolean isWholeColumn(){
 		return _range.isWholeColumn();
 	}
+
 	/**
-	 * Check if this range represents a whole row, which mean all column are included, 
+	 * Check if this range represents a whole row, which mean all column are included,
 	 */
-	public boolean isWholeRow(){ 
+	public boolean isWholeRow(){
 		return _range.isWholeRow();
 	}
+
 	/**
-	 * Check if this range represents a whole sheet, which mean all column and row are included, 
+	 * Check if this range represents a whole sheet, which mean all column and row are included,
 	 */
-	public boolean isWholeSheet(){ 
+	public boolean isWholeSheet(){
 		return _range.isWholeSheet();
 	}
 	
 	public void insert(InsertShift shift,InsertCopyOrigin copyOrigin){
 		_range.insert(EnumUtil.toRangeInsertShift(shift), EnumUtil.toRangeInsertCopyOrigin(copyOrigin));
 	}
-	
-	public void delete(DeleteShift shift){ 
+
+	public void delete(DeleteShift shift){
 		_range.delete(EnumUtil.toRangeDeleteShift(shift));
 	}
-	
-	public void sort(boolean desc){	
+
+	public void sort(boolean desc){
 		sort(desc,false,false,false,null);
 	}
 	
 	public void sort(boolean desc,
-			boolean hasHeader, 
-			boolean matchCase, 
-			boolean sortByRows, 
+					 boolean hasHeader,
+					 boolean matchCase,
+					 boolean sortByRows,
 			SortDataOption dataOption){
 		Range index = null;
 		int r = getRow();
 		int c = getColumn();
 		int lr = getLastRow();
 		int lc = getLastColumn();
-		
+
 		index = Ranges.range(this.getSheet(),r,c,sortByRows?r:lr,sortByRows?lc:c);
-		
+
 		sort(index,desc,dataOption,
 			null,false,null,
 			null,false,null,
@@ -453,22 +368,22 @@ public class RangeImpl implements Range{
 	public void sort(Range key1,boolean desc1,SortDataOption dataOption1,
 			Range key2,boolean desc2,SortDataOption dataOption2,
 			Range key3,boolean desc3,SortDataOption dataOption3,
-			boolean header, 
-			boolean matchCase, 
+					 boolean header,
+					 boolean matchCase,
 			boolean sortByRows
 			/*int orderCustom, //not implement*/
-			/*int sortMethod, //not implement*/){
-		
-		_range.sort(key1==null?null:((RangeImpl)key1).getNative(), desc1, 
+			/*int sortMethod, //not implement*/) {
+
+		_range.sort(key1 == null ? null : ((RangeImpl) key1).getNative(), desc1,
 				dataOption1==null?SRange.SortDataOption.NORMAL_DEFAULT:EnumUtil.toRangeSortDataOption(dataOption1),
-				key2==null?null:((RangeImpl)key2).getNative(), desc2, 
-				dataOption2==null?SRange.SortDataOption.NORMAL_DEFAULT:EnumUtil.toRangeSortDataOption(dataOption2), 
-				key3==null?null:((RangeImpl)key3).getNative(), desc3, 
+				key2 == null ? null : ((RangeImpl) key2).getNative(), desc2,
+				dataOption2 == null ? SRange.SortDataOption.NORMAL_DEFAULT : EnumUtil.toRangeSortDataOption(dataOption2),
+				key3 == null ? null : ((RangeImpl) key3).getNative(), desc3,
 				dataOption3==null?SRange.SortDataOption.NORMAL_DEFAULT:EnumUtil.toRangeSortDataOption(dataOption3),
-				header?BookHelper.SORT_HEADER_YES:BookHelper.SORT_HEADER_NO, 
-				matchCase, 
+				header ? BookHelper.SORT_HEADER_YES : BookHelper.SORT_HEADER_NO,
+				matchCase,
 				sortByRows);
-		
+
 	}
 	
 	/** check if auto filter is enable or not.**/
@@ -476,7 +391,7 @@ public class RangeImpl implements Range{
 		final SSheet sheet = _range.getSheet();
 		//ZSS-988
 		final STable table = ((AbstractSheetAdv)sheet).getTableByRowCol(getRow(), getColumn());
-		return table != null ? table.getAutoFilter() != null : sheet.getAutoFilter()!=null; 
+		return table != null ? table.getAutoFilter() != null : sheet.getAutoFilter() !=null;
 	}
 	
 	// ZSS-246: give an API for user checking the auto-filtering range before applying it.
@@ -488,17 +403,18 @@ public class RangeImpl implements Range{
 			return null;
 		}
 	}
-
+	
 	/** enable/disable autofilter of the sheet**/
 	public void enableAutoFilter(boolean enable){
 		if(isAutoFilterEnabled() == enable){
 			return ;
-		} 
+		}
 		_range.enableAutoFilter(enable);
 	}
+	
 	/** enable filter with condition **/
 	//TODO have to review this after I know more detail
-	public void enableAutoFilter(int field, AutoFilterOperation filterOp, Object criteria1, Object criteria2, Boolean showButton){ 
+	public void enableAutoFilter(int field, AutoFilterOperation filterOp, Object criteria1, Object criteria2, Boolean showButton){
 		_range.enableAutoFilter(field,EnumUtil.toRangeAutoFilterOperation(filterOp),criteria1,criteria2,showButton);
 	}
 	
@@ -506,39 +422,39 @@ public class RangeImpl implements Range{
 	public void resetAutoFilter(){
 		_range.resetAutoFilter();
 	}
-	
+
 	/** re-apply existing criteria of filters **/
-	public void applyAutoFilter(){ 
+	public void applyAutoFilter(){
 		_range.applyAutoFilter();
 	}
-	
+
 	@Deprecated
-	public void protectSheet(String password){ 
+	public void protectSheet(String password){
 		_range.protectSheet(password);
 	}
-	
-	public void autoFill(Range dest,AutoFillType fillType){ 
+
+	public void autoFill(Range dest, AutoFillType fillType){
 		_range.fill(((RangeImpl)dest).getNative(), EnumUtil.toRangeFillType(fillType));
 	}
-	
-	public void fillDown(){ 
+
+	public void fillDown(){
 		_range.fillDown();
 	}
-	
-	public void fillLeft(){ 
+
+	public void fillLeft(){
 		_range.fillLeft();
 	}
-	
-	public void fillUp(){ 
+
+	public void fillUp(){
 		_range.fillUp();
 	}
-	
-	public void fillRight(){ 
+
+	public void fillRight(){
 		_range.fillRight();
 	}
 	
 	/** shift this range with a offset row and column**/
-	public void shift(int rowOffset,int colOffset){ 
+	public void shift(int rowOffset, int colOffset){
 		_range.move(rowOffset, colOffset);
 	}
 	
@@ -546,66 +462,66 @@ public class RangeImpl implements Range{
 		String txt = _range.getEditText();
 		return txt==null?"":txt;
 	}
-	
-	public void setCellEditText(String editText){ 
+
+	public void setCellEditText(String editText){
 		try{
 			_range.setEditText(editText);
 		}catch(InvalidFormulaException x){
 			throw new IllegalFormulaException(x.getMessage(),x);
 		}
 	}
-	
-	public String getCellFormatText(){ 
+
+	public String getCellFormatText(){
 		return _range.getCellFormatText();
 	}
-	
-	public String getCellDataFormat(){ 
+
+	public String getCellDataFormat(){
 		return _range.getCellDataFormat();
 	}
-	
-	public Object getCellValue(){ 
+
+	public Object getCellValue(){
 		return _range.getValue();
 	}
-	
-	public void setDisplaySheetGridlines(boolean enable){ 
-		_range.setDisplayGridlines(enable);
+
+	public void setCellValue(Object value) {
+		_range.setValue(value);
 	}
-	
-	public boolean isDisplaySheetGridlines(){ 
+
+	public boolean isDisplaySheetGridlines(){
 		return getSheet().isDisplayGridlines();
 	}
-	
-	public void setHidden(boolean hidden){ 
+
+	public void setDisplaySheetGridlines(boolean enable) {
+		_range.setDisplayGridlines(enable);
+	}
+
+	public void setHidden(boolean hidden){
 		_range.setHidden(hidden);
 	}
-	
-	public void setCellHyperlink(HyperlinkType type,String address,String display){ 
+
+	public void setCellHyperlink(HyperlinkType type, String address, String display){
 		_range.setHyperlink(EnumUtil.toHyperlinkType(type), address, display);
 	}
-	
-	public Hyperlink getCellHyperlink(){ 
+
+	public Hyperlink getCellHyperlink() {
 		SHyperlink l = _range.getHyperlink();
 		return l==null?null:new HyperlinkImpl(new SimpleRef<SHyperlink>(l),getCellEditText());
-	}
-	
-	public void setSheetName(String name){ 
-		_range.setSheetName(name);
 	}
 	
 	public String getSheetName(){
 		return getSheet().getSheetName();
 	}
-	
-	public void setSheetOrder(int pos){ 
-		_range.setSheetOrder(pos);
+
+	public void setSheetName(String name) {
+		_range.setSheetName(name);
 	}
 	
 	public int getSheetOrder(){
 		return getBook().getSheetIndex(getSheet());
 	}
-	
-	public void setCellValue(Object value){
-		_range.setValue(value);
+
+	public void setSheetOrder(int pos) {
+		_range.setSheetOrder(pos);
 	}
 	
 	private ModelRef<SBook> getBookRef(){
@@ -616,17 +532,19 @@ public class RangeImpl implements Range{
 		return ((SheetImpl)getSheet()).getRef();
 	}
 	
-
 	/**
 	 * get the first cell style of this range
-	 * 
+	 *
 	 * @return cell style if cell is exist, the check row style and column cell style if cell not found, if row and column style is not exist, then return default style of sheet
 	 */
 	public CellStyle getCellStyle() {
 		SCellStyle style = _range.getCellStyle();
-		return new CellStyleImpl(getBookRef(), new SimpleRef<SCellStyle>(style));		
+		return new CellStyleImpl(getBookRef(), new SimpleRef<SCellStyle>(style));
 	}
 
+	public void setCellStyle(final CellStyle nstyle) {
+		_range.setCellStyle(nstyle == null ? null : ((CellStyleImpl) nstyle).getNative());
+	}
 	
 	public Picture addPicture(SheetAnchor anchor,byte[] image,Format format){
 		SPicture picture = _range.addPicture(SheetImpl.toViewAnchor(_range.getSheet(), anchor), image, EnumUtil.toPictureFormat(format));
@@ -636,23 +554,21 @@ public class RangeImpl implements Range{
 	public void deletePicture(Picture picture){
 		_range.deletePicture(((PictureImpl)picture).getNative());
 	}
-	
+
 	public void movePicture(SheetAnchor anchor,Picture picture){
 		_range.movePicture(((PictureImpl)picture).getNative(), SheetImpl.toViewAnchor(_range.getSheet(), anchor));
 	}
-	
-	public Chart addChart(SheetAnchor anchor,Type type, Grouping grouping, LegendPosition pos){
-		SChart chart =  _range.addChart(new ViewAnchor(anchor.getRow(), anchor.getColumn(), DEFAULT_CHART_WIDTH, DEFAULT_CHART_HEIGHT), 
+
+	public Chart addChart(SheetAnchor anchor, Type type, Grouping grouping, LegendPosition pos) {
+		SChart chart = _range.addChart(new ViewAnchor(anchor.getRow(), anchor.getColumn(), DEFAULT_CHART_WIDTH, DEFAULT_CHART_HEIGHT),
 				EnumUtil.toChartType(type), EnumUtil.toChartGrouping(grouping),
 				EnumUtil.toLegendPosition(pos), EnumUtil.isThreeDimentionalChart(type));
 		return new ChartImpl(new SimpleRef<SSheet>(_range.getSheet()), new SimpleRef<SChart>(chart));
 	}
 	
-	
 	public void deleteChart(Chart chart){
 		_range.deleteChart(((ChartImpl)chart).getNative());
 	}
-	
 	
 	public void moveChart(SheetAnchor anchor,Chart chart){
 		_range.moveChart(((ChartImpl)chart).getNative(), SheetImpl.toViewAnchor(_range.getSheet(), anchor));
@@ -676,13 +592,13 @@ public class RangeImpl implements Range{
 	public void deleteSheet(){
 		_range.deleteSheet();
 	}
-	
-	
+
 	@Override
 	public void setColumnWidth(int widthPx) {
 		SRange r = _range.isWholeColumn()?_range:_range.getColumns();
 		r.setColumnWidth(widthPx);
 	}
+
 	@Override
 	public void setRowHeight(int heightPx) {
 		SRange r = _range.isWholeRow()?_range:_range.getRows();
@@ -694,7 +610,7 @@ public class RangeImpl implements Range{
 		SRange r = _range.isWholeRow()?_range:_range.getRows();
 		r.setRowHeight(heightPx, isCustom);
 	}
-	
+
 	public String toString(){
 		return Ranges.getAreaRefString(getSheet(), getRow(),getColumn(),getLastRow(),getLastColumn());
 	}
@@ -703,7 +619,7 @@ public class RangeImpl implements Range{
 	 * Notify this range has been changed.
 	 */
 	@Override
-	public void notifyChange(){ 
+	public void notifyChange() {
 		_range.notifyChange();
 	}
 	
@@ -713,29 +629,35 @@ public class RangeImpl implements Range{
 	}
 	
 	@Override
-	public void setFreezePanel(int rowfreeze, int columnfreeze) { 
+	public void setFreezePanel(int rowfreeze, int columnfreeze) {
 		_range.setFreezePanel(rowfreeze, columnfreeze);
 	}
+
 	@Override
 	public int getRowCount() {
-		return _range.getLastRow()-_range.getRow()+1;
+		return _range.getLastRow() - _range.getRow() + 1;
 	}
+
 	@Override
 	public int getColumnCount() {
 		return _range.getLastColumn()-_range.getColumn()+1;
 	}
+
 	@Override
 	public String asString() {
 		return Ranges.getAreaRefString(getSheet(), getRow(),getColumn(),getLastRow(),getLastColumn());
 	}
+
 	@Override
 	public SRange getInternalRange() {
 		return _range;
 	}
+
 	@Override
 	public void createName(String nameName) {
 		_range.createName(nameName);
 	}
+
 	@Override
 	public void protectSheet(String password,
 			boolean allowSelectingLockedCells,
@@ -756,6 +678,7 @@ public class RangeImpl implements Range{
 				allowFiltering, allowUsingPivotTables,
 				drawingObjects, scenarios);
 	}
+
 	@Override
 	public boolean unprotectSheet(String password) {
 		return _range.unprotectSheet(password);
@@ -771,7 +694,7 @@ public class RangeImpl implements Range{
 	@Override
 	public Validation validate(final String editText) {
 		SDataValidation dv = _range.validate(editText);
-		return dv == null ? 
+		return dv == null ?
 				null : new ValidationImpl(new SimpleRef<SDataValidation>(dv));
 	}
 
@@ -782,7 +705,7 @@ public class RangeImpl implements Range{
 			boolean showInput, String inputTitle, String inputMessage,
 			boolean showError, AlertStyle alertStyle, String errorTitle,
 			String errorMessage) {
-		_range.setValidation(validationType.getNative(), 
+		_range.setValidation(validationType.getNative(),
 				ignoreBlank, operatorType.getNative(),
 				inCellDropDown, formula1, formula2,
 				showInput, inputTitle, inputMessage,
@@ -799,20 +722,20 @@ public class RangeImpl implements Range{
 		}
 		return vs;
 	}
-	
+
 	@Override
 	public void deleteValidation() {
 		_range.deleteValidation();
 	}
 
 	@Override
-	public void setCellRichText(String html) {
-		_range.setRichText(html);
+	public String getCellRichText() {
+		return _range.getRichText();
 	}
 	
 	@Override
-	public String getCellRichText() {
-		return _range.getRichText();
+	public void setCellRichText(String html) {
+		_range.setRichText(html);
 	}
 
 	@Override
@@ -820,9 +743,9 @@ public class RangeImpl implements Range{
 			int fontHeight, String fontName, boolean italic, boolean strikeout,
 			TypeOffset typeOffset, Underline underline) {
 		SFont font = _range.getOrCreateFont(
-				EnumUtil.toFontBoldweight(boldweight), color.getHtmlColor(), 
+				EnumUtil.toFontBoldweight(boldweight), color.getHtmlColor(),
 				fontHeight, fontName, italic, strikeout,
-				EnumUtil.toFontTypeOffset(typeOffset), 
+				EnumUtil.toFontTypeOffset(typeOffset),
 				EnumUtil.toFontUnderline(underline));
 		return new FontImpl(((BookImpl) getBook()).getRef(), new SimpleRef<SFont>(font));
 	}
@@ -831,12 +754,12 @@ public class RangeImpl implements Range{
 	public void refresh(boolean includeDependants) {
 		_range.refresh(includeDependants);
 	}
-	
+
 	@Override
 	public boolean setAutoRefresh(boolean auto) {
 		return _range.setAutoRefresh(auto);
 	}
-	
+
 	//ZSS-814
 	@Override
 	public void refresh(boolean includeDependants, boolean clearCache, boolean enforceEval) {
@@ -872,18 +795,18 @@ public class RangeImpl implements Range{
 	}
 
 	//ZSS-848
-	public void setCommentVisible(boolean visible) {
-		_range.setCommentVisible(visible);
-	}
-	
-	//ZSS-848
 	public boolean isCommentVisible() {
 		return _range.isCommentVisible();
 	}
 
+	//ZSS-848
+	public void setCommentVisible(boolean visible) {
+		_range.setCommentVisible(visible);
+	}
+
 	//ZSS-939
 	@Override
-	public void notifyChange(CellAttribute cellAttr){ 
+	public void notifyChange(CellAttribute cellAttr) {
 		_range.notifyChange(org.zkoss.zss.model.impl.CellAttribute.values()[cellAttr.ordinal()]);
 	}
 	
@@ -892,11 +815,53 @@ public class RangeImpl implements Range{
 	public void setNameName(String namename, String newname) {
 		_range.setNameName(namename, newname);
 	}
-	
+
 	//ZSS-1046
 	//@Since 3.8.0
 	@Override
 	public void setStringValue(String text) {
 		_range.setStringValue(text);
+	}
+
+	private static class SharedContext {
+		Sheet _sheet;
+		Book _book; //ZSS-966
+
+		private SharedContext(Sheet sheet) {
+			this._sheet = sheet;
+		}
+
+		//ZSS-966
+		private SharedContext(Book book) {
+			this._sheet = null;
+			this._book = book;
+		}
+
+		public Sheet getSheet() {
+			return _sheet;
+		}
+
+		public Book getBook() {
+			return _book == null ? _sheet.getBook() : _book;
+		}
+	}
+
+	static private class Result<T> {
+		T r;
+
+		Result() {
+		}
+
+		Result(T r) {
+			this.r = r;
+		}
+
+		public T get() {
+			return r;
+		}
+
+		public void set(T r) {
+			this.r = r;
+		}
 	}
 }

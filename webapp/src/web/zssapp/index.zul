@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
-<zk xmlns:w="http://www.zkoss.org/2005/zk/client">
+<zk>
 	<window id="mainWin" hflex="1" vflex="1" apply="org.zkoss.zss.app.ui.AppCtrl">
 		<vlayout hflex="1" vflex="1" spacing="0">
 			<include hflex="1" src="~./zssapp/mainMenubar.zul" />
@@ -8,7 +8,8 @@
 
 				<include vflex="1" src="~./zssapp/TablesBar.zul"></include>
 
-				<spreadsheet id="ss" hflex="1" showToolbar="true" showFormulabar="true" showSheetbar="true" showContextMenu="true" vflex="1"/>
+				<spreadsheet id="ss" hflex="1" showToolbar="true" showFormulabar="true" showSheetbar="true"
+							 showContextMenu="true" vflex="1"/>
 
 			</hlayout>
 		</vlayout>

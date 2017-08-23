@@ -21,19 +21,12 @@ import org.zkoss.poi.ss.formula.eval.AreaEval;
 import org.zkoss.poi.ss.formula.eval.BlankEval;
 import org.zkoss.poi.ss.formula.eval.ErrorEval;
 import org.zkoss.poi.ss.usermodel.Cell;
-import org.zkoss.util.CacheMap;
-import org.zkoss.util.Pair;
-import org.zkoss.poi.ss.usermodel.DateUtil;
 import org.zkoss.poi.ss.usermodel.DataFormatter;
+import org.zkoss.poi.ss.usermodel.DateUtil;
+import org.zkoss.util.Pair;
 
 import javax.swing.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -79,20 +72,11 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings({"Singleton"})
 public class CellFormat {
-    private final String format;
-    private final CellFormatPart posNumFmt;
-    private final CellFormatPart zeroNumFmt;
-    private final CellFormatPart negNumFmt;
-    private final CellFormatPart textFmt;
-    private final int formatPartCount;
-
     private static final Pattern ONE_PART = Pattern.compile(
             CellFormatPart.FORMAT_PAT.pattern() + "(;|$)",
             Pattern.COMMENTS | Pattern.CASE_INSENSITIVE);
-
     private static final CellFormatPart DEFAULT_TEXT_FORMAT =
             new CellFormatPart("@");
-
     /*
      * Cells that cannot be formatted, e.g. cells that have a date or time
      * format and have an invalid date or time value, are displayed as 255
@@ -104,39 +88,18 @@ public class CellFormat {
             "###################################################" +
             "###################################################" +
             "###################################################";
-
+    /**
+     * Maps a format string to its parsed version for efficiencies sake.
+     */
+    private static final Map<Object, CellFormat> formatCache = //ZSS-68
+            Collections.synchronizedMap(new WeakHashMap<Object, CellFormat>());
+    private static final CellFormatResult EMPTY_CELL_FORMAT_RESULT = new CellFormatResult(false, "", null);
     private static String QUOTE = "\"";
-
-    //20111229, henrichen@zkoss.org: ZSS-68
-	public static final CellFormat getGeneralFormat(final Locale locale) {
-		return new CellFormat("General") {
-	        @Override
-	        public CellFormatResult apply(Object value, int cellWidth) { //ZSS-666
-	            String text;
-	            if (value == null) {
-	                text = "";
-	            } else if (value instanceof Byte){ //20100616, Henri Chen
-	            	text = ErrorEval.getText(((Byte)value).intValue());
-	            } else if (value instanceof Number) {
-	                text = CellNumberFormatter.getFormatter(CellNumberFormatter.FormatterType.SIMPLE_NUMBER, locale).format(value);
-	            } else if (value instanceof Boolean) { //20100616, Henri Chen
-	            	text = ((Boolean)value).booleanValue() ? "TRUE" : "FALSE";
-	            } else if (value instanceof AreaEval) {
-	                // Show the number of rows and columns in the area
-	                int numRow = ((AreaEval) value).getLastRow()-((AreaEval) value).getFirstRow()+1;
-	                int numCol = ((AreaEval) value).getLastColumn()-((AreaEval) value).getFirstColumn()+1;
-	                if (numRow == 1 && numCol == 1 && ((AreaEval) value).getValue(0, 0) instanceof BlankEval) {
-	                    text = "[empty]";
-                    } else {
-                        text = "[" + ((Integer) numRow).toString() + " x " + ((Integer) numCol).toString() + "]";
-                    }
-                } else {
-	                text = value.toString();
-	            }
-	            return new CellFormatResult(true, text, null);
-	        }
-	    };
-	}
+    private final String format;
+    private final CellFormatPart posNumFmt;
+    private final CellFormatPart zeroNumFmt;
+    private final CellFormatPart negNumFmt;
+    private final CellFormatPart textFmt;
     /**
      * Format a value as it would be were no format specified.  This is also
      * used when the format specified is <tt>General</tt>.
@@ -161,30 +124,9 @@ public class CellFormat {
         }
     };
 */
-    /** Maps a format string to its parsed version for efficiencies sake. */
-    private static final Map<Object, CellFormat> formatCache = //ZSS-68
-            Collections.synchronizedMap(new WeakHashMap<Object, CellFormat>());
-
-    /**
-     * Returns a {@link CellFormat} that applies the given format.  Two calls
-     * with the same format may or may not return the same object.
-     *
-     * @param format The format.
-     *
-     * @return A {@link CellFormat} that applies the given format.
-     */
-    public static CellFormat getInstance(String format, Locale locale) { //20111229, henrichen@zkoss.org: ZSS-68
-    	final Pair<String, Locale> key = new Pair<String, Locale>(format, locale);
-        CellFormat fmt = formatCache.get(key);
-        if (fmt == null) {
-            if (format.equals("General") || format.equals("@"))
-                fmt = getGeneralFormat(locale);
-            else
-                fmt = new CellFormat(format);
-            formatCache.put(key, fmt);
-        }
-        return fmt;
-    }
+    private final int formatPartCount;
+    //20100615, Henri Chen: patch to distinguish implicit negative number format
+    private boolean _implicit;
 
     /**
      * Creates a new object.
@@ -245,6 +187,74 @@ public class CellFormat {
         }
     }
 
+    //20111229, henrichen@zkoss.org: ZSS-68
+    public static final CellFormat getGeneralFormat(final Locale locale) {
+        return new CellFormat("General") {
+            @Override
+            public CellFormatResult apply(Object value, int cellWidth) { //ZSS-666
+                String text;
+                if (value == null) {
+                    text = "";
+                } else if (value instanceof Byte) { //20100616, Henri Chen
+                    text = ErrorEval.getText(((Byte) value).intValue());
+                } else if (value instanceof Number) {
+                    text = CellNumberFormatter.getFormatter(CellNumberFormatter.FormatterType.SIMPLE_NUMBER, locale).format(value);
+                } else if (value instanceof Boolean) { //20100616, Henri Chen
+                    text = ((Boolean) value).booleanValue() ? "TRUE" : "FALSE";
+                } else if (value instanceof AreaEval) {
+                    // Show the number of rows and columns in the area
+                    int numRow = ((AreaEval) value).getLastRow() - ((AreaEval) value).getFirstRow() + 1;
+                    int numCol = ((AreaEval) value).getLastColumn() - ((AreaEval) value).getFirstColumn() + 1;
+                    if (numRow == 1 && numCol == 1 && ((AreaEval) value).getValue(0, 0) instanceof BlankEval) {
+                        text = "[empty]";
+                    } else {
+                        text = "[" + ((Integer) numRow).toString() + " x " + ((Integer) numCol).toString() + "]";
+                    }
+                } else {
+                    text = value.toString();
+                }
+                return new CellFormatResult(true, text, null);
+            }
+        };
+    }
+
+    /**
+     * Returns a {@link CellFormat} that applies the given format.  Two calls
+     * with the same format may or may not return the same object.
+     *
+     * @param format The format.
+     * @return A {@link CellFormat} that applies the given format.
+     */
+    public static CellFormat getInstance(String format, Locale locale) { //20111229, henrichen@zkoss.org: ZSS-68
+        final Pair<String, Locale> key = new Pair<String, Locale>(format, locale);
+        CellFormat fmt = formatCache.get(key);
+        if (fmt == null) {
+            if (format.equals("General") || format.equals("@"))
+                fmt = getGeneralFormat(locale);
+            else
+                fmt = new CellFormat(format);
+            formatCache.put(key, fmt);
+        }
+        return fmt;
+    }
+
+    /**
+     * Returns the ultimate cell type, following the results of formulas.  If
+     * the cell is a {@link Cell#CELL_TYPE_FORMULA}, this returns the result of
+     * {@link Cell#getCachedFormulaResultType()}.  Otherwise this returns the
+     * result of {@link Cell#getCellType()}.
+     *
+     * @param cell The cell.
+     * @return The ultimate type of this cell.
+     */
+    public static int ultimateType(Cell cell) {
+        int type = cell.getCellType();
+        if (type == Cell.CELL_TYPE_FORMULA)
+            return cell.getCachedFormulaResultType();
+        else
+            return type;
+    }
+
     /**
      * Returns the result of applying the format to the given value.  If the
      * value is a number (a type of {@link Number} object), the correct number
@@ -282,7 +292,7 @@ public class CellFormat {
             } else {
                 throw new IllegalArgumentException("value not a valid Excel date");
             }
-//marked out after upgrade to POI 3.8-Final            
+//marked out after upgrade to POI 3.8-Final
 //        } else if (value instanceof Date) { //20100615, Henri Chen.
 //        	return posNumFmt.apply(value);
         } else {
@@ -339,18 +349,16 @@ public class CellFormat {
             return apply("?", cellWidth);
         }
     }
-    
-    //20131209, dennischen@zkoss.org, api to know to convert double to date 
-	public boolean isApplicableDateFormat(Double value) {
-		if (getApplicableFormatPart(value).getCellFormatType() == CellFormatType.DATE) {
-			if (DateUtil.isValidExcelDate(value)) {
+
+    //20131209, dennischen@zkoss.org, api to know to convert double to date
+    public boolean isApplicableDateFormat(Double value) {
+        if (getApplicableFormatPart(value).getCellFormatType() == CellFormatType.DATE) {
+            if (DateUtil.isValidExcelDate(value)) {
 				return true;
 			}
 		}
 		return false;
 	}
-    
-    private static final CellFormatResult EMPTY_CELL_FORMAT_RESULT = new CellFormatResult(false, "", null); 
 
     /**
      * Uses the result of applying this format to the value, setting the text
@@ -427,16 +435,16 @@ public class CellFormat {
      * Returns the {@link CellFormatPart} that applies to the value.  Result
      * depends on how many parts the cell format has, the cell value and any
      * conditions.  The value must be a {@link Number}.
-     * 
+     *
      * @param value The value.
      * @return The {@link CellFormatPart} that applies to the value.
      */
     private CellFormatPart getApplicableFormatPart(Object value) {
-        
+
         if (value instanceof Number) {
-            
+
             double val = ((Number) value).doubleValue();
-            
+
             if (formatPartCount == 1) {
             	//20120725 samchuang@zkoss.org: ZSS-142
                 if (posNumFmt != null && (!posNumFmt.hasCondition()
@@ -472,25 +480,7 @@ public class CellFormat {
         } else {
             throw new IllegalArgumentException("value must be a Number");
         }
-        
-    }
 
-    /**
-     * Returns the ultimate cell type, following the results of formulas.  If
-     * the cell is a {@link Cell#CELL_TYPE_FORMULA}, this returns the result of
-     * {@link Cell#getCachedFormulaResultType()}.  Otherwise this returns the
-     * result of {@link Cell#getCellType()}.
-     *
-     * @param cell The cell.
-     *
-     * @return The ultimate type of this cell.
-     */
-    public static int ultimateType(Cell cell) {
-        int type = cell.getCellType();
-        if (type == Cell.CELL_TYPE_FORMULA)
-            return cell.getCachedFormulaResultType();
-        else
-            return type;
     }
 
     /**
@@ -521,7 +511,4 @@ public class CellFormat {
     public int hashCode() {
         return format.hashCode();
     }
-    
-    //20100615, Henri Chen: patch to distinguish implicit negative number format
-    private boolean _implicit;
 }

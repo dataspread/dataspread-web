@@ -18,22 +18,9 @@ Copyright (C) 2007 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.range.impl;
 
-import javax.xml.ws.handler.MessageContext.Scope;
-
-import org.zkoss.zss.model.SBook;
-import org.zkoss.zss.model.SBorder;
-import org.zkoss.zss.model.SCell;
-import org.zkoss.zss.model.SCellStyle;
-import org.zkoss.zss.model.CellStyleHolder;
-import org.zkoss.zss.model.SFill;
-import org.zkoss.zss.model.STable;
+import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.SBorder.BorderType;
 import org.zkoss.zss.model.SFill.FillPattern;
-import org.zkoss.zss.model.SColor;
-import org.zkoss.zss.model.SFont;
-import org.zkoss.zss.model.SRichText;
-import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.model.impl.AbstractCellAdv;
 import org.zkoss.zss.model.impl.AbstractSheetAdv;
 import org.zkoss.zss.model.impl.AbstractTableAdv;
 import org.zkoss.zss.model.impl.RichTextImpl;
@@ -46,11 +33,18 @@ import org.zkoss.zss.model.util.FontMatcher;
  */
 public class StyleUtil {
 //	private static final Log log = Log.lookup(NStyles.class);
-	
+
+	public static final short BORDER_EDGE_BOTTOM = 0x01;
+	public static final short BORDER_EDGE_RIGHT = 0x02;
+	public static final short BORDER_EDGE_TOP = 0x04;
+	public static final short BORDER_EDGE_LEFT = 0x08;
+	public static final short BORDER_EDGE_ALL = BORDER_EDGE_BOTTOM | BORDER_EDGE_RIGHT | BORDER_EDGE_TOP | BORDER_EDGE_LEFT;
+
 	public static SCellStyle cloneCellStyle(SCell cell) {
 		final SCellStyle destination = cell.getSheet().getBook().createCellStyle(cell.getCellStyle(), true);
 		return destination;
 	}
+
 	public static SCellStyle cloneCellStyle(SBook book,SCellStyle style) {
 		final SCellStyle destination = book.createCellStyle(style, true);
 		return destination;
@@ -64,20 +58,19 @@ public class StyleUtil {
 		if (orgColor == newColor || orgColor != null && orgColor.equals(newColor)) {
 			return;
 		}
-		
+
 //		NCellStyle hitStyle = cache==null?null:cache.get((int)orgStyle.getIndex());
 //		if(hitStyle!=null){
 //			cell.setCellStyle(hitStyle);
 //			return;
 //		}
-		
+
 		FontMatcher fontmatcher = new FontMatcher(orgFont);
 		fontmatcher.setColor(color);
-		
+
 		SFont font = book.searchFont(fontmatcher);
-		
-		
-		
+
+
 		SCellStyle style = null;
 		if(font!=null){//search it since we have existed font
 			CellStyleMatcher matcher = new CellStyleMatcher(orgStyle);
@@ -87,13 +80,13 @@ public class StyleUtil {
 			font = book.createFont(orgFont,true);
 			font.setColor(newColor);
 		}
-		
+
 		if(style==null){
 			style = cloneCellStyle(book,orgStyle);
 			style.setFont(font);
 		}
 		holder.setCellStyle(style);
-		
+
 //		if(cache!=null){
 //			cache.put((int)orgStyle.getIndex(), style);
 //		}
@@ -106,17 +99,17 @@ public class StyleUtil {
 		if (orgColor == newColor || orgColor != null  && orgColor.equals(newColor)) { //no change, skip
 			return;
 		}
-		
+
 		CellStyleMatcher matcher = new CellStyleMatcher(orgStyle);
 		matcher.setBackColor(htmlColor);
-		
+
 		SCellStyle style = book.searchCellStyle(matcher);
 		if(style==null){
 			style = cloneCellStyle(book,orgStyle);
 			style.setFillColor(newColor);
 		}
 		holder.setCellStyle(style);
-		
+
 	}
 	
 	//ZSS-857
@@ -127,16 +120,16 @@ public class StyleUtil {
 		if (orgColor == newColor || orgColor != null  && orgColor.equals(newColor)) { //no change, skip
 			return;
 		}
-		
+
 		SFill.FillPattern pattern = orgStyle.getFillPattern();
 		if (pattern == FillPattern.NONE && htmlColor != null) {
 			pattern = FillPattern.SOLID;
 		}
-		
+
 		CellStyleMatcher matcher = new CellStyleMatcher(orgStyle);
 		matcher.setBackColor(htmlColor);
 		matcher.setFillPattern(pattern);
-		
+
 		SCellStyle style = book.searchCellStyle(matcher);
 		if(style==null){
 			style = cloneCellStyle(book,orgStyle);
@@ -153,18 +146,18 @@ public class StyleUtil {
 		final SColor orgFillColor = orgStyle.getFillColor();
 		final SColor newFillColor = book.createColor(fillColor);
 		final FillPattern orgPattern = orgStyle.getFillPattern();
-			
-		if ((orgBackColor == newBackColor || (orgBackColor != null  && orgBackColor.equals(newBackColor))) && 
+
+		if ((orgBackColor == newBackColor || (orgBackColor != null && orgBackColor.equals(newBackColor))) &&
 				(orgFillColor == newFillColor || (orgFillColor != null  && orgFillColor.equals(newFillColor))) &&
 					orgPattern == pattern) {
 			return;
 		}
-		
+
 		CellStyleMatcher matcher = new CellStyleMatcher(orgStyle);
 		matcher.setBackColor(bgColor);
 		matcher.setFillColor(fillColor);
 		matcher.setFillPattern(pattern);
-		
+
 		SCellStyle style = book.searchCellStyle(matcher);
 		if(style==null){
 			style = cloneCellStyle(book,orgStyle);
@@ -174,14 +167,14 @@ public class StyleUtil {
 		}
 		holder.setCellStyle(style);
 	}
-	
+
 	public static void setTextWrap(SBook book,CellStyleHolder holder,boolean wrap){
 		final SCellStyle orgStyle = holder.getCellStyle();
 		final boolean textWrap = orgStyle.isWrapText();
 		if (wrap == textWrap) { //no change, skip
 			return;
 		}
-		
+
 		CellStyleMatcher matcher = new CellStyleMatcher(orgStyle);
 		matcher.setWrapText(wrap);
 		SCellStyle style = book.searchCellStyle(matcher);
@@ -191,21 +184,21 @@ public class StyleUtil {
 		}
 		holder.setCellStyle(style);
 	}
-	
+
 	public static void setFontHeightPoints(SBook book,CellStyleHolder holder,int fontHeightPoints){
 		final SCellStyle orgStyle = holder.getCellStyle();
 		SFont orgFont = orgStyle.getFont();
-		
+
 		final int orgSize = orgFont.getHeightPoints();
 		if (orgSize == fontHeightPoints) { //no change, skip
 			return;
 		}
-		
+
 		FontMatcher fontmatcher = new FontMatcher(orgFont);
 		fontmatcher.setHeightPoints(fontHeightPoints);
-		
+
 		SFont font = book.searchFont(fontmatcher);
-		
+
 		SCellStyle style = null;
 		if(font!=null){//search it since we have existed font
 			CellStyleMatcher matcher = new CellStyleMatcher(orgStyle);
@@ -215,18 +208,18 @@ public class StyleUtil {
 			font = book.createFont(orgFont,true);
 			font.setHeightPoints(fontHeightPoints);
 		}
-		
+
 		if(style==null){
 			style = cloneCellStyle(book,orgStyle);
 			style.setFont(font);
 		}
 		holder.setCellStyle(style);
 	}
-	
+
 	public static void setFontStrikethrough(SBook book,CellStyleHolder holder, boolean strikeout){
 		final SCellStyle orgStyle = holder.getCellStyle();
 		SFont orgFont = orgStyle.getFont();
-		
+
 		final boolean orgStrikeout = orgFont.isStrikeout();
 		if (orgStrikeout == strikeout) { //no change, skip
 			return;
@@ -234,9 +227,9 @@ public class StyleUtil {
 
 		FontMatcher fontmatcher = new FontMatcher(orgFont);
 		fontmatcher.setStrikeout(strikeout);
-		
+
 		SFont font = book.searchFont(fontmatcher);
-		
+
 		SCellStyle style = null;
 		if(font!=null){//search it since we have existed font
 			CellStyleMatcher matcher = new CellStyleMatcher(orgStyle);
@@ -246,29 +239,29 @@ public class StyleUtil {
 			font = book.createFont(orgFont,true);
 			font.setStrikeout(strikeout);
 		}
-		
+
 		if(style==null){
 			style = cloneCellStyle(book,orgStyle);
 			style.setFont(font);
 		}
 		holder.setCellStyle(style);
-		
+
 	}
-	
+
 	public static void setFontName(SBook book,CellStyleHolder holder,String name){
 		final SCellStyle orgStyle = holder.getCellStyle();
 		SFont orgFont = orgStyle.getFont();
-		
+
 		final String orgName = orgFont.getName();
 		if (orgName.equals(name)) { //no change, skip
 			return;
 		}
-		
+
 		FontMatcher fontmatcher = new FontMatcher(orgFont);
 		fontmatcher.setName(name);
-		
+
 		SFont font = book.searchFont(fontmatcher);
-		
+
 		SCellStyle style = null;
 		if(font!=null){//search it since we have existed font
 			CellStyleMatcher matcher = new CellStyleMatcher(orgStyle);
@@ -278,20 +271,14 @@ public class StyleUtil {
 			font = book.createFont(orgFont,true);
 			font.setName(name);
 		}
-		
+
 		if(style==null){
 			style = cloneCellStyle(book,orgStyle);
 			style.setFont(font);
 		}
 		holder.setCellStyle(style);
-		
+
 	}
-	
-	public static final short BORDER_EDGE_BOTTOM		= 0x01;
-	public static final short BORDER_EDGE_RIGHT			= 0x02;
-	public static final short BORDER_EDGE_TOP			= 0x04;
-	public static final short BORDER_EDGE_LEFT			= 0x08;
-	public static final short BORDER_EDGE_ALL			= BORDER_EDGE_BOTTOM|BORDER_EDGE_RIGHT|BORDER_EDGE_TOP|BORDER_EDGE_LEFT;
 	
 	public static void setBorder(SBook book,CellStyleHolder holder, String color, SBorder.BorderType linestyle){
 		setBorder(book,holder, color, linestyle, BORDER_EDGE_ALL);
@@ -503,8 +490,7 @@ public class StyleUtil {
 	}
 
 
-
-	public static void setLocked(SBook book,CellStyleHolder holder, boolean locked){
+	public static void setLocked(SBook book, CellStyleHolder holder, boolean locked) {
 		final SCellStyle orgStyle = holder.getCellStyle();
 		final boolean orgStyleLocked = orgStyle.isLocked();
 		if (locked == orgStyleLocked) { //no change, skip
@@ -514,8 +500,8 @@ public class StyleUtil {
 		CellStyleMatcher matcher = new CellStyleMatcher(orgStyle);
 		matcher.setLocked(locked);
 		SCellStyle style = book.searchCellStyle(matcher);
-		if(style==null){
-			style = cloneCellStyle(book,orgStyle);
+		if (style == null) {
+			style = cloneCellStyle(book, orgStyle);
 			style.setLocked(locked);
 		}
 		holder.setCellStyle(style);
@@ -591,7 +577,7 @@ public class StyleUtil {
 	
 	//ZSS-752
 	public static boolean setRichTextFontTypeOffset(SBook book, SCell cell, SFont.TypeOffset offset) {
-		final Object value = ((AbstractCellAdv)cell).isRichTextValue() ? cell.getValue() : null;
+		final Object value = cell.isRichTextValue() ? cell.getValue() : null;
 		if (!(value instanceof SRichText)) return false;
 		
 		final SRichText text = (SRichText) value;
@@ -628,7 +614,7 @@ public class StyleUtil {
 	
 	//ZSS-752
 	public static boolean setRichTextFontBoldweight(SBook book, SCell cell, SFont.Boldweight bold) {
-		final Object value = ((AbstractCellAdv)cell).isRichTextValue() ? cell.getValue() : null;
+		final Object value = cell.isRichTextValue() ? cell.getValue() : null;
 		if (!(value instanceof SRichText)) return false;
 		
 		final SRichText text = (SRichText) value;
@@ -665,7 +651,7 @@ public class StyleUtil {
 	
 	//ZSS-752
 	public static boolean setRichTextFontItalic(SBook book, SCell cell, boolean italic) {
-		final Object value = ((AbstractCellAdv)cell).isRichTextValue() ? cell.getValue() : null;
+		final Object value = cell.isRichTextValue() ? cell.getValue() : null;
 		if (!(value instanceof SRichText)) return false;
 		
 		final SRichText text = (SRichText) value;
@@ -702,7 +688,7 @@ public class StyleUtil {
 
 	//ZSS-752
 	public static boolean setRichTextFontUnderline(SBook book, SCell cell, SFont.Underline underline) {
-		final Object value = ((AbstractCellAdv)cell).isRichTextValue() ? cell.getValue() : null;
+		final Object value = cell.isRichTextValue() ? cell.getValue() : null;
 		if (!(value instanceof SRichText)) return false;
 		
 		final SRichText text = (SRichText) value;
@@ -739,7 +725,7 @@ public class StyleUtil {
 
 	//ZSS-752
 	public static boolean setRichTextFontName(SBook book, SCell cell, String name) {
-		final Object value = ((AbstractCellAdv)cell).isRichTextValue() ? cell.getValue() : null;
+		final Object value = cell.isRichTextValue() ? cell.getValue() : null;
 		if (!(value instanceof SRichText)) return false;
 		
 		final SRichText text = (SRichText) value;
@@ -776,7 +762,7 @@ public class StyleUtil {
 
 	//ZSS-752
 	public static boolean setRichTextFontHeightPoints(SBook book, SCell cell, int heightPoints) {
-		final Object value = ((AbstractCellAdv)cell).isRichTextValue() ? cell.getValue() : null;
+		final Object value = cell.isRichTextValue() ? cell.getValue() : null;
 		if (!(value instanceof SRichText)) return false;
 		
 		final SRichText text = (SRichText) value;
@@ -813,7 +799,7 @@ public class StyleUtil {
 
 	//ZSS-752
 	public static boolean setRichTextFontStrikeout(SBook book, SCell cell, boolean strike) {
-		final Object value = ((AbstractCellAdv)cell).isRichTextValue() ? cell.getValue() : null;
+		final Object value = cell.isRichTextValue() ? cell.getValue() : null;
 		if (!(value instanceof SRichText)) return false;
 		
 		final SRichText text = (SRichText) value;
@@ -850,7 +836,7 @@ public class StyleUtil {
 
 	//ZSS-752
 	public static boolean setRichTextFontColor(SBook book, SCell cell, String htmlColor) {
-		final Object value = ((AbstractCellAdv)cell).isRichTextValue() ? cell.getValue() : null;
+		final Object value = cell.isRichTextValue() ? cell.getValue() : null;
 		if (!(value instanceof SRichText)) return false;
 		
 		final SColor newColor = book.createColor(htmlColor);
