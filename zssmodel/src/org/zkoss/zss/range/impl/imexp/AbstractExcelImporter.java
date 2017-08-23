@@ -362,11 +362,11 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 		if (colrng != null) {
 			sps.setRepeatingColumnsTitle(colrng.getFirstColumn(), colrng.getLastColumn());
 		}
-		
-		sheet.setPassword(poiSheet.getProtect()?"":null);
-		
+
+		// Commenting below to avoid resetting password
+		//sheet.setPassword(poiSheet.getProtect()?"":null);
 		//import hashed password directly
-		importPassword(poiSheet, sheet);
+		//importPassword(poiSheet, sheet);
 		
 		//ZSS-832
 		//import sheet visible
@@ -540,7 +540,8 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 				cellStyle.setDataFormat(dataFormat);
 			}
 			cellStyle.setWrapText(poiCellStyle.getWrapText());
-			cellStyle.setLocked(poiCellStyle.getLocked());
+			cellStyle.setLocked(false); /* Mangesh Temp workaround */
+			//cellStyle.setLocked(poiCellStyle.getLocked());
 			cellStyle.setAlignment(PoiEnumConversion.toHorizontalAlignment(poiCellStyle.getAlignment()));
 			cellStyle.setVerticalAlignment(PoiEnumConversion.toVerticalAlignment(poiCellStyle.getVerticalAlignment()));
 			cellStyle.setRotation(poiCellStyle.getRotation()); //ZSS-918

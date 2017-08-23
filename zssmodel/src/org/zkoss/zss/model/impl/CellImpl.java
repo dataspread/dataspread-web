@@ -88,11 +88,12 @@ public class CellImpl extends AbstractCellAdv {
     }
 
 
-    public static CellImpl fromBytes(int row, int column, byte[] inByteArray) {
+    public static CellImpl fromBytes(SSheet sheet, int row, int column, byte[] inByteArray) {
 		CellImpl cellImpl;
 		Kryo kryo = kryoPool.borrow();
 		try (Input in = new Input(inByteArray)) {
 			cellImpl = kryo.readObject(in, CellImpl.class);
+
             cellImpl._row = row;
             cellImpl._column = column;
 			in.close();
@@ -101,6 +102,7 @@ public class CellImpl extends AbstractCellAdv {
 			cellImpl = new CellImpl(row, column);
 			cellImpl._localValue = new CellValue(new String(inByteArray));
         }
+		cellImpl._sheet = (AbstractSheetAdv) sheet;
 		kryoPool.release(kryo);
 		return cellImpl;
 	}
@@ -581,6 +583,11 @@ public class CellImpl extends AbstractCellAdv {
 			Ref ref = getRef();
 			fe.parse(formula, new FormulaParseContext(this ,ref));//rebuild the expression to make new dependency with current row,column
 		}
+	}
+
+	public void translate(int rowShift, int colShift) {
+		this._row += rowShift;
+		this._column += colShift;
 	}
 
 	protected Ref getRef(){

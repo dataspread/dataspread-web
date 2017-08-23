@@ -35,11 +35,14 @@ import org.zkoss.poi.ss.util.CellReference;
 public class CellRegion implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
-	final public int row;
-	final public int column;
-	final public int lastRow;
-	final public int lastColumn;
+	public int row;
+	public int column;
+	public int lastRow;
+	public int lastColumn;
 	
+	public CellRegion(){
+		/* For seralization */
+	}
 
 	/**
 	 * Create a region which only contains 1 cell. 

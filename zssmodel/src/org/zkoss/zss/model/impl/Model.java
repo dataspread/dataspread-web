@@ -2,6 +2,7 @@ package org.zkoss.zss.model.impl;
 
 import org.model.DBContext;
 import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.SSheet;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -9,20 +10,31 @@ import java.util.Collection;
 
 public abstract class Model {
     protected String tableName;
+    protected SSheet sheet;
 
-    public static Model CreateModel(DBContext context, ModelType modelType, String tableName) {
+    public static Model CreateModel(DBContext context, SSheet sheet, ModelType modelType, String tableName) {
+        Model model=null;
         switch (modelType)
         {
             case RCV_Model:
-                return new RCV_Model(context, tableName);
+                model = new RCV_Model(context, sheet, tableName);
+                break;
             case ROM_Model:
-                return new ROM_Model(context, tableName);
+                model =  new ROM_Model(context, sheet,tableName);
+                break;
             case COM_Model:
-                return new COM_Model(context, tableName);
+                model =  new COM_Model(context,sheet, tableName);
+                break;
             case HYBRID_Model:
-                return new Hybrid_Model(context, tableName);
+                model =  new Hybrid_Model(context, sheet, tableName);
+                break;
+            case TOM_Model:
+                model = TOM_Mapping.instance.createTOMModel(context, tableName);
+               // model =  new TOM_Model(context, sheet, tableName);
+                break;
         }
-        return null;
+        model.sheet=sheet;
+        return model;
     }
 
     // Drop the tables created.
@@ -53,6 +65,8 @@ public abstract class Model {
 
     public abstract void deleteCells(DBContext context, Collection<AbstractCellAdv> cells);
 
+    public abstract boolean deleteTuples(DBContext context, CellRegion cellRegion);
+
     //Get a range of cells
     public abstract Collection<AbstractCellAdv> getCells(DBContext context, CellRegion cellRegion);
 
@@ -77,6 +91,6 @@ public abstract class Model {
 
     //
     public enum ModelType {
-        ROM_Model, COM_Model, RCV_Model, HYBRID_Model
+        ROM_Model, COM_Model, RCV_Model, HYBRID_Model, TOM_Model
     }
 }

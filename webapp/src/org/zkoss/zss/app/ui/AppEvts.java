@@ -53,7 +53,11 @@ public class AppEvts {
 	public static String ON_INSERT_HYPERLINK = "onInsertHyperlink";
 
 	public static String ON_CREATE_TABLE = "onCreateTable";
+	public static String ON_DISPLAY_TABLE = "onDisplayTable";
 	public static String ON_DELETE_TABLE = "onDeleteTable";
+	public static String ON_EXPAND_COLS="onExpandCols";
+	public static String ON_EXPAND_ROWS="onExpandRows";
+	public static String ON_EXPAND_ALL="onExpandAll";
 	public static String ON_TOGGLE_TABLE_BAR = "onToggleTableBar";
 
 }

@@ -4,7 +4,9 @@ import org.model.BlockStore;
 import org.model.DBContext;
 import org.zkoss.util.logging.Log;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * An implementation of a B+ Tree
@@ -1027,6 +1029,17 @@ public class BTree implements PosMapping {
         bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
         bs.flushDirtyBlocks(context);
         return ids;
+    }
+
+    // TODO: Do it in batches. offline if possible.
+    public void insertIDs(DBContext context, int pos, List<Integer> ids) {
+        int count=ids.size();
+        for (int i = 0; i < count; i++) {
+            ++metaDataBlock.maxValue;
+            addByCount(context, pos + i, ids.get(i), false);
+        }
+        bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
+        bs.flushDirtyBlocks(context);
     }
 
     private static class MetaDataBlock {

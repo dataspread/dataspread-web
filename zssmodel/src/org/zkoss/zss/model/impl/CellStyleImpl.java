@@ -43,7 +43,7 @@ public class CellStyleImpl extends AbstractCellStyleAdv {
 
 	private String _dataFormat = FORMAT_GENERAL;
 	private boolean _directFormat = false;
-	private boolean _locked = true;// default locked as excel.
+	private boolean _locked = false;// default locked as excel. Mangesh -  Changed to unlocked as default
 	private boolean _hidden = false;
 	private int _rotation; //ZSS-918
 	private int _indention; //ZSS-915
