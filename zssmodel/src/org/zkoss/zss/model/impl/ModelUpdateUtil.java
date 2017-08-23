@@ -23,6 +23,7 @@ import org.zkoss.zss.model.SBookSeries;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.STable;
+import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.TransactionManager;
 import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.dependency.Ref;
@@ -52,7 +53,7 @@ import org.zkoss.zss.range.impl.ModelUpdateCollector;
 			dependents = table.getDependents(precedent);
 		}
 		try {
-			TransactionManager.INSTANCE.startTransaction(null);
+			TransactionManager.INSTANCE.startTransaction(BookBindings.get(precedent.getBookName()));
 			//zekun.fan@gmail.com - Masking and Scheduling
 			if (includePrecedent) { //ZSS-1047
 				addRefUpdate(precedent);
@@ -74,7 +75,7 @@ import org.zkoss.zss.range.impl.ModelUpdateCollector;
 				});
 			}
 		}finally {
-			TransactionManager.INSTANCE.endTransaction(null);
+			TransactionManager.INSTANCE.endTransaction(BookBindings.get(precedent.getBookName()));
 		}
 	}
 

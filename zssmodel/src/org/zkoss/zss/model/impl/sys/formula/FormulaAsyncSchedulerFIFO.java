@@ -47,7 +47,7 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
         //    throw new RuntimeException("addTask not within transaction!");
         if (target.getType()!= Ref.RefType.CELL && target.getType()!=Ref.RefType.AREA)
             return;
-        int xid=TransactionManager.INSTANCE.getXid(null);
+        int xid=TransactionManager.INSTANCE.getXid(BookBindings.get(target.getBookName()));
 
         expander.submit(new Runnable() {
             @Override
@@ -94,7 +94,7 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
         //throw new RuntimeException("cancelTask not within transaction!");
         if (target.getType()!= Ref.RefType.CELL && target.getType()!=Ref.RefType.AREA)
             return;
-        int xid=TransactionManager.INSTANCE.getXid(null);
+        int xid=TransactionManager.INSTANCE.getXid(BookBindings.get(target.getBookName()));
         expander.submit(new Runnable() {
             @Override
             public void run() {

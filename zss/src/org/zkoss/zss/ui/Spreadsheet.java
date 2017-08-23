@@ -317,11 +317,11 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 			private static final long serialVersionUID = 2412586322103952998L;
 			public void onEvent(Event event) throws Exception {
 				try{
-					TransactionManager.INSTANCE.startTransaction(null);
+					TransactionManager.INSTANCE.startTransaction(_book);
 					Object[] data = (Object[]) event.getData();
 					processStopEditing((String) data[0], (StopEditingEvent) data[1], (String) data[2]);
 				}finally {
-					TransactionManager.INSTANCE.endTransaction(null);
+					TransactionManager.INSTANCE.endTransaction(_book);
 				}
 			}
 		});
@@ -2424,10 +2424,10 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 			final Integer cellAttrVal = (Integer) event.getData("cellAttr");
 			final CellAttribute cellAttr = cellAttrVal == null ? CellAttribute.ALL : CellAttribute.values()[cellAttrVal - 1];
 			try {
-				TransactionManager.INSTANCE.startTransaction(null);
+				TransactionManager.INSTANCE.startTransaction(sheet.getBook());
 				updateCell(sheet, left, top, right, bottom, cellAttr);
 			}finally {
-				TransactionManager.INSTANCE.endTransaction(null);
+				TransactionManager.INSTANCE.endTransaction(sheet.getBook());
 			}
 			updateUnlockInfo();
 			org.zkoss.zk.ui.event.Events.postEvent(new CellAreaEvent(

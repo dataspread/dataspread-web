@@ -224,12 +224,12 @@ public class CellImpl extends AbstractCellAdv {
 			CellValue val = getCellValue();
 			if(val!=null &&  val.getType() == CellType.FORMULA){
 				try {
-					TransactionManager.INSTANCE.startTransaction(null);
+					TransactionManager.INSTANCE.startTransaction(getSheet().getBook());
 					FormulaCacheMasker.INSTANCE.mask(target);
 					_formulaResultValue=FormulaCacheMasker.INSTANCE.getMaskedVal();
 					FormulaAsyncScheduler.getScheduler().addTask(target);
 				}finally {
-					TransactionManager.INSTANCE.endTransaction(null);
+					TransactionManager.INSTANCE.endTransaction(getSheet().getBook());
 				}
 				/* zekun.fan@gmail.com - Original implementation by henri
 				FormulaEngine fe = EngineFactory.getInstance().createFormulaEngine();
@@ -601,7 +601,7 @@ public class CellImpl extends AbstractCellAdv {
 		try {
 			//zekun.fan@gmail.com : no cancelTask, for it is only called after evaluation
 			//FormulaAsyncScheduler.getScheduler().cancelTask(getRef());
-			if (TransactionManager.INSTANCE.getXid(null)>=version)
+			if (TransactionManager.INSTANCE.getXid(getSheet().getBook())>=version)
 				_formulaResultValue=new FormulaResultCellValue(FormulaEngineImpl.convertToEvaluationResult(value));
 		} catch (EvaluationException e) {
 			// ignore it!

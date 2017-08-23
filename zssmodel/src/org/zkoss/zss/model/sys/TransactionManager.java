@@ -6,42 +6,42 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by zekun.fan@gmail.com on 8/16/17.
- * This implementation limits parallelism.
- * Shall be implemented with fine-grained lock
- * The question is - to which level? Book?
  */
 
 public enum TransactionManager {
     INSTANCE;
 
-    private ReentrantLock xlock;
-    private int xid;
     private Map<Thread,Integer> workers;
+    private Map<Object,TransactionInfo> xinfo;
 
     private TransactionManager() {
-        xlock=new ReentrantLock();
         workers=new HashMap<>();
-        xid=0;//require loading maybe
+        xinfo=new HashMap<>();
     }
 
-    public void startTransaction(Object target){
-        xlock.lock();
+    public synchronized void startTransaction(Object target){
+        TransactionInfo info=xinfo.computeIfAbsent(target, v->new TransactionInfo());
+        info.xlock.lock();
         //avoid nesting start messing up xid
-        if (xlock.getHoldCount()==1)
-            ++xid;
+        if (info.xlock.getHoldCount()==1)
+            ++info.xid;
     }
 
-    public void endTransaction(Object target){
-        xlock.unlock();
+    public synchronized void endTransaction(Object target){
+        TransactionInfo info=xinfo.get(target);
+        if (info!=null)
+            info.xlock.unlock();
     }
 
-    public boolean isInTransaction(Object target){
-        return xlock.isLocked();
+    public synchronized boolean isInTransaction(Object target){
+        TransactionInfo info=xinfo.get(target);
+        return info!=null && info.xlock.isLocked();
     }
 
-    public int getXid(Object target){
-        if (xlock.isHeldByCurrentThread())
-            return xid;
+    public synchronized int getXid(Object target){
+        TransactionInfo info=xinfo.get(target);
+        if (info!=null && info.xlock.isHeldByCurrentThread())
+            return info.xid;
         else {
             Integer res=workers.get(Thread.currentThread());
             if (res==null)
@@ -50,7 +50,17 @@ public enum TransactionManager {
         }
     }
 
-    public void registerWorker(int xid){
+    public synchronized void registerWorker(int xid){
         workers.put(Thread.currentThread(),xid);
+    }
+
+    private class TransactionInfo{
+        public ReentrantLock xlock;
+        public int xid;
+
+        public TransactionInfo() {
+            xlock=new ReentrantLock();
+            xid=0;
+        }
     }
 }

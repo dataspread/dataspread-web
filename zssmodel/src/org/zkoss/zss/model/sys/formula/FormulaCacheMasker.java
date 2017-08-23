@@ -27,7 +27,7 @@ public enum FormulaCacheMasker {
         SSheet sheet;
         if (target.getType()!= Ref.RefType.CELL && target.getType()!=Ref.RefType.AREA)
             return;
-        if (!TransactionManager.INSTANCE.isInTransaction(null))
+        if (!TransactionManager.INSTANCE.isInTransaction(BookBindings.get(target.getBookName())))
             throw new RuntimeException("Masking not within transaction!");
         book=BookBindings.get(target.getBookName());
         if (book==null)
@@ -36,7 +36,7 @@ public enum FormulaCacheMasker {
         if (sheet==null)
             return;
         Collection<MaskArea> records = mapping.computeIfAbsent(sheet, k -> new ArrayList<>());
-        MaskArea newRec=new MaskArea(TransactionManager.INSTANCE.getXid(null),new CellRegion(target.getRow(),target.getColumn(),target.getLastRow(),target.getLastColumn()));
+        MaskArea newRec=new MaskArea(TransactionManager.INSTANCE.getXid(BookBindings.get(target.getBookName())),new CellRegion(target.getRow(),target.getColumn(),target.getLastRow(),target.getLastColumn()));
         records.add(newRec);
     }
 
