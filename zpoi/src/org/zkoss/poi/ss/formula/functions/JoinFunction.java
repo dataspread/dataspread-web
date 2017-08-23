@@ -28,30 +28,29 @@ public abstract class JoinFunction implements Function {
         }
         throw new EvaluationException(ErrorEval.VALUE_INVALID);
     }
-    
-    public final ValueEval evaluate (ValueEval[] args, int srcCellRow, int srcCellCol) {
-        
+
+    public final ValueEval evaluate(ValueEval[] args, int srcCellRow, int srcCellCol) {
+
         try {
-            
+
             if (args.length < 2) {
-                
+
                 return ErrorEval.VALUE_INVALID;
-                
+
             }
-            
+
             AreaEval range1 = convertRangeArg(args[0]);
             AreaEval range2 = convertRangeArg(args[1]);
             ValueEval[] conditions = Arrays.copyOfRange(args, 1, args.length);
 
-            return evaluate(range1, range2, conditions, srcCellRow, srcCellCol);            
-            
-        }
-        catch (EvaluationException e) {
+            return evaluate(range1, range2, conditions, srcCellRow, srcCellCol);
+
+        } catch (EvaluationException e) {
             return e.getErrorEval();
         }
-        
+
     }
 
     protected abstract ValueEval evaluate(AreaEval range1, AreaEval range2, ValueEval[] args, int srcRowIndex, int srcColumnIndex);
-    
+
 }

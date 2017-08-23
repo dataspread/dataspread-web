@@ -16,39 +16,20 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
  */
 package org.zkoss.zss.ui.impl;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
 import org.zkoss.lang.Strings;
-import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zss.api.AreaRef;
-import org.zkoss.zss.api.Range;
-import org.zkoss.zss.api.Ranges;
 import org.zkoss.zss.api.Range.ApplyBorderType;
+import org.zkoss.zss.api.Ranges;
 import org.zkoss.zss.api.model.Book;
 import org.zkoss.zss.api.model.CellStyle.Alignment;
+import org.zkoss.zss.api.model.CellStyle.BorderType;
 import org.zkoss.zss.api.model.CellStyle.VerticalAlignment;
 import org.zkoss.zss.api.model.Sheet;
-import org.zkoss.zss.api.model.CellStyle.BorderType;
 import org.zkoss.zss.model.SBook;
-import org.zkoss.zss.ui.AuxAction;
-import org.zkoss.zss.ui.CellSelectionType;
-import org.zkoss.zss.ui.Spreadsheet;
-import org.zkoss.zss.ui.UserActionContext;
+import org.zkoss.zss.ui.*;
 import org.zkoss.zss.ui.UserActionContext.Clipboard;
-import org.zkoss.zss.ui.UserActionHandler;
-import org.zkoss.zss.ui.UserActionManager;
 import org.zkoss.zss.ui.event.AuxActionEvent;
-import org.zkoss.zss.ui.event.CellSelectionAction;
-import org.zkoss.zss.ui.event.CellSelectionUpdateEvent;
 import org.zkoss.zss.ui.event.Events;
 import org.zkoss.zss.ui.event.KeyEvent;
 import org.zkoss.zss.ui.impl.ua.*;
@@ -58,6 +39,9 @@ import org.zkoss.zss.ui.sys.DisplayGridlinesAction;
 import org.zkoss.zss.ui.sys.SortHandler;
 import org.zkoss.zss.ui.sys.UndoableActionManager;
 import org.zkoss.zss.ui.sys.UserActionManagerCtrl;
+
+import java.util.*;
+import java.util.Map.Entry;
 /**
  * The user action handler which provide default spreadsheet operation handling.
  *  
@@ -65,38 +49,12 @@ import org.zkoss.zss.ui.sys.UserActionManagerCtrl;
  * @since 3.0.0
  */
 public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserActionManager {
-	private static final long serialVersionUID = 1L;
-	
-	public enum Category{
-		AUXACTION("aux"),KEYSTROKE("key"),EVENT("event");
-
-		private final String name;
-		private Category(String name) {
-			this.name = name;
-		}
-		
-		public String getName(){
-			return name;
-		}
-		
-		public String toString(){
-			return getName();
-		}
-	}
-	
-	private final Set<String> _interestedEvents = new LinkedHashSet<String>();
-	
-	private static final String CLIPBOARD_KEY = "$zss.clipboard$";
-
-	private Map<String,List<UserActionHandler>> _handlerMap = new HashMap<String,List<UserActionHandler>>();
 	protected static final char SPLIT_CHAR = '/';
-	
+	private static final long serialVersionUID = 1L;
+	private static final String CLIPBOARD_KEY = "$zss.clipboard$";
+	private final Set<String> _interestedEvents = new LinkedHashSet<String>();
 	Spreadsheet _sparedsheet;//the binded spreadhseet;
-	
-	public void bind(Spreadsheet sparedsheet){
-		this._sparedsheet = sparedsheet;
-	}
-	
+	private Map<String,List<UserActionHandler>> _handlerMap = new HashMap<String,List<UserActionHandler>>();
 	
 	public DefaultUserActionManagerCtrl(){
 
@@ -106,32 +64,36 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 		_interestedEvents.add(org.zkoss.zk.ui.event.Events.ON_CANCEL);
 //		_interestedEvents.add(Events.ON_CELL_DOUBLE_CLICK);
 		_interestedEvents.add(Events.ON_START_EDITING);
-		
+
 		initDefaultAuxHandlers();
+	}
+
+	public void bind(Spreadsheet sparedsheet) {
+		this._sparedsheet = sparedsheet;
 	}
 	
 	private void initDefaultAuxHandlers() {
 		String category =  Category.AUXACTION.getName();
-		
+
 		//book
 		registerHandler(category, AuxAction.CLOSE_BOOK.getAction(), new CloseBookHandler());
-		
+
 		//sheet
 		registerHandler(category, AuxAction.ADD_SHEET.getAction(), new AddSheetHandler());
-		registerHandler(category, AuxAction.DELETE_SHEET.getAction(), new DeleteSheetHandler());	
+		registerHandler(category, AuxAction.DELETE_SHEET.getAction(), new DeleteSheetHandler());
 		registerHandler(category, AuxAction.RENAME_SHEET.getAction(), new RenameSheetHandler());
 		registerHandler(category, AuxAction.COPY_SHEET.getAction(), new CopySheetHandler());
 		registerHandler(category, AuxAction.MOVE_SHEET_LEFT.getAction(), new MoveSheetHandler(true));
 		registerHandler(category, AuxAction.MOVE_SHEET_RIGHT.getAction(), new MoveSheetHandler(false));
 
 		registerHandler(category, AuxAction.GRIDLINES.getAction(), new DisplayGridlinesAction());
-		
-		
+
+
 		registerHandler(category, AuxAction.PASTE.getAction(), new PasteHandler());
 		registerHandler(category, AuxAction.CUT.getAction(), new CutHandler());
 		registerHandler(category, AuxAction.COPY.getAction(), new CopyHandler());
-		
-		
+
+
 		registerHandler(category, AuxAction.FONT_FAMILY.getAction(), new FontFamilyHandler());
 		registerHandler(category, AuxAction.FONT_SIZE.getAction(), new FontSizeHandler());
 		registerHandler(category, AuxAction.FONT_BOLD.getAction(), new FontBoldHandler());
@@ -139,8 +101,8 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 		registerHandler(category, AuxAction.FONT_UNDERLINE.getAction(), new FontUnderlineHandler());
 		registerHandler(category, AuxAction.FONT_STRIKE.getAction(), new FontStrikeoutHandler());
 		registerHandler(category, AuxAction.FONT_TYPEOFFSET.getAction(), new FontTypeOffsetHandler()); //ZSS-748
-		
-		
+
+
 		registerHandler(category, AuxAction.BORDER.getAction(), new ApplyBorderHandler(ApplyBorderType.EDGE_BOTTOM,BorderType.THIN));
 		registerHandler(category, AuxAction.BORDER_BOTTOM.getAction(), new ApplyBorderHandler(ApplyBorderType.EDGE_BOTTOM,BorderType.THIN));
 		registerHandler(category, AuxAction.BORDER_TOP.getAction(), new ApplyBorderHandler(ApplyBorderType.EDGE_TOP,BorderType.THIN));
@@ -152,38 +114,38 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 		registerHandler(category, AuxAction.BORDER_INSIDE.getAction(), new ApplyBorderHandler(ApplyBorderType.INSIDE,BorderType.THIN));
 		registerHandler(category, AuxAction.BORDER_INSIDE_HORIZONTAL.getAction(), new ApplyBorderHandler(ApplyBorderType.INSIDE_HORIZONTAL,BorderType.THIN));
 		registerHandler(category, AuxAction.BORDER_INSIDE_VERTICAL.getAction(), new ApplyBorderHandler(ApplyBorderType.INSIDE_VERTICAL,BorderType.THIN));
-		
-		
+
+
 		registerHandler(category, AuxAction.FONT_COLOR.getAction(), new FontColorHandler());
 		registerHandler(category, AuxAction.FILL_COLOR.getAction(), new FillColorHandler());
 		registerHandler(category, AuxAction.BACK_COLOR.getAction(), new BackColorHandler());
-		
-		
+
+
 		registerHandler(category, AuxAction.VERTICAL_ALIGN_TOP.getAction(), new VerticalAlignHandler(VerticalAlignment.TOP));
 		registerHandler(category, AuxAction.VERTICAL_ALIGN_MIDDLE.getAction(), new VerticalAlignHandler(VerticalAlignment.CENTER));
 		registerHandler(category, AuxAction.VERTICAL_ALIGN_BOTTOM.getAction(), new VerticalAlignHandler(VerticalAlignment.BOTTOM));
 		registerHandler(category, AuxAction.HORIZONTAL_ALIGN_LEFT.getAction(), new HorizontalAlignHandler(Alignment.LEFT));
 		registerHandler(category, AuxAction.HORIZONTAL_ALIGN_CENTER.getAction(), new HorizontalAlignHandler(Alignment.CENTER));
 		registerHandler(category, AuxAction.HORIZONTAL_ALIGN_RIGHT.getAction(), new HorizontalAlignHandler(Alignment.RIGHT));
-		
+
 		registerHandler(category, AuxAction.WRAP_TEXT.getAction(), new WrapTextHandler());
-		
+
 		registerHandler(category, AuxAction.TEXT_INDENT_INCREASE.getAction(), new TextIndentHandler(1));
 		registerHandler(category, AuxAction.TEXT_INDENT_DECREASE.getAction(), new TextIndentHandler(-1));
-		
+
 		registerHandler(category, AuxAction.INSERT_SHIFT_CELL_RIGHT.getAction(), new InsertCellRightHandler());
 		registerHandler(category, AuxAction.INSERT_SHIFT_CELL_DOWN.getAction(), new InsertCellDownHandler());
 		registerHandler(category, AuxAction.INSERT_SHEET_ROW.getAction(), new InsertRowHandler());
 		registerHandler(category, AuxAction.INSERT_SHEET_COLUMN.getAction(), new InsertColumnHandler());
-		
+
 		registerHandler(category, AuxAction.DELETE_SHIFT_CELL_LEFT.getAction(), new DeleteCellLeftHandler());
 		registerHandler(category, AuxAction.DELETE_SHIFT_CELL_UP.getAction(), new DeleteCellUpHandler());
 		registerHandler(category, AuxAction.DELETE_SHEET_ROW.getAction(), new DeleteRowHandler());
 		registerHandler(category, AuxAction.DELETE_SHEET_COLUMN.getAction(), new DeleteColumnHandler());
-		
+
 		registerHandler(category, AuxAction.SORT_ASCENDING.getAction(), new SortHandler(false));
 		registerHandler(category, AuxAction.SORT_DESCENDING.getAction(), new SortHandler(true));
-		
+
 		registerHandler(category, AuxAction.CLEAR_CONTENT.getAction(), new ClearCellHandler(ClearCellAction.Type.CONTENT));
 		registerHandler(category, AuxAction.CLEAR_STYLE.getAction(), new ClearCellHandler(ClearCellAction.Type.STYLE));
 		registerHandler(category, AuxAction.CLEAR_ALL.getAction(), new ClearCellHandler(ClearCellAction.Type.ALL));
@@ -197,11 +159,11 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 		registerHandler(category, AuxAction.UNHIDE_COLUMN.getAction(), new HideHeaderHandler(HideHeaderAction.Type.COLUMN,false));
 		registerHandler(category, AuxAction.HIDE_ROW.getAction(), new HideHeaderHandler(HideHeaderAction.Type.ROW,true));
 		registerHandler(category, AuxAction.UNHIDE_ROW.getAction(), new HideHeaderHandler(HideHeaderAction.Type.ROW,false));
-		
+
 		registerHandler(category, AuxAction.ADD_ROW.getAction(), new AddRowHandler()); //ZSS-1082
 		registerHandler(category, AuxAction.ADD_COLUMN.getAction(), new AddColumnHandler()); //ZSS-1082
-		
-		
+
+
 		//for enable some menu folder, do nothing
 		UserActionHandler folderhandler = new AbstractHandler() {
 			private static final long serialVersionUID = -8432478971347806399L;
@@ -211,7 +173,7 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 				return false;
 			}
 		};
-		
+
 		//for enable cell format menu folder, do nothing
 		UserActionHandler cellfolderhandler = new AbstractCellHandler() {
 			private static final long serialVersionUID = -5609262169871048327L;
@@ -221,7 +183,7 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 				return false;
 			}
 		};
-		
+
 		//for enable sort and filter menu folder, do nothing
 		UserActionHandler sortfolderhandler = new AbstractHandler() {
 			private static final long serialVersionUID = -7703640984068234979L;
@@ -230,22 +192,22 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 			protected boolean processAction(UserActionContext ctx) {
 				return false;
 			}
-			
+
 			@Override
 			public boolean isEnabled(Book book, Sheet sheet) {
 				return book != null && sheet != null && (!sheet.isProtected() ||
 						Ranges.range(sheet).getSheetProtection().isSortAllowed());
 			}
 		};
-		
+
 		registerHandler(category, AuxAction.VERTICAL_ALIGN.getAction(), cellfolderhandler);
 		registerHandler(category, AuxAction.HORIZONTAL_ALIGN.getAction(), cellfolderhandler);
 		registerHandler(category, AuxAction.INSERT.getAction(), folderhandler);
 		registerHandler(category, AuxAction.DELETE.getAction(), folderhandler);
 		registerHandler(category, AuxAction.SORT_AND_FILTER.getAction(), sortfolderhandler);
 		registerHandler(category, AuxAction.CLEAR.getAction(), folderhandler);
-		
-		
+
+
 		//key
 		category =  Category.KEYSTROKE.getName();
 		registerHandler(category, "^Z", new AbstractBookHandler() {
@@ -266,25 +228,24 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 				return true;
 			}
 		});
-		
+
 		registerHandler(category, "^X", new CutHandler());
 		registerHandler(category, "^C", new CopyHandler());
 		registerHandler(category, "^V", new PasteHandler());
-		
-		
+
+
 		registerHandler(category, "^B", new FontBoldHandler());
 		registerHandler(category, "^I", new FontItalicHandler());
 		registerHandler(category, "^U", new FontUnderlineHandler());
 		registerHandler(category, "#del", new ClearCellHandler(ClearCellAction.Type.CONTENT));
-		
-		
+
+
 		//event
 		category =  Category.EVENT.getName();
 
-		
+
 	}
-
-
+	
 	protected boolean dispatchAuxAction(UserActionContext ctx) {
 		boolean r = false;
 		for(UserActionHandler uac :getHandlerList(ctx.getCategory(), ctx.getAction())){
@@ -299,14 +260,14 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 	public String getCtrlKeys() {
 		return "^Z^Y^X^C^V^B^I^U#del";
 	}
-	
+
 	protected String getAction(org.zkoss.zk.ui.event.KeyEvent event){
 		StringBuilder sb = new StringBuilder();
 		int keyCode = event.getKeyCode();
 		boolean ctrlKey = event.isCtrlKey();
 		boolean shiftKey = event.isShiftKey();
 		boolean altKey = event.isAltKey();
-		
+
 		switch(keyCode){
 		case KeyEvent.DELETE:
 			sb.append("#del");
@@ -336,8 +297,8 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 				return false;
 			((UserActionContextImpl)ctx).setAction(action);
 		}
-		
-		
+
+
 		boolean r = false;
 		for(UserActionHandler uac :getHandlerList(ctx.getCategory(), ctx.getAction())){
 			if(uac!=null && uac.isEnabled(ctx.getBook(), ctx.getSheet())){
@@ -347,12 +308,11 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 		return r;
 	}
 
-
 	//aux
 	@Override
 	public Set<String> getSupportedUserAction(Sheet sheet) {
 		Set<String> actions = new LinkedHashSet<String>();
-		
+
 		Book book = sheet == null? null:sheet.getBook();
 		String auxkey = Category.AUXACTION.getName()+SPLIT_CHAR;
 		for(Entry<String, List<UserActionHandler>> entry:_handlerMap.entrySet()){
@@ -366,7 +326,7 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 				}
 			}
 		}
-		
+
 		return actions;
 	}
 
@@ -374,7 +334,7 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 	public Set<String> getInterestedEvents() {
 		return Collections.unmodifiableSet(_interestedEvents);
 	}
-	
+
 	@Override
 	public void onEvent(Event event) throws Exception {
 		String nm = event.getName();
@@ -388,7 +348,7 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 		AreaRef uiSelection = spreadsheet.getSelection();
 		Map extraData = null;
 		if(Events.ON_CTRL_KEY.equals(nm)){
-			//respect zss key-even't selection 
+			//respect zss key-even't selection
 			//(could consider to remove this extra spec some day)
 			selection = ((KeyEvent)event).getSelection();
 //			action = "keyStroke";
@@ -402,42 +362,42 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 		}else{
 			selection = uiSelection;
 		}
-		
+
 		if(extraData==null){
 			extraData = new HashMap();
 		}
-		
-		AreaRef visibleSelection = new AreaRef(selection.getRow(), selection.getColumn(), 
-				Math.min(spreadsheet.getCurrentMaxVisibleRows(), selection.getLastRow()), //ZSS-1084 
+
+		AreaRef visibleSelection = new AreaRef(selection.getRow(), selection.getColumn(),
+				Math.min(spreadsheet.getCurrentMaxVisibleRows(), selection.getLastRow()), //ZSS-1084
 				Math.min(spreadsheet.getCurrentMaxVisibleColumns(), selection.getLastColumn())); //ZSS-1084
 		CellSelectionType _selectionType = CellSelectionType.CELL;
-		
+
 		//book could be null after close -> new book
 		SBook sbook = book==null?null:book.getInternalBook();
 		if(sbook!=null){
 			boolean wholeRow = uiSelection.getColumn()==0 && uiSelection.getLastColumn()>=sbook.getMaxColumnIndex();
 			boolean wholeColumn = uiSelection.getRow()==0 && uiSelection.getLastRow()>=sbook.getMaxRowIndex();
 			boolean wholeSheet = wholeRow&&wholeColumn;
-			
+
 			_selectionType = wholeSheet?CellSelectionType.ALL:wholeRow?CellSelectionType.ROW:wholeColumn?CellSelectionType.COLUMN:CellSelectionType.CELL;
 		}
-		
+
 		if(Events.ON_AUX_ACTION.equals(nm)){
 			UserActionContextImpl ctx = new UserActionContextImpl(_sparedsheet,event,book,sheet,visibleSelection,_selectionType,extraData,Category.AUXACTION.getName(),action);
 			dispatchAuxAction(ctx);//aux action
 		}else if(Events.ON_SHEET_SELECT.equals(nm)){
-			
+
 			updateClipboardEffect(sheet);
 			//TODO 20130513, Dennis, looks like I don't need to do this here?
 			//syncAutoFilter();
-			
+
 			//TODO this should be spreadsheet's job
-			//toggleActionOnSheetSelected() 
+			//toggleActionOnSheetSelected()
 		}else if(Events.ON_CTRL_KEY.equals(nm)){
 			KeyEvent kevt = (KeyEvent)event;
-			
+
 			UserActionContextImpl ctx = new UserActionContextImpl(_sparedsheet,event,book,sheet,visibleSelection,_selectionType,extraData,Category.KEYSTROKE.getName(),action);
-			
+
 			boolean r = dispatchKeyAction(ctx);
 			if(r){
 				//to disable client copy/paste feature if there is any server side copy/paste
@@ -455,8 +415,9 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 			clearClipboard();
 		}
 	}
+
 	protected void updateClipboardEffect(Sheet sheet) {
-		//to sync the 
+		//to sync the
 		Clipboard cb = getClipboard();
 		if (cb != null) {
 			//TODO a way to know the book is different already?
@@ -478,7 +439,7 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 	public void doAfterLoadBook(Book book) {
 		clearClipboard();
 	}
-	
+
 	protected Clipboard getClipboard() {
 		return (Clipboard)_sparedsheet.getAttribute(CLIPBOARD_KEY);
 	}
@@ -489,7 +450,6 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 			_sparedsheet.setHighlight(null);
 		}
 	}
-
 	
 	private String getKey(String category, String action){
 		return new StringBuilder(category).append(SPLIT_CHAR).append(action).toString();
@@ -511,19 +471,21 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 			handlers.add(handler);
 		}
 	}
+
 	@Override
 	public void registerHandler(String category, String action,
 			UserActionHandler handler) {
 		registerHandler(category,action,handler,false);
 	}
+
 	@Override
 	public void setHandler(String category, String action,
 			UserActionHandler handler) {
 		registerHandler(category,action,handler,true);
 	}
-	
+
 	protected List<UserActionHandler> getHandlerList(String category, String action){
-		
+
 		List<UserActionHandler> list= _handlerMap.get(getKey(category,action));
 		return list==null?Collections.EMPTY_LIST:list;
 	}
@@ -533,7 +495,7 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 		if(uam!=null && uam.isUndoable()){
 			uam.undoAction();
 		}
-		//do we need to clear clipboard? clear clipboard will cause undo/redo misunderstanding when doing copy past with client clipboard 
+		//do we need to clear clipboard? clear clipboard will cause undo/redo misunderstanding when doing copy past with client clipboard
 //		clearClipboard();
 		return true;
 	}
@@ -552,6 +514,24 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 		UndoableActionManager uam = _sparedsheet.getUndoableActionManager();
 		if(uam!=null){
 			uam.clear();
+		}
+	}
+
+	public enum Category {
+		AUXACTION("aux"), KEYSTROKE("key"), EVENT("event");
+
+		private final String name;
+
+		Category(String name) {
+			this.name = name;
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public String toString() {
+			return getName();
 		}
 	}
 	

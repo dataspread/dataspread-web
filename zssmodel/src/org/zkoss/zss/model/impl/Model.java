@@ -13,27 +13,26 @@ public abstract class Model {
     protected SSheet sheet;
 
     public static Model CreateModel(DBContext context, SSheet sheet, ModelType modelType, String tableName) {
-        Model model=null;
-        switch (modelType)
-        {
+        Model model = null;
+        switch (modelType) {
             case RCV_Model:
                 model = new RCV_Model(context, sheet, tableName);
                 break;
             case ROM_Model:
-                model =  new ROM_Model(context, sheet,tableName);
+                model = new ROM_Model(context, sheet, tableName);
                 break;
             case COM_Model:
-                model =  new COM_Model(context,sheet, tableName);
+                model = new COM_Model(context, sheet, tableName);
                 break;
             case HYBRID_Model:
-                model =  new Hybrid_Model(context, sheet, tableName);
+                model = new Hybrid_Model(context, sheet, tableName);
                 break;
             case TOM_Model:
                 model = TOM_Mapping.instance.createTOMModel(context, tableName);
-               // model =  new TOM_Model(context, sheet, tableName);
+                // model =  new TOM_Model(context, sheet, tableName);
                 break;
         }
-        model.sheet=sheet;
+        model.sheet = sheet;
         return model;
     }
 

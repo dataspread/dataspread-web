@@ -16,14 +16,14 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.api.model.impl;
 
-import java.util.concurrent.locks.ReadWriteLock;
-
 import org.zkoss.zss.api.model.Book;
 import org.zkoss.zss.api.model.Sheet;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SBooks;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.range.impl.imexp.AbstractExcelImporter;
+
+import java.util.concurrent.locks.ReadWriteLock;
 /**
  * 
  * @author dennis
@@ -116,13 +116,13 @@ public class BookImpl implements Book{
 	}
 
 	@Override
-	public void setShareScope(String scope) {
-		getNative().setShareScope(scope);
+	public String getShareScope() {
+		return getNative().getShareScope();
 	}
 
 	@Override
-	public String getShareScope() {
-		return getNative().getShareScope();
+	public void setShareScope(String scope) {
+		getNative().setShareScope(scope);
 	}
 
 	@Override

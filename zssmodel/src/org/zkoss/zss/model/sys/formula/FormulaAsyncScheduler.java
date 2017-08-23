@@ -1,7 +1,5 @@
 package org.zkoss.zss.model.sys.formula;
 
-import org.zkoss.zss.model.impl.CellImpl;
-import org.zkoss.zss.model.impl.FormulaResultCellValue;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerFIFO;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
@@ -10,24 +8,24 @@ import org.zkoss.zss.model.sys.dependency.Ref;
  */
 
 public abstract class FormulaAsyncScheduler {
-    private static Class _instanceType=FormulaAsyncSchedulerFIFO.class;
-    private static FormulaAsyncScheduler _schedulerInstance;
     protected static FormulaAsyncUIController uiController;
+    private static Class _instanceType = FormulaAsyncSchedulerFIFO.class;
+    private static FormulaAsyncScheduler _schedulerInstance;
 
-    public static void initUiController(FormulaAsyncUIController uiController){
-        if (FormulaAsyncScheduler.uiController==null)
-            FormulaAsyncScheduler.uiController=uiController;
+    public static void initUiController(FormulaAsyncUIController uiController) {
+        if (FormulaAsyncScheduler.uiController == null)
+            FormulaAsyncScheduler.uiController = uiController;
     }
 
-    public static FormulaAsyncUIController getUiController(){
+    public static FormulaAsyncUIController getUiController() {
         return uiController;
     }
 
-    public static FormulaAsyncScheduler getScheduler(){
-        if (_schedulerInstance !=null)
+    public static FormulaAsyncScheduler getScheduler() {
+        if (_schedulerInstance != null)
             return _schedulerInstance;
-        if (_instanceType==FormulaAsyncSchedulerFIFO.class)
-            _schedulerInstance =new FormulaAsyncSchedulerFIFO();
+        if (_instanceType == FormulaAsyncSchedulerFIFO.class)
+            _schedulerInstance = new FormulaAsyncSchedulerFIFO();
         return _schedulerInstance;
     }
 
@@ -53,6 +51,7 @@ public abstract class FormulaAsyncScheduler {
     * 2. If it's in progress, will block until it's finished, return false.
     */
     public abstract boolean cancelTask(Ref target);
+
     /* clear:
      * Clear all unscheduled task. Tasks in progress will finish
      */

@@ -7,7 +7,8 @@ import org.zkoss.zss.model.SFont;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.range.impl.StyleUtil;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.Reader;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
@@ -45,7 +46,7 @@ public class TOM_Model extends Model {
             Integer ids[] = colMapping.getIDs(context, 0, colCount);
 
             for (int i = 0; i < colCount; i++)
-                columnNames.put(ids[i], rs.getMetaData().getColumnName(i+1));
+                columnNames.put(ids[i], rs.getMetaData().getColumnName(i + 1));
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -68,8 +69,7 @@ public class TOM_Model extends Model {
     }
 
     @Override
-    public boolean deleteTuples(DBContext context, CellRegion cellRegion)
-    {
+    public boolean deleteTuples(DBContext context, CellRegion cellRegion) {
         throw new UnsupportedOperationException();
     }
 
@@ -104,15 +104,14 @@ public class TOM_Model extends Model {
 
     public void indexOIDs(DBContext context) {
         /* Batch processing */
-        if (rowMapping.size(context)==0) {
+        if (rowMapping.size(context) == 0) {
             ArrayList<Integer> oids = getOIDs(context, tableName);
             rowMapping.insertIDs(context, 0, oids);
         }
     }
 
-    public void insertOIDs(DBContext context, List<Integer> oids)
-    {
-        rowMapping.insertIDs(context,rowMapping.size(context),oids);
+    public void insertOIDs(DBContext context, List<Integer> oids) {
+        rowMapping.insertIDs(context, rowMapping.size(context), oids);
     }
 
     public void deleteTuples(DBContext context, int row, int count) {
@@ -156,7 +155,6 @@ public class TOM_Model extends Model {
     }
 
 
-
     @Override
     public Collection<AbstractCellAdv> getCells(DBContext context, CellRegion fetchRange) {
         throw new UnsupportedOperationException();
@@ -191,7 +189,7 @@ public class TOM_Model extends Model {
         HashMap<Integer, Integer> row_map = new HashMap<>(); // Oid -> row number
         int bound = rowIds.length;
         for (int i1 = 0; i1 < bound; i1++) {
-            if (rowIds[i1]!=-1) {
+            if (rowIds[i1] != -1) {
                 row_map.put(rowIds[i1], fetchRegion.getRow() + i1 + (includeHeader ? 1 : 0));
             }
         }
@@ -204,9 +202,9 @@ public class TOM_Model extends Model {
         }
 
         StringBuffer select = new StringBuffer("SELECT oid, ")
-                .append(IntStream.range(0,colIds.length)
-                    .mapToObj(i->columnNames.get(colIds[i]))
-                    .collect(Collectors.joining(",")))
+                .append(IntStream.range(0, colIds.length)
+                        .mapToObj(i -> columnNames.get(colIds[i]))
+                        .collect(Collectors.joining(",")))
                 .append(" FROM ")
                 .append(tableName)
                 .append(" WHERE oid = ANY (?) ");
@@ -229,10 +227,10 @@ public class TOM_Model extends Model {
                         cells.add(cell);
 
                         /* Header formatting */
-                        StyleUtil.setBackColor(sheet.getBook(),cell,"#99ccff");
-                        StyleUtil.setFontBoldWeight(sheet.getBook(),cell, SFont.Boldweight.BOLD);
-                        StyleUtil.setBorder(sheet.getBook(),cell, "#000000", SBorder.BorderType.MEDIUM);
-                        StyleUtil.setLocked(sheet.getBook(),cell,true);
+                        StyleUtil.setBackColor(sheet.getBook(), cell, "#99ccff");
+                        StyleUtil.setFontBoldWeight(sheet.getBook(), cell, SFont.Boldweight.BOLD);
+                        StyleUtil.setBorder(sheet.getBook(), cell, "#000000", SBorder.BorderType.MEDIUM);
+                        StyleUtil.setLocked(sheet.getBook(), cell, true);
                     }
                 }
             }
@@ -246,8 +244,8 @@ public class TOM_Model extends Model {
                     if (data != null) {
                         AbstractCellAdv cell = CellImpl.fromBytes(sheet, row, col, data);
                         cells.add(cell);
-                        StyleUtil.setBackColor(sheet.getBook(),cell,"#99ccff");
-                        StyleUtil.setBorder(sheet.getBook(),cell, "#000000", SBorder.BorderType.MEDIUM);
+                        StyleUtil.setBackColor(sheet.getBook(), cell, "#99ccff");
+                        StyleUtil.setBorder(sheet.getBook(), cell, "#000000", SBorder.BorderType.MEDIUM);
                     }
                 }
             }
@@ -313,8 +311,8 @@ public class TOM_Model extends Model {
                     int key = rowMapping.getIDs(context, _row.getKey() - 1, 1)[0];
                     stmt.setInt(idsCol.length + 1, key); //at insert
                     for (int i = 0; i < idsCol.length; i++) {
-                            stmt.setString(i + 1,
-                                    _row.getValue().get(columnList.first() + i).getValue().toString());
+                        stmt.setString(i + 1,
+                                _row.getValue().get(columnList.first() + i).getValue().toString());
                     }
                     stmt.execute();
                 }

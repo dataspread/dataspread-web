@@ -88,7 +88,7 @@ public class CellImpl extends AbstractCellAdv {
     }
 
 
-    public static CellImpl fromBytes(SSheet sheet, int row, int column, byte[] inByteArray) {
+	public static CellImpl fromBytes(SSheet sheet, int row, int column, byte[] inByteArray) {
 		CellImpl cellImpl;
 		Kryo kryo = kryoPool.borrow();
 		try (Input in = new Input(inByteArray)) {
@@ -133,7 +133,7 @@ public class CellImpl extends AbstractCellAdv {
 	@Override
 	public CellType getType() {
 		CellValue val = getCellValue();
-		return val==null? CellType.BLANK:val.getType();
+		return val == null ? CellType.BLANK : val.getType();
 	}
 
 	@Override
@@ -207,7 +207,7 @@ public class CellImpl extends AbstractCellAdv {
 	}
 
 	@Override
-	protected  void evalFormula() {
+	protected void evalFormula() {
 		//20140731, henrichen: when share the same book, many users might 
 		//populate CellImpl simultaneously; must synchronize it.
 		if(_formulaResultValue != null) return;
@@ -216,7 +216,7 @@ public class CellImpl extends AbstractCellAdv {
 			if (_formulaResultValue == null) {
 				CellValue val = getCellValue();
 				if(val!=null &&  val.getType() == CellType.FORMULA){
-					_formulaResultValue=new FormulaResultCellValue(new EvaluationResult() {
+					_formulaResultValue = new FormulaResultCellValue(new EvaluationResult() {
 						@Override
 						public ResultType getType() {
 							return ResultType.SUCCESS;
@@ -232,7 +232,7 @@ public class CellImpl extends AbstractCellAdv {
 							return null;
 						}
 					});
-					FormulaAsyncScheduler.getScheduler().addTask(new RefImpl(getSheet().getBook().getId(),getSheet().getSheetName(),getRowIndex(),getColumnIndex()));
+					FormulaAsyncScheduler.getScheduler().addTask(new RefImpl(getSheet().getBook().getId(), getSheet().getSheetName(), getRowIndex(), getColumnIndex()));
 					FormulaAsyncScheduler.getUiController().confirm(this);
 					/* zekun.fan@gmail.com - Original implementation by henri
 					FormulaEngine fe = EngineFactory.getInstance().createFormulaEngine();
@@ -334,9 +334,9 @@ public class CellImpl extends AbstractCellAdv {
 	}
 
 	@Override
-	public  void clearFormulaResultCache() {
+	public void clearFormulaResultCache() {
 		//ZSS-818: better performance
-		if(_formulaResultValue!=null){
+		if (_formulaResultValue != null) {
 			//only clear when there is a formula result, or poi will do full cache scan to clean blank.
 			//zekun.fan@gmail.com : cancelTask
 			FormulaAsyncScheduler.getScheduler().cancelTask(getRef());
@@ -354,7 +354,7 @@ public class CellImpl extends AbstractCellAdv {
 	}
 	
 	private void clearFormulaDependency(){
-		if(getType()== CellType.FORMULA){
+		if (getType() == CellType.FORMULA) {
 			((AbstractBookSeriesAdv) getSheet().getBook().getBookSeries())
 					.getDependencyTable().clearDependents(getRef());
 		}
@@ -379,7 +379,7 @@ public class CellImpl extends AbstractCellAdv {
 	}
 	
 	private void setCellValue(CellValue value, boolean destroy, Connection connection, boolean updateToDB){ //ZSS-985
-		this._localValue = value!=null&&value.getType()== CellType.BLANK?null:value;
+		this._localValue = value != null && value.getType() == CellType.BLANK ? null : value;
 		
 		//clear the dependent's formula result cache
 		SBook book = getSheet().getBook();
@@ -520,7 +520,7 @@ public class CellImpl extends AbstractCellAdv {
 		CellValue newCellVal = new InnerCellValue(newType,newVal);
 		//ZSS-747.
 		//20140828, henrichen: clear if previous is a formula; update dependency table if a formula
-		clearValueForSet(oldVal!=null && oldVal.getType()== CellType.FORMULA);
+		clearValueForSet(oldVal != null && oldVal.getType() == CellType.FORMULA);
 		if (newType == CellType.FORMULA) {
 			FormulaParseContext context = new FormulaParseContext(this, getRef());
 			EngineFactory.getInstance().createFormulaEngine().updateDependencyTable((FormulaExpression)newVal, context);
@@ -636,6 +636,11 @@ public class CellImpl extends AbstractCellAdv {
 		return _formulaResultValue;
 	}
 
+	//zekun.fan@gmail.com - Added interface to update formula result value
+	public void updateFormulaResultValue(EvaluationResult result) {
+		_formulaResultValue.updateByEvaluationResult(result);
+	}
+
 	private static class OptFields implements Serializable {
 		private AbstractHyperlinkAdv _hyperlink;
 		private AbstractCommentAdv _comment;
@@ -652,10 +657,5 @@ public class CellImpl extends AbstractCellAdv {
 		private InnerCellValue(CellType type, Object value) {
 			super(type, value);
 		}
-	}
-
-	//zekun.fan@gmail.com - Added interface to update formula result value
-	public  void updateFormulaResultValue(EvaluationResult result){
-		_formulaResultValue.updateByEvaluationResult(result);
 	}
 }

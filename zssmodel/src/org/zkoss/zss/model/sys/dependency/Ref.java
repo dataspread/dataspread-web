@@ -8,40 +8,40 @@ import java.util.Set;
  * @since 3.5.0
  */
 public interface Ref {
-	/**
-	 * @since 3.5.0
-	 */
-	public enum RefType {
-		CELL, AREA, SHEET, BOOK, NAME, OBJECT, INDIRECT, TABLE, 
-	}
+	RefType getType();
 
-	public RefType getType();
+	String getBookName();
 
-	public String getBookName();
+	String getSheetName();
 
-	public String getSheetName();
-	
-	public String getLastSheetName();
+	String getLastSheetName();
 
-	public int getRow();
+	int getRow();
 
-	public int getColumn();
+	int getColumn();
 
-	public int getLastRow();
+	int getLastRow();
 
-	public int getLastColumn();
+	int getLastColumn();
+
+	//ZSS-815
+	//since 3.7.0
+	int getSheetIndex();
 	
 	//ZSS-815
 	//since 3.7.0
-	public int getSheetIndex(); 
-	
-	//ZSS-815
-	//since 3.7.0
-	public int getLastSheetIndex();
+	int getLastSheetIndex();
 
 	Set<Ref> getPrecedents();
 
 	void addPrecedent(Ref precedent);
 
 	void clearDependent();
+
+	/**
+	 * @since 3.5.0
+	 */
+	enum RefType {
+		CELL, AREA, SHEET, BOOK, NAME, OBJECT, INDIRECT, TABLE,
+	}
 }

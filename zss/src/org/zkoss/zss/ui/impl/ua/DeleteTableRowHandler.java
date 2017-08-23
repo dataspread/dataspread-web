@@ -2,23 +2,17 @@ package org.zkoss.zss.ui.impl.ua;
 
 import org.model.DBContext;
 import org.model.DBHandler;
-import org.zkoss.util.resource.Labels;
 import org.zkoss.zss.api.AreaRef;
-import org.zkoss.zss.api.IllegalOpArgumentException;
-import org.zkoss.zss.api.Range;
-import org.zkoss.zss.api.Ranges;
 import org.zkoss.zss.api.model.Sheet;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.impl.Model;
 import org.zkoss.zss.ui.UserActionContext;
-import org.zkoss.zss.ui.impl.undo.InsertCellAction;
-import org.zkoss.zss.ui.sys.UndoableActionManager;
 import org.zkoss.zul.Messagebox;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 
-public class DeleteTableRowHandler extends AbstractProtectedHandler  {
+public class DeleteTableRowHandler extends AbstractProtectedHandler {
     @Override
     protected boolean processAction(UserActionContext ctx) {
         Sheet sheet = ctx.getSheet();

@@ -49,7 +49,7 @@ public class COM_Model extends Model {
     public void updateCells(DBContext context, Collection<AbstractCellAdv> cells) {
         rom_model.updateCells(context,
                 cells.stream()
-                        .map(c ->  CellImpl.fromBytes(sheet, c.getColumnIndex(), c.getRowIndex(), c.toBytes()))
+                        .map(c -> CellImpl.fromBytes(sheet, c.getColumnIndex(), c.getRowIndex(), c.toBytes()))
                         .collect(Collectors.toList()));
     }
 

@@ -43,24 +43,23 @@ public abstract class RangeSchemaFunction implements Function {
     }
 
 
-    public final ValueEval evaluate (ValueEval[] args, int srcCellRow, int srcCellCol) {
+    public final ValueEval evaluate(ValueEval[] args, int srcCellRow, int srcCellCol) {
 
         try {
 
             if (args.length != 2) {
-                
+
                 return ErrorEval.VALUE_INVALID;
-                
+
             }
-            
+
             AreaEval range = convertRangeArg(args[0]);
             ArrayEval attributes = convertArrayArg(args[1]);
             String[] attributeNames = extractAttributeNames(attributes);
 
-            return evaluate(range, attributeNames, srcCellRow, srcCellCol);            
-            
-        }
-        catch (EvaluationException e) {
+            return evaluate(range, attributeNames, srcCellRow, srcCellCol);
+
+        } catch (EvaluationException e) {
             return e.getErrorEval();
         }
 

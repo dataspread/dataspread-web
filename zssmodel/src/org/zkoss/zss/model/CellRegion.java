@@ -16,12 +16,12 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model;
 
+import org.zkoss.poi.ss.util.AreaReference;
+import org.zkoss.poi.ss.util.CellReference;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.zkoss.poi.ss.util.AreaReference;
-import org.zkoss.poi.ss.util.CellReference;
 
 
 /**
@@ -34,13 +34,13 @@ import org.zkoss.poi.ss.util.CellReference;
  */
 public class CellRegion implements Serializable {
 	private static final long serialVersionUID = 1L;
-	
+
 	public int row;
 	public int column;
 	public int lastRow;
 	public int lastColumn;
-	
-	public CellRegion(){
+
+	public CellRegion() {
 		/* For seralization */
 	}
 
@@ -69,6 +69,32 @@ public class CellRegion implements Serializable {
 	}
 	
 	/**
+	 * Create a region with 4 indexes
+	 */
+	public CellRegion(int row, int column, int lastRow, int lastColumn) {
+		this.row = row;
+		this.column = column;
+		this.lastRow = lastRow;
+		this.lastColumn = lastColumn;
+		checkLegal();
+	}
+
+	private static boolean overlaps0(CellRegion r1, CellRegion r2) {
+		return ((r1.lastColumn >= r2.column) &&
+				(r1.lastRow >= r2.row) &&
+				(r1.column <= r2.lastColumn) &&
+				(r1.row <= r2.lastRow));
+	}
+
+	public static String convertIndexToColumnString(int columnIdx) {
+		return CellReference.convertNumToColString(columnIdx);
+	}
+
+	public static int convertColumnStringToIndex(String colRef) {
+		return CellReference.convertColStringToIndex(colRef);
+	}
+
+	/**
 	 * @return a cell reference string it might be A1:B2 for multiple cells or A1 for one cell.
 	 */
 	public String getReferenceString(){
@@ -84,17 +110,6 @@ public class CellRegion implements Serializable {
 	}
 
 	/**
-	 * Create a region with 4 indexes
-	 */
-	public CellRegion(int row, int column, int lastRow, int lastColumn) {
-		this.row = row;
-		this.column = column;
-		this.lastRow = lastRow;
-		this.lastColumn = lastColumn;
-		checkLegal();
-	}
-
-	/**
 	 * @return return TRUE if this region only contains 1 cell, otherwise returns FALSE
 	 */
 	public boolean isSingle() {
@@ -102,7 +117,7 @@ public class CellRegion implements Serializable {
 	}
 
 	/**
-	 * @return returns TRUE if this region contains (or equals to) the cell specified by row and column index, otherwise returns FALSE 
+	 * @return returns TRUE if this region contains (or equals to) the cell specified by row and column index, otherwise returns FALSE
 	 */
 	public boolean contains(int row, int column) {
 		return row >= this.row && row <= this.lastRow && column >= this.column
@@ -110,29 +125,22 @@ public class CellRegion implements Serializable {
 	}
 	
 	/**
-	 * @return returns TRUE if this region contains (or equals to) specified region, otherwise returns FALSE 
+	 * @return returns TRUE if this region contains (or equals to) specified region, otherwise returns FALSE
 	 */
 	public boolean contains(CellRegion region) {
 		return contains(region.row, region.column)
-				&& contains(region.lastRow, region.lastColumn); 
+				&& contains(region.lastRow, region.lastColumn);
 	}
 
 	/**
-	 * @return returns TRUE if this region overlaps specified region, otherwise returns FALSE 
+	 * @return returns TRUE if this region overlaps specified region, otherwise returns FALSE
 	 */
 	public boolean overlaps(CellRegion region) {
 		return overlaps0(this,region) || overlaps0(region,this);
 	}
-	
-	private static boolean overlaps0(CellRegion r1,CellRegion r2) {
-		return ((r1.lastColumn >= r2.column) &&
-			    (r1.lastRow >= r2.row) &&
-			    (r1.column <= r2.lastColumn) &&
-			    (r1.row <= r2.lastRow));
-	}
-	
+
 	/**
-	 * @return returns TRUE if this region refers to the same scope as specified region, otherwise returns FALSE 
+	 * @return returns TRUE if this region refers to the same scope as specified region, otherwise returns FALSE
 	 */
 	public boolean equals(int row, int column, int lastRow, int lastColumn){
 		return this.row == row && this.column==column && this.lastRow==lastRow && this.lastColumn == lastColumn;
@@ -172,9 +180,7 @@ public class CellRegion implements Serializable {
 			return false;
 		if (lastRow != other.lastRow)
 			return false;
-		if (row != other.row)
-			return false;
-		return true;
+		return row == other.row;
 	}
 
 	/**
@@ -202,16 +208,9 @@ public class CellRegion implements Serializable {
 	public int getRowCount(){
 		return lastRow-row+1;
 	}
+
 	public int getColumnCount(){
 		return lastColumn-column+1;
-	}
-	
-	public static String convertIndexToColumnString(int columnIdx){
-		return CellReference.convertNumToColString(columnIdx);
-	}
-	
-	public static int convertColumnStringToIndex(String colRef){
-		return CellReference.convertColStringToIndex(colRef);
 	}
 	
 	/**
@@ -286,7 +285,6 @@ public class CellRegion implements Serializable {
 		final int col2 = Math.max(this.lastColumn, target.lastColumn);
 		return new CellRegion(row1, col1, row2, col2);
 	}
-
 
 
 	/**

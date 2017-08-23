@@ -1,10 +1,5 @@
-
-import org.zkoss.zss.model.impl.*;
-import org.zkoss.zss.model.sys.EngineFactory;
-import org.zkoss.zss.model.sys.formula.EvaluationResult;
-import org.zkoss.zss.model.sys.formula.FormulaEngine;
-import org.zkoss.zss.model.sys.formula.FormulaEvaluationContext;
-import org.zkoss.zss.model.sys.formula.FormulaExpression;
+import org.zkoss.zss.model.impl.BookImpl;
+import org.zkoss.zss.model.impl.SheetImpl;
 
 /**
  * Created by zekun.fan@gmail.com on 7/26/17.
@@ -12,8 +7,8 @@ import org.zkoss.zss.model.sys.formula.FormulaExpression;
 public class OfflineFormulaContext {
 
     public static void main(String[] args) throws Exception {
-        BookImpl testBook=new BookImpl("testbook");
-        SheetImpl testSheet=(SheetImpl) testBook.createSheet("testsheet");
+        BookImpl testBook = new BookImpl("testbook");
+        SheetImpl testSheet = (SheetImpl) testBook.createSheet("testsheet");
         /*
         CellImpl testCell=testSheet.createCell(0,0),
                 testFormula=testSheet.createCell(0,1);

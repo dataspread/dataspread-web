@@ -1,30 +1,22 @@
 package com.github.davidmoten.rtree;
 
-import static com.github.davidmoten.guavamini.Optional.absent;
-import static com.github.davidmoten.guavamini.Optional.of;
-import static com.github.davidmoten.rtree.geometry.Geometries.rectangle;
-
-import java.util.List;
-
 import com.github.davidmoten.guavamini.Lists;
 import com.github.davidmoten.guavamini.Optional;
 import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
-import com.github.davidmoten.rtree.geometry.Circle;
-import com.github.davidmoten.rtree.geometry.Geometry;
-import com.github.davidmoten.rtree.geometry.Intersects;
-import com.github.davidmoten.rtree.geometry.Line;
-import com.github.davidmoten.rtree.geometry.Point;
-import com.github.davidmoten.rtree.geometry.Rectangle;
+import com.github.davidmoten.rtree.geometry.*;
 import com.github.davidmoten.rtree.internal.Comparators;
 import com.github.davidmoten.rtree.internal.NodeAndEntries;
 import com.github.davidmoten.rtree.internal.operators.OperatorBoundedPriorityQueue;
-
-
-import org.model.BlockStore;
 import org.model.DBContext;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.functions.Func2;
+
+import java.util.List;
+
+import static com.github.davidmoten.guavamini.Optional.absent;
+import static com.github.davidmoten.guavamini.Optional.of;
+import static com.github.davidmoten.rtree.geometry.Geometries.rectangle;
 
 
 /**
@@ -37,21 +29,29 @@ import rx.functions.Func2;
  */
 public final class RTree<T, S extends Geometry> {
 
-    private final Optional<? extends Node<T, S>> root;
-    private final Context<T, S> context;
-
     /**
      * Benchmarks show that this is a good choice for up to O(10,000) entries
      * when using Quadratic splitter (Guttman).
      */
     public static final int MAX_CHILDREN_DEFAULT_GUTTMAN = 4;
-
     /**
      * Benchmarks show that this is the sweet spot for up to O(10,000) entries
      * when using R*-tree heuristics.
      */
     public static final int MAX_CHILDREN_DEFAULT_STAR = 4;
-
+    /**
+     * Returns the always true predicate. See {@link RTree#entries()} for
+     * example use.
+     */
+    private static final Func1<Geometry, Boolean> ALWAYS_TRUE = new Func1<Geometry, Boolean>() {
+        @Override
+        public Boolean call(Geometry rectangle) {
+            return true;
+        }
+    };
+    private final static String marginIncrement = "  ";
+    private final Optional<? extends Node<T, S>> root;
+    private final Context<T, S> context;
     /**
      * Current size in Entries of the RTree.
      */
@@ -59,7 +59,7 @@ public final class RTree<T, S extends Geometry> {
 
     /**
      * Constructor.
-     * 
+     *
      * @param root
      *            the root node of the tree if present
      * @param context
@@ -72,12 +72,12 @@ public final class RTree<T, S extends Geometry> {
     }
 
     private RTree() {
-        this(Optional.<Node<T, S>> absent(), 0, null);
+        this(Optional.absent(), 0, null);
     }
 
     /**
      * Constructor.
-     * 
+     *
      * @param root
      *            the root node of the R-tree
      * @param context
@@ -95,7 +95,7 @@ public final class RTree<T, S extends Geometry> {
     /**
      * Returns a new Builder instance for {@link RTree}. Defaults to
      * maxChildren=128, minChildren=64, splitter=QuadraticSplitter.
-     * 
+     *
      * @param <T>
      *            the value type of the entries in the tree
      * @param <S>
@@ -106,17 +106,8 @@ public final class RTree<T, S extends Geometry> {
         return new Builder().create();
     }
 
-    public static <T, S extends Geometry> RTree<T, S> createWithDb(DBContext dbcontext, String tableName) {return new Builder().createWithDb(dbcontext, tableName);}
-
-    /**
-     * The tree is scanned for depth and the depth returned. This involves
-     * recursing down to the leaf level of the tree to get the current depth.
-     * Should be <code>log(n)</code> in complexity.
-     * 
-     * @return depth of the R-tree
-     */
-    public int calculateDepth() {
-        return calculateDepth(root);
+    public static <T, S extends Geometry> RTree<T, S> createWithDb(DBContext dbcontext, String tableName) {
+        return new Builder().createWithDb(dbcontext, tableName);
     }
 
     private static <T, S extends Geometry> int calculateDepth(Optional<? extends Node<T, S>> root) {
@@ -136,7 +127,7 @@ public final class RTree<T, S extends Geometry> {
     /**
      * When the number of children in an R-tree node drops below this number the
      * node is deleted and the children are added on to the R-tree again.
-     * 
+     *
      * @param minChildren
      *            less than this number of children in a node triggers a node
      *            deletion and redistribution of its members
@@ -148,7 +139,7 @@ public final class RTree<T, S extends Geometry> {
 
     /**
      * Sets the max number of children in an R-tree node.
-     * 
+     *
      * @param maxChildren
      *            max number of children in an R-tree node
      * @return builder
@@ -159,7 +150,7 @@ public final class RTree<T, S extends Geometry> {
 
     /**
      * Sets the {@link Splitter} to use when maxChildren is reached.
-     * 
+     *
      * @param splitter
      *            the splitter algorithm to use
      * @return builder
@@ -171,7 +162,7 @@ public final class RTree<T, S extends Geometry> {
     /**
      * Sets the node {@link Selector} which decides which branches to follow
      * when inserting or searching.
-     * 
+     *
      * @param selector
      *            determines which branches to follow when inserting or
      *            searching
@@ -184,7 +175,7 @@ public final class RTree<T, S extends Geometry> {
     /**
      * Sets the splitter to {@link SplitterRStar} and selector to
      * {@link SelectorRStar} and defaults to minChildren=10.
-     * 
+     *
      * @return builder
      */
     public static Builder star() {
@@ -192,155 +183,36 @@ public final class RTree<T, S extends Geometry> {
     }
 
     /**
-     * RTree Builder.
+     * Returns a predicate function that indicates if {@link Geometry}
+     * intersects with a given rectangle.
+     *
+     * @param r
+     *            the rectangle to check intersection with
+     * @return whether the geometry and the rectangle intersect
      */
-    public static class Builder {
+    public static Func1<Geometry, Boolean> intersects(final Rectangle r) {
+        return new Func1<Geometry, Boolean>() {
+            @Override
+            public Boolean call(Geometry g) {
+                return g.intersects(r);
+            }
+        };
+    }
 
-        /**
-         * According to
-         * http://dbs.mathematik.uni-marburg.de/publications/myPapers
-         * /1990/BKSS90.pdf (R*-tree paper), best filling ratio is 0.4 for both
-         * quadratic split and R*-tree split.
-         */
-        private static final double DEFAULT_FILLING_FACTOR = 0.4;
-        private Optional<Integer> maxChildren = absent();
-        private Optional<Integer> minChildren = absent();
-        private Splitter splitter = new SplitterQuadratic();
-        private Selector selector = new SelectorMinimalAreaIncrease();
-        private boolean star = false;
-        private Factory<Object, Geometry> factory = Factories.defaultFactory();
-
-        private Builder() {
-        }
-
-        /**
-         * When the number of children in an R-tree node drops below this number
-         * the node is deleted and the children are added on to the R-tree
-         * again.
-         * 
-         * @param minChildren
-         *            less than this number of children in a node triggers a
-         *            redistribution of its children.
-         * @return builder
-         */
-        public Builder minChildren(int minChildren) {
-            this.minChildren = of(minChildren);
-            return this;
-        }
-
-        /**
-         * Sets the max number of children in an R-tree node.
-         * 
-         * @param maxChildren
-         *            max number of children in R-tree node.
-         * @return builder
-         */
-        public Builder maxChildren(int maxChildren) {
-            this.maxChildren = of(maxChildren);
-            return this;
-        }
-
-        /**
-         * Sets the {@link Splitter} to use when maxChildren is reached.
-         * 
-         * @param splitter
-         *            node splitting method to use
-         * @return builder
-         */
-        public Builder splitter(Splitter splitter) {
-            this.splitter = splitter;
-            return this;
-        }
-
-        /**
-         * Sets the node {@link Selector} which decides which branches to follow
-         * when inserting or searching.
-         * 
-         * @param selector
-         *            selects the branch to follow when inserting or searching
-         * @return builder
-         */
-        public Builder selector(Selector selector) {
-            this.selector = selector;
-            return this;
-        }
-
-        /**
-         * Sets the splitter to {@link SplitterRStar} and selector to
-         * {@link SelectorRStar} and defaults to minChildren=10.
-         * 
-         * @return builder
-         */
-        public Builder star() {
-            selector = new SelectorRStar();
-            splitter = new SplitterRStar();
-            star = true;
-            return this;
-        }
-
-        @SuppressWarnings("unchecked")
-        public Builder factory(Factory<?, ? extends Geometry> factory) {
-            // TODO could change the signature of Builder to have types to
-            // support this method but would be breaking change for existing
-            // clients
-            this.factory = (Factory<Object, Geometry>) factory;
-            return this;
-        }
-
-        /**
-         * Builds the {@link RTree}.
-         * 
-         * @param <T>
-         *            value type
-         * @param <S>
-         *            geometry type
-         * @return RTree
-         */
-        @SuppressWarnings("unchecked")
-        public <T, S extends Geometry> RTree<T, S> create() {
-            if (!maxChildren.isPresent())
-                if (star)
-                    maxChildren = of(MAX_CHILDREN_DEFAULT_STAR);
-                else
-                    maxChildren = of(MAX_CHILDREN_DEFAULT_GUTTMAN);
-            if (!minChildren.isPresent())
-                minChildren = of((int) Math.round(maxChildren.get() * DEFAULT_FILLING_FACTOR));
-            return new RTree<T, S>(Optional.<Node<T, S>> absent(), 0,
-                    new Context<T, S>(minChildren.get(), maxChildren.get(), selector, splitter,
-                            (Factory<T, S>) factory));
-        }
-
-        /**
-         * Builds the {@link RTree}.
-         *
-         * @param <T>
-         *            value type
-         * @param <S>
-         *            geometry type
-         * @return RTree
-         */
-        @SuppressWarnings("unchecked")
-        public <T, S extends Geometry> RTree<T, S> createWithDb(DBContext dbcontext, String tableName) {
-            if (!maxChildren.isPresent())
-                if (star)
-                    maxChildren = of(MAX_CHILDREN_DEFAULT_STAR);
-                else
-                    maxChildren = of(MAX_CHILDREN_DEFAULT_GUTTMAN);
-            if (!minChildren.isPresent())
-                minChildren = of((int) Math.round(maxChildren.get() * DEFAULT_FILLING_FACTOR));
-
-            RTree<T, S> ret = new RTree<T, S>(Optional.absent(), 0,
-                    new Context<T, S>(minChildren.get(), maxChildren.get(), selector, splitter,
-                            (Factory<T, S>) factory));
-            //ret.setupBlockStore(dbcontext, tableName);
-            return ret;
-        }
-
+    /**
+     * The tree is scanned for depth and the depth returned. This involves
+     * recursing down to the leaf level of the tree to get the current depth.
+     * Should be <code>log(n)</code> in complexity.
+     *
+     * @return depth of the R-tree
+     */
+    public int calculateDepth() {
+        return calculateDepth(root);
     }
 
     /**
      * Returns an immutable copy of the RTree with the addition of given entry.
-     * 
+     *
      * @param entry
      *            item to add to the R-tree.
      * @return a new immutable R-tree including the new entry
@@ -366,7 +238,7 @@ public final class RTree<T, S extends Geometry> {
     /**
      * Returns an immutable copy of the RTree with the addition of an entry
      * comprised of the given value and Geometry.
-     * 
+     *
      * @param value
      *            the value of the {@link Entry} to be added
      * @param geometry
@@ -380,7 +252,7 @@ public final class RTree<T, S extends Geometry> {
     /**
      * Returns an immutable RTree with the current entries and the additional
      * entries supplied as a parameter.
-     * 
+     *
      * @param entries
      *            entries to add
      * @return R-tree with entries added
@@ -395,7 +267,7 @@ public final class RTree<T, S extends Geometry> {
     /**
      * Returns the Observable sequence of trees created by progressively adding
      * entries.
-     * 
+     *
      * @param entries
      *            the entries to add
      * @return a sequence of trees
@@ -413,7 +285,7 @@ public final class RTree<T, S extends Geometry> {
     /**
      * Returns the Observable sequence of trees created by progressively
      * deleting entries.
-     * 
+     *
      * @param entries
      *            the entries to add
      * @param all
@@ -434,7 +306,7 @@ public final class RTree<T, S extends Geometry> {
      * Returns a new R-tree with the given entries deleted. If <code>all</code>
      * is false deletes only one if exists. If <code>all</code> is true deletes
      * all matching entries.
-     * 
+     *
      * @param entries
      *            entries to delete
      * @param all
@@ -451,7 +323,7 @@ public final class RTree<T, S extends Geometry> {
     /**
      * Returns a new R-tree with the given entries deleted but only one matching
      * occurence of each entry is deleted.
-     * 
+     *
      * @param entries
      *            entries to delete
      * @return R-tree with entries deleted up to one matching occurence per
@@ -470,7 +342,7 @@ public final class RTree<T, S extends Geometry> {
      * the given value and geometry. This method has no effect if the entry is
      * not present. The entry must match on both value and geometry to be
      * deleted.
-     * 
+     *
      * @param value
      *            the value of the {@link Entry} to be deleted
      * @param geometry
@@ -489,7 +361,7 @@ public final class RTree<T, S extends Geometry> {
      * Deletes maximum one entry matching the given value and geometry. This
      * method has no effect if the entry is not present. The entry must match on
      * both value and geometry to be deleted.
-     * 
+     *
      * @param value
      *            the value to be matched for deletion
      * @param geometry
@@ -507,7 +379,7 @@ public final class RTree<T, S extends Geometry> {
      * one will be deleted if all is false otherwise all matching entries will
      * be deleted. The entry must match on both value and geometry to be
      * deleted.
-     * 
+     *
      * @param entry
      *            the {@link Entry} to be deleted
      * @param all
@@ -533,7 +405,7 @@ public final class RTree<T, S extends Geometry> {
      * without that entry. If multiple copies of the entry are in the R-tree
      * only one will be deleted. The entry must match on both value and geometry
      * to be deleted.
-     * 
+     *
      * @param entry
      *            the {@link Entry} to be deleted
      * @return a new immutable R-tree without one instance of the specified
@@ -548,16 +420,16 @@ public final class RTree<T, S extends Geometry> {
      * Returns an Observable sequence of {@link Entry} that satisfy the given
      * condition. Note that this method is well-behaved only if:
      *
-     * 
+     *
      * <p>
      * {@code condition(g)} is true for {@link Geometry} g implies
      * {@code condition(r)} is true for the minimum bounding rectangles of the
      * ancestor nodes.
-     * 
+     *
      * <p>
      * {@code distance(g) < D} is an example of such a condition.
-     * 
-     * 
+     *
+     *
      * @param condition
      *            return Entries whose geometry satisfies the given condition
      * @return sequence of matching entries
@@ -569,34 +441,6 @@ public final class RTree<T, S extends Geometry> {
         else
             return Observable.empty();
     }
-
-    /**
-     * Returns a predicate function that indicates if {@link Geometry}
-     * intersects with a given rectangle.
-     * 
-     * @param r
-     *            the rectangle to check intersection with
-     * @return whether the geometry and the rectangle intersect
-     */
-    public static Func1<Geometry, Boolean> intersects(final Rectangle r) {
-        return new Func1<Geometry, Boolean>() {
-            @Override
-            public Boolean call(Geometry g) {
-                return g.intersects(r);
-            }
-        };
-    }
-
-    /**
-     * Returns the always true predicate. See {@link RTree#entries()} for
-     * example use.
-     */
-    private static final Func1<Geometry, Boolean> ALWAYS_TRUE = new Func1<Geometry, Boolean>() {
-        @Override
-        public Boolean call(Geometry rectangle) {
-            return true;
-        }
-    };
 
     /**
      * Returns an {@link Observable} sequence of all {@link Entry}s in the
@@ -739,7 +583,7 @@ public final class RTree<T, S extends Geometry> {
     public Observable<Entry<T, S>> nearest(final Rectangle r, final double maxDistance,
             int maxCount) {
         return search(r, maxDistance).lift(new OperatorBoundedPriorityQueue<Entry<T, S>>(maxCount,
-                Comparators.<T, S> ascendingDistance(r)));
+                Comparators.ascendingDistance(r)));
     }
 
     /**
@@ -802,7 +646,7 @@ public final class RTree<T, S extends Geometry> {
     }
 
     private Rectangle calculateMaxView(RTree<T, S> tree) {
-        return tree.entries().reduce(Optional.<Rectangle> absent(),
+        return tree.entries().reduce(Optional.absent(),
                 new Func2<Optional<Rectangle>, Entry<T, S>, Optional<Rectangle>>() {
 
                     @Override
@@ -883,8 +727,6 @@ public final class RTree<T, S extends Geometry> {
             return asString(root.get(), "");
     }
 
-    private final static String marginIncrement = "  ";
-
     private String asString(Node<T, S> node, String margin) {
         StringBuilder s = new StringBuilder();
         s.append(margin);
@@ -909,6 +751,145 @@ public final class RTree<T, S extends Geometry> {
             }
         }
         return s.toString();
+    }
+
+    /**
+     * RTree Builder.
+     */
+    public static class Builder {
+
+        /**
+         * According to
+         * http://dbs.mathematik.uni-marburg.de/publications/myPapers
+         * /1990/BKSS90.pdf (R*-tree paper), best filling ratio is 0.4 for both
+         * quadratic split and R*-tree split.
+         */
+        private static final double DEFAULT_FILLING_FACTOR = 0.4;
+        private Optional<Integer> maxChildren = absent();
+        private Optional<Integer> minChildren = absent();
+        private Splitter splitter = new SplitterQuadratic();
+        private Selector selector = new SelectorMinimalAreaIncrease();
+        private boolean star = false;
+        private Factory<Object, Geometry> factory = Factories.defaultFactory();
+
+        private Builder() {
+        }
+
+        /**
+         * When the number of children in an R-tree node drops below this number
+         * the node is deleted and the children are added on to the R-tree
+         * again.
+         *
+         * @param minChildren less than this number of children in a node triggers a
+         *                    redistribution of its children.
+         * @return builder
+         */
+        public Builder minChildren(int minChildren) {
+            this.minChildren = of(minChildren);
+            return this;
+        }
+
+        /**
+         * Sets the max number of children in an R-tree node.
+         *
+         * @param maxChildren max number of children in R-tree node.
+         * @return builder
+         */
+        public Builder maxChildren(int maxChildren) {
+            this.maxChildren = of(maxChildren);
+            return this;
+        }
+
+        /**
+         * Sets the {@link Splitter} to use when maxChildren is reached.
+         *
+         * @param splitter node splitting method to use
+         * @return builder
+         */
+        public Builder splitter(Splitter splitter) {
+            this.splitter = splitter;
+            return this;
+        }
+
+        /**
+         * Sets the node {@link Selector} which decides which branches to follow
+         * when inserting or searching.
+         *
+         * @param selector selects the branch to follow when inserting or searching
+         * @return builder
+         */
+        public Builder selector(Selector selector) {
+            this.selector = selector;
+            return this;
+        }
+
+        /**
+         * Sets the splitter to {@link SplitterRStar} and selector to
+         * {@link SelectorRStar} and defaults to minChildren=10.
+         *
+         * @return builder
+         */
+        public Builder star() {
+            selector = new SelectorRStar();
+            splitter = new SplitterRStar();
+            star = true;
+            return this;
+        }
+
+        @SuppressWarnings("unchecked")
+        public Builder factory(Factory<?, ? extends Geometry> factory) {
+            // TODO could change the signature of Builder to have types to
+            // support this method but would be breaking change for existing
+            // clients
+            this.factory = (Factory<Object, Geometry>) factory;
+            return this;
+        }
+
+        /**
+         * Builds the {@link RTree}.
+         *
+         * @param <T> value type
+         * @param <S> geometry type
+         * @return RTree
+         */
+        @SuppressWarnings("unchecked")
+        public <T, S extends Geometry> RTree<T, S> create() {
+            if (!maxChildren.isPresent())
+                if (star)
+                    maxChildren = of(MAX_CHILDREN_DEFAULT_STAR);
+                else
+                    maxChildren = of(MAX_CHILDREN_DEFAULT_GUTTMAN);
+            if (!minChildren.isPresent())
+                minChildren = of((int) Math.round(maxChildren.get() * DEFAULT_FILLING_FACTOR));
+            return new RTree<T, S>(Optional.absent(), 0,
+                    new Context<T, S>(minChildren.get(), maxChildren.get(), selector, splitter,
+                            (Factory<T, S>) factory));
+        }
+
+        /**
+         * Builds the {@link RTree}.
+         *
+         * @param <T> value type
+         * @param <S> geometry type
+         * @return RTree
+         */
+        @SuppressWarnings("unchecked")
+        public <T, S extends Geometry> RTree<T, S> createWithDb(DBContext dbcontext, String tableName) {
+            if (!maxChildren.isPresent())
+                if (star)
+                    maxChildren = of(MAX_CHILDREN_DEFAULT_STAR);
+                else
+                    maxChildren = of(MAX_CHILDREN_DEFAULT_GUTTMAN);
+            if (!minChildren.isPresent())
+                minChildren = of((int) Math.round(maxChildren.get() * DEFAULT_FILLING_FACTOR));
+
+            RTree<T, S> ret = new RTree<T, S>(Optional.absent(), 0,
+                    new Context<T, S>(minChildren.get(), maxChildren.get(), selector, splitter,
+                            (Factory<T, S>) factory));
+            //ret.setupBlockStore(dbcontext, tableName);
+            return ret;
+        }
+
     }
 
 }

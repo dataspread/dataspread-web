@@ -187,7 +187,7 @@ public interface SSheet {
 	/**
 	 * Clear the cache
 	 */
-	public void clearCache(CellRegion cellRegion);
+	void clearCache(CellRegion cellRegion);
 
 	/**
 	 * @see #insertCell(CellRegion, boolean)

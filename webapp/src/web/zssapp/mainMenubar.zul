@@ -133,8 +133,8 @@
 			<menupopup>
 				<menuitem id="toggleTableBar"
 						  label="${c:l('zssapp.mainMenu.table.tableBar')}" forward="mainMenubar.onToggleTableBar"
-						  autocheck="true" checked="false" sclass="zsmenuitem-app appmenu" />
-				<menuseparator />
+						  autocheck="true" checked="false" sclass="zsmenuitem-app appmenu"/>
+				<menuseparator/>
 				<menuitem id="createTable" label="${c:l('zssapp.mainMenu.table.create')}"
 						  sclass="zsmenuitem-app appmenu"></menuitem>
 				<menuitem id="displayTable" label="${c:l('zssapp.mainMenu.table.display')}"
@@ -142,14 +142,14 @@
 				<menuitem id="deleteTable" label="${c:l('zssapp.mainMenu.table.delete')}"
 						  sclass="zsmenuitem-app appmenu"></menuitem>
 				<!--<menu id="expandTable" label="${c:l('zssapp.mainMenu.table.expand')}" sclass="zsmenu-app">-->
-					<!--<menupopup>-->
-						<!--<menuitem id="expandCols" label="${c:l('zssapp.mainMenu.table.expand.col')}"-->
-								  <!--sclass="zsmenuitem-app appmenu"></menuitem>-->
-						<!--<menuitem id="expandRows" label="${c:l('zssapp.mainMenu.table.expand.row')}"-->
-								  <!--sclass="zsmenuitem-app appmenu"></menuitem>-->
-						<!--<menuitem id="expandAll" label="${c:l('zssapp.mainMenu.table.expand.full')}"-->
-								  <!--sclass="zsmenuitem-app appmenu"></menuitem>-->
-					<!--</menupopup>-->
+				<!--<menupopup>-->
+				<!--<menuitem id="expandCols" label="${c:l('zssapp.mainMenu.table.expand.col')}"-->
+				<!--sclass="zsmenuitem-app appmenu"></menuitem>-->
+				<!--<menuitem id="expandRows" label="${c:l('zssapp.mainMenu.table.expand.row')}"-->
+				<!--sclass="zsmenuitem-app appmenu"></menuitem>-->
+				<!--<menuitem id="expandAll" label="${c:l('zssapp.mainMenu.table.expand.full')}"-->
+				<!--sclass="zsmenuitem-app appmenu"></menuitem>-->
+				<!--</menupopup>-->
 				<!--</menu>-->
 			</menupopup>
 		</menu>

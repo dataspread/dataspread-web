@@ -17,18 +17,26 @@ import java.util.HashMap;
  */
 public class FormulaAsyncUIControllerImpl implements FormulaAsyncUIController {
 
-    private HashMap<SCell,AsyncCellInfo> cellUIBinding;
+    private static EventListener<AsyncUIUpdateEvent> AsyncUIUpdateEventListener = new EventListener<AsyncUIUpdateEvent>() {
+        @Override
+        public void onEvent(AsyncUIUpdateEvent event) throws Exception {
+            Object[] data = (Object[]) event.getData();
+            CellRegion region = (CellRegion) data[2];
+            ((Spreadsheet) data[0]).updateCell((SSheet) data[1], region.column, region.row, region.lastColumn, region.lastRow, SpreadsheetCtrl.CellAttribute.ALL);
+        }
+    };
+    private HashMap<SCell, AsyncCellInfo> cellUIBinding;
 
-    public FormulaAsyncUIControllerImpl(){
-        cellUIBinding=new HashMap<>();
+    public FormulaAsyncUIControllerImpl() {
+        cellUIBinding = new HashMap<>();
     }
 
     @Override
-    public synchronized void prepare(SCell cell, Object spreadsheet){
-        if (cellUIBinding.containsKey(cell)){
+    public synchronized void prepare(SCell cell, Object spreadsheet) {
+        if (cellUIBinding.containsKey(cell)) {
             ++cellUIBinding.get(cell).refcnt;
-        }else{
-            cellUIBinding.put(cell,new AsyncCellInfo((Spreadsheet) spreadsheet,1));
+        } else {
+            cellUIBinding.put(cell, new AsyncCellInfo((Spreadsheet) spreadsheet, 1));
         }
     }
 
@@ -39,12 +47,12 @@ public class FormulaAsyncUIControllerImpl implements FormulaAsyncUIController {
     }
 
     @Override
-    public void updateAndRelease(SCell cell){
+    public void updateAndRelease(SCell cell) {
         AsyncCellInfo info;
         synchronized (this) {
             info = cellUIBinding.get(cell);
             --info.refcnt;
-            if (info.refcnt==0)
+            if (info.refcnt == 0)
                 cellUIBinding.remove(cell);
         }
         /* Method 1 - Not working
@@ -70,20 +78,20 @@ public class FormulaAsyncUIControllerImpl implements FormulaAsyncUIController {
         */
 
         //Method 3
-        Executions.schedule(info.ui.getDesktop(),AsyncUIUpdateEventListener,new AsyncUIUpdateEvent(info.ui,cell.getSheet(),new CellRegion(cell.getRowIndex(),cell.getColumnIndex())));
+        Executions.schedule(info.ui.getDesktop(), AsyncUIUpdateEventListener, new AsyncUIUpdateEvent(info.ui, cell.getSheet(), new CellRegion(cell.getRowIndex(), cell.getColumnIndex())));
     }
 
     @Override
-    public synchronized void cancelIfNotConfirmed(SCell cell){
+    public synchronized void cancelIfNotConfirmed(SCell cell) {
         if (cellUIBinding.containsKey(cell)) {
-            AsyncCellInfo info=cellUIBinding.get(cell);
+            AsyncCellInfo info = cellUIBinding.get(cell);
             --info.refcnt;
             if (info.refcnt == 0)
                 cellUIBinding.remove(cell);
         }
     }
 
-    private class AsyncCellInfo{
+    private class AsyncCellInfo {
         Spreadsheet ui;
         int refcnt;
 
@@ -93,18 +101,9 @@ public class FormulaAsyncUIControllerImpl implements FormulaAsyncUIController {
         }
     }
 
-    private static EventListener<AsyncUIUpdateEvent> AsyncUIUpdateEventListener=new EventListener<AsyncUIUpdateEvent>() {
-        @Override
-        public void onEvent(AsyncUIUpdateEvent event) throws Exception {
-            Object[] data=(Object[]) event.getData();
-            CellRegion region=(CellRegion) data[2];
-            ((Spreadsheet)data[0]).updateCell((SSheet)data[1],region.column,region.row,region.lastColumn,region.lastRow, SpreadsheetCtrl.CellAttribute.ALL);
-        }
-    };
-
-    private class AsyncUIUpdateEvent extends Event{
+    private class AsyncUIUpdateEvent extends Event {
         public AsyncUIUpdateEvent(Spreadsheet ui, SSheet sheet, CellRegion region) {
-            super("AsyncUIUpdateEvent",null,new Object[] {ui,sheet,region});
+            super("AsyncUIUpdateEvent", null, new Object[]{ui, sheet, region});
         }
     }
 }

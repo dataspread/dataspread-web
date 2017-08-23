@@ -683,8 +683,8 @@ public final class FormulaParser {
 			//if we're parsing an argument for relational operator formulas
 			//e.g. Table_1.Col_1
 			if (part1.isRef() && part2.isRef()) {
-                return createTableColumnParseNode(part1, part2);
-            }
+				return createTableColumnParseNode(part1, part2);
+			}
 
 			if (part1.isRowOrColumn() || part2.isRowOrColumn()) {
 				if (dotCount != 2) {
@@ -986,7 +986,7 @@ public final class FormulaParser {
 		}
 	}
 
-    private ParseNode createTableColumnParseNode(SimpleRangePart part1, SimpleRangePart part2) {
+	private ParseNode createTableColumnParseNode(SimpleRangePart part1, SimpleRangePart part2) {
 
 		Ptg ptg = new OpTableColRefPtg(part1.getRep(), part2.getRep());
 		return new ParseNode(ptg);
@@ -1051,7 +1051,7 @@ public final class FormulaParser {
 				hasLetters = true;
 			} else if (ch == '_') {
 				hasUnder = true;
-			} else if (ch == '$' ){
+			} else if (ch == '$') {
 				//
 			} else {
 				break;
@@ -1098,7 +1098,7 @@ public final class FormulaParser {
 		}
 
 
-		resetPointer(ptr+1); // stepping forward
+		resetPointer(ptr + 1); // stepping forward
 		return new SimpleRangePart(rep, hasLetters, hasDigits, hasUnder);
 	}
 
@@ -1244,31 +1244,32 @@ public final class FormulaParser {
 	/**
 	 * If a function is a relational algebra operator, we need to get the number of tables it has as arguments.
 	 * e.g. Select takes one relation, and Join takes two relations.
+	 *
 	 * @param name
 	 * @return
 	 */
 	private int getNumOperatorTables(String name) {
 
-        FunctionMetadata fm = FunctionMetadataRegistry.getFunctionByName(name.toUpperCase());
-        int funcIx = fm.getIndex();
+		FunctionMetadata fm = FunctionMetadataRegistry.getFunctionByName(name.toUpperCase());
+		int funcIx = fm.getIndex();
 
-        Function fcn = FunctionEval.getBasicFunction(funcIx);
+		Function fcn = FunctionEval.getBasicFunction(funcIx);
 
-        if (fcn == null) {
-            return 0;
-        } else {
+		if (fcn == null) {
+			return 0;
+		} else {
 
-            if (fcn instanceof OverridableFunction) {
-                Function original = ((OverridableFunction) fcn).get_original();
-                if (original != null) {
+			if (fcn instanceof OverridableFunction) {
+				Function original = ((OverridableFunction) fcn).get_original();
+				if (original != null) {
 					if (original instanceof SelectFunction) {
 						return 1;
-                    } else if (original instanceof TwoRangeFunction) {
-                        return 2;
-                    } else {
-                        return 0;
-                    }
-                }
+					} else if (original instanceof TwoRangeFunction) {
+						return 2;
+					} else {
+						return 0;
+					}
+				}
             }
 
             return 0;
@@ -1324,8 +1325,8 @@ public final class FormulaParser {
 			retval = FuncPtg.create(funcIx);
 		}
 
-        retval.setOverrideTableNum(getNumOperatorTables(name));
-        return new ParseNode(retval, args);
+		retval.setOverrideTableNum(getNumOperatorTables(name));
+		return new ParseNode(retval, args);
 	}
 
 	//ZSS-852: Multiply inside SUMPRODUCT must do array calc
@@ -1388,31 +1389,31 @@ public final class FormulaParser {
 	 *
 	 * @param arg
 	 */
-    private void markOverridenOpPtgs(ParseNode arg) {
+	private void markOverridenOpPtgs(ParseNode arg) {
 
 		if (arg.getToken() instanceof OperationPtg && !(arg.getToken() instanceof AbstractFunctionPtg)) {
-            Ptg ptg = arg.getToken();
-            if (!(ptg instanceof ComparisonPtg))
-                ((OperationPtg) arg.getToken()).setOverrided(true);
+			Ptg ptg = arg.getToken();
+			if (!(ptg instanceof ComparisonPtg))
+				((OperationPtg) arg.getToken()).setOverrided(true);
 		}
-        if (arg.getToken() instanceof AbstractFunctionPtg &&
-                (((AbstractFunctionPtg) arg.getToken()).getName().equals("AND")
-                        || ((AbstractFunctionPtg) arg.getToken()).getName().equals("OR")
-                        || ((AbstractFunctionPtg) arg.getToken()).getName().equals("NOT"))) {
+		if (arg.getToken() instanceof AbstractFunctionPtg &&
+				(((AbstractFunctionPtg) arg.getToken()).getName().equals("AND")
+						|| ((AbstractFunctionPtg) arg.getToken()).getName().equals("OR")
+						|| ((AbstractFunctionPtg) arg.getToken()).getName().equals("NOT"))) {
 			((OperationPtg) arg.getToken()).setOverrided(true);
 		}
 
-        // mark all of the children ptgs
-        for (int i = 0; i < arg.getChildren().length; i++) {
-            markOverridenOpPtgs(arg.getChildren()[i]);
-        }
-    }
+		// mark all of the children ptgs
+		for (int i = 0; i < arg.getChildren().length; i++) {
+			markOverridenOpPtgs(arg.getChildren()[i]);
+		}
+	}
 
 	/** get arguments to a function */
 	private ParseNode[] Arguments(int numOperatorTables) {
 		//average 2 args per function
-        List<ParseNode> temp = new ArrayList<>(2);
-        SkipWhite();
+		List<ParseNode> temp = new ArrayList<>(2);
+		SkipWhite();
 		if(look == ')') {
 			return ParseNode.EMPTY_ARRAY;
 		}
@@ -1438,8 +1439,8 @@ public final class FormulaParser {
 
 			//mark all OperationPtg's that are inside a relational algebra operator formula
 			if (numOperatorTables > 0) {
-                markOverridenOpPtgs(children);
-            }
+				markOverridenOpPtgs(children);
+			}
 
 			//create the OpTableRefPtg and its children. need '<' since table 1 == arg 0
 			if (numArgs < numOperatorTables) {
@@ -1907,10 +1908,10 @@ public final class FormulaParser {
 	//20101214, henrichen@zkoss.org: make parse error more end user readable
 	private RuntimeException expected(String s) {
 		String msg;
-	
-		if (look == '=' && _formulaString.substring(0, _pointer-1).trim().length() < 1) {
+
+		if (look == '=' && _formulaString.substring(0, _pointer - 1).trim().length() < 1) {
 			msg = "The specified formula '" + _formulaString
-				+ "' cannot starts with two equals signs.";
+					+ "' cannot starts with two equals signs.";
 		} else {
 			msg = "The specified formula '" + _formulaString
 					+ "' contains an error. Expects " + s + ".";
@@ -1929,7 +1930,7 @@ public final class FormulaParser {
 	 Match('=');
 	 Expression;
 
-end;
+	 end;
 	 **/
 
 	//20131204, kuroridoplayer@gmail.com: make parse error more end user readable

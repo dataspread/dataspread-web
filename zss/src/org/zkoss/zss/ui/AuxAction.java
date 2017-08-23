@@ -87,9 +87,9 @@ public enum AuxAction {
 	 UNMERGE_CELL("unmergeCell"),
 	 INSERT_SHIFT_CELL_RIGHT("shiftCellRight"),
 	 INSERT_SHIFT_CELL_DOWN("shiftCellDown"),
-     DELETE_TABLE_ROW("deleteTableRow"),
-	 APPEND_TABLE_ROW("appendTableRow"),
-	 INSERT_TABLE_ROW("insertTableRow"),
+	DELETE_TABLE_ROW("deleteTableRow"),
+	APPEND_TABLE_ROW("appendTableRow"),
+	INSERT_TABLE_ROW("insertTableRow"),
 	 INSERT_SHEET_ROW("insertSheetRow"),
 	 INSERT_SHEET_COLUMN("insertSheetColumn"),
 	 DELETE_SHIFT_CELL_LEFT("shiftCellLeft"),
@@ -143,16 +143,13 @@ public enum AuxAction {
 	 CLEAR("clear"),
 	 SORT_AND_FILTER("sortAndFilter"),
 	 OTHER_CHART("otherChart");
-	 
 
+
+	public static Map<String, AuxAction> actionMap;
 	private final String action;
 
-	private AuxAction() {
+	AuxAction() {
 		this("none");
-	}
-
-	private AuxAction(String action) {
-		this.action = action;
 	}
 
 //	public String getLabelKey() {
@@ -162,18 +159,11 @@ public enum AuxAction {
 //	public boolean equals(String action) {
 //		return this.action.equals(action);
 //	}
-	
-	public String getAction(){
-		return action;
+
+	AuxAction(String action) {
+		this.action = action;
 	}
 
-	@Override
-	public String toString() {
-		return action;
-	}
-	
-	public static Map<String,AuxAction> actionMap;
-	
 	public static AuxAction getBy(String action){
 		if(actionMap==null){
 			synchronized(AuxAction.class){
@@ -186,7 +176,16 @@ public enum AuxAction {
 			}
 		}
 		return actionMap.get(action);
-		
+
+	}
+
+	public String getAction() {
+		return action;
+	}
+
+	@Override
+	public String toString() {
+		return action;
 	}
 	
 

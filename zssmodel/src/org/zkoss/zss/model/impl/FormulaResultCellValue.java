@@ -8,8 +8,6 @@ import org.zkoss.zss.model.sys.formula.EvaluationResult.ResultType;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * the formula result cell value
@@ -27,7 +25,7 @@ public class FormulaResultCellValue extends CellValue implements Serializable {
 	}
 
 	// Added by zekun.fan@gmail.com, @WriteLockProtected
-	public void updateByEvaluationResult(EvaluationResult result){
+	public void updateByEvaluationResult(EvaluationResult result) {
 		Object val = result.getValue();
 		ResultType type = result.getType();
 		if (type == ResultType.ERROR) {
@@ -45,22 +43,22 @@ public class FormulaResultCellValue extends CellValue implements Serializable {
 			value = null;
 		} else if (val instanceof String) {
 			cellType = CellType.STRING;
-			value = (String) val;
+			value = val;
 		} else if (val instanceof Number) {
 			cellType = CellType.NUMBER;
-			value = (Number) val;
+			value = val;
 		} else if (val instanceof Boolean) {
 			cellType = CellType.BOOLEAN;
-			value = (Boolean) val;
+			value = val;
 		} else if (val instanceof AreaEval) {
 			cellType = CellType.COLLECTION;
-			value = (AreaEval) val;
+			value = val;
 		} else if (val instanceof Collection) {
 			// possible a engine return a collection in cell evaluation case?
 			// who should take care array formula?
 			if (((Collection) val).size() > 0) {
 				cellType = CellType.COLLECTION;
-				value = (Collection) val;
+				value = val;
 			} else {
 				cellType = CellType.BLANK;
 				value = null;

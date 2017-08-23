@@ -17,8 +17,8 @@
 
 package org.zkoss.poi.ss.formula.functions;
 
-import org.zkoss.poi.ss.formula.eval.*;
 import org.zkoss.poi.ss.formula.TwoDEval;
+import org.zkoss.poi.ss.formula.eval.*;
 
 /**
  * Implementation for the Excel function INDEX
@@ -40,52 +40,6 @@ import org.zkoss.poi.ss.formula.TwoDEval;
  */
 public final class Index implements Function2Arg, Function3Arg, Function4Arg {
 
-	public ValueEval evaluate(int srcRowIndex, int srcColumnIndex, ValueEval arg0, ValueEval arg1) {
-		TwoDEval reference = convertFirstArg(arg0);
-
-		int columnIx = 0;
-		try {
-			int rowIx = resolveIndexArg(arg1, srcRowIndex, srcColumnIndex);
-
-			if (!reference.isColumn()) {
-				if (!reference.isRow()) {
-					// always an error with 2-D area refs
-					// Note - the type of error changes if the pRowArg is negative
-					return ErrorEval.REF_INVALID;
-				}
-				// When the two-arg version of INDEX() has been invoked and the reference
-				// is a single column ref, the row arg seems to get used as the column index
-				columnIx = rowIx;
-				rowIx = 0;
-			}
-
-			return getValueFromArea(reference, rowIx, columnIx);
-		} catch (EvaluationException e) {
-			return e.getErrorEval();
-		}
-	}
-	public ValueEval evaluate(int srcRowIndex, int srcColumnIndex, ValueEval arg0, ValueEval arg1,
-			ValueEval arg2) {
-		TwoDEval reference = convertFirstArg(arg0);
-
-		try {
-			int columnIx = resolveIndexArg(arg2, srcRowIndex, srcColumnIndex);
-			int rowIx = resolveIndexArg(arg1, srcRowIndex, srcColumnIndex);
-			return getValueFromArea(reference, rowIx, columnIx);
-		} catch (EvaluationException e) {
-			return e.getErrorEval();
-		}
-	}
-	public ValueEval evaluate(int srcRowIndex, int srcColumnIndex, ValueEval arg0, ValueEval arg1,
-			ValueEval arg2, ValueEval arg3) {
-		throw new RuntimeException("Incomplete code"
-				+ " - don't know how to support the 'area_num' parameter yet)");
-		// Excel expression might look like this "INDEX( (A1:B4, C3:D6, D2:E5 ), 1, 2, 3)
-		// In this example, the 3rd area would be used i.e. D2:E5, and the overall result would be E2
-		// Token array might be encoded like this: MemAreaPtg, AreaPtg, AreaPtg, UnionPtg, UnionPtg, ParenthesesPtg
-		// The formula parser doesn't seem to support this yet. Not sure if the evaluator does either
-	}
-
 	private static TwoDEval convertFirstArg(ValueEval arg0) {
 		ValueEval firstArg = arg0;
 		if (firstArg instanceof RefEval) {
@@ -100,18 +54,6 @@ public final class Index implements Function2Arg, Function3Arg, Function4Arg {
 		throw new RuntimeException("Incomplete code - cannot handle first arg of type ("
 				+ firstArg.getClass().getName() + ")");
 
-	}
-
-	public ValueEval evaluate(ValueEval[] args, int srcRowIndex, int srcColumnIndex) {
-		switch (args.length) {
-			case 2:
-				return evaluate(srcRowIndex, srcColumnIndex, args[0], args[1]);
-			case 3:
-				return evaluate(srcRowIndex, srcColumnIndex, args[0], args[1], args[2]);
-			case 4:
-				return evaluate(srcRowIndex, srcColumnIndex, args[0], args[1], args[2], args[3]);
-		}
-		return ErrorEval.VALUE_INVALID;
 	}
 
 	private static ValueEval getValueFromArea(TwoDEval ae, int pRowIx, int pColumnIx)
@@ -156,7 +98,6 @@ public final class Index implements Function2Arg, Function3Arg, Function4Arg {
 		return result;
 	}
 
-
 	/**
 	 * @param arg a 1-based index.
 	 * @return the resolved 1-based index. Zero if the arg was missing or blank
@@ -176,5 +117,65 @@ public final class Index implements Function2Arg, Function3Arg, Function4Arg {
 			throw new EvaluationException(ErrorEval.VALUE_INVALID);
 		}
 		return result;
+	}
+
+	public ValueEval evaluate(int srcRowIndex, int srcColumnIndex, ValueEval arg0, ValueEval arg1) {
+		TwoDEval reference = convertFirstArg(arg0);
+
+		int columnIx = 0;
+		try {
+			int rowIx = resolveIndexArg(arg1, srcRowIndex, srcColumnIndex);
+
+			if (!reference.isColumn()) {
+				if (!reference.isRow()) {
+					// always an error with 2-D area refs
+					// Note - the type of error changes if the pRowArg is negative
+					return ErrorEval.REF_INVALID;
+				}
+				// When the two-arg version of INDEX() has been invoked and the reference
+				// is a single column ref, the row arg seems to get used as the column index
+				columnIx = rowIx;
+				rowIx = 0;
+			}
+
+			return getValueFromArea(reference, rowIx, columnIx);
+		} catch (EvaluationException e) {
+			return e.getErrorEval();
+		}
+	}
+
+	public ValueEval evaluate(int srcRowIndex, int srcColumnIndex, ValueEval arg0, ValueEval arg1,
+							  ValueEval arg2) {
+		TwoDEval reference = convertFirstArg(arg0);
+
+		try {
+			int columnIx = resolveIndexArg(arg2, srcRowIndex, srcColumnIndex);
+			int rowIx = resolveIndexArg(arg1, srcRowIndex, srcColumnIndex);
+			return getValueFromArea(reference, rowIx, columnIx);
+		} catch (EvaluationException e) {
+			return e.getErrorEval();
+		}
+	}
+
+	public ValueEval evaluate(int srcRowIndex, int srcColumnIndex, ValueEval arg0, ValueEval arg1,
+							  ValueEval arg2, ValueEval arg3) {
+		throw new RuntimeException("Incomplete code"
+				+ " - don't know how to support the 'area_num' parameter yet)");
+		// Excel expression might look like this "INDEX( (A1:B4, C3:D6, D2:E5 ), 1, 2, 3)
+		// In this example, the 3rd area would be used i.e. D2:E5, and the overall result would be E2
+		// Token array might be encoded like this: MemAreaPtg, AreaPtg, AreaPtg, UnionPtg, UnionPtg, ParenthesesPtg
+		// The formula parser doesn't seem to support this yet. Not sure if the evaluator does either
+	}
+
+	public ValueEval evaluate(ValueEval[] args, int srcRowIndex, int srcColumnIndex) {
+		switch (args.length) {
+			case 2:
+				return evaluate(srcRowIndex, srcColumnIndex, args[0], args[1]);
+			case 3:
+				return evaluate(srcRowIndex, srcColumnIndex, args[0], args[1], args[2]);
+			case 4:
+				return evaluate(srcRowIndex, srcColumnIndex, args[0], args[1], args[2], args[3]);
+		}
+		return ErrorEval.VALUE_INVALID;
 	}
 }

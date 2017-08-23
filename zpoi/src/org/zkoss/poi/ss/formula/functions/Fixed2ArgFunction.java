@@ -28,28 +28,28 @@ import org.zkoss.poi.ss.formula.eval.*;
 public abstract class Fixed2ArgFunction implements Function2Arg {
 	public final ValueEval evaluate(ValueEval[] args, int srcRowIndex, int srcColumnIndex) {
 
-        if (args.length != 2 && !(args.length == 3 && args[0] instanceof OverrideEval)) {
-            return ErrorEval.VALUE_INVALID;
+		if (args.length != 2 && !(args.length == 3 && args[0] instanceof OverrideEval)) {
+			return ErrorEval.VALUE_INVALID;
 		}
 
-        // if args[0] is OverrideEval, need to do evaluateArray
-        if (args.length == 3) {
+		// if args[0] is OverrideEval, need to do evaluateArray
+		if (args.length == 3) {
 
-            final ValueEval arg0 = args[1];
-            final ValueEval arg1 = args[2];
+			final ValueEval arg0 = args[1];
+			final ValueEval arg1 = args[2];
 
-            if (arg0 instanceof AreaEval) {
-                return evaluateArray(srcRowIndex, srcColumnIndex, arg0, arg1);
-            } else if (arg1 instanceof AreaEval) {
-                return evaluateArray(srcRowIndex, srcColumnIndex, arg1, arg0);
-            }
-        }
+			if (arg0 instanceof AreaEval) {
+				return evaluateArray(srcRowIndex, srcColumnIndex, arg0, arg1);
+			} else if (arg1 instanceof AreaEval) {
+				return evaluateArray(srcRowIndex, srcColumnIndex, arg1, arg0);
+			}
+		}
 
 		//ZSS-852
 		final ValueEval arg0 = args[0];
 		final ValueEval arg1 = args[1];
 
-        if (this instanceof Operator) {
+		if (this instanceof Operator) {
 			if (arg0 instanceof AreaEval) {
 				return evaluateArray(srcRowIndex, srcColumnIndex, arg0, arg1);
 			} else if (arg1 instanceof AreaEval) {
