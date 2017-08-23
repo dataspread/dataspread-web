@@ -135,7 +135,6 @@ public class BookImpl extends AbstractBookAdv{
 
 	@Override
 	public boolean setBookName(String bookName) {
-
 		if (schemaPresent)
 		{
 			String updateBookName = "UPDATE books SET bookname = ? WHERE bookname = ?";
@@ -151,12 +150,15 @@ public class BookImpl extends AbstractBookAdv{
 			{
 				return false;
 			}
+			BookBindings.remove(this._bookName);
 			this._bookName = bookName;
 		}
 		else {
+			BookBindings.remove(this._bookName);
 			this._bookName = bookName;
 			checkDBSchema();
 		}
+		BookBindings.put(this._bookName,this);
 		return true;
 	}
 

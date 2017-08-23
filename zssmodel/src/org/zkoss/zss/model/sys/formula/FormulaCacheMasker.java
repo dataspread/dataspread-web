@@ -10,6 +10,7 @@ import org.zkoss.zss.model.sys.TransactionManager;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by zekun.fan@gmail.com on 8/16/17.
@@ -19,7 +20,7 @@ public enum FormulaCacheMasker {
     INSTANCE;
     private Map<SSheet,Collection<MaskArea>> mapping;
     private FormulaCacheMasker(){
-        mapping=new HashMap<>();
+        mapping=new ConcurrentHashMap<>();
     }
 
     public void mask(Ref target){
@@ -35,9 +36,11 @@ public enum FormulaCacheMasker {
         sheet=book.getSheetByName(target.getSheetName());
         if (sheet==null)
             return;
-        Collection<MaskArea> records = mapping.computeIfAbsent(sheet, k -> new ArrayList<>());
-        MaskArea newRec=new MaskArea(TransactionManager.INSTANCE.getXid(BookBindings.get(target.getBookName())),new CellRegion(target.getRow(),target.getColumn(),target.getLastRow(),target.getLastColumn()));
-        records.add(newRec);
+        final Collection<MaskArea> records = mapping.computeIfAbsent(sheet, k -> Collections.synchronizedList(new ArrayList<>()));
+        synchronized (records) {
+            MaskArea newRec = new MaskArea(TransactionManager.INSTANCE.getXid(BookBindings.get(target.getBookName())), new CellRegion(target.getRow(), target.getColumn(), target.getLastRow(), target.getLastColumn()));
+            records.add(newRec);
+        }
     }
 
     //Assumption: Each cell in each transaction is unmask once and only once
@@ -55,21 +58,23 @@ public enum FormulaCacheMasker {
         sheet=book.getSheetByName(target.getSheetName());
         if (sheet==null)
             return;
-        Collection<MaskArea> records=mapping.get(sheet);
-        for (Iterator<MaskArea> iter=records.iterator();iter.hasNext();){
-            MaskArea maskArea=iter.next();
-            if (xid==maskArea.xid) {
-                //Intersection - Once and only once.
-                 int intersect=Math.max(0,1+
-                         Math.min(maskArea.region.lastColumn,target.getLastColumn())-
-                                 Math.max(maskArea.region.column,target.getColumn()))
-                         * Math.max(0,1+
-                         Math.min(maskArea.region.lastRow,target.getLastRow()-
-                         Math.max(maskArea.region.row,target.getRow())));
-                 maskArea.updateCnt+=intersect;
-                 if (maskArea.updateCnt==maskArea.region.getCellCount()){
-                     iter.remove();
-                 }
+        final Collection<MaskArea> records=mapping.get(sheet);
+        synchronized (records) {
+            for (Iterator<MaskArea> iter = records.iterator(); iter.hasNext(); ) {
+                MaskArea maskArea = iter.next();
+                if (xid == maskArea.xid) {
+                    //Intersection - Once and only once.
+                    int intersect = Math.max(0, 1 +
+                            Math.min(maskArea.region.lastColumn, target.getLastColumn()) -
+                            Math.max(maskArea.region.column, target.getColumn()))
+                            * Math.max(0, 1 +
+                            Math.min(maskArea.region.lastRow, target.getLastRow() -
+                                    Math.max(maskArea.region.row, target.getRow())));
+                    maskArea.updateCnt += intersect;
+                    if (maskArea.updateCnt == maskArea.region.getCellCount()) {
+                        iter.remove();
+                    }
+                }
             }
         }
     }
@@ -87,17 +92,19 @@ public enum FormulaCacheMasker {
         sheet=book.getSheetByName(target.getSheetName());
         if (sheet==null)
             return result;
-        Collection<MaskArea> records=mapping.get(sheet);
+        final Collection<MaskArea> records=mapping.get(sheet);
         if (records==null)
             return result;
-        for (MaskArea maskArea:records){
-            if (result<maskArea.xid && !(
-                    maskArea.region.column>target.getLastColumn() ||
-                    maskArea.region.lastColumn<target.getColumn()||
-                    maskArea.region.row>target.getLastRow()||
-                    maskArea.region.lastRow<target.getRow()))
-                //Intersection
-                    result=maskArea.xid;
+        synchronized (records) {
+            for (MaskArea maskArea : records) {
+                if (result < maskArea.xid && !(
+                        maskArea.region.column > target.getLastColumn() ||
+                                maskArea.region.lastColumn < target.getColumn() ||
+                                maskArea.region.row > target.getLastRow() ||
+                                maskArea.region.lastRow < target.getRow()))
+                    //Intersection
+                    result = maskArea.xid;
+            }
         }
         return result;
     }

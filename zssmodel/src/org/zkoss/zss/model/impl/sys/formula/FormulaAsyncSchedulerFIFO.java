@@ -71,7 +71,7 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
                     if (info==null)
                         info = new FormulaAsyncTaskInfo();
                     else if (xid > info.xid)
-                        info.ctrl.cancel(false);
+                        info.ctrl.cancel(true);
                     info.target=cell;
                     //This might not work, DK if it'll be loaded
                     FormulaExpression expr=cell.getFormulaExpression();
@@ -106,13 +106,13 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
                 if (book==null)
                     return;
                 sheet=book.getSheetByName(target.getSheetName());
-                if (sheet==null || target.getType()!=Ref.RefType.AREA || target.getType()!=Ref.RefType.CELL)
+                if (sheet==null)
                     return;
                 Collection<SCell> cells=sheet.getCells(new CellRegion(target.getRow(),target.getColumn(),target.getLastRow(),target.getLastColumn()));
                 cells.forEach((sCell)-> {
                     CellImpl cell=(CellImpl)sCell;
                     FormulaAsyncTaskInfo info= infos.get(cell);
-                    if (info != null && info.xid<xid && info.ctrl.cancel(false))
+                    if (info != null && info.xid<xid && info.ctrl.cancel(true))
                         infos.remove(cell);
                 });
             }
@@ -121,7 +121,7 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
 
     @Override
     public void clear() {
-        infos.forEach((cell, info) -> info.ctrl.cancel(false));
+        infos.forEach((cell, info) -> info.ctrl.cancel(true));
         infos.clear();
     }
 
@@ -134,7 +134,7 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
 
         @Override
         public void run() {
-            //try {Thread.sleep(5000);}catch (InterruptedException ignored){}
+            //try {Thread.sleep(5000);}catch (InterruptedException ignored){return;}
             TransactionManager.INSTANCE.registerWorker(info.xid);
             Ref refTarget=new RefImpl(this.info.target);
             FormulaEvaluationContext evalContext=new FormulaEvaluationContext(this.info.target,refTarget);

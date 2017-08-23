@@ -214,8 +214,12 @@ public class CellImpl extends AbstractCellAdv {
 		//20140731, henrichen: when share the same book, many users might 
 		//populate CellImpl simultaneously; must synchronize it.
 		Ref target=getRef();
-		if (version<FormulaCacheMasker.INSTANCE.isMaskedUntil(target))
-			_formulaResultValue=FormulaCacheMasker.INSTANCE.getMaskedVal();
+		int maskedVer=FormulaCacheMasker.INSTANCE.isMaskedUntil(target);
+		if (version<maskedVer) {
+			_formulaResultValue = FormulaCacheMasker.INSTANCE.getMaskedVal();
+			version=maskedVer;
+			//System.out.format("Masked@%d\n",version);
+		}
 
 		if(_formulaResultValue == null){
 		//20170714, may cause dead lock, mustn't synchronize it!
@@ -654,6 +658,7 @@ public class CellImpl extends AbstractCellAdv {
 	public synchronized void updateFormulaResultValue(EvaluationResult result,int version){
 		if (version>=this.version) {
 			this.version=version;
+			//System.out.format("Updated@%d\n",version);
 			_formulaResultValue=new FormulaResultCellValue(result);
 		}
 	}
