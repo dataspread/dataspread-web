@@ -501,7 +501,26 @@ public class StyleUtil {
 		}
 		holder.setCellStyle(style);
 	}
-	
+
+
+
+	public static void setLocked(SBook book,CellStyleHolder holder, boolean locked){
+		final SCellStyle orgStyle = holder.getCellStyle();
+		final boolean orgStyleLocked = orgStyle.isLocked();
+		if (locked == orgStyleLocked) { //no change, skip
+			return;
+		}
+
+		CellStyleMatcher matcher = new CellStyleMatcher(orgStyle);
+		matcher.setLocked(locked);
+		SCellStyle style = book.searchCellStyle(matcher);
+		if(style==null){
+			style = cloneCellStyle(book,orgStyle);
+			style.setLocked(locked);
+		}
+		holder.setCellStyle(style);
+	}
+
 	public static void setTextVAlign(SBook book,CellStyleHolder holder, SCellStyle.VerticalAlignment valign){
 		final SCellStyle orgStyle = holder.getCellStyle();
 		final SCellStyle.VerticalAlignment orgValign = orgStyle.getVerticalAlignment();

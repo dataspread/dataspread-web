@@ -106,6 +106,8 @@ public class SheetImpl extends AbstractSheetAdv {
 		this._book = book;
 		this._id = id;
         sheetDataCache = new LruCache<>(CACHE_SIZE);
+        // TODO: Fix protect  issue
+		//setPassword("000000000");
     }
 	
 	protected void checkOwnership(SPicture picture){
@@ -342,7 +344,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	public void setDataModel(String model) {
 		try (Connection connection = DBHandler.instance.getConnection()) {
 			DBContext dbContext = new DBContext(connection);
-			dataModel = Model.CreateModel(dbContext, model);
+			dataModel = Model.CreateModel(dbContext, this, Model.ModelType.HYBRID_Model, model);
 			connection.commit();
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -602,6 +604,7 @@ public class SheetImpl extends AbstractSheetAdv {
 			}
 		}
 
+		/*TODO: Check if it works for deleting a region */
 		sheetDataCache.remove(deleted_region);
 	}
 
@@ -624,14 +627,14 @@ public class SheetImpl extends AbstractSheetAdv {
         }
 
 		// Update Column numbers for cached cells
-		List<AbstractCellAdv> cellsToShift = new LinkedList<>(sheetDataCache.values());
-		cellsToShift.stream()
-				.filter(e -> e.getRowIndex() >= rowIdx)
-				.forEach(e -> e.shift(size, 0));
+		//List<AbstractCellAdv> cellsToShift = new LinkedList<>(sheetDataCache.values());
+		//cellsToShift.stream()
+		//		.filter(e -> e.getRowIndex() >= rowIdx)
+		//		.forEach(e -> e.shift(size, 0));
 
 		sheetDataCache.clear();
-		cellsToShift.stream()
-				.forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
+		//cellsToShift.stream()
+		//		.forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
 
 
 		//ZSS-619, should clear formula for entire effected region
@@ -718,18 +721,19 @@ public class SheetImpl extends AbstractSheetAdv {
         }
 
         // Update Column numbers for cached cells
-        List<AbstractCellAdv> cellsToShift = sheetDataCache.values()
-                .stream()
-                .filter(e -> e.getRowIndex() < rowIdx || e.getRowIndex() > lastRowIdx)
-                .collect(Collectors.toList());
+		/* TODO: Figure how to reuse cache */
+        //List<AbstractCellAdv> cellsToShift = sheetDataCache.values()
+        //        .stream()
+        //        .filter(e -> e.getRowIndex() < rowIdx || e.getRowIndex() > lastRowIdx)
+        //        .collect(Collectors.toList());
 
-        cellsToShift.stream()
-                .filter(e -> e.getRowIndex() >= rowIdx)
-                .forEach(e -> e.shift(-size, 0));
+        //cellsToShift.stream()
+        //        .filter(e -> e.getRowIndex() >= rowIdx)
+        //        .forEach(e -> e.shift(-size, 0));
 
         sheetDataCache.clear();
-        cellsToShift.stream()
-                .forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
+        //cellsToShift.stream()
+        //        .forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
 
 		//ZSS-619, should clear formula for entire effected region
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
@@ -1139,14 +1143,14 @@ public class SheetImpl extends AbstractSheetAdv {
         }
 
         // Update Column numbers for cached cells
-        List<AbstractCellAdv> cellsToShift = new LinkedList<>(sheetDataCache.values());
-        cellsToShift.stream()
-                .filter(e -> e.getColumnIndex() >= columnIdx)
-                .forEach(e -> e.shift(0, size));
+        //List<AbstractCellAdv> cellsToShift = new LinkedList<>(sheetDataCache.values());
+        //cellsToShift.stream()
+        //        .filter(e -> e.getColumnIndex() >= columnIdx)
+        //        .forEach(e -> e.shift(0, size));
 
 		sheetDataCache.clear();
-		cellsToShift.stream()
-				.forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
+		//cellsToShift.stream()
+		//		.forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
 
 
 		//ZSS-619, should clear formula for entire effected region
@@ -1305,6 +1309,16 @@ public class SheetImpl extends AbstractSheetAdv {
 	}
 
 	@Override
+	public void clearCache(CellRegion cellRegion)
+	{
+		List<CellRegion> cellsToRemove = sheetDataCache.keySet()
+				.stream()
+				.filter(e->cellRegion.contains(e))
+				.collect(Collectors.toList());
+		cellsToRemove.stream().forEach(sheetDataCache::remove);
+	}
+
+	@Override
 	public void deleteColumn(int columnIdx, int lastColumnIdx) {
 		if(columnIdx>lastColumnIdx){
 			throw new IllegalArgumentException(columnIdx+">"+lastColumnIdx);
@@ -1322,18 +1336,18 @@ public class SheetImpl extends AbstractSheetAdv {
         }
 
         // Update Column numbers for cached cells
-        List<AbstractCellAdv> cellsToShift = sheetDataCache.values()
-                .stream()
-                .filter(e -> e.getColumnIndex() < columnIdx || e.getColumnIndex() > lastColumnIdx)
-                .collect(Collectors.toList());
+        //List<AbstractCellAdv> cellsToShift = sheetDataCache.values()
+        //        .stream()
+        //        .filter(e -> e.getColumnIndex() < columnIdx || e.getColumnIndex() > lastColumnIdx)
+        //        .collect(Collectors.toList());
 
-        cellsToShift.stream()
-                .filter(e -> e.getColumnIndex() >= columnIdx)
-                .forEach(e -> e.shift(0, - size));
+        //cellsToShift.stream()
+        //        .filter(e -> e.getColumnIndex() >= columnIdx)
+        //        .forEach(e -> e.shift(0, - size));
 
         sheetDataCache.clear();
-        cellsToShift.stream()
-                .forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
+        //cellsToShift.stream()
+        //        .forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
 
 		
 		//ZSS-619, should clear formula for entire effected region
@@ -2153,7 +2167,7 @@ public class SheetImpl extends AbstractSheetAdv {
 
     @Override
     public void createModel(DBContext dbContext, String modelName) {
-		dataModel = Model.CreateModel(dbContext, modelName);
+		dataModel = Model.CreateModel(dbContext, this, Model.ModelType.HYBRID_Model, modelName);
 	}
 
 	@Override

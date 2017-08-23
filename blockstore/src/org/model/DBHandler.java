@@ -63,8 +63,17 @@ public class DBHandler implements ServletContextListener {
             System.err.println("Unable to connect to a Database");
             e.printStackTrace();
         }
-        createBookTable();
-        createUserTable();
+        try (Connection connection = DBHandler.instance.getConnection()) {
+            DBContext dbContext = new DBContext(connection);
+            createBookTable(dbContext);
+            createUserTable(dbContext);
+            createTableOrders(dbContext);
+            connection.commit();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -72,10 +81,9 @@ public class DBHandler implements ServletContextListener {
 
     }
 
-    private void createBookTable()
+    private void createBookTable(DBContext dbContext)
     {
-        try (Connection connection = DBHandler.instance.getConnection();
-             Statement stmt = connection.createStatement())
+        try (Statement stmt = dbContext.getConnection().createStatement())
         {
             String createTable = "CREATE TABLE  IF NOT  EXISTS  books (" +
                     "bookname  TEXT NOT NULL," +
@@ -83,25 +91,40 @@ public class DBHandler implements ServletContextListener {
                     "PRIMARY KEY (bookname)" +
                     ");";
             stmt.execute(createTable);
-            connection.commit();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    private void createUserTable() {
-        try (Connection connection = DBHandler.instance.getConnection();
-             Statement stmt = connection.createStatement()) {
+    private void createUserTable(DBContext dbContext) {
+        try (Statement stmt = dbContext.getConnection().createStatement()) {
             String createTable = "CREATE TABLE  IF NOT  EXISTS  users (" +
                     "username  TEXT NOT NULL," +
                     "booktable   TEXT NOT NULL" +
                     ");";
             stmt.execute(createTable);
-            connection.commit();
         }
         catch (SQLException e)
         {
             e.printStackTrace();
         }
     }
+
+    private void createTableOrders(DBContext dbContext)
+    {
+        try (Statement stmt = dbContext.getConnection().createStatement()) {
+            String createTable = "CREATE TABLE  IF NOT  EXISTS  tableorders (" +
+                    "tablename  TEXT NOT NULL," +
+                    "ordername TEXT NOT NULL," +
+                    "rowIdxTable TEXT, " +
+                    "colIdxTable TEXT, " +
+                    "PRIMARY KEY (tablename, ordername)," +
+                    "UNIQUE (oid)" +
+                    ") WITH oids;";
+            stmt.execute(createTable);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
 }

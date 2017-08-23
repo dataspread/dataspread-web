@@ -5,6 +5,18 @@
     <groupId>io.github.dataspread</groupId>
     <artifactId>dataspread</artifactId>
     <version>0.1.1</version>
+    <dependencies>
+        <dependency>
+            <groupId>io.github.dataspread</groupId>
+            <artifactId>blockstore</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.dataspread</groupId>
+            <artifactId>zssmodel</artifactId>
+            <version>3.8.1</version>
+        </dependency>
+    </dependencies>
     <packaging>pom</packaging>
     <name>DataSpread</name>
     <description>DataSpread</description>

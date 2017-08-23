@@ -35,11 +35,14 @@ import org.zkoss.poi.ss.util.CellReference;
 public class CellRegion implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
-	final public int row;
-	final public int column;
-	final public int lastRow;
-	final public int lastColumn;
+	public int row;
+	public int column;
+	public int lastRow;
+	public int lastColumn;
 	
+	public CellRegion(){
+		/* For seralization */
+	}
 
 	/**
 	 * Create a region which only contains 1 cell. 
@@ -271,10 +274,49 @@ public class CellRegion implements Serializable {
 		return new CellRegion(row1, col1, row2, col2);
 	}
 
+
+	/**
+	 * @return returns the overlapping region between this region and the
+	 * specified region; null if no overlapping.
+	 */
+	public CellRegion getBoundingBox(CellRegion target) {
+		final int row1 = Math.min(this.row, target.row);
+		final int row2 = Math.max(this.lastRow, target.lastRow);
+		final int col1 = Math.min(this.column, target.column);
+		final int col2 = Math.max(this.lastColumn, target.lastColumn);
+		return new CellRegion(row1, col1, row2, col2);
+	}
+
+
+
 	/**
 	 * @return returns the cell count which this region covers 
 	 */
 	public int getCellCount() {
 		return getRowCount() * getColumnCount();
+	}
+
+
+	public CellRegion extendRange(int rows, int cols) {
+		return new CellRegion(this.row,
+				this.column,
+				this.lastRow + rows,
+				this.lastColumn + cols);
+	}
+
+
+	public CellRegion shiftedRange(int row_shift, int col_shift) {
+		return new CellRegion(this.row + row_shift,
+				this.column + col_shift,
+				this.lastRow + row_shift,
+				this.lastColumn + col_shift);
+	}
+
+	public int getHeight() {
+		return lastRow - row + 1;
+	}
+
+	public int getLength() {
+		return lastColumn - column + 1;
 	}
 }

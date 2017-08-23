@@ -1,22 +1,33 @@
 package org.zkoss.zss.model.impl;
 
-import java.io.Serializable;
-import java.util.Collection;
-
+import org.zkoss.poi.ss.formula.eval.AreaEval;
 import org.zkoss.zss.model.ErrorValue;
 import org.zkoss.zss.model.SCell.CellType;
 import org.zkoss.zss.model.sys.formula.EvaluationResult;
 import org.zkoss.zss.model.sys.formula.EvaluationResult.ResultType;
 
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 /**
  * the formula result cell value
  * @author dennis
  * @since 3.5.0
+ *
+ * Added live value switch for async eval and RWlock for consistency between value and type
+ * by zekun.fan@gmail.com
  */
 public class FormulaResultCellValue extends CellValue implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	public FormulaResultCellValue(EvaluationResult result) {
+		updateByEvaluationResult(result);
+	}
+
+	// Added by zekun.fan@gmail.com, @WriteLockProtected
+	public void updateByEvaluationResult(EvaluationResult result){
 		Object val = result.getValue();
 		ResultType type = result.getType();
 		if (type == ResultType.ERROR) {
@@ -41,11 +52,15 @@ public class FormulaResultCellValue extends CellValue implements Serializable {
 		} else if (val instanceof Boolean) {
 			cellType = CellType.BOOLEAN;
 			value = (Boolean) val;
+		} else if (val instanceof AreaEval) {
+			cellType = CellType.COLLECTION;
+			value = (AreaEval) val;
 		} else if (val instanceof Collection) {
 			// possible a engine return a collection in cell evaluation case?
 			// who should take care array formula?
 			if (((Collection) val).size() > 0) {
-				setByValue(((Collection) val).iterator().next());
+				cellType = CellType.COLLECTION;
+				value = (Collection) val;
 			} else {
 				cellType = CellType.BLANK;
 				value = null;

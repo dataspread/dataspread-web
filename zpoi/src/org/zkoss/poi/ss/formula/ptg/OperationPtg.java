@@ -25,7 +25,9 @@ public abstract class OperationPtg extends Ptg {
     public final static int TYPE_UNARY    = 0;
     public final static int TYPE_BINARY   = 1;
     public final static int TYPE_FUNCTION = 2;
-
+    private boolean isOverrided = false;
+    private int overrideTableNum = 0;
+    
     /**
      *  returns a string representation of the operations
      *  the length of the input array should equal the number returned by 
@@ -38,6 +40,14 @@ public abstract class OperationPtg extends Ptg {
      * The number of operands expected by the operations
      */
     public abstract int getNumberOfOperands();
+
+    public boolean isOverrided() {
+        return this.isOverrided;
+    }
+
+    public void setOverrided(boolean isOverrided) {
+        this.isOverrided = isOverrided;
+    }
     
     public byte getDefaultOperandClass() {
         return Ptg.CLASS_VALUE;
@@ -46,5 +56,13 @@ public abstract class OperationPtg extends Ptg {
     //ZSS-565
     public String toInternalFormulaString(String[] operands) {
     	return toFormulaString(operands);
+    }
+
+    public int getOverrideTableNum() {
+        return this.overrideTableNum;
+    }
+
+    public void setOverrideTableNum(int numOperatorTables) {
+        this.overrideTableNum = numOperatorTables;
     }
 }

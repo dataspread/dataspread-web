@@ -9,6 +9,7 @@ import org.postgresql.copy.CopyIn;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.SSheet;
 
 import java.io.*;
 import java.sql.*;
@@ -25,7 +26,8 @@ public class RCV_Model extends Model {
     private MetaDataBlock metaDataBlock;
 
     //Create or load RCV_model.
-    protected RCV_Model(DBContext context, String tableName) {
+    protected RCV_Model(DBContext context, SSheet sheet,  String tableName) {
+        this.sheet = sheet;
         rowMapping = new BTree(context, tableName + "_row_idx");
         colMapping = new BTree(context, tableName + "_col_idx");
         this.tableName = tableName;
@@ -233,6 +235,11 @@ public class RCV_Model extends Model {
     }
 
     @Override
+    public boolean deleteTuples(DBContext context, CellRegion cellRegion) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Collection<AbstractCellAdv> getCells(DBContext context, CellRegion fetchRange) {
         // Reduce Range to bounds
         Collection<AbstractCellAdv> cells = new ArrayList<>();
@@ -271,7 +278,8 @@ public class RCV_Model extends Model {
             while (rs.next()) {
                 int row_id = rs.getInt(1);
                 int col_id = rs.getInt(2);
-                AbstractCellAdv cell = CellImpl.fromBytes(row_map.get(row_id), col_map.get(col_id), rs.getBytes(3));
+                AbstractCellAdv cell = CellImpl.fromBytes(sheet, row_map.get(row_id),
+                        col_map.get(col_id), rs.getBytes(3));
                 cells.add(cell);
             }
             rs.close();

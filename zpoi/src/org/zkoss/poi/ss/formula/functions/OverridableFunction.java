@@ -16,11 +16,11 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.poi.ss.formula.functions;
 
-import java.lang.reflect.Method;
-
 import org.zkoss.poi.ss.formula.eval.ErrorEval;
 import org.zkoss.poi.ss.formula.eval.NotImplementedException;
 import org.zkoss.poi.ss.formula.eval.ValueEval;
+
+import java.lang.reflect.Method;
 
 /**
  * A Overridable function to provide the chance of override poi's basic functions
@@ -28,14 +28,10 @@ import org.zkoss.poi.ss.formula.eval.ValueEval;
  *
  */
 public class OverridableFunction implements Function{
-	private final String _functionName;
-	private final Function _original;
-	private Function _func; 
 	private static Class _funcClass;
-	
 	private static String _funcClassName = "org.zkoss.zssex.formula.ELEvalFunction";
 	private static String _hasFuncName = "hasFunction";
-	
+
 	static {
 		try {
 			_funcClass = Thread.currentThread().getClass().forName(_funcClassName);
@@ -43,6 +39,10 @@ public class OverridableFunction implements Function{
 			//ignore
 		}		
 	}
+
+	private final String _functionName;
+	private final Function _original;
+	private Function _func; 
 	
 	public OverridableFunction(String name,Function original) {
 		_functionName = name;
@@ -81,4 +81,9 @@ public class OverridableFunction implements Function{
 	public String getFunctionName() {
 		return _functionName;
 	}
+
+	public Function get_original() {
+		return _original;
+	}
+
 }

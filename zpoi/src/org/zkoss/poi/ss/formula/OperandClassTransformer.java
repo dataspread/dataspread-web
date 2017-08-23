@@ -17,16 +17,7 @@
 
 package org.zkoss.poi.ss.formula;
 
-import org.zkoss.poi.ss.formula.ptg.AbstractFunctionPtg;
-import org.zkoss.poi.ss.formula.ptg.AttrPtg;
-import org.zkoss.poi.ss.formula.ptg.ControlPtg;
-import org.zkoss.poi.ss.formula.ptg.FuncVarPtg;
-import org.zkoss.poi.ss.formula.ptg.MemAreaPtg;
-import org.zkoss.poi.ss.formula.ptg.MemFuncPtg;
-import org.zkoss.poi.ss.formula.ptg.Ptg;
-import org.zkoss.poi.ss.formula.ptg.RangePtg;
-import org.zkoss.poi.ss.formula.ptg.UnionPtg;
-import org.zkoss.poi.ss.formula.ptg.ValueOperatorPtg;
+import org.zkoss.poi.ss.formula.ptg.*;
 
 /**
  * This class performs 'operand class' transformation. Non-base tokens are classified into three
@@ -61,6 +52,31 @@ final class OperandClassTransformer {
 	public OperandClassTransformer(int formulaType) {
 		_formulaType = formulaType;
 	}
+
+    private static boolean isSingleArgSum(Ptg token) {
+        if (token instanceof AttrPtg) {
+            AttrPtg attrPtg = (AttrPtg) token;
+            return attrPtg.isSum();
+        }
+        return false;
+    }
+
+    private static boolean isSimpleValueFunction(Ptg token) {
+        if (token instanceof AbstractFunctionPtg) {
+            AbstractFunctionPtg aptg = (AbstractFunctionPtg) token;
+            if (aptg.getDefaultOperandClass() != Ptg.CLASS_VALUE) {
+                return false;
+            }
+            int numberOfOperands = aptg.getNumberOfOperands();
+            for (int i = numberOfOperands - 1; i >= 0; i--) {
+                if (aptg.getParameterClass(i) != Ptg.CLASS_VALUE) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
 
 	/**
 	 * Traverses the supplied formula parse tree, calling <tt>Ptg.setClass()</tt> for each non-base
@@ -135,8 +151,18 @@ final class OperandClassTransformer {
 			return;
 		}
 		if (children.length > 0) {
-			if (token == RangePtg.instance) {
-				// TODO is any token transformation required under the various ref operators?
+            // OpTableRefPtg is just put as the parent of a first and/or second argument in relational algebra operator
+            // transform all of its children as would normally be done
+            if (token instanceof OpTableRefPtg) {
+
+                byte localDesiredOperandClass = desiredOperandClass == Ptg.CLASS_REF ? Ptg.CLASS_VALUE : desiredOperandClass;
+                for (int i = 0; i < children.length; i++) {
+                    transformNode(children[i], localDesiredOperandClass, callerForceArrayFlag);
+                }
+                return;
+            }
+            if (token == RangePtg.instance) {
+                // TODO is any token transformation required under the various ref operators?
 				return;
 			}
 			throw new IllegalStateException("Node should not have any children");
@@ -147,31 +173,6 @@ final class OperandClassTransformer {
 			return;
 		}
 		token.setClass(transformClass(token.getPtgClass(), desiredOperandClass, callerForceArrayFlag));
-	}
-
-	private static boolean isSingleArgSum(Ptg token) {
-		if (token instanceof AttrPtg) {
-			AttrPtg attrPtg = (AttrPtg) token;
-			return attrPtg.isSum();
-		}
-		return false;
-	}
-
-	private static boolean isSimpleValueFunction(Ptg token) {
-		if (token instanceof AbstractFunctionPtg) {
-			AbstractFunctionPtg aptg = (AbstractFunctionPtg) token;
-			if (aptg.getDefaultOperandClass() != Ptg.CLASS_VALUE) {
-				return false;
-			}
-			int numberOfOperands = aptg.getNumberOfOperands();
-			for (int i=numberOfOperands-1; i>=0; i--) {
-				if (aptg.getParameterClass(i) != Ptg.CLASS_VALUE) {
-					return false;
-				}
-			}
-			return true;
-		}
-		return false;
 	}
 
 	private byte transformClass(byte currentOperandClass, byte desiredOperandClass,

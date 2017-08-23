@@ -21,6 +21,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import org.zkoss.zss.api.model.Book;
 import org.zkoss.zss.api.model.Sheet;
 import org.zkoss.zss.model.SBook;
+import org.zkoss.zss.model.SBooks;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.range.impl.imexp.AbstractExcelImporter;
 /**
@@ -45,7 +46,7 @@ public class BookImpl implements Book{
 	}
 
 	public BookImpl(String bookName){
-		_book = new org.zkoss.zss.model.impl.BookImpl(bookName);
+		_book = SBooks.createBook(bookName);
 	}
 
 	public SBook getNative() {

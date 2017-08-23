@@ -269,8 +269,7 @@ public class RangeImpl implements Range{
 	/**
 	 * visit all cells in this range, make sure you call this in a limited range, 
 	 * don't use it for all row/column selection, it will spend much time to iterate the cell 
-	 * @param visitor the visitor 
-	 * @param create create cell if it doesn't exist, if it is true, it will also lock the sheet
+	 * @param visitor the visitor
 	 */
 	public void visit(final CellVisitor visitor){
 		final int r=getRow();

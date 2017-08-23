@@ -17,13 +17,7 @@
 
 package org.zkoss.poi.ss.formula.functions;
 
-import org.zkoss.poi.ss.formula.eval.BlankEval;
-import org.zkoss.poi.ss.formula.eval.ErrorEval;
-import org.zkoss.poi.ss.formula.eval.EvaluationException;
-import org.zkoss.poi.ss.formula.eval.MissingArgEval;
-import org.zkoss.poi.ss.formula.eval.OperandResolver;
-import org.zkoss.poi.ss.formula.eval.RefEval;
-import org.zkoss.poi.ss.formula.eval.ValueEval;
+import org.zkoss.poi.ss.formula.eval.*;
 import org.zkoss.poi.ss.formula.TwoDEval;
 
 /**
@@ -125,6 +119,14 @@ public final class Index implements Function2Arg, Function3Arg, Function4Arg {
 		assert pRowIx >= 0;
 		assert pColumnIx >= 0;
 
+		// If the value inside is a 2D item, extract it.
+		if (ae.getHeight() == 1 && ae.getWidth() == 1 && ae instanceof AreaEval) {
+			Object what = ((AreaEval) ae).getRelativeValue(0, 0);
+			if (what instanceof TwoDEval) {
+				ae = (TwoDEval) what;
+			}
+		}
+
 		TwoDEval result = ae;
 
 		if (pRowIx != 0) {
@@ -144,6 +146,13 @@ public final class Index implements Function2Arg, Function3Arg, Function4Arg {
 			}
 			result = result.getColumn(pColumnIx-1);
 		}
+
+		// If the cell contains only one value, not a 2D item of more than one value,
+		// use it as a single value.
+		if (result.getHeight() == 1 && result.getWidth() == 1 && result instanceof AreaEval) {
+			return ((AreaEval) result).getRelativeValue(0, 0);
+		}
+
 		return result;
 	}
 
