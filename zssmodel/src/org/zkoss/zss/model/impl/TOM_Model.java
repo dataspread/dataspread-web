@@ -110,6 +110,11 @@ public class TOM_Model extends Model {
         }
     }
 
+    public void insertOIDs(DBContext context, List<Integer> oids)
+    {
+        rowMapping.insertIDs(context,rowMapping.size(context),oids);
+    }
+
     public void deleteTuples(DBContext context, int row, int count) {
         Integer[] oids = rowMapping.deleteIDs(context, row, count);
         try (PreparedStatement stmt = context.getConnection().prepareStatement(
@@ -333,12 +338,13 @@ public class TOM_Model extends Model {
 
     @Override
     public void insertRows(DBContext context, int row, int count) {
-        rowMapping.createIDs(context, row, count);
+        /* Do nothing */
     }
 
     @Override
     public void insertCols(DBContext context, int col, int count) {
-        StringBuffer insertColumn = (new StringBuffer())
+        /* Do nothing */
+        /* StringBuffer insertColumn = (new StringBuffer())
                 .append("ALTER TABLE ")
                 .append(tableName);
         Integer ids[] = colMapping.createIDs(context, col, count);
@@ -353,7 +359,7 @@ public class TOM_Model extends Model {
             stmt.execute(insertColumn.toString());
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } */
     }
 
     /* Delete row on a spreadsheet */
@@ -409,10 +415,6 @@ public class TOM_Model extends Model {
             columnList.add(cell.getColumnIndex());
         }
 
-        if (columnList.last() >= colMapping.size(context))
-            insertCols(context, colMapping.size(context), columnList.last() - colMapping.size(context) + 1);
-
-
         Integer[] idsCol = colMapping.getIDs(context, columnList.first(),
                 columnList.last() - columnList.first() + 1);
 
@@ -460,4 +462,5 @@ public class TOM_Model extends Model {
     public void importSheet(Reader reader, char delimiter) throws IOException {
         throw new UnsupportedOperationException();
     }
+
 }

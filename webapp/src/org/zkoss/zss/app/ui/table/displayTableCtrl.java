@@ -69,25 +69,33 @@ public class displayTableCtrl extends DlgCtrlBase {
     }
 
     private ListModelList<String> getTablesList() throws SQLException {
-
+        try (
         Connection connection = DBHandler.instance.getConnection();
-        Statement stmt = connection.createStatement();
+        Statement stmt = connection.createStatement();) {
 
-        String sql = "SELECT table_name FROM information_schema.tables  WHERE TABLE_SCHEMA='public' AND table_name NOT IN ('users', 'usertables', 'books') AND table_name NOT LIKE '%_idx' " +
-                "EXCEPT SELECT table_name FROM information_schema.tables, public.books WHERE table_name LIKE booktable||'%'";
+            String sql = "SELECT table_name FROM information_schema.tables  " +
+                    "WHERE TABLE_SCHEMA='public' AND " +
+                    "table_name NOT IN ('users', 'usertables', 'books') AND table_name NOT LIKE '%_idx' " +
+                    "EXCEPT SELECT table_name FROM information_schema.tables, public.books " +
+                    "  WHERE table_name LIKE booktable||'%'";
 
-        ResultSet result = stmt.executeQuery(sql);
+            ResultSet result = stmt.executeQuery(sql);
 
-        while (result.next()) {
-            tablesList.add(result.getString(1));
+            while (result.next()) {
+                tablesList.add(result.getString(1));
+            }
         }
-        connection.close();
-
         return tablesList;
     }
 
     @Listen("onClick = #okButton")
     public void display() throws SQLException {
+        if (tablesBox.getSelectedItem()==null)
+        {
+            Messagebox.show("Table Name is Required", "Table Name",
+                    Messagebox.OK, Messagebox.ERROR);
+            return;
+        }
         String tableName =  tablesBox.getSelectedItem().getLabel();
         if (tableName!=null && !tableName.isEmpty()) {
             try(Connection connection = DBHandler.instance.getConnection())
@@ -104,19 +112,16 @@ public class displayTableCtrl extends DlgCtrlBase {
 
                 sheet.getInternalSheet().clearCache(region);
                 sss.updateCell(selection.getColumn(), selection.getRow(), selection.getLastColumn(), selection.getLastRow());
-
+                displayTableDlg.detach();
             }
         } else {
             Messagebox.show("Table Name is Required", "Table Name",
                     Messagebox.OK, Messagebox.ERROR);
-
         }
-        displayTableDlg.detach();
     }
 
     @Listen("onClick = #cancelButton")
     public void cancel() {
-
         displayTableDlg.detach();
     }
 }

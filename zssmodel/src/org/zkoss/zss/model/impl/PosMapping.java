@@ -3,6 +3,7 @@ package org.zkoss.zss.model.impl;
 import org.model.DBContext;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /* Store mapping between logical pos and ID */
 public interface PosMapping {
@@ -25,6 +26,6 @@ public interface PosMapping {
 
     String getTableName();
 
-    void insertIDs(DBContext context, int row, ArrayList<Integer> ids);
+    void insertIDs(DBContext context, int row, List<Integer> ids);
 }
 

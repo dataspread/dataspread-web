@@ -99,28 +99,26 @@ public class createTableCtrl extends DlgCtrlBase {
 
             Connection connection = DBHandler.instance.getConnection();
             DBContext dbContext = new DBContext(connection);
-            created=model.convert(dbContext, Model.ModelType.TOM_Model, region,name);
+            model.createTable(dbContext, region, name);
+            model.insertTuples(dbContext, new CellRegion(region.getRow()+1, region.getColumn(),
+                    region.getLastRow(), region.getLastColumn()),name);
+            model.linkTable(dbContext, name, new CellRegion(region.getRow(), region.getColumn(),
+                    region.getLastRow(), region.getLastColumn()));
             connection.commit();
             sheet.getInternalSheet().clearCache(region);
             sss.updateCell(selection.getColumn(), selection.getRow(), selection.getLastColumn(),
                     selection.getLastRow());
-
+            Messagebox.show("Table " + name.toUpperCase() + " is Successfully Created", "Table Creation",
+                    Messagebox.OK, Messagebox.INFORMATION);
 
         } catch (SQLException e) {
             e.printStackTrace();
+            Messagebox.show("Error in Creating Table " + e.getMessage(), "Table Creation",
+                    Messagebox.OK, Messagebox.ERROR);
 
         }
         createTableDlg.detach();
-        if(created)
-        {
-            Messagebox.show("Table " + name.toUpperCase() + " is Successfully Created", "Table Creation",
-                    Messagebox.OK, Messagebox.INFORMATION);
-        }
-        else
-        {
-            Messagebox.show("Error in Creating Table", "Table Creation",
-                    Messagebox.OK, Messagebox.ERROR);
-        }
+
 
 
     }

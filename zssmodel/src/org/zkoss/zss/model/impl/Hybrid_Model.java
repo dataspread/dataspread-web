@@ -151,11 +151,11 @@ public class Hybrid_Model extends RCV_Model {
         return true;
     }
 
-    public boolean convert(DBContext context, ModelType modelType, CellRegion range, String name) {
-        logger.info("Start - Converting HYBRID " + range.toString());
+    public boolean createTable(DBContext context, CellRegion range, String tableName)
+    {
         String newTableName;
 
-        newTableName = name.toLowerCase();
+        newTableName = tableName.toLowerCase();
         /* First create table then create model */
         CellRegion tableHeaderRow = new CellRegion(range.getRow(), range.getColumn(), range.getRow(), range.getLastColumn());
         List<String> columnList = getCells(context, tableHeaderRow)
@@ -171,7 +171,7 @@ public class Hybrid_Model extends RCV_Model {
                 .append(newTableName)
                 .append(" (")
                 .append(columnList.stream().map(e->e+" TEXT").collect(Collectors.joining(",")))
-                .append(")")
+                .append(") WITH OIDS")
                 .toString();
 
         try (Statement stmt = context.getConnection().createStatement()) {
@@ -179,9 +179,16 @@ public class Hybrid_Model extends RCV_Model {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        deleteCells(context, tableHeaderRow);
+        return true;
+    }
+
+    public List<Integer> insertTuples(DBContext context,  CellRegion range, String tableName) {
+
+        List<Integer> oidList = new ArrayList<>();
         // Delete Header
-        super.deleteCells(context, tableHeaderRow);
-        ++range.row;
+
+        //++range.row;
 
         // Migrate data to the new table
         //newModel.insertCols(context, 0, range.getLastColumn() - range.getColumn() + 1);
@@ -189,12 +196,13 @@ public class Hybrid_Model extends RCV_Model {
         // logger.info("Start - Loading Cells");
 
         String update = new StringBuffer("INSERT INTO ")
-                .append(newTableName)
+                .append(tableName)
                 .append(" VALUES (")
                 .append(IntStream.range(0,columnCount).mapToObj(e->"?").collect(Collectors.joining(",")))
-                .append(");")
+                .append(") RETURNING oid;")
                 .toString();
 
+        // Start min_row  from 1.
         try (PreparedStatement stmt = context.getConnection().prepareStatement(update)) {
         // Work in small range
             for (int i = range.getLastRow() / block_row + 1; i > 0; i--) {
@@ -229,7 +237,11 @@ public class Hybrid_Model extends RCV_Model {
                         else
                             stmt.setNull(j + 1, Types.VARCHAR);
                     }
-                    stmt.execute();
+
+                    ResultSet resultSet = stmt.executeQuery();
+                    while (resultSet.next())
+                        oidList.add(resultSet.getInt(1));
+                    resultSet.close();
 
                 }
                 super.deleteCells(context, work_range);
@@ -237,13 +249,12 @@ public class Hybrid_Model extends RCV_Model {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        --range.row;
 
         // Collect a list of models to be deleted
-        linkTable(context, newTableName, range);
+
 //       super.vaccumTable(context);
 
-        return true;
+        return oidList;
     }
 
     public CellRegion linkTable(DBContext context, String tableName, CellRegion range){
@@ -253,7 +264,7 @@ public class Hybrid_Model extends RCV_Model {
                 range.getLastRow(),  range.getLastColumn()));
         model.createOIDIndex(context);
         model.indexOIDs(context);
-        range = getBounds(context).shiftedRange(range.row, range.column).getOverlap(range);
+        range = model.getBounds(context).shiftedRange(range.row, range.column).getOverlap(range);
 
         tableModels.add(new Pair<>(range, model));
         MetaDataBlock.ModelEntry modelEntry = new MetaDataBlock.ModelEntry();
@@ -518,6 +529,54 @@ public class Hybrid_Model extends RCV_Model {
     public void deleteModel(DBContext dbContext, CellRegion modelRange) {
         metaDataBlock.modelEntryList.removeIf(e -> e.range.equals(modelRange));
     }
+
+    public Pair<CellRegion, Model> getTableModelAbove(CellRegion newTuplesRegion) {
+        // Make sure this range is not contained within any other table.
+        if (tableModels.stream()
+                .map(e->e.x)
+                .filter(e->checkOverap(newTuplesRegion))
+                .findFirst().isPresent())
+            return null;
+
+        for (Pair<CellRegion, Model> cellRegionModelPair:tableModels)
+        {
+            if (newTuplesRegion.getRow()==cellRegionModelPair.x.getLastRow()+1 &&
+                    newTuplesRegion.getColumn() == cellRegionModelPair.x.getColumn() &&
+                    newTuplesRegion.getLastColumn() == cellRegionModelPair.x.getLastColumn() &&
+                    cellRegionModelPair.y instanceof TOM_Model)
+                return cellRegionModelPair;
+        }
+        return null;
+    }
+
+    // Extend the area of x by cellRegion
+    public void extendRange(DBContext dbContext, CellRegion x, CellRegion cellRegion) {
+        for (int i=0;i<tableModels.size();i++)
+        {
+            if (tableModels.get(i).x == x)
+            {
+                CellRegion newRegion = new CellRegion(x.getRow(), x.getColumn(),
+                        cellRegion.getLastRow(), cellRegion.getLastColumn());
+                Model model = tableModels.get(i).y;
+                tableModels.remove(i);
+
+                tableModels.add(new Pair<>(newRegion, model));
+                MetaDataBlock.ModelEntry modelEntry = new MetaDataBlock.ModelEntry();
+                modelEntry.range = newRegion;
+                modelEntry.modelType = ModelType.TOM_Model;
+                modelEntry.tableName = tableName;
+                metaDataBlock.modelEntryList.remove(i);
+                metaDataBlock.modelEntryList.add(modelEntry);
+                bs.putObject(0, metaDataBlock);
+                bs.flushDirtyBlocks(dbContext);
+
+                TOM_Mapping.instance.pushUpdates(dbContext, model.getTableName());
+                return;
+            }
+        }
+
+    }
+
 
     private static class MetaDataBlock {
         List<ModelEntry> modelEntryList;

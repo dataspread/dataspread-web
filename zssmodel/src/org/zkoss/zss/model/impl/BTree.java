@@ -6,6 +6,7 @@ import org.zkoss.util.logging.Log;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * An implementation of a B+ Tree
@@ -1031,7 +1032,7 @@ public class BTree implements PosMapping {
     }
 
     // TODO: Do it in batches. offline if possible.
-    public void insertIDs(DBContext context, int pos, ArrayList<Integer> ids) {
+    public void insertIDs(DBContext context, int pos, List<Integer> ids) {
         int count=ids.size();
         for (int i = 0; i < count; i++) {
             ++metaDataBlock.maxValue;

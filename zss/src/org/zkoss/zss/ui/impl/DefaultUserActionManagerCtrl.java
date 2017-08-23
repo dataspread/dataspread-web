@@ -190,6 +190,8 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 
 		registerHandler(category, AuxAction.DELETE_TABLE_ROW.getAction(), new DeleteTableRowHandler());
 		registerHandler(category, AuxAction.INSERT_TABLE_ROW.getAction(), new InsertTableRowHandler());
+		registerHandler(category, AuxAction.APPEND_TABLE_ROW.getAction(), new AppendRowHandler());
+
 
 		registerHandler(category, AuxAction.HIDE_COLUMN.getAction(), new HideHeaderHandler(HideHeaderAction.Type.COLUMN,true));
 		registerHandler(category, AuxAction.UNHIDE_COLUMN.getAction(), new HideHeaderHandler(HideHeaderAction.Type.COLUMN,false));
