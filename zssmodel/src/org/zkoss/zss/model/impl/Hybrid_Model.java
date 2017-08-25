@@ -352,6 +352,13 @@ public class Hybrid_Model extends RCV_Model {
                 tableModel.dropSchema(context);
                 metaDataBlock.modelEntryList.remove(i);
                 tableModels.remove(i);
+                // If TOM update TOM_Mapping.
+                if (tableModel instanceof TOM_Model)
+                    TOM_Mapping.instance.removeMapping(tableModel.getTableName(),
+                            new RefImpl(sheet.getBook().getId(),
+                                    sheet.getSheetName(), tableRange.getRow(), tableRange.getColumn(),
+                                    tableRange.getLastRow(), tableRange.getLastColumn()),
+                            (TOM_Model) tableModel);
                 //Continue next table at some i.
                 continue;
             } else if (tableRange.overlaps(rowRange)) {

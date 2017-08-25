@@ -28,6 +28,7 @@ public abstract class Model {
                 model = new Hybrid_Model(context, sheet, tableName);
                 break;
             case TOM_Model:
+                /* One tom instance for a table */
                 model = TOM_Mapping.instance.createTOMModel(context, tableName);
                 // model =  new TOM_Model(context, sheet, tableName);
                 break;

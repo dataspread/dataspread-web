@@ -141,6 +141,10 @@ public class TOM_Mapping {
         tableSet.add(new Pair<>(newRef, tomModel));
     }
 
+    public void removeMapping(String tableName, Ref tableRange, TOM_Model tomModel) {
+        tableMapping.get(tableName).remove(new Pair<>(tableRange, tomModel));
+    }
+
     private class TableOrder {
         final PosMapping rowIdxTable;
         final PosMapping colIdxTable;

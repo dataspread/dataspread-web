@@ -336,8 +336,11 @@ public class BTree implements PosMapping {
     }
 
     private int removeByCount(DBContext context, long pos, boolean flush) {
-        if (pos >= size(context))
-            throw new RuntimeException("pos should be < size");
+        if (pos >= size(context)) {
+            // Ignore this delete
+            // Do nothing
+            return -1;
+        }
 
         int id = removeRecursiveByCount(context, pos, metaDataBlock.ri);
         if (id > -1) {
