@@ -785,7 +785,8 @@ public final class WorkbookEvaluator {
 			if (col == -1) {
 				String colName = tcrPtg.getColumnName();
 				if (value instanceof TwoDEval) {
-					return ((TwoDEval) value).getColumnByAttribute(colName);
+					/*return ((TwoDEval) value).getColumnByAttribute(colName);*/
+					return null;
 				}
 			} else {
 				if (value instanceof TwoDEval) {

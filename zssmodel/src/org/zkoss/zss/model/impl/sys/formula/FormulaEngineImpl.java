@@ -510,6 +510,8 @@ public class FormulaEngineImpl implements FormulaEngine {
 		} else if(value instanceof AreaEval) {
 			// Don't convert the value into one array. Keep it a 2D object.
 			return new ResultValueEval(value, value);
+		} else if(value instanceof RelTableEval) {
+			return new ResultValueEval(value, value);
 		} else if(value instanceof RefEval) {
 			ValueEval ve = ((RefEval)value).getInnerValueEval();
 			Object v = getResolvedValue(ve).value; //ZSS-810

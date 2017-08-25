@@ -1,12 +1,12 @@
 package org.zkoss.poi.ss.formula.functions;
 
-import org.zkoss.poi.ss.formula.SheetRefEvaluator;
 import org.zkoss.poi.ss.formula.TwoDEval;
 import org.zkoss.poi.ss.formula.eval.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.zkoss.poi.ss.formula.functions.CountUtils.I_MatchPredicate;
 
@@ -19,560 +19,391 @@ import static org.zkoss.poi.ss.formula.functions.CountUtils.I_MatchPredicate;
 public abstract class RelationalOperatorFunction implements Function {
 
 
-    /**
-     * Implementation of the relational algebra operator UNION
-     */
-    public static final Function UNION = new TwoRangeFunction() {
-        
-        @Override
-        protected ValueEval evaluate(ArrayEval range1, ArrayEval range2, int srcRowIndex, int srcColumnIndex) {
-            
-            try {
-                
-                validateUnionCompatible(range1, range2);
-
-                List<Row> rows1 = Row.getRowsFromArea(range1);
-                List<Row> rows2 = Row.getRowsFromArea(range2);
-                Row[] combinedRows = new Row[rows1.size() + rows2.size()];                
-                
-                int insertIndex = 0;
-                //Add all rows from rows1
-                for (Row r : rows1) {
-                    combinedRows[insertIndex++] = r;
-                }                    
-                //Add all rows from rows2
-                for (Row r : rows2) {
-                    combinedRows[insertIndex++] = r;
-                }
-
-                boolean[] indicesToKeep = getDistinctIndices(combinedRows);
-                List<Row> resultRows = getRowsToKeep(indicesToKeep, combinedRows);
-
-                //return evalHelper(resultRows);
-                return Row.getArrayEval(resultRows, srcRowIndex, srcColumnIndex, range1.getRefEvaluator());
-                
-            }
-            catch (EvaluationException e) {
-                return e.getErrorEval();
-            }
-        }
-
-
-        /**
-         * Helper method for UNION to determine which indices to keep (distinct rows)
-         * @param rows
-         * @return
-         */
-        private boolean[] getDistinctIndices(Row[] rows) {
-
-            boolean[] indicesToKeep = new boolean[rows.length];
-            Arrays.fill(indicesToKeep, true);
-
-            for (int r1 = 0; r1 < rows.length; r1++) {
-                Row row1 = rows[r1];
-                for (int r2 = r1 + 1; r2 < rows.length; r2++) {                    
-                    Row row2 = rows[r2];
-                    if (row1.matches(row2)) {
-                        indicesToKeep[r2] = false;
-                    }
-                }//end r2 for loop
-            }//end r1 for loop
-
-            return indicesToKeep;
-
-        }
-    };
-
-
-    /**
-     * Implementation of the relational algebra operator SET DIFFERENCE
-     */
-    public static final Function DIFFERENCE = new TwoRangeFunction() {
-        
-        @Override
-        protected ValueEval evaluate(ArrayEval range1, ArrayEval range2, int srcRowIndex, int srcColumnIndex) {
-
-            try {
-
-                validateUnionCompatible(range1, range2);
-
-                List<Row> list1 = Row.getRowsFromArea(range1);
-                List<Row> list2 = Row.getRowsFromArea(range2);
-                Row[] rows1 = list1.toArray(new Row[list1.size()]);
-                Row[] rows2 = list2.toArray(new Row[list2.size()]);
-
-                List<Row> resultRows = new ArrayList<>();
-                //get all rows in rows1 that don't have matching rows in rows2
-                for (Row row1 : rows1) {
-                    boolean keepRow = true;
-                    for (Row row2 : rows2) {
-                        //this row exists in the other range, so don't include it
-                        if (row1.matches(row2)) {
-                            keepRow = false;
-                            break;
-                        }
-                    }//end r2 for loop
-                    if (keepRow) {
-                        resultRows.add(row1);
-                    }
-                }//end r1 for loop
-
-//                boolean[] indicesToKeep = getIndicesNotInRows2(rows1, rows2);
-//                List<Row> resultRows = getRowsToKeep(indicesToKeep, rows1);
-
-                //return evalHelper(resultRows);                
-                return Row.getArrayEval(resultRows, srcRowIndex, srcColumnIndex, range1.getRefEvaluator());                
-
-            } catch (EvaluationException e) {                
-                return e.getErrorEval();
-            }
-        }
-
-
-//        /**
-//         * Helper function to find the indices in rows1 that don't have
-//         * matching rows in rows2.
-//         * @param rows1
-//         * @param rows2
-//         * @return
-//         */
-//        private boolean[] getIndicesNotInRows2(Row[] rows1, Row[] rows2) {
-//
-//            boolean[] indicesToKeep = new boolean[rows1.length];
-//            Arrays.fill(indicesToKeep, true);
-//
-//            for (int r1 = 0; r1 < rows1.length; r1++) {
-//                for (int r2 = 0; r2 < rows1.length; r2++) {
-//
-//                    Row row1 = rows1[r1];
-//                    Row row2 = rows2[r2];
-//
-//                    //this row exists in the other range, so don't include it
-//                    if (row1.matches(row2)) {
-//
-//                        indicesToKeep[r1] = false;
-//                        break;
-//
-//                    }
-//                }//end r2 for loop
-//            }//end r1 for loop
-//
-//            return indicesToKeep;
-//
-//        }
-    };
-
-
-    /**
-     * Implementation of relational algebra operator INTERSECTION
-     */
-    public static final Function INTERSECTION = new TwoRangeFunction() {
-        
-        @Override
-        protected ValueEval evaluate(ArrayEval range1, ArrayEval range2, int srcRowIndex, int srcColumnIndex) {
-
-            try {
-
-                validateUnionCompatible(range1, range2);
-
-                List<Row> list1 = Row.getRowsFromArea(range1);
-                List<Row> list2 = Row.getRowsFromArea(range2);
-                Row[] rows1 = list1.toArray(new Row[list1.size()]);
-                Row[] rows2 = list2.toArray(new Row[list2.size()]);
-
-                List<Row> resultRows = new ArrayList<>();
-
-                //get rows that match
-                for (Row row1 : rows1) {
-                    for (Row row2 : rows2) {
-                        if (row1.matches(row2)) {
-                            resultRows.add(row1);
-                            break;
-                        }
-                    }
-                }
-
-//                boolean[] indicesToKeep = getMatchingIndices(rows1, rows2);
-//                List<Row> resultRows = getRowsToKeep(indicesToKeep, rows1);
-
-                //return evalHelper(resultRows);
-                return Row.getArrayEval(resultRows, srcRowIndex, srcColumnIndex, range1.getRefEvaluator());
-                
-
-            }
-            catch (EvaluationException e) {
-                return e.getErrorEval();
-            }
-        }
-
-
-//        /**
-//         * Helper method for INTERSECTION to find the indices in rows1 that have matching rows in rows2
-//         * @param rows1
-//         * @param rows2
-//         * @return
-//         */
-//        private boolean[] getMatchingIndices(Row[] rows1, Row[] rows2) {
-//
-//            boolean[] indicesToKeep = new boolean[rows1.length];
-//            Arrays.fill(indicesToKeep, false);
-//            
-//            //get rows that match
-//            for (int r1 = 0; r1 < rows1.length; r1++) {
-//                for (int r2 = 0; r2 < rows2.length; r2++) {
-//
-//                    Row row1 = rows1[r1];
-//                    Row row2 = rows2[r2];
-//
-//                    if (row1.matches(row2)) {
-//                        indicesToKeep[r1] = true;
-//                        break;
-//                    }
-//
-//                }
-//            }
-//
-//            return indicesToKeep;
-//
-//        }
-    };
-    
-    
-    public static final Function CROSSPRODUCT = new TwoRangeFunction() {
-        
-        @Override
-        protected ValueEval evaluate(ArrayEval range1, ArrayEval range2, int srcRowIndex, int srcColumnIndex) {
-
-            List<Row> list1 = Row.getRowsFromArea(range1);
-            List<Row> list2 = Row.getRowsFromArea(range2);
-            Row[] rows1 = list1.toArray(new Row[list1.size()]);
-            Row[] rows2 = list2.toArray(new Row[list2.size()]);
-
-//                Row[] resultRows = new Row[ rows1.length * rows2.length ];
-            List<Row> resultRows = new ArrayList<>();
-
-            for (Row aRows1 : rows1) {
-                for (Row aRows2 : rows2) {
-                    resultRows.add(Row.combineRows(aRows1, aRows2));
-                }
-            }
-
-
-            return Row.getArrayEval(resultRows, srcRowIndex, srcColumnIndex, range1.getRefEvaluator());
-        }
-    };
-    
-    
-    public static final Function SELECT = new SelectFunction() {
-        
-        //select with no conditions
-        @Override
-        protected ValueEval evaluate(AreaEval range, int srcRowIndex, int srcColumnIndex) {
-
-            List<Row> rows = Row.getRowsFromArea(range);
-
-            return Row.getArrayEval(rows, srcRowIndex, srcColumnIndex, range.getRefEvaluator());
-            
-        }
-
-        //select with conditions
-        @Override
-        protected ValueEval evaluate(AreaEval range, ValueEval condition, int srcRowIndex, int srcColumnIndex) {
-            /** TODO
-             *  how to reuse the evaluateFormula function in WorkbookEvaluator class
-             *  just need to replace the value for the conditionPtg
-             */
-            List<Row> rows = Row.getRowsFromArea(range, condition);
-
-            return Row.getArrayEval(rows, srcRowIndex, srcColumnIndex, range.getRefEvaluator());
-//            return evalHelper(rows);
-        }
-    };
-    
-    
-    public static final Function PROJECT = new RangeSchemaFunction() {
-        
-        @Override
-        protected ValueEval evaluate(AreaEval range, String[] attributes, int srcRowIndex, int srcColumnIndex) {
-            ValueEval[][] values = new ValueEval[range.getHeight()][attributes.length];
-            for (int i = 0; i < attributes.length; i++) {
-                TwoDEval cols = range.getColumnByAttribute(attributes[i]);
-                for (int j = 0; j < range.getHeight(); j++) {
-                    values[j][i] = cols.getValue(j, 0);
-                }
-            }
-            return new ArrayEval(values, range.getFirstRow(), range.getFirstColumn(), range.getLastRow(), range.getFirstColumn() + attributes.length - 1, range.getRefEvaluator());
-        }
-    };
-    
-    
-    public static final Function RENAME = new RangeSchemaFunction() {
-        
-        @Override
-        protected ValueEval evaluate(AreaEval range, String[] attributes, int srcRowIndex, int srcColumnIndex) {
-
-            //number of attributes must be the same as number of columns
-            if (attributes.length != range.getWidth()) {
-                return ErrorEval.VALUE_INVALID;
-            }
-            
-            range.setAttributeNames(attributes);
-            return range;
-
-        }
-    };   
-    
-    
-    public static final Function JOIN = new JoinFunction() {
-        
-        @Override
-        protected ValueEval evaluate(AreaEval range1, AreaEval range2, ValueEval[] args, int srcRowIndex, int srcColumnIndex) {
-            return new StringEval("not implemented");
-        }
-    };
-
-
-    /**
-     * Method to check that the two ranges are union compatible. 
-     * i.e. they have same number of columns and same schema
-     * @param range1
-     * @param range2
-     * @throws EvaluationException
-     */
-    private static void validateUnionCompatible(AreaEval range1, AreaEval range2) throws EvaluationException {
-
-        //TODO: Compare schemas
-        if (range1.getWidth() != range2.getWidth()) {
-
-            throw EvaluationException.invalidValue();
-
-        }
-    }
-
-
-    /**
-     * Helper method for getRowsToKeep to find how many rows are going to be in the result
-     * @param indicesToKeep
-     * @return
-     */
-    private static int getNumToKeep(boolean[] indicesToKeep) {
-
-        int numToKeep = 0;
-
-        for (int i = 0; i < indicesToKeep.length; i++) {
-            if (indicesToKeep[i]) {
-                numToKeep++;
-            }
-        }
-
-        return numToKeep;
-
-    }
-
-
-    /**
-     * Helper method for relational operator functions to get the resulting set of rows
-     * @param indicesToKeep
-     * @param rows
-     * @return
-     */
-    private static List<Row> getRowsToKeep(boolean[] indicesToKeep, Row[] rows) {
-
-        List<Row> rowsToKeep = new ArrayList<>();
-
-        for (int r = 0; r < indicesToKeep.length; r++) {
-
-            if (indicesToKeep[r]) {
-                rowsToKeep.add(rows[r]);
-            }
-        }
-
-        return rowsToKeep;
-
-    }
-
-    
-    /**
-     * Helper method for evalHelper that gets a string of the value
-     * @param eval
-     * @return
-     */
-    private static String getStringVal (ValueEval eval) {
-        
-        if (eval instanceof NumberEval) {
-            return ((NumberEval) eval).getStringValue();
-        }
-        else if (eval instanceof StringEval) {
-            return ((StringEval) eval).getStringValue();
-        }
-        
-        //TODO: Check other eval instances
-        
-        return null;
-        
-    }
-
-
-    /**
-     * Private class used to represent a row (array of ValueEval's)
-     */
-    private static class Row {
-        
-        private ValueEval[] values;
-        
-        public Row(ValueEval[] values) {
-            
-            this.values = values;
-            
-        }
-
-        /**
-         * Static method to combine row1 (a1, ..., an) and row2 (b1, ... , bn) into row3 (a1, ... , an, b1, ... , bn)
-         * @param row1
-         * @param row2
-         * @return
-         */
-        public static Row combineRows(Row row1, Row row2) {
-            
-            ValueEval[] combinedRow = new ValueEval[ row1.getLength() + row2.getLength() ];
-            
-            int insertIndex = 0;
-            
-            for (int c = 0; c < row1.getLength(); c++) {
-                combinedRow[insertIndex++] = row1.getValue(c);
-            }
-            
-            for (int c = 0; c < row2.getLength(); c++) {
-                combinedRow[insertIndex++] = row2.getValue(c);
-            }
-            
-            return new Row(combinedRow);
-
-        }
-
-
-        public static ArrayEval getArrayEval(List<Row> rows, int firstRow, int firstColumn, SheetRefEvaluator evaluator) {
-
-            int height = rows.size();
-
-            if (height == 0) {
-                ValueEval[][] values = new ValueEval[][]{{BlankEval.instance}};
-                return new ArrayEval(values, firstRow, firstColumn, firstRow, firstColumn, evaluator);
-            }
-
-            ValueEval[][] values = new ValueEval[height][];
-
-
-            for (int r = 0; r < height; r++) {
-
-                Row row = rows.get(r);
-
-                int width = row.getLength();
-                values[r] = new ValueEval[width];
-
-                for (int c = 0; c < width; c++) {
-                    values[r][c] = row.getValue(c);
-                }
-            }
-
-            return new ArrayEval(values, firstRow, firstColumn, firstRow + values.length - 1, firstColumn + values[0].length - 1, evaluator);
-            
-        }
-
-
-        /**
-         * Static method to create an array of Row's from an AreaEval
-         * @param range
-         * @return
-         */
-        public static List<Row> getRowsFromArea(AreaEval range) {
-            List<Row> rows = new ArrayList<>();
-            for (int r = 0; r < range.getHeight(); r++) {
-                //get all of the ValueEval's for this row
-                TwoDEval row = range.getRow(r);
-                ValueEval[] rowEvals = new ValueEval[row.getWidth()];
-                for (int c = 0; c < row.getWidth(); c++) {
-                    rowEvals[c] = row.getValue(0, c);
-                }
-                rows.add(r, new Row(rowEvals));
-            }
-            return rows;
-        }
-
-
-        /**
-         * Static method to create an array of Row's from an AreaEval
-         *
-         * @param range,conditions
-         * @return
-         */
-        public static List<Row> getRowsFromArea(AreaEval range, ValueEval conditions) {
-            List<Row> rows = new ArrayList<>();
-            if (conditions instanceof BoolEval) {
-                if (!((BoolEval) conditions).getBooleanValue()) return rows;
-                else return getRowsFromArea(range);
-            } else if (conditions instanceof ArrayEval) {
-                ArrayEval cds = (ArrayEval) conditions;
-                for (int r = 0; r < range.getHeight(); r++) {
-                    ValueEval select = cds.getValue(r, 0);
-                    if (select instanceof BoolEval) {
-                        if (((BoolEval) select).getBooleanValue()) {
-                            //get all of the ValueEval's for this row
-                            TwoDEval row = range.getRow(r);
-                            ValueEval[] rowEvals = new ValueEval[row.getWidth()];
-                            for (int c = 0; c < row.getWidth(); c++) {
-                                rowEvals[c] = row.getValue(0, c);
-                            }
-                            rows.add(new Row(rowEvals));
-                        }
-                    }
-                }
-            }
-            return rows;
-        }
-        
-        public ValueEval getValue(int col) {
-            
-            return values[col];
-                        
-        }
-        
-        public int getLength() {
-            
-            return values.length;
-            
-        }
-        
-        public boolean matches(Row row2) {
-
-            Row row1 = this;
-            
-            if (row1.getLength() != row2.getLength()) {
-                return false;
-            }
-
-            int width = row1.getLength();
-            boolean matches = true;
-
-            //Iterate over columns
-            for (int c = 0; c < width; c++) {
-
-                ValueEval value1 = row1.getValue(c);
-                ValueEval value2 = row2.getValue(c);
-
-                //arguments for srcCellRow and srcCellCol not used in createCriteriaPredicate, so just use 0, 0
-                I_MatchPredicate matchPredicate = Countif.createCriteriaPredicate(value1, 0, 0);
-
-                if (!matchPredicate.matches(value2)) {
-                    matches = false;
-                    break;
-                }
-            }
-
-            return matches;
-            
-        }
-        
-    }//end Row class
+	private abstract static class MatchingSchemaFunction extends RelTable2ArgFunction {
+
+		protected static short PRESENT1_MASK = 1;
+		protected static short PRESENT2_MASK = 2;
+
+		private final class RowEntry {
+			private final Row _row;
+			private short _mask;
+
+			public RowEntry(Row row) {
+				_row = row;
+				_mask = 0;
+			}
+
+			public Row getRow() {
+				return _row;
+			}
+
+			public short getMask() {
+				return _mask;
+			}
+
+			public void addMask(short mask) {
+				_mask |= mask;
+			}
+		}
+
+		private final void populateRowsAll(List<Row> rows, short listMask, Map<Row, Integer> locator, List<RowEntry> rowEntries) {
+			for (Row row : rows) {
+				int id = rowEntries.size();
+				Integer result = locator.putIfAbsent(row, id);
+				if (result == null) {
+					rowEntries.add(new RowEntry(row));
+					result = id;
+				}
+				rowEntries.get(result).addMask(listMask);
+			}
+		}
+
+		@Override
+		protected final ValueEval evaluate(RelTableEval range1, RelTableEval range2, int srcRowIndex, int srcColumnIndex) {
+			try {
+				validateMatchingSchema(range1, range2);
+				List<Row> rows1 = Row.getRowsFromArea(range1);
+				List<Row> rows2 = Row.getRowsFromArea(range2);
+				Map<Row, Integer> locator = new HashMap<>();
+				List<RowEntry> rowEntries = new ArrayList<>();
+				populateRowsAll(rows1, PRESENT1_MASK, locator, rowEntries);
+				populateRowsAll(rows2, PRESENT2_MASK, locator, rowEntries);
+
+				List<Row> resultRows = new ArrayList<>();
+				for (RowEntry rowEntry : rowEntries) {
+					if (match(rowEntry.getMask())) {
+						resultRows.add(rowEntry.getRow());
+					}
+				}
+				return Row.getRelTableEval(resultRows, range1.getAttributes());
+			} catch (EvaluationException e) {
+				return e.getErrorEval();
+			}
+		}
+
+		/**
+		 * @param mask
+		 * @return true if a row associated with this mask should be kept.
+		 */
+		protected abstract boolean match(short mask);
+
+	}
+
+	public static final Function UNION = new MatchingSchemaFunction() {
+
+		@Override
+		protected boolean match(short mask) {
+			return true;
+		}
+
+	};
+
+	public static final Function DIFFERENCE = new MatchingSchemaFunction() {
+
+		@Override
+		protected boolean match(short mask) {
+			return (mask & PRESENT2_MASK) == 0;
+		}
+
+	};
+
+	public static final Function INTERSECTION = new MatchingSchemaFunction() {
+
+		@Override
+		protected boolean match(short mask) {
+			return (mask & PRESENT1_MASK) == PRESENT1_MASK &&
+					(mask & PRESENT2_MASK) == PRESENT2_MASK;
+		}
+
+	};
+
+
+	public static final Function CROSSPRODUCT = new RelTable2ArgFunction() {
+
+		@Override
+		protected ValueEval evaluate(RelTableEval range1, RelTableEval range2, int srcRowIndex, int srcColumnIndex) {
+			List<Row> rows1 = Row.getRowsFromArea(range1);
+			List<Row> rows2 = Row.getRowsFromArea(range2);
+			List<Row> resultRows = new ArrayList<>();
+
+			for (Row aRows1 : rows1) {
+				for (Row aRows2 : rows2) {
+					resultRows.add(Row.combineRows(aRows1, aRows2));
+				}
+			}
+
+			int nColumns1 = range1.getWidth();
+			int nColumns2 = range2.getWidth();
+			String[] resultAttributes = new String[nColumns1+nColumns2];
+			System.arraycopy(range1.getAttributes(), 0, resultAttributes, 0, nColumns1);
+			System.arraycopy(range2.getAttributes(), 0, resultAttributes, nColumns1, nColumns2);
+
+			return Row.getRelTableEval(resultRows, resultAttributes);
+		}
+
+	};
+
+
+	public static final Function SELECT = new SelectFunction() {
+
+		//select with no conditions
+		@Override
+		protected ValueEval evaluate(AreaEval range, int srcRowIndex, int srcColumnIndex) {
+			return evaluate(range, BoolEval.TRUE, srcRowIndex, srcColumnIndex);
+		}
+
+		//select with conditions
+		@Override
+		protected ValueEval evaluate(AreaEval range, ValueEval condition, int srcRowIndex, int srcColumnIndex) {
+			/** TODO
+			 *  how to reuse the evaluateFormula function in WorkbookEvaluator class
+			 *  just need to replace the value for the conditionPtg
+			 */
+			//List<Row> rows = Row.getRowsFromArea(range, condition);
+			//Row.getRelTableEval(rows, srcRowIndex, srcColumnIndex, range.getRefEvaluator());
+			return null;
+		}
+	};
+
+
+	public static final Function PROJECT = new RangeSchemaFunction() {
+
+		@Override
+		protected ValueEval evaluate(AreaEval range, String[] attributes, int srcRowIndex, int srcColumnIndex) {
+			throw new NotImplementedException("not implemented");
+		}
+	};
+
+
+	public static final Function RENAME = new RangeSchemaFunction() {
+
+		@Override
+		protected ValueEval evaluate(AreaEval range, String[] attributes, int srcRowIndex, int srcColumnIndex) {
+			throw new NotImplementedException("not implemented");
+		}
+
+	};
+
+
+	public static final Function JOIN = new JoinFunction() {
+
+		@Override
+		protected ValueEval evaluate(AreaEval range1, AreaEval range2, ValueEval[] args, int srcRowIndex, int srcColumnIndex) {
+			throw new NotImplementedException("not implemented");
+		}
+	};
+
+
+	/**
+	 * Method to check that the two ranges have matching schema.
+	 * @param range1
+	 * @param range2
+	 * @throws EvaluationException
+	 */
+	private static void validateMatchingSchema(RelTableEval range1, RelTableEval range2) throws EvaluationException {
+		//TODO: Compare schemas
+		if (range1.getWidth() != range2.getWidth()) {
+			throw EvaluationException.invalidValue();
+		}
+	}
+
+
+	/**
+	 * Private class used to represent a row (array of ValueEval's)
+	 */
+	private static class Row {
+
+		private final ValueEval[] _values;
+
+		public Row(ValueEval[] values) {
+			_values = values;
+		}
+
+		public ValueEval getValue(int col) {
+			return _values[col];
+		}
+
+		public int getLength() {
+			return _values.length;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (obj instanceof Row) {
+				Row row1 = this;
+				Row row2 = (Row) obj;
+				if (row1.getLength() != row2.getLength()) {
+					return false;
+				}
+				for (int i = 0; i < row1.getLength(); i++) {
+					ValueEval eval1 = row1.getValue(i);
+					ValueEval eval2 = row2.getValue(i);
+					if (!compareEvals(eval1, eval2)) {
+						return false;
+					}
+				}
+				return true;
+			}
+			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			int hashCode = 1;
+			for (ValueEval e : _values) {
+				hashCode = 31 * 31 * hashCode + (e == null ? 0 : makeshiftHashcode(e));
+			}
+			return hashCode;
+		}
+
+		private int makeshiftHashcode(ValueEval e) {
+			if (e instanceof NumberEval) {
+				return 0 * 31 + ((Double) ((NumberEval) e).getNumberValue()).hashCode();
+			} else if (e instanceof StringEval) {
+				return 1 * 31 + ((StringEval) e).getStringValue().hashCode();
+			} else if (e instanceof BoolEval) {
+				return 4 * 31 + ((Boolean) ((BoolEval) e).getBooleanValue()).hashCode();
+			}
+			return 0;
+		}
+
+		private boolean compareEvals(ValueEval e1, ValueEval e2) {
+			if (e1 instanceof NumberEval && e2 instanceof NumberEval) {
+				double val1 = ((NumberEval) e1).getNumberValue();
+				double val2 = ((NumberEval) e2).getNumberValue();
+				return val1 == val2;
+			} else if (e1 instanceof StringEval && e2 instanceof StringEval) {
+				String val1 = ((StringEval) e1).getStringValue();
+				String val2 = ((StringEval) e2).getStringValue();
+				return val1.equals(val2);
+			} else if (e1 instanceof BoolEval && e2 instanceof BoolEval) {
+				boolean val1 = ((BoolEval) e1).getBooleanValue();
+				boolean val2 = ((BoolEval) e2).getBooleanValue();
+				return val1 == val2;
+			}
+			return false;
+		}
+
+		/**
+		 * Static method to combine row1 (a1, ..., an) and row2 (b1, ... , bn) into row3 (a1, ... , an, b1, ... , bn)
+		 * @param row1
+		 * @param row2
+		 * @return
+		 */
+		public static Row combineRows(Row row1, Row row2) {
+			int nColumns1 = row1.getLength();
+			int nColumns2 = row2.getLength();
+			ValueEval[] combinedRow = new ValueEval[nColumns1+nColumns2];
+
+			for (int i = 0; i < nColumns1; i++) {
+				combinedRow[i] = row1.getValue(i);
+			}
+			for (int i = 0; i < nColumns2; i++) {
+				combinedRow[nColumns1+i] = row2.getValue(i);
+			}
+
+			return new Row(combinedRow);
+		}
+
+
+		public static RelTableEval getRelTableEval(List<Row> rows, String[] schema) {
+			int nRows = rows.size();
+			int nColumns = schema.length;
+			ValueEval[][] values = new ValueEval[nRows][];
+
+			for (int r = 0; r < nRows; r++) {
+				Row row = rows.get(r);
+				values[r] = new ValueEval[nColumns];
+				for (int c = 0; c < nColumns; c++) {
+					values[r][c] = row.getValue(c);
+				}
+			}
+
+			return new RelTableEval(values, schema, nRows, nColumns);
+		}
+
+
+		/**
+		 * Static method to create an array of Row's from an AreaEval
+		 * @param range
+		 * @return
+		 */
+		public static List<Row> getRowsFromArea(RelTableEval range) {
+			List<Row> rows = new ArrayList<>();
+			for (int r = 0; r < range.getHeight(); r++) {
+				//get all of the ValueEval's for this row
+				TwoDEval row = range.getRow(r);
+				ValueEval[] rowEvals = new ValueEval[row.getWidth()];
+				for (int c = 0; c < row.getWidth(); c++) {
+					rowEvals[c] = row.getValue(0, c);
+				}
+				rows.add(r, new Row(rowEvals));
+			}
+			return rows;
+		}
+
+
+		/**
+		 * Static method to create an array of Row's from an AreaEval
+		 *
+		 * @param range,conditions
+		 * @return
+		 */
+		public static List<Row> getRowsFromArea(RelTableEval range, ValueEval conditions) {
+			List<Row> rows = new ArrayList<>();
+			if (conditions instanceof BoolEval) {
+				if (!((BoolEval) conditions).getBooleanValue()) return rows;
+				else return getRowsFromArea(range);
+			} else if (conditions instanceof ArrayEval) {
+				ArrayEval cds = (ArrayEval) conditions;
+				for (int r = 0; r < range.getHeight(); r++) {
+					ValueEval select = cds.getValue(r, 0);
+					if (select instanceof BoolEval) {
+						if (((BoolEval) select).getBooleanValue()) {
+							//get all of the ValueEval's for this row
+							TwoDEval row = range.getRow(r);
+							ValueEval[] rowEvals = new ValueEval[row.getWidth()];
+							for (int c = 0; c < row.getWidth(); c++) {
+								rowEvals[c] = row.getValue(0, c);
+							}
+							rows.add(new Row(rowEvals));
+						}
+					}
+				}
+			}
+			return rows;
+		}
+
+		public boolean matches(Row row2) {
+
+			Row row1 = this;
+
+			if (row1.getLength() != row2.getLength()) {
+				return false;
+			}
+
+			int width = row1.getLength();
+			boolean matches = true;
+
+			//Iterate over columns
+			for (int c = 0; c < width; c++) {
+
+				ValueEval value1 = row1.getValue(c);
+				ValueEval value2 = row2.getValue(c);
+
+				//arguments for srcCellRow and srcCellCol not used in createCriteriaPredicate, so just use 0, 0
+				I_MatchPredicate matchPredicate = Countif.createCriteriaPredicate(value1, 0, 0);
+
+				if (!matchPredicate.matches(value2)) {
+					matches = false;
+					break;
+				}
+			}
+
+			return matches;
+
+		}
+
+	}//end Row class
 
 }
