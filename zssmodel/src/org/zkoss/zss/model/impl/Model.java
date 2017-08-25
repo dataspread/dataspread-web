@@ -88,6 +88,13 @@ public abstract class Model {
     // Gets a connection from handler and commits.
     public abstract void importSheet(Reader reader, char delimiter) throws IOException;
 
+    public boolean deleteTableColumns(DBContext dbContext, CellRegion cellRegion) {
+        //TODO implement.
+        return true;
+
+
+    }
+
     //
     public enum ModelType {
         ROM_Model, COM_Model, RCV_Model, HYBRID_Model, TOM_Model

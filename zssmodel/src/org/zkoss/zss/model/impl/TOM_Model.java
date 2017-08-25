@@ -32,7 +32,7 @@ public class TOM_Model extends Model {
         loadColumnInfo(context);
     }
 
-    private void loadColumnInfo(DBContext context) {
+    public void loadColumnInfo(DBContext context) {
         columnNames = new TreeMap<>();
         String tableCols = (new StringBuffer())
                 .append("SELECT * FROM ")
@@ -112,6 +112,11 @@ public class TOM_Model extends Model {
 
     public void insertOIDs(DBContext context, List<Integer> oids) {
         rowMapping.insertIDs(context, rowMapping.size(context), oids);
+    }
+
+    public void insertColMappings(DBContext context, int count) {
+        colMapping.insertIDs(context, colMapping.size(context), IntStream.rangeClosed(colMapping.size(context) + 1,
+                colMapping.size(context) + count).boxed().collect(Collectors.toList()));
     }
 
     public void deleteTuples(DBContext context, int row, int count) {
@@ -337,22 +342,6 @@ public class TOM_Model extends Model {
     @Override
     public void insertCols(DBContext context, int col, int count) {
         /* Do nothing */
-        /* StringBuffer insertColumn = (new StringBuffer())
-                .append("ALTER TABLE ")
-                .append(tableName);
-        Integer ids[] = colMapping.createIDs(context, col, count);
-        for (int i = 0; i < ids.length; i++) {
-            insertColumn.append(" ADD COLUMN ")
-                    .append(columnNames.get(ids[i]))
-                    .append(" TEXT");
-            if (i < ids.length - 1)
-                insertColumn.append(",");
-        }
-        try (Statement stmt = context.getConnection().createStatement()) {
-            stmt.execute(insertColumn.toString());
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } */
     }
 
     /* Delete row on a spreadsheet */
@@ -455,5 +444,4 @@ public class TOM_Model extends Model {
     public void importSheet(Reader reader, char delimiter) throws IOException {
         throw new UnsupportedOperationException();
     }
-
 }

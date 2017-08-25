@@ -87,9 +87,14 @@ public enum AuxAction {
 	 UNMERGE_CELL("unmergeCell"),
 	 INSERT_SHIFT_CELL_RIGHT("shiftCellRight"),
 	 INSERT_SHIFT_CELL_DOWN("shiftCellDown"),
-	DELETE_TABLE_ROW("deleteTableRow"),
-	APPEND_TABLE_ROW("appendTableRow"),
-	INSERT_TABLE_ROW("insertTableRow"),
+    /* Table Operations */
+    LINK_TABLE("linkTable"),
+    UNLINK_TABLE("unlinkTable"),
+    APPEND_TABLE_ROW("appendTableRow"),
+    APPEND_TABLE_COLUMN("appendTableColumn"),
+    DELETE_TABLE_ROW("deleteTableRow"),
+    DELETE_TABLE_COLUMN("deleteTableColumn"),
+
 	 INSERT_SHEET_ROW("insertSheetRow"),
 	 INSERT_SHEET_COLUMN("insertSheetColumn"),
 	 DELETE_SHIFT_CELL_LEFT("shiftCellLeft"),

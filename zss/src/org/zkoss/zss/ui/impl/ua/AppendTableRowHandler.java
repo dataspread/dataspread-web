@@ -43,7 +43,7 @@ import java.util.List;
 /**
  * @author dennis
  */
-public class AppendRowHandler extends AbstractHandler {
+public class AppendTableRowHandler extends AbstractHandler {
     //private static final long serialVersionUID = -3250068182764513758L;
 
     /* (non-Javadoc)

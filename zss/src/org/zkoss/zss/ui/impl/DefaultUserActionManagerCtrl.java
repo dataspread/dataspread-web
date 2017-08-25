@@ -150,10 +150,14 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 		registerHandler(category, AuxAction.CLEAR_STYLE.getAction(), new ClearCellHandler(ClearCellAction.Type.STYLE));
 		registerHandler(category, AuxAction.CLEAR_ALL.getAction(), new ClearCellHandler(ClearCellAction.Type.ALL));
 
-		registerHandler(category, AuxAction.DELETE_TABLE_ROW.getAction(), new DeleteTableRowHandler());
-		registerHandler(category, AuxAction.INSERT_TABLE_ROW.getAction(), new InsertTableRowHandler());
-		registerHandler(category, AuxAction.APPEND_TABLE_ROW.getAction(), new AppendRowHandler());
+        registerHandler(category, AuxAction.LINK_TABLE.getAction(), new LinkTableHandler());
+        registerHandler(category, AuxAction.UNLINK_TABLE.getAction(), new UnlinkTableHandler());
 
+        registerHandler(category, AuxAction.APPEND_TABLE_ROW.getAction(), new AppendTableRowHandler());
+        registerHandler(category, AuxAction.DELETE_TABLE_ROW.getAction(), new DeleteTableRowHandler());
+
+        registerHandler(category, AuxAction.APPEND_TABLE_COLUMN.getAction(), new AppendTableColumnHandler());
+        registerHandler(category, AuxAction.DELETE_TABLE_COLUMN.getAction(), new DeleteTableColumnHandler());
 
 		registerHandler(category, AuxAction.HIDE_COLUMN.getAction(), new HideHeaderHandler(HideHeaderAction.Type.COLUMN,true));
 		registerHandler(category, AuxAction.UNHIDE_COLUMN.getAction(), new HideHeaderHandler(HideHeaderAction.Type.COLUMN,false));

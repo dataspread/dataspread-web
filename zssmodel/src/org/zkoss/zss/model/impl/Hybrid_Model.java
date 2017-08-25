@@ -179,6 +179,27 @@ public class Hybrid_Model extends RCV_Model {
         return true;
     }
 
+
+    public void appendTableColumn(DBContext dbContext, CellRegion cellRegion, String tableName) {
+        StringBuffer insertColumnStmt = (new StringBuffer())
+                .append("ALTER TABLE ")
+                .append(tableName);
+
+        // Integer ids[] = colMapping.createIDs(dbContext, colMapping.size(dbContext), cellRegion.getLength());
+        for (int i = cellRegion.getColumn(); i <= cellRegion.getColumn(); i++) {
+            insertColumnStmt.append(" ADD COLUMN ")
+                    .append(sheet.getCell(cellRegion.getRow(), i).getStringValue())
+                    .append(" TEXT");
+            if (i < cellRegion.getColumn())
+                insertColumnStmt.append(",");
+        }
+        try (Statement stmt = dbContext.getConnection().createStatement()) {
+            stmt.execute(insertColumnStmt.toString());
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public List<Integer> insertTuples(DBContext context, CellRegion range, String tableName) {
 
         List<Integer> oidList = new ArrayList<>();
@@ -528,6 +549,24 @@ public class Hybrid_Model extends RCV_Model {
 
     public void deleteModel(DBContext dbContext, CellRegion modelRange) {
         metaDataBlock.modelEntryList.removeIf(e -> e.range.equals(modelRange));
+    }
+
+    public Pair<CellRegion, Model> getTableModelToLeft(CellRegion newColumnRegion) {
+        // Make sure this range is not contained within any other table.
+        if (tableModels.stream()
+                .map(e -> e.x)
+                .filter(e -> checkOverap(newColumnRegion))
+                .findFirst().isPresent())
+            return null;
+
+        for (Pair<CellRegion, Model> cellRegionModelPair : tableModels) {
+            if (newColumnRegion.getRow() == cellRegionModelPair.x.getRow() &&
+                    newColumnRegion.getLastRow() == cellRegionModelPair.x.getLastRow() &&
+                    newColumnRegion.getColumn() == cellRegionModelPair.x.getLastColumn() + 1 &&
+                    cellRegionModelPair.y instanceof TOM_Model)
+                return cellRegionModelPair;
+        }
+        return null;
     }
 
     public Pair<CellRegion, Model> getTableModelAbove(CellRegion newTuplesRegion) {

@@ -15,6 +15,7 @@ import java.sql.SQLException;
 public class DeleteTableRowHandler extends AbstractProtectedHandler {
     @Override
     protected boolean processAction(UserActionContext ctx) {
+        boolean success = false;
         Sheet sheet = ctx.getSheet();
         AreaRef selection = ctx.getSelection();
         Model dataModel = sheet.getInternalSheet().getDataModel();
@@ -22,19 +23,18 @@ public class DeleteTableRowHandler extends AbstractProtectedHandler {
             try (Connection connection = DBHandler.instance.getConnection()) {
                 DBContext dbContext = new DBContext(connection);
 
-                boolean ret = dataModel.deleteTuples(dbContext, new CellRegion(selection.getRow(),
+                success = dataModel.deleteTuples(dbContext, new CellRegion(selection.getRow(),
                         selection.getColumn(),
                         selection.getLastRow(),
                         selection.getLastColumn()));
                 connection.commit();
-                if (!ret)
-                    Messagebox.show("Selected region does not correspond to a table", "Delete Tuples",
-                            Messagebox.OK, Messagebox.ERROR);
             } catch (SQLException e) {
                 e.printStackTrace();
             }
         }
-
-        return true;
+        if (!success)
+            Messagebox.show("Selected region does not correspond to a table", "Delete Tuples",
+                    Messagebox.OK, Messagebox.ERROR);
+        return success;
     }
 }
