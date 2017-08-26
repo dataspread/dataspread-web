@@ -65,7 +65,7 @@ public abstract class Model {
 
     public abstract void deleteCells(DBContext context, Collection<AbstractCellAdv> cells);
 
-    public abstract boolean deleteTuples(DBContext context, CellRegion cellRegion);
+    public abstract boolean deleteTableRows(DBContext context, CellRegion cellRegion);
 
     //Get a range of cells
     public abstract Collection<AbstractCellAdv> getCells(DBContext context, CellRegion cellRegion);
@@ -89,12 +89,7 @@ public abstract class Model {
     // Gets a connection from handler and commits.
     public abstract void importSheet(Reader reader, char delimiter) throws IOException;
 
-    public boolean deleteTableColumns(DBContext dbContext, CellRegion cellRegion) {
-        //TODO implement.
-        return true;
-
-
-    }
+    public abstract boolean deleteTableColumns(DBContext dbContext, CellRegion cellRegion);
 
     //
     public enum ModelType {

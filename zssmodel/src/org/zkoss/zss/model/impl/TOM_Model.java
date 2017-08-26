@@ -69,7 +69,7 @@ public class TOM_Model extends Model {
     }
 
     @Override
-    public boolean deleteTuples(DBContext context, CellRegion cellRegion) {
+    public boolean deleteTableRows(DBContext context, CellRegion cellRegion) {
         throw new UnsupportedOperationException();
     }
 
@@ -126,14 +126,28 @@ public class TOM_Model extends Model {
             Array inArray = context.getConnection().createArrayOf("integer", oids);
             stmt.setArray(1, inArray);
             stmt.execute();
-
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
     }
 
+
+    public void deleteTableColumns(DBContext context, int col, int count) {
+        Integer[] colids = colMapping.deleteIDs(context, col, count);
+        try (Statement stmt = context.getConnection().createStatement()) {
+            for (int colid : colids) {
+                StringBuilder deleteColumnsStmt = (new StringBuilder())
+                        .append("ALTER TABLE ")
+                        .append(tableName)
+                        .append(" DROP COLUMN ")
+                        .append(columnNames.get(colid));
+                stmt.execute(deleteColumnsStmt.toString());
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        loadColumnInfo(context);
+    }
 
     protected void createOIDIndex(DBContext context) {
         /* TODO update query */
@@ -443,5 +457,10 @@ public class TOM_Model extends Model {
     @Override
     public void importSheet(Reader reader, char delimiter) throws IOException {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean deleteTableColumns(DBContext dbContext, CellRegion cellRegion) {
+        return false;
     }
 }

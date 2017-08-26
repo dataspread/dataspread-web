@@ -200,7 +200,7 @@ public class Hybrid_Model extends RCV_Model {
         }
     }
 
-    public List<Integer> insertTuples(DBContext context, CellRegion range, String tableName) {
+    public List<Integer> appendTableRows(DBContext context, CellRegion range, String tableName) {
 
         List<Integer> oidList = new ArrayList<>();
         // Delete Header
@@ -380,7 +380,7 @@ public class Hybrid_Model extends RCV_Model {
     }
 
     @Override
-    public boolean deleteTuples(DBContext context, CellRegion cellRegion) {
+    public boolean deleteTableRows(DBContext context, CellRegion cellRegion) {
         List<Pair<CellRegion, Model>> modelEntries = tableModels.stream()
                 .filter(e -> e.x.overlaps(cellRegion))
                 .collect(Collectors.toList());
@@ -400,6 +400,37 @@ public class Hybrid_Model extends RCV_Model {
         TOM_Model tomModel = (TOM_Model) modelEntries.get(0).y;
         /* -1 below as top row is header */
         tomModel.deleteTuples(context, cellRegion.getRow() - tableRegion.getRow() - 1, cellRegion.getHeight());
+        // For all the regions that are displaying more than my displayed records
+        // Reduce the size.
+
+        shrinkToBound(context, tomModel);
+
+        TOM_Mapping.instance.pushUpdates(context, tomModel.getTableName());
+        return true;
+    }
+
+
+    @Override
+    public boolean deleteTableColumns(DBContext context, CellRegion cellRegion) {
+        List<Pair<CellRegion, Model>> modelEntries = tableModels.stream()
+                .filter(e -> e.x.overlaps(cellRegion))
+                .collect(Collectors.toList());
+
+        if (modelEntries.size() != 1)
+            return false;
+
+        if (!(modelEntries.get(0).y instanceof TOM_Model))
+            return false;
+
+
+        CellRegion tableRegion = modelEntries.get(0).x;
+
+        if (!tableRegion.contains(cellRegion))
+            return false;
+
+        TOM_Model tomModel = (TOM_Model) modelEntries.get(0).y;
+        /* -1 below as top row is header */
+        tomModel.deleteTableColumns(context, cellRegion.getColumn() - tableRegion.getColumn(), cellRegion.getLength());
         // For all the regions that are displaying more than my displayed records
         // Reduce the size.
 

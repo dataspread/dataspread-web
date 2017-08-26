@@ -89,7 +89,7 @@ public class createTableCtrl extends DlgCtrlBase {
             Connection connection = DBHandler.instance.getConnection();
             DBContext dbContext = new DBContext(connection);
             model.createTable(dbContext, region, name);
-            model.insertTuples(dbContext, new CellRegion(region.getRow() + 1, region.getColumn(),
+            model.appendTableRows(dbContext, new CellRegion(region.getRow() + 1, region.getColumn(),
                     region.getLastRow(), region.getLastColumn()), name);
             model.linkTable(dbContext, name, new CellRegion(region.getRow(), region.getColumn(),
                     region.getLastRow(), region.getLastColumn()));

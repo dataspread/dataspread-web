@@ -97,7 +97,13 @@ public class COM_Model extends Model {
     }
 
     @Override
-    public boolean deleteTuples(DBContext context, CellRegion cellRegion) {
+    public boolean deleteTableColumns(DBContext dbContext, CellRegion cellRegion) {
+        throw new UnsupportedOperationException();
+    }
+
+
+    @Override
+    public boolean deleteTableRows(DBContext context, CellRegion cellRegion) {
         throw new UnsupportedOperationException();
     }
 }

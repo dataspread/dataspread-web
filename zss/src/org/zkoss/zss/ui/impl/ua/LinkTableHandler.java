@@ -16,13 +16,14 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.ui.impl.ua;
 
+
 import org.zkoss.zss.api.AreaRef;
 import org.zkoss.zss.api.model.Sheet;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.impl.Hybrid_Model;
 import org.zkoss.zss.ui.UserActionContext;
 
-public class LinkTableHandler extends AbstractHandler {
+public class LinkTableHandler extends AbstractHandler /*, EventListener<DlgCallbackEvent>  */ {
 
     @Override
     protected boolean processAction(UserActionContext ctx) {
@@ -33,7 +34,15 @@ public class LinkTableHandler extends AbstractHandler {
                 selection.getColumn(),
                 selection.getLastRow(),
                 selection.getLastColumn());
+
+
+        // TODO implement this.
         return true;
 
     }
+/*
+    @Override
+    public void onEvent(DlgCallbackEvent event) throws Exception {
+
+    } */
 }

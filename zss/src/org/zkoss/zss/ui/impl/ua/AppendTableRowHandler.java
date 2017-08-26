@@ -71,7 +71,7 @@ public class AppendTableRowHandler extends AbstractHandler {
 
             try (Connection connection = DBHandler.instance.getConnection()) {
                 DBContext dbContext = new DBContext(connection);
-                List<Integer> oidList = dataModel.insertTuples(dbContext, cellRegion,
+                List<Integer> oidList = dataModel.appendTableRows(dbContext, cellRegion,
                         cellRegionModelPair.y.getTableName());
                 ((TOM_Model) cellRegionModelPair.y).insertOIDs(dbContext, oidList);
                 //TOM_Mapping.instance.getTableOrder("", cellRegionModelPair.y.getTableName())
