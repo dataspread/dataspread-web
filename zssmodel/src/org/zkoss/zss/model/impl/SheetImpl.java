@@ -641,9 +641,10 @@ public class SheetImpl extends AbstractSheetAdv {
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
 
 		Map<String,Object> dataBefore = shiftBeforeRowInsert(rowIdx,lastRowIdx);
-		ModelUpdateUtil.addInsertDeleteUpdate(this, true, true, rowIdx, lastRowIdx);
-		shiftAfterRowInsert(dataBefore,rowIdx,lastRowIdx);
-	}
+        //ModelUpdateUtil.addInsertDeleteUpdate(this, true, true, rowIdx, lastRowIdx);
+        fullRefresh();
+        shiftAfterRowInsert(dataBefore, rowIdx, lastRowIdx);
+    }
 	
 	private Map<String, Object> shiftBeforeRowInsert(int rowIdx, int lastRowIdx) {
 		Map<String,Object> dataBefore = new HashMap<String, Object>();
@@ -739,12 +740,19 @@ public class SheetImpl extends AbstractSheetAdv {
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
 		
 		Map<String,Object> dataBefore = shiftBeforeRowDelete(rowIdx,lastRowIdx);
-		ModelUpdateUtil.addInsertDeleteUpdate(this, false, true, rowIdx, lastRowIdx);
-		shiftAfterRowDelete(dataBefore,rowIdx,lastRowIdx);
-	}	
-	
-	private Map<String, Object> shiftBeforeRowDelete(int rowIdx, int lastRowIdx) {
-		Map<String,Object> dataBefore = new HashMap<String,Object>();
+        // TODO: Refreshing entire sheet Find a more efficient way.
+        //ModelUpdateUtil.addInsertDeleteUpdate(this, false, true, rowIdx, lastRowIdx);
+        fullRefresh();
+        shiftAfterRowDelete(dataBefore, rowIdx, lastRowIdx);
+    }
+
+    private void fullRefresh() {
+        ((AbstractBookAdv) getBook()).sendModelEvent(ModelEvents.createModelEvent(ModelEvents.ON_CELL_CONTENT_CHANGE,
+                this, new CellRegion(0, 0, getEndRowIndex(), getEndColumnIndex())));
+    }
+
+    private Map<String, Object> shiftBeforeRowDelete(int rowIdx, int lastRowIdx) {
+        Map<String,Object> dataBefore = new HashMap<String,Object>();
 		CellRegion affectedRegion = new CellRegion(rowIdx, 0, _book.getMaxRowIndex(), _book.getMaxColumnIndex());
 		List<CellRegion> toShrink = getOverlapsMergedRegions(affectedRegion, false);
 		removeMergedRegion(affectedRegion, true);
@@ -1157,9 +1165,10 @@ public class SheetImpl extends AbstractSheetAdv {
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
 
 		Map<String,Object> dataBefore = shiftBeforeColumnInsert(columnIdx,lastColumnIdx);
-		ModelUpdateUtil.addInsertDeleteUpdate(this, true, false, columnIdx, lastColumnIdx);
-		shiftAfterColumnInsert(dataBefore,columnIdx,lastColumnIdx);
-	}
+        //ModelUpdateUtil.addInsertDeleteUpdate(this, true, false, columnIdx, lastColumnIdx);
+        fullRefresh();
+        shiftAfterColumnInsert(dataBefore, columnIdx, lastColumnIdx);
+    }
 	
 	private Map<String, Object> shiftBeforeColumnInsert(int columnIdx,
 			int lastColumnIdx) {
@@ -1353,9 +1362,10 @@ public class SheetImpl extends AbstractSheetAdv {
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
 		
 		Map<String,Object> dataBefore = shiftBeforeColumnDelete(columnIdx,lastColumnIdx);
-		ModelUpdateUtil.addInsertDeleteUpdate(this, false, false, columnIdx, lastColumnIdx);
-		shiftAfterColumnDelete(dataBefore,columnIdx,lastColumnIdx);
-	}
+        //ModelUpdateUtil.addInsertDeleteUpdate(this, false, false, columnIdx, lastColumnIdx);
+        fullRefresh();
+        shiftAfterColumnDelete(dataBefore, columnIdx, lastColumnIdx);
+    }
 	
 	private Map<String,Object> shiftBeforeColumnDelete(int columnIdx,int lastColumnIdx) {
 		Map<String,Object> dataBefore = new HashMap<String,Object>();

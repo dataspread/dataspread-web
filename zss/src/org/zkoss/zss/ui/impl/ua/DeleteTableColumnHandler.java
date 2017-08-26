@@ -19,7 +19,6 @@ package org.zkoss.zss.ui.impl.ua;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.zss.api.AreaRef;
-import org.zkoss.zss.api.model.Book;
 import org.zkoss.zss.api.model.Sheet;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.impl.Model;
@@ -60,13 +59,6 @@ public class DeleteTableColumnHandler extends AbstractHandler {
             }
         }
         return true;
-    }
-
-    @Override
-    public boolean isEnabled(Book book, Sheet sheet) {
-        return true;
-        //return book != null && sheet != null && ( !sheet.isProtected() ||
-        //		Ranges.range(sheet).getSheetProtection().isDeleteRowsAllowed());
     }
 
 }
