@@ -88,6 +88,7 @@ public enum AuxAction {
 	 INSERT_SHIFT_CELL_RIGHT("shiftCellRight"),
 	 INSERT_SHIFT_CELL_DOWN("shiftCellDown"),
     /* Table Operations */
+    CREATE_TABLE("createTable"),
     LINK_TABLE("linkTable"),
     UNLINK_TABLE("unlinkTable"),
     APPEND_TABLE_ROW("appendTableRow"),

@@ -1594,6 +1594,7 @@ zss.MenupopupFactory = zk.$extends(zk.Object, {
 		p.appendChild(newActionMenuitem(wgt, 'clearContent'));
 		p.appendChild(new zul.menu.Menuseparator());
 
+        tableMP.appendChild(newActionMenuitem(wgt, 'createTable'));
         tableMP.appendChild(newActionMenuitem(wgt, 'linkTable'));
         tableMP.appendChild(newActionMenuitem(wgt, 'unlinkTable'));
 

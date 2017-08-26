@@ -20,11 +20,11 @@ package org.zkoss.zss.ui.impl.ua;
 import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zss.ui.UserActionContext;
 
-public class LinkTableHandler extends AbstractHandler implements EventListener<DlgCallbackEvent> {
+public class CreateTableHandler extends AbstractHandler implements EventListener<DlgCallbackEvent> {
 
     @Override
     protected boolean processAction(UserActionContext ctx) {
-        LinkTableCtrl.show(this, ctx.getSpreadsheet());
+        CreateTableCtrl.show(this, ctx.getSpreadsheet());
         return true;
     }
 

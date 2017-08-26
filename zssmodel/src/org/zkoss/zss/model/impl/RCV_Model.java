@@ -21,8 +21,8 @@ import java.util.stream.IntStream;
 
 public class RCV_Model extends Model {
     private Logger logger = Logger.getLogger(RCV_Model.class.getName());
-    private PosMapping rowMapping;
-    private PosMapping colMapping;
+    protected PosMapping rowMapping;
+    protected PosMapping colMapping;
     private BlockStore bs;
     private MetaDataBlock metaDataBlock;
 

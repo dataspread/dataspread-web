@@ -282,6 +282,11 @@ public class Hybrid_Model extends RCV_Model {
                 sheet.getSheetName(), range.getRow(), range.getColumn(),
                 range.getLastRow(), range.getLastColumn()));
 
+        // Add mappings if not present
+        rowMapping.getIDs(context, range.getRow(), range.getHeight());
+        colMapping.getIDs(context, range.getColumn(), range.getLength());
+
+
         tableModels.add(new Pair<>(range, model));
         MetaDataBlock.ModelEntry modelEntry = new MetaDataBlock.ModelEntry();
         modelEntry.range = range;
@@ -369,7 +374,21 @@ public class Hybrid_Model extends RCV_Model {
                 }
             } else if (tableRange.getRow() > row) {
                 // Shift tables
-                metaDataBlock.modelEntryList.get(i).range = tableRange.shiftedRange(-count, 0);
+                CellRegion shiftedRange = tableRange.shiftedRange(-count, 0);
+                TOM_Mapping.instance.removeMapping(tableModel.getTableName(),
+                        new RefImpl(sheet.getBook().getId(),
+                                sheet.getSheetName(), tableRange.getRow(), tableRange.getColumn(),
+                                tableRange.getLastRow(), tableRange.getLastColumn()),
+                        (TOM_Model) tableModel);
+                TOM_Mapping.instance.addMapping(tableModel.getTableName(), (TOM_Model) tableModel,
+                        new RefImpl(sheet.getBook().getId(),
+                                sheet.getSheetName(), shiftedRange.getRow(), shiftedRange.getColumn(),
+                                shiftedRange.getLastRow(), shiftedRange.getLastColumn()));
+
+
+                metaDataBlock.modelEntryList.get(i).range = shiftedRange;
+
+
             }
             ++i;
         }
