@@ -16,11 +16,17 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.ui.impl.ua;
 
+import org.model.DBContext;
+import org.model.DBHandler;
 import org.zkoss.zss.api.AreaRef;
 import org.zkoss.zss.api.model.Sheet;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.impl.Hybrid_Model;
+import org.zkoss.zss.model.impl.SheetImpl;
 import org.zkoss.zss.ui.UserActionContext;
+
+import java.sql.Connection;
+import java.sql.SQLException;
 
 public class UnlinkTableHandler extends AbstractHandler {
 
@@ -33,6 +39,17 @@ public class UnlinkTableHandler extends AbstractHandler {
                 selection.getColumn(),
                 selection.getLastRow(),
                 selection.getLastColumn());
+
+        try (Connection connection = DBHandler.instance.getConnection()) {
+            DBContext dbContext = new DBContext(connection);
+            dataModel.unlinkTable(dbContext, cellRegion);
+            dbContext.getConnection().commit();
+            ((SheetImpl) sheet.getInternalSheet()).clearCache();
+            ((SheetImpl) sheet.getInternalSheet()).fullRefresh();
+        } catch (SQLException e) {
+            e.printStackTrace();
+
+        }
         return true;
 
     }

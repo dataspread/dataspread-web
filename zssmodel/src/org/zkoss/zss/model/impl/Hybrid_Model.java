@@ -344,6 +344,26 @@ public class Hybrid_Model extends RCV_Model {
         super.insertCols(context, col, count);
     }
 
+    public void unlinkTable(DBContext dbContext, CellRegion cellRegion) {
+        for (int i = 0; i < metaDataBlock.modelEntryList.size(); i++) {
+            CellRegion tableRange = metaDataBlock.modelEntryList.get(i).range;
+            Model tableModel = tableModels.get(i).y;
+            if (tableRange.contains(cellRegion)) {
+                if (tableModel instanceof TOM_Model) {
+                    TOM_Mapping.instance.removeMapping(tableModel.getTableName(),
+                            new RefImpl(sheet.getBook().getId(),
+                                    sheet.getSheetName(), tableRange.getRow(), tableRange.getColumn(),
+                                    tableRange.getLastRow(), tableRange.getLastColumn()),
+                            (TOM_Model) tableModel);
+                    metaDataBlock.modelEntryList.remove(i);
+                    tableModels.remove(i);
+                    bs.putObject(0, metaDataBlock);
+                    bs.flushDirtyBlocks(dbContext);
+                    ((SheetImpl) sheet).fullRefresh();
+                }
+            }
+        }
+    }
 
     @Override
     public void deleteRows(DBContext context, int row, int count) {
