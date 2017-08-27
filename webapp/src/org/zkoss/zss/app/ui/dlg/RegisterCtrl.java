@@ -1,14 +1,3 @@
-/* 
-	Purpose:
-		
-	Description:
-		
-	History:
-		2014/11/27, Created by JerryChen
-
-Copyright (C) 2013 Potix Corporation. All Rights Reserved.
-
-*/
 package org.zkoss.zss.app.ui.dlg;
 
 import org.model.DBContext;
@@ -29,21 +18,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
 
-/**
- * 
- * @author JerryChen
- *
- */
-public class UsernameCtrl extends DlgCtrlBase{
-	public final static String ARG_NAME = "username";
+public class RegisterCtrl extends DlgCtrlBase {
+    public final static String ARG_NAME = "username";
     public final static String ARG_PASSWORD = "password";
     public final static String MESSAGE = "message";
     public static final String ON_USERNAME_CHANGE = "onUsernameChange";
     private static final long serialVersionUID = 1L;
-    private final static String URI = "~./zssapp/dlg/username.zul";
+    private final static String URI = "~./zssapp/dlg/register.zul";
     private final static String SALT = "DataSpread";
     @Wire
-	Textbox username;
+    Textbox username;
     @Wire
     Textbox password;
 
@@ -58,62 +42,66 @@ public class UsernameCtrl extends DlgCtrlBase{
         comp.doModal();
         return;
     }
-	
-	@Override
-	public void doAfterCompose(Window comp) throws Exception {
-		super.doAfterCompose(comp);
-		Map<?, ?> args = Executions.getCurrent().getArg();
-		if(args.containsKey(ARG_NAME))
-			username.setValue((String) args.get(ARG_NAME));
+
+    @Override
+    public void doAfterCompose(Window comp) throws Exception {
+        super.doAfterCompose(comp);
+        Map<?, ?> args = Executions.getCurrent().getArg();
+        if (args.containsKey(ARG_NAME))
+            username.setValue((String) args.get(ARG_NAME));
         if (args.containsKey(ARG_PASSWORD))
             password.setValue((String) args.get(ARG_PASSWORD));
         if (args.containsKey(MESSAGE))
             username.setErrorMessage((String) args.get(MESSAGE));
     }
 
-	@Listen("onClick=#ok; onOK=#usernameDlg")
-	public void onSave(){
-		if(Strings.isBlank(username.getValue())){
-			username.setErrorMessage("empty name is not allowed");
-			return;
-		}
-        if (Strings.isBlank(password.getValue()) && (!username.getValue().equals("admin"))) {
+    @Listen("onClick=#submit; onSubmit=#registerDlg")
+    public void onSave() {
+        if (Strings.isBlank(username.getValue())) {
+            username.setErrorMessage("empty name is not allowed");
+            return;
+        } else {
+            if (username.getValue().equals("admin")) {
+                username.setErrorMessage("You can not use admin as your username");
+                return;
+            }
+        }
+        if (Strings.isBlank(password.getValue())) {
             password.setErrorMessage("empty password is not allowed");
             return;
         }
-        if (!username.getValue().equals("admin")) {
-            try (Connection connection = DBHandler.instance.getConnection()) {
-                DBContext dbContext = new DBContext(connection);
+        try (Connection connection = DBHandler.instance.getConnection()) {
+            DBContext dbContext = new DBContext(connection);
 
-                //get user info
-                String select = "SELECT password FROM user_account WHERE username = ?;";
-                PreparedStatement selectStmt = dbContext.getConnection().prepareStatement(select);
-                selectStmt.setString(1, username.getValue());
-                ResultSet rs = selectStmt.executeQuery();
-                if (rs.next()) {
-                    String pswd = rs.getString(1);
-                    String saltedPassword = SALT + password.getValue();
-                    String hashedPassword = generateHash(saltedPassword);
-                    if (!pswd.equals(hashedPassword)) {
-                        password.setErrorMessage("Wrong Password");
-                        return;
-                    }
-                } else {
-                    username.setErrorMessage("Your username does not exist");
-                    return;
-                }
-                selectStmt.close();
-                connection.commit();
-            } catch (SQLException e) {
-                e.printStackTrace();
+            //get user info
+            String select = "SELECT password FROM user_account WHERE username = ?;";
+            PreparedStatement selectStmt = dbContext.getConnection().prepareStatement(select);
+            selectStmt.setString(1, username.getValue());
+            ResultSet rs = selectStmt.executeQuery();
+            if (!rs.next()) {
+                String insert = "INSERT INTO user_account (username, password) VALUES (?, ?);";
+                PreparedStatement insertStmt = dbContext.getConnection().prepareStatement(insert);
+                insertStmt.setString(1, username.getValue());
+                String saltedPassword = SALT + password.getValue();
+                String hashedPassword = generateHash(saltedPassword);
+                insertStmt.setString(2, hashedPassword);
+                insertStmt.execute();
+                insertStmt.close();
+            } else {
+                username.setErrorMessage("Please change another username");
+                return;
             }
+            selectStmt.close();
+            connection.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
+        postCallback(ON_USERNAME_CHANGE, newMap(newEntry(ARG_NAME, username.getValue())));
+        detach();
+    }
 
-		postCallback(ON_USERNAME_CHANGE, newMap(newEntry(ARG_NAME, username.getValue())));
-		detach();
-	}
 
-    @Listen("onClick=#cancel; onCancel=#usernameDlg")
+    @Listen("onClick=#cancel; onCancel=#registerDlg")
     public void onCancel() {
         detach();
     }

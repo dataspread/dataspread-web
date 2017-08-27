@@ -274,9 +274,25 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 	public void onChangeUsername(){
 		pushAppEvent(AppEvts.ON_CLOSE_BOOK);
 		pushAppEvent(AppEvts.ON_CHANGED_USERNAME);
-	}
-	@Listen("onClick=#shareBook")
-	public void onShareBook() {
+        pushAppEvent(AppEvts.ON_NEW_BOOK);
+    }
+
+    @Listen("onClick=#logout")
+    public void onLogout() {
+        pushAppEvent(AppEvts.ON_CLOSE_BOOK);
+        pushAppEvent(AppEvts.ON_LOGOUT);
+        pushAppEvent(AppEvts.ON_NEW_BOOK);
+    }
+
+    @Listen("onClick=#register")
+    public void onRegister() {
+        pushAppEvent(AppEvts.ON_CLOSE_BOOK);
+        pushAppEvent(AppEvts.ON_REGISTER);
+        pushAppEvent(AppEvts.ON_NEW_BOOK);
+    }
+
+    @Listen("onClick=#shareBook")
+    public void onShareBook() {
 		pushAppEvent(AppEvts.ON_SHARE_BOOK);
 	}
 	
