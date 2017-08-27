@@ -30,9 +30,9 @@ public class Version {
 	/** Returns the version UID.
 	 */
 	public static final String UID = "3.8.1";
-	public static final String DATASPREADUID = "0.2 - Internal";
-	
-	/** Features. */
+    public static final String DATASPREADUID = "0.3";
+
+    /** Features. */
 	private static final boolean
 		_ee = Classes.existsByThread("org.zkoss.zssex.Version");
 	
