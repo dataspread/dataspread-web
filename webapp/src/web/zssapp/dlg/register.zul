@@ -4,9 +4,9 @@
 hyperlink.zul
 
 	Purpose:
-		
+
 	Description:
-		
+
 	History:
 		Tue, Nov 26, 2014  2:32:05 PM, Created by JerryChen
 
@@ -14,9 +14,9 @@ Copyright (C) 2014 Potix Corporation. All Rights Reserved.
 
 -->
 <zk>
-    <window title="Login Page" border="normal" id="usernameDlg"
-            apply="org.zkoss.zss.app.ui.dlg.UsernameCtrl" hflex="min" vflex="min">
-		<vbox hflex="1" pack="center" align="center">
+    <window title="Register" border="normal" id="registerDlg"
+            apply="org.zkoss.zss.app.ui.dlg.RegisterCtrl" hflex="min" vflex="min">
+        <vbox hflex="1" pack="center" align="center">
             <hbox>
                 <label>Username</label>
                 <textbox id="username"/>
@@ -26,9 +26,9 @@ Copyright (C) 2014 Potix Corporation. All Rights Reserved.
                 <textbox id="password" type="password"/>
             </hbox>
             <hbox>
-                <button id="ok" label="Login"/>
+                <button id="submit" label="Submit"/>
                 <button id="cancel" label="Cancel"/>
-			</hbox>
-		</vbox>
-	</window>
+            </hbox>
+        </vbox>
+    </window>
 </zk>

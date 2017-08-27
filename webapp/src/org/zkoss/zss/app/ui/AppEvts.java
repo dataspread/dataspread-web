@@ -21,8 +21,10 @@ public class AppEvts {
 	public static String ON_CHANGED_FILE_STATE = "onFileSaved";
 	public static String ON_SHARE_BOOK = "onShareBook";
 	public static String ON_CHANGED_USERNAME = "onChangeUsername";
-	public static String ON_AFTER_CHANGED_USERNAME = "onAfterChangeUsername";
-	public static String ON_LOADED_BOOK = "onLoadedBook";
+    public static String ON_LOGOUT = "onLogout";
+    public static String ON_REGISTER = "onRegister";
+    public static String ON_AFTER_CHANGED_USERNAME = "onAfterChangeUsername";
+    public static String ON_LOADED_BOOK = "onLoadedBook";
 	public static String ON_CLOSED_BOOK = "onClosedBook";
 	public static String ON_SAVED_BOOK = "onSavedBook";
 	public static String ON_CHANGED_SPREADSHEET = "onChangedSpreadsheet";

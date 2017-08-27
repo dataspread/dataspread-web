@@ -138,7 +138,9 @@
 			</menupopup>
 		</menu>
 		<menuitem id="zssmark" label="ZK Spreadsheet (Evaluation)" disabled="true"/>
+        <menuitem id="logout" style="float:right;" label="${c:l('zssapp.mainMenu.logout')}" sclass="zsmenuitem-app"/>
 		<menuitem id="changeUsername" image="~./zssapp/img/user.png" style="float:right;" label="${c:l('zssapp.mainMenu.user')}" sclass="zsmenuitem-app"/>
+        <menuitem id="register" style="float:right" label="${c:l('zssapp.mainMenu.register')}" sclass="zsmenuitem-app"/>
 		<menuitem id="shareBook" image="~./zssapp/img/share.png" style="float:right;" label="${c:l('zssapp.mainMenu.shareBook')}" sclass="zsmenuitem-app" tooltip="usersPop, after_end"/>
 		<menuitem id="saveMessage" style="float:right;" disabled="true" sclass="zsmenuitem-app"/>
 	</menubar>

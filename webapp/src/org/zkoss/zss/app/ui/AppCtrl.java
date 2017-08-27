@@ -392,6 +392,45 @@ public class AppCtrl extends CtrlBase<Component> {
 
     }
 
+    private void logout() {
+        String name = "admin";
+        if (name.equals(username))
+            return;
+
+        if (!collaborationInfo.addUsername(name, username)) {
+            setupUsername(true, "Conflict, should choose another one...");
+            return;
+        }
+
+        ss.setUserName(username = name);
+        saveUsername(username);
+        pushAppEvent(AppEvts.ON_AFTER_CHANGED_USERNAME, username);
+    }
+
+    private void register() {
+        String message = null;
+        RegisterCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
+            private static final long serialVersionUID = -6819708673820196683L;
+
+            public void onEvent(DlgCallbackEvent event) throws Exception {
+                if (RegisterCtrl.ON_USERNAME_CHANGE.equals(event.getName())) {
+                    String name = (String) event.getData(UsernameCtrl.ARG_NAME);
+                    if (name.equals(username))
+                        return;
+
+                    if (!collaborationInfo.addUsername(name, username)) {
+                        setupUsername(true, "Conflict, should choose another one...");
+                        return;
+                    }
+
+                    ss.setUserName(username = name);
+                    saveUsername(username);
+                    pushAppEvent(AppEvts.ON_AFTER_CHANGED_USERNAME, username);
+                }
+            }
+        }, username == null ? "admin" : username, message == null ? "" : message);
+    }
+
     private void setupUsername(boolean forceAskUser) {
         setupUsername(forceAskUser, null);
     }
@@ -1114,6 +1153,10 @@ public class AppCtrl extends CtrlBase<Component> {
             doInsertHyperlink();
         } else if (AppEvts.ON_CHANGED_USERNAME.equals(event)) {
             setupUsername(true);
+        } else if (AppEvts.ON_LOGOUT.equals(event)) {
+            logout();
+        } else if (AppEvts.ON_REGISTER.equals(event)) {
+            register();
         } else if (AppEvts.ON_SHARE_BOOK.equals(event)) {
             shareBook();
         } else if (AppEvts.ON_CREATE_TABLE.equals(event)) {
