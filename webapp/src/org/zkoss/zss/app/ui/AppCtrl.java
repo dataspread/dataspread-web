@@ -393,7 +393,7 @@ public class AppCtrl extends CtrlBase<Component> {
     }
 
     private void logout() {
-        String name = "admin";
+        String name = "guest";
         if (name.equals(username))
             return;
 
@@ -428,7 +428,7 @@ public class AppCtrl extends CtrlBase<Component> {
                     pushAppEvent(AppEvts.ON_AFTER_CHANGED_USERNAME, username);
                 }
             }
-        }, username == null ? "admin" : username, message == null ? "" : message);
+        }, username == null ? "guest" : username, message == null ? "" : message);
     }
 
     private void setupUsername(boolean forceAskUser) {
@@ -456,7 +456,7 @@ public class AppCtrl extends CtrlBase<Component> {
                         pushAppEvent(AppEvts.ON_AFTER_CHANGED_USERNAME, username);
                     }
                 }
-            }, username == null ? "admin" : username, message == null ? "" : message);
+            }, username == null ? "guest" : username, message == null ? "" : message);
         } else {
             // already in cookie
             Cookie[] cookies = ((HttpServletRequest) Executions.getCurrent().getNativeRequest()).getCookies();
@@ -464,13 +464,17 @@ public class AppCtrl extends CtrlBase<Component> {
                 for (Cookie cookie : cookies) {
                     if (cookie.getName().equals(ZSS_USERNAME)) {
                         username = cookie.getValue();
+                        collaborationInfo.addUsername(username, username);
+                        saveUsername(username);
+                        pushAppEvent(AppEvts.ON_AFTER_CHANGED_USERNAME, username);
+                        ss.setUserName(username);
                         break;
                     }
                 }
             }
 
             String newName = collaborationInfo.getUsername(username);
-
+            collaborationInfo.addUsername(newName, newName);
             if (username == null) {
                 saveUsername(newName);
             }

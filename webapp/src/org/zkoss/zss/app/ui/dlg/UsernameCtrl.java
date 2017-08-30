@@ -77,11 +77,11 @@ public class UsernameCtrl extends DlgCtrlBase{
 			username.setErrorMessage("empty name is not allowed");
 			return;
 		}
-        if (Strings.isBlank(password.getValue()) && (!username.getValue().equals("admin"))) {
+        if (Strings.isBlank(password.getValue()) && (!username.getValue().equals("guest"))) {
             password.setErrorMessage("empty password is not allowed");
             return;
         }
-        if (!username.getValue().equals("admin")) {
+        if (!username.getValue().equals("guest")) {
             try (Connection connection = DBHandler.instance.getConnection()) {
                 DBContext dbContext = new DBContext(connection);
 
