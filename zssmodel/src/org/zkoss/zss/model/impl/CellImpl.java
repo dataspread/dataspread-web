@@ -177,6 +177,7 @@ public class CellImpl extends AbstractCellAdv {
 			Validations.argInstance(cellStyle, AbstractCellStyleAdv.class);
 		}
 		this._cellStyle = (AbstractCellStyleAdv) cellStyle;
+		updateCelltoDB(null);
 		addCellUpdate(CellAttribute.STYLE); //ZSS-939
 	}
 
@@ -419,24 +420,26 @@ public class CellImpl extends AbstractCellAdv {
 
 			if (updateToDB)
 			{
-				getSheet().getBook().checkDBSchema();
-				try {
-					Connection localConnection = connection == null ? DBHandler.instance.getConnection() : connection;
-					Collection<AbstractCellAdv> cells = new LinkedList<>();
-					cells.add(this);
-					getSheet().getDataModel().updateCells(new DBContext(localConnection), cells);
-					//TODO: Handle cell delete.
-
-					if (connection == null) {
-						localConnection.commit();
-						localConnection.close();
-					}
-				}
-				catch (SQLException e)
-				{
-					e.printStackTrace();
-				}
+				updateCelltoDB(connection);
 			}
+		}
+	}
+
+	private void updateCelltoDB(Connection connection) {
+		getSheet().getBook().checkDBSchema();
+		try {
+			Connection localConnection = connection == null ? DBHandler.instance.getConnection() : connection;
+			Collection<AbstractCellAdv> cells = new LinkedList<>();
+			cells.add(this);
+			getSheet().getDataModel().updateCells(new DBContext(localConnection), cells);
+			//TODO: Handle cell delete.
+
+			if (connection == null) {
+				localConnection.commit();
+				localConnection.close();
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
 	}
 
