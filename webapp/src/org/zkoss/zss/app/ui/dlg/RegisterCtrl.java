@@ -61,8 +61,8 @@ public class RegisterCtrl extends DlgCtrlBase {
             username.setErrorMessage("empty name is not allowed");
             return;
         } else {
-            if (username.getValue().equals("admin")) {
-                username.setErrorMessage("You can not use admin as your username");
+            if (username.getValue().equals("guest")) {
+                username.setErrorMessage("You can not use guest as your username");
                 return;
             }
         }
