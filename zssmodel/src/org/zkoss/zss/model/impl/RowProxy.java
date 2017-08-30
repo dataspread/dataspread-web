@@ -16,15 +16,14 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
+import org.zkoss.zss.model.SCell;
+import org.zkoss.zss.model.SCellStyle;
+import org.zkoss.zss.model.SSheet;
+
 import java.lang.ref.WeakReference;
 import java.sql.Connection;
 import java.util.Collections;
 import java.util.Iterator;
-
-import org.zkoss.zss.model.SCell;
-import org.zkoss.zss.model.SCellStyle;
-import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.model.util.Validations;
 /**
  * 
  * @author dennis
@@ -52,7 +51,7 @@ class RowProxy extends AbstractRowAdv{
 	
 	protected void loadProxy(){
 		if(_proxy==null){
-			_proxy = (AbstractRowAdv)((AbstractSheetAdv)getSheet()).getRow(_index,false);
+			_proxy = ((AbstractSheetAdv) getSheet()).getRow(_index, false);
 		}
 	}
 	
@@ -64,7 +63,7 @@ class RowProxy extends AbstractRowAdv{
 
 	public boolean isNull() {
 		loadProxy();
-		return _proxy==null?true:_proxy.isNull();
+		return _proxy == null || _proxy.isNull();
 	}
 
 
@@ -83,6 +82,11 @@ class RowProxy extends AbstractRowAdv{
 		return getCellStyle(false);
 	}
 
+	@Override
+	public void setCellStyle(SCellStyle cellStyle, boolean updateToDB) {
+
+	}
+
 	public SCellStyle getCellStyle(boolean local) {
 		loadProxy();
 		if(_proxy!=null){
@@ -94,7 +98,7 @@ class RowProxy extends AbstractRowAdv{
 	public void setCellStyle(SCellStyle cellStyle) {
 		loadProxy();
 		if(_proxy==null){
-			_proxy = (AbstractRowAdv)((AbstractSheetAdv)getSheet()).getOrCreateRow(_index);
+			_proxy = ((AbstractSheetAdv) getSheet()).getOrCreateRow(_index);
 		}
 		_proxy.setCellStyle(cellStyle);
 	}
@@ -151,7 +155,7 @@ class RowProxy extends AbstractRowAdv{
 	public void setHeight(int width) {
 		loadProxy();
 		if (_proxy == null) {
-			_proxy = (AbstractRowAdv)((AbstractSheetAdv)getSheet()).getOrCreateRow(_index);
+			_proxy = ((AbstractSheetAdv) getSheet()).getOrCreateRow(_index);
 		}
 		_proxy.setHeight(width);
 	}
@@ -160,7 +164,7 @@ class RowProxy extends AbstractRowAdv{
 	public void setHidden(boolean hidden) {
 		loadProxy();
 		if (_proxy == null) {
-			_proxy = (AbstractRowAdv)((AbstractSheetAdv)getSheet()).getOrCreateRow(_index);
+			_proxy = ((AbstractSheetAdv) getSheet()).getOrCreateRow(_index);
 		}
 		_proxy.setHidden(hidden);
 	}

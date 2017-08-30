@@ -5,7 +5,7 @@ import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBorder;
 import org.zkoss.zss.model.SFont;
 import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.range.impl.StyleUtil;
+import org.zkoss.zss.range.impl.StyleUtilNoDB;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -246,10 +246,10 @@ public class TOM_Model extends Model {
                         cells.add(cell);
 
                         /* Header formatting */
-                        StyleUtil.setBackColor(sheet.getBook(), cell, "#99ccff");
-                        StyleUtil.setFontBoldWeight(sheet.getBook(), cell, SFont.Boldweight.BOLD);
-                        StyleUtil.setBorder(sheet.getBook(), cell, "#000000", SBorder.BorderType.MEDIUM);
-                        StyleUtil.setLocked(sheet.getBook(), cell, true);
+                        StyleUtilNoDB.setBackColor(sheet.getBook(), cell, "#99ccff");
+                        StyleUtilNoDB.setFontBoldWeight(sheet.getBook(), cell, SFont.Boldweight.BOLD);
+                        StyleUtilNoDB.setBorder(sheet.getBook(), cell, "#000000", SBorder.BorderType.MEDIUM);
+                        StyleUtilNoDB.setLocked(sheet.getBook(), cell, true);
                     }
                 }
             }
@@ -263,8 +263,8 @@ public class TOM_Model extends Model {
                     if (data != null) {
                         AbstractCellAdv cell = CellImpl.fromBytes(sheet, row, col, data);
                         cells.add(cell);
-                        StyleUtil.setBackColor(sheet.getBook(), cell, "#99ccff");
-                        StyleUtil.setBorder(sheet.getBook(), cell, "#000000", SBorder.BorderType.MEDIUM);
+                        StyleUtilNoDB.setBackColor(sheet.getBook(), cell, "#99ccff");
+                        StyleUtilNoDB.setBorder(sheet.getBook(), cell, "#000000", SBorder.BorderType.MEDIUM);
                     }
                 }
             }
