@@ -173,7 +173,7 @@ public class CellImpl extends AbstractCellAdv {
 
     @Override
     public void setCellStyle(SCellStyle cellStyle) {
-        setCellStyle(cellStyle, false);
+        setCellStyle(cellStyle, true);
     }
 
     @Override
