@@ -16,12 +16,11 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
-import java.lang.ref.WeakReference;
-
 import org.zkoss.zss.model.SCellStyle;
 import org.zkoss.zss.model.SColumn;
 import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.model.util.Validations;
+
+import java.lang.ref.WeakReference;
 /**
  * 
  * @author dennis
@@ -40,9 +39,9 @@ class ColumnProxy implements SColumn {
 
 	protected void loadProxy(boolean split) {
 		if(split){
-			_proxy = (AbstractColumnArrayAdv) ((AbstractSheetAdv)getSheet()).getOrSplitColumnArray(_index);
+			_proxy = ((AbstractSheetAdv) getSheet()).getOrSplitColumnArray(_index);
 		}else if (_proxy == null) {
-			_proxy = (AbstractColumnArrayAdv) ((AbstractSheetAdv)getSheet()).getColumnArray(_index);
+			_proxy = (AbstractColumnArrayAdv) getSheet().getColumnArray(_index);
 		}
 	}
 
@@ -64,7 +63,7 @@ class ColumnProxy implements SColumn {
 	@Override
 	public boolean isNull() {
 		loadProxy(false);
-		return _proxy == null ? true : false;
+		return _proxy == null;
 	}
 
 	@Override
@@ -75,7 +74,12 @@ class ColumnProxy implements SColumn {
 		}
 		return getSheet().getBook().getDefaultCellStyle();
 	}
-	
+
+	@Override
+	public void setCellStyle(SCellStyle cellStyle, boolean updateToDB) {
+
+	}
+
 	@Override
 	public SCellStyle getCellStyle(boolean local) {
 		loadProxy(false);

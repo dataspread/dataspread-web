@@ -21,8 +21,8 @@ import java.util.stream.IntStream;
 
 public class RCV_Model extends Model {
     private Logger logger = Logger.getLogger(RCV_Model.class.getName());
-    private PosMapping rowMapping;
-    private PosMapping colMapping;
+    protected PosMapping rowMapping;
+    protected PosMapping colMapping;
     private BlockStore bs;
     private MetaDataBlock metaDataBlock;
 
@@ -236,7 +236,7 @@ public class RCV_Model extends Model {
     }
 
     @Override
-    public boolean deleteTuples(DBContext context, CellRegion cellRegion) {
+    public boolean deleteTableRows(DBContext context, CellRegion cellRegion) {
         throw new UnsupportedOperationException();
     }
 
@@ -351,6 +351,11 @@ public class RCV_Model extends Model {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public boolean deleteTableColumns(DBContext dbContext, CellRegion cellRegion) {
+        throw new UnsupportedOperationException();
     }
 
     private static class MetaDataBlock {

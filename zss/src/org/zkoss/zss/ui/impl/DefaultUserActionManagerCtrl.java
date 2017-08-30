@@ -150,6 +150,7 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 		registerHandler(category, AuxAction.CLEAR_STYLE.getAction(), new ClearCellHandler(ClearCellAction.Type.STYLE));
 		registerHandler(category, AuxAction.CLEAR_ALL.getAction(), new ClearCellHandler(ClearCellAction.Type.ALL));
 
+        registerHandler(category, AuxAction.CREATE_TABLE.getAction(), new CreateTableHandler());
         registerHandler(category, AuxAction.LINK_TABLE.getAction(), new LinkTableHandler());
         registerHandler(category, AuxAction.UNLINK_TABLE.getAction(), new UnlinkTableHandler());
 

@@ -5,7 +5,7 @@ import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBorder;
 import org.zkoss.zss.model.SFont;
 import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.range.impl.StyleUtil;
+import org.zkoss.zss.range.impl.StyleUtilNoDB;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -69,7 +69,7 @@ public class TOM_Model extends Model {
     }
 
     @Override
-    public boolean deleteTuples(DBContext context, CellRegion cellRegion) {
+    public boolean deleteTableRows(DBContext context, CellRegion cellRegion) {
         throw new UnsupportedOperationException();
     }
 
@@ -126,14 +126,28 @@ public class TOM_Model extends Model {
             Array inArray = context.getConnection().createArrayOf("integer", oids);
             stmt.setArray(1, inArray);
             stmt.execute();
-
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
     }
 
+
+    public void deleteTableColumns(DBContext context, int col, int count) {
+        Integer[] colids = colMapping.deleteIDs(context, col, count);
+        try (Statement stmt = context.getConnection().createStatement()) {
+            for (int colid : colids) {
+                StringBuilder deleteColumnsStmt = (new StringBuilder())
+                        .append("ALTER TABLE ")
+                        .append(tableName)
+                        .append(" DROP COLUMN ")
+                        .append(columnNames.get(colid));
+                stmt.execute(deleteColumnsStmt.toString());
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        loadColumnInfo(context);
+    }
 
     protected void createOIDIndex(DBContext context) {
         /* TODO update query */
@@ -232,10 +246,10 @@ public class TOM_Model extends Model {
                         cells.add(cell);
 
                         /* Header formatting */
-                        StyleUtil.setBackColor(sheet.getBook(), cell, "#99ccff");
-                        StyleUtil.setFontBoldWeight(sheet.getBook(), cell, SFont.Boldweight.BOLD);
-                        StyleUtil.setBorder(sheet.getBook(), cell, "#000000", SBorder.BorderType.MEDIUM);
-                        StyleUtil.setLocked(sheet.getBook(), cell, true);
+                        StyleUtilNoDB.setBackColor(sheet.getBook(), cell, "#99ccff");
+                        StyleUtilNoDB.setFontBoldWeight(sheet.getBook(), cell, SFont.Boldweight.BOLD);
+                        StyleUtilNoDB.setBorder(sheet.getBook(), cell, "#000000", SBorder.BorderType.MEDIUM);
+                        StyleUtilNoDB.setLocked(sheet.getBook(), cell, true);
                     }
                 }
             }
@@ -249,8 +263,8 @@ public class TOM_Model extends Model {
                     if (data != null) {
                         AbstractCellAdv cell = CellImpl.fromBytes(sheet, row, col, data);
                         cells.add(cell);
-                        StyleUtil.setBackColor(sheet.getBook(), cell, "#99ccff");
-                        StyleUtil.setBorder(sheet.getBook(), cell, "#000000", SBorder.BorderType.MEDIUM);
+                        StyleUtilNoDB.setBackColor(sheet.getBook(), cell, "#99ccff");
+                        StyleUtilNoDB.setBorder(sheet.getBook(), cell, "#000000", SBorder.BorderType.MEDIUM);
                     }
                 }
             }
@@ -443,5 +457,10 @@ public class TOM_Model extends Model {
     @Override
     public void importSheet(Reader reader, char delimiter) throws IOException {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean deleteTableColumns(DBContext dbContext, CellRegion cellRegion) {
+        return false;
     }
 }

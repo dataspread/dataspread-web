@@ -171,13 +171,20 @@ public class CellImpl extends AbstractCellAdv {
 		return getCellStyle(false);
 	}
 
-	@Override
-	public void setCellStyle(SCellStyle cellStyle) {
-		if (cellStyle != null) {
+    @Override
+    public void setCellStyle(SCellStyle cellStyle) {
+        setCellStyle(cellStyle, true);
+    }
+
+    @Override
+    public void setCellStyle(SCellStyle cellStyle, boolean updateToDB) {
+        if (cellStyle != null) {
 			Validations.argInstance(cellStyle, AbstractCellStyleAdv.class);
 		}
 		this._cellStyle = (AbstractCellStyleAdv) cellStyle;
-		addCellUpdate(CellAttribute.STYLE); //ZSS-939
+        if (updateToDB)
+            updateCelltoDB(null);
+        addCellUpdate(CellAttribute.STYLE); //ZSS-939
 	}
 
 	@Override
@@ -419,24 +426,26 @@ public class CellImpl extends AbstractCellAdv {
 
 			if (updateToDB)
 			{
-				getSheet().getBook().checkDBSchema();
-				try {
-					Connection localConnection = connection == null ? DBHandler.instance.getConnection() : connection;
-					Collection<AbstractCellAdv> cells = new LinkedList<>();
-					cells.add(this);
-					getSheet().getDataModel().updateCells(new DBContext(localConnection), cells);
-					//TODO: Handle cell delete.
-
-					if (connection == null) {
-						localConnection.commit();
-						localConnection.close();
-					}
-				}
-				catch (SQLException e)
-				{
-					e.printStackTrace();
-				}
+				updateCelltoDB(connection);
 			}
+		}
+	}
+
+	private void updateCelltoDB(Connection connection) {
+		getSheet().getBook().checkDBSchema();
+		try {
+			Connection localConnection = connection == null ? DBHandler.instance.getConnection() : connection;
+			Collection<AbstractCellAdv> cells = new LinkedList<>();
+			cells.add(this);
+			getSheet().getDataModel().updateCells(new DBContext(localConnection), cells);
+			//TODO: Handle cell delete.
+
+			if (connection == null) {
+				localConnection.commit();
+				localConnection.close();
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
 	}
 

@@ -18,7 +18,6 @@ package org.zkoss.zss.model.impl;
 
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCellStyle;
-import org.zkoss.zss.model.SColumn;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.util.Validations;
 /**
@@ -74,6 +73,11 @@ public class ColumnArrayImpl extends AbstractColumnArrayAdv {
 	@Override
 	public SCellStyle getCellStyle() {
 		return getCellStyle(false);
+	}
+
+	@Override
+	public void setCellStyle(SCellStyle cellStyle, boolean updateToDB) {
+
 	}
 
 	@Override

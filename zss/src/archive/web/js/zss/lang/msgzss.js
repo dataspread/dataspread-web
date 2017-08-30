@@ -85,8 +85,9 @@ msgzss.action = {
 	insertSheetColumn: 'Insert Columns',
     /* Table strings */
 	table: 'Table',
+    createTable: 'Create',
     linkTable: 'Link',
-    unlinkTable: 'UnLink',
+    unlinkTable: 'Unlink',
     appendTableRow: 'Add Tuples',
     deleteTableRow: 'Delete Tuples',
     appendTableColumn: 'Add Columns',

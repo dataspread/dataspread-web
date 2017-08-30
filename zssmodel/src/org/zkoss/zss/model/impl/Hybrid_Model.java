@@ -159,9 +159,9 @@ public class Hybrid_Model extends RCV_Model {
                 .sorted(Comparator.comparingInt(SCell::getRowIndex))
                 .map(AbstractCellAdv::getValue)
                 .map(Object::toString)
+                .map(e -> e.replaceAll("[^a-zA-Z0-9.\\-;]+", "_"))
                 .collect(Collectors.toList());
 
-        /* assume first column is key */
         String createTable = (new StringBuilder())
                 .append("CREATE TABLE IF NOT EXISTS ")
                 .append(newTableName)
@@ -200,7 +200,7 @@ public class Hybrid_Model extends RCV_Model {
         }
     }
 
-    public List<Integer> insertTuples(DBContext context, CellRegion range, String tableName) {
+    public List<Integer> appendTableRows(DBContext context, CellRegion range, String tableName) {
 
         List<Integer> oidList = new ArrayList<>();
         // Delete Header
@@ -282,6 +282,11 @@ public class Hybrid_Model extends RCV_Model {
                 sheet.getSheetName(), range.getRow(), range.getColumn(),
                 range.getLastRow(), range.getLastColumn()));
 
+        // Add mappings if not present
+        rowMapping.getIDs(context, range.getRow(), range.getHeight());
+        colMapping.getIDs(context, range.getColumn(), range.getLength());
+
+
         tableModels.add(new Pair<>(range, model));
         MetaDataBlock.ModelEntry modelEntry = new MetaDataBlock.ModelEntry();
         modelEntry.range = range;
@@ -339,6 +344,26 @@ public class Hybrid_Model extends RCV_Model {
         super.insertCols(context, col, count);
     }
 
+    public void unlinkTable(DBContext dbContext, CellRegion cellRegion) {
+        for (int i = 0; i < metaDataBlock.modelEntryList.size(); i++) {
+            CellRegion tableRange = metaDataBlock.modelEntryList.get(i).range;
+            Model tableModel = tableModels.get(i).y;
+            if (tableRange.contains(cellRegion)) {
+                if (tableModel instanceof TOM_Model) {
+                    TOM_Mapping.instance.removeMapping(tableModel.getTableName(),
+                            new RefImpl(sheet.getBook().getId(),
+                                    sheet.getSheetName(), tableRange.getRow(), tableRange.getColumn(),
+                                    tableRange.getLastRow(), tableRange.getLastColumn()),
+                            (TOM_Model) tableModel);
+                    metaDataBlock.modelEntryList.remove(i);
+                    tableModels.remove(i);
+                    bs.putObject(0, metaDataBlock);
+                    bs.flushDirtyBlocks(dbContext);
+                    ((SheetImpl) sheet).fullRefresh();
+                }
+            }
+        }
+    }
 
     @Override
     public void deleteRows(DBContext context, int row, int count) {
@@ -369,7 +394,21 @@ public class Hybrid_Model extends RCV_Model {
                 }
             } else if (tableRange.getRow() > row) {
                 // Shift tables
-                metaDataBlock.modelEntryList.get(i).range = tableRange.shiftedRange(-count, 0);
+                CellRegion shiftedRange = tableRange.shiftedRange(-count, 0);
+                TOM_Mapping.instance.removeMapping(tableModel.getTableName(),
+                        new RefImpl(sheet.getBook().getId(),
+                                sheet.getSheetName(), tableRange.getRow(), tableRange.getColumn(),
+                                tableRange.getLastRow(), tableRange.getLastColumn()),
+                        (TOM_Model) tableModel);
+                TOM_Mapping.instance.addMapping(tableModel.getTableName(), (TOM_Model) tableModel,
+                        new RefImpl(sheet.getBook().getId(),
+                                sheet.getSheetName(), shiftedRange.getRow(), shiftedRange.getColumn(),
+                                shiftedRange.getLastRow(), shiftedRange.getLastColumn()));
+
+
+                metaDataBlock.modelEntryList.get(i).range = shiftedRange;
+
+
             }
             ++i;
         }
@@ -380,7 +419,7 @@ public class Hybrid_Model extends RCV_Model {
     }
 
     @Override
-    public boolean deleteTuples(DBContext context, CellRegion cellRegion) {
+    public boolean deleteTableRows(DBContext context, CellRegion cellRegion) {
         List<Pair<CellRegion, Model>> modelEntries = tableModels.stream()
                 .filter(e -> e.x.overlaps(cellRegion))
                 .collect(Collectors.toList());
@@ -400,6 +439,37 @@ public class Hybrid_Model extends RCV_Model {
         TOM_Model tomModel = (TOM_Model) modelEntries.get(0).y;
         /* -1 below as top row is header */
         tomModel.deleteTuples(context, cellRegion.getRow() - tableRegion.getRow() - 1, cellRegion.getHeight());
+        // For all the regions that are displaying more than my displayed records
+        // Reduce the size.
+
+        shrinkToBound(context, tomModel);
+
+        TOM_Mapping.instance.pushUpdates(context, tomModel.getTableName());
+        return true;
+    }
+
+
+    @Override
+    public boolean deleteTableColumns(DBContext context, CellRegion cellRegion) {
+        List<Pair<CellRegion, Model>> modelEntries = tableModels.stream()
+                .filter(e -> e.x.overlaps(cellRegion))
+                .collect(Collectors.toList());
+
+        if (modelEntries.size() != 1)
+            return false;
+
+        if (!(modelEntries.get(0).y instanceof TOM_Model))
+            return false;
+
+
+        CellRegion tableRegion = modelEntries.get(0).x;
+
+        if (!tableRegion.contains(cellRegion))
+            return false;
+
+        TOM_Model tomModel = (TOM_Model) modelEntries.get(0).y;
+        /* -1 below as top row is header */
+        tomModel.deleteTableColumns(context, cellRegion.getColumn() - tableRegion.getColumn(), cellRegion.getLength());
         // For all the regions that are displaying more than my displayed records
         // Reduce the size.
 

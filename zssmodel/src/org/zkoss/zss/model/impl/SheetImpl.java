@@ -746,7 +746,7 @@ public class SheetImpl extends AbstractSheetAdv {
         shiftAfterRowDelete(dataBefore, rowIdx, lastRowIdx);
     }
 
-    private void fullRefresh() {
+    public void fullRefresh() {
         ((AbstractBookAdv) getBook()).sendModelEvent(ModelEvents.createModelEvent(ModelEvents.ON_CELL_CONTENT_CHANGE,
                 this, new CellRegion(0, 0, getEndRowIndex(), getEndColumnIndex())));
     }
@@ -1325,6 +1325,10 @@ public class SheetImpl extends AbstractSheetAdv {
 				.collect(Collectors.toList());
 		cellsToRemove.stream().forEach(sheetDataCache::remove);
 	}
+
+    public void clearCache() {
+        sheetDataCache.clear();
+    }
 
 	@Override
 	public void deleteColumn(int columnIdx, int lastColumnIdx) {

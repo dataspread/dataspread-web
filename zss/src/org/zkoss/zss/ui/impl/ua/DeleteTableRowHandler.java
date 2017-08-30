@@ -23,7 +23,7 @@ public class DeleteTableRowHandler extends AbstractProtectedHandler {
             try (Connection connection = DBHandler.instance.getConnection()) {
                 DBContext dbContext = new DBContext(connection);
 
-                success = dataModel.deleteTuples(dbContext, new CellRegion(selection.getRow(),
+                success = dataModel.deleteTableRows(dbContext, new CellRegion(selection.getRow(),
                         selection.getColumn(),
                         selection.getLastRow(),
                         selection.getLastColumn()));

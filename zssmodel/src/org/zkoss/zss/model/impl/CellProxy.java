@@ -136,6 +136,11 @@ class CellProxy extends AbstractCellAdv {
 	}
 
 	@Override
+	public void setCellStyle(SCellStyle cellStyle, boolean updateToDB) {
+
+	}
+
+	@Override
 	public void setCellStyle(SCellStyle cellStyle) {
 		if (_proxy == null)
 			_proxy = _sheet.createCell(_rowIdx, _columnIdx);

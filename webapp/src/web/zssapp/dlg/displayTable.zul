@@ -1,6 +1,6 @@
 <zk>
-    <window id="displayTableDlg" title="Display Table" border="normal" closable="true" mode="modal"
-            apply="org.zkoss.zss.app.ui.table.displayTableCtrl" width="330px" position="center,center"
+    <window id="displayTableDlg" title="Link Table" border="normal" closable="true" mode="modal"
+            apply="org.zkoss.zss.ui.impl.ua.LinkTableCtrl" width="330px" position="center,center"
             action="show: slideDown;hide: slideUp">
         <vlayout>
             <hbox hflex="1" style="padding: 5px 3px 5px 15px;">
@@ -20,8 +20,6 @@
                 <button id="cancelButton" label="Cancel"/>
             </hbox>
 
-
         </vlayout>
-
     </window>
 </zk>

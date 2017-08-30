@@ -16,17 +16,17 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
-import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SCellStyle;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.util.Validations;
+
+import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
 /**
  * 
  * @author dennis
@@ -167,6 +167,11 @@ public class RowImpl extends AbstractRowAdv {
 	@Override
 	public SCellStyle getCellStyle() {
 		return getCellStyle(false);
+	}
+
+	@Override
+	public void setCellStyle(SCellStyle cellStyle, boolean updateToDB) {
+
 	}
 
 	@Override

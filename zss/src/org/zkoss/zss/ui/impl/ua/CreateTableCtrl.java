@@ -1,4 +1,4 @@
-package org.zkoss.zss.app.ui.table;
+package org.zkoss.zss.ui.impl.ua;
 
 import org.model.DBContext;
 import org.model.DBHandler;
@@ -7,10 +7,7 @@ import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zk.ui.select.annotation.Listen;
 import org.zkoss.zk.ui.select.annotation.Wire;
 import org.zkoss.zss.api.AreaRef;
-import org.zkoss.zss.api.Ranges;
 import org.zkoss.zss.api.model.Sheet;
-import org.zkoss.zss.app.ui.dlg.DlgCallbackEvent;
-import org.zkoss.zss.app.ui.dlg.DlgCtrlBase;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.impl.Hybrid_Model;
 import org.zkoss.zss.ui.Spreadsheet;
@@ -25,7 +22,7 @@ import java.util.Map;
 /**
  * Created by Albatool on 4/11/2017.
  */
-public class createTableCtrl extends DlgCtrlBase {
+public class CreateTableCtrl extends DlgCtrlBase {
     public static final String ON_OPEN = "onOpen";
     private static final long serialVersionUID = 1L;
     private final static String URI = "~./zssapp/dlg/createTable.zul";
@@ -37,11 +34,7 @@ public class createTableCtrl extends DlgCtrlBase {
     private AreaRef selection;
     private Sheet sheet;
 
-    private Table tableObj = new Table();
-
-    private String name;
-    private String rangeRef;
-    private String bookName;
+    private String tableNameStr;
 
     public static void show(EventListener<DlgCallbackEvent> callback, Spreadsheet ss) {
 
@@ -60,17 +53,14 @@ public class createTableCtrl extends DlgCtrlBase {
         selection = sss.getSelection();
         sheet = sss.getSelectedSheet();
 
-        bookName = sss.getBook().getBookName();
-        rangeRef = Ranges.getAreaRefString(sheet, selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
-
     }
 
     @Listen("onClick = #createButton")
     public void create() {
         boolean created = false;
-        name = tableName.getValue();
+        tableNameStr = tableName.getValue();
         try {
-            if (name.isEmpty()) {
+            if (tableNameStr.isEmpty()) {
                 Messagebox.show("Table Name is Required", "Table Name",
                         Messagebox.OK, Messagebox.ERROR);
                 return;
@@ -88,16 +78,16 @@ public class createTableCtrl extends DlgCtrlBase {
 
             Connection connection = DBHandler.instance.getConnection();
             DBContext dbContext = new DBContext(connection);
-            model.createTable(dbContext, region, name);
+            model.createTable(dbContext, region, tableNameStr);
             model.appendTableRows(dbContext, new CellRegion(region.getRow() + 1, region.getColumn(),
-                    region.getLastRow(), region.getLastColumn()), name);
-            model.linkTable(dbContext, name, new CellRegion(region.getRow(), region.getColumn(),
+                    region.getLastRow(), region.getLastColumn()), tableNameStr);
+            model.linkTable(dbContext, tableNameStr, new CellRegion(region.getRow(), region.getColumn(),
                     region.getLastRow(), region.getLastColumn()));
             connection.commit();
             sheet.getInternalSheet().clearCache(region);
             sss.updateCell(selection.getColumn(), selection.getRow(), selection.getLastColumn(),
                     selection.getLastRow());
-            Messagebox.show("Table " + name.toUpperCase() + " is Successfully Created", "Table Creation",
+            Messagebox.show("Table " + tableNameStr.toUpperCase() + " is Successfully Created", "Table Creation",
                     Messagebox.OK, Messagebox.INFORMATION);
 
         } catch (SQLException e) {
@@ -107,8 +97,6 @@ public class createTableCtrl extends DlgCtrlBase {
 
         }
         createTableDlg.detach();
-
-
     }
 
     @Listen("onClick = #cancelButton")
@@ -116,6 +104,4 @@ public class createTableCtrl extends DlgCtrlBase {
 
         createTableDlg.detach();
     }
-
-
 }
