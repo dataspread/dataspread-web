@@ -159,9 +159,9 @@ public class Hybrid_Model extends RCV_Model {
                 .sorted(Comparator.comparingInt(SCell::getRowIndex))
                 .map(AbstractCellAdv::getValue)
                 .map(Object::toString)
+                .map(e -> e.replaceAll("[^a-zA-Z0-9.\\-;]+", "_"))
                 .collect(Collectors.toList());
 
-        /* assume first column is key */
         String createTable = (new StringBuilder())
                 .append("CREATE TABLE IF NOT EXISTS ")
                 .append(newTableName)
