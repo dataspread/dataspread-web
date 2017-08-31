@@ -174,7 +174,7 @@ public class CollaborationInfoImpl implements CollaborationInfo {
 	
 	@Override
 	public String getUsername(String originName) {
-        return isUsernameExist(originName) ? originName : "admin";
+        return isUsernameExist(originName) ? originName : "guest";
     }
 
     @Override
