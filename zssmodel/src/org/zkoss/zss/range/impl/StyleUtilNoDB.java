@@ -87,7 +87,7 @@ public class StyleUtilNoDB {
             style = cloneCellStyle(book, orgStyle);
             style.setFont(font);
         }
-        holder.setCellStyle(style);
+        holder.setCellStyle(style, false);
 
 //		if(cache!=null){
 //			cache.put((int)orgStyle.getIndex(), style);
@@ -138,7 +138,7 @@ public class StyleUtilNoDB {
             style.setBackColor(newColor);
             style.setFillPattern(pattern);
         }
-        holder.setCellStyle(style);
+        holder.setCellStyle(style, false);
     }
 
     public static void setFillOptions(SBook book, CellStyleHolder holder, String bgColor, String fillColor, FillPattern pattern) {
@@ -167,7 +167,7 @@ public class StyleUtilNoDB {
             style.setFillColor(newFillColor);
             style.setFillPattern(pattern);
         }
-        holder.setCellStyle(style);
+        holder.setCellStyle(style, false);
     }
 
     public static void setTextWrap(SBook book, CellStyleHolder holder, boolean wrap) {
@@ -184,7 +184,7 @@ public class StyleUtilNoDB {
             style = cloneCellStyle(book, orgStyle);
             style.setWrapText(wrap);
         }
-        holder.setCellStyle(style);
+        holder.setCellStyle(style, false);
     }
 
     public static void setFontHeightPoints(SBook book, CellStyleHolder holder, int fontHeightPoints) {
@@ -215,7 +215,7 @@ public class StyleUtilNoDB {
             style = cloneCellStyle(book, orgStyle);
             style.setFont(font);
         }
-        holder.setCellStyle(style);
+        holder.setCellStyle(style, false);
     }
 
     public static void setFontStrikethrough(SBook book, CellStyleHolder holder, boolean strikeout) {
@@ -246,7 +246,7 @@ public class StyleUtilNoDB {
             style = cloneCellStyle(book, orgStyle);
             style.setFont(font);
         }
-        holder.setCellStyle(style);
+        holder.setCellStyle(style, false);
 
     }
 
@@ -278,7 +278,7 @@ public class StyleUtilNoDB {
             style = cloneCellStyle(book, orgStyle);
             style.setFont(font);
         }
-        holder.setCellStyle(style);
+        holder.setCellStyle(style, false);
 
     }
 
@@ -370,7 +370,7 @@ public class StyleUtilNoDB {
             }
         }
 
-        holder.setCellStyle(style);
+        holder.setCellStyle(style, false);
     }
 
 //	private static void debugStyle(String msg,int row, int col, Workbook book, NCellStyle style){
@@ -411,7 +411,7 @@ public class StyleUtilNoDB {
             style = cloneCellStyle(book, orgStyle);
             style.setFont(font);
         }
-        holder.setCellStyle(style);
+        holder.setCellStyle(style, false);
     }
 
     public static void setFontItalic(SBook book, CellStyleHolder holder, boolean italic) {
@@ -442,7 +442,7 @@ public class StyleUtilNoDB {
             style = cloneCellStyle(book, orgStyle);
             style.setFont(font);
         }
-        holder.setCellStyle(style);
+        holder.setCellStyle(style, false);
 
     }
 
@@ -474,7 +474,7 @@ public class StyleUtilNoDB {
             style = cloneCellStyle(book, orgStyle);
             style.setFont(font);
         }
-        holder.setCellStyle(style);
+        holder.setCellStyle(style, false);
     }
 
     public static void setTextHAlign(SBook book, CellStyleHolder holder, SCellStyle.Alignment align) {
@@ -491,7 +491,7 @@ public class StyleUtilNoDB {
             style = cloneCellStyle(book, orgStyle);
             style.setAlignment(align);
         }
-        holder.setCellStyle(style);
+        holder.setCellStyle(style, false);
     }
 
 
@@ -509,7 +509,7 @@ public class StyleUtilNoDB {
             style = cloneCellStyle(book, orgStyle);
             style.setLocked(locked);
         }
-        holder.setCellStyle(style);
+        holder.setCellStyle(style, false);
     }
 
     public static void setTextVAlign(SBook book, CellStyleHolder holder, SCellStyle.VerticalAlignment valign) {
@@ -526,7 +526,7 @@ public class StyleUtilNoDB {
             style = cloneCellStyle(book, orgStyle);
             style.setVerticalAlignment(valign);
         }
-        holder.setCellStyle(style);
+        holder.setCellStyle(style, false);
 
     }
 
@@ -545,7 +545,7 @@ public class StyleUtilNoDB {
             style = cloneCellStyle(book, orgStyle);
             style.setDataFormat(format);
         }
-        holder.setCellStyle(style);
+        holder.setCellStyle(style, false);
     }
 
     //ZSS-748
@@ -577,7 +577,7 @@ public class StyleUtilNoDB {
             style = cloneCellStyle(book, orgStyle);
             style.setFont(font);
         }
-        holder.setCellStyle(style);
+        holder.setCellStyle(style, false);
     }
 
     //ZSS-752
@@ -891,7 +891,7 @@ public class StyleUtilNoDB {
             style = cloneCellStyle(book, orgStyle);
             style.setRotation(rotation);
         }
-        holder.setCellStyle(style);
+        holder.setCellStyle(style, false);
     }
 
     //ZSS-915
@@ -919,7 +919,7 @@ public class StyleUtilNoDB {
             style = cloneCellStyle(book, orgStyle);
             style.setIndention(indent);
         }
-        holder.setCellStyle(style);
+        holder.setCellStyle(style, false);
     }
 
 
