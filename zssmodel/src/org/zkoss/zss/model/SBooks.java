@@ -35,7 +35,7 @@ public class SBooks {
 		SBook book = BookBindings.get(bookName);
 		if (book==null){
 			book=new BookImpl(bookName);
-			BookBindings.put(bookName,book);
+			BookBindings.put(book.getBookName(),book);
 		}
 		return book;
 	}

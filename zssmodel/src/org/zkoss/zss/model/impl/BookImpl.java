@@ -180,8 +180,10 @@ public class BookImpl extends AbstractBookAdv{
 			checkBookStmt.setString(1, getBookName() + "%");
 			checkBookStmt.setString(2, getBookName() + "%");
 			ResultSet rs = checkBookStmt.executeQuery();
-			if(rs.next())
+			if(rs.next()) {
 				_bookName = rs.getString(1) + "_";
+				BookBindings.put(_bookName,this);
+			}
 			checkBookStmt.close();
 
 			String createBookRelation = "CREATE TABLE " + bookTable + "_workbook (" +
@@ -1097,7 +1099,6 @@ public class BookImpl extends AbstractBookAdv{
 	@Override
 	public void setIdAndLoad(String id){
 		schemaPresent = true;
-		BookBindings.remove(_bookId);
 		this._bookId = id;
 
 		// Load Schema

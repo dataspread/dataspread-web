@@ -24,18 +24,11 @@ public enum FormulaCacheMasker {
     }
 
     public void mask(Ref target){
-        SBook book;
-        SSheet sheet;
         if (target.getType()!= Ref.RefType.CELL && target.getType()!=Ref.RefType.AREA)
             return;
         if (!TransactionManager.INSTANCE.isInTransaction(BookBindings.get(target.getBookName())))
-            throw new RuntimeException("Masking not within transaction!");
-        book=BookBindings.get(target.getBookName());
-        if (book==null)
             return;
-        sheet=book.getSheetByName(target.getSheetName());
-        if (sheet==null)
-            return;
+        SSheet sheet=BookBindings.getSheetByRef(target,false);
         final Collection<MaskArea> records = mapping.computeIfAbsent(sheet, k -> Collections.synchronizedList(new ArrayList<>()));
         synchronized (records) {
             MaskArea newRec = new MaskArea(TransactionManager.INSTANCE.getXid(BookBindings.get(target.getBookName())), new CellRegion(target.getRow(), target.getColumn(), target.getLastRow(), target.getLastColumn()));
@@ -47,17 +40,9 @@ public enum FormulaCacheMasker {
     //Otherwise, the area has to be expanded
     //Supported by caller
     public void unmask(Ref target,int xid){
-        SBook book;
-        SSheet sheet;
         if (target.getType()!=Ref.RefType.CELL && target.getType()!=Ref.RefType.AREA)
             return;
-        //This code is duplicated for too many time
-        book=BookBindings.get(target.getBookName());
-        if (book==null)
-            return;
-        sheet=book.getSheetByName(target.getSheetName());
-        if (sheet==null)
-            return;
+        SSheet sheet=BookBindings.getSheetByRef(target,true);
         final Collection<MaskArea> records=mapping.get(sheet);
         synchronized (records) {
             for (Iterator<MaskArea> iter = records.iterator(); iter.hasNext(); ) {
@@ -80,18 +65,11 @@ public enum FormulaCacheMasker {
     }
 
     public int isMaskedUntil(Ref target){
-        SBook book;
-        SSheet sheet;
         //This code is duplicated for too many time
         int result=-1;
         if (target.getType()!=Ref.RefType.CELL && target.getType()!=Ref.RefType.AREA)
             return result;
-        book=BookBindings.get(target.getBookName());
-        if (book==null)
-            return result;
-        sheet=book.getSheetByName(target.getSheetName());
-        if (sheet==null)
-            return result;
+        SSheet sheet=BookBindings.getSheetByRef(target,false);
         final Collection<MaskArea> records=mapping.get(sheet);
         if (records==null)
             return result;

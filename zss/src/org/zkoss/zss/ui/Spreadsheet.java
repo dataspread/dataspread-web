@@ -1563,8 +1563,10 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 			ReadWriteLock lock = book.getBookSeries().getLock();
 			lock.writeLock().lock();//have to use write lock because of formula evaluation is not thread safe
 			try{
+				TransactionManager.INSTANCE.startTransaction(book);
 				renderProperties0(renderer);
 			}finally{
+				TransactionManager.INSTANCE.endTransaction(book);
 				lock.writeLock().unlock();
 			}
 		}

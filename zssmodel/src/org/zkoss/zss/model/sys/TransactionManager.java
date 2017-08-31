@@ -2,6 +2,7 @@ package org.zkoss.zss.model.sys;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -15,11 +16,11 @@ public enum TransactionManager {
     private Map<Object,TransactionInfo> xinfo;
 
     private TransactionManager() {
-        workers=new HashMap<>();
-        xinfo=new HashMap<>();
+        workers=new ConcurrentHashMap<>();
+        xinfo=new ConcurrentHashMap<>();
     }
 
-    public synchronized void startTransaction(Object target){
+    public void startTransaction(Object target){
         TransactionInfo info=xinfo.computeIfAbsent(target, v->new TransactionInfo());
         info.xlock.lock();
         //avoid nesting start messing up xid
@@ -27,18 +28,18 @@ public enum TransactionManager {
             ++info.xid;
     }
 
-    public synchronized void endTransaction(Object target){
+    public void endTransaction(Object target){
         TransactionInfo info=xinfo.get(target);
         if (info!=null)
             info.xlock.unlock();
     }
 
-    public synchronized boolean isInTransaction(Object target){
+    public boolean isInTransaction(Object target){
         TransactionInfo info=xinfo.get(target);
-        return info!=null && info.xlock.isLocked();
+        return info!=null && info.xlock.isHeldByCurrentThread();
     }
 
-    public synchronized int getXid(Object target){
+    public int getXid(Object target){
         TransactionInfo info=xinfo.get(target);
         if (info!=null && info.xlock.isHeldByCurrentThread())
             return info.xid;
@@ -50,7 +51,7 @@ public enum TransactionManager {
         }
     }
 
-    public synchronized void registerWorker(int xid){
+    public void registerWorker(int xid){
         workers.put(Thread.currentThread(),xid);
     }
 

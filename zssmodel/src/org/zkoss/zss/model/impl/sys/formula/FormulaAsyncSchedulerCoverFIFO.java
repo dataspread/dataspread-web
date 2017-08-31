@@ -13,27 +13,29 @@ import org.zkoss.zss.model.sys.TransactionManager;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.formula.*;
 
+import java.io.PrintWriter;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
-/**
- * Created by zekun.fan@gmail.com on 7/11/17.
- */
-public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
+public class FormulaAsyncSchedulerCoverFIFO extends FormulaAsyncScheduler {
 
     private ExecutorService pool;
     private ExecutorService expander;
     private HashMap<CellImpl,FormulaAsyncTaskInfo> infos;
     private final int maxThread=8;
+    private PrintWriter writer;
 
-
-    public FormulaAsyncSchedulerFIFO(){
-        pool=Executors.newFixedThreadPool(maxThread);
+    public FormulaAsyncSchedulerCoverFIFO(){
+        pool= Executors.newFixedThreadPool(maxThread);
         expander=Executors.newSingleThreadExecutor();
         infos =new HashMap<>();
+        if (logWriter!=null)
+            writer=new PrintWriter(logWriter);
     }
 
     @Override
@@ -47,7 +49,6 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
         //    throw new RuntimeException("addTask not within transaction!");
         if (target.getType()!= Ref.RefType.CELL && target.getType()!=Ref.RefType.AREA)
             return;
-        //callbacks in worker will call addTask for precedent update, disable that as all tasks are added beforehand.
         if (!TransactionManager.INSTANCE.isInTransaction(BookBindings.get(target.getBookName())))
             return;
         int xid=TransactionManager.INSTANCE.getXid(BookBindings.get(target.getBookName()));
@@ -74,6 +75,7 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
                         info.xid=xid;
                         info.expr=expr;
                         infos.put(cell,info);
+                        info.ctime= Instant.now().toEpochMilli();
                         info.ctrl=pool.submit(new FormulaAsyncTask(info));
                     }else{
                         FormulaCacheMasker.INSTANCE.unmask(new RefImpl(cell),xid);
@@ -97,6 +99,7 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
             @Override
             public void run() {
                 SSheet sheet=BookBindings.getSheetByRef(target,true);
+
                 Collection<SCell> cells=sheet.getCells(new CellRegion(target.getRow(),target.getColumn(),target.getLastRow(),target.getLastColumn()));
                 cells.forEach((sCell)-> {
                     CellImpl cell=(CellImpl)sCell;
@@ -124,6 +127,7 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
         @Override
         public void run() {
             //try {Thread.sleep(5000);}catch (InterruptedException ignored){return;}
+            long stime=Instant.now().toEpochMilli();
             TransactionManager.INSTANCE.registerWorker(info.xid);
             Ref refTarget=new RefImpl(this.info.target);
             FormulaEvaluationContext evalContext=new FormulaEvaluationContext(this.info.target,refTarget);
@@ -135,6 +139,9 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
             }
             FormulaCacheMasker.INSTANCE.unmask(refTarget,info.xid);
             infos.remove(info.target);
+            long etime=Instant.now().toEpochMilli();
+            if (writer!=null)
+                writer.printf("%s,%s,%s,%d,%d,%d\n",info.target.getReferenceString(),info.expr.getFormulaString(),result.getValue().toString(),info.ctime,stime,etime);
         }
     }
 
@@ -144,10 +151,16 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
         expander.shutdownNow();
     }
 
+    public void shutdownGracefully() throws InterruptedException{
+        while (!pool.awaitTermination(1, TimeUnit.MINUTES));
+        shutdown();
+    }
+
     private class FormulaAsyncTaskInfo{
         public int xid;
         public CellImpl target;
         public Future<?> ctrl;
         public FormulaExpression expr;
+        public long ctime;
     }
 }

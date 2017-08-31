@@ -52,30 +52,25 @@ import org.zkoss.zss.range.impl.ModelUpdateCollector;
 			DependencyTable table = ((AbstractBookSeriesAdv)bookSeries).getDependencyTable();
 			dependents = table.getDependents(precedent);
 		}
-		try {
-			TransactionManager.INSTANCE.startTransaction(BookBindings.get(precedent.getBookName()));
-			//zekun.fan@gmail.com - Masking and Scheduling
-			if (includePrecedent) { //ZSS-1047
-				addRefUpdate(precedent);
-				FormulaCacheMasker.INSTANCE.mask(precedent);
-				FormulaAsyncScheduler.getScheduler().addTask(precedent);
+		//zekun.fan@gmail.com - Masking and Scheduling
+		if (includePrecedent) { //ZSS-1047
+			addRefUpdate(precedent);
+			FormulaCacheMasker.INSTANCE.mask(precedent);
+			FormulaAsyncScheduler.getScheduler().addTask(precedent);
+		}
+		if (dependents != null && dependents.size() > 0) {
+			if (clearer != null) {
+				clearer.clear(dependents);
+			} else if (bookSeries.isAutoFormulaCacheClean()) {
+				new FormulaCacheClearHelper(bookSeries).clear(dependents);
 			}
-			if (dependents != null && dependents.size() > 0) {
-				if (clearer != null) {
-					clearer.clear(dependents);
-				} else if (bookSeries.isAutoFormulaCacheClean()) {
-					new FormulaCacheClearHelper(bookSeries).clear(dependents);
-				}
-				if (collector != null) {
-					collector.addRefs(dependents);
-				}
-				dependents.forEach(v -> {
-					FormulaCacheMasker.INSTANCE.mask(v);
-					FormulaAsyncScheduler.getScheduler().addTask(v);
-				});
+			if (collector != null) {
+				collector.addRefs(dependents);
 			}
-		}finally {
-			TransactionManager.INSTANCE.endTransaction(BookBindings.get(precedent.getBookName()));
+			dependents.forEach(v -> {
+				FormulaCacheMasker.INSTANCE.mask(v);
+				FormulaAsyncScheduler.getScheduler().addTask(v);
+			});
 		}
 	}
 

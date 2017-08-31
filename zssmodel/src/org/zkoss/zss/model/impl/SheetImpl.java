@@ -40,6 +40,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -84,7 +85,7 @@ public class SheetImpl extends AbstractSheetAdv {
     //ZSS-855
     private final List<STable> _tables = new ArrayList<STable>();
     Model dataModel;
-    LruCache<CellRegion, AbstractCellAdv> sheetDataCache;
+    Map<CellRegion, AbstractCellAdv> sheetDataCache;
     private AbstractBookAdv _book;
     private String _name;
     private int _dbid;
@@ -105,7 +106,8 @@ public class SheetImpl extends AbstractSheetAdv {
 	public SheetImpl(AbstractBookAdv book,String id){
 		this._book = book;
 		this._id = id;
-        sheetDataCache = new LruCache<>(CACHE_SIZE);
+        sheetDataCache = new ConcurrentHashMap<>();
+		// Collections.synchronizedMap(new LruCache<CellRegion,AbstractCellAdv>(CACHE_SIZE));
     }
 	
 	protected void checkOwnership(SPicture picture){
@@ -461,7 +463,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	}
 
 	@Override
-    AbstractCellAdv createCell(int rowIdx, int columnIdx) {
+    public AbstractCellAdv createCell(int rowIdx, int columnIdx) {
         AbstractCellAdv cell = new CellImpl(rowIdx, columnIdx);
         cell.setSheet(this);
         CellRegion cellRegion = new CellRegion(rowIdx, columnIdx);
