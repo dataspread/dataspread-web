@@ -61,14 +61,14 @@ public class BlockStore {
     }
 
     // Do not call any thing after drop schema.
-    public void dropSchemaAndClear(DBContext context) {
+    public void dropSchemaAndClear(DBContext dbContext) {
         blockCache.clear();
         dirtyBlocks.clear();
         deletedBlocks.clear();
         if (dataStore == null)
             return;
 
-        try (Statement stmt = context.getConnection().createStatement()) {
+        try (Statement stmt = dbContext.getConnection().createStatement()) {
             String createTable = (new StringBuilder())
                     .append("DROP TABLE ")
                     .append(dataStore)
@@ -81,13 +81,13 @@ public class BlockStore {
         dataStore = null;
     }
 
-    public void createSchema(DBContext context, String dataStore) {
+    public void createSchema(DBContext dbContext, String dataStore) {
         if (dataStore == null) {
             return;
         }
         this.dataStore = dataStore;
 
-        try (Statement stmt = context.getConnection().createStatement()) {
+        try (Statement stmt = dbContext.getConnection().createStatement()) {
             String createTable = (new StringBuilder())
                     .append("CREATE TABLE IF NOT EXISTS ")
                     .append(dataStore)
@@ -118,14 +118,14 @@ public class BlockStore {
      *
      * @return new block_id
      */
-    public int getNewBlockID(DBContext context) {
+    public int getNewBlockID(DBContext dbContext) {
         if (dataStore == null) {
             return inMemBlockId++;
         }
         int id = -1;
 
         String insert = "SELECT nextval(?)";
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(insert)) {
+        try (PreparedStatement stmt = dbContext.getConnection().prepareStatement(insert)) {
             stmt.setString(1, dataStore + "_block_id_seq");
             ResultSet rs = stmt.executeQuery();
             if (rs.next())
@@ -171,7 +171,7 @@ public class BlockStore {
         return obj;
     }
 
-    public void flushDirtyBlocks(DBContext context) {
+    public void flushDirtyBlocks(DBContext dbContext) {
         if (dataStore == null) {
             dirtyBlocks.clear();
             deletedBlocks.stream().forEach(e -> blockCache.remove(e));
@@ -184,7 +184,7 @@ public class BlockStore {
                 .append(dataStore)
                 .append("(block_id, data) VALUES (?,?) ON CONFLICT (block_id) DO UPDATE set data = EXCLUDED.data")
                 .toString();
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(insertOrUpdate)) {
+        try (PreparedStatement stmt = dbContext.getConnection().prepareStatement(insertOrUpdate)) {
             for (Map.Entry<Integer, Object> blockEntry : dirtyBlocks.entrySet()) {
                 stmt.setInt(1, blockEntry.getKey());
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -202,7 +202,7 @@ public class BlockStore {
 
         // Delete blocks
         String free = "DELETE FROM " + dataStore + " WHERE block_id = ?";
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(free)) {
+        try (PreparedStatement stmt = dbContext.getConnection().prepareStatement(free)) {
             for (int block_id : deletedBlocks) {
                 stmt.setInt(1, block_id);
                 stmt.execute();

@@ -11,8 +11,6 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.app.ui;
 
-import org.model.DBContext;
-import org.model.DBHandler;
 import org.zkoss.image.AImage;
 import org.zkoss.lang.Library;
 import org.zkoss.lang.Strings;
@@ -45,12 +43,11 @@ import org.zkoss.zss.app.repository.BookRepositoryFactory;
 import org.zkoss.zss.app.repository.impl.BookUtil;
 import org.zkoss.zss.app.repository.impl.SimpleBookInfo;
 import org.zkoss.zss.app.ui.dlg.*;
-import org.zkoss.zss.app.ui.table.Table;
-import org.zkoss.zss.app.ui.table.createTableCtrl;
-import org.zkoss.zss.app.ui.table.displayTableCtrl;
-import org.zkoss.zss.model.*;
+import org.zkoss.zss.model.ModelEvent;
+import org.zkoss.zss.model.ModelEventListener;
+import org.zkoss.zss.model.ModelEvents;
+import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.AbstractBookAdv;
-import org.zkoss.zss.model.impl.Hybrid_Model;
 import org.zkoss.zss.ui.*;
 import org.zkoss.zss.ui.Version;
 import org.zkoss.zss.ui.event.Events;
@@ -65,8 +62,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URLDecoder;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
@@ -979,140 +974,6 @@ public class AppCtrl extends CtrlBase<Component> {
         }
     }
 
-    private void doCreateTable(Spreadsheet ss) {
-
-        createTableCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
-            private static final long serialVersionUID = 7753635062865984294L;
-
-            public void onEvent(DlgCallbackEvent event) throws Exception {
-                if (createTableCtrl.ON_OPEN.equals(event.getName())) {
-                    pushAppEvent(AppEvts.ON_CREATE_TABLE, ss);
-                }
-            }
-        }, ss);
-    }
-
-    private void doDisplayTable(Spreadsheet ss) {
-
-        displayTableCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
-            private static final long serialVersionUID = 7753635062865984294L;
-
-            public void onEvent(DlgCallbackEvent event) throws Exception {
-                if (displayTableCtrl.ON_OPEN.equals(event.getName())) {
-                    pushAppEvent(AppEvts.ON_DISPLAY_TABLE, ss);
-                }
-            }
-        }, ss);
-    }
-
-    private void doDeleteTable(Spreadsheet ss) {
-
-        String bookName = ss.getBook().getBookName();
-        Sheet sheet = ss.getSelectedSheet();
-        AreaRef selection = ss.getSelection();
-
-        CellRegion region = new CellRegion(selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
-
-        String rangeRef = Ranges.getAreaRefString(sheet, selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
-
-        Table tableObj = new Table();
-
-        try {
-            String tableRange = tableObj.checkOverlap(ss);
-
-            if (tableRange != null) {
-
-                String checkedTable = tableObj.checkUserTable(bookName, rangeRef);
-                if (checkedTable != null) {
-
-                    tableObj.deleteUserTable(checkedTable, rangeRef);
-
-                    Connection connection = DBHandler.instance.getConnection();
-                    DBContext dbContext = new DBContext(connection);
-
-                    Hybrid_Model model = (Hybrid_Model) sheet.getInternalSheet().getDataModel();
-
-                    model.deleteModel(dbContext, region);
-                    connection.commit();
-                    sheet.getInternalSheet().clearCache(region);
-                    ss.updateCell(selection.getColumn(), selection.getRow(), selection.getLastColumn(), selection.getLastRow());
-
-//                    Messagebox.show("Table was Deleted from the Database", "Delete Table",
-//                            Messagebox.OK, Messagebox.INFORMATION);
-                }
-            } else {
-                Messagebox.show("Selected Range is Not a Table", "Delete Table",
-                        Messagebox.OK, Messagebox.ERROR);
-            }
-
-            refreshTableBar();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-    }
-
-    private void doExpand(Spreadsheet ss, String type) {
-        try {
-            Table tableObj = new Table();
-            String tableRange = tableObj.checkOverlap(ss);
-
-            if (tableRange != null) {
-                tableObj.expand(ss, tableRange, type);
-//                    Ranges.range(sheet, src.getRow(), src.getColumn(), src.getLastRow(), src.getLastColumn()).notifyChange();
-//                    Messagebox.show("Table was Deleted from the Database", "Delete Table",
-//                            Messagebox.OK, Messagebox.INFORMATION);
-
-                Messagebox.show("Table Expanded", "Expand Table",
-                        Messagebox.OK, Messagebox.INFORMATION);
-            } else {
-                Messagebox.show("Cannot be Expanded", "Expand Table",
-                        Messagebox.OK, Messagebox.ERROR);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void doToggleTablebar() {
-
-        Panel panel = (Panel) getAppComp().query("panel");
-
-        if (!panel.isVisible()) {
-            refreshTableBar();
-        }
-        panel.setVisible(!panel.isVisible());
-    }
-
-
-    private void refreshTableBar() {
-        Table obj = new Table();
-        Panel panel = (Panel) getAppComp().query("panel");
-        try {
-
-            Panelchildren panelChild = panel.getPanelchildren();
-            Grid tableGrid = (Grid) panelChild.getFirstChild();
-
-            ListModelList<String> tables = obj.userTables(ss.getBook().getBookName());
-
-            tableGrid.setModel(tables);
-
-            tableGrid.setRowRenderer(new RowRenderer() {
-
-                @Override
-                public void render(Row row, Object data, int i) throws Exception {
-
-                    final String table = (String) data;
-                    new Label(table).setParent(row);
-                }
-            });
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
     @Override
     protected void onAppEvent(String event, Object data) {
         //menu
@@ -1163,20 +1024,6 @@ public class AppCtrl extends CtrlBase<Component> {
             register();
         } else if (AppEvts.ON_SHARE_BOOK.equals(event)) {
             shareBook();
-        } else if (AppEvts.ON_CREATE_TABLE.equals(event)) {
-            doCreateTable(ss);
-        } else if (AppEvts.ON_DISPLAY_TABLE.equals(event)) {
-            doDisplayTable(ss);
-        } else if (AppEvts.ON_DELETE_TABLE.equals(event)) {
-            doDeleteTable(ss);
-        } else if (AppEvts.ON_EXPAND_COLS.equals(event)) {
-            doExpand(ss, "cols");
-        } else if (AppEvts.ON_EXPAND_ROWS.equals(event)) {
-            doExpand(ss, "rows");
-        } else if (AppEvts.ON_EXPAND_ALL.equals(event)) {
-            doExpand(ss, "all");
-        } else if (AppEvts.ON_TOGGLE_TABLE_BAR.equals(event)) {
-            doToggleTablebar();
         }
     }
 
