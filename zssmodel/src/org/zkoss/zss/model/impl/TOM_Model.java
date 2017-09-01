@@ -327,13 +327,16 @@ public class TOM_Model extends Model {
 
             try (PreparedStatement stmt = context.getConnection().prepareStatement(update.toString())) {
                 for (Map.Entry<Integer, SortedMap<Integer, AbstractCellAdv>> _row : groupedCells.entrySet()) {
-                    int key = rowMapping.getIDs(context, _row.getKey() - 1, 1)[0];
-                    stmt.setInt(idsCol.length + 1, key); //at insert
-                    for (int i = 0; i < idsCol.length; i++) {
-                        stmt.setString(i + 1,
-                                _row.getValue().get(columnList.first() + i).getValue().toString());
+                    // Ignore updates to the first row
+                    if (_row.getKey() > 0) {
+                        int key = rowMapping.getIDs(context, _row.getKey() - 1, 1)[0];
+                        stmt.setInt(idsCol.length + 1, key); //at insert
+                        for (int i = 0; i < idsCol.length; i++) {
+                            stmt.setString(i + 1,
+                                    _row.getValue().get(columnList.first() + i).getValue().toString());
+                        }
+                        stmt.execute();
                     }
-                    stmt.execute();
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
