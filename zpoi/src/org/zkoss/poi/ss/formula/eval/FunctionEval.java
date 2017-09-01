@@ -38,7 +38,7 @@ public final class FunctionEval {
 	private static final FunctionID ID = null;
 
 	private static Function[] produceFunctions() {
-		Function[] retval = new Function[377];
+		Function[] retval = new Function[378];
 
 		retval[0] = new Count();
 		retval[FunctionID.IF] = new IfFunc();
@@ -122,7 +122,7 @@ public final class FunctionEval {
 
 		retval[109] = NumericFunction.LOG;
 
-        retval[111] = TextFunction.CHAR;
+		retval[111] = TextFunction.CHAR;
 		retval[112] = TextFunction.LOWER;
 		retval[113] = TextFunction.UPPER;
 
@@ -148,15 +148,15 @@ public final class FunctionEval {
 		retval[184] = NumericFunction.FACT;
 
 		retval[190] = LogicalFunction.ISNONTEXT;
-        retval[194] = AggregateFunction.VARP;
+		retval[194] = AggregateFunction.VARP;
 		retval[197] = NumericFunction.TRUNC;
 		retval[198] = LogicalFunction.ISLOGICAL;
 
 		retval[212] = NumericFunction.ROUNDUP;
 		retval[213] = NumericFunction.ROUNDDOWN;
-        retval[216] = new Rank();
-        retval[219] = new Address();  //Aniket Banerjee
-        retval[220] = new Days360();
+		retval[216] = new Rank();
+		retval[219] = new Address();  //Aniket Banerjee
+		retval[220] = new Days360();
 		retval[221] = new Today();
 
 		retval[227] = AggregateFunction.MEDIAN;
@@ -184,7 +184,7 @@ public final class FunctionEval {
 
 		retval[298] = new Odd();
 
-        retval[300] = NumericFunction.POISSON;
+		retval[300] = NumericFunction.POISSON;
 
 		retval[303] = new Sumxmy2();
 		retval[304] = new Sumx2my2();
@@ -227,6 +227,8 @@ public final class FunctionEval {
 
 		//temporarily add wrapper function
 		retval[376] = new MultipleArea();
+
+		retval[377] = new SqlFunction();
 
 
 

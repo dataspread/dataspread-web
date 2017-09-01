@@ -15,10 +15,9 @@ package org.zkoss.poi.ss.formula.eval;
 import org.zkoss.poi.ss.formula.SheetRefEvaluator;
 import org.zkoss.poi.ss.formula.TwoDEval;
 import org.zkoss.poi.ss.formula.constant.ErrorConstant;
+import org.zkoss.poi.ss.formula.ptg.AreaI;
 import org.zkoss.poi.ss.formula.ptg.ArrayPtg;
-
-import java.util.HashMap;
-import java.util.Map;
+import org.zkoss.poi.ss.util.NumberToTextConverter;
 
 /**
  * Constant value array eval.
@@ -35,9 +34,6 @@ public class ArrayEval implements AreaEval {
 	private final int _lastCol;
 	
 	private final ValueEval[][] _values; //[row][col] -> value
-
-	private Map<String, Integer> attributeDict = new HashMap<>();
-
 
 	private ArrayEval(Object[][] srcvalues, int firstRow, int firstColumn, int lastRow, int lastColumn, SheetRefEvaluator evaluator) {
 		_evaluator = evaluator; //ZSS-962
@@ -222,34 +218,4 @@ public class ArrayEval implements AreaEval {
 	public SheetRefEvaluator getRefEvaluator() {
 		return _evaluator;
 	}
-
-	/**
-	 * Map each attribute name to a column index, starting with 0.
-	 *
-	 * @param attributeNames
-	 */
-	@Override
-	public void setAttributeNames(String[] attributeNames) {
-
-		//this.attributeNames = attributeNames;
-
-		//each attribute at index i corresponds to the i-th column
-		for (int i = 0; i < attributeNames.length; i++) {
-			this.attributeDict.put(attributeNames[i], i);
-		}
-
-	}
-
-	@Override
-	public TwoDEval getColumnByAttribute(String attributeName) {
-
-		Integer colIdx = this.attributeDict.get(attributeName);
-		if (colIdx != null) {
-			return this.getColumn(colIdx);
-		} else {
-			throw new IllegalArgumentException("Attribute name '" + attributeName + " does not exist.");
-		}
-
-	}
-	
 }

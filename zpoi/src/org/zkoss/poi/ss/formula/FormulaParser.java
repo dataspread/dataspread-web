@@ -26,7 +26,7 @@ import org.zkoss.poi.ss.formula.function.FunctionMetadataRegistry;
 import org.zkoss.poi.ss.formula.functions.Function;
 import org.zkoss.poi.ss.formula.functions.OverridableFunction;
 import org.zkoss.poi.ss.formula.functions.SelectFunction;
-import org.zkoss.poi.ss.formula.functions.TwoRangeFunction;
+import org.zkoss.poi.ss.formula.functions.RelTable2ArgFunction;
 import org.zkoss.poi.ss.formula.ptg.*;
 import org.zkoss.poi.ss.usermodel.ErrorConstants;
 import org.zkoss.poi.ss.util.AreaReference;
@@ -1264,7 +1264,7 @@ public final class FormulaParser {
 				if (original != null) {
 					if (original instanceof SelectFunction) {
 						return 1;
-					} else if (original instanceof TwoRangeFunction) {
+					} else if (original instanceof RelTable2ArgFunction) {
 						return 2;
 					} else {
 						return 0;

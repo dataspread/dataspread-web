@@ -6,7 +6,7 @@
    (the "License"); you may not use this file except in compliance with
    the License.  You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+	   http://www.apache.org/licenses/LICENSE-2.0
 
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,18 +17,15 @@
 
 package org.zkoss.poi.ss.formula;
 
-import org.zkoss.poi.ss.formula.eval.AreaEval;
-import org.zkoss.poi.ss.formula.eval.AreaEvalBase;
-import org.zkoss.poi.ss.formula.eval.HyperlinkEval;
-import org.zkoss.poi.ss.formula.eval.ValueEval;
 import org.zkoss.poi.ss.formula.ptg.AreaI;
 import org.zkoss.poi.ss.formula.ptg.AreaI.OffsetArea;
-import org.zkoss.poi.ss.usermodel.Hyperlink;
+import org.zkoss.poi.ss.formula.eval.AreaEval;
+import org.zkoss.poi.ss.formula.eval.AreaEvalBase;
+import org.zkoss.poi.ss.formula.eval.ValueEval;
 import org.zkoss.poi.ss.util.CellReference;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import org.zkoss.poi.ss.formula.eval.HyperlinkEval;
+import org.zkoss.poi.ss.usermodel.Hyperlink;
 /**
  *
  * @author Josh Micich
@@ -37,11 +34,6 @@ import java.util.Map;
 public final class LazyAreaEval extends AreaEvalBase implements HyperlinkEval {
 
 	private final SheetRefEvaluator _evaluator;
-
-	private String[] attributeNames;
-	private Map<String, Integer> attributeDict = new HashMap<>();
-	//20100720, henrichen@zkoss.org: handle HYPERLINK function
-	private Hyperlink _hyperlink;
 
 	LazyAreaEval(AreaI ptg, SheetRefEvaluator evaluator) {
 		super(ptg);
@@ -76,7 +68,6 @@ public final class LazyAreaEval extends AreaEvalBase implements HyperlinkEval {
 
 		return new LazyAreaEval(area, _evaluator);
 	}
-
 	public LazyAreaEval getRow(int rowIndex) {
 		if (rowIndex >= getHeight()) {
 			throw new IllegalArgumentException("Invalid rowIndex " + rowIndex
@@ -86,7 +77,6 @@ public final class LazyAreaEval extends AreaEvalBase implements HyperlinkEval {
 		return new LazyAreaEval(absRowIx, getFirstColumn(), absRowIx, getLastColumn(), 
 				isFirstRowRelative(), isFirstColRelative(), isLastRowRelative(), isLastColRelative(), _evaluator);
 	}
-
 	public LazyAreaEval getColumn(int columnIndex) {
 		if (columnIndex >= getWidth()) {
 			throw new IllegalArgumentException("Invalid columnIndex " + columnIndex
@@ -108,7 +98,7 @@ public final class LazyAreaEval extends AreaEvalBase implements HyperlinkEval {
 	public String getBookName() {
 		return _evaluator.getBookName();
 	}
-
+	
 	public String toString() {
 		CellReference crA = new CellReference(getFirstRow(), getFirstColumn(), !isFirstRowRelative(), !isFirstColRelative());
 		CellReference crB = new CellReference(getLastRow(), getLastColumn(), !isLastRowRelative(), !isLastColRelative());
@@ -139,6 +129,8 @@ public final class LazyAreaEval extends AreaEvalBase implements HyperlinkEval {
     }
 
 	//20100720, henrichen@zkoss.org: handle HYPERLINK function
+	private Hyperlink _hyperlink;
+
 	public Hyperlink getHyperlink() {
 		return _hyperlink;
 	}
@@ -163,40 +155,5 @@ public final class LazyAreaEval extends AreaEvalBase implements HyperlinkEval {
 	@Override
 	public SheetRefEvaluator getRefEvaluator() {
 		return _evaluator;
-	}
-
-	/**
-	 * Map each attribute name to a column index, starting with 0.
-	 *
-	 * @param attributeNames
-	 */
-	@Override
-	public void setAttributeNames(String[] attributeNames) {
-
-		//this.attributeNames = attributeNames;
-
-		//each attribute at index i corresponds to the i-th column
-		for (int i = 0; i < attributeNames.length; i++) {
-			this.attributeDict.put(attributeNames[i], i);
-		}
-
-	}
-
-	/**
-	 * Get the column for attributeNae
-	 *
-	 * @param attributeName name of column
-	 * @return
-	 */
-	@Override
-	public TwoDEval getColumnByAttribute(String attributeName) {
-
-		Integer colIdx = this.attributeDict.get(attributeName);
-		if (colIdx != null) {
-			return this.getColumn(colIdx);
-		} else {
-			throw new IllegalArgumentException("Attribute name '" + attributeName + " does not exist.");
-		}
-
 	}
 }

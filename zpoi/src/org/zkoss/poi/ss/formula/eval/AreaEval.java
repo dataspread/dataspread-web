@@ -97,7 +97,4 @@ public interface AreaEval extends TwoDEval {
     
     //ZSS-962: dirty but works
     SheetRefEvaluator getRefEvaluator();
-
-    void setAttributeNames(String[] attributeNames);
-    
 }

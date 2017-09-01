@@ -17,12 +17,7 @@
 
 package org.zkoss.poi.ss.formula;
 
-import org.zkoss.poi.ss.formula.eval.BlankEval;
-import org.zkoss.poi.ss.formula.eval.BoolEval;
-import org.zkoss.poi.ss.formula.eval.ErrorEval;
-import org.zkoss.poi.ss.formula.eval.NumberEval;
-import org.zkoss.poi.ss.formula.eval.StringEval;
-import org.zkoss.poi.ss.formula.eval.ValueEval;
+import org.zkoss.poi.ss.formula.eval.*;
 import org.zkoss.poi.ss.formula.IEvaluationListener.ICacheEntry;
 
 /**
@@ -77,6 +72,9 @@ abstract class CellCacheEntry implements ICacheEntry {
 		}
 		if (cls == ErrorEval.class) {
 			return ((ErrorEval)a).getErrorCode() == ((ErrorEval)b).getErrorCode();
+		}
+		if (cls == RelTableEval.class) {
+			return false;
 		}
 		throw new IllegalStateException("Unexpected value class (" + cls.getName() + ")");
 	}
