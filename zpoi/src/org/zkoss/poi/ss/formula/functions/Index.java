@@ -91,8 +91,8 @@ public final class Index implements Function2Arg, Function3Arg, Function4Arg {
 
 		// If the cell contains only one value, not a 2D item of more than one value,
 		// use it as a single value.
-		if (result.getHeight() == 1 && result.getWidth() == 1 && result instanceof AreaEval) {
-			return ((AreaEval) result).getRelativeValue(0, 0);
+		if (result.getHeight() == 1 && result.getWidth() == 1 && result instanceof TwoDEval) {
+			return ((TwoDEval) result).getValue(0, 0);
 		}
 
 		return result;

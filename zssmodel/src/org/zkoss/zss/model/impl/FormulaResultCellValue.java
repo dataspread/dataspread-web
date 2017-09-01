@@ -1,6 +1,7 @@
 package org.zkoss.zss.model.impl;
 
 import org.zkoss.poi.ss.formula.eval.AreaEval;
+import org.zkoss.poi.ss.formula.eval.RelTableEval;
 import org.zkoss.zss.model.ErrorValue;
 import org.zkoss.zss.model.SCell.CellType;
 import org.zkoss.zss.model.sys.formula.EvaluationResult;
@@ -50,7 +51,7 @@ public class FormulaResultCellValue extends CellValue implements Serializable {
 		} else if (val instanceof Boolean) {
 			cellType = CellType.BOOLEAN;
 			value = val;
-		} else if (val instanceof AreaEval) {
+		} else if (val instanceof RelTableEval) {
 			cellType = CellType.COLLECTION;
 			value = val;
 		} else if (val instanceof Collection) {

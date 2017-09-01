@@ -73,7 +73,7 @@ abstract class CellCacheEntry implements ICacheEntry {
 		if (cls == ErrorEval.class) {
 			return ((ErrorEval)a).getErrorCode() == ((ErrorEval)b).getErrorCode();
 		}
-		if (cls == ArrayEval.class) {
+		if (cls == RelTableEval.class) {
 			return false;
 		}
 		throw new IllegalStateException("Unexpected value class (" + cls.getName() + ")");
