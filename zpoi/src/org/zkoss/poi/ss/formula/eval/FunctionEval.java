@@ -38,7 +38,7 @@ public final class FunctionEval {
 	private static final FunctionID ID = null;
 
 	private static Function[] produceFunctions() {
-		Function[] retval = new Function[377];
+		Function[] retval = new Function[378];
 
 		retval[0] = new Count();
 		retval[FunctionID.IF] = new IfFunc();
@@ -227,6 +227,8 @@ public final class FunctionEval {
 
 		//temporarily add wrapper function
 		retval[376] = new MultipleArea();
+
+		retval[377] = new SqlFunction();
 
 
 
