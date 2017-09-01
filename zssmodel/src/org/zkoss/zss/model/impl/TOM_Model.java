@@ -132,9 +132,9 @@ public class TOM_Model extends Model {
     }
 
 
-    public void deleteTableColumns(DBContext context, int col, int count) {
-        Integer[] colids = colMapping.deleteIDs(context, col, count);
-        try (Statement stmt = context.getConnection().createStatement()) {
+    public void deleteTableColumns(DBContext dbContext, int col, int count) {
+        Integer[] colids = colMapping.deleteIDs(dbContext, col, count);
+        try (Statement stmt = dbContext.getConnection().createStatement()) {
             for (int colid : colids) {
                 StringBuilder deleteColumnsStmt = (new StringBuilder())
                         .append("ALTER TABLE ")
@@ -146,10 +146,10 @@ public class TOM_Model extends Model {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        loadColumnInfo(context);
+        loadColumnInfo(dbContext);
     }
 
-    protected void createOIDIndex(DBContext context) {
+    protected void createOIDIndex(DBContext dbContext) {
         /* TODO update query */
         String addOID = (new StringBuffer())
                 .append("ALTER TABLE ")
@@ -165,7 +165,7 @@ public class TOM_Model extends Model {
                 .append(" (oid)")
                 .toString();
 
-        try (Statement stmt = context.getConnection().createStatement()) {
+        try (Statement stmt = dbContext.getConnection().createStatement()) {
             stmt.executeUpdate(addOID);
             stmt.executeUpdate(indexOID);
         } catch (SQLException e) {
