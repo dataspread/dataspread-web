@@ -50,7 +50,7 @@ public class RCV_Model extends Model {
 
 
     //Create a table from the database
-    private void createSchema(DBContext context) {
+    private void createSchema(DBContext dbContext) {
         String createTable = (new StringBuffer())
                 .append("CREATE TABLE IF NOT EXISTS ")
                 .append(tableName)
@@ -63,7 +63,8 @@ public class RCV_Model extends Model {
                 .append(tableName)
                 .append("(row, col)")
                 .toString();
-        try (Statement stmt = context.getConnection().createStatement()) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement()) {
             stmt.execute(createTable);
             stmt.execute(createIndex);
         } catch (SQLException e) {
@@ -77,7 +78,8 @@ public class RCV_Model extends Model {
                 .append("DROP TABLE ")
                 .append(tableName)
                 .toString();
-        try (Statement stmt = context.getConnection().createStatement()) {
+        AutoRollbackConnection connection = context.getConnection();
+        try (Statement stmt = connection.createStatement()) {
             stmt.execute(dropTable);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -99,12 +101,13 @@ public class RCV_Model extends Model {
     }
 
     @Override
-    public void deleteRows(DBContext context, int row, int count) {
-        Integer[] ids = rowMapping.deleteIDs(context, row, count);
+    public void deleteRows(DBContext dbContext, int row, int count) {
+        Integer[] ids = rowMapping.deleteIDs(dbContext, row, count);
 
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(
                 "DELETE FROM " + tableName + " WHERE row = ANY(?)")) {
-            Array inArray = context.getConnection().createArrayOf("integer", ids);
+            Array inArray = dbContext.getConnection().createArrayOf("integer", ids);
             stmt.setArray(1, inArray);
             stmt.execute();
 
@@ -138,17 +141,18 @@ public class RCV_Model extends Model {
         } */
     }
 
-    public void executeLazyDelete(DBContext context) {
+    public void executeLazyDelete(DBContext dbContext) {
         Integer[] ids = (Integer[]) metaDataBlock.deletedColumns.toArray();
 
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(
                 "DELETE FROM " + tableName + " WHERE col = ANY(?)")) {
-            Array inArray = context.getConnection().createArrayOf("integer", ids);
+            Array inArray = connection.createArrayOf("integer", ids);
             stmt.setArray(1, inArray);
             stmt.execute();
             metaDataBlock.deletedColumns.clear();
             bs.putObject(0, metaDataBlock);
-            bs.flushDirtyBlocks(context);
+            bs.flushDirtyBlocks(dbContext);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -165,7 +169,8 @@ public class RCV_Model extends Model {
                 .append(tableName)
                 .append(" (row,col,data) SELECT ?,?,? WHERE NOT EXISTS (SELECT * FROM upsert)");
 
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(update.toString())) {
+        AutoRollbackConnection connection = context.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(update.toString())) {
             for (AbstractCellAdv cell : cells) {
                 // Extend sheet
                 Integer[] idsRow = rowMapping.getIDs(context, cell.getRowIndex(), 1);
@@ -187,22 +192,23 @@ public class RCV_Model extends Model {
     }
 
     @Override
-    public void deleteCells(DBContext context, CellRegion range) {
+    public void deleteCells(DBContext dbContext, CellRegion range) {
 
-        Integer[] rowIds = rowMapping.getIDs(context, range.getRow(), range.getLastRow() - range.getRow() + 1);
-        Integer[] colIds = colMapping.getIDs(context, range.getColumn(), range.getLastColumn() - range.getColumn() + 1);
+        Integer[] rowIds = rowMapping.getIDs(dbContext, range.getRow(), range.getLastRow() - range.getRow() + 1);
+        Integer[] colIds = colMapping.getIDs(dbContext, range.getColumn(), range.getLastColumn() - range.getColumn() + 1);
 
         String delete = new StringBuffer("DELETE FROM ")
                 .append(tableName)
                 .append(" WHERE row = ANY (?) AND col = ANY (?)").toString();
 
 
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(delete)) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(delete)) {
 
-            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
+            Array inArrayRow = dbContext.getConnection().createArrayOf("integer", rowIds);
             stmt.setArray(1, inArrayRow);
 
-            Array inArrayCol = context.getConnection().createArrayOf("integer", colIds);
+            Array inArrayCol = dbContext.getConnection().createArrayOf("integer", colIds);
             stmt.setArray(2, inArrayCol);
 
             stmt.executeUpdate();
@@ -214,17 +220,18 @@ public class RCV_Model extends Model {
     }
 
     @Override
-    public void deleteCells(DBContext context, Collection<AbstractCellAdv> cells) {
+    public void deleteCells(DBContext dbContext, Collection<AbstractCellAdv> cells) {
 
         String delete = new StringBuffer("DELETE FROM ")
                 .append(tableName)
                 .append(" WHERE row = ? AND col = ?").toString();
 
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(delete)) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(delete)) {
             for (AbstractCellAdv cell : cells) {
-                Integer[] idsRow = rowMapping.getIDs(context, cell.getRowIndex(), 1);
+                Integer[] idsRow = rowMapping.getIDs(dbContext, cell.getRowIndex(), 1);
                 int row = idsRow[0];
-                Integer[] idsCol = colMapping.getIDs(context, cell.getColumnIndex(), 1);
+                Integer[] idsCol = colMapping.getIDs(dbContext, cell.getColumnIndex(), 1);
                 int col = idsCol[0];
                 stmt.setObject(1, row);
                 stmt.setObject(2, col);
@@ -268,7 +275,8 @@ public class RCV_Model extends Model {
                 .append(" WHERE row = ANY (?) AND col = ANY (?)").toString();
 
 
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(select)) {
+        AutoRollbackConnection connection = context.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(select)) {
 
             Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
             stmt.setArray(1, inArrayRow);

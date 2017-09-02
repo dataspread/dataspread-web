@@ -72,16 +72,14 @@ public class RegisterCtrl extends DlgCtrlBase {
             return;
         }
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
-            DBContext dbContext = new DBContext(connection);
-
             //get user info
             String select = "SELECT password FROM user_account WHERE username = ?;";
-            PreparedStatement selectStmt = dbContext.getConnection().prepareStatement(select);
+            PreparedStatement selectStmt = connection.prepareStatement(select);
             selectStmt.setString(1, username.getValue());
             ResultSet rs = selectStmt.executeQuery();
             if (!rs.next()) {
                 String insert = "INSERT INTO user_account (username, password) VALUES (?, ?);";
-                PreparedStatement insertStmt = dbContext.getConnection().prepareStatement(insert);
+                PreparedStatement insertStmt = connection.prepareStatement(insert);
                 insertStmt.setString(1, username.getValue());
                 String saltedPassword = SALT + password.getValue();
                 String hashedPassword = generateHash(saltedPassword);

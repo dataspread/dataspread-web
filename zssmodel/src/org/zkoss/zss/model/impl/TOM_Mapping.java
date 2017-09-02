@@ -87,7 +87,8 @@ public class TOM_Mapping {
                 .append(" ORDER BY oid") /* TODO allow custom order */
                 .toString();
 
-        try (Statement stmt = context.getConnection().createStatement()) {
+        AutoRollbackConnection connection = context.getConnection();
+        try (Statement stmt = connection.createStatement()) {
             ResultSet set = stmt.executeQuery(getOids);
 
             while (set.next()) {

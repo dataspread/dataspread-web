@@ -82,7 +82,8 @@ public class DBHandler implements ServletContextListener {
 
     private void createBookTable(DBContext dbContext)
     {
-        try (Statement stmt = dbContext.getConnection().createStatement())
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement())
         {
             String createTable = "CREATE TABLE  IF NOT  EXISTS  books (" +
                     "bookname  TEXT NOT NULL," +
@@ -96,7 +97,8 @@ public class DBHandler implements ServletContextListener {
     }
 
     private void createUserTable(DBContext dbContext) {
-        try (Statement stmt = dbContext.getConnection().createStatement()) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement()) {
             String createTable = "CREATE TABLE IF NOT EXISTS users (" +
                     "username  TEXT NOT NULL," +
                     "booktable   TEXT NOT NULL" +
@@ -110,7 +112,8 @@ public class DBHandler implements ServletContextListener {
     }
 
     private void createUserAccountTable(DBContext dbContext) {
-        try (Statement stmt = dbContext.getConnection().createStatement()) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement()) {
             String createTable = "CREATE TABLE IF NOT EXISTS user_account (" +
                     "username  TEXT NOT NULL," +
                     "password   TEXT NOT NULL" +
@@ -122,7 +125,8 @@ public class DBHandler implements ServletContextListener {
     }
 
     private void createTableOrders(DBContext dbContext) {
-        try (Statement stmt = dbContext.getConnection().createStatement()) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement()) {
             String createTable = "CREATE TABLE  IF NOT  EXISTS  tableorders (" +
                     "tablename  TEXT NOT NULL," +
                     "ordername TEXT NOT NULL," +

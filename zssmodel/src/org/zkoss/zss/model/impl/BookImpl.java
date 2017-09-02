@@ -176,7 +176,7 @@ public class BookImpl extends AbstractBookAdv{
 			String checkBook = "SELECT bookname FROM books WHERE bookname like ?" +
 					" AND LENGTH(bookname) = (SELECT MAX(LENGTH(bookname))" +
 					" FROM books WHERE bookname like ?) LIMIT 1";
-			PreparedStatement checkBookStmt = dbContext.getConnection().prepareStatement(checkBook);
+			PreparedStatement checkBookStmt = connection.prepareStatement(checkBook);
 			checkBookStmt.setString(1, getBookName() + "%");
 			checkBookStmt.setString(2, getBookName() + "%");
 			ResultSet rs = checkBookStmt.executeQuery();

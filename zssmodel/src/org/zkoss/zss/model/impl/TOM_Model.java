@@ -125,7 +125,8 @@ public class TOM_Model extends Model {
 
     public void deleteTuples(DBContext context, int row, int count) {
         Integer[] oids = rowMapping.deleteIDs(context, row, count);
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(
+        AutoRollbackConnection connection = context.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(
                 "DELETE FROM " + tableName + " WHERE oid = ANY(?)")) {
             Array inArray = context.getConnection().createArrayOf("integer", oids);
             stmt.setArray(1, inArray);
@@ -169,7 +170,8 @@ public class TOM_Model extends Model {
                 .append(" (oid)")
                 .toString();
 
-        try (Statement stmt = dbContext.getConnection().createStatement()) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement()) {
             stmt.executeUpdate(addOID);
             stmt.executeUpdate(indexOID);
         } catch (SQLException e) {
@@ -233,7 +235,8 @@ public class TOM_Model extends Model {
                 .append(" WHERE oid = ANY (?) ");
 
 
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(select.toString())) {
+        AutoRollbackConnection connection = context.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
             // Array inArrayRow = context.getConnection().createArrayOf(pkColumnType, rowIds);
             /* Assume an int array for now */
             Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
@@ -329,7 +332,8 @@ public class TOM_Model extends Model {
                     .append(sqlValuesPlaceHolders.toString())
                     .append(" WHERE oid = ?");
 
-            try (PreparedStatement stmt = context.getConnection().prepareStatement(update.toString())) {
+            AutoRollbackConnection connection = context.getConnection();
+            try (PreparedStatement stmt = connection.prepareStatement(update.toString())) {
                 for (Map.Entry<Integer, SortedMap<Integer, AbstractCellAdv>> _row : groupedCells.entrySet()) {
                     // Ignore updates to the first row
                     if (_row.getKey() > 0) {
@@ -437,7 +441,8 @@ public class TOM_Model extends Model {
         }
         update.append(" WHERE row = ?");
 
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(update.toString())) {
+        AutoRollbackConnection connection = context.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(update.toString())) {
             for (Map.Entry<Integer, SortedMap<Integer, AbstractCellAdv>> _row : groupedCells.entrySet()) {
                 int rowId = rowMapping.getIDs(context, _row.getKey(), 1)[0];
                 stmt.setInt(idsCol.length + 1, rowId);
