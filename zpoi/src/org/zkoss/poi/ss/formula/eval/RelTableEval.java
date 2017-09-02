@@ -15,7 +15,10 @@ package org.zkoss.poi.ss.formula.eval;
 import org.zkoss.poi.ss.formula.SheetRefEvaluator;
 import org.zkoss.poi.ss.formula.TwoDEval;
 import org.zkoss.poi.ss.formula.constant.ErrorConstant;
+import org.zkoss.poi.ss.formula.functions.RelTableUtils;
 import org.zkoss.poi.ss.formula.ptg.ArrayPtg;
+
+import java.util.Arrays;
 
 /**
  * Constant value relational table eval.
@@ -55,9 +58,10 @@ public class RelTableEval implements TwoDEval {
 		}
 		_attributes = new String[nColumns];
 		for (int i = 0; i < nColumns; i++) {
-			ValueEval e = region[0][i];
-			if (e instanceof StringEval) {
-				_attributes[i] = ((StringEval) e).getStringValue();
+			try {
+				_attributes[i] = RelTableUtils.attributeString(region[0][i]);
+			} catch (EvaluationException e) {
+				_attributes[i] = new String();
 			}
 		}
 	}
@@ -78,7 +82,14 @@ public class RelTableEval implements TwoDEval {
 	}
 
 	public String[] getAttributes() {
-		return _attributes;
+		int nColumns = getWidth();
+		String[] tgtAttributes = new String[nColumns];
+		System.arraycopy(_attributes, 0, tgtAttributes, 0, nColumns);
+		return tgtAttributes;
+	}
+
+	public int indexOfAttribute(String key) {
+		return Arrays.asList(_attributes).indexOf(key);
 	}
 
 	@Override
@@ -92,31 +103,51 @@ public class RelTableEval implements TwoDEval {
 	}
 
 	@Override
-	public TwoDEval getRow(int rowIndex) {
+	public RelTableEval getRow(int rowIndex) {
 		int nRows = 1;
 		int nColumns = getWidth();
-		final ValueEval[][] tgtvalues = new ValueEval[nRows][];
+		final ValueEval[][] tgtValues = new ValueEval[nRows][];
 		final ValueEval[] dst = new ValueEval[nColumns];
-		tgtvalues[0] = dst;
+		tgtValues[0] = dst;
 		System.arraycopy(_values[rowIndex], 0, dst, 0, nColumns);
-		final String[] dstatt = new String[nColumns];
-		System.arraycopy(_attributes, 0, dstatt, 0, nColumns);
-		return new RelTableEval(tgtvalues, dstatt, nRows, nColumns);
+		final String[] tgtAttributes = getAttributes();
+		return new RelTableEval(tgtValues, tgtAttributes, nRows, nColumns);
 	}
 
 	@Override
-	public TwoDEval getColumn(int columnIndex) {
+	public RelTableEval getColumn(int columnIndex) {
+		int[] columnIndices = {columnIndex};
+		return getColumns(columnIndices);
+	}
+
+	public RelTableEval getColumns(int[] columnIndices) {
 		int nRows = getHeight();
-		int nColumns = 1;
-		final ValueEval[][] tgtvalues = new ValueEval[nRows][];
-		for(int r = 0; r < nRows; ++r) {
+		int nColumns = columnIndices.length;
+		final ValueEval[][] tgtValues = new ValueEval[nRows][];
+		for (int r = 0; r < nRows; ++r) {
 			final ValueEval[] dst = new ValueEval[nColumns];
-			tgtvalues[r] = dst;
-			dst[0] = _values[r][columnIndex];
+			tgtValues[r] = dst;
+			for (int c = 0; c < nColumns; ++c) {
+				dst[c] = _values[r][columnIndices[c]];
+			}
 		}
-		final String[] dstatt = new String[nColumns];
-		dstatt[0] = _attributes[columnIndex];
-		return new RelTableEval(tgtvalues, dstatt, nRows, nColumns);
+		final String[] tgtAttributes = new String[nColumns];
+		for (int c = 0; c < nColumns; ++c) {
+			tgtAttributes[c] = _attributes[columnIndices[c]];
+		}
+		return new RelTableEval(tgtValues, tgtAttributes, nRows, nColumns);
+	}
+
+	public RelTableEval rename(String[] attributes) {
+		int nRows = getHeight();
+		int nColumns = getWidth();
+		final ValueEval[][] tgtValues = new ValueEval[nRows][];
+		for (int r = 0; r < nRows; ++r) {
+			final ValueEval[] dst = new ValueEval[nColumns];
+			tgtValues[r] = dst;
+			System.arraycopy(_values[r], 0, dst, 0, nColumns);
+		}
+		return new RelTableEval(tgtValues, attributes, nRows, nColumns);
 	}
 
 	@Override
