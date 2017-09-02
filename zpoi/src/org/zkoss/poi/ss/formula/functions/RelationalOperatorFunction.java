@@ -166,20 +166,37 @@ public abstract class RelationalOperatorFunction implements Function {
 	};
 
 
-	public static final Function PROJECT = new RangeSchemaFunction() {
+	public static final Function PROJECT = new RelTableSchemaFunction() {
 
 		@Override
-		protected ValueEval evaluate(AreaEval range, String[] attributes, int srcRowIndex, int srcColumnIndex) {
-			throw new NotImplementedException("not implemented");
+		protected ValueEval evaluate(RelTableEval range, String[] attributes, int srcRowIndex, int srcColumnIndex) {
+			List<Integer> attributeIndicesList = new ArrayList<>();
+			for (String attribute : attributes) {
+				int index = range.indexOfAttribute(attribute);
+				if (index != -1) {
+					attributeIndicesList.add(index);
+				}
+			}
+			int[] attributeIndices = attributeIndicesList.stream().mapToInt(i->i).toArray();
+			return range.getColumns(attributeIndices);
 		}
+
 	};
 
 
-	public static final Function RENAME = new RangeSchemaFunction() {
+	public static final Function RENAME = new RelTableSchemaFunction() {
 
 		@Override
-		protected ValueEval evaluate(AreaEval range, String[] attributes, int srcRowIndex, int srcColumnIndex) {
-			throw new NotImplementedException("not implemented");
+		protected ValueEval evaluate(RelTableEval range, String[] attributes, int srcRowIndex, int srcColumnIndex) {
+			if (attributes.length != 2) {
+				return ErrorEval.VALUE_INVALID;
+			}
+			String[] tgtAttributes = range.getAttributes();
+			int index = range.indexOfAttribute(attributes[0]);
+			if (index != -1) {
+				tgtAttributes[index] = attributes[1];
+			}
+			return range.rename(tgtAttributes);
 		}
 
 	};

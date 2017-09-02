@@ -71,28 +71,43 @@ public final class Index implements Function2Arg, Function3Arg, Function4Arg {
 
 		TwoDEval result = ae;
 
-		if (pRowIx != 0) {
-			// Slightly irregular logic for bounds checking errors
-			if (pRowIx > ae.getHeight()) {
-				// high bounds check fail gives #REF! if arg was explicitly passed
-				throw new EvaluationException(ErrorEval.REF_INVALID);
-			}
-			result = result.getRow(pRowIx-1);
-		}
+		if (ae instanceof RelTableEval && pRowIx == 0) {
 
-		if (pColumnIx != 0) {
+			String[] attributes = ((RelTableEval) ae).getAttributes();
+
 			// Slightly irregular logic for bounds checking errors
-			if (pColumnIx > ae.getWidth()) {
+			if (pColumnIx > ae.getWidth() || pColumnIx <= 0) {
 				// high bounds check fail gives #REF! if arg was explicitly passed
 				throw new EvaluationException(ErrorEval.REF_INVALID);
 			}
-			result = result.getColumn(pColumnIx-1);
+			return new StringEval(attributes[pColumnIx - 1]);
+
+		} else {
+
+			if (pRowIx != 0) {
+				// Slightly irregular logic for bounds checking errors
+				if (pRowIx > ae.getHeight()) {
+					// high bounds check fail gives #REF! if arg was explicitly passed
+					throw new EvaluationException(ErrorEval.REF_INVALID);
+				}
+				result = result.getRow(pRowIx - 1);
+			}
+
+			if (pColumnIx != 0) {
+				// Slightly irregular logic for bounds checking errors
+				if (pColumnIx > ae.getWidth()) {
+					// high bounds check fail gives #REF! if arg was explicitly passed
+					throw new EvaluationException(ErrorEval.REF_INVALID);
+				}
+				result = result.getColumn(pColumnIx - 1);
+			}
+
 		}
 
 		// If the cell contains only one value, not a 2D item of more than one value,
 		// use it as a single value.
-		if (result.getHeight() == 1 && result.getWidth() == 1 && result instanceof TwoDEval) {
-			return ((TwoDEval) result).getValue(0, 0);
+		if (result.getHeight() == 1 && result.getWidth() == 1) {
+			return result.getValue(0, 0);
 		}
 
 		return result;
