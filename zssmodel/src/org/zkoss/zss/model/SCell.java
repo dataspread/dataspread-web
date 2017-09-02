@@ -16,6 +16,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model;
 
+import org.model.AutoRollbackConnection;
 import org.zkoss.poi.ss.usermodel.CellStyle;
 import org.zkoss.zss.model.SHyperlink.HyperlinkType;
 
@@ -42,7 +43,7 @@ public interface SCell extends CellStyleHolder,FormulaContent{
 	 */
 	Object getValue();
 
-	void setValue(Object value, Connection connection, boolean updateToDB);
+	void setValue(Object value, AutoRollbackConnection connection, boolean updateToDB);
 	
 	/**
 	 * Because you always get a not-null cell object, use this method to judge the cell is really null or not.
@@ -74,7 +75,7 @@ public interface SCell extends CellStyleHolder,FormulaContent{
 	/**
 	 * clear cell value , reset it to blank
 	 */
-	void clearValue(Connection connection, boolean updateToDB);//
+	void clearValue(AutoRollbackConnection connection, boolean updateToDB);
 
 //	boolean isReadonly();
 //	
@@ -82,7 +83,7 @@ public interface SCell extends CellStyleHolder,FormulaContent{
 	/**
 	 * Set string value, if the value start with '=', then it sets as formula
 	 */
-	void setStringValue(String value, Connection connection, boolean updateToDB);
+	void setStringValue(String value, AutoRollbackConnection connection, boolean updateToDB);
 
 	String getStringValue();
 
@@ -106,28 +107,28 @@ public interface SCell extends CellStyleHolder,FormulaContent{
 	 * set formula with string without '=', e.g. SUM(A1:B2)
 	 * @param formula
 	 */
-	void setFormulaValue(String formula, Connection connection, boolean updateToDB);
+	void setFormulaValue(String formula, AutoRollbackConnection connection, boolean updateToDB);
 	
 	/**
 	 * @return returns formula string without '=', e.g. SUM(A1:B2)
 	 */
 	String getFormulaValue();
 
-	void setNumberValue(Double number, Connection connection, boolean updateToDB);
+	void setNumberValue(Double number, AutoRollbackConnection connection, boolean updateToDB);
 
 	Double getNumberValue();
 
 	/**
 	 * Sets the number value a date instance, it will transfer the date to double value
 	 */
-	void setDateValue(Date date, Connection connection, boolean updateToDB);
+	void setDateValue(Date date, AutoRollbackConnection connection, boolean updateToDB);
 	
 	/**
 	 * Gets the date value that is transfered by the double number value.
 	 */
 	Date getDateValue();
 
-	void setBooleanValue(Boolean bool, Connection connection, boolean updateToDB);
+	void setBooleanValue(Boolean bool, AutoRollbackConnection connection, boolean updateToDB);
 	
 	/**
 	 * Gets the boolean value
@@ -136,7 +137,7 @@ public interface SCell extends CellStyleHolder,FormulaContent{
 
 	ErrorValue getErrorValue();
 
-	void setErrorValue(ErrorValue errorValue, Connection connection, boolean updateToDB);
+	void setErrorValue(ErrorValue errorValue, AutoRollbackConnection connection, boolean updateToDB);
 
 	SComment setupComment();
 
@@ -147,7 +148,7 @@ public interface SCell extends CellStyleHolder,FormulaContent{
 	/**
 	 * Parse Input string and update value
 	 */
-	void setValueParse(String valueParse, Connection connection, boolean updateToDB);
+	void setValueParse(String valueParse, AutoRollbackConnection connection, boolean updateToDB);
 
 	/**
 	 * Delete the comment associated with this cell.

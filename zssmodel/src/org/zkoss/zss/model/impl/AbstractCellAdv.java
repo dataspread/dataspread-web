@@ -16,6 +16,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
+import org.model.AutoRollbackConnection;
 import org.zkoss.poi.ss.formula.eval.ValueEval;
 import org.zkoss.poi.ss.usermodel.ZssContext;
 import org.zkoss.zss.model.*;
@@ -75,7 +76,7 @@ public abstract class AbstractCellAdv implements SCell,Serializable{
 	}
 	
 	@Override
-	public void setStringValue(String value, Connection connection, boolean updateToDB) {
+	public void setStringValue(String value, AutoRollbackConnection connection, boolean updateToDB) {
 		setValue(value, true, connection, updateToDB); //ZSS-853
 	}
 
@@ -92,7 +93,7 @@ public abstract class AbstractCellAdv implements SCell,Serializable{
 	}
 
 	@Override
-	public void setNumberValue(Double number, Connection connection, boolean updateToDB) {
+	public void setNumberValue(Double number, AutoRollbackConnection connection, boolean updateToDB) {
 		setValue(number, connection, updateToDB);
 	}
 
@@ -115,7 +116,7 @@ public abstract class AbstractCellAdv implements SCell,Serializable{
 	}
 
 	@Override
-	public void setDateValue(Date date, Connection connection, boolean updateToDB) {
+	public void setDateValue(Date date, AutoRollbackConnection connection, boolean updateToDB) {
 		double num = EngineFactory.getInstance().getCalendarUtil().dateToDoubleValue(date);
 		setNumberValue(num, connection, updateToDB);
 	}
@@ -131,7 +132,7 @@ public abstract class AbstractCellAdv implements SCell,Serializable{
 	}
 	
 	@Override
-	public void setBooleanValue(Boolean boolVal, Connection connection, boolean updateToDB) {
+	public void setBooleanValue(Boolean boolVal, AutoRollbackConnection connection, boolean updateToDB) {
 		setValue(boolVal, connection, updateToDB);
 	}
 
@@ -160,7 +161,7 @@ public abstract class AbstractCellAdv implements SCell,Serializable{
 	}
 
 	@Override
-	public void setErrorValue(ErrorValue errorValue, Connection connection, boolean updateToDB) {
+	public void setErrorValue(ErrorValue errorValue, AutoRollbackConnection connection, boolean updateToDB) {
 		setValue(errorValue, connection, updateToDB);
 	}
 
@@ -236,7 +237,7 @@ public abstract class AbstractCellAdv implements SCell,Serializable{
 	/*package*/ abstract Ref getRef();
 
 	//ZSS-565: Support input with Swedish locale into formula 
-	public abstract void setFormulaValue(String formula, Locale locale, Connection connection, boolean updateToDB);
+	public abstract void setFormulaValue(String formula, Locale locale, AutoRollbackConnection connection, boolean updateToDB);
 	
 	//ZSS-818
 	//@since 3.7.0
@@ -244,7 +245,7 @@ public abstract class AbstractCellAdv implements SCell,Serializable{
 	
 	//ZSS-853
 	//@since 3.7.0
-	protected abstract void setValue(Object value, boolean aString, Connection connection, boolean updateToDB);
+	protected abstract void setValue(Object value, boolean aString, AutoRollbackConnection connection, boolean updateToDB);
 	
 	//ZSS-873
 	//@since 3.7.0
@@ -260,7 +261,7 @@ public abstract class AbstractCellAdv implements SCell,Serializable{
 		return false;
 	}
 
-	public void setValueParse(String valueParse, Connection connection, boolean updateToDB) {
+	public void setValueParse(String valueParse, AutoRollbackConnection connection, boolean updateToDB) {
 		final InputEngine ie = EngineFactory.getInstance().createInputEngine();
 		Locale locale = ZssContext.getCurrent().getLocale();
 		InputResult result;

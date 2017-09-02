@@ -1,6 +1,7 @@
 package org.zkoss.poi.ss.formula.functions;
 
 
+import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
 import org.zkoss.poi.ss.formula.eval.*;
 
@@ -64,8 +65,8 @@ public class SqlFunction implements Function {
     }
 
     private ValueEval makeQuery(String queryString, ValueEval[] parameters) throws SQLException {
-        Connection connection = DBHandler.instance.getConnection();
-        
+        //TODO: Fix this for auto close
+        AutoRollbackConnection connection = DBHandler.instance.getConnection();
         PreparedStatement stmt = connection.prepareStatement(queryString);
         for (int i = 0; i < parameters.length; i++) {
             if (parameters[i] instanceof StringEval) {

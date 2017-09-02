@@ -2,6 +2,7 @@ package org.zkoss.zss.model.impl;
 
 import com.opencsv.CSVReader;
 import org.apache.tomcat.dbcp.dbcp2.DelegatingConnection;
+import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.postgresql.copy.CopyIn;
@@ -365,9 +366,9 @@ public class ROM_Model extends Model {
         int importedRows = 0;
         int importedColumns = 0;
 
-        try (Connection connection = DBHandler.instance.getConnection()) {
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             DBContext dbContext = new DBContext(connection);
-            Connection rawConn = ((DelegatingConnection) connection).getInnermostDelegate();
+            Connection rawConn = ((DelegatingConnection) connection.getInternalConnection()).getInnermostDelegate();
             CopyManager cm = ((PgConnection) rawConn).getCopyAPI();
             CopyIn cpIN = null;
 

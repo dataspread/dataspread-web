@@ -2,6 +2,7 @@ package org.zkoss.zss.model.impl;
 
 import com.opencsv.CSVReader;
 import org.apache.tomcat.dbcp.dbcp2.DelegatingConnection;
+import org.model.AutoRollbackConnection;
 import org.model.BlockStore;
 import org.model.DBContext;
 import org.model.DBHandler;
@@ -317,8 +318,8 @@ public class RCV_Model extends Model {
         int importedColumns = 0;
 
 
-        try (Connection connection = DBHandler.instance.getConnection()) {
-            Connection rawConn = ((DelegatingConnection) connection).getInnermostDelegate();
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            Connection rawConn = ((DelegatingConnection) connection.getInternalConnection()).getInnermostDelegate();
             CopyManager cm = ((PgConnection) rawConn).getCopyAPI();
 
             CopyIn cpIN = cm.copyIn("COPY " + tableName + " (row,col,data)" +

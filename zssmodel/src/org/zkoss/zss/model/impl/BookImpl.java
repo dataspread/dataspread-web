@@ -16,6 +16,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
+import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.lang.Objects;
@@ -99,7 +100,7 @@ public class BookImpl extends AbstractBookAdv{
 
 	public static void deleteBook(String bookName, String bookTable) {
 		String deleteBookEntry = "DELETE FROM books WHERE bookname = ?";
-		try (Connection connection = DBHandler.instance.getConnection();
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
 			 Statement stmt = connection.createStatement();
 			 PreparedStatement deleteBookStmt = connection.prepareStatement(deleteBookEntry)) {
 			//TODO: Delete sheet
@@ -140,7 +141,7 @@ public class BookImpl extends AbstractBookAdv{
 		if (schemaPresent)
 		{
 			String updateBookName = "UPDATE books SET bookname = ? WHERE bookname = ?";
-			try (Connection connection = DBHandler.instance.getConnection();
+			try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
 				 PreparedStatement updateBookNameStmt = connection.prepareStatement(updateBookName))
 			{
 				updateBookNameStmt.setString(1, bookName);
@@ -167,7 +168,7 @@ public class BookImpl extends AbstractBookAdv{
 			return;
 		String bookTable=getId();
 
-		try (Connection connection = DBHandler.instance.getConnection();
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
 			 Statement stmt = connection.createStatement()) {
 			DBContext dbContext = new DBContext(connection);
 
@@ -346,7 +347,7 @@ public class BookImpl extends AbstractBookAdv{
 					" SELECT max(sheetid) +  1, ?, ?, '" + bookTable + "' || (max(sheetid) +  1)" +
 					" FROM " +  bookTable + "_workbook  " +
 					" RETURNING sheetid";
-			try (Connection connection = DBHandler.instance.getConnection();
+			try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
 				 PreparedStatement stmt = connection.prepareStatement(insertSheets))
 			{
 				stmt.setInt(1,_sheets.indexOf(sheet));
@@ -382,7 +383,7 @@ public class BookImpl extends AbstractBookAdv{
 						" SELECT ?, row, col, value " +
 						" FROM " +  bookTable + "_sheetdata " +
 						" WHERE sheetid = ? ";
-				try (Connection connection = DBHandler.instance.getConnection();
+				try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
 					 PreparedStatement stmt = connection.prepareStatement(insertSheets))
 				{
 					stmt.setInt(1, sheet.getDBId());
@@ -562,7 +563,7 @@ public class BookImpl extends AbstractBookAdv{
 		{
 			String bookTable=getId();
 			String deleteSheet = "DELETE FROM " + bookTable + "_workbook WHERE sheetid = ?";
-			try (Connection connection = DBHandler.instance.getConnection();
+			try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
 				 PreparedStatement deleteSheetstmt = connection.prepareStatement(deleteSheet))
 			{
 				deleteSheetstmt.setInt(1,sheet.getDBId());
@@ -606,7 +607,7 @@ public class BookImpl extends AbstractBookAdv{
 			String bookTable = getId();
 			String updateSheetIndex = "UPDATE " + bookTable + "_workbook " +
 					" SET sheetindex = ? WHERE sheetid = ?";
-			try (Connection connection = DBHandler.instance.getConnection();
+			try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
 				 PreparedStatement updateSheetIndexStmt = connection.prepareStatement(updateSheetIndex)) {
 				for (SSheet s:_sheets)
 				{
@@ -1104,7 +1105,7 @@ public class BookImpl extends AbstractBookAdv{
 		String bookTable = getId();
 		String query ="SELECT * FROM "+ bookTable +"_workbook ORDER BY sheetindex";
 
-		try (Connection connection = DBHandler.instance.getConnection();
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
 			 PreparedStatement stmt = connection.prepareStatement(query);
 			 ResultSet rs = stmt.executeQuery()) {
 			 while (rs.next())

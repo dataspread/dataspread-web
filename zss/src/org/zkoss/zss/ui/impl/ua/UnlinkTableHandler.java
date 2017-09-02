@@ -16,6 +16,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.ui.impl.ua;
 
+import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.zss.api.AreaRef;
@@ -40,7 +41,7 @@ public class UnlinkTableHandler extends AbstractHandler {
                 selection.getLastRow(),
                 selection.getLastColumn());
 
-        try (Connection connection = DBHandler.instance.getConnection()) {
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             DBContext dbContext = new DBContext(connection);
             dataModel.unlinkTable(dbContext, cellRegion);
             dbContext.getConnection().commit();

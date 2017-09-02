@@ -1,5 +1,6 @@
 package org.zkoss.zss.app.ui.dlg;
 
+import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.lang.Strings;
@@ -70,7 +71,7 @@ public class RegisterCtrl extends DlgCtrlBase {
             password.setErrorMessage("empty password is not allowed");
             return;
         }
-        try (Connection connection = DBHandler.instance.getConnection()) {
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             DBContext dbContext = new DBContext(connection);
 
             //get user info

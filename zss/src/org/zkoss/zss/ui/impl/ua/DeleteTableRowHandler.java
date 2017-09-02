@@ -1,5 +1,6 @@
 package org.zkoss.zss.ui.impl.ua;
 
+import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.zss.api.AreaRef;
@@ -20,7 +21,7 @@ public class DeleteTableRowHandler extends AbstractProtectedHandler {
         AreaRef selection = ctx.getSelection();
         Model dataModel = sheet.getInternalSheet().getDataModel();
         if (dataModel != null) {
-            try (Connection connection = DBHandler.instance.getConnection()) {
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
                 DBContext dbContext = new DBContext(connection);
 
                 success = dataModel.deleteTableRows(dbContext, new CellRegion(selection.getRow(),

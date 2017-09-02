@@ -11,6 +11,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.app.ui.dlg;
 
+import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.lang.Strings;
@@ -82,7 +83,7 @@ public class UsernameCtrl extends DlgCtrlBase{
             return;
         }
         if (!username.getValue().equals("guest")) {
-            try (Connection connection = DBHandler.instance.getConnection()) {
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
                 DBContext dbContext = new DBContext(connection);
 
                 //get user info

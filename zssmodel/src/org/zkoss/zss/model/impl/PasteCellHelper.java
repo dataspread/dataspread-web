@@ -26,6 +26,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
 import org.zkoss.poi.ss.formula.FormulaRenderer;
 import org.zkoss.poi.ss.formula.ptg.Ptg;
@@ -456,7 +457,7 @@ public class PasteCellHelper { //ZSS-693: promote visibility
 		// Mangesh Update to DB
 		// Need to handle formatting and other information
 
-		Connection connection = DBHandler.instance.getConnection();
+		AutoRollbackConnection connection = DBHandler.instance.getConnection();
 
 		for(int r = row; r <= lastRow; r++){
 			for (int c = col; c <= lastColumn;c++){
@@ -555,12 +556,12 @@ public class PasteCellHelper { //ZSS-693: promote visibility
 		}
 	}
 
-	private String pasteValue(CellBuffer buffer, SCell destCell,SheetRegion cutFrom, Connection connection, boolean updateToDB) {
+	private String pasteValue(CellBuffer buffer, SCell destCell,SheetRegion cutFrom, AutoRollbackConnection connection, boolean updateToDB) {
 		return pasteValue(buffer,destCell,cutFrom,false,-1,-1,false,-1,-1,connection, updateToDB);
 	}
 	//ZSS-693: promote to public so SortHelper can use this
 	public String pasteValue(CellBuffer buffer, SCell destCell,SheetRegion cutFrom, boolean pasteFormula, int rowOffset,int columnOffset,
-							 boolean transpose, int rowOrigin, int columnOrigin, Connection connection, boolean updateToDB) {
+							 boolean transpose, int rowOrigin, int columnOrigin, AutoRollbackConnection connection, boolean updateToDB) {
 		if(pasteFormula){
 			String formula = buffer.getFormula();
 			if(formula!=null){

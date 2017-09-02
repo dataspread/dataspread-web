@@ -31,10 +31,10 @@ public class DBHandler implements ServletContextListener {
         instance.ds = datasource;
     }
 
-    public Connection getConnection()
+    public AutoRollbackConnection getConnection()
     {
         try {
-            return ds.getConnection();
+            return new AutoRollbackConnection(ds.getConnection());
         } catch (SQLException e) {
             e.printStackTrace();
             return null;
@@ -63,7 +63,7 @@ public class DBHandler implements ServletContextListener {
             System.err.println("Unable to connect to a Database");
             e.printStackTrace();
         }
-        try (Connection connection = DBHandler.instance.getConnection()) {
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             DBContext dbContext = new DBContext(connection);
             createBookTable(dbContext);
             createUserAccountTable(dbContext);

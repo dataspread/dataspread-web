@@ -1,5 +1,6 @@
 package org.zkoss.zss.app.impl;
 
+import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.lang.Library;
@@ -59,7 +60,7 @@ public class CollaborationInfoImpl implements CollaborationInfo {
     public void checkDBSchema() {
         if (schemaPresent)
             return;
-        try (Connection connection = DBHandler.instance.getConnection()) {
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             DBContext dbContext = new DBContext(connection);
 
             //get all users
@@ -96,7 +97,7 @@ public class CollaborationInfoImpl implements CollaborationInfo {
         if (!isUsernameExist(username)) addUsername(username, username);
         book_list.get(username).add(booktable);
         if (schemaPresent) {
-            try (Connection connection = DBHandler.instance.getConnection()) {
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
                 DBContext dbContext = new DBContext(connection);
 
                 //get all users
@@ -126,7 +127,7 @@ public class CollaborationInfoImpl implements CollaborationInfo {
             book_list.get(user).add(new_name);
         }
         if (schemaPresent) {
-            try (Connection connection = DBHandler.instance.getConnection()) {
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
                 DBContext dbContext = new DBContext(connection);
 
                 //get all users

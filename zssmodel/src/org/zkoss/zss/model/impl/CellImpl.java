@@ -21,6 +21,7 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.pool.KryoFactory;
 import com.esotericsoftware.kryo.pool.KryoPool;
+import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.poi.ss.formula.eval.EvaluationException;
@@ -41,7 +42,6 @@ import org.zkoss.zss.model.util.Validations;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
@@ -271,10 +271,10 @@ public class CellImpl extends AbstractCellAdv {
 	}
 
 	@Override
-	public void clearValue(Connection connection, boolean updateToDB) {
+	public void clearValue(AutoRollbackConnection connection, boolean updateToDB) {
 		clearValue0(false, connection, updateToDB); //ZSS-985
 	}
-	private void clearValue0(boolean destroy, Connection connection, boolean updateToDB) {
+	private void clearValue0(boolean destroy, AutoRollbackConnection connection, boolean updateToDB) {
 		clearFormulaDependency();
 		clearFormulaResultCache();
 		
@@ -296,14 +296,14 @@ public class CellImpl extends AbstractCellAdv {
 	}
 	
 	@Override
-	public void setFormulaValue(String formula, Connection connection, boolean updateToDB) {
+	public void setFormulaValue(String formula, AutoRollbackConnection connection, boolean updateToDB) {
 		//ZSS-565: enforce internal US locale
 		setFormulaValue(formula, Locale.US, connection, updateToDB);
 	}
 	
 	// ZSS-565: Support input with Swedish locale into Formula
 	@Override
-	public void setFormulaValue(String formula, Locale locale, Connection connection, boolean updateToDB) {
+	public void setFormulaValue(String formula, Locale locale, AutoRollbackConnection connection, boolean updateToDB) {
 		Validations.argNotNull(formula);
 		
 		//ZSS-967
@@ -385,7 +385,7 @@ public class CellImpl extends AbstractCellAdv {
 		return _localValue;
 	}
 	
-	private void setCellValue(CellValue value, boolean destroy, Connection connection, boolean updateToDB){ //ZSS-985
+	private void setCellValue(CellValue value, boolean destroy, AutoRollbackConnection connection, boolean updateToDB){ //ZSS-985
 		this._localValue = value != null && value.getType() == CellType.BLANK ? null : value;
 		
 		//clear the dependent's formula result cache
@@ -431,10 +431,10 @@ public class CellImpl extends AbstractCellAdv {
 		}
 	}
 
-	private void updateCelltoDB(Connection connection) {
+	private void updateCelltoDB(AutoRollbackConnection connection) {
 		getSheet().getBook().checkDBSchema();
 		try {
-			Connection localConnection = connection == null ? DBHandler.instance.getConnection() : connection;
+            AutoRollbackConnection localConnection = connection == null ? DBHandler.instance.getConnection() : connection;
 			Collection<AbstractCellAdv> cells = new LinkedList<>();
 			cells.add(this);
 			getSheet().getDataModel().updateCells(new DBContext(localConnection), cells);
@@ -477,13 +477,13 @@ public class CellImpl extends AbstractCellAdv {
 	}
 	
 	@Override
-	public void setValue(Object newVal, Connection connection, boolean updateToDB) {
+	public void setValue(Object newVal, AutoRollbackConnection connection, boolean updateToDB) {
 		setValue(newVal, false, connection, updateToDB); //ZSS-853
 	}
 
 	//ZSS-853
 	@Override
-	protected void setValue(Object newVal, boolean aString, Connection connection, boolean updateToDB) {
+	protected void setValue(Object newVal, boolean aString, AutoRollbackConnection connection, boolean updateToDB) {
 		CellValue oldVal = getCellValue();
 		if( (oldVal==null && newVal==null) ||
 				(oldVal != null && valueEquals(oldVal.getValue(), newVal))) {
