@@ -16,6 +16,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
  */
 package org.zkoss.zss.range.impl.imexp;
 
+import org.model.AutoRollbackConnection;
 import org.zkoss.poi.hssf.usermodel.HSSFRichTextString;
 import org.zkoss.poi.ss.formula.eval.*;
 import org.zkoss.poi.ss.formula.ptg.FuncVarPtg;
@@ -403,7 +404,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 
 	abstract protected void importValidation(Sheet poiSheet, SSheet sheet);
 
-	protected SRow importRow(Row poiRow, SSheet sheet, Connection connection, boolean updateToDB) {
+	protected SRow importRow(Row poiRow, SSheet sheet, AutoRollbackConnection connection, boolean updateToDB) {
 		SRow row = sheet.getRow(poiRow.getRowNum());
 		row.setHeight(UnitUtil.twipToPx(poiRow.getHeight()));
 		row.setCustomHeight(poiRow.isCustomHeight());
@@ -420,7 +421,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 		return row;
 	}
 
-	protected SCell importCell(Cell poiCell, int row, SSheet sheet, Connection connection, boolean updateToDB) {
+	protected SCell importCell(Cell poiCell, int row, SSheet sheet, AutoRollbackConnection connection, boolean updateToDB) {
 
 		SCell cell = sheet.getCell(row, poiCell.getColumnIndex());
 		cell.setCellStyle(importCellStyle(poiCell.getCellStyle()));

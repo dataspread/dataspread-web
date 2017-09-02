@@ -1,5 +1,6 @@
 package org.zkoss.zss.model.impl;
 
+import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.util.Pair;
@@ -86,7 +87,8 @@ public class TOM_Mapping {
                 .append(" ORDER BY oid") /* TODO allow custom order */
                 .toString();
 
-        try (Statement stmt = context.getConnection().createStatement()) {
+        AutoRollbackConnection connection = context.getConnection();
+        try (Statement stmt = connection.createStatement()) {
             ResultSet set = stmt.executeQuery(getOids);
 
             while (set.next()) {
@@ -108,7 +110,7 @@ public class TOM_Mapping {
 
     private void loadTableOrder(String tableName) {
         String selectTableOrder = "SELECT * FROM tableorders WHERE tablename = ?";
-        try (Connection conn = DBHandler.instance.getConnection();
+        try (AutoRollbackConnection conn = DBHandler.instance.getConnection();
              PreparedStatement stmt = conn.prepareStatement(selectTableOrder)) {
             DBContext dbContext = new DBContext(conn);
             stmt.setString(1, tableName);

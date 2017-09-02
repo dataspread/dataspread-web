@@ -1,5 +1,6 @@
 package org.zkoss.zss.model.impl;
 
+import org.model.AutoRollbackConnection;
 import org.model.BlockStore;
 import org.model.DBContext;
 import org.zkoss.util.Pair;
@@ -170,7 +171,8 @@ public class Hybrid_Model extends RCV_Model {
                 .append(") WITH OIDS")
                 .toString();
 
-        try (Statement stmt = context.getConnection().createStatement()) {
+        AutoRollbackConnection connection = context.getConnection();
+        try (Statement stmt = connection.createStatement()) {
             stmt.execute(createTable);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -193,14 +195,15 @@ public class Hybrid_Model extends RCV_Model {
             if (i < cellRegion.getColumn())
                 insertColumnStmt.append(",");
         }
-        try (Statement stmt = dbContext.getConnection().createStatement()) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement()) {
             stmt.execute(insertColumnStmt.toString());
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    public List<Integer> appendTableRows(DBContext context, CellRegion range, String tableName) {
+    public List<Integer> appendTableRows(DBContext dbContext, CellRegion range, String tableName) {
 
         List<Integer> oidList = new ArrayList<>();
         // Delete Header
@@ -220,7 +223,8 @@ public class Hybrid_Model extends RCV_Model {
                 .toString();
 
         // Start min_row  from 1.
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(update)) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(update)) {
             // Work in small range
             for (int i = range.getLastRow() / block_row + 1; i > 0; i--) {
                 int min_row = range.getRow() + (i - 1) * block_row;
@@ -229,7 +233,7 @@ public class Hybrid_Model extends RCV_Model {
                 CellRegion work_range = new CellRegion(min_row, range.getColumn(), max_row, range.getLastColumn());
 
 
-                Collection<AbstractCellAdv> cells = getCells(context, work_range)
+                Collection<AbstractCellAdv> cells = getCells(dbContext, work_range)
                         .stream()
                         .peek(e -> e.translate(-range.getRow(), -range.getColumn())) // Translate
                         .collect(Collectors.toList());
@@ -260,7 +264,7 @@ public class Hybrid_Model extends RCV_Model {
                     resultSet.close();
 
                 }
-                super.deleteCells(context, work_range);
+                super.deleteCells(dbContext, work_range);
             }
         } catch (SQLException e) {
             e.printStackTrace();

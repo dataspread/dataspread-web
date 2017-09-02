@@ -68,7 +68,8 @@ public class BlockStore {
         if (dataStore == null)
             return;
 
-        try (Statement stmt = dbContext.getConnection().createStatement()) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement()) {
             String createTable = (new StringBuilder())
                     .append("DROP TABLE ")
                     .append(dataStore)
@@ -87,7 +88,8 @@ public class BlockStore {
         }
         this.dataStore = dataStore;
 
-        try (Statement stmt = dbContext.getConnection().createStatement()) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement()) {
             String createTable = (new StringBuilder())
                     .append("CREATE TABLE IF NOT EXISTS ")
                     .append(dataStore)
@@ -125,7 +127,9 @@ public class BlockStore {
         int id = -1;
 
         String insert = "SELECT nextval(?)";
-        try (PreparedStatement stmt = dbContext.getConnection().prepareStatement(insert)) {
+
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(insert)) {
             stmt.setString(1, dataStore + "_block_id_seq");
             ResultSet rs = stmt.executeQuery();
             if (rs.next())
@@ -144,7 +148,7 @@ public class BlockStore {
      * @param block_id the index of the block to read
      * @return the block
      */
-    public <T> T getObject(DBContext context, int block_id, Class<T> type) {
+    public <T> T getObject(DBContext dbContext, int block_id, Class<T> type) {
         T obj = (T) blockCache.get(block_id);
         if (obj != null || dataStore == null)
             return obj;
@@ -153,8 +157,8 @@ public class BlockStore {
             return obj;
 
         String read = "SELECT data FROM " + dataStore + " WHERE block_id = ?";
-
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(read)) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(read)) {
             stmt.setInt(1, block_id);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
@@ -184,7 +188,8 @@ public class BlockStore {
                 .append(dataStore)
                 .append("(block_id, data) VALUES (?,?) ON CONFLICT (block_id) DO UPDATE set data = EXCLUDED.data")
                 .toString();
-        try (PreparedStatement stmt = dbContext.getConnection().prepareStatement(insertOrUpdate)) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(insertOrUpdate)) {
             for (Map.Entry<Integer, Object> blockEntry : dirtyBlocks.entrySet()) {
                 stmt.setInt(1, blockEntry.getKey());
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -202,7 +207,8 @@ public class BlockStore {
 
         // Delete blocks
         String free = "DELETE FROM " + dataStore + " WHERE block_id = ?";
-        try (PreparedStatement stmt = dbContext.getConnection().prepareStatement(free)) {
+
+        try (PreparedStatement stmt = connection.prepareStatement(free)) {
             for (int block_id : deletedBlocks) {
                 stmt.setInt(1, block_id);
                 stmt.execute();

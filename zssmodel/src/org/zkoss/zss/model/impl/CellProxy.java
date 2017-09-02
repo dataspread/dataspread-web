@@ -16,6 +16,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
+import org.model.AutoRollbackConnection;
 import org.zkoss.poi.ss.formula.eval.ValueEval;
 import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.sys.dependency.Ref;
@@ -84,7 +85,7 @@ class CellProxy extends AbstractCellAdv {
 	}
 
 	@Override
-	public void setFormulaValue(String formula, Connection connection, boolean updateToDB) {
+	public void setFormulaValue(String formula, AutoRollbackConnection connection, boolean updateToDB) {
 		if (_proxy == null)
 			_proxy = _sheet.createCell(_rowIdx, _columnIdx);
 		_proxy.setFormulaValue(formula, connection, updateToDB);
@@ -93,7 +94,7 @@ class CellProxy extends AbstractCellAdv {
 
 	//ZSS-565: Support input with Swedish locale into Formula
 	@Override
-	public void setFormulaValue(String formula, Locale locale, Connection connection, boolean updateToDB) {
+	public void setFormulaValue(String formula, Locale locale, AutoRollbackConnection connection, boolean updateToDB) {
 		if (_proxy == null)
 			_proxy = _sheet.createCell(_rowIdx, _columnIdx);
 		_proxy.setFormulaValue(formula, locale, connection, updateToDB);
@@ -101,13 +102,13 @@ class CellProxy extends AbstractCellAdv {
 	}
 
 	@Override
-	public void setValue(Object value, Connection connection, boolean updateToDB) {
+	public void setValue(Object value, AutoRollbackConnection connection, boolean updateToDB) {
 		setValue(value, false, connection, updateToDB);
 	}
 
 	//ZSS-853
 	@Override
-	protected void setValue(Object value, boolean aString, Connection connection, boolean updateToDB) {
+	protected void setValue(Object value, boolean aString, AutoRollbackConnection connection, boolean updateToDB) {
 		if (_proxy == null && value != null) {
 			_proxy = _sheet.createCell(_rowIdx, _columnIdx);
 			_proxy.setValue(value, aString, connection, updateToDB);
@@ -178,7 +179,7 @@ class CellProxy extends AbstractCellAdv {
 	}
 
 	@Override
-	public void clearValue(Connection connection, boolean updateToDB) {
+	public void clearValue(AutoRollbackConnection connection, boolean updateToDB) {
 		if (_proxy != null)
 			_proxy.clearValue(connection, updateToDB);
 	}

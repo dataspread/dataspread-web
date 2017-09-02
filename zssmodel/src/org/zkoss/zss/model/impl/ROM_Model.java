@@ -2,6 +2,7 @@ package org.zkoss.zss.model.impl;
 
 import com.opencsv.CSVReader;
 import org.apache.tomcat.dbcp.dbcp2.DelegatingConnection;
+import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.postgresql.copy.CopyIn;
@@ -39,7 +40,8 @@ public class ROM_Model extends Model {
                 .append("(row INT PRIMARY KEY)")
                 .toString();
 
-        try (Statement stmt = context.getConnection().createStatement()) {
+        AutoRollbackConnection connection = context.getConnection();
+        try (Statement stmt = connection.createStatement()) {
             stmt.execute(createTable.toString());
         } catch (SQLException e) {
             e.printStackTrace();
@@ -91,7 +93,8 @@ public class ROM_Model extends Model {
     public void deleteRows(DBContext context, int row, int count) {
         Integer[] ids = rowMapping.deleteIDs(context, row, count);
 
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(
+        AutoRollbackConnection connection = context.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(
                 "DELETE FROM " + tableName + " WHERE row = ANY(?)")) {
             Array inArray = context.getConnection().createArrayOf("integer", ids);
             stmt.setArray(1, inArray);
@@ -114,7 +117,8 @@ public class ROM_Model extends Model {
         deleteColumn.append(" DROP COLUMN col_")
                 .append(ids[ids.length - 1]);
 
-        try (Statement stmt = context.getConnection().createStatement()) {
+        AutoRollbackConnection connection = context.getConnection();
+        try (Statement stmt = connection.createStatement()) {
             stmt.execute(deleteColumn.toString());
         } catch (SQLException e) {
             e.printStackTrace();
@@ -176,7 +180,8 @@ public class ROM_Model extends Model {
         for (int i = 0; i < idsCol.length; ++i)
             update.append("?,");
         update.append("? WHERE NOT EXISTS (SELECT * FROM upsert)");
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(update.toString())) {
+        AutoRollbackConnection connection = context.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(update.toString())) {
             for (Map.Entry<Integer, SortedMap<Integer, AbstractCellAdv>> _row : groupedCells.entrySet()) {
                 int rowId = rowMapping.getIDs(context, _row.getKey(), 1)[0];
                 stmt.setInt(idsCol.length + 1, rowId);
@@ -217,7 +222,8 @@ public class ROM_Model extends Model {
 
         Integer[] rowIds = rowMapping.getIDs(context, range.getRow(), range.getLastRow() - range.getRow() + 1);
 
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(delete.toString())) {
+        AutoRollbackConnection connection = context.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(delete.toString())) {
             Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
             stmt.setArray(1, inArrayRow);
             stmt.executeUpdate();
@@ -263,7 +269,8 @@ public class ROM_Model extends Model {
         }
         update.append(" WHERE row = ?");
 
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(update.toString())) {
+        AutoRollbackConnection connection = context.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(update.toString())) {
             for (Map.Entry<Integer, SortedMap<Integer, AbstractCellAdv>> _row : groupedCells.entrySet()) {
                 int rowId = rowMapping.getIDs(context, _row.getKey(), 1)[0];
                 stmt.setInt(idsCol.length + 1, rowId);
@@ -309,7 +316,8 @@ public class ROM_Model extends Model {
                 .append(tableName)
                 .append(" WHERE row = ANY (?) ");
 
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(select.toString())) {
+        AutoRollbackConnection connection = context.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
             Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
             stmt.setArray(1, inArrayRow);
 
@@ -365,9 +373,9 @@ public class ROM_Model extends Model {
         int importedRows = 0;
         int importedColumns = 0;
 
-        try (Connection connection = DBHandler.instance.getConnection()) {
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             DBContext dbContext = new DBContext(connection);
-            Connection rawConn = ((DelegatingConnection) connection).getInnermostDelegate();
+            Connection rawConn = ((DelegatingConnection) connection.getInternalConnection()).getInnermostDelegate();
             CopyManager cm = ((PgConnection) rawConn).getCopyAPI();
             CopyIn cpIN = null;
 

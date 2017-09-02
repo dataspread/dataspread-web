@@ -1,5 +1,6 @@
 package org.zkoss.zss.app.ui.table;
 
+import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.zk.ui.Executions;
@@ -39,9 +40,6 @@ public class displayTableCtrl extends DlgCtrlBase {
     private AreaRef selection;
     private Sheet sheet;
 
-    //private Table tableObj = new Table();
-
-
     private ListModelList<String> tablesList = new ListModelList<String>();
 
     public static void show(EventListener<DlgCallbackEvent> callback, Spreadsheet ss) {
@@ -65,7 +63,7 @@ public class displayTableCtrl extends DlgCtrlBase {
 
     private ListModelList<String> getTablesList() throws SQLException {
         try (
-                Connection connection = DBHandler.instance.getConnection();
+                AutoRollbackConnection connection = DBHandler.instance.getConnection();
                 Statement stmt = connection.createStatement()) {
 
             String sql = "SELECT table_name FROM information_schema.tables  " +
@@ -92,7 +90,7 @@ public class displayTableCtrl extends DlgCtrlBase {
         }
         String tableName = tablesBox.getSelectedItem().getLabel();
         if (tableName != null && !tableName.isEmpty()) {
-            try (Connection connection = DBHandler.instance.getConnection()) {
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
                 DBContext dbContext = new DBContext(connection);
                 CellRegion region = new CellRegion(selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
                 // Make sure the sheet is saved

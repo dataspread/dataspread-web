@@ -1,5 +1,6 @@
 package org.zkoss.zss.app.impl;
 
+import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.lang.Library;
@@ -59,12 +60,10 @@ public class CollaborationInfoImpl implements CollaborationInfo {
     public void checkDBSchema() {
         if (schemaPresent)
             return;
-        try (Connection connection = DBHandler.instance.getConnection()) {
-            DBContext dbContext = new DBContext(connection);
-
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             //get all users
             String getUser = "SELECT * FROM users";
-            PreparedStatement getUserStmt = dbContext.getConnection().prepareStatement(getUser);
+            PreparedStatement getUserStmt = connection.prepareStatement(getUser);
             ResultSet rs = getUserStmt.executeQuery();
             while (rs.next()) {
                 String user_name = rs.getString(1);
@@ -96,12 +95,11 @@ public class CollaborationInfoImpl implements CollaborationInfo {
         if (!isUsernameExist(username)) addUsername(username, username);
         book_list.get(username).add(booktable);
         if (schemaPresent) {
-            try (Connection connection = DBHandler.instance.getConnection()) {
-                DBContext dbContext = new DBContext(connection);
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
 
                 //get all users
                 String add = "INSERT INTO users VALUES (?,?)";
-                PreparedStatement addStmt = dbContext.getConnection().prepareStatement(add);
+                PreparedStatement addStmt = connection.prepareStatement(add);
                 addStmt.setString(1, username);
                 addStmt.setString(2, booktable);
                 addStmt.execute();
@@ -126,12 +124,10 @@ public class CollaborationInfoImpl implements CollaborationInfo {
             book_list.get(user).add(new_name);
         }
         if (schemaPresent) {
-            try (Connection connection = DBHandler.instance.getConnection()) {
-                DBContext dbContext = new DBContext(connection);
-
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
                 //get all users
                 String update = "UPDATE users SET booktable = ? WHERE booktable = ?;";
-                PreparedStatement updateStmt = dbContext.getConnection().prepareStatement(update);
+                PreparedStatement updateStmt = connection.prepareStatement(update);
                 updateStmt.setString(1, new_name);
                 updateStmt.setString(2, old_name);
                 updateStmt.execute();

@@ -16,6 +16,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.ui.impl.ua;
 
+import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.util.Pair;
@@ -55,7 +56,7 @@ public class AppendTableColumnHandler extends AbstractHandler {
                 return false;
             }
 
-            try (Connection connection = DBHandler.instance.getConnection()) {
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
                 DBContext dbContext = new DBContext(connection);
 
                 CellRegion tupleRegion = new CellRegion(selectedCellRegion.getRow() + 1,

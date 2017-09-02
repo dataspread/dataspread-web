@@ -4,21 +4,14 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 public class DBContext {
-    private Connection connection;
+    private AutoRollbackConnection connection;
 
-    public DBContext(Connection connection) {
+    public DBContext(AutoRollbackConnection connection) {
         this.connection = connection;
     }
 
-    public Connection getConnection() {
+    public AutoRollbackConnection getConnection() {
         return connection;
     }
 
-    public void rollback() {
-        try {
-            connection.rollback();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
 }

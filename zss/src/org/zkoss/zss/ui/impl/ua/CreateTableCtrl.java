@@ -1,5 +1,6 @@
 package org.zkoss.zss.ui.impl.ua;
 
+import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.zk.ui.Executions;
@@ -59,24 +60,24 @@ public class CreateTableCtrl extends DlgCtrlBase {
     public void create() {
         boolean created = false;
         tableNameStr = tableName.getValue();
-        try {
-            if (tableNameStr.isEmpty()) {
-                Messagebox.show("Table Name is Required", "Table Name",
-                        Messagebox.OK, Messagebox.ERROR);
-                return;
-            }
+        if (tableNameStr.isEmpty()) {
+            Messagebox.show("Table Name is Required", "Table Name",
+                    Messagebox.OK, Messagebox.ERROR);
+            return;
+        }
 
-            CellRegion region = new CellRegion(selection.getRow(), selection.getColumn(),
-                    selection.getLastRow(), selection.getLastColumn());
-            Hybrid_Model model = (Hybrid_Model) sheet.getInternalSheet().getDataModel();
-            if (model.checkOverap(region)) {
-                Messagebox.show("Table Range Overlaps with Existing Table.", "Create Table",
-                        Messagebox.OK, Messagebox.ERROR);
-                createTableDlg.detach();
-                return;
-            }
+        CellRegion region = new CellRegion(selection.getRow(), selection.getColumn(),
+                selection.getLastRow(), selection.getLastColumn());
+        Hybrid_Model model = (Hybrid_Model) sheet.getInternalSheet().getDataModel();
+        if (model.checkOverap(region)) {
+            Messagebox.show("Table Range Overlaps with Existing Table.", "Create Table",
+                    Messagebox.OK, Messagebox.ERROR);
+            createTableDlg.detach();
+            return;
+        }
 
-            Connection connection = DBHandler.instance.getConnection();
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection())
+        {
             DBContext dbContext = new DBContext(connection);
             model.createTable(dbContext, region, tableNameStr);
             model.appendTableRows(dbContext, new CellRegion(region.getRow() + 1, region.getColumn(),
@@ -89,14 +90,14 @@ public class CreateTableCtrl extends DlgCtrlBase {
                     selection.getLastRow());
             Messagebox.show("Table " + tableNameStr.toUpperCase() + " is Successfully Created", "Table Creation",
                     Messagebox.OK, Messagebox.INFORMATION);
+            createTableDlg.detach();
+            return;
 
         } catch (SQLException e) {
             e.printStackTrace();
             Messagebox.show("Error in Creating Table " + e.getMessage(), "Table Creation",
                     Messagebox.OK, Messagebox.ERROR);
-
         }
-        createTableDlg.detach();
     }
 
     @Listen("onClick = #cancelButton")

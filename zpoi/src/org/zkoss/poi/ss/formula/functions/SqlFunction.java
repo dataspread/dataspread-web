@@ -1,6 +1,7 @@
 package org.zkoss.poi.ss.formula.functions;
 
 
+import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
 import org.zkoss.poi.ss.formula.eval.*;
 
@@ -69,7 +70,7 @@ public class SqlFunction implements Function {
 
 		ValueEval resultEval;
 
-		try (Connection connection = DBHandler.instance.getConnection()) {
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
 			PreparedStatement stmt = connection.prepareStatement(queryString);
 			for (int i = 0; i < parameters.length; i++) {
 				if (parameters[i] instanceof StringEval) {
@@ -102,7 +103,7 @@ public class SqlFunction implements Function {
 
 	/**
 	 *
-	 * @return the de-referenced query arg (possibly {@link ErrorEval})
+	 * @return the de-referenced parameter arg (possibly {@link ErrorEval})
 	 */
 	private static ValueEval[] evaluateParameterArgs(ValueEval[] args, int srcRowIndex, int srcColumnIndex) {
 		ValueEval[] evaluatedArgs = new ValueEval[args.length-1];

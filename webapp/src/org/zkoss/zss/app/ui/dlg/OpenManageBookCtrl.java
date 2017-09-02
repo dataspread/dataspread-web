@@ -11,6 +11,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.app.ui.dlg;
 
+import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
 import org.zkoss.util.logging.Log;
 import org.zkoss.util.media.Media;
@@ -86,9 +87,9 @@ public class OpenManageBookCtrl extends DlgCtrlBase{
 
 		String bookListQuery = "SELECT booktable FROM users WHERE username = ?;";
 		String fetchBookQuery = "SELECT * FROM books WHERE booktable = ANY(?);";
-		try (Connection connection = DBHandler.instance.getConnection();
-			 PreparedStatement getstmt = connection.prepareStatement(bookListQuery);
-			 PreparedStatement stmt = connection.prepareStatement(fetchBookQuery))
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+             PreparedStatement getstmt = connection.prepareStatement(bookListQuery);
+             PreparedStatement stmt = connection.prepareStatement(fetchBookQuery))
 		{
 			ArrayList<String> booklist = new ArrayList<>();
 			getstmt.setString(1, collaborationInfo.getUsername());

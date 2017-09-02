@@ -16,6 +16,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
+import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.model.LruCache;
@@ -342,7 +343,7 @@ public class SheetImpl extends AbstractSheetAdv {
 
 	@Override
 	public void setDataModel(String model) {
-		try (Connection connection = DBHandler.instance.getConnection()) {
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
 			DBContext dbContext = new DBContext(connection);
 			dataModel = Model.CreateModel(dbContext, this, Model.ModelType.HYBRID_Model, model);
 			connection.commit();
@@ -362,7 +363,7 @@ public class SheetImpl extends AbstractSheetAdv {
 
 		CellRegion fetchRange = new CellRegion(minRow, minColumn, maxRow, maxColumn);
 
-		try (Connection connection = DBHandler.instance.getConnection())
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection())
 		{
 			DBContext dbContext = new DBContext(connection);
 			Collection<AbstractCellAdv> cells = dataModel.getCells(dbContext, fetchRange);
@@ -454,13 +455,14 @@ public class SheetImpl extends AbstractSheetAdv {
 
 	public int getEndRowIndex() {
 		if (dataModel != null) {
-			Connection localConnection = DBHandler.instance.getConnection();
-			CellRegion cellRegion = dataModel.getBounds(new DBContext(localConnection));
-			if (cellRegion != null)
-				return cellRegion.getLastRow();
-			try {
-				localConnection.close();
-			} catch (SQLException e) {
+			try (AutoRollbackConnection connection = DBHandler.instance.getConnection())
+			{
+				CellRegion cellRegion = dataModel.getBounds(new DBContext(connection));
+				if (cellRegion != null)
+					return cellRegion.getLastRow();
+			}
+			catch (SQLException e)
+			{
 				e.printStackTrace();
 			}
 		}
@@ -473,12 +475,11 @@ public class SheetImpl extends AbstractSheetAdv {
 
 	public int getEndColumnIndex() {
 		if (dataModel != null) {
-			Connection localConnection = DBHandler.instance.getConnection();
-			CellRegion cellRegion = dataModel.getBounds(new DBContext(localConnection));
-			if (cellRegion != null)
-				return cellRegion.getLastColumn();
-			try {
-				localConnection.close();
+			try (AutoRollbackConnection connection = DBHandler.instance.getConnection())
+			{
+				CellRegion cellRegion = dataModel.getBounds(new DBContext(connection));
+				if (cellRegion != null)
+					return cellRegion.getLastColumn();
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
@@ -515,7 +516,7 @@ public class SheetImpl extends AbstractSheetAdv {
 			String bookTable = getBook().getId();
 			String updateWorkbook = "UPDATE " + bookTable + "_workbook " +
 					" SET sheetname = ? WHERE sheetid = ?";
-			try (Connection connection = DBHandler.instance.getConnection();
+			try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
 				 PreparedStatement updateSheetNameStmt = connection.prepareStatement(updateWorkbook))
 			{
 				updateSheetNameStmt.setString(1,name);
@@ -595,7 +596,7 @@ public class SheetImpl extends AbstractSheetAdv {
 
 		CellRegion deleted_region = new CellRegion(rowStart, columnStart, rowEnd, columnEnd);
 		if (dataModel != null) {
-			try (Connection connection = DBHandler.instance.getConnection()) {
+			try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
 				DBContext dbContext = new DBContext(connection);
 				dataModel.deleteCells(dbContext, deleted_region);
 				connection.commit();
@@ -617,7 +618,7 @@ public class SheetImpl extends AbstractSheetAdv {
 
 		//TODO: Store row based attributes
         if (dataModel != null) {
-            try (Connection connection = DBHandler.instance.getConnection()) {
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
                 DBContext dbContext = new DBContext(connection);
                 dataModel.insertRows(dbContext, rowIdx, size);
                 connection.commit();
@@ -712,7 +713,7 @@ public class SheetImpl extends AbstractSheetAdv {
 
 		int size = lastRowIdx-rowIdx+1;
         if (dataModel != null) {
-            try (Connection connection = DBHandler.instance.getConnection()) {
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
                 DBContext dbContext = new DBContext(connection);
                 dataModel.deleteRows(dbContext, rowIdx, size);
                 connection.commit();
@@ -1141,7 +1142,7 @@ public class SheetImpl extends AbstractSheetAdv {
 		int size = lastColumnIdx - columnIdx + 1;
         //TODO: Store column based attributes
         if (dataModel != null) {
-            try (Connection connection = DBHandler.instance.getConnection()) {
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
                 DBContext dbContext = new DBContext(connection);
                 dataModel.insertCols(dbContext, columnIdx, size);
                 connection.commit();
@@ -1338,7 +1339,7 @@ public class SheetImpl extends AbstractSheetAdv {
 		int size = lastColumnIdx - columnIdx + 1;
 
         if (dataModel != null) {
-            try (Connection connection = DBHandler.instance.getConnection()) {
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
                 DBContext dbContext = new DBContext(connection);
                 dataModel.deleteCols(dbContext, columnIdx, size);
                 connection.commit();

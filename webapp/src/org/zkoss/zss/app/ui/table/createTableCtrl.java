@@ -1,5 +1,6 @@
 package org.zkoss.zss.app.ui.table;
 
+import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.zk.ui.Executions;
@@ -37,11 +38,7 @@ public class createTableCtrl extends DlgCtrlBase {
     private AreaRef selection;
     private Sheet sheet;
 
-    private Table tableObj = new Table();
-
     private String name;
-    private String rangeRef;
-    private String bookName;
 
     public static void show(EventListener<DlgCallbackEvent> callback, Spreadsheet ss) {
 
@@ -59,34 +56,29 @@ public class createTableCtrl extends DlgCtrlBase {
         super.doAfterCompose(comp);
         selection = sss.getSelection();
         sheet = sss.getSelectedSheet();
-
-        bookName = sss.getBook().getBookName();
-        rangeRef = Ranges.getAreaRefString(sheet, selection.getRow(), selection.getColumn(), selection.getLastRow(), selection.getLastColumn());
-
     }
 
     @Listen("onClick = #createButton")
     public void create() {
         boolean created = false;
         name = tableName.getValue();
-        try {
-            if (name.isEmpty()) {
-                Messagebox.show("Table Name is Required", "Table Name",
-                        Messagebox.OK, Messagebox.ERROR);
-                return;
-            }
+        if (name.isEmpty()) {
+            Messagebox.show("Table Name is Required", "Table Name",
+                    Messagebox.OK, Messagebox.ERROR);
+            return;
+        }
 
-            CellRegion region = new CellRegion(selection.getRow(), selection.getColumn(),
-                    selection.getLastRow(), selection.getLastColumn());
-            Hybrid_Model model = (Hybrid_Model) sheet.getInternalSheet().getDataModel();
-            if (model.checkOverap(region)) {
-                Messagebox.show("Table Range Overlaps with Existing Table.", "Create Table",
-                        Messagebox.OK, Messagebox.ERROR);
-                createTableDlg.detach();
-                return;
-            }
+        CellRegion region = new CellRegion(selection.getRow(), selection.getColumn(),
+                selection.getLastRow(), selection.getLastColumn());
+        Hybrid_Model model = (Hybrid_Model) sheet.getInternalSheet().getDataModel();
+        if (model.checkOverap(region)) {
+            Messagebox.show("Table Range Overlaps with Existing Table.", "Create Table",
+                    Messagebox.OK, Messagebox.ERROR);
+            createTableDlg.detach();
+            return;
+        }
 
-            Connection connection = DBHandler.instance.getConnection();
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             DBContext dbContext = new DBContext(connection);
             model.createTable(dbContext, region, name);
             model.appendTableRows(dbContext, new CellRegion(region.getRow() + 1, region.getColumn(),
@@ -94,21 +86,21 @@ public class createTableCtrl extends DlgCtrlBase {
             model.linkTable(dbContext, name, new CellRegion(region.getRow(), region.getColumn(),
                     region.getLastRow(), region.getLastColumn()));
             connection.commit();
-            sheet.getInternalSheet().clearCache(region);
-            sss.updateCell(selection.getColumn(), selection.getRow(), selection.getLastColumn(),
-                    selection.getLastRow());
-            Messagebox.show("Table " + name.toUpperCase() + " is Successfully Created", "Table Creation",
-                    Messagebox.OK, Messagebox.INFORMATION);
-
-        } catch (SQLException e) {
+        }
+        catch (SQLException e)
+        {
             e.printStackTrace();
             Messagebox.show("Error in Creating Table " + e.getMessage(), "Table Creation",
                     Messagebox.OK, Messagebox.ERROR);
-
+            return;
         }
+        sheet.getInternalSheet().clearCache(region);
+        sss.updateCell(selection.getColumn(), selection.getRow(), selection.getLastColumn(),
+                selection.getLastRow());
+        Messagebox.show("Table " + name.toUpperCase() + " is Successfully Created", "Table Creation",
+                Messagebox.OK, Messagebox.INFORMATION);
+
         createTableDlg.detach();
-
-
     }
 
     @Listen("onClick = #cancelButton")

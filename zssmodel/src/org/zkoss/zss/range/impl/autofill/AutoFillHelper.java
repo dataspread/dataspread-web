@@ -26,6 +26,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.model.AutoRollbackConnection;
 import org.zkoss.lang.Strings;
 import org.zkoss.poi.ss.usermodel.ZssContext;
 import org.zkoss.zss.model.CellRegion;
@@ -818,7 +819,7 @@ public class AutoFillHelper {
 
 		if (!isPasteValue(pasteType)) return; //ZSS-722
 
-		try (Connection connection = DBHandler.instance.getConnection()) {
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
 			for (int c = srclCol, j = 0; c <= srcrCol; ++c) {
 				final StepChunk stepChunk = stepChunks[j++];
 				for (int srcIndex = 0, r = srcbRow + 1; r <= dstbRow; ++r, ++srcIndex) {
@@ -841,7 +842,7 @@ public class AutoFillHelper {
 		}
 	}
 	
-	public void applyStepValue(SCell srcCell, SCell dstCell, Object value, Connection connection, boolean updateToDB){
+	public void applyStepValue(SCell srcCell, SCell dstCell, Object value, AutoRollbackConnection connection, boolean updateToDB){
 		CellType type = srcCell.getType();
 		if(type==CellType.FORMULA){
 			//it is formula, it should shift by copy/paste already, just ignore it.
@@ -886,7 +887,7 @@ public class AutoFillHelper {
 		
 		if (!isPasteValue(pasteType)) return; //ZSS-722
 
-		try (Connection connection = DBHandler.instance.getConnection()) {
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
 			for(int c = srclCol, j = 0; c <= srcrCol; ++c) {
 				final StepChunk stepChunk = stepChunks[j++];
 				for(int srcIndex = 0, r = srctRow - 1; r >= dsttRow; --r, ++srcIndex) {
@@ -945,7 +946,7 @@ public class AutoFillHelper {
 		
 		if (!isPasteValue(pasteType)) return; //ZSS-722
 
-		try (Connection connection = DBHandler.instance.getConnection()) {
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
 			for(int r = srctRow, j = 0; r <= srcbRow; ++r) {
 				final StepChunk stepChunk = stepChunks[j++];
 				for(int srcIndex = 0, c = srcrCol + 1; c <= dstrCol; ++c, ++srcIndex) {
@@ -1004,7 +1005,7 @@ public class AutoFillHelper {
 		}
 		
 		if (!isPasteValue(pasteType)) return; //ZSS-722
-		try (Connection connection = DBHandler.instance.getConnection()) {
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
 			for(int r = srctRow, j = 0; r <= srcbRow; ++r) {
 				final StepChunk stepChunk = stepChunks[j++];
 				for(int srcIndex = 0, c = srclCol - 1; c >= dstlCol; --c, ++srcIndex) {

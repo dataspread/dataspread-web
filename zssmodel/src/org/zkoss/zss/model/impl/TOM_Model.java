@@ -1,5 +1,6 @@
 package org.zkoss.zss.model.impl;
 
+import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBorder;
@@ -32,7 +33,7 @@ public class TOM_Model extends Model {
         loadColumnInfo(context);
     }
 
-    public void loadColumnInfo(DBContext context) {
+    public void loadColumnInfo(DBContext dbContext) {
         columnNames = new TreeMap<>();
         String tableCols = (new StringBuffer())
                 .append("SELECT * FROM ")
@@ -40,10 +41,11 @@ public class TOM_Model extends Model {
                 .append(" WHERE false")
                 .toString();
 
-        try (Statement stmt = context.getConnection().createStatement()) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement()) {
             ResultSet rs = stmt.executeQuery(tableCols.toString());
             int colCount = rs.getMetaData().getColumnCount();
-            Integer ids[] = colMapping.getIDs(context, 0, colCount);
+            Integer ids[] = colMapping.getIDs(dbContext, 0, colCount);
 
             for (int i = 0; i < colCount; i++)
                 columnNames.put(ids[i], rs.getMetaData().getColumnName(i + 1));
@@ -54,14 +56,15 @@ public class TOM_Model extends Model {
     }
 
     //TODO Make this as a static and get all info to create a table.
-    private void createSchema(DBContext context) {
+    private void createSchema(DBContext dbContext) {
         String createTable = (new StringBuffer())
                 .append("CREATE TABLE IF NOT EXISTS ")
                 .append(tableName)
                 .append("(row INT PRIMARY KEY)")
                 .toString();
 
-        try (Statement stmt = context.getConnection().createStatement()) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement()) {
             stmt.execute(createTable.toString());
         } catch (SQLException e) {
             e.printStackTrace();
@@ -80,7 +83,7 @@ public class TOM_Model extends Model {
     }
 
 
-    private ArrayList<Integer> getOIDs(DBContext context, String tableName) {
+    private ArrayList<Integer> getOIDs(DBContext dbContext, String tableName) {
         ArrayList<Integer> oids = new ArrayList<>();
 
         String getOids = (new StringBuffer())
@@ -89,7 +92,8 @@ public class TOM_Model extends Model {
                 .append(" ORDER BY oid") /* TODO allow custom order */
                 .toString();
 
-        try (Statement stmt = context.getConnection().createStatement()) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement()) {
             ResultSet set = stmt.executeQuery(getOids);
 
             while (set.next()) {
@@ -121,7 +125,8 @@ public class TOM_Model extends Model {
 
     public void deleteTuples(DBContext context, int row, int count) {
         Integer[] oids = rowMapping.deleteIDs(context, row, count);
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(
+        AutoRollbackConnection connection = context.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(
                 "DELETE FROM " + tableName + " WHERE oid = ANY(?)")) {
             Array inArray = context.getConnection().createArrayOf("integer", oids);
             stmt.setArray(1, inArray);
@@ -165,7 +170,8 @@ public class TOM_Model extends Model {
                 .append(" (oid)")
                 .toString();
 
-        try (Statement stmt = dbContext.getConnection().createStatement()) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement()) {
             stmt.executeUpdate(addOID);
             stmt.executeUpdate(indexOID);
         } catch (SQLException e) {
@@ -229,7 +235,8 @@ public class TOM_Model extends Model {
                 .append(" WHERE oid = ANY (?) ");
 
 
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(select.toString())) {
+        AutoRollbackConnection connection = context.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
             // Array inArrayRow = context.getConnection().createArrayOf(pkColumnType, rowIds);
             /* Assume an int array for now */
             Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
@@ -325,7 +332,8 @@ public class TOM_Model extends Model {
                     .append(sqlValuesPlaceHolders.toString())
                     .append(" WHERE oid = ?");
 
-            try (PreparedStatement stmt = context.getConnection().prepareStatement(update.toString())) {
+            AutoRollbackConnection connection = context.getConnection();
+            try (PreparedStatement stmt = connection.prepareStatement(update.toString())) {
                 for (Map.Entry<Integer, SortedMap<Integer, AbstractCellAdv>> _row : groupedCells.entrySet()) {
                     // Ignore updates to the first row
                     if (_row.getKey() > 0) {
@@ -433,7 +441,8 @@ public class TOM_Model extends Model {
         }
         update.append(" WHERE row = ?");
 
-        try (PreparedStatement stmt = context.getConnection().prepareStatement(update.toString())) {
+        AutoRollbackConnection connection = context.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(update.toString())) {
             for (Map.Entry<Integer, SortedMap<Integer, AbstractCellAdv>> _row : groupedCells.entrySet()) {
                 int rowId = rowMapping.getIDs(context, _row.getKey(), 1)[0];
                 stmt.setInt(idsCol.length + 1, rowId);

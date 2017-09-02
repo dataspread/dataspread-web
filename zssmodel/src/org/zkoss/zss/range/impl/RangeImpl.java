@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 
+import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
 import org.zkoss.lang.Strings;
 import org.zkoss.poi.ss.usermodel.ZssContext;
@@ -301,7 +302,7 @@ public class RangeImpl implements SRange {
 	@Override
 	public void setValue(final Object value) {
 		new CellVisitorTask(new CellVisitorForUpdate() {
-			Connection connection = null;
+			AutoRollbackConnection connection = null;
 			public boolean visit(SCell cell) {
 				if (connection==null)
 					initConnection(cell);
@@ -448,7 +449,7 @@ public class RangeImpl implements SRange {
 		final ResultWrap<InputResult> input = new ResultWrap<InputResult>();
 		final ResultWrap<HyperlinkType> hyperlinkType = new ResultWrap<HyperlinkType>();
 		new CellVisitorTask(new CellVisitorForUpdate() {
-			Connection connection = null;
+			AutoRollbackConnection connection = null;
 
 			public boolean visit(SCell cell) {
 				if (connection==null)
@@ -1106,7 +1107,7 @@ public class RangeImpl implements SRange {
 	public void setHyperlink(final HyperlinkType linkType,final String address,
 			final String display) {
 		new CellVisitorTask(new CellVisitorForUpdate() {
-			Connection connection = null;
+			AutoRollbackConnection connection = null;
 
 			public boolean visit(SCell cell) {
 				if (connection==null)
@@ -2476,7 +2477,7 @@ public class RangeImpl implements SRange {
 	@Override
 	public void setStringValue(final String value) {
 		new CellVisitorTask(new CellVisitorForUpdate() {
-			Connection connection = null;
+			AutoRollbackConnection connection = null;
 			public boolean visit(SCell cell) {
 				if (connection==null)
 					initConnection(cell);
