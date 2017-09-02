@@ -12,11 +12,8 @@ Copyright (C) 2010 Potix Corporation. All Rights Reserved.
 
 package org.zkoss.poi.ss.formula.eval;
 
-import org.zkoss.poi.ss.formula.SheetRefEvaluator;
 import org.zkoss.poi.ss.formula.TwoDEval;
-import org.zkoss.poi.ss.formula.constant.ErrorConstant;
 import org.zkoss.poi.ss.formula.functions.RelTableUtils;
-import org.zkoss.poi.ss.formula.ptg.ArrayPtg;
 
 import java.util.Arrays;
 

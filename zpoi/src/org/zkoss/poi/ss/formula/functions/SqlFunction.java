@@ -27,13 +27,8 @@ public class SqlFunction implements Function {
 
 
 		if (evaluatedQuery instanceof StringEval) {
-			try {
-				String queryString = ((StringEval) evaluatedQuery).getStringValue();
-				return makeQuery(queryString, evaluatedParameters);
-			} catch (SQLException e) {
-				e.printStackTrace();
-				return ErrorEval.VALUE_INVALID;
-			}
+			String queryString = ((StringEval) evaluatedQuery).getStringValue();
+			return makeQuery(queryString, evaluatedParameters);
 		}
 		throw new RuntimeException("Unexpected type for query ("
 				+ evaluatedQuery.getClass().getName() + ")");
@@ -70,22 +65,27 @@ public class SqlFunction implements Function {
 		return eval;
 	}
 
-	private ValueEval makeQuery(String queryString, ValueEval[] parameters) throws SQLException {
-		Connection connection = DBHandler.instance.getConnection();
+	private ValueEval makeQuery(String queryString, ValueEval[] parameters) {
 
-		PreparedStatement stmt = connection.prepareStatement(queryString);
-		for (int i = 0; i < parameters.length; i++) {
-			if (parameters[i] instanceof StringEval) {
-				String paramString = ((StringEval) parameters[i]).getStringValue();
-				stmt.setString(i+1, paramString);
+		ValueEval resultEval;
+
+		try (Connection connection = DBHandler.instance.getConnection()) {
+			PreparedStatement stmt = connection.prepareStatement(queryString);
+			for (int i = 0; i < parameters.length; i++) {
+				if (parameters[i] instanceof StringEval) {
+					String paramString = ((StringEval) parameters[i]).getStringValue();
+					stmt.setString(i+1, paramString);
+				}
 			}
-		}
 
-		ResultSet result = stmt.executeQuery();
-		RelTableEval resultEval = parseResult(result);
-		connection.commit();
-		connection.close();
+			ResultSet result = stmt.executeQuery();
+			resultEval = parseResult(result);
+			connection.commit();
+		} catch (SQLException e) {
+			resultEval = ErrorEval.VALUE_INVALID;
+		}
 		return resultEval;
+
 	}
 
 	/**
