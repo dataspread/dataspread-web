@@ -4,9 +4,11 @@ import java.sql.*;
 
 public class AutoRollbackConnection  implements AutoCloseable {
     static int openConnections=0;
+
     final private Connection connection;
     private boolean comitted;
 
+    /* TODO: get a connection here */
     AutoRollbackConnection(Connection connection)
     {
         this.connection=connection;
@@ -23,6 +25,7 @@ public class AutoRollbackConnection  implements AutoCloseable {
             connection.rollback();
         }
         connection.close();
+
         synchronized (AutoRollbackConnection.class) {
             openConnections--;
             System.out.println("Open connections: " + openConnections);
