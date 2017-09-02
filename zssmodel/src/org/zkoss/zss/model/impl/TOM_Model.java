@@ -1,5 +1,6 @@
 package org.zkoss.zss.model.impl;
 
+import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBorder;
@@ -32,7 +33,7 @@ public class TOM_Model extends Model {
         loadColumnInfo(context);
     }
 
-    public void loadColumnInfo(DBContext context) {
+    public void loadColumnInfo(DBContext dbContext) {
         columnNames = new TreeMap<>();
         String tableCols = (new StringBuffer())
                 .append("SELECT * FROM ")
@@ -40,10 +41,11 @@ public class TOM_Model extends Model {
                 .append(" WHERE false")
                 .toString();
 
-        try (Statement stmt = context.getConnection().createStatement()) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement()) {
             ResultSet rs = stmt.executeQuery(tableCols.toString());
             int colCount = rs.getMetaData().getColumnCount();
-            Integer ids[] = colMapping.getIDs(context, 0, colCount);
+            Integer ids[] = colMapping.getIDs(dbContext, 0, colCount);
 
             for (int i = 0; i < colCount; i++)
                 columnNames.put(ids[i], rs.getMetaData().getColumnName(i + 1));
@@ -54,14 +56,15 @@ public class TOM_Model extends Model {
     }
 
     //TODO Make this as a static and get all info to create a table.
-    private void createSchema(DBContext context) {
+    private void createSchema(DBContext dbContext) {
         String createTable = (new StringBuffer())
                 .append("CREATE TABLE IF NOT EXISTS ")
                 .append(tableName)
                 .append("(row INT PRIMARY KEY)")
                 .toString();
 
-        try (Statement stmt = context.getConnection().createStatement()) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement()) {
             stmt.execute(createTable.toString());
         } catch (SQLException e) {
             e.printStackTrace();
@@ -80,7 +83,7 @@ public class TOM_Model extends Model {
     }
 
 
-    private ArrayList<Integer> getOIDs(DBContext context, String tableName) {
+    private ArrayList<Integer> getOIDs(DBContext dbContext, String tableName) {
         ArrayList<Integer> oids = new ArrayList<>();
 
         String getOids = (new StringBuffer())
@@ -89,7 +92,8 @@ public class TOM_Model extends Model {
                 .append(" ORDER BY oid") /* TODO allow custom order */
                 .toString();
 
-        try (Statement stmt = context.getConnection().createStatement()) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement()) {
             ResultSet set = stmt.executeQuery(getOids);
 
             while (set.next()) {
