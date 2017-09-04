@@ -17,6 +17,8 @@ import org.zkoss.zul.Textbox;
 import org.zkoss.zul.Window;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
 
@@ -79,11 +81,20 @@ public class CreateTableCtrl extends DlgCtrlBase {
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection())
         {
             DBContext dbContext = new DBContext(connection);
-            model.createTable(dbContext, region, tableNameStr);
-            model.appendTableRows(dbContext, new CellRegion(region.getRow() + 1, region.getColumn(),
-                    region.getLastRow(), region.getLastColumn()), tableNameStr);
-            model.linkTable(dbContext, tableNameStr, new CellRegion(region.getRow(), region.getColumn(),
-                    region.getLastRow(), region.getLastColumn()));
+            String select = "SELECT 1 as ct FROM pg_tables WHERE schemaname = 'public' AND tablename = ?";
+            PreparedStatement selectStmt = connection.prepareStatement(select);
+            selectStmt.setString(1, tableNameStr);
+            ResultSet rs = selectStmt.executeQuery();
+            if (rs.next()) {
+                Messagebox.show("Table Name Exists", "Table Name",Messagebox.OK, Messagebox.ERROR);
+                return;
+            } else {
+                model.createTable(dbContext, region, tableNameStr);
+                model.appendTableRows(dbContext, new CellRegion(region.getRow() + 1, region.getColumn(),
+                        region.getLastRow(), region.getLastColumn()), tableNameStr);
+                model.linkTable(dbContext, tableNameStr, new CellRegion(region.getRow(), region.getColumn(),
+                        region.getLastRow(), region.getLastColumn()));
+            }
             connection.commit();
             sheet.getInternalSheet().clearCache(region);
             sss.updateCell(selection.getColumn(), selection.getRow(), selection.getLastColumn(),
