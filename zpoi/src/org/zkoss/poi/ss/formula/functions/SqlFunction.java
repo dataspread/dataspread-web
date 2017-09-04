@@ -70,8 +70,8 @@ public class SqlFunction implements Function {
 
 		ValueEval resultEval;
 
-		try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
-			PreparedStatement stmt = connection.prepareStatement(queryString);
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+			 PreparedStatement stmt = connection.prepareStatement(queryString)) {
 			for (int i = 0; i < parameters.length; i++) {
 				if (parameters[i] instanceof StringEval) {
 					String paramString = ((StringEval) parameters[i]).getStringValue();
