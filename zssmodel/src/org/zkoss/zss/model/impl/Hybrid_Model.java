@@ -161,7 +161,7 @@ public class Hybrid_Model extends RCV_Model {
                 .sorted(Comparator.comparingInt(SCell::getRowIndex))
                 .map(AbstractCellAdv::getValue)
                 .map(Object::toString)
-                .map(e -> e.replaceAll("[^a-zA-Z0-9.\\-;]+", "_"))
+                .map(e -> e.trim().replaceAll("[^a-zA-Z0-9.\\-;]+", "_"))
                 .collect(Collectors.toList());
 
         String createTable = (new StringBuilder())
