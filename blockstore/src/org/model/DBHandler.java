@@ -33,6 +33,9 @@ public class DBHandler implements ServletContextListener {
 
     public AutoRollbackConnection getConnection()
     {
+        StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+        if (stack.length>2)
+            System.out.println("Opening connection at " + stack[2]);
         try {
             return new AutoRollbackConnection(ds.getConnection());
         } catch (SQLException e) {

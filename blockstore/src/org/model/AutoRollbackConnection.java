@@ -20,6 +20,9 @@ public class AutoRollbackConnection  implements AutoCloseable {
 
     @Override
     public void close() throws SQLException {
+        StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+        if (stack.length>2)
+            System.out.println("Closing connection at " + stack[2]);
         if (!comitted) {
             // Rollback uncomitted transactions
             connection.rollback();
