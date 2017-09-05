@@ -38,6 +38,7 @@ import org.zkoss.zss.model.SFill.FillPattern;
 import org.zkoss.zss.model.SPicture.Format;
 import org.zkoss.zss.model.SSheet.SheetVisible;
 import org.zkoss.zss.model.impl.*;
+import org.zkoss.zss.model.sys.TransactionManager;
 import org.zkoss.zss.model.sys.formula.FormulaExpression;
 
 /**
@@ -116,6 +117,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 
 		workbook = createPoiBook(is);
 		book = SBooks.createOrGetBook(bookName);
+		TransactionManager.INSTANCE.startTransaction(book);
 //		book.setDefaultCellStyle(importCellStyle(workbook.getCellStyleAt((short) 0), false)); //ZSS-780
 		//ZSS-854
 		importDefaultCellStyles();
@@ -157,6 +159,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 		} finally {
 			book.getBookSeries().setAutoFormulaCacheClean(isCacheClean);
 			Locales.setThreadLocal(old);
+			TransactionManager.INSTANCE.endTransaction(book);
 		}
 
 		return book;

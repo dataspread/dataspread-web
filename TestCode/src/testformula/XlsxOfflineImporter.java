@@ -1,6 +1,9 @@
 package testformula;
 
 import org.model.DBHandler;
+import org.zkoss.zss.api.model.impl.ModelRef;
+import org.zkoss.zss.api.model.impl.SimpleRef;
+import org.zkoss.zss.app.impl.CollaborationInfoImpl;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.impl.BookImpl;
 import org.zkoss.zss.model.sys.TransactionManager;
@@ -17,12 +20,12 @@ import java.util.UUID;
  */
 
 public class XlsxOfflineImporter {
-    public static void loadToDB(String path) throws IOException{
+    public static SBook loadToDB(String path) throws IOException{
         SImporter importer=SImporters.getImporter();
         File inputf=new File(path);
         SBook book = importer.imports(inputf, UUID.randomUUID().toString());
-        book.setBookName(book.getId());
-        System.out.printf("Loaded %s, id=%s\n",path,book.getId());
+        CollaborationInfoImpl.getInstance().setRelationship("test",new org.zkoss.zss.api.model.impl.BookImpl(new SimpleRef<>(book)));
+        return book;
     }
     public static void main(String[] args) throws Exception {
         String url = "jdbc:postgresql://127.0.0.1:5432/dataspread";
@@ -30,8 +33,6 @@ public class XlsxOfflineImporter {
         String userName = "dataspread";
         String password = "dataspread";
         DBHandler.connectToDB(url, driver, userName, password);
-        System.out.println(LocalDateTime.now());
         loadToDB("D:\\csv\\1000.xlsx");
-        System.out.println(LocalDateTime.now());
     }
 }

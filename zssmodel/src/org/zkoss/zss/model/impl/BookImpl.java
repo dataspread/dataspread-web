@@ -150,11 +150,11 @@ public class BookImpl extends AbstractBookAdv{
 			{
 				return false;
 			}
-			BookBindings.remove(this._bookName);
+			//BookBindings.remove(this._bookName);
 			this._bookName = bookName;
 		}
 		else {
-			BookBindings.remove(this._bookName);
+			//BookBindings.remove(this._bookName);
 			this._bookName = bookName;
 			checkDBSchema();
 		}

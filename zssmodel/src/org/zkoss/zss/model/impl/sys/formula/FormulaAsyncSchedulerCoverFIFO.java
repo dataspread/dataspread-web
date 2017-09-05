@@ -127,21 +127,27 @@ public class FormulaAsyncSchedulerCoverFIFO extends FormulaAsyncScheduler {
         @Override
         public void run() {
             //try {Thread.sleep(5000);}catch (InterruptedException ignored){return;}
-            long stime=Instant.now().toEpochMilli();
-            TransactionManager.INSTANCE.registerWorker(info.xid);
-            Ref refTarget=new RefImpl(this.info.target);
-            FormulaEvaluationContext evalContext=new FormulaEvaluationContext(this.info.target,refTarget);
-            FormulaEngine fe = EngineFactory.getInstance().createFormulaEngine();
-            EvaluationResult result = fe.evaluate(info.expr,evalContext);
-            info.target.updateFormulaResultValue(result,info.xid);
-            if (FormulaAsyncScheduler.uiController!=null){
-                FormulaAsyncScheduler.uiController.update(info.target.getSheet(),new CellRegion(info.target.getRowIndex(),info.target.getColumnIndex()));
+            try {
+                long stime = Instant.now().toEpochMilli();
+                TransactionManager.INSTANCE.registerWorker(info.xid);
+                Ref refTarget = new RefImpl(this.info.target);
+                FormulaEvaluationContext evalContext = new FormulaEvaluationContext(this.info.target, refTarget);
+                FormulaEngine fe = EngineFactory.getInstance().createFormulaEngine();
+                EvaluationResult result = fe.evaluate(info.expr, evalContext);
+                info.target.updateFormulaResultValue(result, info.xid);
+                if (FormulaAsyncScheduler.uiController != null) {
+                    FormulaAsyncScheduler.uiController.update(info.target.getSheet(), new CellRegion(info.target.getRowIndex(), info.target.getColumnIndex()));
+                }
+                FormulaCacheMasker.INSTANCE.unmask(refTarget, info.xid);
+                infos.remove(info.target);
+                long etime = Instant.now().toEpochMilli();
+                if (writer != null)
+                    //writer.printf("%s,%s,%s,%d,%d,%d,%d,%d,%d\n", info.target.getReferenceString(), info.expr.getFormulaString(), result.getValue().toString(), info.ctime, stime, etime,stime-info.ctime,etime-stime,etime-info.ctime);
+                    writer.printf("%s,%d,%d\n", info.expr.getFormulaString(), etime-stime, etime-info.ctime);
+            }catch (Exception e){
+                //Trace!
+                e.printStackTrace();
             }
-            FormulaCacheMasker.INSTANCE.unmask(refTarget,info.xid);
-            infos.remove(info.target);
-            long etime=Instant.now().toEpochMilli();
-            if (writer!=null)
-                writer.printf("%s,%s,%s,%d,%d,%d\n",info.target.getReferenceString(),info.expr.getFormulaString(),result.getValue().toString(),info.ctime,stime,etime);
         }
     }
 
@@ -149,11 +155,6 @@ public class FormulaAsyncSchedulerCoverFIFO extends FormulaAsyncScheduler {
     public void shutdown() {
         pool.shutdownNow();
         expander.shutdownNow();
-    }
-
-    public void shutdownGracefully() throws InterruptedException{
-        while (!pool.awaitTermination(1, TimeUnit.MINUTES));
-        shutdown();
     }
 
     private class FormulaAsyncTaskInfo{

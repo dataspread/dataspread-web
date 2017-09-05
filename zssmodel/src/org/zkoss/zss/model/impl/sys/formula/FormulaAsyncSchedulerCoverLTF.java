@@ -23,7 +23,6 @@ public class FormulaAsyncSchedulerCoverLTF extends FormulaAsyncScheduler {
     private ExecutorService pool;
     private ExecutorService expander;
     private HashMap<CellImpl,FormulaAsyncTaskInfo> infos;
-    private PriorityBlockingQueue<Runnable> tasks;
 
     private Map<Ref,Long> metric;
 
@@ -31,8 +30,13 @@ public class FormulaAsyncSchedulerCoverLTF extends FormulaAsyncScheduler {
     private PrintWriter writer;
 
     public FormulaAsyncSchedulerCoverLTF(){
-        tasks=new PriorityBlockingQueue<Runnable>();
-        pool= new ThreadPoolExecutor(maxThread/2,maxThread,5,TimeUnit.MINUTES,tasks);
+        pool= new ThreadPoolExecutor(maxThread/2,maxThread,5,TimeUnit.MINUTES,
+                new PriorityBlockingQueue<>(1024, new PriorityFutureComparator())){
+            @Override
+            protected <T> RunnableFuture<T> newTaskFor(Runnable runnable, T value) {
+                return new PriorityFuture<T>(runnable,value,((FormulaAsyncTask)runnable).info.metric);
+            }
+        };
 
         expander=Executors.newSingleThreadExecutor();
         infos =new HashMap<>();
@@ -80,7 +84,11 @@ public class FormulaAsyncSchedulerCoverLTF extends FormulaAsyncScheduler {
                         info.metric=metric.getOrDefault(target,0L);
                         infos.put(cell,info);
                         info.ctime= Instant.now().toEpochMilli();
-                        info.ctrl=pool.submit(new FormulaAsyncTask(info));
+                        try {
+                            info.ctrl = pool.submit(new FormulaAsyncTask(info));
+                        }catch (Exception e){
+                            e.printStackTrace();
+                        }
                     }else{
                         FormulaCacheMasker.INSTANCE.unmask(new RefImpl(cell),xid);
                     }
@@ -121,7 +129,7 @@ public class FormulaAsyncSchedulerCoverLTF extends FormulaAsyncScheduler {
         infos.clear();
     }
 
-    private class FormulaAsyncTask implements Runnable,Comparable<FormulaAsyncTask>{
+    private class FormulaAsyncTask implements Runnable{
         private FormulaAsyncTaskInfo info;
 
         FormulaAsyncTask(FormulaAsyncTaskInfo info) {
@@ -146,12 +154,7 @@ public class FormulaAsyncSchedulerCoverLTF extends FormulaAsyncScheduler {
             long etime=Instant.now().toEpochMilli();
             metric.put(refTarget,stime-etime);
             if (writer!=null)
-                writer.printf("%s,%s,%s,%d,%d,%d\n",info.target.getReferenceString(),info.expr.getFormulaString(),result.getValue().toString(),info.ctime,stime,etime);
-        }
-
-        @Override
-        public int compareTo(FormulaAsyncTask o) {
-            return (info.metric-o.info.metric)>=0 ? 1:-1;
+                writer.printf("%s,%d,%d\n", info.expr.getFormulaString(), etime-stime, etime-info.ctime);
         }
     }
 
@@ -173,5 +176,43 @@ public class FormulaAsyncSchedulerCoverLTF extends FormulaAsyncScheduler {
         public FormulaExpression expr;
         public long ctime;
         public long metric;
+    }
+
+    class PriorityFuture<T> extends FutureTask<T>{
+        private long priority;
+
+        public PriorityFuture(Callable callable,long priority) {
+            super(callable);
+            this.priority=priority;
+        }
+
+        public PriorityFuture(Runnable runnable, T result, long priority) {
+            super(runnable, result);
+            this.priority = priority;
+        }
+
+        public long getPriority() {
+            return priority;
+        }
+    }
+
+    class PriorityFutureComparator implements Comparator<Runnable> {
+        @Override
+        public int compare(Runnable o1, Runnable o2) {
+            if (o1 == null && o2 == null)
+                return 0;
+            else if (o1 == null)
+                return -1;
+            else if (o2 == null)
+                return 1;
+            else
+                try {
+                    return ((PriorityFuture<?>) o1).getPriority() > ((PriorityFuture<?>) o2).getPriority()
+                            ? 1 : -1;
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+            return 0;
+        }
     }
 }
