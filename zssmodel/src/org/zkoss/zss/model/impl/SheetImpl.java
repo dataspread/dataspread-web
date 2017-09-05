@@ -66,6 +66,7 @@ public class SheetImpl extends AbstractSheetAdv {
     }
 
     final int CACHE_SIZE = 50000;
+    final int CACHE_EVICT = 100;
     private final String _id;
 	private final IndexPool<AbstractRowAdv> _rows = new IndexPool<AbstractRowAdv>(){
 		private static final long serialVersionUID = 1L;
@@ -106,7 +107,15 @@ public class SheetImpl extends AbstractSheetAdv {
 	public SheetImpl(AbstractBookAdv book,String id){
 		this._book = book;
 		this._id = id;
-        sheetDataCache = new ConcurrentHashMap<>();
+        sheetDataCache = new ConcurrentHashMap<CellRegion, AbstractCellAdv>(){
+			@Override
+			public AbstractCellAdv put(CellRegion key, AbstractCellAdv value) {
+				if (this.size()>CACHE_SIZE+CACHE_EVICT) {
+					this.keySet().stream().limit(CACHE_EVICT).collect(Collectors.toList()).stream().forEach(e -> this.remove(e));
+				}
+				return super.put(key, value);
+			}
+		};
 		// Collections.synchronizedMap(new LruCache<CellRegion,AbstractCellAdv>(CACHE_SIZE));
     }
 	
