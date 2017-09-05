@@ -72,8 +72,12 @@ public class AppendTableColumnHandler extends AbstractHandler {
 
                 dataModel.updateCells(dbContext, cells);
                 connection.commit();
-            } catch (SQLException e) {
-                e.printStackTrace();
+            }
+            catch (SQLException e)
+            {
+                Messagebox.show(e.getMessage(), "Add Columns",
+                        Messagebox.OK, Messagebox.ERROR);
+                return false;
             }
         } else {
             Messagebox.show("Select a column right of an existing table", "Add Columns",

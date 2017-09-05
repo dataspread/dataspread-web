@@ -347,8 +347,6 @@ public class SheetImpl extends AbstractSheetAdv {
 			DBContext dbContext = new DBContext(connection);
 			dataModel = Model.CreateModel(dbContext, this, Model.ModelType.HYBRID_Model, model);
 			connection.commit();
-		} catch (SQLException e) {
-			e.printStackTrace();
 		}
 	}
 
@@ -379,10 +377,6 @@ public class SheetImpl extends AbstractSheetAdv {
 
             cells.stream().forEach(e->sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
         }
-		catch (SQLException e)
-		{
-			e.printStackTrace();
-		}
 
         for (int row=fetchRange.getRow();row<=fetchRange.getLastRow();++row) {
             for (int col = fetchRange.getColumn(); col <= fetchRange.getLastColumn(); ++col) {
@@ -461,10 +455,6 @@ public class SheetImpl extends AbstractSheetAdv {
 				if (cellRegion != null)
 					return cellRegion.getLastRow();
 			}
-			catch (SQLException e)
-			{
-				e.printStackTrace();
-			}
 		}
 		return -1;
 	}
@@ -480,8 +470,6 @@ public class SheetImpl extends AbstractSheetAdv {
 				CellRegion cellRegion = dataModel.getBounds(new DBContext(connection));
 				if (cellRegion != null)
 					return cellRegion.getLastColumn();
-			} catch (SQLException e) {
-				e.printStackTrace();
 			}
 		}
 		return -1;
@@ -600,8 +588,6 @@ public class SheetImpl extends AbstractSheetAdv {
 				DBContext dbContext = new DBContext(connection);
 				dataModel.deleteCells(dbContext, deleted_region);
 				connection.commit();
-			} catch (SQLException e) {
-				e.printStackTrace();
 			}
 		}
 
@@ -622,8 +608,6 @@ public class SheetImpl extends AbstractSheetAdv {
                 DBContext dbContext = new DBContext(connection);
                 dataModel.insertRows(dbContext, rowIdx, size);
                 connection.commit();
-            } catch (SQLException e) {
-                e.printStackTrace();
             }
         }
 
@@ -717,8 +701,6 @@ public class SheetImpl extends AbstractSheetAdv {
                 DBContext dbContext = new DBContext(connection);
                 dataModel.deleteRows(dbContext, rowIdx, size);
                 connection.commit();
-            } catch (SQLException e) {
-                e.printStackTrace();
             }
         }
 
@@ -1146,8 +1128,6 @@ public class SheetImpl extends AbstractSheetAdv {
                 DBContext dbContext = new DBContext(connection);
                 dataModel.insertCols(dbContext, columnIdx, size);
                 connection.commit();
-            } catch (SQLException e) {
-                e.printStackTrace();
             }
         }
 
@@ -1343,8 +1323,6 @@ public class SheetImpl extends AbstractSheetAdv {
                 DBContext dbContext = new DBContext(connection);
                 dataModel.deleteCols(dbContext, columnIdx, size);
                 connection.commit();
-            } catch (SQLException e) {
-                e.printStackTrace();
             }
         }
 

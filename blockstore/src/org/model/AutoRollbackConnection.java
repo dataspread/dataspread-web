@@ -4,30 +4,48 @@ import java.sql.*;
 
 public class AutoRollbackConnection  implements AutoCloseable {
     static int openConnections=0;
+    private String connectionOpenedAt;
 
-    final private Connection connection;
-    private boolean comitted;
+    private Connection connection;
+    private boolean committed;
 
     /* TODO: get a connection here */
     AutoRollbackConnection(Connection connection)
     {
+        StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+        if (stack.length>3)
+            System.out.println("Opening connection at " + stack[3]);
+        connectionOpenedAt = stack[3].toString();
         this.connection=connection;
-        comitted = false;
+        committed = false;
         synchronized (AutoRollbackConnection.class) {
             openConnections++;
         }
     }
 
     @Override
-    public void close() throws SQLException {
+    public void close(){
         StackTraceElement[] stack = Thread.currentThread().getStackTrace();
         if (stack.length>2)
             System.out.println("Closing connection at " + stack[2]);
-        if (!comitted) {
+        if (!committed) {
             // Rollback uncomitted transactions
-            connection.rollback();
+            try {
+                connection.rollback();
+            }
+            catch (SQLException e)
+            {
+                e.printStackTrace();
+            }
         }
-        connection.close();
+        try {
+            connection.close();
+        }
+        catch (SQLException e)
+        {
+            e.printStackTrace();
+        }
+        connection = null;
 
         synchronized (AutoRollbackConnection.class) {
             openConnections--;
@@ -39,7 +57,7 @@ public class AutoRollbackConnection  implements AutoCloseable {
     public void commit() {
         try {
             connection.commit();
-            comitted=true;
+            committed = true;
         } catch (SQLException e) {
             try {
                 connection.rollback();
@@ -63,4 +81,18 @@ public class AutoRollbackConnection  implements AutoCloseable {
     public Connection getInternalConnection() {
         return connection;
     }
+
+    public void finalize()
+    {
+        if (connection!=null) {
+            System.err.println("Database Connection left open at " + connectionOpenedAt);
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            connection=null;
+        }
+    }
+
 }

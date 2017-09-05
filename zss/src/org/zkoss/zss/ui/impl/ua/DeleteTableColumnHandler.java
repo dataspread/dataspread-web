@@ -55,8 +55,6 @@ public class DeleteTableColumnHandler extends AbstractHandler {
                 if (!ret)
                     Messagebox.show("Selected region does not correspond to a table", "Delete Columns",
                             Messagebox.OK, Messagebox.ERROR);
-            } catch (SQLException e) {
-                e.printStackTrace();
             }
         }
         return true;
