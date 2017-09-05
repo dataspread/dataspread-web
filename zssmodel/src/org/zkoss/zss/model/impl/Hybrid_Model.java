@@ -149,7 +149,8 @@ public class Hybrid_Model extends RCV_Model {
         return true;
     }
 
-    public boolean createTable(DBContext context, CellRegion range, String tableName) throws SQLException {
+    public boolean createTable(DBContext context, CellRegion range, String tableName)
+            throws SQLException {
         String newTableName;
 
         newTableName = tableName.toLowerCase();
@@ -181,7 +182,7 @@ public class Hybrid_Model extends RCV_Model {
 
 
     public void appendTableColumn(DBContext dbContext, CellRegion cellRegion, String tableName)
-            throws Exception {
+            throws SQLException {
         StringBuffer insertColumnStmt = (new StringBuffer())
                 .append("ALTER TABLE ")
                 .append(tableName);
@@ -197,8 +198,6 @@ public class Hybrid_Model extends RCV_Model {
         AutoRollbackConnection connection = dbContext.getConnection();
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(insertColumnStmt.toString());
-        } catch (SQLException e) {
-            throw new Exception(e.getMessage());
         }
     }
 

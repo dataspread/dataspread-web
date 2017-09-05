@@ -73,9 +73,9 @@ public class AppendTableColumnHandler extends AbstractHandler {
                 dataModel.updateCells(dbContext, cells);
                 connection.commit();
             }
-            catch (Exception e)
+            catch (SQLException e)
             {
-                Messagebox.show("Unable to add column:" + e.getMessage(), "Add Columns",
+                Messagebox.show(e.getMessage(), "Add Columns",
                         Messagebox.OK, Messagebox.ERROR);
                 return false;
             }
