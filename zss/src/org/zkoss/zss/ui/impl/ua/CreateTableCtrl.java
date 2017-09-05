@@ -85,14 +85,14 @@ public class CreateTableCtrl extends DlgCtrlBase {
             sheet.getInternalSheet().clearCache(region);
             sss.updateCell(selection.getColumn(), selection.getRow(), selection.getLastColumn(),
                     selection.getLastRow());
-            Messagebox.show("Table " + tableNameStr.toUpperCase() + " is Successfully Created", "Table Creation",
+            Messagebox.show("Table " + tableNameStr.toUpperCase() + " is successfully created", "Table Creation",
                     Messagebox.OK, Messagebox.INFORMATION);
             createTableDlg.detach();
             return;
 
         } catch (SQLException e) {
             e.printStackTrace();
-            Messagebox.show("Error in Creating Table: " + e.getMessage(), "Table Creation",
+            Messagebox.show(e.getMessage(), "Table Creation",
                     Messagebox.OK, Messagebox.ERROR);
         }
     }
