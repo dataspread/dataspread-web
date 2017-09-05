@@ -836,10 +836,6 @@ public class AutoFillHelper {
 			}
 			connection.commit();
 		}
-		catch (SQLException e)
-		{
-			e.printStackTrace();
-		}
 	}
 	
 	public void applyStepValue(SCell srcCell, SCell dstCell, Object value, AutoRollbackConnection connection, boolean updateToDB){
@@ -904,10 +900,6 @@ public class AutoFillHelper {
 			}
 			connection.commit();
 		}
-		catch (SQLException e)
-		{
-			e.printStackTrace();
-		}
 	}
 	
 	public void fillRight(SSheet sheet, CellRegion srcRef, CellRegion dstRef, FillType fillType) {
@@ -964,10 +956,6 @@ public class AutoFillHelper {
 			}
 			connection.commit();
 		}
-		catch (SQLException e)
-		{
-			e.printStackTrace();
-		}
 	}
 	
 	public void fillLeft(SSheet sheet, CellRegion srcRef, CellRegion dstRef, FillType fillType) {
@@ -1021,10 +1009,6 @@ public class AutoFillHelper {
 				}
 			}
 		connection.commit();
-		}
-		catch (SQLException e)
-		{
-			e.printStackTrace();
 		}
 	}
 	

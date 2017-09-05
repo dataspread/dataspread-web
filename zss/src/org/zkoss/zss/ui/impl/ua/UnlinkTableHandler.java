@@ -47,9 +47,6 @@ public class UnlinkTableHandler extends AbstractHandler {
             dbContext.getConnection().commit();
             ((SheetImpl) sheet.getInternalSheet()).clearCache();
             ((SheetImpl) sheet.getInternalSheet()).fullRefresh();
-        } catch (SQLException e) {
-            e.printStackTrace();
-
         }
         return true;
 

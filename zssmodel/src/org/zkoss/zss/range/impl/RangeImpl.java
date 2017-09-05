@@ -16,8 +16,6 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.range.impl;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -204,6 +202,8 @@ public class RangeImpl implements SRange {
 		abstract boolean visit(SCell cell);
 		
 		public void afterVisitAll(){}
+
+		public void release(){}
 	}
 	
 	private abstract class CellVisitorForUpdate extends CellVisitor{
@@ -249,12 +249,14 @@ public class RangeImpl implements SRange {
 					}
 				}
 			}
+
+			//don't use updateWrap's notify, update whole range at once, to prevent update separately
+			visitor.afterVisitAll();
+
 		}finally{
 			updateWrap.doFinially();
+			visitor.release();
 		}
-		
-		//don't use updateWrap's notify, update whole range at once, to prevent update separately
-		visitor.afterVisitAll();
 	}
 
 	private void handleRefNotifyContentChange(SBookSeries bookSeries,Set<Ref> notifySet, CellAttribute cellAttr) { //ZSS-939
@@ -320,14 +322,14 @@ public class RangeImpl implements SRange {
 			}
 
 			@Override
+			public void release()
+			{
+				connection.close();
+			}
+
+			@Override
 			public void afterVisitAll() {
-				// Close connection
-				try {
-					connection.commit();
-					connection.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
+				connection.commit();
 				super.afterVisitAll();
 			}
 
@@ -472,14 +474,14 @@ public class RangeImpl implements SRange {
 			}
 
 			@Override
+			public void release()
+			{
+				connection.close();
+			}
+
+			@Override
 			public void afterVisitAll() {
-				// Close connection
-				try {
-					connection.commit();
-					connection.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
+				connection.commit();
 				super.afterVisitAll();
 			}
 		}).doInWriteLock(getLock());
@@ -1128,14 +1130,14 @@ public class RangeImpl implements SRange {
 			}
 
 			@Override
+			public void release()
+			{
+				connection.close();
+			}
+
+			@Override
 			public void afterVisitAll() {
-				// Close connection
-				try {
-					connection.commit();
-					connection.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
+				connection.commit();
 				super.afterVisitAll();
 			}
 			//ZSS-939
@@ -2495,14 +2497,14 @@ public class RangeImpl implements SRange {
 			}
 
 			@Override
+			public void release()
+			{
+				connection.close();
+			}
+
+			@Override
 			public void afterVisitAll() {
-				// Close connection
-				try {
-					connection.commit();
-					connection.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
+				connection.commit();
 				super.afterVisitAll();
 			}
 

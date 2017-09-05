@@ -20,9 +20,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 
-/**
- * Created by Albatool on 4/11/2017.
- */
 public class CreateTableCtrl extends DlgCtrlBase {
     public static final String ON_OPEN = "onOpen";
     private static final long serialVersionUID = 1L;
@@ -95,7 +92,7 @@ public class CreateTableCtrl extends DlgCtrlBase {
 
         } catch (SQLException e) {
             e.printStackTrace();
-            Messagebox.show("Error in Creating Table " + e.getMessage(), "Table Creation",
+            Messagebox.show("Error in Creating Table: " + e.getMessage(), "Table Creation",
                     Messagebox.OK, Messagebox.ERROR);
         }
     }
