@@ -55,7 +55,6 @@ public class CreateTableCtrl extends DlgCtrlBase {
 
     @Listen("onClick = #createButton")
     public void create() {
-        boolean created = false;
         tableNameStr = tableName.getValue();
         if (tableNameStr.isEmpty()) {
             Messagebox.show("Table Name is Required", "Table Name",
@@ -77,8 +76,9 @@ public class CreateTableCtrl extends DlgCtrlBase {
         {
             DBContext dbContext = new DBContext(connection);
             model.createTable(dbContext, region, tableNameStr);
-            model.appendTableRows(dbContext, new CellRegion(region.getRow() + 1, region.getColumn(),
-                    region.getLastRow(), region.getLastColumn()), tableNameStr);
+            if (region.getHeight() > 1)
+                model.appendTableRows(dbContext, new CellRegion(region.getRow() + 1, region.getColumn(),
+                        region.getLastRow(), region.getLastColumn()), tableNameStr);
             model.linkTable(dbContext, tableNameStr, new CellRegion(region.getRow(), region.getColumn(),
                     region.getLastRow(), region.getLastColumn()));
             connection.commit();
