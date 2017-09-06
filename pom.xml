@@ -16,6 +16,11 @@
             <artifactId>zssmodel</artifactId>
             <version>3.8.1</version>
         </dependency>
+        <dependency>
+            <groupId>io.github.dataspread</groupId>
+            <artifactId>zss</artifactId>
+            <version>3.8.1</version>
+        </dependency>
     </dependencies>
     <packaging>pom</packaging>
     <name>DataSpread</name>

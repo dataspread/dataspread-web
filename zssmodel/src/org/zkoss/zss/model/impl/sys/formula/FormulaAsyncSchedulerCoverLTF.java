@@ -1,10 +1,9 @@
 package org.zkoss.zss.model.impl.sys.formula;
 
+import org.model.LruCache;
 import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.model.impl.BookImpl;
 import org.zkoss.zss.model.impl.CellImpl;
 import org.zkoss.zss.model.impl.RefImpl;
 import org.zkoss.zss.model.sys.BookBindings;
@@ -13,27 +12,37 @@ import org.zkoss.zss.model.sys.TransactionManager;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.formula.*;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.io.PrintWriter;
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.*;
 
-/**
- * Created by zekun.fan@gmail.com on 7/11/17.
- */
-public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
+//Least Time First
+public class FormulaAsyncSchedulerCoverLTF extends FormulaAsyncScheduler {
 
     private ExecutorService pool;
     private ExecutorService expander;
     private HashMap<CellImpl,FormulaAsyncTaskInfo> infos;
+
+    private Map<Ref,Long> metric;
+
     private final int maxThread=8;
+    private PrintWriter writer;
 
+    public FormulaAsyncSchedulerCoverLTF(){
+        pool= new ThreadPoolExecutor(maxThread/2,maxThread,5,TimeUnit.MINUTES,
+                new PriorityBlockingQueue<>(1024, new PriorityFutureComparator())){
+            @Override
+            protected <T> RunnableFuture<T> newTaskFor(Runnable runnable, T value) {
+                return new PriorityFuture<T>(runnable,value,((FormulaAsyncTask)runnable).info.metric);
+            }
+        };
 
-    public FormulaAsyncSchedulerFIFO(){
-        pool=Executors.newFixedThreadPool(maxThread);
         expander=Executors.newSingleThreadExecutor();
         infos =new HashMap<>();
+        metric= Collections.synchronizedMap(new LinkedHashMap<>());
+        if (logWriter!=null)
+            writer=new PrintWriter(logWriter);
     }
 
     @Override
@@ -47,7 +56,6 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
         //    throw new RuntimeException("addTask not within transaction!");
         if (target.getType()!= Ref.RefType.CELL && target.getType()!=Ref.RefType.AREA)
             return;
-        //callbacks in worker will call addTask for precedent update, disable that as all tasks are added beforehand.
         if (!TransactionManager.INSTANCE.isInTransaction(BookBindings.get(target.getBookName())))
             return;
         int xid=TransactionManager.INSTANCE.getXid(BookBindings.get(target.getBookName()));
@@ -73,8 +81,14 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
                     if (expr!=null) {
                         info.xid=xid;
                         info.expr=expr;
+                        info.metric=metric.getOrDefault(target,0L);
                         infos.put(cell,info);
-                        info.ctrl=pool.submit(new FormulaAsyncTask(info));
+                        info.ctime= Instant.now().toEpochMilli();
+                        try {
+                            info.ctrl = pool.submit(new FormulaAsyncTask(info));
+                        }catch (Exception e){
+                            e.printStackTrace();
+                        }
                     }else{
                         FormulaCacheMasker.INSTANCE.unmask(new RefImpl(cell),xid);
                     }
@@ -97,6 +111,7 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
             @Override
             public void run() {
                 SSheet sheet=BookBindings.getSheetByRef(target,true);
+
                 Collection<SCell> cells=sheet.getCells(new CellRegion(target.getRow(),target.getColumn(),target.getLastRow(),target.getLastColumn()));
                 cells.forEach((sCell)-> {
                     CellImpl cell=(CellImpl)sCell;
@@ -124,6 +139,7 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
         @Override
         public void run() {
             //try {Thread.sleep(5000);}catch (InterruptedException ignored){return;}
+            long stime=Instant.now().toEpochMilli();
             TransactionManager.INSTANCE.registerWorker(info.xid);
             Ref refTarget=new RefImpl(this.info.target);
             FormulaEvaluationContext evalContext=new FormulaEvaluationContext(this.info.target,refTarget);
@@ -135,6 +151,10 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
             }
             FormulaCacheMasker.INSTANCE.unmask(refTarget,info.xid);
             infos.remove(info.target);
+            long etime=Instant.now().toEpochMilli();
+            metric.put(refTarget,stime-etime);
+            if (writer!=null)
+                writer.printf("%s,%d,%d\n", info.expr.getFormulaString(), etime-stime, etime-info.ctime);
         }
     }
 
@@ -144,10 +164,55 @@ public class FormulaAsyncSchedulerFIFO extends FormulaAsyncScheduler {
         expander.shutdownNow();
     }
 
+    public void shutdownGracefully() throws InterruptedException{
+        while (!pool.awaitTermination(1, TimeUnit.MINUTES));
+        shutdown();
+    }
+
     private class FormulaAsyncTaskInfo{
         public int xid;
         public CellImpl target;
         public Future<?> ctrl;
         public FormulaExpression expr;
+        public long ctime;
+        public long metric;
+    }
+
+    class PriorityFuture<T> extends FutureTask<T>{
+        private long priority;
+
+        public PriorityFuture(Callable callable,long priority) {
+            super(callable);
+            this.priority=priority;
+        }
+
+        public PriorityFuture(Runnable runnable, T result, long priority) {
+            super(runnable, result);
+            this.priority = priority;
+        }
+
+        public long getPriority() {
+            return priority;
+        }
+    }
+
+    class PriorityFutureComparator implements Comparator<Runnable> {
+        @Override
+        public int compare(Runnable o1, Runnable o2) {
+            if (o1 == null && o2 == null)
+                return 0;
+            else if (o1 == null)
+                return -1;
+            else if (o2 == null)
+                return 1;
+            else
+                try {
+                    return ((PriorityFuture<?>) o1).getPriority() > ((PriorityFuture<?>) o2).getPriority()
+                            ? 1 : -1;
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+            return 0;
+        }
     }
 }

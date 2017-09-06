@@ -64,6 +64,7 @@ import org.zkoss.zss.model.impl.AbstractBookAdv;
 import org.zkoss.zss.model.impl.AbstractSheetAdv;
 import org.zkoss.zss.model.impl.AbstractTableAdv;
 import org.zkoss.zss.model.impl.TableImpl.DummyTable;
+import org.zkoss.zss.model.sys.TransactionManager;
 import org.zkoss.zss.model.sys.format.FormatResult;
 import org.zkoss.zss.model.sys.formula.EvaluationContributorContainer;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
@@ -370,10 +371,13 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 		this.addEventListener("onStopEditingImpl", new SerializableEventListener() {
 			private static final long serialVersionUID = 2412586322103952998L;
 			public void onEvent(Event event) throws Exception {
-
-				Object[] data = (Object[]) event.getData();
-				processStopEditing((String) data[0], (StopEditingEvent) data[1], (String) data[2]);
-			}
+				try{
+					TransactionManager.INSTANCE.startTransaction(_book);
+					Object[] data = (Object[]) event.getData();
+					processStopEditing((String) data[0], (StopEditingEvent) data[1], (String) data[2]);
+				}finally {
+					TransactionManager.INSTANCE.endTransaction(_book);
+				}}
 		});
 		//ZSS-816
 		this.addEventListener(_ON_PROCESS_DEFER_OPERATIONS,  new SerializableEventListener() {
@@ -745,6 +749,8 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 			}finally{
 				_book.getBookSeries().getLock().writeLock().unlock();
 			}
+			//zekun.fan@gmail.com
+			FormulaAsyncScheduler.getUiController().unbind(_book,Spreadsheet.this);
 			_book = null;
 		}
 	}
@@ -793,6 +799,8 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 
 		_book = book;
 		if (_book != null) {
+			//zekun.fan@gmail.com
+			FormulaAsyncScheduler.getUiController().bind(_book,Spreadsheet.this);
 			_book.getBookSeries().getLock().writeLock().lock();
 			try{
 				_book.addEventListener(_modelEventListener);
@@ -1622,8 +1630,10 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 			ReadWriteLock lock = book.getBookSeries().getLock();
 			lock.writeLock().lock();//have to use write lock because of formula evaluation is not thread safe
 			try{
+				TransactionManager.INSTANCE.startTransaction(book);
 				renderProperties0(renderer);
 			}finally{
+				TransactionManager.INSTANCE.endTransaction(book);
 				lock.writeLock().unlock();
 			}
 		}
@@ -4862,9 +4872,12 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 			//ZSS-939
 			final Integer cellAttrVal = (Integer) event.getData("cellAttr");
 			final CellAttribute cellAttr = cellAttrVal == null ? CellAttribute.ALL : CellAttribute.values()[cellAttrVal - 1];
-			FormulaAsyncScheduler.getScheduler().startTransaction();
-			updateCell(sheet, left, top, right, bottom, cellAttr);
-			FormulaAsyncScheduler.getScheduler().endTransaction();
+			try {
+				TransactionManager.INSTANCE.startTransaction(sheet.getBook());
+				updateCell(sheet, left, top, right, bottom, cellAttr);
+			}finally {
+				TransactionManager.INSTANCE.endTransaction(sheet.getBook());
+			}
 			updateUnlockInfo();
 			org.zkoss.zk.ui.event.Events.postEvent(new CellAreaEvent(
 					Events.ON_AFTER_CELL_CHANGE, Spreadsheet.this, new SheetImpl(new SimpleRef<SBook>(sheet.getBook()), new SimpleRef<SSheet>(sheet))
@@ -5503,7 +5516,6 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 
 			SCell cell = sheet.getCell(row, col);
 			JSONObject attrs = new JSONObject();
-			FormulaAsyncScheduler.getUiController().prepare(cell, Spreadsheet.this);
 			//row num, cell num attr
 //			if (cell != null) {
 //				attrs.put("r", row);
@@ -5680,7 +5692,6 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 					attrs.put("rot", rotate);
 				}
 			}
-			FormulaAsyncScheduler.getUiController().cancelIfNotConfirmed(cell);
 			return attrs;
 		}
 

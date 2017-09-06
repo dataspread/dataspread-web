@@ -89,7 +89,7 @@ public class DepOptTest {
         dependencyGraph = new DependencyGraph();
 
         while (rs.next()) {
-            String formula = rs.getString("formula");
+            String formula = rs.getString("testformula");
             if (formula != null) {
                 String tokens[] = formula.split("[ \t*+-/()<>!,]");
                 for (String token : tokens)

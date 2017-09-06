@@ -17,8 +17,10 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 package org.zkoss.zss.model;
 
 import org.model.DBContext;
+import org.zkoss.poi.ss.usermodel.Cell;
 import org.zkoss.zss.model.impl.Model;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -107,6 +109,9 @@ public interface SSheet {
 	 * This method always returns not-null cell object. Use {@link SCell#isNull()} to know it's null (blank) or not.
 	 */
 	SCell getCell(int rowIdx, int columnIdx);
+
+	//zekun.fan@gmail.com
+	Collection<SCell> getCells(CellRegion region);
 	
 	/**
 	 * @return return a cell with specified cell reference, e.g. A2, B3. Area reference, A1:A2, is not acceptable.

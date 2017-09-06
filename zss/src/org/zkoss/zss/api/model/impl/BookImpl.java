@@ -46,7 +46,7 @@ public class BookImpl implements Book{
 	}
 
 	public BookImpl(String bookName){
-		_book = SBooks.createBook(bookName);
+		_book = SBooks.createOrGetBook(bookName);
 	}
 
 	public SBook getNative() {
@@ -116,13 +116,13 @@ public class BookImpl implements Book{
 	}
 
 	@Override
-	public String getShareScope() {
-		return getNative().getShareScope();
+	public void setShareScope(String scope) {
+		getNative().setShareScope(scope);
 	}
 
 	@Override
-	public void setShareScope(String scope) {
-		getNative().setShareScope(scope);
+	public String getShareScope() {
+		return getNative().getShareScope();
 	}
 
 	@Override

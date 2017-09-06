@@ -17,6 +17,10 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 package org.zkoss.zss.range.impl.imexp;
 
 import org.model.AutoRollbackConnection;
+import java.io.*;
+import java.sql.Connection;
+import java.util.*;
+
 import org.zkoss.poi.hssf.usermodel.HSSFRichTextString;
 import org.zkoss.poi.ss.formula.eval.*;
 import org.zkoss.poi.ss.formula.ptg.FuncVarPtg;
@@ -33,6 +37,7 @@ import org.zkoss.zss.model.SFill.FillPattern;
 import org.zkoss.zss.model.SPicture.Format;
 import org.zkoss.zss.model.SSheet.SheetVisible;
 import org.zkoss.zss.model.impl.*;
+import org.zkoss.zss.model.sys.TransactionManager;
 import org.zkoss.zss.model.sys.formula.FormulaExpression;
 
 import java.io.IOException;
@@ -96,7 +101,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 	public static String getBookType(SBook book) {
 		return (String) book.getAttribute(BOOK_TYPE_KEY);
 	}
-	
+
 	//ZSS-854
 	private void importDefaultCellStyles() {
 		((AbstractBookAdv)book).clearDefaultCellStyles();
@@ -132,7 +137,8 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 		importedFont.clear();
 
 		workbook = createPoiBook(is);
-		book = SBooks.createBook(bookName);
+		book = SBooks.createOrGetBook(bookName);
+		TransactionManager.INSTANCE.startTransaction(book);
 //		book.setDefaultCellStyle(importCellStyle(workbook.getCellStyleAt((short) 0), false)); //ZSS-780
 		//ZSS-854
 		importDefaultCellStyles();
@@ -174,6 +180,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 		} finally {
 			book.getBookSeries().setAutoFormulaCacheClean(isCacheClean);
 			Locales.setThreadLocal(old);
+			TransactionManager.INSTANCE.endTransaction(book);
 		}
 
 		return book;
@@ -244,7 +251,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 	 * necessary.
 	 */
 	abstract protected void importExternalBookLinks();
-	
+
 	//ZSS-952
 	protected void importSheetDefaultColumnWidth(Sheet poiSheet, SSheet sheet) {
 		// reference XUtils.getDefaultColumnWidthInPx()
@@ -732,7 +739,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 	public void setImportCache(boolean b) {
 		_importCache = b;
 	}
-	
+
 	//ZSS-873
 	//Must evaluate INDIRECT() function to make the dependency table)
 	//Issue845Test-checkIndirectNameRange

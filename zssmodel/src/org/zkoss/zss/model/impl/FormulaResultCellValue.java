@@ -1,7 +1,6 @@
 package org.zkoss.zss.model.impl;
 
 import org.zkoss.poi.ss.formula.eval.AreaEval;
-import org.zkoss.poi.ss.formula.eval.RelTableEval;
 import org.zkoss.zss.model.ErrorValue;
 import org.zkoss.zss.model.SCell.CellType;
 import org.zkoss.zss.model.sys.formula.EvaluationResult;
@@ -9,6 +8,8 @@ import org.zkoss.zss.model.sys.formula.EvaluationResult.ResultType;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * the formula result cell value
@@ -26,7 +27,7 @@ public class FormulaResultCellValue extends CellValue implements Serializable {
 	}
 
 	// Added by zekun.fan@gmail.com, @WriteLockProtected
-	public void updateByEvaluationResult(EvaluationResult result) {
+	private void updateByEvaluationResult(EvaluationResult result){
 		Object val = result.getValue();
 		ResultType type = result.getType();
 		if (type == ResultType.ERROR) {
@@ -44,22 +45,22 @@ public class FormulaResultCellValue extends CellValue implements Serializable {
 			value = null;
 		} else if (val instanceof String) {
 			cellType = CellType.STRING;
-			value = val;
+			value = (String) val;
 		} else if (val instanceof Number) {
 			cellType = CellType.NUMBER;
-			value = val;
+			value = (Number) val;
 		} else if (val instanceof Boolean) {
 			cellType = CellType.BOOLEAN;
-			value = val;
-		} else if (val instanceof RelTableEval) {
+			value = (Boolean) val;
+		} else if (val instanceof AreaEval) {
 			cellType = CellType.COLLECTION;
-			value = val;
+			value = (AreaEval) val;
 		} else if (val instanceof Collection) {
 			// possible a engine return a collection in cell evaluation case?
 			// who should take care array formula?
 			if (((Collection) val).size() > 0) {
 				cellType = CellType.COLLECTION;
-				value = val;
+				value = (Collection) val;
 			} else {
 				cellType = CellType.BLANK;
 				value = null;
