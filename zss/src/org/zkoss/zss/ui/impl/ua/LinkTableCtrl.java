@@ -55,9 +55,8 @@ public class LinkTableCtrl extends DlgCtrlBase {
     }
 
     private ListModelList<String> getTablesList() throws SQLException {
-        try (
-                AutoRollbackConnection connection = DBHandler.instance.getConnection();
-                Statement stmt = connection.createStatement()) {
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+             Statement stmt = connection.createStatement()) {
 
             String sql = "SELECT table_name FROM information_schema.tables  " +
                     "WHERE TABLE_SCHEMA='public' AND " +
