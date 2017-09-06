@@ -1,5 +1,6 @@
 package testformula;
 
+import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SBooks;
@@ -70,7 +71,7 @@ public class FormulaPerformance {
         try {Thread.sleep(300000);}catch (InterruptedException ignored){return;}
 
         Random random=new Random();
-        Connection conn=DBHandler.instance.getConnection();
+        AutoRollbackConnection conn=DBHandler.instance.getConnection();
         for (int i=0;i<modification;++i)
             sheet.getCell(1+random.nextInt(range),0).setNumberValue(random.nextDouble()*range,conn,false);
     }
