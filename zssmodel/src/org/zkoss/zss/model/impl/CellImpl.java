@@ -433,6 +433,7 @@ public class CellImpl extends AbstractCellAdv {
 
 
 	private void updateCelltoDB(AutoRollbackConnection connection) {
+		//TODO: Connection handling
 		getSheet().getBook().checkDBSchema();
 		Collection<AbstractCellAdv> cells = new LinkedList<>();
 		cells.add(this);
