@@ -43,7 +43,7 @@ public abstract class AbstractSheetAdv implements SSheet,LinkedModelObject,Seria
 	
 	/*package*/ abstract AbstractCellAdv getCell(int rowIdx, int columnIdx, boolean proxy);
 
-    /*package*/
+    /*package*/ public
     abstract AbstractCellAdv createCell(int rowIdx, int columnIdx);
 
 

@@ -41,6 +41,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -66,6 +67,7 @@ public class SheetImpl extends AbstractSheetAdv {
     }
 
     final int CACHE_SIZE = 50000;
+    final int CACHE_EVICT = 100;
     private final String _id;
 	private final IndexPool<AbstractRowAdv> _rows = new IndexPool<AbstractRowAdv>(){
 		private static final long serialVersionUID = 1L;
@@ -85,7 +87,7 @@ public class SheetImpl extends AbstractSheetAdv {
     //ZSS-855
     private final List<STable> _tables = new ArrayList<STable>();
     Model dataModel;
-    LruCache<CellRegion, AbstractCellAdv> sheetDataCache;
+    Map<CellRegion, AbstractCellAdv> sheetDataCache;
     private AbstractBookAdv _book;
     private String _name;
     private int _dbid;
@@ -106,10 +108,17 @@ public class SheetImpl extends AbstractSheetAdv {
 	public SheetImpl(AbstractBookAdv book,String id){
 		this._book = book;
 		this._id = id;
-        sheetDataCache = new LruCache<>(CACHE_SIZE);
-		// TODO: Fix protect  issue
-		//setPassword("000000000");
-	}
+        sheetDataCache = new ConcurrentHashMap<CellRegion, AbstractCellAdv>(){
+			@Override
+			public AbstractCellAdv put(CellRegion key, AbstractCellAdv value) {
+				if (this.size()>CACHE_SIZE+CACHE_EVICT) {
+					this.keySet().stream().limit(CACHE_EVICT).collect(Collectors.toList()).stream().forEach(e -> this.remove(e));
+				}
+				return super.put(key, value);
+			}
+		};
+		// Collections.synchronizedMap(new LruCache<CellRegion,AbstractCellAdv>(CACHE_SIZE));
+    }
 	
 	protected void checkOwnership(SPicture picture){
 		if(!_pictures.contains(picture)){
@@ -387,6 +396,29 @@ public class SheetImpl extends AbstractSheetAdv {
         }
 	}
 
+	//zekun.fan@gmail.com
+
+
+	@Override
+	public Collection<SCell> getCells(CellRegion region) {
+		int lc=region.getLastColumn(),lr=region.getLastRow();
+		ArrayList<SCell> result=new ArrayList<>(region.getCellCount());
+		for (int i=region.getRow();i<=lr;++i)
+			for (int j=region.getColumn();j<=lc;++j){
+				//...Don't like creating new temporal objects in a loop
+				//but it seems read-only...
+				CellRegion tmp=new CellRegion(i,j);
+				SCell cell=sheetDataCache.get(tmp);
+				if (cell==null) {
+					//one fail, load all, save future time
+					preFetchCells(region);
+					cell=sheetDataCache.get(tmp);
+				}
+				if (cell!=null)
+					result.add(cell);
+			}
+		return result;
+	}
 
 	@Override
 	public SCell getCell(int rowIdx, int columnIdx) {
@@ -435,7 +467,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	}
 
 	@Override
-    AbstractCellAdv createCell(int rowIdx, int columnIdx) {
+    public AbstractCellAdv createCell(int rowIdx, int columnIdx) {
         AbstractCellAdv cell = new CellImpl(rowIdx, columnIdx);
         cell.setSheet(this);
         CellRegion cellRegion = new CellRegion(rowIdx, columnIdx);
