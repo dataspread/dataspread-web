@@ -43,6 +43,7 @@ import org.zkoss.zss.model.util.Validations;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
@@ -389,7 +390,7 @@ public class CellImpl extends AbstractCellAdv {
 		return _localValue;
 	}
 	
-	private void setCellValue(CellValue value, boolean destroy, Connection connection, boolean updateToDB){ //ZSS-985
+	private void setCellValue(CellValue value, boolean destroy, AutoRollbackConnection connection, boolean updateToDB){ //ZSS-985
 		this._localValue = value!=null&&value.getType()== CellType.BLANK?null:value;
 		
 		//clear the dependent's formula result cache
@@ -655,11 +656,6 @@ public class CellImpl extends AbstractCellAdv {
 	@Internal
 	public synchronized Object getFromulaResultValue() {
 		return _formulaResultValue;
-	}
-
-	//zekun.fan@gmail.com - Added interface to update formula result value
-	public void updateFormulaResultValue(EvaluationResult result) {
-		_formulaResultValue.updateByEvaluationResult(result);
 	}
 
 	private static class OptFields implements Serializable {
