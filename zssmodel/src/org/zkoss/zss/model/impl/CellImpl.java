@@ -433,7 +433,6 @@ public class CellImpl extends AbstractCellAdv {
 
 
 	private void updateCelltoDB(AutoRollbackConnection connection) {
-		//TODO: Connection handling
 		getSheet().getBook().checkDBSchema();
 		Collection<AbstractCellAdv> cells = new LinkedList<>();
 		cells.add(this);
@@ -441,18 +440,13 @@ public class CellImpl extends AbstractCellAdv {
 	}
 
 	private void updateCelltoDB() {
-		//TODO: Connection handling
 		getSheet().getBook().checkDBSchema();
-
-
 		try(AutoRollbackConnection connection = DBHandler.instance.getConnection())
 		{
 			Collection<AbstractCellAdv> cells = new LinkedList<>();
 			cells.add(this);
 			getSheet().getDataModel().updateCells(new DBContext(connection), cells);
-			//TODO: Handle cell delete.
 			connection.commit();
-
 		}
 	}
 
