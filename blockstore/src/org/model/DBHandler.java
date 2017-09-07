@@ -68,6 +68,7 @@ public class DBHandler implements ServletContextListener {
             createUserAccountTable(dbContext);
             createUserTable(dbContext);
             createTableOrders(dbContext);
+            createDependencyTable(dbContext);
             connection.commit();
         } catch (Exception e) {
             e.printStackTrace();
@@ -134,6 +135,22 @@ public class DBHandler implements ServletContextListener {
                     "PRIMARY KEY (tablename, ordername)," +
                     "UNIQUE (oid)" +
                     ") WITH oids;";
+            stmt.execute(createTable);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void createDependencyTable(DBContext dbContext) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement()) {
+            String createTable = "CREATE TABLE  IF NOT  EXISTS  dependency (" +
+                    "bookname      TEXT NOT NULL," +
+                    "sheetname     TEXT NOT NULL," +
+                    "range         BOX NOT NULL," +
+                    "dep_bookname  TEXT NOT NULL," +
+                    "dep_sheetname TEXT NOT NULL," +
+                    "dep_range     BOX NOT NULL)";
             stmt.execute(createTable);
         } catch (SQLException e) {
             e.printStackTrace();

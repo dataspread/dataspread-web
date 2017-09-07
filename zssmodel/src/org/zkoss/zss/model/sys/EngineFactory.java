@@ -18,10 +18,7 @@ package org.zkoss.zss.model.sys;
 
 import org.zkoss.lang.Library;
 import org.zkoss.util.logging.Log;
-import org.zkoss.zss.model.impl.sys.CalendarUtilImpl;
-import org.zkoss.zss.model.impl.sys.DependencyTableImpl;
-import org.zkoss.zss.model.impl.sys.FormatEngineImpl;
-import org.zkoss.zss.model.impl.sys.InputEngineImpl;
+import org.zkoss.zss.model.impl.sys.*;
 import org.zkoss.zss.model.impl.sys.formula.FormulaEngineImpl;
 import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.format.FormatEngine;
@@ -146,7 +143,7 @@ public class EngineFactory {
 		}
 		//zekun.fan@gmail.com
 		//Aug.2 Disabled RtreeImpl
-		return new DependencyTableImpl();//DependencyTableImpl();
+		return new DependencyTablePGImpl();//DependencyTableImpl();
 	}
 
 	public FormatEngine createFormatEngine() {
