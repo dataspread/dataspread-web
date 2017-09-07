@@ -29,8 +29,6 @@ public class DeleteTableRowHandler extends AbstractProtectedHandler {
                         selection.getLastRow(),
                         selection.getLastColumn()));
                 connection.commit();
-            } catch (SQLException e) {
-                e.printStackTrace();
             }
         }
         if (!success)

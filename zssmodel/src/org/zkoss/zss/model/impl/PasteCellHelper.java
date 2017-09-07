@@ -457,72 +457,70 @@ public class PasteCellHelper { //ZSS-693: promote visibility
 		// Mangesh Update to DB
 		// Need to handle formatting and other information
 
-		AutoRollbackConnection connection = DBHandler.instance.getConnection();
-
-		for(int r = row; r <= lastRow; r++){
-			for (int c = col; c <= lastColumn;c++){
-				CellBuffer buffer = srcBuffer[r-row][c-col];
-				if((buffer==null || buffer.getType()==CellType.BLANK) && option.isSkipBlank()){
-					continue;
-				}
-				
-				//unmerge region if it is overlaps and not at first cell
-				CellRegion region = _destSheet.getMergedRegion(r, c);
-				if(region!=null && (region.getRow()!=r || region.getColumn()!=c)){
-					_destSheet.removeMergedRegion(region, true);
-				}
-				
-				SCell destCell = _destSheet.getCell(r,c);
-				if(buffer==null){
-					if(!destCell.isNull()){
-						// Already updated to the database.
-						_destSheet.clearCell(destCell.getRowIndex(), destCell.getColumnIndex(), destCell.getRowIndex(), destCell.getColumnIndex());
+		try(AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+			for (int r = row; r <= lastRow; r++) {
+				for (int c = col; c <= lastColumn; c++) {
+					CellBuffer buffer = srcBuffer[r - row][c - col];
+					if ((buffer == null || buffer.getType() == CellType.BLANK) && option.isSkipBlank()) {
 						continue;
 					}
-					continue;
-				}
 
+					//unmerge region if it is overlaps and not at first cell
+					CellRegion region = _destSheet.getMergedRegion(r, c);
+					if (region != null && (region.getRow() != r || region.getColumn() != c)) {
+						_destSheet.removeMergedRegion(region, true);
+					}
 
-				String updatedValue="";
+					SCell destCell = _destSheet.getCell(r, c);
+					if (buffer == null) {
+						if (!destCell.isNull()) {
+							// Already updated to the database.
+							_destSheet.clearCell(destCell.getRowIndex(), destCell.getColumnIndex(), destCell.getRowIndex(), destCell.getColumnIndex());
+							continue;
+						}
+						continue;
+					}
 
-				switch(option.getPasteType()){
-				case ALL:
-					updatedValue = pasteValue(buffer,destCell,cutFrom,true,rowOffset,columnOffset,transpose,row,col, connection, true);
-					pasteStyle(buffer,destCell,true);//border,comment
-					buffer.applyHyperlink(destCell);
-					buffer.applyComment(destCell);
-					break;
-				case ALL_EXCEPT_BORDERS:
-					updatedValue = pasteValue(buffer,destCell,cutFrom,true,rowOffset,columnOffset,transpose,row,col, connection, true);
-					pasteStyle(buffer,destCell,false);//border,comment
-					buffer.applyHyperlink(destCell);
-					buffer.applyComment(destCell);
-					break;
-				case COMMENTS:
-					buffer.applyComment(destCell);
-					break;
-				case FORMATS:
-					//paste format should paste all style
-					pasteStyle(buffer,destCell,true);
-					break;
-				case FORMULAS_AND_NUMBER_FORMATS:
-					pasteFormat(buffer,destCell);
-				case FORMULAS:
-					updatedValue = pasteValue(buffer,destCell,cutFrom,true,rowOffset,columnOffset,transpose,row,col, connection, true);
-					break;
-				case VALIDATAION:
-				case VALUES_AND_NUMBER_FORMATS:
-					pasteFormat(buffer,destCell);
-				case VALUES:
-					updatedValue = pasteValue(buffer,destCell,cutFrom, connection, true);
-					break;
-				case COLUMN_WIDTHS:
-					break;				
+					String updatedValue = "";
+
+					switch (option.getPasteType()) {
+						case ALL:
+							updatedValue = pasteValue(buffer, destCell, cutFrom, true, rowOffset, columnOffset, transpose, row, col, connection, true);
+							pasteStyle(buffer, destCell, true);//border,comment
+							buffer.applyHyperlink(destCell);
+							buffer.applyComment(destCell);
+							break;
+						case ALL_EXCEPT_BORDERS:
+							updatedValue = pasteValue(buffer, destCell, cutFrom, true, rowOffset, columnOffset, transpose, row, col, connection, true);
+							pasteStyle(buffer, destCell, false);//border,comment
+							buffer.applyHyperlink(destCell);
+							buffer.applyComment(destCell);
+							break;
+						case COMMENTS:
+							buffer.applyComment(destCell);
+							break;
+						case FORMATS:
+							//paste format should paste all style
+							pasteStyle(buffer, destCell, true);
+							break;
+						case FORMULAS_AND_NUMBER_FORMATS:
+							pasteFormat(buffer, destCell);
+						case FORMULAS:
+							updatedValue = pasteValue(buffer, destCell, cutFrom, true, rowOffset, columnOffset, transpose, row, col, connection, true);
+							break;
+						case VALIDATAION:
+						case VALUES_AND_NUMBER_FORMATS:
+							pasteFormat(buffer, destCell);
+						case VALUES:
+							updatedValue = pasteValue(buffer, destCell, cutFrom, connection, true);
+							break;
+						case COLUMN_WIDTHS:
+							break;
+					}
 				}
 			}
+			connection.commit();
 		}
-		connection.commit();
-		connection.close();
 	}
 
 	private void pasteFormat(CellBuffer buffer, SCell destCell) {

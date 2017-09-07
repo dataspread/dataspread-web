@@ -23,8 +23,12 @@ import org.zkoss.zss.model.SBookSeries;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.STable;
+import org.zkoss.zss.model.sys.BookBindings;
+import org.zkoss.zss.model.sys.TransactionManager;
 import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.dependency.Ref;
+import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
+import org.zkoss.zss.model.sys.formula.FormulaCacheMasker;
 import org.zkoss.zss.range.impl.ModelUpdateCollector;
 
 /**
@@ -43,23 +47,30 @@ import org.zkoss.zss.range.impl.ModelUpdateCollector;
 		FormulaCacheCleaner clearer = FormulaCacheCleaner.getCurrent();
 		ModelUpdateCollector collector = ModelUpdateCollector.getCurrent();
 		Set<Ref> dependents = null; 
-		//get table when collector and clearer is not ignored (in import case, we should ignore clear cahche)
+		//get table when collector and clearer is not ignored (in import case, we should ignore clear cache)
 		if(collector!=null || clearer!=null || bookSeries.isAutoFormulaCacheClean()){
 			DependencyTable table = ((AbstractBookSeriesAdv)bookSeries).getDependencyTable();
 			dependents = table.getDependents(precedent);
 		}
+		//zekun.fan@gmail.com - Masking and Scheduling
 		if (includePrecedent) { //ZSS-1047
 			addRefUpdate(precedent);
+			FormulaCacheMasker.INSTANCE.mask(precedent);
+			FormulaAsyncScheduler.getScheduler().addTask(precedent);
 		}
-		if(dependents!=null && dependents.size()>0){
-			if(clearer!=null){
+		if (dependents != null && dependents.size() > 0) {
+			if (clearer != null) {
 				clearer.clear(dependents);
-			}else if(bookSeries.isAutoFormulaCacheClean()){
+			} else if (bookSeries.isAutoFormulaCacheClean()) {
 				new FormulaCacheClearHelper(bookSeries).clear(dependents);
 			}
-			if(collector!=null){
+			if (collector != null) {
 				collector.addRefs(dependents);
 			}
+			dependents.forEach(v -> {
+				FormulaCacheMasker.INSTANCE.mask(v);
+				FormulaAsyncScheduler.getScheduler().addTask(v);
+			});
 		}
 	}
 

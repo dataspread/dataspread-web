@@ -32,6 +32,7 @@ import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.STableColumn.STotalsRowFunction;
 import org.zkoss.zss.model.impl.sys.formula.FormulaEngineImpl;
 import org.zkoss.zss.model.sys.EngineFactory;
+import org.zkoss.zss.model.sys.TransactionManager;
 import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.format.FormatContext;
@@ -42,6 +43,7 @@ import org.zkoss.zss.model.util.Validations;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
@@ -55,6 +57,7 @@ import java.util.Locale;
  * @since 3.5.0
  *
  * Modified usages of _formulaResultValue by zekun.fan@gmail.com on July 2017
+ * Added version on Aug 2017
  */
 public class CellImpl extends AbstractCellAdv {
 	private static final long serialVersionUID = 1L;
@@ -75,6 +78,9 @@ public class CellImpl extends AbstractCellAdv {
     transient private AbstractSheetAdv _sheet;
     //use another object to reduce object reference size
 	private OptFields _opts;
+
+	//zekun.fan@gmail.com - added version for xid
+	transient private int version=0;
 
     public CellImpl(int row, int column) {
         _row = row;
@@ -183,7 +189,7 @@ public class CellImpl extends AbstractCellAdv {
 		}
 		this._cellStyle = (AbstractCellStyleAdv) cellStyle;
         if (updateToDB)
-            updateCelltoDB(null);
+            updateCelltoDB();
         addCellUpdate(CellAttribute.STYLE); //ZSS-939
 	}
 
@@ -214,56 +220,55 @@ public class CellImpl extends AbstractCellAdv {
 	}
 
 	@Override
-	protected void evalFormula() {
+	protected synchronized void evalFormula() {
 		//20140731, henrichen: when share the same book, many users might 
 		//populate CellImpl simultaneously; must synchronize it.
-		if(_formulaResultValue != null) return;
+		Ref target=getRef();
+		int maskedVer=FormulaCacheMasker.INSTANCE.isMaskedUntil(target);
+		if (version<maskedVer) {
+			_formulaResultValue = FormulaCacheMasker.INSTANCE.getMaskedVal();
+			version=maskedVer;
+			//System.out.format("Masked@%d\n",version);
+		}
+
+		if(_formulaResultValue == null){
 		//20170714, may cause dead lock, mustn't synchronize it!
 		// (this.getSheet().getBook().getBookSeries()) {
-			if (_formulaResultValue == null) {
-				CellValue val = getCellValue();
-				if(val!=null &&  val.getType() == CellType.FORMULA){
-					_formulaResultValue = new FormulaResultCellValue(new EvaluationResult() {
-						@Override
-						public ResultType getType() {
-							return ResultType.SUCCESS;
-						}
-
-						@Override
-						public Object getValue() {
-							return "...";
-						}
-
-						@Override
-						public ValueEval getValueEval() {
-							return null;
-						}
-					});
-					FormulaAsyncScheduler.getScheduler().addTask(new RefImpl(getSheet().getBook().getId(), getSheet().getSheetName(), getRowIndex(), getColumnIndex()));
-					FormulaAsyncScheduler.getUiController().confirm(this);
-					/* zekun.fan@gmail.com - Original implementation by henri
-					FormulaEngine fe = EngineFactory.getInstance().createFormulaEngine();
-					// ZSS-818
-					// 20141030, henrichen: callback inside FormulaEngine.evaluate() 
-					//    will update _formulaResultValue automatically
-					EvaluationResult result = 
-						fe.evaluate((FormulaExpression) val.getValue(),
-							new FormulaEvaluationContext(this,getRef()));
-					// ZSS-818
-					// 20141113, henrichen: some special case will not go
-					//     thru FormulaEngine.evaluate() method, need to
-					//     cache directly here. This is quite patchy but...
-					if (_formulaResultValue == null) {
-						_formulaResultValue = new FormulaResultCellValue(result);
-					}
-					*/
+			//zekun.fan@gmail.com - this code is kept here just in case
+			//they are not supposed to be called
+			CellValue val = getCellValue();
+			if(val!=null &&  val.getType() == CellType.FORMULA){
+				try {
+					TransactionManager.INSTANCE.startTransaction(getSheet().getBook());
+					FormulaCacheMasker.INSTANCE.mask(target);
+					_formulaResultValue=FormulaCacheMasker.INSTANCE.getMaskedVal();
+					FormulaAsyncScheduler.getScheduler().addTask(target);
+				}finally {
+					TransactionManager.INSTANCE.endTransaction(getSheet().getBook());
 				}
+				/* zekun.fan@gmail.com - Original implementation by henri
+				FormulaEngine fe = EngineFactory.getInstance().createFormulaEngine();
+				// ZSS-818
+				// 20141030, henrichen: callback inside FormulaEngine.evaluate()
+				//    will update _formulaResultValue automatically
+				EvaluationResult result =
+					fe.evaluate((FormulaExpression) val.getValue(),
+						new FormulaEvaluationContext(this,getRef()));
+				// ZSS-818
+				// 20141113, henrichen: some special case will not go
+				//     thru FormulaEngine.evaluate() method, need to
+				//     cache directly here. This is quite patchy but...
+				if (_formulaResultValue == null) {
+					_formulaResultValue = new FormulaResultCellValue(result);
+				}
+				*/
 			}
+		}
 		//}
 	}
 
 	@Override
-	public CellType getFormulaResultType() {
+	public synchronized CellType getFormulaResultType() {
 		checkType(CellType.FORMULA);
 		evalFormula();
 
@@ -341,9 +346,9 @@ public class CellImpl extends AbstractCellAdv {
 	}
 
 	@Override
-	public void clearFormulaResultCache() {
+	public synchronized void clearFormulaResultCache() {
 		//ZSS-818: better performance
-		if (_formulaResultValue != null) {
+		if(_formulaResultValue!=null){
 			//only clear when there is a formula result, or poi will do full cache scan to clean blank.
 			//zekun.fan@gmail.com : cancelTask
 			FormulaAsyncScheduler.getScheduler().cancelTask(getRef());
@@ -361,14 +366,14 @@ public class CellImpl extends AbstractCellAdv {
 	}
 	
 	private void clearFormulaDependency(){
-		if (getType() == CellType.FORMULA) {
+		if(getType()== CellType.FORMULA){
 			((AbstractBookSeriesAdv) getSheet().getBook().getBookSeries())
 					.getDependencyTable().clearDependents(getRef());
 		}
 	}
 
 	@Override
-	public Object getValue(boolean evaluatedVal) {
+	public synchronized Object getValue(boolean evaluatedVal) {
 		CellValue val = getCellValue();
 		if (evaluatedVal && val!=null && val.getType() == CellType.FORMULA) {
 			evalFormula();
@@ -386,7 +391,7 @@ public class CellImpl extends AbstractCellAdv {
 	}
 	
 	private void setCellValue(CellValue value, boolean destroy, AutoRollbackConnection connection, boolean updateToDB){ //ZSS-985
-		this._localValue = value != null && value.getType() == CellType.BLANK ? null : value;
+		this._localValue = value!=null&&value.getType()== CellType.BLANK?null:value;
 		
 		//clear the dependent's formula result cache
 		SBook book = getSheet().getBook();
@@ -431,21 +436,23 @@ public class CellImpl extends AbstractCellAdv {
 		}
 	}
 
+
 	private void updateCelltoDB(AutoRollbackConnection connection) {
+		//TODO: Connection handling
 		getSheet().getBook().checkDBSchema();
-		try {
-            AutoRollbackConnection localConnection = connection == null ? DBHandler.instance.getConnection() : connection;
+		Collection<AbstractCellAdv> cells = new LinkedList<>();
+		cells.add(this);
+		getSheet().getDataModel().updateCells(new DBContext(connection), cells);
+	}
+
+	private void updateCelltoDB() {
+		getSheet().getBook().checkDBSchema();
+		try(AutoRollbackConnection connection = DBHandler.instance.getConnection())
+		{
 			Collection<AbstractCellAdv> cells = new LinkedList<>();
 			cells.add(this);
-			getSheet().getDataModel().updateCells(new DBContext(localConnection), cells);
-			//TODO: Handle cell delete.
-
-			if (connection == null) {
-				localConnection.commit();
-				localConnection.close();
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
+			getSheet().getDataModel().updateCells(new DBContext(connection), cells);
+			connection.commit();
 		}
 	}
 
@@ -529,7 +536,7 @@ public class CellImpl extends AbstractCellAdv {
 		CellValue newCellVal = new InnerCellValue(newType,newVal);
 		//ZSS-747.
 		//20140828, henrichen: clear if previous is a formula; update dependency table if a formula
-		clearValueForSet(oldVal != null && oldVal.getType() == CellType.FORMULA);
+		clearValueForSet(oldVal!=null && oldVal.getType()==CellType.FORMULA);
 		if (newType == CellType.FORMULA) {
 			FormulaParseContext context = new FormulaParseContext(this, getRef());
 			EngineFactory.getInstance().createFormulaEngine().updateDependencyTable((FormulaExpression)newVal, context);
@@ -612,11 +619,12 @@ public class CellImpl extends AbstractCellAdv {
 
 	//ZSS-818
 	//@since 3.7.0
-	public void setFormulaResultValue(ValueEval value) {
+	public synchronized void setFormulaResultValue(ValueEval value) {
 		try {
 			//zekun.fan@gmail.com : no cancelTask, for it is only called after evaluation
 			//FormulaAsyncScheduler.getScheduler().cancelTask(getRef());
-			_formulaResultValue.updateByEvaluationResult(FormulaEngineImpl.convertToEvaluationResult(value));
+			if (TransactionManager.INSTANCE.getXid(getSheet().getBook())>=version)
+				_formulaResultValue=new FormulaResultCellValue(FormulaEngineImpl.convertToEvaluationResult(value));
 		} catch (EvaluationException e) {
 			// ignore it!
 		}
@@ -641,13 +649,8 @@ public class CellImpl extends AbstractCellAdv {
 	//ZSS-957
 	//@for test only
 	@Internal
-	public Object getFromulaResultValue() {
+	public synchronized Object getFromulaResultValue() {
 		return _formulaResultValue;
-	}
-
-	//zekun.fan@gmail.com - Added interface to update formula result value
-	public void updateFormulaResultValue(EvaluationResult result) {
-		_formulaResultValue.updateByEvaluationResult(result);
 	}
 
 	private static class OptFields implements Serializable {
@@ -665,6 +668,15 @@ public class CellImpl extends AbstractCellAdv {
 
 		private InnerCellValue(CellType type, Object value) {
 			super(type, value);
+		}
+	}
+
+	//zekun.fan@gmail.com - Added interface to update formula result value
+	public synchronized void updateFormulaResultValue(EvaluationResult result,int version){
+		if (version>=this.version) {
+			this.version=version;
+			//System.out.format("Updated@%d\n",version);
+			_formulaResultValue=new FormulaResultCellValue(result);
 		}
 	}
 }

@@ -75,16 +75,10 @@ public class AppendTableRowHandler extends AbstractHandler {
                 List<Integer> oidList = dataModel.appendTableRows(dbContext, cellRegion,
                         cellRegionModelPair.y.getTableName());
                 ((TOM_Model) cellRegionModelPair.y).insertOIDs(dbContext, oidList);
-                //TOM_Mapping.instance.getTableOrder("", cellRegionModelPair.y.getTableName())
                 dataModel.extendRange(dbContext, cellRegionModelPair.y.getTableName(),
                         cellRegionModelPair.x, cellRegion);
                 connection.commit();
-            } catch (SQLException e) {
-                e.printStackTrace();
-
             }
-
-
         }
 
         Range range = Ranges.range(sheet, selection);

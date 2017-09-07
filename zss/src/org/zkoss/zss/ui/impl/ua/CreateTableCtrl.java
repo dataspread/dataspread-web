@@ -20,9 +20,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 
-/**
- * Created by Albatool on 4/11/2017.
- */
 public class CreateTableCtrl extends DlgCtrlBase {
     public static final String ON_OPEN = "onOpen";
     private static final long serialVersionUID = 1L;
@@ -58,7 +55,6 @@ public class CreateTableCtrl extends DlgCtrlBase {
 
     @Listen("onClick = #createButton")
     public void create() {
-        boolean created = false;
         tableNameStr = tableName.getValue();
         if (tableNameStr.isEmpty()) {
             Messagebox.show("Table Name is Required", "Table Name",
@@ -80,22 +76,23 @@ public class CreateTableCtrl extends DlgCtrlBase {
         {
             DBContext dbContext = new DBContext(connection);
             model.createTable(dbContext, region, tableNameStr);
-            model.appendTableRows(dbContext, new CellRegion(region.getRow() + 1, region.getColumn(),
-                    region.getLastRow(), region.getLastColumn()), tableNameStr);
+            if (region.getHeight() > 1)
+                model.appendTableRows(dbContext, new CellRegion(region.getRow() + 1, region.getColumn(),
+                        region.getLastRow(), region.getLastColumn()), tableNameStr);
             model.linkTable(dbContext, tableNameStr, new CellRegion(region.getRow(), region.getColumn(),
                     region.getLastRow(), region.getLastColumn()));
             connection.commit();
             sheet.getInternalSheet().clearCache(region);
             sss.updateCell(selection.getColumn(), selection.getRow(), selection.getLastColumn(),
                     selection.getLastRow());
-            Messagebox.show("Table " + tableNameStr.toUpperCase() + " is Successfully Created", "Table Creation",
+            Messagebox.show("Table " + tableNameStr.toUpperCase() + " is successfully created", "Table Creation",
                     Messagebox.OK, Messagebox.INFORMATION);
             createTableDlg.detach();
             return;
 
         } catch (SQLException e) {
             e.printStackTrace();
-            Messagebox.show("Error in Creating Table " + e.getMessage(), "Table Creation",
+            Messagebox.show(e.getMessage(), "Table Creation",
                     Messagebox.OK, Messagebox.ERROR);
         }
     }

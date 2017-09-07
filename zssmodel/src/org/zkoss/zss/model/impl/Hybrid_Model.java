@@ -149,7 +149,8 @@ public class Hybrid_Model extends RCV_Model {
         return true;
     }
 
-    public boolean createTable(DBContext context, CellRegion range, String tableName) {
+    public boolean createTable(DBContext context, CellRegion range, String tableName)
+            throws SQLException {
         String newTableName;
 
         newTableName = tableName.toLowerCase();
@@ -160,11 +161,11 @@ public class Hybrid_Model extends RCV_Model {
                 .sorted(Comparator.comparingInt(SCell::getRowIndex))
                 .map(AbstractCellAdv::getValue)
                 .map(Object::toString)
-                .map(e -> e.replaceAll("[^a-zA-Z0-9.\\-;]+", "_"))
+                .map(e -> e.trim().replaceAll("[^a-zA-Z0-9.\\-;]+", "_"))
                 .collect(Collectors.toList());
 
         String createTable = (new StringBuilder())
-                .append("CREATE TABLE IF NOT EXISTS ")
+                .append("CREATE TABLE ")
                 .append(newTableName)
                 .append(" (")
                 .append(columnList.stream().map(e -> e + " TEXT").collect(Collectors.joining(",")))
@@ -174,15 +175,14 @@ public class Hybrid_Model extends RCV_Model {
         AutoRollbackConnection connection = context.getConnection();
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(createTable);
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
         deleteCells(context, tableHeaderRow);
         return true;
     }
 
 
-    public void appendTableColumn(DBContext dbContext, CellRegion cellRegion, String tableName) {
+    public void appendTableColumn(DBContext dbContext, CellRegion cellRegion, String tableName)
+            throws SQLException {
         StringBuffer insertColumnStmt = (new StringBuffer())
                 .append("ALTER TABLE ")
                 .append(tableName);
@@ -198,8 +198,6 @@ public class Hybrid_Model extends RCV_Model {
         AutoRollbackConnection connection = dbContext.getConnection();
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(insertColumnStmt.toString());
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
     }
 
