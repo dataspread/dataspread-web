@@ -41,7 +41,6 @@ public class SBooks {
 			book.createSheet("Sheet1");
 			book.createSheet("Sheet2");
 			((AbstractBookAdv) book).initDefaultCellStyles();
-
 			BookBindings.put(book.getBookName(),book);
 		}
 		return book;
