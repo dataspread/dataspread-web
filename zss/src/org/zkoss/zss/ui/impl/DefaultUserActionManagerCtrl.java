@@ -19,6 +19,8 @@ package org.zkoss.zss.ui.impl;
 import org.zkoss.lang.Strings;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zss.api.AreaRef;
+import org.zkoss.zss.api.CellOperationUtil;
+import org.zkoss.zss.api.Range;
 import org.zkoss.zss.api.Range.ApplyBorderType;
 import org.zkoss.zss.api.Ranges;
 import org.zkoss.zss.api.model.Book;
@@ -30,6 +32,7 @@ import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.ui.*;
 import org.zkoss.zss.ui.UserActionContext.Clipboard;
 import org.zkoss.zss.ui.event.AuxActionEvent;
+import org.zkoss.zss.ui.event.CellSelectionUpdateEvent;
 import org.zkoss.zss.ui.event.Events;
 import org.zkoss.zss.ui.event.KeyEvent;
 import org.zkoss.zss.ui.impl.ua.*;
@@ -64,6 +67,7 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 		_interestedEvents.add(org.zkoss.zk.ui.event.Events.ON_CANCEL);
 //		_interestedEvents.add(Events.ON_CELL_DOUBLE_CLICK);
 		_interestedEvents.add(Events.ON_START_EDITING);
+		_interestedEvents.add(Events.ON_CELL_SELECTION_UPDATE);
 
 		initDefaultAuxHandlers();
 	}
@@ -418,6 +422,18 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 			clearClipboard();
 		}else if(org.zkoss.zk.ui.event.Events.ON_CANCEL.equals(nm)){
 			clearClipboard();
+		}else if (Events.ON_CELL_SELECTION_UPDATE.equals(nm)) {
+			CellSelectionUpdateEvent evt = ((CellSelectionUpdateEvent)event);
+			if (evt.getType()==CellSelectionType.CELL)
+			{
+				Range src = Ranges.range(evt.getSheet(), evt.getOrigRow(),
+					evt.getOrigColumn(), evt.getOrigLastRow(), evt.getOrigLastColumn());
+
+				Range dest =  Ranges.range(evt.getSheet(), evt.getRow(),
+						evt.getColumn(), evt.getLastRow(), evt.getLastColumn());
+
+				CellOperationUtil.autoFill(src, dest, Range.AutoFillType.DEFAULT);
+			}
 		}
 	}
 
