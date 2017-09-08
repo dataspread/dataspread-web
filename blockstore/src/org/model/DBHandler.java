@@ -84,12 +84,22 @@ public class DBHandler implements ServletContextListener {
         AutoRollbackConnection connection = dbContext.getConnection();
         try (Statement stmt = connection.createStatement())
         {
-            String createTable = "CREATE TABLE  IF NOT  EXISTS  books (" +
+            String createBooksTable = "CREATE TABLE  IF NOT  EXISTS  books (" +
                     "bookname  TEXT NOT NULL," +
-                    "booktable TEXT NOT NULL," +
-                    "PRIMARY KEY (bookname)" +
-                    ");";
-            stmt.execute(createTable);
+                    "booktable TEXT NOT NULL UNIQUE," +
+                    "lastopened timestamp," +
+                    "PRIMARY KEY (bookname))";
+            stmt.execute(createBooksTable);
+
+
+            String createSheetsTable = "CREATE TABLE IF NOT EXISTS sheets (" +
+                    "  booktable     TEXT REFERENCES books(booktable) ON DELETE CASCADE ON UPDATE CASCADE," +
+                    "  sheetid       INTEGER," +
+                    "  sheetindex    INTEGER," +
+                    "  sheetname     TEXT," +
+                    "  modelname     TEXT," +
+                    "  PRIMARY KEY (booktable, sheetid))";
+            stmt.execute(createSheetsTable);
         } catch (SQLException e) {
             e.printStackTrace();
         }

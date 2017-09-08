@@ -107,7 +107,7 @@ public class SaveBookAsCtrl extends DlgCtrlBase{
 		}
 		else
 		{
-			Messagebox.show("File Name already exists.", "DataSpread",
+			Messagebox.show("Book Name already exists.", "DataSpread",
 					Messagebox.OK , Messagebox.ERROR);
 		}
 	}
