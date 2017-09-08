@@ -1104,6 +1104,7 @@ public class BookImpl extends AbstractBookAdv{
 		schemaPresent = true;
 		BookBindings.remove(_bookId);
 		this._bookId = id;
+		this._sheets.clear();
 		BookBindings.put(_bookId, this);
 
 		// Load Schema
