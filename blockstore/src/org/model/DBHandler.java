@@ -87,6 +87,7 @@ public class DBHandler implements ServletContextListener {
             String createBooksTable = "CREATE TABLE  IF NOT  EXISTS  books (" +
                     "bookname  TEXT NOT NULL," +
                     "booktable TEXT NOT NULL UNIQUE," +
+                    "lastopened timestamp," +
                     "PRIMARY KEY (bookname))";
             stmt.execute(createBooksTable);
 

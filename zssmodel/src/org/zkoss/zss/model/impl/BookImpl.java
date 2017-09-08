@@ -184,7 +184,7 @@ public class BookImpl extends AbstractBookAdv{
 			}
 			checkBookStmt.close();
 
-			String insertBook = "INSERT INTO books(bookname, booktable) VALUES (?,?)";
+			String insertBook = "INSERT INTO books(bookname, booktable, lastopened) VALUES (?, ?, now())";
 			PreparedStatement insertBookStmt = connection.prepareStatement(insertBook);
 			insertBookStmt.setString(1, getBookName());
 			insertBookStmt.setString(2, getId());
@@ -1099,10 +1099,12 @@ public class BookImpl extends AbstractBookAdv{
 
 		// Load Schema
 		String bookTable = getId();
-		String query ="SELECT * FROM sheets WHERE booktable = ? ORDER BY sheetindex";
+		String query = "SELECT * FROM sheets WHERE booktable = ? ORDER BY sheetindex";
+		String updateLastOpened = "UPDATE books SET lastopened = now() 	WHERE bookname = ?";
 
 		try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-			 PreparedStatement stmt = connection.prepareStatement(query)) {
+			 PreparedStatement stmt = connection.prepareStatement(query);
+			 PreparedStatement updateLastOpenedstmt = connection.prepareStatement(updateLastOpened)) {
 			stmt.setString(1, getId());
 			ResultSet rs = stmt.executeQuery();
 			while (rs.next())
@@ -1111,6 +1113,8 @@ public class BookImpl extends AbstractBookAdv{
 				sheet.setDataModel(rs.getString("modelname"));
 			}
 			rs.close();
+			updateLastOpenedstmt.setString(1,getBookName());
+			updateLastOpenedstmt.execute();
 			connection.commit();
 		}
 		catch (SQLException e)
