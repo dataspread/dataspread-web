@@ -16,8 +16,11 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model;
 
+import org.zkoss.zss.model.impl.AbstractBookAdv;
 import org.zkoss.zss.model.impl.BookImpl;
 import org.zkoss.zss.model.sys.BookBindings;
+
+import static java.awt.SystemColor.info;
 
 /**
  * Contains factory methods to create a {@link SBook}.
@@ -35,6 +38,9 @@ public class SBooks {
 		SBook book = BookBindings.get(bookName);
 		if (book==null){
 			book=new BookImpl(bookName);
+			book.createSheet("Sheet1");
+			book.createSheet("Sheet2");
+			((AbstractBookAdv) book).initDefaultCellStyles();
 			BookBindings.put(book.getBookName(),book);
 		}
 		return book;

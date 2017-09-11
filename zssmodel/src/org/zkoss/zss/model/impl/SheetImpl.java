@@ -534,13 +534,15 @@ public class SheetImpl extends AbstractSheetAdv {
 		if (getBook().hasSchema() && updateToDB)
 		{
 			String bookTable = getBook().getId();
-			String updateWorkbook = "UPDATE " + bookTable + "_workbook " +
-					" SET sheetname = ? WHERE sheetid = ?";
+			String updateWorkbook = "UPDATE sheets " +
+					" SET sheetname = ? WHERE booktable = ? AND sheetid = ?";
 			try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
 				 PreparedStatement updateSheetNameStmt = connection.prepareStatement(updateWorkbook))
 			{
 				updateSheetNameStmt.setString(1,name);
-				updateSheetNameStmt.setInt(2,getDBId());
+				updateSheetNameStmt.setString(2, getBook().getId());
+				updateSheetNameStmt.setInt(3,getDBId());
+
 				updateSheetNameStmt.execute();
 				connection.commit();
 			}
