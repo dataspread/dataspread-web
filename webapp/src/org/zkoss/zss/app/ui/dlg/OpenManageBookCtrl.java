@@ -40,6 +40,7 @@ import org.zkoss.zul.*;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -112,6 +113,9 @@ public class OpenManageBookCtrl extends DlgCtrlBase{
 				Map<String,Object> data = new HashMap<String,Object>();
 				data.put("name", rs.getString("bookname"));
 				data.put("booktable", rs.getString("booktable"));
+				data.put("lastopened",
+						new SimpleDateFormat("MM/dd/yy HH:mm")
+								.format(rs.getTimestamp("lastopened")));
 				bookListModel.add(data);
 			}
 			getstmt.close();
@@ -246,7 +250,6 @@ public class OpenManageBookCtrl extends DlgCtrlBase{
 	}
 	
 	private Book loadBook(String bookName, String bookTable) {
-		Importer importer = Importers.getImporter();
 		Book book = new org.zkoss.zss.api.model.impl.BookImpl(bookName);
 		book.getInternalBook().setIdAndLoad(bookTable);
 		return book;
