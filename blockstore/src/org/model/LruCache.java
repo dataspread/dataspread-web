@@ -1,33 +1,56 @@
 package org.model;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.stream.Collectors;
 
-public class LruCache<A, B> extends LinkedHashMap<A, B> {
+public class LruCache<K, V> {
+    private ConcurrentLinkedQueue<K> concurrentLinkedQueue;
+    private ConcurrentHashMap<K,V> concurrentHashMap;
+    
     private final int maxEntries;
+    private final int evictSize;
 
-    public LruCache(final int maxEntries) {
-        super(maxEntries + 1, 1.0f, true);
+    // Get the size = maxEntrs, when size >  maxEntries + evictSize
+    public LruCache(int maxEntries, int evictSize) {
+        concurrentHashMap = new ConcurrentHashMap<>();
+        concurrentLinkedQueue = new ConcurrentLinkedQueue<>();
         this.maxEntries = maxEntries;
+        this.evictSize = evictSize;
     }
 
-    /**
-     * Returns <tt>true</tt> if this <code>LruCache</code> has more entries than the maximum specified when it was
-     * created.
-     * <p>
-     * <p>
-     * This method <em>does not</em> modify the underlying <code>Map</code>; it relies on the implementation of
-     * <code>LinkedHashMap</code> to do that, but that behavior is documented in the JavaDoc for
-     * <code>LinkedHashMap</code>.
-     * </p>
-     *
-     * @param eldest the <code>Entry</code> in question; this implementation doesn't care what it is, since the
-     *               implementation is only dependent on the size of the cache
-     * @return <tt>true</tt> if the oldest
-     * @see java.util.LinkedHashMap#removeEldestEntry(Map.Entry)
-     */
-    @Override
-    protected boolean removeEldestEntry(final Map.Entry<A, B> eldest) {
-        return maxEntries != -1 && super.size() > maxEntries;
+    public boolean containsKey(K key) {
+        return concurrentHashMap.containsKey(key);
+    }
+
+    public void put(K key, V value) {
+        V putVal = concurrentHashMap.put(key,value);
+        if (putVal==null)
+            concurrentLinkedQueue.add(key);
+
+        if (maxEntries > -1 && concurrentLinkedQueue.size() > maxEntries+evictSize) {
+            int itemsToRemove = concurrentLinkedQueue.size() - maxEntries;
+            for (int i = 0; i < itemsToRemove; i++)
+                concurrentHashMap.remove(concurrentLinkedQueue.remove());
+        }
+    }
+
+    public V get(K key) {
+        return concurrentHashMap.get(key);
+    }
+
+    public void remove(K key) {
+        // Do not remove from queue concurrentLinkedQueue, as it is expensive.
+        concurrentHashMap.remove(key);
+    }
+
+    public void clear() {
+        concurrentLinkedQueue.clear();
+        concurrentHashMap.clear();
+    }
+
+    public List<K> keySet() {
+        return concurrentHashMap.keySet().stream().collect(Collectors.toList());
     }
 }
