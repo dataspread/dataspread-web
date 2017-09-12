@@ -26,9 +26,6 @@
     <orderEntry type="library" scope="PROVIDED" name="tomcat-jdbc" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="tomcat-juli" level="project" />
     <orderEntry type="module" module-name="blockstore" />
-    <orderEntry type="library" name="Maven: org.apache.tomcat:tomcat-dbcp:8.0.33" level="project" />
-    <orderEntry type="library" name="Maven: org.apache.tomcat:tomcat-jdbc:8.5.11" level="project" />
-    <orderEntry type="library" name="Maven: org.apache.tomcat:tomcat-juli:8.5.11" level="project" />
     <orderEntry type="library" name="Maven: com.esotericsoftware:kryo:4.0.0" level="project" />
     <orderEntry type="library" name="Maven: com.esotericsoftware:reflectasm:1.11.3" level="project" />
     <orderEntry type="library" name="Maven: org.ow2.asm:asm:5.0.4" level="project" />
@@ -58,7 +55,6 @@
     <orderEntry type="library" name="Maven: org.zkoss.zk:zk:7.0.3" level="project" />
     <orderEntry type="library" name="Maven: org.zkoss.common:zweb:7.0.3" level="project" />
     <orderEntry type="library" name="Maven: org.jsoup:jsoup:1.7.3" level="project" />
-    <orderEntry type="library" name="Maven: org.postgresql:postgresql:9.4.1208" level="project" />
     <orderEntry type="module" module-name="zss" />
     <orderEntry type="library" name="Maven: junit:junit:4.8.1" level="project" />
     <orderEntry type="library" name="Maven: org.zkoss.zk:zul:7.0.3" level="project" />

@@ -52,10 +52,6 @@
           <element id="library" level="project" name="Maven: org.apache.poi:ooxml-schemas:1.1" />
           <element id="library" level="project" name="Maven: commons-codec:commons-codec:1.5" />
           <element id="library" level="project" name="Maven: org.zkoss.zk:zul:7.0.3" />
-          <element id="library" level="project" name="Maven: org.postgresql:postgresql:9.4.1208" />
-          <element id="library" level="project" name="Maven: org.apache.tomcat:tomcat-dbcp:8.0.33" />
-          <element id="library" level="project" name="Maven: org.apache.tomcat:tomcat-jdbc:8.5.11" />
-          <element id="library" level="project" name="Maven: org.apache.tomcat:tomcat-juli:8.5.11" />
         </element>
       </element>
       <element id="directory" name="META-INF">
