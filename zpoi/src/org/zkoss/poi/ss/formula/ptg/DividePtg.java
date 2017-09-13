@@ -30,7 +30,12 @@ public final class DividePtg extends ValueOperatorPtg {
     private DividePtg() {
     	// enforce singleton
     }
-    
+
+    @Override
+    public OperationPtg getInstance() {
+        return instance;
+    }
+
     protected byte getSid() {
     	return sid;
     }

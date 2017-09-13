@@ -34,7 +34,13 @@ public final class LessEqualPtg extends ComparisonPtg {
     private LessEqualPtg() {
     	// enforce singleton
     }
-    
+
+    @Override
+    public OperationPtg getInstance() {
+        return instance;
+    }
+
+
     protected byte getSid() {
     	return sid;
     }

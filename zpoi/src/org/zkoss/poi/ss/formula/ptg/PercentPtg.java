@@ -41,7 +41,12 @@ public final class PercentPtg extends ValueOperatorPtg {
     public int getNumberOfOperands() {
         return 1;
     }
-       
+
+    @Override
+    public OperationPtg getInstance() {
+        return instance;
+    }
+
     public String toFormulaString(String[] operands) {
         StringBuffer buffer = new StringBuffer();
 

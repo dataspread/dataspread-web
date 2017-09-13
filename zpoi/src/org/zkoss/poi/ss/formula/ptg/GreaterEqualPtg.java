@@ -32,7 +32,13 @@ public final class GreaterEqualPtg extends ComparisonPtg {
     private GreaterEqualPtg() {
     	// enforce singleton
     }
-    
+
+    @Override
+    public OperationPtg getInstance() {
+        return instance;
+    }
+
+
     protected byte getSid() {
     	return sid;
     }

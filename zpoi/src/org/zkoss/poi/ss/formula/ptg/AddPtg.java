@@ -33,7 +33,13 @@ public final class AddPtg extends ValueOperatorPtg {
     private AddPtg() {
     	// enforce singleton
     }
-    
+
+    @Override
+    public OperationPtg getInstance() {
+        return instance;
+    }
+
+
     protected byte getSid() {
     	return sid;
     }
