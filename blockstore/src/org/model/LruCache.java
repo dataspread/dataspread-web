@@ -25,6 +25,9 @@ public class LruCache<K, V> {
     }
 
     public void put(K key, V value) {
+        // Do not store null values.
+        if (value==null)
+            return;
         V putVal = concurrentHashMap.put(key,value);
         if (putVal==null)
             concurrentLinkedQueue.add(key);
