@@ -684,6 +684,7 @@ public class CellImpl extends AbstractCellAdv {
 			this.version=version;
 			//System.out.format("Updated@%d\n",version);
 			_formulaResultValue=new FormulaResultCellValue(result);
+			updateCelltoDB();
 		}
 	}
 }
