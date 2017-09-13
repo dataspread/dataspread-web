@@ -30,7 +30,13 @@ public final class SubtractPtg extends ValueOperatorPtg {
     private SubtractPtg() {
     	// enforce singleton
     }
-    
+
+    @Override
+    public OperationPtg getInstance() {
+        return instance;
+    }
+
+
     protected byte getSid() {
     	return sid;
     }

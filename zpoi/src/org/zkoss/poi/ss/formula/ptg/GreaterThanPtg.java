@@ -30,7 +30,13 @@ public final class GreaterThanPtg extends ComparisonPtg {
     private GreaterThanPtg() {
     	// enforce singleton
     }
-    
+
+    @Override
+    public OperationPtg getInstance() {
+        return instance;
+    }
+
+
     protected byte getSid() {
     	return sid;
     }

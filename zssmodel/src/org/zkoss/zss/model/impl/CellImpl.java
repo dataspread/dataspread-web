@@ -74,7 +74,7 @@ public class CellImpl extends AbstractCellAdv {
 	transient private int _column;
 	private CellValue _localValue = null;
 	private AbstractCellStyleAdv _cellStyle;
-	transient private FormulaResultCellValue _formulaResultValue;// cache
+	private FormulaResultCellValue _formulaResultValue;// cache
     transient private AbstractSheetAdv _sheet;
     //use another object to reduce object reference size
 	private OptFields _opts;
@@ -102,6 +102,13 @@ public class CellImpl extends AbstractCellAdv {
 
             cellImpl._row = row;
             cellImpl._column = column;
+            /* Update ptgs */
+	//		if (cellImpl._formulaResultValue.getCellType() == CellType.FORMULA)
+	//		{
+
+	//		}
+
+
 			in.close();
 		} catch (Exception e) {
             // data that cannot be parsed is considered as a string value.

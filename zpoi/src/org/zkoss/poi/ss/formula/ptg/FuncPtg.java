@@ -40,6 +40,12 @@ public final class FuncPtg extends AbstractFunctionPtg {
         super(funcIndex, fm.getReturnClassCode(), fm.getParameterClassCodes(), fm.getMinParams());  // minParams same as max since these are not var-arg funcs
     }
 
+    @Override
+    public OperationPtg getInstance() {
+        return null;
+    }
+
+
     public static FuncPtg create(int functionIndex) {
         FunctionMetadata fm = FunctionMetadataRegistry.getFunctionByIndex(functionIndex);
         if(fm == null) {

@@ -32,7 +32,13 @@ public final class MultiplyPtg extends ValueOperatorPtg {
 //    	// enforce singleton
 //    }  
     public MultiplyPtg() {};
-    
+
+    @Override
+    public OperationPtg getInstance() {
+        return null;
+    }
+
+
     protected byte getSid() {
     	return sid;
     }

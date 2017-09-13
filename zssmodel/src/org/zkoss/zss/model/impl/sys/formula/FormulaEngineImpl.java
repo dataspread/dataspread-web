@@ -1219,8 +1219,8 @@ public class FormulaEngineImpl implements FormulaEngine {
 		private String errorMessage;
 
 		//ZSS-747
-		//TODO: For now do not store parsed formulae.
-		transient private Ptg[] ptgs;
+		//TODO: Need to understand formula shifting
+		private Ptg[] ptgs;
 		private boolean multipleArea;
 
 		@SuppressWarnings("unused")

@@ -27,7 +27,9 @@ public abstract class OperationPtg extends Ptg {
     public final static int TYPE_FUNCTION = 2;
     private boolean isOverrided = false;
     private int overrideTableNum = 0;
-    
+
+    public abstract OperationPtg getInstance();
+
     /**
      *  returns a string representation of the operations
      *  the length of the input array should equal the number returned by 

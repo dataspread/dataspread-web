@@ -39,6 +39,11 @@ public final class NotEqualPtg extends ComparisonPtg {
         return 2;
     }
 
+    @Override
+    public OperationPtg getInstance() {
+        return instance;
+    }
+
     public String toFormulaString(String[] operands) {
         StringBuffer buffer = new StringBuffer();
 

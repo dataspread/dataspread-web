@@ -32,7 +32,12 @@ public final class UnaryPlusPtg extends ValueOperatorPtg {
     private UnaryPlusPtg() {
     	// enforce singleton
     }
-    
+
+    @Override
+    public OperationPtg getInstance() {
+        return instance;
+    }
+
     protected byte getSid() {
     	return sid;
     }

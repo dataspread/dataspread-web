@@ -32,7 +32,13 @@ public final class ConcatPtg extends ValueOperatorPtg {
     private ConcatPtg() {
     	// enforce singleton
     }
-    
+
+    @Override
+    public OperationPtg getInstance() {
+        return instance;
+    }
+
+
     protected byte getSid() {
     	return sid;
     }

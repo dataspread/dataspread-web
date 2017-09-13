@@ -38,6 +38,12 @@ public final class FuncVarPtg extends AbstractFunctionPtg{
         super(functionIndex, returnClass, paramClasses, numArgs);
     }
 
+    @Override
+    public OperationPtg getInstance() {
+        return null;
+    }
+
+
     /**Creates new function pointer from a byte array
      * usually called while reading an excel file.
      */
