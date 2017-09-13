@@ -431,8 +431,10 @@ public class DefaultUserActionManagerCtrl implements UserActionManagerCtrl,UserA
 
 				Range dest =  Ranges.range(evt.getSheet(), evt.getRow(),
 						evt.getColumn(), evt.getLastRow(), evt.getLastColumn());
+				try {
+					CellOperationUtil.autoFill(src, dest, Range.AutoFillType.DEFAULT);
+				} catch (Exception e) {}
 
-				CellOperationUtil.autoFill(src, dest, Range.AutoFillType.DEFAULT);
 			}
 		}
 	}
