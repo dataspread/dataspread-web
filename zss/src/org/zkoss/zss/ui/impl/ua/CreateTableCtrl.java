@@ -55,27 +55,32 @@ public class CreateTableCtrl extends DlgCtrlBase {
 
     @Listen("onClick = #createButton")
     public void create() {
-        tableNameStr = tableName.getValue();
+        tableNameStr = tableName.getValue().toLowerCase();
         if (tableNameStr.isEmpty()) {
             Messagebox.show("Table Name is Required", "Table Name",
                     Messagebox.OK, Messagebox.ERROR);
             return;
         }
 
+        CellRegion tableHeaderRow = new CellRegion(selection.getRow(), selection.getColumn(),
+                selection.getRow(), selection.getLastColumn());
+
         CellRegion region = new CellRegion(selection.getRow(), selection.getColumn(),
                 selection.getLastRow(), selection.getLastColumn());
         Hybrid_Model model = (Hybrid_Model) sheet.getInternalSheet().getDataModel();
         if (model.checkOverap(region)) {
-            Messagebox.show("Table Range Overlaps with Existing Table.", "Create Table",
+            Messagebox.show("Table range overlaps with an existing table.", "Create Table",
                     Messagebox.OK, Messagebox.ERROR);
             createTableDlg.detach();
             return;
         }
 
+
+
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection())
         {
             DBContext dbContext = new DBContext(connection);
-            model.createTable(dbContext, region, tableNameStr);
+            model.createTable(dbContext, tableHeaderRow, tableNameStr);
             if (region.getHeight() > 1)
                 model.appendTableRows(dbContext, new CellRegion(region.getRow() + 1, region.getColumn(),
                         region.getLastRow(), region.getLastColumn()), tableNameStr);
@@ -85,12 +90,12 @@ public class CreateTableCtrl extends DlgCtrlBase {
             sheet.getInternalSheet().clearCache(region);
             sss.updateCell(selection.getColumn(), selection.getRow(), selection.getLastColumn(),
                     selection.getLastRow());
-            Messagebox.show("Table " + tableNameStr.toUpperCase() + " is successfully created", "Table Creation",
+            Messagebox.show("Table " + tableNameStr + " is successfully created", "Table Creation",
                     Messagebox.OK, Messagebox.INFORMATION);
             createTableDlg.detach();
             return;
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             Messagebox.show(e.getMessage(), "Table Creation",
                     Messagebox.OK, Messagebox.ERROR);

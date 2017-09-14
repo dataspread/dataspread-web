@@ -63,7 +63,7 @@ public class BookImpl extends AbstractBookAdv{
 	private final List<AbstractFontAdv> _fonts = new ArrayList<AbstractFontAdv>();
 	private final AbstractFontAdv _defaultFont;
 	private final HashMap<AbstractColorAdv,AbstractColorAdv> _colors = new LinkedHashMap<AbstractColorAdv,AbstractColorAdv>();
-	private final HashMap<String,AtomicInteger> _objIdCounter = new HashMap<String,AtomicInteger>();
+	private final HashMap<String,AtomicInteger> _objIdCounter = new HashMap<>();
 	private final int _maxRowSize = Integer.MAX_VALUE;
 	private final int _maxColumnSize = Integer.MAX_VALUE;
 	boolean schemaPresent = false;

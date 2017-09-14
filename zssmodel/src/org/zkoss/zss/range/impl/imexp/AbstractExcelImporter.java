@@ -21,6 +21,7 @@ import java.io.*;
 import java.sql.Connection;
 import java.util.*;
 
+import org.model.DBHandler;
 import org.zkoss.poi.hssf.usermodel.HSSFRichTextString;
 import org.zkoss.poi.ss.formula.eval.*;
 import org.zkoss.poi.ss.formula.ptg.FuncVarPtg;
@@ -150,7 +151,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 		Locale old = Locales.setThreadLocal(Locale.US);
 		SBookSeries bookSeries = book.getBookSeries();
 		boolean isCacheClean = bookSeries.isAutoFormulaCacheClean();
-		try {
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
 			bookSeries.setAutoFormulaCacheClean(false);// disable it to avoid
 														// unnecessary clean up
 														// during importing
@@ -168,7 +169,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 				SSheet sheet = book.getSheet(i);
 				Sheet poiSheet = workbook.getSheetAt(i);
 				for (Row poiRow : poiSheet) {
-					importRow(poiRow, sheet, null, true);
+					importRow(poiRow, sheet, connection, true);
 				}
 				importColumn(poiSheet, sheet);
 				importMergedRegions(poiSheet, sheet);
@@ -177,6 +178,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 				importAutoFilter(poiSheet, sheet);
 				importSheetProtection(poiSheet, sheet); //ZSS-576
 			}
+			connection.commit();
 		} finally {
 			book.getBookSeries().setAutoFormulaCacheClean(isCacheClean);
 			Locales.setThreadLocal(old);
