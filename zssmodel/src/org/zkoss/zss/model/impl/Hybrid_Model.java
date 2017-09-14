@@ -195,8 +195,14 @@ public class Hybrid_Model extends RCV_Model {
 
         // Integer ids[] = colMapping.createIDs(dbContext, colMapping.size(dbContext), cellRegion.getLength());
         for (int i = cellRegion.getColumn(); i <= cellRegion.getColumn(); i++) {
+            // check for valid column name
+            String curCol = sheet.getCell(cellRegion.getRow(), i).getStringValue();
+            if (!curCol.matches("^[a-zA-Z_][a-zA-Z0-9_]*$")) {
+                // not a valid column name
+                throw new SQLException("Invalid column name");
+            }
             insertColumnStmt.append(" ADD COLUMN ")
-                    .append(sheet.getCell(cellRegion.getRow(), i).getStringValue())
+                    .append(curCol)
                     .append(" TEXT");
             if (i < cellRegion.getColumn())
                 insertColumnStmt.append(",");
