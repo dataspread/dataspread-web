@@ -38,8 +38,6 @@ public class SBooks {
 		SBook book = BookBindings.get(bookName);
 		if (book==null){
 			book=new BookImpl(bookName);
-			book.createSheet("Sheet1");
-			book.createSheet("Sheet2");
 			((AbstractBookAdv) book).initDefaultCellStyles();
 			BookBindings.put(book.getBookName(),book);
 		}
