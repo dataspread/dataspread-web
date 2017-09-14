@@ -149,13 +149,12 @@ public class Hybrid_Model extends RCV_Model {
         return true;
     }
 
-    public boolean createTable(DBContext context, CellRegion range, String tableName)
-            throws SQLException {
+    public boolean createTable(DBContext context, CellRegion tableHeaderRow, String tableName)
+            throws Exception {
         String newTableName;
 
         newTableName = tableName.toLowerCase();
         /* First create table then create model */
-        CellRegion tableHeaderRow = new CellRegion(range.getRow(), range.getColumn(), range.getRow(), range.getLastColumn());
         List<String> columnList = getCells(context, tableHeaderRow)
                 .stream()
                 .sorted(Comparator.comparingInt(SCell::getRowIndex))
@@ -163,6 +162,13 @@ public class Hybrid_Model extends RCV_Model {
                 .map(Object::toString)
                 .map(e -> e.trim().replaceAll("[^a-zA-Z0-9.\\-;]+", "_"))
                 .collect(Collectors.toList());
+
+        if (columnList.size()<tableHeaderRow.getLength())
+            throw new Exception("Missing columns names.");
+
+        if (columnList.stream().filter(e->!Character.isLetter(e.charAt(0))).findFirst().isPresent())
+            throw new Exception("Column names should start with a letter.");
+
 
         String createTable = (new StringBuilder())
                 .append("CREATE TABLE ")
