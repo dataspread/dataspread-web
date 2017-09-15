@@ -16,8 +16,6 @@ import org.zkoss.zul.Messagebox;
 import org.zkoss.zul.Textbox;
 import org.zkoss.zul.Window;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Map;
 
 public class CreateTableCtrl extends DlgCtrlBase {
@@ -68,7 +66,7 @@ public class CreateTableCtrl extends DlgCtrlBase {
         CellRegion region = new CellRegion(selection.getRow(), selection.getColumn(),
                 selection.getLastRow(), selection.getLastColumn());
         Hybrid_Model model = (Hybrid_Model) sheet.getInternalSheet().getDataModel();
-        if (model.checkOverap(region)) {
+        if (model.checkOverlap(region)) {
             Messagebox.show("Table range overlaps with an existing table.", "Create Table",
                     Messagebox.OK, Messagebox.ERROR);
             createTableDlg.detach();

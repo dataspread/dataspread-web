@@ -30,7 +30,7 @@ public class Hybrid_Model extends RCV_Model {
         loadMetaData(context);
     }
 
-    public boolean checkOverap(CellRegion cellRegion) {
+    public boolean checkOverlap(CellRegion cellRegion) {
         return metaDataBlock.modelEntryList
                 .stream()
                 .filter(e -> e.range.overlaps(cellRegion))
@@ -640,7 +640,7 @@ public class Hybrid_Model extends RCV_Model {
         // Make sure this range is not contained within any other table.
         if (tableModels.stream()
                 .map(e -> e.x)
-                .filter(e -> checkOverap(newColumnRegion))
+                .filter(e -> checkOverlap(newColumnRegion))
                 .findFirst().isPresent())
             return null;
 
@@ -658,7 +658,7 @@ public class Hybrid_Model extends RCV_Model {
         // Make sure this range is not contained within any other table.
         if (tableModels.stream()
                 .map(e -> e.x)
-                .filter(e -> checkOverap(newTuplesRegion))
+                .filter(e -> checkOverlap(newTuplesRegion))
                 .findFirst().isPresent())
             return null;
 
