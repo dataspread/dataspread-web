@@ -97,9 +97,11 @@ public class DBHandler implements ServletContextListener {
                     "  booktable     TEXT REFERENCES books(booktable) ON DELETE CASCADE ON UPDATE CASCADE," +
                     "  sheetid       INTEGER," +
                     "  sheetindex    INTEGER," +
+                    "  bookname      TEXT REFERENCES books(bookname) ON DELETE CASCADE ON UPDATE CASCADE," +
                     "  sheetname     TEXT," +
                     "  modelname     TEXT," +
-                    "  PRIMARY KEY (booktable, sheetid))";
+                    "  PRIMARY KEY (booktable, sheetid)," +
+                    "  UNIQUE (bookname,sheetname))";
             stmt.execute(createSheetsTable);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -160,7 +162,11 @@ public class DBHandler implements ServletContextListener {
                     "range         BOX NOT NULL," +
                     "dep_bookname  TEXT NOT NULL," +
                     "dep_sheetname TEXT NOT NULL," +
-                    "dep_range     BOX NOT NULL)";
+                    "dep_range     BOX NOT NULL," +
+                    "FOREIGN KEY (bookname, sheetname) REFERENCES sheets (bookname, sheetname)" +
+                    " ON DELETE CASCADE ON UPDATE CASCADE," +
+                    "FOREIGN KEY (dep_bookname, dep_sheetname) REFERENCES sheets (bookname, sheetname)" +
+                    " ON DELETE CASCADE ON UPDATE CASCADE )";
             stmt.execute(createTable);
         } catch (SQLException e) {
             e.printStackTrace();
