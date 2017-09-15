@@ -164,12 +164,13 @@ public class ClearCellHelper extends RangeHelperBase{
 		}else{
 			// Mangesh - For now destroy the cells. Later need to change this.
 			sheet.clearCell(new CellRegion(getRow(), getColumn(),getLastRow(),getLastColumn()));
-			/* for(int r = getRow(); r <= getLastRow(); r++){
+			//uncommented this code to explicitly clear cells from the sheet not just DB. Temp fix
+			for(int r = getRow(); r <= getLastRow(); r++){
 				for (int c = getColumn(); c <= getLastColumn(); c++){
 					SCell cell = sheet.getCell(r,c);
 					clearCellContent(cell);
 				}
-			} */
+			}
 		}
 	}
 	
