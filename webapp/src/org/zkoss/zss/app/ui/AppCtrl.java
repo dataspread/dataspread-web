@@ -563,7 +563,7 @@ public class AppCtrl extends CtrlBase<Component> {
                     book.setShareScope(EventQueues.APPLICATION);
 
                     setBook(book, null);
-                    collaborationInfo.removeRelationship(username);
+                    collaborationInfo.setRelationship(username, loadedBook);
                     ss.setBook(book);
                     setBookmark("");
                     initSaveNotification(loadedBook);
