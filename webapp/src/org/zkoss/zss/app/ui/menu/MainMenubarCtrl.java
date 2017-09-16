@@ -117,6 +117,7 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 			doUpdateMenu((Spreadsheet)data);
 		}else if(AppEvts.ON_AFTER_CHANGED_USERNAME.equals(event)){
 			doUpdateUsername((String)data);
+            pushAppEvent(AppEvts.ON_CLOSE_BOOK);
 			pushAppEvent(AppEvts.ON_NEW_BOOK);
 		}else if(AppEvts.ON_CHANGED_FILE_STATE.equals(event)){
 			doUpdateFileState((String)data);
@@ -273,19 +274,16 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 	}
 	@Listen("onClick=#changeUsername")
 	public void onChangeUsername(){
-		pushAppEvent(AppEvts.ON_CLOSE_BOOK);
 		pushAppEvent(AppEvts.ON_CHANGED_USERNAME);
     }
 
     @Listen("onClick=#logout")
     public void onLogout() {
-        pushAppEvent(AppEvts.ON_CLOSE_BOOK);
         pushAppEvent(AppEvts.ON_LOGOUT);
     }
 
     @Listen("onClick=#register")
     public void onRegister() {
-        pushAppEvent(AppEvts.ON_CLOSE_BOOK);
         pushAppEvent(AppEvts.ON_REGISTER);
     }
 

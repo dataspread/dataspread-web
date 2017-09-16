@@ -78,9 +78,11 @@ msgzss.action = {
 	mergeCell: 'Merge Cells',
 	unmergeCell: 'Unmerge Cells',
 	insert: 'Insert',
-	insertCell: 'Insert Cells...',
+	/*
+    insertCell: 'Insert Cells...',
 	shiftCellRight: 'Shift Cells Right',
 	shiftCellDown: 'Shift Cells Down',
+	*/
 	insertSheetRow: 'Insert Rows',
 	insertSheetColumn: 'Insert Columns',
     /* Table strings */
@@ -102,9 +104,11 @@ msgzss.action = {
 	formatCell: 'Format Cell',
 	lockCell: 'Lock Cell',
 	del: 'Delete',
+	/*
 	deleteCell: 'Delete Cells...',
 	shiftCellLeft: 'Shift Cells Left',
 	shiftCellUp: 'Shift Cells Up',
+	*/
 	deleteSheetRow: 'Delete Rows',
 	deleteSheetColumn: 'Delete Columns',
 	clear: 'Clear',
