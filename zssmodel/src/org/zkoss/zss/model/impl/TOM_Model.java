@@ -234,7 +234,6 @@ public class TOM_Model extends Model {
                 .append(tableName)
                 .append(" WHERE oid = ANY (?) ");
 
-
         AutoRollbackConnection connection = context.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
             // Array inArrayRow = context.getConnection().createArrayOf(pkColumnType, rowIds);
@@ -267,12 +266,10 @@ public class TOM_Model extends Model {
                 for (int i = 0; i < colIds.length; i++) {
                     int col = col_map.get(columnNames.get(colIds[i]));
                     byte[] data = rs.getBytes(i + 2);
-                    if (data != null) {
-                        AbstractCellAdv cell = CellImpl.fromBytes(sheet, row, col, data);
-                        cells.add(cell);
-                        StyleUtilNoDB.setBackColor(sheet.getBook(), cell, "#99ccff");
-                        StyleUtilNoDB.setBorder(sheet.getBook(), cell, "#000000", SBorder.BorderType.MEDIUM);
-                    }
+                    AbstractCellAdv cell = CellImpl.fromBytes(sheet, row, col, data);
+                    cells.add(cell);
+                    StyleUtilNoDB.setBackColor(sheet.getBook(), cell, "#99ccff");
+                    StyleUtilNoDB.setBorder(sheet.getBook(), cell, "#000000", SBorder.BorderType.MEDIUM);
                 }
             }
             rs.close();
