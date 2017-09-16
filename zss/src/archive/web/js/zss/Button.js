@@ -1581,12 +1581,14 @@ zss.MenupopupFactory = zk.$extends(zk.Object, {
 		p.appendChild(new zul.menu.Menuseparator());
 
 		//TODO: Need to fix the shift cell
+
 		// insertMP.appendChild(newActionMenuitem(wgt, 'shiftCellRight'));
 		// insertMP.appendChild(newActionMenuitem(wgt, 'shiftCellDown'));
 		insertMP.appendChild(newActionMenuitem(wgt, 'insertSheetRow'));
 		insertMP.appendChild(newActionMenuitem(wgt, 'insertSheetColumn'));
 		insertMenu.appendChild(insertMP);
 		p.appendChild(insertMenu);
+
 
 		// deleteMP.appendChild(newActionMenuitem(wgt, 'shiftCellLeft'));
 		// deleteMP.appendChild(newActionMenuitem(wgt, 'shiftCellUp'));
