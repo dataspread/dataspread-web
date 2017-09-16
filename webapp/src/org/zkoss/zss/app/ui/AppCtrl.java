@@ -466,17 +466,18 @@ public class AppCtrl extends CtrlBase<Component> {
                         break;
                     }
                 }
+            } else {
+                String newName = collaborationInfo.getUsername(username);
+                collaborationInfo.addUsername(newName, newName);
+                if (username == null) {
+                    saveUsername(newName);
+                }
+
+                username = newName;
+                pushAppEvent(AppEvts.ON_AFTER_CHANGED_USERNAME, username);
+                ss.setUserName(username);
             }
 
-            String newName = collaborationInfo.getUsername(username);
-            collaborationInfo.addUsername(newName, newName);
-            if (username == null) {
-                saveUsername(newName);
-            }
-
-            username = newName;
-            pushAppEvent(AppEvts.ON_AFTER_CHANGED_USERNAME, username);
-            ss.setUserName(username);
         }
     }
 
@@ -562,7 +563,7 @@ public class AppCtrl extends CtrlBase<Component> {
                     book.setShareScope(EventQueues.APPLICATION);
 
                     setBook(book, null);
-                    collaborationInfo.removeRelationship(username);
+                    collaborationInfo.setRelationship(username, loadedBook);
                     ss.setBook(book);
                     setBookmark("");
                     initSaveNotification(loadedBook);
