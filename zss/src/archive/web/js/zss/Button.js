@@ -1334,8 +1334,9 @@ zss.MenupopupFactory = zk.$extends(zk.Object, {
 	},
 	insert: function () {
 		var wgt = this._wgt,
-			p = new zss.Menupopup(),
-			insertCellMenu = new zss.Menu({
+			p = new zss.Menupopup();
+            /*
+            insertCellMenu = new zss.Menu({
 				label: msgzss.action.insertCell,
 				sclass: 'insertCell'
 			}),
@@ -1345,24 +1346,26 @@ zss.MenupopupFactory = zk.$extends(zk.Object, {
 		insertCellMP.appendChild(newActionMenuitem(wgt, 'shiftCellDown'));
 		insertCellMenu.appendChild(insertCellMP);
 		p.appendChild(insertCellMenu);
-		
+		*/
 		p.appendChild(newActionMenuitem(wgt, 'insertSheetRow'));
 		p.appendChild(newActionMenuitem(wgt, 'insertSheetColumn'));
 		return p;
 	},
 	del: function () {
 		var wgt = this._wgt,
-			p = new zss.Menupopup(),
-			deleteCellMenu = new zss.Menu({
+			p = new zss.Menupopup();
+			/*
+            deleteCellMenu = new zss.Menu({
 				label: msgzss.action.deleteCell,
 				sclass: 'deleteCell'
 			}),
 			deleteCellMP = new zss.Menupopup();
+
 		deleteCellMP.appendChild(newActionMenuitem(wgt, 'shiftCellLeft'));
 		deleteCellMP.appendChild(newActionMenuitem(wgt, 'shiftCellUp'));
 		deleteCellMenu.appendChild(deleteCellMP);
 		p.appendChild(deleteCellMenu);
-		
+		*/
 		p.appendChild(newActionMenuitem(wgt, 'deleteSheetRow'));
 		p.appendChild(newActionMenuitem(wgt, 'deleteSheetColumn'));
 		return p;
@@ -1578,15 +1581,15 @@ zss.MenupopupFactory = zk.$extends(zk.Object, {
 		p.appendChild(new zul.menu.Menuseparator());
 
 		//TODO: Need to fix the shift cell
-		//insertMP.appendChild(newActionMenuitem(wgt, 'shiftCellRight'));
-		//insertMP.appendChild(newActionMenuitem(wgt, 'shiftCellDown'));
+		// insertMP.appendChild(newActionMenuitem(wgt, 'shiftCellRight'));
+		// insertMP.appendChild(newActionMenuitem(wgt, 'shiftCellDown'));
 		insertMP.appendChild(newActionMenuitem(wgt, 'insertSheetRow'));
 		insertMP.appendChild(newActionMenuitem(wgt, 'insertSheetColumn'));
 		insertMenu.appendChild(insertMP);
 		p.appendChild(insertMenu);
-		
-		//deleteMP.appendChild(newActionMenuitem(wgt, 'shiftCellLeft'));
-		//deleteMP.appendChild(newActionMenuitem(wgt, 'shiftCellUp'));
+
+		// deleteMP.appendChild(newActionMenuitem(wgt, 'shiftCellLeft'));
+		// deleteMP.appendChild(newActionMenuitem(wgt, 'shiftCellUp'));
 		deleteMP.appendChild(newActionMenuitem(wgt, 'deleteSheetRow'));
 		deleteMP.appendChild(newActionMenuitem(wgt, 'deleteSheetColumn'));
 		deleteMenu.appendChild(deleteMP);
