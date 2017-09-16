@@ -97,24 +97,30 @@ public class CellImpl extends AbstractCellAdv {
 	public static CellImpl fromBytes(SSheet sheet, int row, int column, byte[] inByteArray) {
 		CellImpl cellImpl;
 		Kryo kryo = kryoPool.borrow();
-		try (Input in = new Input(inByteArray)) {
-			cellImpl = kryo.readObject(in, CellImpl.class);
-
-            cellImpl._row = row;
-            cellImpl._column = column;
-            /* Update ptgs */
-	//		if (cellImpl._formulaResultValue.getCellType() == CellType.FORMULA)
-	//		{
-
-	//		}
-
-
-			in.close();
-		} catch (Exception e) {
-            // data that cannot be parsed is considered as a string value.
+		if (inByteArray == null) {
 			cellImpl = new CellImpl(row, column);
-			cellImpl._localValue = new CellValue(new String(inByteArray));
-        }
+			// cellImpl._localValue = ??? what should the default value be in the database ??
+		}
+		else {
+			try (Input in = new Input(inByteArray)) {
+				cellImpl = kryo.readObject(in, CellImpl.class);
+
+				cellImpl._row = row;
+				cellImpl._column = column;
+				/* Update ptgs */
+				//		if (cellImpl._formulaResultValue.getCellType() == CellType.FORMULA)
+				//		{
+
+				//		}
+
+
+				in.close();
+			} catch (Exception e) {
+				// data that cannot be parsed is considered as a string value.
+				cellImpl = new CellImpl(row, column);
+				cellImpl._localValue = new CellValue(new String(inByteArray));
+			}
+		}
 		cellImpl._sheet = (AbstractSheetAdv) sheet;
 		kryoPool.release(kryo);
 		return cellImpl;
