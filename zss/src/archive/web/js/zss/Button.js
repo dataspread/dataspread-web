@@ -1399,8 +1399,8 @@ zss.MenupopupFactory = zk.$extends(zk.Object, {
 		var wgt = this._wgt,
 			p = new zss.Menupopup();
 		
-		p.appendChild(newActionMenuitem(wgt, 'sortAscending', '/web/zss/img/asc.png'));
-		p.appendChild(newActionMenuitem(wgt, 'sortDescending', '/web/zss/img/des.png'));
+		// p.appendChild(newActionMenuitem(wgt, 'sortAscending', '/web/zss/img/asc.png'));
+		// p.appendChild(newActionMenuitem(wgt, 'sortDescending', '/web/zss/img/des.png'));
 		p.appendChild(newActionMenuitem(wgt, 'customSort'));
 		p.appendChild(newActionMenuitem(wgt, 'filter', '/web/zss/img/funnel--pencil.png'));
 		p.appendChild(newActionMenuitem(wgt, 'clearFilter', '/web/zss/img/funnel--minus.png'));
@@ -1619,8 +1619,8 @@ zss.MenupopupFactory = zk.$extends(zk.Object, {
 		filterMenu.appendChild(filterMP);
 		p.appendChild(filterMenu);
 		
-		sortMP.appendChild(newActionMenuitem(wgt, 'sortAscending', '/web/zss/img/asc.png'));
-		sortMP.appendChild(newActionMenuitem(wgt, 'sortDescending', '/web/zss/img/des.png'));
+		// sortMP.appendChild(newActionMenuitem(wgt, 'sortAscending', '/web/zss/img/asc.png'));
+		// sortMP.appendChild(newActionMenuitem(wgt, 'sortDescending', '/web/zss/img/des.png'));
 		sortMP.appendChild(newActionMenuitem(wgt, 'customSort'));
 		sortMenu.appendChild(sortMP);
 		p.appendChild(sortMenu);
@@ -1657,17 +1657,20 @@ zss.MenupopupFactory = zk.$extends(zk.Object, {
 
 zss.Buttons = zk.$extends(zk.Object, {
 }, {//static
-	HOME_DEFAULT: ['newBook', 'saveBook', 'exportPDF', 'separator', 
+    // 'saveBook', 'exportPDF',
+	HOME_DEFAULT: ['newBook', 'separator',
 	          'paste', 'cut', 'copy', 'separator',
 	          'fontFamily', 'fontSize', 'fontBold', 'fontItalic', 'fontUnderline', 
 	          'fontStrike', 'border', 'fontColor', 'backColor', 'separator',
 	          'verticalAlign', 'horizontalAlign', 'textIndentDecrease', 'textIndentIncrease', 
 	          'wrapText', 'mergeAndCenter', 'separator', 'insert', 'del', 'format', 'separator',
 	          'autoSum', 'clear', 'sortAndFilter', 'separator',
-	          'protectSheet', 'gridlines', 'separator',
-	          'insertPicture', 'insertChart', 'hyperlink'
+	          'protectSheet', 'gridlines'
 	          ],
-	 INSERT_DEFAULT: ['insertPicture', 'separator',
+    // , 'separator',
+    // 'insertPicture', 'insertChart', 'hyperlink'
+
+	INSERT_DEFAULT: ['insertPicture', 'separator',
 	                  'columnChart', 'lineChart', 'pieChart', 
 	                  'barChart', 'areaChart', 'scatterChart', 
 	                  'otherChart', 'separator',
