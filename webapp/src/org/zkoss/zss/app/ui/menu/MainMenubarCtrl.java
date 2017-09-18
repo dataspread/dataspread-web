@@ -163,7 +163,7 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 		saveFileAs.setDisabled(disabled || readonly);
 //		saveFileAndClose.setDisabled(disabled || readonly);
 		closeFile.setDisabled(disabled);
-		exportFile.setDisabled(disabled);
+		exportFile.setDisabled(!isEE || disabled);
 		exportPdf.setDisabled(!isEE || disabled);
 		//changeUsername.setDisabled(!isEE || collabDisabled == Boolean.TRUE);
 		changeUsername.setDisabled(collabDisabled == Boolean.TRUE);
@@ -185,6 +185,7 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 		Boolean shareBookHidden = Boolean.valueOf(Library.getProperty("zssapp.menu.sharebook.hidden"));
 		if(shareBookHidden)
 			shareBook.setVisible(false);
+        shareBook.setVisible(false);
 		
 		Boolean usernameHidden = Boolean.valueOf(Library.getProperty("zssapp.menu.username.hidden"));
 		if(usernameHidden)
