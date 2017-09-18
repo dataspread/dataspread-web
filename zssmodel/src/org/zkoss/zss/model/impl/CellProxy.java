@@ -29,6 +29,7 @@ import java.util.Locale;
  * @author dennis
  * @since 3.5.0
  */
+
 class CellProxy extends AbstractCellAdv {
 	private static final long serialVersionUID = 1L;
 	AbstractCellAdv _proxy;
@@ -138,7 +139,16 @@ class CellProxy extends AbstractCellAdv {
 
 	@Override
 	public void setCellStyle(SCellStyle cellStyle, boolean updateToDB) {
+		if (_proxy == null)
+			_proxy = _sheet.createCell(_rowIdx, _columnIdx);
+		_proxy.setCellStyle(cellStyle, updateToDB);
+	}
 
+	@Override
+	public void setCellStyle(SCellStyle cellStyle, AutoRollbackConnection connection, boolean updateToDB) {
+		if (_proxy == null)
+			_proxy = _sheet.createCell(_rowIdx, _columnIdx);
+		_proxy.setCellStyle(cellStyle, connection, updateToDB);
 	}
 
 	@Override
@@ -171,6 +181,21 @@ class CellProxy extends AbstractCellAdv {
 			style = sheet.getBook().getDefaultCellStyle();
 		}
 		return style;
+	}
+
+	@Override
+	public void setSemantics(SSemantics.Semantics semantics) {
+		if (_proxy == null)
+			_proxy = _sheet.createCell(_rowIdx, _columnIdx);
+		_proxy.setSemantics(semantics);
+	}
+
+	@Override
+	public SSemantics.Semantics getSemantics() {
+		if (_proxy != null) {
+			return _proxy.getSemantics();
+		}
+		return SSemantics.Semantics.NORMAL;
 	}
 
 	@Override

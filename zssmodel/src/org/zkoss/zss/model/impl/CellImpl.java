@@ -43,8 +43,6 @@ import org.zkoss.zss.model.util.Validations;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;
@@ -74,6 +72,7 @@ public class CellImpl extends AbstractCellAdv {
 	transient private int _column;
 	private CellValue _localValue = null;
 	private AbstractCellStyleAdv _cellStyle;
+	private SSemantics.Semantics _cellSemantics;
 	private FormulaResultCellValue _formulaResultValue;// cache
     transient private AbstractSheetAdv _sheet;
     //use another object to reduce object reference size
@@ -197,13 +196,23 @@ public class CellImpl extends AbstractCellAdv {
 
     @Override
     public void setCellStyle(SCellStyle cellStyle, boolean updateToDB) {
-        if (cellStyle != null) {
+        setCellStyle(cellStyle, null, updateToDB);
+	}
+
+	@Override
+	public void setCellStyle(SCellStyle cellStyle, AutoRollbackConnection connection, boolean updateToDB) {
+		if (cellStyle != null) {
 			Validations.argInstance(cellStyle, AbstractCellStyleAdv.class);
 		}
 		this._cellStyle = (AbstractCellStyleAdv) cellStyle;
-        if (updateToDB)
-            updateCelltoDB();
-        addCellUpdate(CellAttribute.STYLE); //ZSS-939
+		if (updateToDB) {
+			if (connection != null) {
+				updateCelltoDB(connection);
+			} else {
+				updateCelltoDB();
+			}
+		}
+		addCellUpdate(CellAttribute.STYLE); //ZSS-939
 	}
 
 	@Override
@@ -230,6 +239,16 @@ public class CellImpl extends AbstractCellAdv {
 		}
 
 		return _cellStyle; */
+	}
+
+	@Override
+	public void setSemantics(SSemantics.Semantics cellSemantics) {
+		_cellSemantics = cellSemantics;
+	}
+
+	@Override
+	public SSemantics.Semantics getSemantics() {
+		return _cellSemantics;
 	}
 
 	@Override
