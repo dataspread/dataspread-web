@@ -26,10 +26,4 @@ public interface SSemantics {
 		NORMAL, TABLE_CONTENT, TABLE_HEADER;
 	}
 
-	Semantics getSemantics();
-
-	void setSemantics(Semantics semantics);
-
-	void copyFrom(SSemantics src);
-
 }
