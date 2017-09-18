@@ -197,13 +197,23 @@ public class CellImpl extends AbstractCellAdv {
 
     @Override
     public void setCellStyle(SCellStyle cellStyle, boolean updateToDB) {
-        if (cellStyle != null) {
+        setCellStyle(cellStyle, null, updateToDB);
+	}
+
+	@Override
+	public void setCellStyle(SCellStyle cellStyle, AutoRollbackConnection connection, boolean updateToDB) {
+		if (cellStyle != null) {
 			Validations.argInstance(cellStyle, AbstractCellStyleAdv.class);
 		}
 		this._cellStyle = (AbstractCellStyleAdv) cellStyle;
-        if (updateToDB)
-            updateCelltoDB();
-        addCellUpdate(CellAttribute.STYLE); //ZSS-939
+		if (updateToDB) {
+			if (connection != null) {
+				updateCelltoDB(connection);
+			} else {
+				updateCelltoDB();
+			}
+		}
+		addCellUpdate(CellAttribute.STYLE); //ZSS-939
 	}
 
 	@Override
