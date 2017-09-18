@@ -41,11 +41,16 @@ public abstract class AbstractFunctionPtg extends OperationPtg {
     /** All external functions have function index 255 */
     private static final short FUNCTION_INDEX_EXTERNAL = 255;
 
-    private final byte returnClass;
-    private final byte[] paramClass;
+    private byte returnClass;
+    private byte[] paramClass;
 
-    private final byte _numberOfArgs;
-    private final short _functionIndex;
+    private byte _numberOfArgs;
+    private short _functionIndex;
+
+    AbstractFunctionPtg()
+    {
+        /* For seralization */
+    }
 
     protected AbstractFunctionPtg(int functionIndex, int pReturnClass, byte[] paramTypes, int nParams) {
         _numberOfArgs = (byte) nParams;

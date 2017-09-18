@@ -6,7 +6,7 @@
 [DataSpread][dataspread-github] is a _spreadsheet-database hybrid system_, with a spreadsheet frontend, and a database backend. Thus, DataSpread inherits the flexibility and ease-of-use of spreadsheets, as well as the scalability and power of databases. A paper describing DataSpread's architecture, design decisions, and optimization can be found [here][dataspread-site]. DataSpread is a multi-year project, supported by the National Science Foundation via award number 1633755.
 
 ### Version
-The current version is 0.1.
+The current version is 0.3.
 
 ### Features
 DataSpread is built using [PostgreSQL][postgressite] and [ZKSpreadsheet][zksite], an open-source web-based spreadsheet tool.
