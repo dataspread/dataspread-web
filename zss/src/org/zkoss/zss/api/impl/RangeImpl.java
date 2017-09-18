@@ -142,6 +142,7 @@ public class RangeImpl implements Range{
 
 	public Range paste(Range dest, boolean cut) {
 		SRange r = _range.copy(((RangeImpl)dest).getNative(), cut);
+		this.clearContents();//clear src cell contents as pasted to new dest
 		return new RangeImpl(r, dest.getSheet());
 	}
 	
