@@ -29,6 +29,11 @@ public final class FuncVarPtg extends AbstractFunctionPtg{
     public final static byte sid  = 0x22;
     private final static int  SIZE = 4;
 
+    FuncVarPtg()
+    {
+        /* For seralization */
+    }
+
     /**
      * Single instance of this token for 'sum() taking a single argument'
      */

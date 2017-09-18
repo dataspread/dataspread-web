@@ -34,6 +34,7 @@ public abstract class AreaPtgBase extends OperandPtg implements AreaI {
 	 * TODO - (May-2008) fix subclasses of AreaPtg 'AreaN~' which are used in shared formulas.
 	 * see similar comment in ReferencePtg
 	 */
+
 	protected final RuntimeException notImplemented() {
 		return new RuntimeException("Coding Error: This method should never be called. This ptg should be converted");
 	}
