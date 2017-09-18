@@ -76,17 +76,17 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
 	@Override
 	public Set<Ref> getDependents(Ref precedent) {
         String selectQuery = "WITH RECURSIVE deps AS (" +
-                "  SELECT dep_bookname, dep_sheetname, dep_range FROM dependency" +
+                "  SELECT dep_bookname, dep_sheetname, dep_range::text FROM dependency" +
                 "  WHERE  bookname  = ?" +
                 "  AND    sheetname =  ?" +
                 "  AND    range ??# ?" +
-                "  UNION ALL" +
-                "  SELECT d.dep_bookname, d.dep_sheetname, d.dep_range FROM dependency d" +
+                "  UNION " +
+                "  SELECT d.dep_bookname, d.dep_sheetname, d.dep_range::text FROM dependency d" +
                 "    INNER JOIN deps t" +
                 "    ON  d.bookname   =  t.dep_bookname" +
                 "    AND  d.sheetname =  t.dep_sheetname" +
-                "    AND d.range      ??# t.dep_range)" +
-                " SELECT * FROM deps";
+                "    AND d.range      ??# t.dep_range::box)" +
+                " SELECT dep_bookname, dep_sheetname, dep_range::box FROM deps";
         return getDependentsQuery(precedent, selectQuery);
 	}
 
