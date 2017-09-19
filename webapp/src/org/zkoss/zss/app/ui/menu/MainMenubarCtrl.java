@@ -66,6 +66,10 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 	@Wire
 	Menuitem about;
 	@Wire
+	Menuitem guide;
+	@Wire
+	Menuitem document;
+	@Wire
 	Menuitem zssmark;
 	@Wire
 	Menuitem changeUsername;
@@ -171,7 +175,8 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 		
 		// set about url
         about.setHref(Library.getProperty("zssapp.menu.about.url", "http://dataspread.github.io"));
-
+        guide.setHref(Library.getProperty("zssapp.menu.guide.url", "https://github.com/dataspread/dataspread-web/wiki/Quick-Start-Guide"));
+        document.setHref(Library.getProperty("zssapp.menu.document.url", "https://github.com/dataspread/dataspread-web/wiki"));
         // zss title
 		if(evalOnly == null) 
 			evalOnly = Boolean.FALSE;

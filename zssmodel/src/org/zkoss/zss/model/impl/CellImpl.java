@@ -111,15 +111,13 @@ public class CellImpl extends AbstractCellAdv {
 				//		{
 
 				//		}
-
-
-				in.close();
-			} catch (Exception e) {
-				// data that cannot be parsed is considered as a string value.
-				cellImpl = new CellImpl(row, column);
-				cellImpl._localValue = new CellValue(new String(inByteArray));
-			}
-		}
+			in.close();
+		} catch (Exception e) {
+			System.out.println("Parsing  error :" + e.getMessage());
+            // data that cannot be parsed is considered as a string value.
+			cellImpl = new CellImpl(row, column);
+			cellImpl._localValue = new CellValue(new String(inByteArray));
+        }
 		cellImpl._sheet = (AbstractSheetAdv) sheet;
 		kryoPool.release(kryo);
 		return cellImpl;
