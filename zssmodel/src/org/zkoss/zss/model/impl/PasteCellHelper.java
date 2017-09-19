@@ -486,13 +486,13 @@ public class PasteCellHelper { //ZSS-693: promote visibility
 					switch (option.getPasteType()) {
 						case ALL:
 							updatedValue = pasteValue(buffer, destCell, cutFrom, true, rowOffset, columnOffset, transpose, row, col, connection, true);
-							pasteStyle(buffer, destCell, true);//border,comment
+							pasteStyle(buffer, destCell, true, connection, true);//border,comment
 							buffer.applyHyperlink(destCell);
 							buffer.applyComment(destCell);
 							break;
 						case ALL_EXCEPT_BORDERS:
 							updatedValue = pasteValue(buffer, destCell, cutFrom, true, rowOffset, columnOffset, transpose, row, col, connection, true);
-							pasteStyle(buffer, destCell, false);//border,comment
+							pasteStyle(buffer, destCell, false, connection, true);//border,comment
 							buffer.applyHyperlink(destCell);
 							buffer.applyComment(destCell);
 							break;
@@ -501,7 +501,7 @@ public class PasteCellHelper { //ZSS-693: promote visibility
 							break;
 						case FORMATS:
 							//paste format should paste all style
-							pasteStyle(buffer, destCell, true);
+							pasteStyle(buffer, destCell, true, connection, true);
 							break;
 						case FORMULAS_AND_NUMBER_FORMATS:
 							pasteFormat(buffer, destCell);
@@ -532,12 +532,12 @@ public class PasteCellHelper { //ZSS-693: promote visibility
 		}
 	}
 
-	private void pasteStyle(CellBuffer buffer, SCell destCell, boolean pasteBorder) {
+	private void pasteStyle(CellBuffer buffer, SCell destCell, boolean pasteBorder, AutoRollbackConnection connection, boolean updateToDB) {
 		if(destCell.getCellStyle()==_defaultStyle && buffer.getStyle()==_defaultStyle){
 			return;
 		}
 		if(pasteBorder){
-			destCell.setCellStyle(buffer.getStyle());
+			destCell.setCellStyle(buffer.getStyle(), connection, updateToDB);
 		}else{
 			SCellStyle newStyle = _book.createCellStyle(buffer.getStyle(), true);
 			SCellStyle destStyle = destCell.getCellStyle();

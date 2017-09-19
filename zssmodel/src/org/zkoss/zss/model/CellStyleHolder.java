@@ -1,4 +1,7 @@
 package org.zkoss.zss.model;
+
+import org.model.AutoRollbackConnection;
+
 /**
  * the style holder interface
  * @author Dennis
@@ -18,7 +21,9 @@ public interface CellStyleHolder {
 	void setCellStyle(SCellStyle cellStyle);
 
 	void setCellStyle(SCellStyle cellStyle, boolean updateToDB);
-	
+
+	void setCellStyle(SCellStyle cellStyle, AutoRollbackConnection connection, boolean updateToDB);
+
 	/**
 	 * Get the cell style locally or look up from the parent
 	 * @param local true to get the local style only 
