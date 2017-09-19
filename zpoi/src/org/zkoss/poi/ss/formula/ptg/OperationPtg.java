@@ -28,6 +28,10 @@ public abstract class OperationPtg extends Ptg {
     private boolean isOverrided = false;
     private int overrideTableNum = 0;
 
+    public OperationPtg(){
+        /* For seralization */
+    }
+
     public abstract OperationPtg getInstance();
 
     /**

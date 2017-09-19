@@ -26,8 +26,11 @@ import org.zkoss.poi.util.LittleEndianOutput;
 public final class MemFuncPtg extends OperandPtg {
 
 	public final static byte sid = 0x29;
-	private final int field_1_len_ref_subexpression;
+	private int field_1_len_ref_subexpression;
 
+	public MemFuncPtg(){
+		/* For seralization */
+	}
 	/**
 	 * Creates new function pointer from a byte array usually called while
 	 * reading an excel file.

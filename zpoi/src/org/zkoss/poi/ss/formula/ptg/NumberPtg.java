@@ -40,9 +40,8 @@ public final class NumberPtg extends ScalarConstantPtg {
 		this(in.readDouble());
 	}
 
-	NumberPtg()
-	{
-
+	NumberPtg() {
+        /* For seralization */
 	}
 
 	/**

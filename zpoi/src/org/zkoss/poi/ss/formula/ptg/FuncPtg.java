@@ -32,6 +32,10 @@ public final class FuncPtg extends AbstractFunctionPtg {
     public final static byte sid  = 0x21;
     public final static int  SIZE = 3;
 
+    public FuncPtg(){
+        /* For seralization */
+    }
+
     public static FuncPtg create(LittleEndianInput in) {
         return create(in.readUShort());
     }

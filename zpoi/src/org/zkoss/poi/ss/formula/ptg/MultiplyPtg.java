@@ -31,7 +31,9 @@ public final class MultiplyPtg extends ValueOperatorPtg {
 //    private MultiplyPtg() {
 //    	// enforce singleton
 //    }  
-    public MultiplyPtg() {};
+    public MultiplyPtg() {
+        /* For seralization */
+    }
 
     @Override
     public OperationPtg getInstance() {

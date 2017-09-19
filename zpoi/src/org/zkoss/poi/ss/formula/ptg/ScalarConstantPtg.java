@@ -24,7 +24,12 @@ package org.zkoss.poi.ss.formula.ptg;
  * @author Josh Micich
  */
 public abstract class ScalarConstantPtg extends Ptg {
-	public final boolean isBaseToken() {
+
+    public ScalarConstantPtg(){
+        /* For seralization */
+    }
+
+    public final boolean isBaseToken() {
 		return true;
 	}
 

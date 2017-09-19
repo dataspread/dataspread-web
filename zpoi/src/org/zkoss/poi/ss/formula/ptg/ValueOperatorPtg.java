@@ -28,6 +28,10 @@ import org.zkoss.poi.util.LittleEndianOutput;
  */
 public abstract class ValueOperatorPtg extends OperationPtg {
 
+
+    public ValueOperatorPtg(){
+        /* For seralization */
+    }
 	/**
 	 * All Operator <tt>Ptg</tt>s are base tokens (i.e. are not RVA classified)
 	 */

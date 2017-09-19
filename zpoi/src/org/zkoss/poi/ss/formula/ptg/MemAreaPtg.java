@@ -26,8 +26,13 @@ import org.zkoss.poi.util.LittleEndianOutput;
 public final class MemAreaPtg extends OperandPtg {
 	public final static short sid = 0x26;
 	private final static int SIZE = 7;
-	private final int field_1_reserved;
-	private final int field_2_subex_len;
+	private int field_1_reserved;
+	private int field_2_subex_len;
+
+
+    public MemAreaPtg(){
+        /* For seralization */
+    }
 
 	/** Creates new MemAreaPtg */
 
