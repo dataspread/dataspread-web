@@ -29,6 +29,10 @@ package org.zkoss.poi.ss.formula.ptg;
  */
 public abstract class ControlPtg extends Ptg {
 
+	public ControlPtg(){
+		/* For seralization */
+	}
+
 	public boolean isBaseToken() {
 		return true;
 	}

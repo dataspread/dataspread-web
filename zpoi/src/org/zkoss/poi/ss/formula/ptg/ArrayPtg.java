@@ -49,14 +49,19 @@ public final class ArrayPtg extends Ptg {
 	public static final int PLAIN_TOKEN_SIZE = 1+RESERVED_FIELD_LEN;
 
 	// 7 bytes of data (stored as an int, short and byte here)
-	private final int _reserved0Int;
-	private final int _reserved1Short;
-	private final int _reserved2Byte;
+	private int _reserved0Int;
+	private int _reserved1Short;
+	private int _reserved2Byte;
 
 	// data from these fields comes after the Ptg data of all tokens in current formula
-	private final int  _nColumns;
-	private final int _nRows;
-	private final Object[] _arrayValues;
+	private int  _nColumns;
+	private int _nRows;
+	private Object[] _arrayValues;
+
+
+    public ArrayPtg(){
+        /* For seralization */
+    }
 
 	ArrayPtg(int reserved0, int reserved1, int reserved2, int nColumns, int nRows, Object[] arrayValues) {
 		_reserved0Int = reserved0;

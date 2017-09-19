@@ -24,6 +24,10 @@ public class DeferredNamePtg extends OperandPtg implements WorkbookDependentForm
 
 	private String namename;
 
+    public DeferredNamePtg(){
+        /* For seralization */
+    }
+
 	public DeferredNamePtg(String name) {
 		this.namename = name;
 	}

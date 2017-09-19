@@ -37,6 +37,9 @@ public final class Ref3DPtg extends RefPtgBase implements WorkbookDependentFormu
     private final static int  SIZE = 7; // 6 + 1 for Ptg
     private int             field_1_index_extern_sheet;
 
+    public Ref3DPtg(){
+        /* For seralization */
+    }
 
     public Ref3DPtg(LittleEndianInput in)  {
         field_1_index_extern_sheet = in.readShort();

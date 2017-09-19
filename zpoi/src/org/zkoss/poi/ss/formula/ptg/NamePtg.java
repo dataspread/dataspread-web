@@ -34,6 +34,10 @@ public class NamePtg extends OperandPtg implements WorkbookDependentFormula {
 	private int field_1_label_index;
 	private short field_2_zero; // reserved must be 0
 
+	public NamePtg(){
+		/* For seralization */
+	}
+
 	/**
 	 * @param nameIndex zero-based index to name within workbook
 	 */

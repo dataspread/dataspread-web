@@ -26,6 +26,11 @@ import org.zkoss.poi.util.LittleEndianInput;
 public final class AreaNPtg extends Area2DPtgBase {
 	public final static short sid = 0x2D;
 
+
+    public AreaNPtg(){
+        /* For seralization */
+    }
+
 	public AreaNPtg(LittleEndianInput in)  {
 		super(in);
 	}

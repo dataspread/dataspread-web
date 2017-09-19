@@ -26,6 +26,10 @@ import org.zkoss.poi.util.LittleEndianInput;
 public final class RefNPtg extends Ref2DPtgBase {
 	public final static byte sid = 0x2C;
 
+	public RefNPtg(){
+		/* For seralization */
+	}
+
 	public RefNPtg(LittleEndianInput in)  {
 		super(in);
 	}

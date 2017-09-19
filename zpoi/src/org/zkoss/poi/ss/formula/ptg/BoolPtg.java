@@ -36,9 +36,8 @@ public final class BoolPtg extends ScalarConstantPtg {
 
 	private boolean _value;
 
-	BoolPtg()
-	{
-
+	BoolPtg() {
+        /* For seralization */
 	}
 
 	private BoolPtg(boolean b) {

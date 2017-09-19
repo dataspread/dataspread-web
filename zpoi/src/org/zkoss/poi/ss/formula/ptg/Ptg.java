@@ -45,7 +45,9 @@ public abstract class Ptg implements Serializable{
 	private static final long serialVersionUID = -5877373845194532264L;
 	public static final Ptg[] EMPTY_PTG_ARRAY = { };
 
-
+	public Ptg(){
+		/* For seralization */
+	}
 	/**
 	 * Reads <tt>size</tt> bytes of the input stream, to create an array of <tt>Ptg</tt>s.
 	 * Extra data (beyond <tt>size</tt>) may be read if and <tt>ArrayPtg</tt>s are present.
