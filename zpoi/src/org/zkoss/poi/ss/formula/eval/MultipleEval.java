@@ -10,6 +10,11 @@ public final class MultipleEval implements ValueEval {
     private int _width;
     private int _height;
 
+    MultipleEval()
+    {
+
+    }
+
     public MultipleEval(int width, int height, AreaEval value) {
         _value = value;
         _width = width;

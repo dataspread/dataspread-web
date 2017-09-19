@@ -29,7 +29,12 @@ public final class StringEval implements StringValueEval, HyperlinkEval {
 
 	public static final StringEval EMPTY_INSTANCE = new StringEval("");
 
-	private final String _value;
+	private String _value;
+
+	StringEval()
+	{
+
+	}
 
 	public StringEval(Ptg ptg) {
 		this(((StringPtg) ptg).getValue());

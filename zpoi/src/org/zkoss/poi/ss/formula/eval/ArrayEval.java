@@ -26,14 +26,19 @@ import org.zkoss.poi.ss.util.NumberToTextConverter;
  */
 public class ArrayEval implements AreaEval {
 
-	private final SheetRefEvaluator _evaluator; //ZSS-962
+	private SheetRefEvaluator _evaluator; //ZSS-962
 
-	private final int _firstRow;
-	private final int _firstCol;
-	private final int _lastRow;
-	private final int _lastCol;
+	private int _firstRow;
+	private int _firstCol;
+	private int _lastRow;
+	private int _lastCol;
 	
-	private final ValueEval[][] _values; //[row][col] -> value
+	private ValueEval[][] _values; //[row][col] -> value
+
+	ArrayEval()
+	{
+
+	}
 
 	private ArrayEval(Object[][] srcvalues, int firstRow, int firstColumn, int lastRow, int lastColumn, SheetRefEvaluator evaluator) {
 		_evaluator = evaluator; //ZSS-962

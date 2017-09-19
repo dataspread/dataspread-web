@@ -24,17 +24,22 @@ import org.zkoss.poi.ss.formula.ptg.AreaI;
  */
 public abstract class AreaEvalBase implements AreaEval {
 
-	private final int _firstColumn;
-	private final int _firstRow;
-	private final int _lastColumn;
-	private final int _lastRow;
-	private final int _nColumns;
-	private final int _nRows;
+	private int _firstColumn;
+	private int _firstRow;
+	private int _lastColumn;
+	private int _lastRow;
+	private int _nColumns;
+	private int _nRows;
 	
-	private final boolean _firstColRel;
-	private final boolean _lastColRel;
-	private final boolean _firstRowRel;
-	private final boolean _lastRowRel;
+	private boolean _firstColRel;
+	private boolean _lastColRel;
+	private boolean _firstRowRel;
+	private boolean _lastRowRel;
+
+	AreaEvalBase()
+	{
+
+	}
 
 //	protected AreaEvalBase(int firstRow, int firstColumn, int lastRow, int lastColumn) { 
 //		this(firstRow, firstColumn, lastRow, lastColumn, false, false, false, false); 
