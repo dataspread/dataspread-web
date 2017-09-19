@@ -2,11 +2,7 @@ package org.zkoss.zss.model.impl;
 
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
-import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.SBorder;
-import org.zkoss.zss.model.SFont;
-import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.range.impl.StyleUtilNoDB;
+import org.zkoss.zss.model.*;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -234,7 +230,6 @@ public class TOM_Model extends Model {
                 .append(tableName)
                 .append(" WHERE oid = ANY (?) ");
 
-
         AutoRollbackConnection connection = context.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
             // Array inArrayRow = context.getConnection().createArrayOf(pkColumnType, rowIds);
@@ -250,13 +245,8 @@ public class TOM_Model extends Model {
                     byte[] data = columnNames.get(colIds[i]).getBytes();
                     if (data != null) {
                         AbstractCellAdv cell = CellImpl.fromBytes(sheet, fetchRegion.getRow(), col, data);
+                        cell.setSemantics(SSemantics.Semantics.TABLE_HEADER);
                         cells.add(cell);
-
-                        /* Header formatting */
-                        StyleUtilNoDB.setBackColor(sheet.getBook(), cell, "#99ccff");
-                        StyleUtilNoDB.setFontBoldWeight(sheet.getBook(), cell, SFont.Boldweight.BOLD);
-                        StyleUtilNoDB.setBorder(sheet.getBook(), cell, "#000000", SBorder.BorderType.MEDIUM);
-                        StyleUtilNoDB.setLocked(sheet.getBook(), cell, true);
                     }
                 }
             }
@@ -267,12 +257,9 @@ public class TOM_Model extends Model {
                 for (int i = 0; i < colIds.length; i++) {
                     int col = col_map.get(columnNames.get(colIds[i]));
                     byte[] data = rs.getBytes(i + 2);
-                    if (data != null) {
-                        AbstractCellAdv cell = CellImpl.fromBytes(sheet, row, col, data);
-                        cells.add(cell);
-                        StyleUtilNoDB.setBackColor(sheet.getBook(), cell, "#99ccff");
-                        StyleUtilNoDB.setBorder(sheet.getBook(), cell, "#000000", SBorder.BorderType.MEDIUM);
-                    }
+                    AbstractCellAdv cell = CellImpl.fromBytes(sheet, row, col, data);
+                    cell.setSemantics(SSemantics.Semantics.TABLE_CONTENT);
+                    cells.add(cell);
                 }
             }
             rs.close();

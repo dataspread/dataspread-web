@@ -5557,7 +5557,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 					}
 				}
 			}
-			SCellStyle cellStyle = sheet.getCell(row, col).getCellStyle();
+			SCellStyle cellStyle = cell.getCellStyle();
 			CellFormatHelper cfh = new CellFormatHelper(sheet, row, col, getMergeMatrixHelper(sheet));
 			StringBuffer doubleBorder = new StringBuffer(8);
 			//ZSS-945: optimize calling CellFormatHelper#getFormatResult()
@@ -5569,7 +5569,10 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 
 			//ZSS-977
 			STable table = ((AbstractSheetAdv) sheet).getTableByRowCol(row, col);
-			SCellStyle tbCellStyle = table != null ? ((AbstractTableAdv) table).getCellStyle(row, col) : null;
+			//Use DataSpread table instead
+			//SCellStyle tbCellStyle = table != null ? ((AbstractTableAdv) table).getCellStyle(row, col) : null;
+			SSemantics.Semantics semantics = cell.getSemantics();
+			SCellStyle tbCellStyle = SemanticsHelper.styleForSemantics(_book, semantics);
 
 			//style attr
 			if (updateStyle) {
