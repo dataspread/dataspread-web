@@ -133,6 +133,10 @@
 			<menupopup>
 				<menuitem id="about" label="${c:l('zssapp.mainMenu.help.about')}"
 					href="http://dataspread.github.io/" target="_blank" sclass="zsmenuitem-app appmenu" />
+				<menuitem id="guide" label="${c:l('zssapp.mainMenu.help.guide')}"
+						  href="https://github.com/dataspread/dataspread-web/wiki/Quick-Start-Guide" target="_blank" sclass="zsmenuitem-app appmenu" />
+                <menuitem id="document" label="${c:l('zssapp.mainMenu.help.document')}"
+                          href="https://github.com/dataspread/dataspread-web/wiki" target="_blank" sclass="zsmenuitem-app appmenu" />
 				<!--<menuitem id="contact" label="${c:l('zssapp.mainMenu.help.contact')}"-->
 					<!--href="http://www.zkoss.org/support/about/contact" target="_blank" sclass="zsmenuitem-app appmenu" />-->
 			</menupopup>
