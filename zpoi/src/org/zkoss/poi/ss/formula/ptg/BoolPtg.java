@@ -34,7 +34,12 @@ public final class BoolPtg extends ScalarConstantPtg {
 	private static final BoolPtg FALSE = new BoolPtg(false);
 	private static final BoolPtg TRUE = new BoolPtg(true);
 
-	private final boolean _value;
+	private boolean _value;
+
+	BoolPtg()
+	{
+
+	}
 
 	private BoolPtg(boolean b) {
 		_value = b;
