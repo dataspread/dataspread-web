@@ -47,9 +47,13 @@ public final class ErrPtg extends ScalarConstantPtg {
 
     public static final short sid  = 0x1c;
     private static final int  SIZE = 2;
-    private final int field_1_error_code;
+    private int field_1_error_code;
 
     /** Creates new ErrPtg */
+    ErrPtg()
+    {
+
+    }
 
     private ErrPtg(int errorCode) {
         if(!ErrorConstants.isValidCode(errorCode)) {
