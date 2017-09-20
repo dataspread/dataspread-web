@@ -8,13 +8,16 @@ import javax.servlet.ServletContextListener;
 import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.logging.Logger;
 
 /**
  * Created by Mangesh Bendre on 4/22/2016.
  */
 public class DBHandler implements ServletContextListener {
+    private static final Logger logger = Logger.getLogger(DBListener.class.getName());
     public static DBHandler instance;
     private DataSource ds;
+    DBListener dbListener;
 
     public static void connectToDB(String url, String driver, String userName, String password) {
         DBHandler.instance = new DBHandler();
@@ -70,6 +73,8 @@ public class DBHandler implements ServletContextListener {
             createTableOrders(dbContext);
             createDependencyTable(dbContext);
             connection.commit();
+            dbListener = new DBListener();
+            dbListener.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -77,7 +82,7 @@ public class DBHandler implements ServletContextListener {
 
     @Override
     public void contextDestroyed(ServletContextEvent servletContextEvent) {
-
+        dbListener.stopListener();
     }
 
     private void createBookTable(DBContext dbContext)
