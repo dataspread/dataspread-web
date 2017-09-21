@@ -42,6 +42,7 @@ import java.awt.print.Book;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
 
 /**
  * @author dennis
@@ -52,8 +53,8 @@ public class BookImpl extends AbstractBookAdv{
 	 * the sheet which is destroying now.
 	 */
 	/*package*/ final static ThreadLocal<SSheet> destroyingSheet = new ThreadLocal<SSheet>();
+	private static final Logger logger = Logger.getLogger(BookImpl.class.getName());
 	private static final long serialVersionUID = 1L;
-	private static final Log _logger = Log.lookup(BookImpl.class);
 	private final static Random _random = new Random(System.currentTimeMillis());
 	private final static AtomicInteger _bookCount = new AtomicInteger();
 	private final List<AbstractSheetAdv> _sheets = new ArrayList<AbstractSheetAdv>();
@@ -1101,6 +1102,7 @@ public class BookImpl extends AbstractBookAdv{
 
 		// Load Schema
 		String bookTable = getId();
+		logger.info("Loading " + getBookName());
 		String query = "SELECT * FROM sheets WHERE booktable = ? ORDER BY sheetindex";
 		String updateLastOpened = "UPDATE books SET lastopened = now() 	WHERE bookname = ?";
 
