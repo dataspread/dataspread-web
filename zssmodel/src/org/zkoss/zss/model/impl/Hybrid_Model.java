@@ -3,11 +3,14 @@ package org.zkoss.zss.model.impl;
 import org.model.AutoRollbackConnection;
 import org.model.BlockStore;
 import org.model.DBContext;
+import org.model.DBHandler;
 import org.zkoss.util.Pair;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 
+import java.io.IOException;
+import java.io.Reader;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
@@ -724,6 +727,36 @@ public class Hybrid_Model extends RCV_Model {
             }
         }
         TOM_Mapping.instance.pushUpdates(dbContext, tomModel.getTableName());
+    }
+
+    @Override
+    public void importSheet(Reader reader, char delimiter) throws IOException
+    {
+        logger.info("Importing sheet");
+        // Create a ROM model and import the file to the ROM model.
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();)
+        {
+            DBContext dbContext = new DBContext(connection);
+            String newTableName = this.tableName + "_"
+                    + Integer.toHexString(++metaDataBlock.romTableIdentifier);
+            Model model = Model.CreateModel(dbContext, sheet, ModelType.ROM_Model, newTableName);
+
+            connection.commit(); //TODO: pass connection to import
+
+            model.importSheet(reader, delimiter);
+
+            CellRegion range = model.getBounds(dbContext);
+
+            tableModels.add(new Pair<>(range, model));
+            MetaDataBlock.ModelEntry modelEntry = new MetaDataBlock.ModelEntry();
+            modelEntry.range = range;
+            modelEntry.modelType = ModelType.ROM_Model;
+            modelEntry.tableName = model.getTableName();
+            metaDataBlock.modelEntryList.add(modelEntry);
+            bs.putObject(0, metaDataBlock);
+            bs.flushDirtyBlocks(dbContext);
+            connection.commit();
+        }
     }
 
     // Extend the area of x by cellRegion
