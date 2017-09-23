@@ -303,7 +303,7 @@ public class RCV_Model extends Model {
         int rows = rowMapping.size(context);
         int columns = colMapping.size(context);
         if (rows==0 || columns ==0)
-            return null;
+            return new CellRegion(0,0,0,0);
         else
             return new CellRegion(0, 0, rowMapping.size(context) - 1, colMapping.size(context) - 1);
     }
