@@ -730,6 +730,16 @@ public class Hybrid_Model extends RCV_Model {
     }
 
     @Override
+    public CellRegion getBounds(DBContext context) {
+        CellRegion region = super.getBounds(context);
+        for (Pair<CellRegion,Model> tableModel:tableModels)
+            region=tableModel.x.getBoundingBox(region);
+
+        return region;
+    }
+
+
+    @Override
     public void importSheet(Reader reader, char delimiter) throws IOException
     {
         logger.info("Importing sheet");
