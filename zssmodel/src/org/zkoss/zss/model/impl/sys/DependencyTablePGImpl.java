@@ -28,7 +28,7 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
 
 	@Override
 	public void add(Ref dependant, Ref precedent) {
-		String insertQuery = "INSERT INTO dependency VALUES (?,?,?,?,?,?)";
+		String insertQuery = "INSERT INTO dependency VALUES (?,?,?,?,?,?,?)";
 		try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
 			 PreparedStatement stmt = connection.prepareStatement(insertQuery)) {
 			stmt.setString(1, precedent.getBookName());
@@ -41,6 +41,7 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
 			stmt.setObject(6, new PGbox(dependant.getRow(),
 					dependant.getColumn(), dependant.getLastRow(),
 					dependant.getLastColumn()), Types.OTHER);
+			stmt.setBoolean(7, true);
 			stmt.execute();
 			connection.commit();
 		} catch (SQLException e) {
@@ -84,7 +85,8 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
                 "  SELECT d.dep_bookname, d.dep_sheetname, d.dep_range::text FROM dependency d" +
                 "    INNER JOIN deps t" +
                 "    ON  d.bookname   =  t.dep_bookname" +
-                "    AND  d.sheetname =  t.dep_sheetname" +
+                "    AND d.must_expand" +
+				"    AND d.sheetname =  t.dep_sheetname" +
                 "    AND d.range      ??# t.dep_range::box)" +
                 " SELECT dep_bookname, dep_sheetname, dep_range::box FROM deps";
         return getDependentsQuery(precedent, selectQuery);

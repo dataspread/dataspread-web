@@ -734,7 +734,6 @@ public class Hybrid_Model extends RCV_Model {
         CellRegion region = super.getBounds(context);
         for (Pair<CellRegion,Model> tableModel:tableModels)
             region=tableModel.x.getBoundingBox(region);
-
         return region;
     }
 
