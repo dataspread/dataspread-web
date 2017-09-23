@@ -99,7 +99,7 @@ public class CellImpl extends AbstractCellAdv {
 		Kryo kryo = kryoPool.borrow();
 		if (inByteArray == null) {
 			cellImpl = new CellImpl(row, column);
-			// cellImpl._localValue = ??? what should the default value be in the database ??
+			cellImpl._localValue = new CellValue("");
 		}
 		else {
 			try (Input in = new Input(inByteArray)) {
