@@ -31,11 +31,16 @@ public final class NameXPtg extends OperandPtg implements WorkbookDependentFormu
 	private final static int SIZE = 7;
 
 	/** index to REF entry in externsheet record */
-	private final int _sheetRefIndex;
+	private int _sheetRefIndex;
 	/** index to defined name or externname table(1 based) */
-	private final int _nameNumber;
+	private int _nameNumber;
 	/** reserved must be 0 */
-	private final int _reserved;
+	private int _reserved;
+
+
+	public NameXPtg(){
+		/* For seralization */
+	}
 
 	private NameXPtg(int sheetRefIndex, int nameNumber, int reserved) {
 		_sheetRefIndex = sheetRefIndex;

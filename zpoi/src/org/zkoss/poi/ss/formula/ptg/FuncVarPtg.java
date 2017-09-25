@@ -29,6 +29,11 @@ public final class FuncVarPtg extends AbstractFunctionPtg{
     public final static byte sid  = 0x22;
     private final static int  SIZE = 4;
 
+    FuncVarPtg()
+    {
+        /* For seralization */
+    }
+
     /**
      * Single instance of this token for 'sum() taking a single argument'
      */
@@ -37,6 +42,12 @@ public final class FuncVarPtg extends AbstractFunctionPtg{
     private FuncVarPtg(int functionIndex, int returnClass, byte[] paramClasses, int numArgs) {
         super(functionIndex, returnClass, paramClasses, numArgs);
     }
+
+    @Override
+    public OperationPtg getInstance() {
+        return null;
+    }
+
 
     /**Creates new function pointer from a byte array
      * usually called while reading an excel file.

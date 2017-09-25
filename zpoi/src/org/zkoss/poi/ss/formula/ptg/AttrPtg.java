@@ -33,13 +33,13 @@ import org.zkoss.poi.util.LittleEndianOutput;
 public final class AttrPtg extends ControlPtg {
     public final static byte sid  = 0x19;
     private final static int  SIZE = 4;
-    private final byte _options;
-    private final short _data;
+    private byte _options;
+    private short _data;
 
     /** only used for tAttrChoose: table of offsets to starts of args */
-    private final int[] _jumpTable;
+    private int[] _jumpTable;
     /** only used for tAttrChoose: offset to the tFuncVar for CHOOSE() */
-    private final int   _chooseFuncOffset;
+    private int   _chooseFuncOffset;
 
     // flags 'volatile' and 'space', can be combined.
     // OOO spec says other combinations are theoretically possible but not likely to occur.
@@ -52,6 +52,10 @@ public final class AttrPtg extends ControlPtg {
     private static final BitField space        = BitFieldFactory.getInstance(0x40);
 
     public static final AttrPtg SUM = new AttrPtg(0x0010, 0, null, -1);
+
+    AttrPtg() {
+		/* For seralization */
+    }
 
     public static final class SpaceType {
         private SpaceType() {

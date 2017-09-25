@@ -87,6 +87,7 @@ final class OperationEvaluatorFactory {
 			throw new IllegalArgumentException("ptg must not be null");
 		}
 
+
 		//ZSS-933
 		if (ptg instanceof UnionPtg) {
 			return new UnionEval(args);

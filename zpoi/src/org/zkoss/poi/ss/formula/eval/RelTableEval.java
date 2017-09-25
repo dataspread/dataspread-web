@@ -24,11 +24,16 @@ import java.util.Arrays;
  */
 public class RelTableEval implements TwoDEval {
 
-	private final int _nRows;
-	private final int _nColumns;
+	private int _nRows;
+	private int _nColumns;
 	
-	private final ValueEval[][] _values;
-	private final String[] _attributes;
+	private ValueEval[][] _values;
+	private String[] _attributes;
+
+	RelTableEval()
+	{
+
+	}
 
 	public RelTableEval(ValueEval[][] values, String[] attributes, int nRows, int nColumns) {
 		_nRows = nRows;

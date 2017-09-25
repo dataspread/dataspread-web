@@ -33,13 +33,17 @@ import org.zkoss.zss.app.impl.BookManagerImpl;
 import org.zkoss.zss.app.impl.CollaborationInfoImpl;
 import org.zkoss.zss.app.repository.BookRepositoryFactory;
 import org.zkoss.zss.app.repository.impl.BookUtil;
+import org.zkoss.zss.app.ui.AppEvts;
 import org.zkoss.zss.app.ui.UiUtil;
 import org.zkoss.zss.model.impl.BookImpl;
 import org.zkoss.zul.*;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -48,7 +52,8 @@ import java.util.*;
  *
  */
 public class OpenManageBookCtrl extends DlgCtrlBase{
-	public final static String ARG_BOOKINFO = "bookinfo";
+    public static final String ZSS_USERNAME = "zssUsername";
+    public final static String ARG_BOOKINFO = "bookinfo";
 	public final static String ARG_BOOK = "book";
 	public static final String ON_OPEN = "onOpen";
 	private static final long serialVersionUID = 1L;
@@ -83,6 +88,17 @@ public class OpenManageBookCtrl extends DlgCtrlBase{
 	}
 	
 	private void reloadBookModel(){
+	    String username = "guest";
+        Cookie[] cookies = ((HttpServletRequest) Executions.getCurrent().getNativeRequest()).getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equals(ZSS_USERNAME)) {
+                    username = cookie.getValue();
+                    break;
+                }
+            }
+        }
+
 		bookListModel = new ListModelList<Map<String,Object>>();
 
 		String bookListQuery = "SELECT booktable FROM users WHERE username = ?;";
@@ -92,7 +108,7 @@ public class OpenManageBookCtrl extends DlgCtrlBase{
              PreparedStatement stmt = connection.prepareStatement(fetchBookQuery))
 		{
 			ArrayList<String> booklist = new ArrayList<>();
-			getstmt.setString(1, collaborationInfo.getUsername());
+			getstmt.setString(1, username);
 			ResultSet resultSet = getstmt.executeQuery();
 			while (resultSet.next()) {
 				booklist.add(resultSet.getString(1));
@@ -112,6 +128,9 @@ public class OpenManageBookCtrl extends DlgCtrlBase{
 				Map<String,Object> data = new HashMap<String,Object>();
 				data.put("name", rs.getString("bookname"));
 				data.put("booktable", rs.getString("booktable"));
+				data.put("lastopened",
+						new SimpleDateFormat("MM/dd/yy HH:mm")
+								.format(rs.getTimestamp("lastopened")));
 				bookListModel.add(data);
 			}
 			getstmt.close();
@@ -246,7 +265,6 @@ public class OpenManageBookCtrl extends DlgCtrlBase{
 	}
 	
 	private Book loadBook(String bookName, String bookTable) {
-		Importer importer = Importers.getImporter();
 		Book book = new org.zkoss.zss.api.model.impl.BookImpl(bookName);
 		book.getInternalBook().setIdAndLoad(bookTable);
 		return book;

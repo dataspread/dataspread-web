@@ -42,6 +42,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
 /**
@@ -66,6 +67,7 @@ public class SheetImpl extends AbstractSheetAdv {
         }
     }
 
+    /* Shoud be more then prefetch region */
     final int CACHE_SIZE = 50000;
     final int CACHE_EVICT = 100;
     private final String _id;
@@ -87,7 +89,7 @@ public class SheetImpl extends AbstractSheetAdv {
     //ZSS-855
     private final List<STable> _tables = new ArrayList<STable>();
     Model dataModel;
-    Map<CellRegion, AbstractCellAdv> sheetDataCache;
+    LruCache<CellRegion, AbstractCellAdv> sheetDataCache;
     private AbstractBookAdv _book;
     private String _name;
     private int _dbid;
@@ -108,16 +110,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	public SheetImpl(AbstractBookAdv book,String id){
 		this._book = book;
 		this._id = id;
-        sheetDataCache = new ConcurrentHashMap<CellRegion, AbstractCellAdv>(){
-			@Override
-			public AbstractCellAdv put(CellRegion key, AbstractCellAdv value) {
-				if (this.size()>CACHE_SIZE+CACHE_EVICT) {
-					this.keySet().stream().limit(CACHE_EVICT).collect(Collectors.toList()).stream().forEach(e -> this.remove(e));
-				}
-				return super.put(key, value);
-			}
-		};
-		// Collections.synchronizedMap(new LruCache<CellRegion,AbstractCellAdv>(CACHE_SIZE));
+		sheetDataCache = new LruCache<>(CACHE_SIZE, CACHE_EVICT);
     }
 	
 	protected void checkOwnership(SPicture picture){
@@ -378,11 +371,11 @@ public class SheetImpl extends AbstractSheetAdv {
 			cells.stream().forEach(e -> e.setSheet(this));
 
 
-			cells.stream()
+			/*cells.stream()
 					.filter(e -> e.getType() == SCell.CellType.FORMULA)
 					.forEach(e ->
 							e.setFormulaValue(((FormulaEngineImpl.FormulaExpressionImpl) e.getValue(false))
-									.getFormulaString(), connection, false));
+									.getFormulaString(), connection, false)); */
 
             cells.stream().forEach(e->sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
         }
@@ -534,13 +527,15 @@ public class SheetImpl extends AbstractSheetAdv {
 		if (getBook().hasSchema() && updateToDB)
 		{
 			String bookTable = getBook().getId();
-			String updateWorkbook = "UPDATE " + bookTable + "_workbook " +
-					" SET sheetname = ? WHERE sheetid = ?";
+			String updateWorkbook = "UPDATE sheets " +
+					" SET sheetname = ? WHERE booktable = ? AND sheetid = ?";
 			try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
 				 PreparedStatement updateSheetNameStmt = connection.prepareStatement(updateWorkbook))
 			{
 				updateSheetNameStmt.setString(1,name);
-				updateSheetNameStmt.setInt(2,getDBId());
+				updateSheetNameStmt.setString(2, getBook().getId());
+				updateSheetNameStmt.setInt(3,getDBId());
+
 				updateSheetNameStmt.execute();
 				connection.commit();
 			}

@@ -44,7 +44,12 @@ public final class IntPtg extends ScalarConstantPtg {
 
 	public final static int SIZE = 3;
 	public final static byte sid = 0x1e;
-	private final int field_1_value;
+	private int field_1_value;
+
+	IntPtg()
+	{
+
+	}
 
 	public IntPtg(LittleEndianInput in)  {
 		this(in.readUShort());

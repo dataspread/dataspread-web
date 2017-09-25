@@ -1,8 +1,10 @@
 package org.model;
 
 import java.sql.*;
+import java.util.logging.Logger;
 
 public class AutoRollbackConnection  implements AutoCloseable {
+    private static final Logger logger = Logger.getLogger(DBHandler.class.getName());
     static int openConnections=0;
     private String connectionOpenedAt;
 
@@ -14,7 +16,7 @@ public class AutoRollbackConnection  implements AutoCloseable {
     {
         StackTraceElement[] stack = Thread.currentThread().getStackTrace();
         if (stack.length>3)
-            System.out.println("Opening connection at " + stack[3]);
+            logger.info("Opening connection at " + stack[3]);
         connectionOpenedAt = stack[3].toString();
         this.connection=connection;
         committed = false;
@@ -27,7 +29,7 @@ public class AutoRollbackConnection  implements AutoCloseable {
     public void close(){
         StackTraceElement[] stack = Thread.currentThread().getStackTrace();
         if (stack.length>2)
-            System.out.println("Closing connection at " + stack[2]);
+            logger.info("Closing connection at " + stack[2]);
         if (!committed) {
             // Rollback uncomitted transactions
             try {
@@ -49,7 +51,7 @@ public class AutoRollbackConnection  implements AutoCloseable {
 
         synchronized (AutoRollbackConnection.class) {
             openConnections--;
-            System.out.println("Open connections: " + openConnections);
+            logger.info("Open connections: " + openConnections);
         }
 
     }
@@ -85,7 +87,7 @@ public class AutoRollbackConnection  implements AutoCloseable {
     public void finalize()
     {
         if (connection!=null) {
-            System.err.println("Database Connection left open at " + connectionOpenedAt);
+            logger.warning("Database Connection left open at " + connectionOpenedAt);
             try {
                 connection.close();
             } catch (SQLException e) {

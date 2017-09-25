@@ -466,17 +466,18 @@ public class AppCtrl extends CtrlBase<Component> {
                         break;
                     }
                 }
+            } else {
+                String newName = collaborationInfo.getUsername(username);
+                collaborationInfo.addUsername(newName, newName);
+                if (username == null) {
+                    saveUsername(newName);
+                }
+
+                username = newName;
+                pushAppEvent(AppEvts.ON_AFTER_CHANGED_USERNAME, username);
+                ss.setUserName(username);
             }
 
-            String newName = collaborationInfo.getUsername(username);
-            collaborationInfo.addUsername(newName, newName);
-            if (username == null) {
-                saveUsername(newName);
-            }
-
-            username = newName;
-            pushAppEvent(AppEvts.ON_AFTER_CHANGED_USERNAME, username);
-            ss.setUserName(username);
         }
     }
 
@@ -552,11 +553,17 @@ public class AppCtrl extends CtrlBase<Component> {
                         return;
                     }
 
-                    Book book = importer.imports(m.getStreamData(), name);
+                    // Create a unique name
+
+                    Date dNow = new Date();
+                    SimpleDateFormat ft =
+                            new SimpleDateFormat("_yyyyMMdd_hhmmss_S");
+                    Book book = importer.imports(m.getStreamData(), name.substring(0, name.lastIndexOf('.'))
+                            .concat(ft.format(dNow)));
                     book.setShareScope(EventQueues.APPLICATION);
 
                     setBook(book, null);
-                    collaborationInfo.removeRelationship(username);
+                    collaborationInfo.setRelationship(username, loadedBook);
                     ss.setBook(book);
                     setBookmark("");
                     initSaveNotification(loadedBook);
@@ -601,24 +608,16 @@ public class AppCtrl extends CtrlBase<Component> {
 
 
     private void doOpenNewBook0(boolean renewState) {
-        Importer importer = Importers.getImporter();
         try {
             Date dNow = new Date();
             SimpleDateFormat ft =
                     new SimpleDateFormat("yyyyMMdd_hhmmss_S");
-
-            //   Book book = new org.zkoss.zss.api.model.impl.BookImpl("New Book_".concat(ft.format(dNow)));
-            //   book.getInternalBook().createSheet("Sheet1");
-            //   book.getInternalBook().createSheet("Sheet2");
-            /* TODO replace below with above, Some issue with Styles */
-            Book book = importer.imports(getClass().getResourceAsStream("/web/zssapp/blank.xlsx"),
-                    "New Book_".concat(ft.format(dNow)));
-            ((AbstractBookAdv) book.getInternalBook()).initDefaultCellStyles();
-            //  ((AbstractBookAdv)book).initDefaultCellStyles();
-
+            Book book = new org.zkoss.zss.api.model.impl.BookImpl("New Book_".concat(ft.format(dNow)));
+            book.getInternalBook().createSheet("Sheet1");
+            book.getInternalBook().createSheet("Sheet2");
             book.setShareScope(EventQueues.APPLICATION);
             setBook(book, null);
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error(e.getMessage(), e);
             UiUtil.showWarnMessage("Can't open a new book");
             return;

@@ -22,13 +22,14 @@ public class BlockStore {
      * Logging
      */
     final int CACHE_SIZE = 1000;
+    final int CACHE_EVICT = 100;
     /* Table that persists the block store */
     private String dataStore;
     /**
      * A list of blocks
      */
 
-    private Map<Integer, Object> blockCache;
+    private LruCache<Integer, Object> blockCache;
     private Map<Integer, Object> dirtyBlocks;
     private Set<Integer> deletedBlocks;
     private int inMemBlockId = 1;
@@ -48,9 +49,9 @@ public class BlockStore {
         this.dataStore = dataStore;
         if (dataStore == null) {
             // Infinite cache size for in memory
-            blockCache = new LruCache<>(-1);
+            blockCache = new LruCache<>(-1,0);
         } else {
-            blockCache = new LruCache<>(CACHE_SIZE);
+            blockCache = new LruCache<>(CACHE_SIZE, CACHE_EVICT);
             createSchema(context, dataStore);
         }
         //logger.info("BlockStore created - " + dataStore);

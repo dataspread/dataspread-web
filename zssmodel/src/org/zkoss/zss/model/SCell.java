@@ -19,6 +19,7 @@ package org.zkoss.zss.model;
 import org.model.AutoRollbackConnection;
 import org.zkoss.poi.ss.usermodel.CellStyle;
 import org.zkoss.zss.model.SHyperlink.HyperlinkType;
+import org.zkoss.zss.model.SSemantics.Semantics;
 
 import java.sql.Connection;
 import java.util.Date;
@@ -37,6 +38,10 @@ public interface SCell extends CellStyleHolder,FormulaContent{
 	 * @return the cell type
 	 */
 	CellType getType();
+
+	Semantics getSemantics();
+
+	void setSemantics(Semantics semantics);
 	
 	/**
 	 * @return cell value.

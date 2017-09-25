@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
 public class ROM_Model extends Model {
-    private Logger logger = Logger.getLogger(ROM_Model.class.getName());
+    private static final Logger logger = Logger.getLogger(ROM_Model.class.getName());
     private PosMapping rowMapping;
     private PosMapping colMapping;
 
@@ -367,11 +367,13 @@ public class ROM_Model extends Model {
 
     @Override
     public void importSheet(Reader reader, char delimiter) throws IOException {
-        final int COMMIT_SIZE_BYTES = 8 * 1000;
+        final int COMMIT_SIZE_BYTES = 8 * 1000 * 1000;
         CSVReader csvReader = new CSVReader(reader, delimiter);
         String[] nextLine;
         int importedRows = 0;
         int importedColumns = 0;
+        logger.info("Importing sheet");
+
 
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             DBContext dbContext = new DBContext(connection);
@@ -396,6 +398,7 @@ public class ROM_Model extends Model {
                                 .append(i);
                     copyCommand.append(") FROM STDIN WITH DELIMITER '|'");
                     cpIN = cm.copyIn(copyCommand.toString());
+
                 }
 
                 sb.append(importedRows);
@@ -406,6 +409,7 @@ public class ROM_Model extends Model {
                 if (sb.length() >= COMMIT_SIZE_BYTES) {
                     cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
                     sb = new StringBuffer();
+                    logger.info(importedRows + " rows imported ");
                 }
             }
             if (sb.length() > 0)
@@ -413,6 +417,8 @@ public class ROM_Model extends Model {
             cpIN.endCopy();
             rawConn.commit();
             insertRows(dbContext, 0, importedRows);
+            logger.info("Import done: " + importedRows + " rows and "
+                    + importedColumns + " columns imported");
             connection.commit();
         } catch (SQLException e) {
             e.printStackTrace();

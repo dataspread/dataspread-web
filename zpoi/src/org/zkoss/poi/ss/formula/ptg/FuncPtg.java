@@ -32,6 +32,10 @@ public final class FuncPtg extends AbstractFunctionPtg {
     public final static byte sid  = 0x21;
     public final static int  SIZE = 3;
 
+    public FuncPtg(){
+        /* For seralization */
+    }
+
     public static FuncPtg create(LittleEndianInput in) {
         return create(in.readUShort());
     }
@@ -39,6 +43,12 @@ public final class FuncPtg extends AbstractFunctionPtg {
     private FuncPtg(int funcIndex, FunctionMetadata fm) {
         super(funcIndex, fm.getReturnClassCode(), fm.getParameterClassCodes(), fm.getMinParams());  // minParams same as max since these are not var-arg funcs
     }
+
+    @Override
+    public OperationPtg getInstance() {
+        return null;
+    }
+
 
     public static FuncPtg create(int functionIndex) {
         FunctionMetadata fm = FunctionMetadataRegistry.getFunctionByIndex(functionIndex);

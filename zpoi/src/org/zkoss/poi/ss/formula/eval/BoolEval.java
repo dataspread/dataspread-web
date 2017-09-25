@@ -31,6 +31,11 @@ public final class BoolEval implements NumericValueEval, StringValueEval, Hyperl
 
 	public static final BoolEval TRUE = new BoolEval(true);
 
+	BoolEval()
+	{
+
+	}
+
 	/**
 	 * Convenience method for the following:<br/>
 	 * <code>(b ? BoolEval.TRUE : BoolEval.FALSE)</code>

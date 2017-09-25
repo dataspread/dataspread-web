@@ -2,10 +2,7 @@ package org.zkoss.zss.model.impl;
 
 import com.opencsv.CSVReader;
 import org.apache.tomcat.dbcp.dbcp2.DelegatingConnection;
-import org.model.AutoRollbackConnection;
-import org.model.BlockStore;
-import org.model.DBContext;
-import org.model.DBHandler;
+import org.model.*;
 import org.postgresql.copy.CopyIn;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.jdbc.PgConnection;
@@ -21,7 +18,7 @@ import java.util.stream.IntStream;
 
 
 public class RCV_Model extends Model {
-    private Logger logger = Logger.getLogger(RCV_Model.class.getName());
+    private static final Logger logger = Logger.getLogger(RCV_Model.class.getName());
     protected PosMapping rowMapping;
     protected PosMapping colMapping;
     private BlockStore bs;
@@ -306,7 +303,7 @@ public class RCV_Model extends Model {
         int rows = rowMapping.size(context);
         int columns = colMapping.size(context);
         if (rows==0 || columns ==0)
-            return null;
+            return new CellRegion(0,0,0,0);
         else
             return new CellRegion(0, 0, rowMapping.size(context) - 1, colMapping.size(context) - 1);
     }
@@ -319,11 +316,12 @@ public class RCV_Model extends Model {
 
     @Override
     public void importSheet(Reader reader, char delimiter) throws IOException {
-        final int COMMIT_SIZE_BYTES = 8 * 1000;
+        final int COMMIT_SIZE_BYTES = 8 * 1000 * 1000;
         CSVReader csvReader = new CSVReader(reader, delimiter);
         String[] nextLine;
         int importedRows = 0;
         int importedColumns = 0;
+        logger.info("Importing sheet");
 
 
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
@@ -347,6 +345,7 @@ public class RCV_Model extends Model {
                 if (sb.length() >= COMMIT_SIZE_BYTES) {
                     cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
                     sb = new StringBuffer();
+                    logger.info(importedRows + " rows imported ");
                 }
             }
             if (sb.length() > 0)
@@ -356,6 +355,8 @@ public class RCV_Model extends Model {
             DBContext dbContext = new DBContext(connection);
             insertRows(dbContext, 0, importedRows);
             insertCols(dbContext, 0, importedColumns);
+            logger.info("Import done: " + importedRows + " rows and "
+                    + importedColumns + " columns imported");
             connection.commit();
         } catch (SQLException e) {
             e.printStackTrace();

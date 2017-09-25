@@ -66,6 +66,10 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 	@Wire
 	Menuitem about;
 	@Wire
+	Menuitem guide;
+	@Wire
+	Menuitem document;
+	@Wire
 	Menuitem zssmark;
 	@Wire
 	Menuitem changeUsername;
@@ -117,6 +121,7 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 			doUpdateMenu((Spreadsheet)data);
 		}else if(AppEvts.ON_AFTER_CHANGED_USERNAME.equals(event)){
 			doUpdateUsername((String)data);
+            pushAppEvent(AppEvts.ON_CLOSE_BOOK);
 			pushAppEvent(AppEvts.ON_NEW_BOOK);
 		}else if(AppEvts.ON_CHANGED_FILE_STATE.equals(event)){
 			doUpdateFileState((String)data);
@@ -162,7 +167,7 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 		saveFileAs.setDisabled(disabled || readonly);
 //		saveFileAndClose.setDisabled(disabled || readonly);
 		closeFile.setDisabled(disabled);
-		exportFile.setDisabled(disabled);
+		exportFile.setDisabled(!isEE || disabled);
 		exportPdf.setDisabled(!isEE || disabled);
 		//changeUsername.setDisabled(!isEE || collabDisabled == Boolean.TRUE);
 		changeUsername.setDisabled(collabDisabled == Boolean.TRUE);
@@ -170,7 +175,8 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 		
 		// set about url
         about.setHref(Library.getProperty("zssapp.menu.about.url", "http://dataspread.github.io"));
-
+        guide.setHref(Library.getProperty("zssapp.menu.guide.url", "https://github.com/dataspread/dataspread-web/wiki/Quick-Start-Guide"));
+        document.setHref(Library.getProperty("zssapp.menu.document.url", "https://github.com/dataspread/dataspread-web/wiki"));
         // zss title
 		if(evalOnly == null) 
 			evalOnly = Boolean.FALSE;
@@ -184,6 +190,7 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 		Boolean shareBookHidden = Boolean.valueOf(Library.getProperty("zssapp.menu.sharebook.hidden"));
 		if(shareBookHidden)
 			shareBook.setVisible(false);
+        shareBook.setVisible(false);
 		
 		Boolean usernameHidden = Boolean.valueOf(Library.getProperty("zssapp.menu.username.hidden"));
 		if(usernameHidden)
@@ -273,19 +280,16 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 	}
 	@Listen("onClick=#changeUsername")
 	public void onChangeUsername(){
-		pushAppEvent(AppEvts.ON_CLOSE_BOOK);
 		pushAppEvent(AppEvts.ON_CHANGED_USERNAME);
     }
 
     @Listen("onClick=#logout")
     public void onLogout() {
-        pushAppEvent(AppEvts.ON_CLOSE_BOOK);
         pushAppEvent(AppEvts.ON_LOGOUT);
     }
 
     @Listen("onClick=#register")
     public void onRegister() {
-        pushAppEvent(AppEvts.ON_CLOSE_BOOK);
         pushAppEvent(AppEvts.ON_REGISTER);
     }
 

@@ -13,6 +13,10 @@ public class OpTableColRefPtg extends Ptg {
     private int _columnNum = -1;
     private String _columnName = "";
 
+    public OpTableColRefPtg(){
+        /* For seralization */
+    }
+
     public OpTableColRefPtg(String arg1, String arg2) {
 
         String[] first = arg1.split("_");

@@ -630,6 +630,8 @@ public final class WorkbookEvaluator {
 			ValueEval opResult = null;
 			if (ptg instanceof OperationPtg) {
 				OperationPtg optg = (OperationPtg) ptg;
+				if (optg.getInstance()!=null)
+					optg=optg.getInstance();
 				/**
 				 *  All operational algebra calculation should be handled here
 				 */

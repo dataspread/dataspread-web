@@ -31,6 +31,11 @@ public final class IntersectionPtg extends OperationPtg {
 		// enforce singleton
 	}
 
+	@Override
+	public OperationPtg getInstance() {
+		return instance;
+	}
+
 	public final boolean isBaseToken() {
 		return true;
 	}

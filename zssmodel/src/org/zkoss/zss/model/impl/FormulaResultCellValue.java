@@ -23,6 +23,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class FormulaResultCellValue extends CellValue implements Serializable {
 	private static final long serialVersionUID = 1L;
 
+	/* Unused */
+	private FormulaResultCellValue() {
+		/* For serialization */
+	}
+
 	public FormulaResultCellValue(EvaluationResult result) {
 		updateByEvaluationResult(result);
 	}

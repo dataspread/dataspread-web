@@ -30,7 +30,13 @@ public final class PowerPtg extends ValueOperatorPtg {
     private PowerPtg() {
     	// enforce singleton
     }
-    
+
+    @Override
+    public OperationPtg getInstance() {
+        return instance;
+    }
+
+
     protected byte getSid() {
     	return sid;
     }

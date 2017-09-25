@@ -34,8 +34,13 @@ public final class NumberEval implements NumericValueEval, StringValueEval, Hype
     
     public static final NumberEval ZERO = new NumberEval(0);
 
-    private final double _value;
+    private double _value;
     private String _stringValue;
+
+    NumberEval()
+    {
+
+    }
 
     public NumberEval(Ptg ptg) {
         if (ptg == null) {

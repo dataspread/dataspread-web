@@ -31,7 +31,11 @@ public class TablePtg extends Area3DPtg { //ZSS-1013
 	private Item[] _items;
 	private String[] _columns;
 	
-	final private boolean _inTable;
+	private boolean _inTable;
+
+	public TablePtg(){
+		/* For seralization */
+	}
 	public TablePtg(int extIdx, int firstRow, int lastRow, int firstColumn, int lastColumn, 
 			String tableName, Item[] items, String[] columns, boolean inTable) {
 		super(firstRow, lastRow, firstColumn, lastColumn, false, false, false, false, extIdx); //ZSS-1013

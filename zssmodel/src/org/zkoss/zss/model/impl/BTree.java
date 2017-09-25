@@ -232,8 +232,11 @@ public class BTree implements PosMapping {
      * @return
      */
     private boolean addByCount(DBContext context, long pos, int val, boolean flush) {
-        if (pos > size(context))
-            throw new RuntimeException("pos should be <= size");
+        if (pos > size(context)) {
+            // Ignore inserts beyond the size of positional index.
+            return false;
+            //throw new RuntimeException("pos should be <= size");
+        }
         Node w;
         w = addRecursiveByCount(context, pos, metaDataBlock.ri, val);
         if (w != null) {   // root was split, make new root

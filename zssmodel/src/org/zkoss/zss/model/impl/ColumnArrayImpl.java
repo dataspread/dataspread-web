@@ -16,6 +16,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
+import org.model.AutoRollbackConnection;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCellStyle;
 import org.zkoss.zss.model.SSheet;
@@ -77,6 +78,11 @@ public class ColumnArrayImpl extends AbstractColumnArrayAdv {
 
 	@Override
 	public void setCellStyle(SCellStyle cellStyle, boolean updateToDB) {
+
+	}
+
+	@Override
+	public void setCellStyle(SCellStyle cellStyle, AutoRollbackConnection connection, boolean updateToDB) {
 
 	}
 

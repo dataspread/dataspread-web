@@ -11,6 +11,10 @@ public class OpTableRefPtg extends Ptg {
 
     private int _tableNum = -1;
 
+    public OpTableRefPtg(){
+        /* For seralization */
+    }
+
     public OpTableRefPtg(int tableNum) {
         _tableNum = tableNum;
     }
