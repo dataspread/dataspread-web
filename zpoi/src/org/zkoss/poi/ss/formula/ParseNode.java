@@ -17,12 +17,7 @@
 
 package org.zkoss.poi.ss.formula;
 
-import org.zkoss.poi.ss.formula.ptg.ArrayPtg;
-import org.zkoss.poi.ss.formula.ptg.AttrPtg;
-import org.zkoss.poi.ss.formula.ptg.FuncVarPtg;
-import org.zkoss.poi.ss.formula.ptg.MemAreaPtg;
-import org.zkoss.poi.ss.formula.ptg.MemFuncPtg;
-import org.zkoss.poi.ss.formula.ptg.Ptg;
+import org.zkoss.poi.ss.formula.ptg.*;
 import org.zkoss.poi.ss.formula.function.FunctionMetadataRegistry;
 /**
  * Represents a syntactic element from a formula by encapsulating the corresponding <tt>Ptg</tt>
@@ -50,6 +45,7 @@ final class ParseNode {
 		for (int i = 0; i < children.length; i++) {
 			tokenCount += children[i].getTokenCount();
 		}
+		tokenCount += isSelect(_token) ? 1 : 0;
 		if (_isIf) {
 			// there will be 2 or 3 extra tAttr tokens according to whether the false param is present
 			tokenCount += children.length;
@@ -87,6 +83,10 @@ final class ParseNode {
 	private void collectPtgs(TokenCollector temp) {
 		if (isIf(_token)) {
 			collectIfPtgs(temp);
+			return;
+		}
+		if (isSelect(_token)) {
+			collectSelectPtgs(temp);
 			return;
 		}
 		boolean isPreFixOperator = _token instanceof MemFuncPtg || _token instanceof MemAreaPtg;
@@ -155,6 +155,25 @@ final class ParseNode {
 			if (FunctionMetadataRegistry.FUNCTION_NAME_IF.equals(func.getName())) {
 				return true;
 			}
+		}
+		return false;
+	}
+
+	private void collectSelectPtgs(TokenCollector temp) {
+		if (getChildren().length > 0) {
+			getChildren()[0].collectPtgs(temp);
+			temp.add(SelectHelperPtg.instance);
+			for (int i = 1; i < getChildren().length; i++) {
+				getChildren()[i].collectPtgs(temp);
+			}
+		}
+		temp.add(_token);
+	}
+
+	private static boolean isSelect(Ptg token) {
+		if (token instanceof FuncVarPtg) {
+			FuncVarPtg func = (FuncVarPtg) token;
+			return func.getName().equalsIgnoreCase("SELECT");
 		}
 		return false;
 	}

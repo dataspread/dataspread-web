@@ -1,12 +1,13 @@
 package org.zkoss.poi.ss.formula.functions;
 
+import org.zkoss.poi.ss.formula.OperationEvaluationContext;
 import org.zkoss.poi.ss.formula.TwoDEval;
+import org.zkoss.poi.ss.formula.WorkbookEvaluator;
 import org.zkoss.poi.ss.formula.eval.*;
+import org.zkoss.poi.ss.formula.ptg.Ptg;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.lang.reflect.Array;
+import java.util.*;
 
 import static org.zkoss.poi.ss.formula.functions.CountUtils.I_MatchPredicate;
 
@@ -146,23 +147,22 @@ public abstract class RelationalOperatorFunction implements Function {
 
 	public static final Function SELECT = new SelectFunction() {
 
-		//select with no conditions
-		@Override
-		protected ValueEval evaluate(AreaEval range, int srcRowIndex, int srcColumnIndex) {
-			return evaluate(range, BoolEval.TRUE, srcRowIndex, srcColumnIndex);
+		protected ValueEval evaluate(RelTableEval table, SelectHelperEval helper, int srcRowIndex, int srcColumnIndex) {
+			WorkbookEvaluator evaluator = helper._evaluator;
+			OperationEvaluationContext ec = helper._ec;
+			Ptg[] ptgs = helper._ptgs;
+			boolean ignoreDereference = helper._ignoreDereference;
+
+			int nRows = table.getHeight();
+			List<ValueEval> evalList = new ArrayList<>();
+			for (int i = 0; i < nRows; i++) {
+				ValueEval result = evaluator.evaluateFormula(ec, ptgs, true, ignoreDereference, table.getRow(i));
+				evalList.add(result);
+			}
+			List<Row> rows = Row.getRowsFromArea(table, evalList);
+			return Row.getRelTableEval(rows, table.getAttributes());
 		}
 
-		//select with conditions
-		@Override
-		protected ValueEval evaluate(AreaEval range, ValueEval condition, int srcRowIndex, int srcColumnIndex) {
-			/** TODO
-			 *  how to reuse the evaluateFormula function in WorkbookEvaluator class
-			 *  just need to replace the value for the conditionPtg
-			 */
-			//List<Row> rows = Row.getRowsFromArea(range, condition);
-			//Row.getRelTableEval(rows, srcRowIndex, srcColumnIndex, range.getRefEvaluator());
-			return null;
-		}
 	};
 
 
@@ -354,7 +354,30 @@ public abstract class RelationalOperatorFunction implements Function {
 				for (int c = 0; c < row.getWidth(); c++) {
 					rowEvals[c] = row.getValue(0, c);
 				}
-				rows.add(r, new Row(rowEvals));
+				rows.add(new Row(rowEvals));
+			}
+			return rows;
+		}
+
+		/**
+		 * Static method to create an array of Row's from an AreaEval
+		 * @param range
+		 * @return
+		 */
+		public static List<Row> getRowsFromArea(RelTableEval range, List<ValueEval> conds) {
+			List<Row> rows = new ArrayList<>();
+			for (int r = 0; r < range.getHeight(); r++) {
+				ValueEval cond = conds.get(r);
+				if (cond instanceof BoolEval &&
+						((BoolEval) cond).getBooleanValue()) {
+					//get all of the ValueEval's for this row
+					TwoDEval row = range.getRow(r);
+					ValueEval[] rowEvals = new ValueEval[row.getWidth()];
+					for (int c = 0; c < row.getWidth(); c++) {
+						rowEvals[c] = row.getValue(0, c);
+					}
+					rows.add(new Row(rowEvals));
+				}
 			}
 			return rows;
 		}

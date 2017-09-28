@@ -36,6 +36,7 @@ public final class FunctionMetadataRegistry {
 	public static final short FUNCTION_INDEX_INDIRECT = 148;
 	public static final short FUNCTION_INDEX_EXTERNAL = 255;
 	public static final short FUNCTION_INDEX_SUMPRODUCT = 228; //ZSS-852
+	public static final short FUNCTION_INDEX_SELECT = 372;
 
 	private static FunctionMetadataRegistry _instance;
 

@@ -18,6 +18,7 @@
 package org.zkoss.poi.ss.formula;
 
 import org.zkoss.poi.ss.formula.EvaluationWorkbook.ExternalSheet;
+import org.zkoss.poi.ss.formula.eval.SelectHelperEval;
 import org.zkoss.poi.ss.formula.ptg.*;
 import org.zkoss.poi.ss.usermodel.ZssContext;
 
@@ -53,6 +54,9 @@ public class FormulaRenderer {
                 // marks the start of a list of area expressions which will be naturally combined
                 // by their trailing operators (e.g. UnionPtg)
                 // TODO - put comment and throw exception in toFormulaString() of these classes
+                continue;
+            }
+            if (ptg instanceof SelectHelperPtg) {
                 continue;
             }
             if (ptg instanceof ParenthesisPtg) {

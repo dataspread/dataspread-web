@@ -749,6 +749,10 @@ public final class FormulaParser {
 		if (name.equalsIgnoreCase("TRUE") || name.equalsIgnoreCase("FALSE")) {
 			return  new ParseNode(BoolPtg.valueOf(name.equalsIgnoreCase("TRUE")));
 		}
+		if (OP_FORMULA_PATTERN.matcher(name).matches() && name.length() > 5) {
+			String actualName = name.substring(5);
+			return new ParseNode(new RelTableAttrPtg(actualName));
+		}
 		if (_book == null) {
 			// Only test cases omit the book (expecting it not to be needed)
 			throw new IllegalStateException("Need book to evaluate name '" + name + "'");

@@ -21,10 +21,8 @@ import org.zkoss.poi.hssf.util.CellReference;
 import org.zkoss.poi.ss.formula.CollaboratingWorkbooksEnvironment.WorkbookNotFoundException;
 import org.zkoss.poi.ss.formula.atp.AnalysisToolPak;
 import org.zkoss.poi.ss.formula.eval.*;
-import org.zkoss.poi.ss.formula.functions.Choose;
-import org.zkoss.poi.ss.formula.functions.FreeRefFunction;
-import org.zkoss.poi.ss.formula.functions.Function;
-import org.zkoss.poi.ss.formula.functions.IfFunc;
+import org.zkoss.poi.ss.formula.function.FunctionMetadataRegistry;
+import org.zkoss.poi.ss.formula.functions.*;
 import org.zkoss.poi.ss.formula.ptg.*;
 import org.zkoss.poi.ss.formula.udf.AggregatingUDFFinder;
 import org.zkoss.poi.ss.formula.udf.UDFFinder;
@@ -514,6 +512,10 @@ public final class WorkbookEvaluator {
 	
 	// visibility raised for testing
 	/* package */ ValueEval evaluateFormula(OperationEvaluationContext ec, Ptg[] ptgs, boolean ignoreDependency, boolean ignoreDereference) {
+		return evaluateFormula(ec, ptgs, ignoreDependency, ignoreDereference, null);
+	}
+
+	public ValueEval evaluateFormula(OperationEvaluationContext ec, Ptg[] ptgs, boolean ignoreDependency, boolean ignoreDereference, RelTableEval contextTable) {
 		if (!ignoreDependency)
 			addDependency(ec, ptgs); //20110324, henrichen@zkoss.org: construct the dependency DAG per this formula (bug#290)
 			
@@ -537,8 +539,7 @@ public final class WorkbookEvaluator {
 
 
 		Stack<ValueEval> stack = new Stack<>();
-		// stack for table references
-		List<Stack<ValueEval>> table_list = new ArrayList<>();
+		boolean selectState = false;
 		for (int i = 0, iSize = ptgs.length; i < iSize; i++) {
 			ec.setPtgIndex(i); //ZSS-845
 			// since we don't know how to handle these yet :(
@@ -546,7 +547,7 @@ public final class WorkbookEvaluator {
 			if (dbgEvaluationOutputIndent > 0) {
 				EVAL_LOG.log(POILogger.INFO, dbgIndentStr + "  * ptg " + i + ": " + ptg);
 			}
-			
+
 			if (ptg instanceof AttrPtg) {
 				AttrPtg attrPtg = (AttrPtg) ptg;
 				if (attrPtg.isSum()) {
@@ -627,119 +628,73 @@ public final class WorkbookEvaluator {
 				continue;
 			}
 
+			if (ptg instanceof SelectHelperPtg) {
+				int selIndex = i;
+				for (int j = i+1; j < ptgs.length; j++) {
+					Ptg jPtg = ptgs[j];
+					if (jPtg instanceof AbstractFunctionPtg) {
+						AbstractFunctionPtg fptg = (AbstractFunctionPtg) jPtg;
+						if (fptg.getFunctionIndex() == FunctionMetadataRegistry.FUNCTION_INDEX_SELECT) {
+							selIndex = j;
+						}
+					}
+				}
+				if (selIndex != i) {
+					Ptg[] sidePtgs = Arrays.copyOfRange(ptgs, i+1, selIndex);
+					SelectHelperEval eval = new SelectHelperEval(this, ec, sidePtgs, ignoreDependency, ignoreDereference);
+					stack.push(eval);
+					i = selIndex-1;
+				}
+				continue;
+			}
+			if (ptg instanceof OpTableRefPtg) {
+				continue;
+			}
+
 			ValueEval opResult = null;
 			if (ptg instanceof OperationPtg) {
 				OperationPtg optg = (OperationPtg) ptg;
-				if (optg.getInstance()!=null)
-					optg=optg.getInstance();
+				if (optg.getInstance() != null)
+					optg = optg.getInstance();
 				/**
 				 *  All operational algebra calculation should be handled here
 				 */
 
 //ZSS-933: should process Union operator
 //				if (optg instanceof UnionPtg) { continue; }
-
-//				if (is andfunction ) {
-//					ops[0] = isOverrided eval
-//					j end with 1
-//				}
-
-				//if optg is overrided (it's in relational algebra operator) need to add an OverrideEval to know
-				boolean isOverridedOpPtg = optg.isOverrided();
-				int overrideTableNum = optg.getOverrideTableNum();
-
 				int numops = optg.getNumberOfOperands();
-
-				if (isOverridedOpPtg) {
-					numops++;
-				}
-
-                ValueEval[] ops = new ValueEval[numops];
+				ValueEval[] ops = new ValueEval[numops];
 
 				// storing the ops in reverse order since they are popping
 				for (int j = numops - 1; j >= 0; j--) {
-
-					//if is overrided op, we need to put an OverrideEval at first index of ops
-					if (isOverridedOpPtg && j == 0) {
-						ops[0] = new OverrideEval();
-						continue;
-					}
 					ValueEval p = stack.pop();
-					/**
-					 * TODO
-					 * for each stack.pop if conditionalEval don't do postProcessValueEval
-					 */
-					/**
-					 if p instanceof ...
-					 flag = true
-					 index of this p for ops
-					 get this root instance which should be areaEval and put it as p
-					 */
 					//20101115, henrichen@zkoss.org: add dependency before operation
 					//FuncVarPtg, the NamePtg(functionname) should be as is
-					
+
 					// 20131230, paowang@potix.com, ZSS-533: FuncVarPtg indicates dynamic arguments function
 					// if it's a external function, the first argument must be the function name in NameEval
 					// so, if it's not a external function, we should also eval. the first argument in post process
 					//p = postProcessValueEval(ec, p, !(optg instanceof FuncVarPtg) || j > 0);
-					if(optg instanceof FuncVarPtg && ((FuncVarPtg)optg).isExternal()) {
+					if (optg instanceof FuncVarPtg && ((FuncVarPtg) optg).isExternal()) {
 						p = postProcessValueEval(ec, p, j > 0);
 					} else {
 						p = postProcessValueEval(ec, p, true);
 					}
 					ops[j] = p;
 				}
-				/**
-				 if flag is true 
-				 for loop 
-				 change the ops[index] to a single value
-				 opResult = OperationEvaluatorFactory.evaluate(optg, ops, ec);
-				 opResult = postProcessValueEval(ec, opResult, true);
-				 opResults[i] = opResult
-				 */
 //				logDebug("invoke " + operation + " (nAgs=" + numops + ")");
 				opResult = OperationEvaluatorFactory.evaluate(optg, ops, ec);
 				opResult = postProcessValueEval(ec, opResult, true);
-
-				if (overrideTableNum > 0) {
-					for (int j = 0; j < overrideTableNum; j++) {
-						if (table_list.size() > j) {
-							Stack<ValueEval> temp = table_list.get(j);
-							if (!temp.isEmpty()) temp.pop();
-						}
-					}
+			} else if (ptg instanceof RelTableAttrPtg) {
+				String name = ((RelTableAttrPtg) ptg).getName();
+				int index = contextTable.indexOfAttribute(name);
+				if (index != -1) {
+					opResult = contextTable.getValue(0, index);
+					opResult = postProcessValueEval(ec, opResult, false);
 				}
 			} else {
-				//TODO: When OpTableRefPtg is seen, the area corresponding to it needs to be added to a separate stack
-				if (ptg instanceof OpTableRefPtg) {
-					//Table reference ptg, needs to add to the stack
-					OpTableRefPtg trPtg = (OpTableRefPtg) ptg;
-					int table_index = trPtg.getTableNum();
-					if (table_list.size() < table_index + 1) {
-						for (int j = table_list.size() - 1; j < table_index; j++) {
-							Stack<ValueEval> t_stack = new Stack<>();
-							table_list.add(t_stack);
-						}
-					}
-					opResult = stack.pop();
-					table_list.get(table_index).push(opResult);
-				} else if (ptg instanceof OpTableColRefPtg) {
-					//TODO: Evaluate TableCol to an area using stack containing TableRef areas
-					// need to retrieve the reference table from the table stack
-					OpTableColRefPtg tcrPtg = (OpTableColRefPtg) ptg;
-					int table_index = tcrPtg.getTableNum();
-
-					// ValueEval arg = table_list.get(table_index).pop() was throwing exception, 
-					// since area was not being put back on stack after getting first Table_.Col_
-					//use peek() instead
-					ValueEval arg = table_list.get(table_index).peek();
-
-					opResult = getEvalForOpPtg(arg, ptg, ec);
-					opResult = postProcessValueEval(ec, opResult, false);
-				} else {
-					opResult = getEvalForPtg(ptg, ec);
-					opResult = postProcessValueEval(ec, opResult, false);
-				}
+				opResult = getEvalForPtg(ptg, ec);
+				opResult = postProcessValueEval(ec, opResult, false);
 			}
 			if (opResult == null) {
 				throw new RuntimeException("Evaluation result must not be null");
@@ -774,29 +729,6 @@ public final class WorkbookEvaluator {
 		} // if
 		return result;
 
-	}
-
-	/**
-	 * returns an appropriate Eval impl instance for the OpTableColRefPtg. The valueEval must be
-	 * the type of TwoDEval
-	 */
-	ValueEval getEvalForOpPtg(ValueEval value, Ptg ptg, OperationEvaluationContext ec) {
-		if (ptg instanceof OpTableColRefPtg) {
-			OpTableColRefPtg tcrPtg = (OpTableColRefPtg) ptg;
-			int col = tcrPtg.getColumnNum();
-			if (col == -1) {
-				String colName = tcrPtg.getColumnName();
-				if (value instanceof TwoDEval) {
-					/*return ((TwoDEval) value).getColumnByAttribute(colName);*/
-					return null;
-				}
-			} else {
-				if (value instanceof TwoDEval) {
-					return ((TwoDEval) value).getColumn(col);
-				}
-			}
-		}
-		throw new RuntimeException("Unexpected ptg class (" + ptg.getClass().getName() + ")");
 	}
 
 	/**
