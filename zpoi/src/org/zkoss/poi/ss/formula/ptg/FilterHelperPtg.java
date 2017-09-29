@@ -6,7 +6,7 @@
    (the "License"); you may not use this file except in compliance with
    the License.  You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+	   http://www.apache.org/licenses/LICENSE-2.0
 
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,26 +17,34 @@
 
 package org.zkoss.poi.ss.formula.ptg;
 
+import org.zkoss.poi.util.LittleEndianOutput;
+
 /**
- * Common superclass for 
- * tExp
- * tTbl
- * tParen
- * tNlr
- * tAttr
- * tSheet
- * tEndSheet
+ * This PTG helps with filters (from Select/Join)
+ * @author Tana
  */
-public abstract class ControlPtg extends Ptg {
+public final class FilterHelperPtg extends ValueOperatorPtg {
+	public final static byte sid  = 0x70;
 
-	public ControlPtg(){
-		/* For seralization */
+	public static final FilterHelperPtg instance = new FilterHelperPtg();
+
+	private FilterHelperPtg() {
+		// enforce singleton
 	}
 
-	public boolean isBaseToken() {
-		return true;
+	public FilterHelperPtg getInstance() {
+		return instance;
 	}
-	public final byte getDefaultOperandClass() {
-		throw new IllegalStateException("Control tokens are not classified");
+
+	protected byte getSid() {
+		return sid;
 	}
+
+	public int getNumberOfOperands() {
+		return 1;
+	}
+
+	 public String toFormulaString(String[] operands) {
+		return operands[0].toString();
+	}      
 }

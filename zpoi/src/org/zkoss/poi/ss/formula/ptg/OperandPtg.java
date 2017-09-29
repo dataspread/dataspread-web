@@ -22,6 +22,10 @@ package org.zkoss.poi.ss.formula.ptg;
  */
 public abstract class OperandPtg extends Ptg implements Cloneable {
 
+	public OperandPtg(){
+		/* For seralization */
+	}
+
 	/**
 	 * All Operand {@link Ptg}s are classified ('relative', 'value', 'array')
 	 */

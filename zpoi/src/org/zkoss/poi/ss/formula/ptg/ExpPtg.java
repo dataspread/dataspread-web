@@ -29,8 +29,12 @@ import org.zkoss.poi.util.LittleEndianOutput;
 public final class ExpPtg extends ControlPtg {
     private final static int  SIZE = 5;
     public final static short sid  = 0x1;
-    private final int field_1_first_row;
-    private final int field_2_first_col;
+    private int field_1_first_row;
+    private int field_2_first_col;
+
+    public ExpPtg(){
+        /* For seralization */
+    }
 
     public ExpPtg(LittleEndianInput in) {
       field_1_first_row = in.readShort();

@@ -42,6 +42,7 @@ import java.awt.print.Book;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
 
 /**
  * @author dennis
@@ -52,8 +53,8 @@ public class BookImpl extends AbstractBookAdv{
 	 * the sheet which is destroying now.
 	 */
 	/*package*/ final static ThreadLocal<SSheet> destroyingSheet = new ThreadLocal<SSheet>();
+	private static final Logger logger = Logger.getLogger(BookImpl.class.getName());
 	private static final long serialVersionUID = 1L;
-	private static final Log _logger = Log.lookup(BookImpl.class);
 	private final static Random _random = new Random(System.currentTimeMillis());
 	private final static AtomicInteger _bookCount = new AtomicInteger();
 	private final List<AbstractSheetAdv> _sheets = new ArrayList<AbstractSheetAdv>();
@@ -191,7 +192,7 @@ public class BookImpl extends AbstractBookAdv{
 			insertBookStmt.execute();
             insertBookStmt.close();
 
-			String insertSheets = "INSERT INTO sheets VALUES(?, ?, ?, ?, ?)";
+			String insertSheets = "INSERT INTO sheets VALUES(?, ?, ?, ?, ?, ?)";
 			PreparedStatement insertSheetStmt = connection.prepareStatement(insertSheets);
 			for (SSheet sheet:getSheets()) {
 				String modelName = bookTable + sheet.getDBId();
@@ -199,8 +200,9 @@ public class BookImpl extends AbstractBookAdv{
 				insertSheetStmt.setString(1, getId());
 				insertSheetStmt.setInt(2, sheet.getDBId());
 				insertSheetStmt.setInt(3, _sheets.indexOf(sheet));
-				insertSheetStmt.setString(4, sheet.getSheetName());
-				insertSheetStmt.setString(5, modelName);
+				insertSheetStmt.setString(4, sheet.getBook().getBookName());
+				insertSheetStmt.setString(5, sheet.getSheetName());
+				insertSheetStmt.setString(6, modelName);
 				insertSheetStmt.execute();
 			}
 			insertSheetStmt.close();
@@ -336,7 +338,7 @@ public class BookImpl extends AbstractBookAdv{
 		{
 			String bookTable=getId();
 			String insertSheets = "INSERT INTO sheets " +
-					" SELECT ?, max(sheetid) +  1, ?, ?, '" + bookTable + "' || (max(sheetid) +  1)" +
+					" SELECT ?, max(sheetid) +  1, ?, ?, ?, '" + bookTable + "' || (max(sheetid) +  1)" +
 					" FROM sheets " +
 					" WHERE booktable = ? " +
 					" RETURNING sheetid";
@@ -345,8 +347,9 @@ public class BookImpl extends AbstractBookAdv{
 			{
 				stmt.setString(1, getId());
 				stmt.setInt(2,_sheets.indexOf(sheet));
-				stmt.setString(3,sheet.getSheetName());
-				stmt.setString(4, getId());
+				stmt.setString(3, getBookName());
+				stmt.setString(4, sheet.getSheetName());
+				stmt.setString(5, getId());
 				ResultSet rs = stmt.executeQuery();
 				if (rs.next())
 					sheet.setDBId(rs.getInt("sheetid"));
@@ -1099,6 +1102,7 @@ public class BookImpl extends AbstractBookAdv{
 
 		// Load Schema
 		String bookTable = getId();
+		logger.info("Loading " + getBookName());
 		String query = "SELECT * FROM sheets WHERE booktable = ? ORDER BY sheetindex";
 		String updateLastOpened = "UPDATE books SET lastopened = now() 	WHERE bookname = ?";
 

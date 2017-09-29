@@ -133,6 +133,8 @@
 			<menupopup>
 				<menuitem id="about" label="${c:l('zssapp.mainMenu.help.about')}"
 					href="http://dataspread.github.io/" target="_blank" sclass="zsmenuitem-app appmenu" />
+				<menuitem id="document" label="${c:l('zssapp.mainMenu.help.document')}"
+                          href="https://github.com/dataspread/dataspread-web/wiki/User-Guide" target="_blank" sclass="zsmenuitem-app appmenu" />
 				<!--<menuitem id="contact" label="${c:l('zssapp.mainMenu.help.contact')}"-->
 					<!--href="http://www.zkoss.org/support/about/contact" target="_blank" sclass="zsmenuitem-app appmenu" />-->
 			</menupopup>
@@ -143,5 +145,7 @@
         <menuitem id="register" style="float:right" label="${c:l('zssapp.mainMenu.register')}" sclass="zsmenuitem-app"/>
 		<menuitem id="shareBook" image="~./zssapp/img/share.png" style="float:right;" label="${c:l('zssapp.mainMenu.shareBook')}" sclass="zsmenuitem-app" tooltip="usersPop, after_end"/>
 		<menuitem id="saveMessage" style="float:right;" disabled="true" sclass="zsmenuitem-app"/>
+		<menuitem id="guide" label="${c:l('zssapp.mainMenu.help.guide')}"
+				  href="https://github.com/dataspread/dataspread-web/wiki/Quick-Start-Guide" target="_blank" sclass="zsmenuitem-app appmenu" />
 	</menubar>
 </zk>

@@ -41,18 +41,34 @@ public abstract class AbstractFunctionPtg extends OperationPtg {
     /** All external functions have function index 255 */
     private static final short FUNCTION_INDEX_EXTERNAL = 255;
 
-    private final byte returnClass;
-    private final byte[] paramClass;
+    private byte returnClass;
+    private byte[] paramClass;
 
-    private final byte _numberOfArgs;
-    private final short _functionIndex;
+    private byte _numberOfArgs;
+    private short _functionIndex;
+    private boolean _containFilter;
+
+    AbstractFunctionPtg()
+    {
+        /* For seralization */
+    }
 
     protected AbstractFunctionPtg(int functionIndex, int pReturnClass, byte[] paramTypes, int nParams) {
         _numberOfArgs = (byte) nParams;
         _functionIndex = (short) functionIndex;
+        _containFilter = false;
         returnClass = (byte) pReturnClass;
         paramClass = paramTypes;
     }
+
+    protected AbstractFunctionPtg(int functionIndex, int pReturnClass, byte[] paramTypes, int nParams, boolean containFilter) {
+        _numberOfArgs = (byte) nParams;
+        _functionIndex = (short) functionIndex;
+        _containFilter = containFilter;
+        returnClass = (byte) pReturnClass;
+        paramClass = paramTypes;
+    }
+
     public final boolean isBaseToken() {
         return false;
     }
@@ -71,6 +87,9 @@ public abstract class AbstractFunctionPtg extends OperationPtg {
     }
     public final int getNumberOfOperands() {
         return _numberOfArgs;
+    }
+    public final boolean getContainFilter() {
+        return _containFilter;
     }
 
     public final String getName() {

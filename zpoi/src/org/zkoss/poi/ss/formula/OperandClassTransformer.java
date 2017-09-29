@@ -133,7 +133,8 @@ final class OperandClassTransformer {
 		if (token instanceof ValueOperatorPtg || token instanceof ControlPtg
 				|| token instanceof MemFuncPtg
 				|| token instanceof MemAreaPtg
-				|| token instanceof UnionPtg) {
+				|| token instanceof UnionPtg
+				|| token instanceof FilterHelperPtg) {
 			// Value Operator Ptgs and Control are base tokens, so token will be unchanged
 			// but any child nodes are processed according to desiredOperandClass and callerForceArrayFlag
 
@@ -151,16 +152,6 @@ final class OperandClassTransformer {
 			return;
 		}
 		if (children.length > 0) {
-			// OpTableRefPtg is just put as the parent of a first and/or second argument in relational algebra operator
-			// transform all of its children as would normally be done
-			if (token instanceof OpTableRefPtg) {
-
-				byte localDesiredOperandClass = desiredOperandClass == Ptg.CLASS_REF ? Ptg.CLASS_VALUE : desiredOperandClass;
-				for (int i = 0; i < children.length; i++) {
-					transformNode(children[i], localDesiredOperandClass, callerForceArrayFlag);
-				}
-				return;
-			}
 			if (token == RangePtg.instance) {
 				// TODO is any token transformation required under the various ref operators?
 				return;

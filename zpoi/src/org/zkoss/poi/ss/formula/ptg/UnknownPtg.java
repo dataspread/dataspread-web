@@ -24,7 +24,11 @@ import org.zkoss.poi.util.LittleEndianOutput;
  */
 public class UnknownPtg extends Ptg {
     private short size = 1;
-    private final int _sid;
+    private int _sid;
+
+    public UnknownPtg(){
+        /* For seralization */
+    }
 
     public UnknownPtg(int sid) {
         _sid = sid;

@@ -33,12 +33,16 @@ import org.zkoss.poi.util.LittleEndianOutput;
  */
 public final class DeletedArea3DPtg extends OperandPtg implements WorkbookDependentFormula {
 	public final static byte sid = 0x3d;
-	private final int field_1_index_extern_sheet;
-	private final int unused1;
-	private final int unused2;
+	private int field_1_index_extern_sheet;
+	private int unused1;
+	private int unused2;
 	
-	private final Area3DPtg ptg; //ZSS-759 for render formula string
-	private final String bookName; //ZSS-759 for render formula string
+	private Area3DPtg ptg; //ZSS-759 for render formula string
+	private String bookName; //ZSS-759 for render formula string
+
+    public DeletedArea3DPtg(){
+        /* For seralization */
+    }
 
 	public DeletedArea3DPtg(int externSheetIndex) {
 		field_1_index_extern_sheet = externSheetIndex;

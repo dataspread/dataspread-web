@@ -34,12 +34,16 @@ import org.zkoss.poi.util.LittleEndianOutput;
  */
 public final class DeletedRef3DPtg extends OperandPtg implements WorkbookDependentFormula {
 	public final static byte sid  = 0x3c;
-	private final int field_1_index_extern_sheet;
-	private final int unused1;
+	private int field_1_index_extern_sheet;
+	private int unused1;
 	
-	private final Ref3DPtg ptg; //ZSS-759 for render formula string
-	private final String bookName; //ZSS-759 for render formula string
-	
+	private Ref3DPtg ptg; //ZSS-759 for render formula string
+	private String bookName; //ZSS-759 for render formula string
+
+	public DeletedRef3DPtg(){
+		/* For seralization */
+	}
+
 	/** Creates new DeletedRef3DPtg */
 	public DeletedRef3DPtg(LittleEndianInput in)  {
 		field_1_index_extern_sheet = in.readUShort();

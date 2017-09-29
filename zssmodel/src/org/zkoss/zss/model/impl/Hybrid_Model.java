@@ -3,11 +3,14 @@ package org.zkoss.zss.model.impl;
 import org.model.AutoRollbackConnection;
 import org.model.BlockStore;
 import org.model.DBContext;
+import org.model.DBHandler;
 import org.zkoss.util.Pair;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 
+import java.io.IOException;
+import java.io.Reader;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
@@ -30,7 +33,7 @@ public class Hybrid_Model extends RCV_Model {
         loadMetaData(context);
     }
 
-    public boolean checkOverap(CellRegion cellRegion) {
+    public boolean checkOverlap(CellRegion cellRegion) {
         return metaDataBlock.modelEntryList
                 .stream()
                 .filter(e -> e.range.overlaps(cellRegion))
@@ -646,7 +649,7 @@ public class Hybrid_Model extends RCV_Model {
         // Make sure this range is not contained within any other table.
         if (tableModels.stream()
                 .map(e -> e.x)
-                .filter(e -> checkOverap(newColumnRegion))
+                .filter(e -> checkOverlap(newColumnRegion))
                 .findFirst().isPresent())
             return null;
 
@@ -664,7 +667,7 @@ public class Hybrid_Model extends RCV_Model {
         // Make sure this range is not contained within any other table.
         if (tableModels.stream()
                 .map(e -> e.x)
-                .filter(e -> checkOverap(newTuplesRegion))
+                .filter(e -> checkOverlap(newTuplesRegion))
                 .findFirst().isPresent())
             return null;
 
@@ -724,6 +727,45 @@ public class Hybrid_Model extends RCV_Model {
             }
         }
         TOM_Mapping.instance.pushUpdates(dbContext, tomModel.getTableName());
+    }
+
+    @Override
+    public CellRegion getBounds(DBContext context) {
+        CellRegion region = super.getBounds(context);
+        for (Pair<CellRegion,Model> tableModel:tableModels)
+            region=tableModel.x.getBoundingBox(region);
+        return region;
+    }
+
+
+    @Override
+    public void importSheet(Reader reader, char delimiter) throws IOException
+    {
+        logger.info("Importing sheet");
+        // Create a ROM model and import the file to the ROM model.
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();)
+        {
+            DBContext dbContext = new DBContext(connection);
+            String newTableName = this.tableName + "_"
+                    + Integer.toHexString(++metaDataBlock.romTableIdentifier);
+            Model model = Model.CreateModel(dbContext, sheet, ModelType.ROM_Model, newTableName);
+
+            connection.commit(); //TODO: pass connection to import
+
+            model.importSheet(reader, delimiter);
+
+            CellRegion range = model.getBounds(dbContext);
+
+            tableModels.add(new Pair<>(range, model));
+            MetaDataBlock.ModelEntry modelEntry = new MetaDataBlock.ModelEntry();
+            modelEntry.range = range;
+            modelEntry.modelType = ModelType.ROM_Model;
+            modelEntry.tableName = model.getTableName();
+            metaDataBlock.modelEntryList.add(modelEntry);
+            bs.putObject(0, metaDataBlock);
+            bs.flushDirtyBlocks(dbContext);
+            connection.commit();
+        }
     }
 
     // Extend the area of x by cellRegion

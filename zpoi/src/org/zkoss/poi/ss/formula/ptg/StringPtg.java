@@ -34,12 +34,17 @@ public final class StringPtg extends ScalarConstantPtg {
     /** the character (") used in formulas to delimit string literals */
     private static final char FORMULA_DELIMITER = '"';
 
-    private final boolean _is16bitUnicode;
+    private boolean _is16bitUnicode;
     /**
      * NOTE: OO doc says 16bit length, but BiffViewer says 8 Book says something
      * totally different, so don't look there!
      */
-    private final String field_3_string;
+    private String field_3_string;
+
+    StringPtg()
+    {
+        /* For seralization */
+    }
 
     /** Create a StringPtg from a stream */
     public StringPtg(LittleEndianInput in)  {

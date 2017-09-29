@@ -32,6 +32,11 @@ public final class MemErrPtg extends OperandPtg {
 	private int field_1_reserved;
 	private short field_2_subex_len;
 
+
+	public MemErrPtg(){
+		/* For seralization */
+	}
+
 	public MemErrPtg(LittleEndianInput in)  {
 		field_1_reserved = in.readInt();
 		field_2_subex_len = in.readShort();

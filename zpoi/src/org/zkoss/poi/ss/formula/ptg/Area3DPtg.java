@@ -38,6 +38,9 @@ public class Area3DPtg extends AreaPtgBase implements WorkbookDependentFormula, 
 
 	private int field_1_index_extern_sheet;
 
+    public Area3DPtg(){
+        /* For seralization */
+    }
 
 	public Area3DPtg(String arearef, int externIdx) {
 		super(new AreaReference(arearef));

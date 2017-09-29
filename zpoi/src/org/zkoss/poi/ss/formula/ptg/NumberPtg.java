@@ -34,10 +34,14 @@ import org.zkoss.poi.util.LittleEndianOutput;
 public final class NumberPtg extends ScalarConstantPtg {
 	public final static int SIZE = 9;
 	public final static byte sid = 0x1f;
-	private final double field_1_value;
+	private double field_1_value;
 
 	public NumberPtg(LittleEndianInput in)  {
 		this(in.readDouble());
+	}
+
+	NumberPtg() {
+        /* For seralization */
 	}
 
 	/**
