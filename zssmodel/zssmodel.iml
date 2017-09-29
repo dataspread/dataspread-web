@@ -19,6 +19,11 @@
     <orderEntry type="library" name="Maven: com.github.davidmoten:rxjava-extras:0.7" level="project" />
     <orderEntry type="library" name="Maven: com.github.davidmoten:flatbuffers-java:1.3.0.1" level="project" />
     <orderEntry type="module" module-name="blockstore" />
+    <orderEntry type="library" name="Maven: com.google.guava:guava:23.0" level="project" />
+    <orderEntry type="library" name="Maven: com.google.code.findbugs:jsr305:1.3.9" level="project" />
+    <orderEntry type="library" name="Maven: com.google.errorprone:error_prone_annotations:2.0.18" level="project" />
+    <orderEntry type="library" name="Maven: com.google.j2objc:j2objc-annotations:1.1" level="project" />
+    <orderEntry type="library" name="Maven: org.codehaus.mojo:animal-sniffer-annotations:1.14" level="project" />
     <orderEntry type="module" module-name="zpoi" />
     <orderEntry type="library" name="Maven: org.zkoss.common:zcommon:7.0.3" level="project" />
     <orderEntry type="library" name="Maven: commons-fileupload:commons-fileupload:1.2.2" level="project" />
