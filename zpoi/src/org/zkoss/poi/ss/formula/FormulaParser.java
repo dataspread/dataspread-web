@@ -23,10 +23,7 @@ import org.zkoss.poi.ss.formula.constant.ErrorConstant;
 import org.zkoss.poi.ss.formula.eval.FunctionEval;
 import org.zkoss.poi.ss.formula.function.FunctionMetadata;
 import org.zkoss.poi.ss.formula.function.FunctionMetadataRegistry;
-import org.zkoss.poi.ss.formula.functions.Function;
-import org.zkoss.poi.ss.formula.functions.OverridableFunction;
-import org.zkoss.poi.ss.formula.functions.SelectFunction;
-import org.zkoss.poi.ss.formula.functions.RelTable2ArgFunction;
+import org.zkoss.poi.ss.formula.functions.*;
 import org.zkoss.poi.ss.formula.ptg.*;
 import org.zkoss.poi.ss.usermodel.ErrorConstants;
 import org.zkoss.poi.ss.util.AreaReference;
@@ -72,7 +69,7 @@ public final class FormulaParser {
 	 * (copied+modified from {@link org.zkoss.poi.ss.util.CellReference#CELL_REF_PATTERN})
 	 */
 	private static final Pattern CELL_REF_PATTERN = Pattern.compile("(\\$?[A-Za-z]+)?(\\$?[0-9]+)?");
-	private static final Pattern OP_FORMULA_PATTERN = Pattern.compile("((TABLE|COL)_\\d+)|((ATTR)_[A-Za-z]+)");
+	private static final Pattern OP_FORMULA_PATTERN = Pattern.compile("((ATTR)_[A-Za-z0-9_]+)");
 	private final String _formulaString;
 	private final int _formulaLength;
 	//ZSS-565
@@ -680,12 +677,6 @@ public final class FormulaParser {
 				return parseNonRange(savePointer);
 			}
 
-			//if we're parsing an argument for relational operator formulas
-			//e.g. Table_1.Col_1
-			if (part1.isRef() && part2.isRef()) {
-				return createTableColumnParseNode(part1, part2);
-			}
-
 			if (part1.isRowOrColumn() || part2.isRowOrColumn()) {
 				if (dotCount != 2) {
 					//henrichen@zkoss.org: shall return #NAME?
@@ -748,6 +739,10 @@ public final class FormulaParser {
 		}
 		if (name.equalsIgnoreCase("TRUE") || name.equalsIgnoreCase("FALSE")) {
 			return  new ParseNode(BoolPtg.valueOf(name.equalsIgnoreCase("TRUE")));
+		}
+		if (OP_FORMULA_PATTERN.matcher(name).matches() && name.length() > 5) {
+			String actualName = name.substring(5);
+			return new ParseNode(new RelTableAttrPtg(actualName));
 		}
 		if (_book == null) {
 			// Only test cases omit the book (expecting it not to be needed)
@@ -984,13 +979,6 @@ public final class FormulaParser {
 		} else {
 			return _book.getName(nonExistedName, sheetName).createPtg();
 		}
-	}
-
-	private ParseNode createTableColumnParseNode(SimpleRangePart part1, SimpleRangePart part2) {
-
-		Ptg ptg = new OpTableColRefPtg(part1.getRep(), part2.getRep());
-		return new ParseNode(ptg);
-		
 	}
 
 	/**
@@ -1234,46 +1222,10 @@ public final class FormulaParser {
 		}
 
 		Match('(');
-		// if the function is a relational operator, we need to know when parsing its arguments
-		ParseNode[] args = Arguments(getNumOperatorTables(name));
+		ParseNode[] args = Arguments();
 		Match(')');
 
 		return getFunction(name, nameToken, args);
-	}
-
-	/**
-	 * If a function is a relational algebra operator, we need to get the number of tables it has as arguments.
-	 * e.g. Select takes one relation, and Join takes two relations.
-	 *
-	 * @param name
-	 * @return
-	 */
-	private int getNumOperatorTables(String name) {
-
-		FunctionMetadata fm = FunctionMetadataRegistry.getFunctionByName(name.toUpperCase());
-		int funcIx = fm.getIndex();
-
-		Function fcn = FunctionEval.getBasicFunction(funcIx);
-
-		if (fcn == null) {
-			return 0;
-		} else {
-
-			if (fcn instanceof OverridableFunction) {
-				Function original = ((OverridableFunction) fcn).get_original();
-				if (original != null) {
-					if (original instanceof SelectFunction) {
-						return 1;
-					} else if (original instanceof RelTable2ArgFunction) {
-						return 2;
-					} else {
-						return 0;
-					}
-				}
-            }
-
-            return 0;
-        }
 	}
 
 	/**
@@ -1295,13 +1247,14 @@ public final class FormulaParser {
 			ParseNode[] allArgs = new ParseNode[numArgs+1];
 			allArgs[0] = new ParseNode(namePtg);
 			System.arraycopy(args, 0, allArgs, 1, numArgs);
-			return new ParseNode(FuncVarPtg.create(name, numArgs+1), allArgs);
+			return new ParseNode(FuncVarPtg.create(name, numArgs+1, false), allArgs);
 		}
 
 		if (namePtg != null) {
 			throw new IllegalStateException("NamePtg no applicable to internal functions");
 		}
 		boolean isVarArgs = !fm.hasFixedArgsLength();
+		boolean containsFilter = false;
 		int funcIx = fm.getIndex();
 		if (funcIx == FunctionMetadataRegistry.FUNCTION_INDEX_SUM && args.length == 1) {
 			// Excel encodes the sum of a single argument as tAttrSum
@@ -1315,17 +1268,24 @@ public final class FormulaParser {
 				setMultiplyOperator(node);
 			}
 		}
+		if (funcIx == FunctionMetadataRegistry.FUNCTION_INDEX_SELECT && args.length >= 2) {
+			args[1] = new ParseNode(FilterHelperPtg.instance, args[1]);
+			containsFilter = true;
+		}
+		if (funcIx == FunctionMetadataRegistry.FUNCTION_INDEX_JOIN && args.length >= 3) {
+			args[2] = new ParseNode(FilterHelperPtg.instance, args[2]);
+			containsFilter = true;
+		}
 		
 		validateNumArgs(args.length, fm);
 
 		AbstractFunctionPtg retval;
 		if(isVarArgs) {
-			retval = FuncVarPtg.create(name, numArgs);
+			retval = FuncVarPtg.create(name, numArgs, containsFilter);
 		} else {
 			retval = FuncPtg.create(funcIx);
 		}
 
-		retval.setOverrideTableNum(getNumOperatorTables(name));
 		return new ParseNode(retval, args);
 	}
 
@@ -1382,35 +1342,8 @@ public final class FormulaParser {
 	}
 
 
-	/**
-	 * For relational operators, we need to mark all OperationPtg's that are arguments to the relational operator.
-	 * AbstractFunctionPtg's are an exception and not marked.
-	 * Arg and all of its children must be marked.
-	 *
-	 * @param arg
-	 */
-	private void markOverridenOpPtgs(ParseNode arg) {
-
-		if (arg.getToken() instanceof OperationPtg && !(arg.getToken() instanceof AbstractFunctionPtg)) {
-			Ptg ptg = arg.getToken();
-			if (!(ptg instanceof ComparisonPtg))
-				((OperationPtg) arg.getToken()).setOverrided(true);
-		}
-		if (arg.getToken() instanceof AbstractFunctionPtg &&
-				(((AbstractFunctionPtg) arg.getToken()).getName().equals("AND")
-						|| ((AbstractFunctionPtg) arg.getToken()).getName().equals("OR")
-						|| ((AbstractFunctionPtg) arg.getToken()).getName().equals("NOT"))) {
-			((OperationPtg) arg.getToken()).setOverrided(true);
-		}
-
-		// mark all of the children ptgs
-		for (int i = 0; i < arg.getChildren().length; i++) {
-			markOverridenOpPtgs(arg.getChildren()[i]);
-		}
-	}
-
 	/** get arguments to a function */
-	private ParseNode[] Arguments(int numOperatorTables) {
+	private ParseNode[] Arguments() {
 		//average 2 args per function
 		List<ParseNode> temp = new ArrayList<>(2);
 		SkipWhite();
@@ -1437,20 +1370,7 @@ public final class FormulaParser {
 
 			ParseNode children = comparisonExpression();
 
-			//mark all OperationPtg's that are inside a relational algebra operator formula
-			if (numOperatorTables > 0) {
-				markOverridenOpPtgs(children);
-			}
-
-			//create the OpTableRefPtg and its children. need '<' since table 1 == arg 0
-			if (numArgs < numOperatorTables) {
-				OpTableRefPtg opTablePtg = new OpTableRefPtg(numArgs);
-				ParseNode tableAndChildren = new ParseNode(opTablePtg, children);
-				temp.add(tableAndChildren);
-			} else {
-				temp.add(children);
-			}
-			
+			temp.add(children);
 			
 			numArgs++;
 			missedPrevArg = false;

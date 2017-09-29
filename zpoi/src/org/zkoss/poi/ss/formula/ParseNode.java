@@ -17,12 +17,7 @@
 
 package org.zkoss.poi.ss.formula;
 
-import org.zkoss.poi.ss.formula.ptg.ArrayPtg;
-import org.zkoss.poi.ss.formula.ptg.AttrPtg;
-import org.zkoss.poi.ss.formula.ptg.FuncVarPtg;
-import org.zkoss.poi.ss.formula.ptg.MemAreaPtg;
-import org.zkoss.poi.ss.formula.ptg.MemFuncPtg;
-import org.zkoss.poi.ss.formula.ptg.Ptg;
+import org.zkoss.poi.ss.formula.ptg.*;
 import org.zkoss.poi.ss.formula.function.FunctionMetadataRegistry;
 /**
  * Represents a syntactic element from a formula by encapsulating the corresponding <tt>Ptg</tt>
@@ -89,7 +84,7 @@ final class ParseNode {
 			collectIfPtgs(temp);
 			return;
 		}
-		boolean isPreFixOperator = _token instanceof MemFuncPtg || _token instanceof MemAreaPtg;
+		boolean isPreFixOperator = _token instanceof MemFuncPtg || _token instanceof MemAreaPtg || _token instanceof FilterHelperPtg;
 		if (isPreFixOperator) {
 			temp.add(_token);
 		}

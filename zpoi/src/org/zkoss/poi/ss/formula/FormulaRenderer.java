@@ -55,6 +55,9 @@ public class FormulaRenderer {
                 // TODO - put comment and throw exception in toFormulaString() of these classes
                 continue;
             }
+            if (ptg instanceof FilterHelperPtg) {
+                continue;
+            }
             if (ptg instanceof ParenthesisPtg) {
             	//ZSS-747
             	//20140827, henrichen: (A1, B2, Sheet2!A1:B2) for chart formula
@@ -93,10 +96,7 @@ public class FormulaRenderer {
                 continue;
             }
             if (! (ptg instanceof OperationPtg)) {
-                // OpTableRefPtg is is not part of the formula string, so don't add it to the stack
-                if (!(ptg instanceof OpTableRefPtg)) {
-                    stack.push(ptg.toFormulaString());
-                }
+                stack.push(ptg.toFormulaString());
                 continue;
             }
 
