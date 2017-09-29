@@ -6,7 +6,6 @@ import org.zkoss.poi.ss.formula.WorkbookEvaluator;
 import org.zkoss.poi.ss.formula.eval.*;
 import org.zkoss.poi.ss.formula.ptg.Ptg;
 
-import java.lang.reflect.Array;
 import java.util.*;
 
 import static org.zkoss.poi.ss.formula.functions.CountUtils.I_MatchPredicate;
@@ -16,38 +15,44 @@ import static org.zkoss.poi.ss.formula.functions.CountUtils.I_MatchPredicate;
  * Functions to be implemented here are:
  * Union, set difference, intersection, cartesian product, select, join, project, and rename.
  * Created by Danny on 9/22/2016.
+ * Heavily modified by Tana.
  */
 public abstract class RelationalOperatorFunction implements Function {
 
 
-	private abstract static class MatchingSchemaFunction extends RelTable2ArgFunction {
+	private static final class RowEntry {
+		private final Row _row;
+		private short _mask;
 
-		protected static short PRESENT1_MASK = 1;
-		protected static short PRESENT2_MASK = 2;
-
-		private final class RowEntry {
-			private final Row _row;
-			private short _mask;
-
-			public RowEntry(Row row) {
-				_row = row;
-				_mask = 0;
-			}
-
-			public Row getRow() {
-				return _row;
-			}
-
-			public short getMask() {
-				return _mask;
-			}
-
-			public void addMask(short mask) {
-				_mask |= mask;
-			}
+		public RowEntry(Row row) {
+			_row = row;
+			_mask = 0;
 		}
 
-		private final void populateRowsAll(List<Row> rows, short listMask, Map<Row, Integer> locator, List<RowEntry> rowEntries) {
+		public Row getRow() {
+			return _row;
+		}
+
+		public short getMask() {
+			return _mask;
+		}
+
+		public void addMask(short mask) {
+			_mask |= mask;
+		}
+	}
+
+	private static final class UniqueRowsContainer {
+
+		private Map<Row, Integer> locator;
+		private List<RowEntry> rowEntries;
+
+		public UniqueRowsContainer() {
+			locator = new HashMap<>();
+			rowEntries = new ArrayList<>();
+		}
+
+		public void addRowsWithMask(List<Row> rows, short listMask) {
 			for (Row row : rows) {
 				int id = rowEntries.size();
 				Integer result = locator.putIfAbsent(row, id);
@@ -59,18 +64,31 @@ public abstract class RelationalOperatorFunction implements Function {
 			}
 		}
 
+		public List<RowEntry> getRowEntries() {
+			return rowEntries;
+		}
+
+	}
+
+	private abstract static class MatchingSchemaFunction extends RelTable2ArgFunction {
+
+		protected static short PRESENT1_MASK = 1;
+		protected static short PRESENT2_MASK = 2;
+
 		@Override
 		protected final ValueEval evaluate(RelTableEval range1, RelTableEval range2, int srcRowIndex, int srcColumnIndex) {
 			try {
 				validateMatchingSchema(range1, range2);
 				List<Row> rows1 = Row.getRowsFromArea(range1);
 				List<Row> rows2 = Row.getRowsFromArea(range2);
-				Map<Row, Integer> locator = new HashMap<>();
-				List<RowEntry> rowEntries = new ArrayList<>();
-				populateRowsAll(rows1, PRESENT1_MASK, locator, rowEntries);
-				populateRowsAll(rows2, PRESENT2_MASK, locator, rowEntries);
+
+				UniqueRowsContainer container = new UniqueRowsContainer();
+
+				container.addRowsWithMask(rows1, PRESENT1_MASK);
+				container.addRowsWithMask(rows2, PRESENT2_MASK);
 
 				List<Row> resultRows = new ArrayList<>();
+				List<RowEntry> rowEntries = container.getRowEntries();
 				for (RowEntry rowEntry : rowEntries) {
 					if (match(rowEntry.getMask())) {
 						resultRows.add(rowEntry.getRow());
@@ -118,49 +136,106 @@ public abstract class RelationalOperatorFunction implements Function {
 
 	};
 
+	private static final int[] getAttrMapping(String[] attrs1, String[] attrs2) {
+		Map<String, Integer> locator = new HashMap<>();
+		int[] attrMapping = new int[attrs2.length];
+		for (int i = 0; i < attrs1.length; i++) {
+			locator.put(attrs1[i], i);
+		}
+		for (int i = 0; i < attrs2.length; i++) {
+			attrMapping[i] = locator.getOrDefault(attrs2[i], -1);
+		}
+		return attrMapping;
+	}
+
+	private static final RelTableEval doCrossProduct(RelTableEval range1, RelTableEval range2, boolean doNaturalJoin) throws EvaluationException {
+		String[] attrs1 = range1.getAttributes();
+		String[] attrs2 = range2.getAttributes();
+		int[] attrMapping = getAttrMapping(attrs1, attrs2);
+		List<String> attrsNewList = new ArrayList<>();
+		for (int i = 0; i < attrs2.length; i++) {
+			if (attrMapping[i] == -1) {
+				attrsNewList.add(attrs2[i]);
+			} else if (!doNaturalJoin) {
+				throw EvaluationException.invalidValue();
+			}
+		}
+
+		int nColumns1 = attrs1.length;
+		int nColumnsN = attrsNewList.size();
+		String[] resultAttributes = new String[nColumns1+nColumnsN];
+		String[] attrsN = attrsNewList.toArray(new String[0]);
+		System.arraycopy(attrs1, 0, resultAttributes, 0, nColumns1);
+		System.arraycopy(attrsN, 0, resultAttributes, nColumns1, nColumnsN);
+
+		List<Row> rows1 = Row.getRowsFromArea(range1);
+		List<Row> rows2 = Row.getRowsFromArea(range2);
+		List<Row> resultRows = new ArrayList<>();
+
+		for (Row row1 : rows1) {
+			for (Row row2 : rows2) {
+				Row combinedRow = Row.combineRows(row1, row2, attrMapping);
+				if (combinedRow != null) {
+					resultRows.add(combinedRow);
+				}
+			}
+		}
+		return Row.getRelTableEval(resultRows, resultAttributes);
+	}
+
+	private static final RelTableEval doSelect(RelTableEval range, FilterHelperEval helper) {
+		WorkbookEvaluator evaluator = helper._evaluator;
+		OperationEvaluationContext ec = helper._ec;
+		Ptg[] ptgs = helper._ptgs;
+		boolean ignoreDereference = helper._ignoreDereference;
+
+		int nRows = range.getHeight();
+		List<ValueEval> evalList = new ArrayList<>();
+		for (int i = 0; i < nRows; i++) {
+			ValueEval result = evaluator.evaluateFormula(ec, ptgs, true, ignoreDereference, range.getRow(i));
+			evalList.add(result);
+		}
+		List<Row> rows = Row.getRowsFromArea(range, evalList);
+		return Row.getRelTableEval(rows, range.getAttributes());
+	}
 
 	public static final Function CROSSPRODUCT = new RelTable2ArgFunction() {
 
 		@Override
 		protected ValueEval evaluate(RelTableEval range1, RelTableEval range2, int srcRowIndex, int srcColumnIndex) {
-			List<Row> rows1 = Row.getRowsFromArea(range1);
-			List<Row> rows2 = Row.getRowsFromArea(range2);
-			List<Row> resultRows = new ArrayList<>();
-
-			for (Row aRows1 : rows1) {
-				for (Row aRows2 : rows2) {
-					resultRows.add(Row.combineRows(aRows1, aRows2));
-				}
+			try {
+				return doCrossProduct(range1, range2, false);
+			} catch (EvaluationException e) {
+				return e.getErrorEval();
 			}
-
-			int nColumns1 = range1.getWidth();
-			int nColumns2 = range2.getWidth();
-			String[] resultAttributes = new String[nColumns1+nColumns2];
-			System.arraycopy(range1.getAttributes(), 0, resultAttributes, 0, nColumns1);
-			System.arraycopy(range2.getAttributes(), 0, resultAttributes, nColumns1, nColumns2);
-
-			return Row.getRelTableEval(resultRows, resultAttributes);
 		}
 
 	};
 
+	public static final Function SELECT = new Var1or2ArgFunction() {
 
-	public static final Function SELECT = new SelectFunction() {
-
-		protected ValueEval evaluate(RelTableEval table, SelectHelperEval helper, int srcRowIndex, int srcColumnIndex) {
-			WorkbookEvaluator evaluator = helper._evaluator;
-			OperationEvaluationContext ec = helper._ec;
-			Ptg[] ptgs = helper._ptgs;
-			boolean ignoreDereference = helper._ignoreDereference;
-
-			int nRows = table.getHeight();
-			List<ValueEval> evalList = new ArrayList<>();
-			for (int i = 0; i < nRows; i++) {
-				ValueEval result = evaluator.evaluateFormula(ec, ptgs, true, ignoreDereference, table.getRow(i));
-				evalList.add(result);
+		@Override
+		public ValueEval evaluate(int srcRowIndex, int srcColumnIndex, ValueEval arg0) {
+			try {
+				return RelTableUtils.getRelTableArg(arg0);
+			} catch (EvaluationException e) {
+				return e.getErrorEval();
 			}
-			List<Row> rows = Row.getRowsFromArea(table, evalList);
-			return Row.getRelTableEval(rows, table.getAttributes());
+		}
+
+		@Override
+		public ValueEval evaluate(int srcRowIndex, int srcColumnIndex, ValueEval arg0, ValueEval arg1) {
+			try {
+				RelTableEval table = RelTableUtils.getRelTableArg(arg0);
+				if (arg1 instanceof FilterHelperEval) {
+					FilterHelperEval helper = (FilterHelperEval) arg1;
+					return doSelect(table, helper);
+				} else {
+					throw EvaluationException.invalidValue();
+				}
+			} catch (EvaluationException e) {
+				return e.getErrorEval();
+			}
 		}
 
 	};
@@ -178,7 +253,19 @@ public abstract class RelationalOperatorFunction implements Function {
 				}
 			}
 			int[] attributeIndices = attributeIndicesList.stream().mapToInt(i->i).toArray();
-			return range.getColumns(attributeIndices);
+			RelTableEval rangeNew = range.getColumns(attributeIndices);
+
+			// Must collapse. Project can produce duplicates.
+			List<Row> rows = Row.getRowsFromArea(rangeNew);
+			UniqueRowsContainer container = new UniqueRowsContainer();
+			container.addRowsWithMask(rows, (short) 0);
+
+			List<Row> resultRows = new ArrayList<>();
+			List<RowEntry> rowEntries = container.getRowEntries();
+			for (RowEntry rowEntry : rowEntries) {
+				resultRows.add(rowEntry.getRow());
+			}
+			return Row.getRelTableEval(resultRows, rangeNew.getAttributes());
 		}
 
 	};
@@ -202,12 +289,36 @@ public abstract class RelationalOperatorFunction implements Function {
 	};
 
 
-	public static final Function JOIN = new JoinFunction() {
+	public static final Function JOIN = new Var2or3ArgFunction() {
 
 		@Override
-		protected ValueEval evaluate(AreaEval range1, AreaEval range2, ValueEval[] args, int srcRowIndex, int srcColumnIndex) {
-			throw new NotImplementedException("not implemented");
+		public ValueEval evaluate(int srcRowIndex, int srcColumnIndex, ValueEval arg0, ValueEval arg1) {
+			try {
+				RelTableEval table1 = RelTableUtils.getRelTableArg(arg0);
+				RelTableEval table2 = RelTableUtils.getRelTableArg(arg1);
+				return doCrossProduct(table1, table2, true);
+			} catch (EvaluationException e) {
+				return e.getErrorEval();
+			}
 		}
+
+		@Override
+		public ValueEval evaluate(int srcRowIndex, int srcColumnIndex, ValueEval arg0, ValueEval arg1, ValueEval arg2) {
+			try {
+				RelTableEval table1 = RelTableUtils.getRelTableArg(arg0);
+				RelTableEval table2 = RelTableUtils.getRelTableArg(arg1);
+				if (arg2 instanceof FilterHelperEval) {
+					FilterHelperEval helper = (FilterHelperEval) arg2;
+					RelTableEval tableTmp = doCrossProduct(table1, table2, false);
+					return doSelect(tableTmp, helper);
+				} else {
+					throw EvaluationException.invalidValue();
+				}
+			} catch (EvaluationException e) {
+				return e.getErrorEval();
+			}
+		}
+
 	};
 
 
@@ -284,7 +395,7 @@ public abstract class RelationalOperatorFunction implements Function {
 			return 0;
 		}
 
-		private boolean compareEvals(ValueEval e1, ValueEval e2) {
+		private static boolean compareEvals(ValueEval e1, ValueEval e2) {
 			if (e1 instanceof NumberEval && e2 instanceof NumberEval) {
 				double val1 = ((NumberEval) e1).getNumberValue();
 				double val2 = ((NumberEval) e2).getNumberValue();
@@ -307,19 +418,23 @@ public abstract class RelationalOperatorFunction implements Function {
 		 * @param row2
 		 * @return
 		 */
-		public static Row combineRows(Row row1, Row row2) {
+		public static Row combineRows(Row row1, Row row2, int[] attrMapping) {
 			int nColumns1 = row1.getLength();
 			int nColumns2 = row2.getLength();
-			ValueEval[] combinedRow = new ValueEval[nColumns1+nColumns2];
-
+			List<ValueEval> combinedRow = new ArrayList<>();
 			for (int i = 0; i < nColumns1; i++) {
-				combinedRow[i] = row1.getValue(i);
-			}
-			for (int i = 0; i < nColumns2; i++) {
-				combinedRow[nColumns1+i] = row2.getValue(i);
+				combinedRow.add(row1.getValue(i));
 			}
 
-			return new Row(combinedRow);
+			for (int i = 0; i < nColumns2; i++) {
+				if (attrMapping[i] == -1) {
+					combinedRow.add(row2.getValue(i));
+				} else if (!compareEvals(row1.getValue(attrMapping[i]), row2.getValue(i))) {
+					return null;
+				}
+			}
+
+			return new Row(combinedRow.toArray(new ValueEval[0]));
 		}
 
 
@@ -380,68 +495,6 @@ public abstract class RelationalOperatorFunction implements Function {
 				}
 			}
 			return rows;
-		}
-
-
-		/**
-		 * Static method to create an array of Row's from an AreaEval
-		 *
-		 * @param range,conditions
-		 * @return
-		 */
-		public static List<Row> getRowsFromArea(RelTableEval range, ValueEval conditions) {
-			List<Row> rows = new ArrayList<>();
-			if (conditions instanceof BoolEval) {
-				if (!((BoolEval) conditions).getBooleanValue()) return rows;
-				else return getRowsFromArea(range);
-			} else if (conditions instanceof ArrayEval) {
-				ArrayEval cds = (ArrayEval) conditions;
-				for (int r = 0; r < range.getHeight(); r++) {
-					ValueEval select = cds.getValue(r, 0);
-					if (select instanceof BoolEval) {
-						if (((BoolEval) select).getBooleanValue()) {
-							//get all of the ValueEval's for this row
-							TwoDEval row = range.getRow(r);
-							ValueEval[] rowEvals = new ValueEval[row.getWidth()];
-							for (int c = 0; c < row.getWidth(); c++) {
-								rowEvals[c] = row.getValue(0, c);
-							}
-							rows.add(new Row(rowEvals));
-						}
-					}
-				}
-			}
-			return rows;
-		}
-
-		public boolean matches(Row row2) {
-
-			Row row1 = this;
-
-			if (row1.getLength() != row2.getLength()) {
-				return false;
-			}
-
-			int width = row1.getLength();
-			boolean matches = true;
-
-			//Iterate over columns
-			for (int c = 0; c < width; c++) {
-
-				ValueEval value1 = row1.getValue(c);
-				ValueEval value2 = row2.getValue(c);
-
-				//arguments for srcCellRow and srcCellCol not used in createCriteriaPredicate, so just use 0, 0
-				I_MatchPredicate matchPredicate = Countif.createCriteriaPredicate(value1, 0, 0);
-
-				if (!matchPredicate.matches(value2)) {
-					matches = false;
-					break;
-				}
-			}
-
-			return matches;
-
 		}
 
 	}//end Row class

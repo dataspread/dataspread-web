@@ -1222,40 +1222,10 @@ public final class FormulaParser {
 		}
 
 		Match('(');
-		ParseNode[] args = Arguments(getFilterArgumentIndex(name));
+		ParseNode[] args = Arguments();
 		Match(')');
 
 		return getFunction(name, nameToken, args);
-	}
-
-	/**
-	 * If the function uses filters, we need the position of the filter argument.
-	 * @param name
-	 * @return the index of the filter argument, or -1 if there are no filter arguments.
-	 */
-	private int getFilterArgumentIndex(String name) {
-		FunctionMetadata fm = FunctionMetadataRegistry.getFunctionByName(name.toUpperCase());
-		int funcIx = fm.getIndex();
-
-		Function fcn = FunctionEval.getBasicFunction(funcIx);
-
-		if (fcn == null) {
-			return -1;
-		} else {
-			if (fcn instanceof OverridableFunction) {
-				Function original = ((OverridableFunction) fcn).get_original();
-				if (original != null) {
-					if (original instanceof SelectFunction) {
-						return 1;
-					} else if (original instanceof JoinFunction) {
-						return 2;
-					} else {
-						return -1;
-					}
-				}
-			}
-			return -1;
-		}
 	}
 
 	/**
@@ -1373,7 +1343,7 @@ public final class FormulaParser {
 
 
 	/** get arguments to a function */
-	private ParseNode[] Arguments(int filterArgumentIndex) {
+	private ParseNode[] Arguments() {
 		//average 2 args per function
 		List<ParseNode> temp = new ArrayList<>(2);
 		SkipWhite();

@@ -26,7 +26,7 @@ import java.util.Arrays;
  * @author tana
  *
  */
-public class SelectHelperEval implements ValueEval {
+public class FilterHelperEval implements ValueEval {
 
 	public final WorkbookEvaluator _evaluator;
 	public final OperationEvaluationContext _ec;
@@ -34,7 +34,7 @@ public class SelectHelperEval implements ValueEval {
 	public final boolean _ignoreDependency;
 	public final boolean _ignoreDereference;
 
-	public SelectHelperEval(WorkbookEvaluator evaluator, OperationEvaluationContext ec, Ptg[] ptgs, boolean ignoreDependency, boolean ignoreDereference) {
+	public FilterHelperEval(WorkbookEvaluator evaluator, OperationEvaluationContext ec, Ptg[] ptgs, boolean ignoreDependency, boolean ignoreDereference) {
 		_evaluator = evaluator;
 		_ec = ec;
 		_ptgs = ptgs;

@@ -21,7 +21,6 @@ import org.zkoss.poi.hssf.util.CellReference;
 import org.zkoss.poi.ss.formula.CollaboratingWorkbooksEnvironment.WorkbookNotFoundException;
 import org.zkoss.poi.ss.formula.atp.AnalysisToolPak;
 import org.zkoss.poi.ss.formula.eval.*;
-import org.zkoss.poi.ss.formula.function.FunctionMetadataRegistry;
 import org.zkoss.poi.ss.formula.functions.*;
 import org.zkoss.poi.ss.formula.ptg.*;
 import org.zkoss.poi.ss.formula.udf.AggregatingUDFFinder;
@@ -647,7 +646,7 @@ public final class WorkbookEvaluator {
 				}
 				if (selIndex < ptgs.length) {
 					Ptg[] sidePtgs = Arrays.copyOfRange(ptgs, i+1, selIndex);
-					SelectHelperEval eval = new SelectHelperEval(this, ec, sidePtgs, ignoreDependency, ignoreDereference);
+					FilterHelperEval eval = new FilterHelperEval(this, ec, sidePtgs, ignoreDependency, ignoreDereference);
 					stack.push(eval);
 					i = selIndex-1;
 				}
