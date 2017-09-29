@@ -34,9 +34,6 @@ public class PtgShifter {
 	private final int _colAmount;
 	private final SpreadsheetVersion _ver;
 
-	//variable used for updating OpTableColRefPtg
-	private AreaPtgBase _currArea;
-
 	public PtgShifter(int externSheetIndex, int firstRow, int lastRow, int rowAmount, int firstCol, int lastCol, int colAmount, SpreadsheetVersion ver) {
 		if (firstRow > lastRow) {
 			throw new IllegalArgumentException("firstRow("+firstRow+") and lastRow("+lastRow+") out of order");
@@ -202,70 +199,7 @@ public class PtgShifter {
 				return colMoveAreaPtg(aptg);
 			}
 		}
-		// Update ptgs for Table_x.Col_x
-		if (ptg instanceof OpTableColRefPtg) {
-
-			if (_colAmount != 0 && _currArea != null) {
-				return moveTableColRefPtg((OpTableColRefPtg) ptg);
-			}
-
-		}
 		return null;
-	}
-
-	/**
-	 * Method to update a ptg for Table_x.Col_x for relational algebra formulas.
-	 * Private variable _currArea has the last seen area. _currArea is not null when this method is called.
-	 *
-	 * @param tcptg
-	 * @return
-	 */
-	private Ptg moveTableColRefPtg(OpTableColRefPtg tcptg) {
-		final int aFirstCol = _currArea.getFirstColumn();
-		final int aLastCol = _currArea.getLastColumn();
-
-		if (_colAmount > 0) {
-			//column(s) being inserted in currArea
-			if (_firstCol > aFirstCol && _firstCol <= aLastCol) {
-				int tcIdx = tcptg.getColumnNum() + aFirstCol;
-				if (tcIdx >= _firstCol) {
-					int newTcIdx = tcIdx + _colAmount - aFirstCol;
-					tcptg.setColumnNum(newTcIdx);
-				}
-			}
-		} else if (_colAmount < 0) {
-			//end of deleted columns is in currArea
-			if (_firstCol > aFirstCol && _firstCol <= aLastCol) {
-				int tcIdx = tcptg.getColumnNum() + aFirstCol;
-				//tcptg is a deleted column
-				if (tcIdx >= _firstCol + _colAmount && tcIdx < _firstCol) {
-					tcptg.setColumnNum(-1);
-				} else if (tcIdx >= _firstCol) {
-					//all columns of currArea up to _firstCol are deleted
-					if (_firstCol + _colAmount <= aFirstCol) {
-						int newTcIdx = tcIdx - _firstCol;
-						tcptg.setColumnNum(newTcIdx);
-					}
-					//only some columns in currArea are deleted
-					else {
-						int newTcIdx = tcIdx + _colAmount - aFirstCol;
-						tcptg.setColumnNum(newTcIdx);
-					}
-				}
-			}
-			//end of deleted columns is after currArea and columns in currArea are deleted
-			else if (_firstCol > aLastCol && _firstCol + _colAmount <= aLastCol) {
-				int tcIdx = tcptg.getColumnNum() + aFirstCol;
-				//tcptg is a deleted column
-				if (tcIdx >= _firstCol + _colAmount && tcIdx < _firstCol) {
-					tcptg.setColumnNum(-1);
-				}
-			}
-		}
-
-
-		return tcptg;
-
 	}
 
 	private Ptg rowMoveRefPtg(RefPtgBase rptg) {
@@ -574,8 +508,6 @@ public class PtgShifter {
 	}
 
 	private Ptg colMoveAreaPtg(AreaPtgBase aptg) {
-		_currArea = new AreaPtg(aptg.getFirstRow(), aptg.getLastRow(), aptg.getFirstColumn(), aptg.getLastColumn(),
-				aptg.isFirstRowRelative(), aptg.isLastRowRelative(), aptg.isFirstColRelative(), aptg.isLastColRelative());
 		final int aFirstRow = aptg.getFirstRow();
 		final int aLastRow = aptg.getLastRow();
 		if (aFirstRow < _firstRow || aLastRow > _lastRow) { //not total cover

@@ -37,10 +37,10 @@ public final class FuncVarPtg extends AbstractFunctionPtg{
     /**
      * Single instance of this token for 'sum() taking a single argument'
      */
-    public static final OperationPtg SUM = FuncVarPtg.create("SUM", 1);
+    public static final OperationPtg SUM = FuncVarPtg.create("SUM", 1, false);
 
-    private FuncVarPtg(int functionIndex, int returnClass, byte[] paramClasses, int numArgs) {
-        super(functionIndex, returnClass, paramClasses, numArgs);
+    private FuncVarPtg(int functionIndex, int returnClass, byte[] paramClasses, int numArgs, boolean containsFilter) {
+        super(functionIndex, returnClass, paramClasses, numArgs, containsFilter);
     }
 
     @Override
@@ -53,25 +53,25 @@ public final class FuncVarPtg extends AbstractFunctionPtg{
      * usually called while reading an excel file.
      */
     public static FuncVarPtg create(LittleEndianInput in)  {
-        return create(in.readByte(), in.readShort());
+        return create(in.readByte(), in.readShort(), false);
     }
 
     /**
      * Create a function ptg from a string tokenised by the parser
      */
-    public static FuncVarPtg create(String pName, int numArgs) {
-        return create(numArgs, lookupIndex(pName));
+    public static FuncVarPtg create(String pName, int numArgs, boolean containsFilter) {
+        return create(numArgs, lookupIndex(pName), containsFilter);
     }
 
-    private static FuncVarPtg create(int numArgs, int functionIndex) {
+    private static FuncVarPtg create(int numArgs, int functionIndex, boolean containsFilter) {
         FunctionMetadata fm = FunctionMetadataRegistry.getFunctionByIndex(functionIndex);
         if(fm == null) {
             // Happens only as a result of a call to FormulaParser.parse(), with a non-built-in function name
-            FuncVarPtg funcVarPtg = new FuncVarPtg(functionIndex, Ptg.CLASS_VALUE, new byte[] {Ptg.CLASS_VALUE}, numArgs);
+            FuncVarPtg funcVarPtg = new FuncVarPtg(functionIndex, Ptg.CLASS_VALUE, new byte[] {Ptg.CLASS_VALUE}, numArgs, containsFilter);
             funcVarPtg.setExternal(true);	// 20131230, paowang@potix.com, ZSS-533: indicates it's a external function
             return funcVarPtg;
         }
-        return new FuncVarPtg(functionIndex, fm.getReturnClassCode(), fm.getParameterClassCodes(), numArgs);
+        return new FuncVarPtg(functionIndex, fm.getReturnClassCode(), fm.getParameterClassCodes(), numArgs, containsFilter);
     }
 
     public void write(LittleEndianOutput out) {

@@ -20,7 +20,7 @@ public abstract class SelectFunction implements Function {
 			RelTableEval table = RelTableUtils.getRelTableArg(args[0]);
 
 			if (args.length == 1) {
-				return null;//return evaluate(table, srcCellRow, srcCellCol);
+				return table;
 			} else {
 				ValueEval helperArg = args[1];
 				if (helperArg instanceof SelectHelperEval) {

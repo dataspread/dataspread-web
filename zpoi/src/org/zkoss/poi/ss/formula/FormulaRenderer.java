@@ -18,7 +18,6 @@
 package org.zkoss.poi.ss.formula;
 
 import org.zkoss.poi.ss.formula.EvaluationWorkbook.ExternalSheet;
-import org.zkoss.poi.ss.formula.eval.SelectHelperEval;
 import org.zkoss.poi.ss.formula.ptg.*;
 import org.zkoss.poi.ss.usermodel.ZssContext;
 
@@ -56,7 +55,7 @@ public class FormulaRenderer {
                 // TODO - put comment and throw exception in toFormulaString() of these classes
                 continue;
             }
-            if (ptg instanceof SelectHelperPtg) {
+            if (ptg instanceof FilterHelperPtg) {
                 continue;
             }
             if (ptg instanceof ParenthesisPtg) {
@@ -97,10 +96,7 @@ public class FormulaRenderer {
                 continue;
             }
             if (! (ptg instanceof OperationPtg)) {
-                // OpTableRefPtg is is not part of the formula string, so don't add it to the stack
-                if (!(ptg instanceof OpTableRefPtg)) {
-                    stack.push(ptg.toFormulaString());
-                }
+                stack.push(ptg.toFormulaString());
                 continue;
             }
 

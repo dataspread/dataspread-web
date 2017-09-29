@@ -539,7 +539,6 @@ public final class WorkbookEvaluator {
 
 
 		Stack<ValueEval> stack = new Stack<>();
-		boolean selectState = false;
 		for (int i = 0, iSize = ptgs.length; i < iSize; i++) {
 			ec.setPtgIndex(i); //ZSS-845
 			// since we don't know how to handle these yet :(
@@ -628,26 +627,30 @@ public final class WorkbookEvaluator {
 				continue;
 			}
 
-			if (ptg instanceof SelectHelperPtg) {
-				int selIndex = i;
-				for (int j = i+1; j < ptgs.length; j++) {
-					Ptg jPtg = ptgs[j];
+			if (ptg instanceof FilterHelperPtg) {
+				int selIndex;
+				int filterDepth = 1;
+				for (selIndex = i+1; selIndex < ptgs.length; selIndex++) {
+					Ptg jPtg = ptgs[selIndex];
+					if (jPtg instanceof FilterHelperPtg) {
+						filterDepth++;
+					}
 					if (jPtg instanceof AbstractFunctionPtg) {
 						AbstractFunctionPtg fptg = (AbstractFunctionPtg) jPtg;
-						if (fptg.getFunctionIndex() == FunctionMetadataRegistry.FUNCTION_INDEX_SELECT) {
-							selIndex = j;
+						if (fptg.getContainFilter()) {
+							filterDepth--;
 						}
 					}
+					if (filterDepth == 0) {
+						break;
+					}
 				}
-				if (selIndex != i) {
+				if (selIndex < ptgs.length) {
 					Ptg[] sidePtgs = Arrays.copyOfRange(ptgs, i+1, selIndex);
 					SelectHelperEval eval = new SelectHelperEval(this, ec, sidePtgs, ignoreDependency, ignoreDereference);
 					stack.push(eval);
 					i = selIndex-1;
 				}
-				continue;
-			}
-			if (ptg instanceof OpTableRefPtg) {
 				continue;
 			}
 

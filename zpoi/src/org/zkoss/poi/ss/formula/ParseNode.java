@@ -45,7 +45,6 @@ final class ParseNode {
 		for (int i = 0; i < children.length; i++) {
 			tokenCount += children[i].getTokenCount();
 		}
-		tokenCount += isSelect(_token) ? 1 : 0;
 		if (_isIf) {
 			// there will be 2 or 3 extra tAttr tokens according to whether the false param is present
 			tokenCount += children.length;
@@ -85,11 +84,7 @@ final class ParseNode {
 			collectIfPtgs(temp);
 			return;
 		}
-		if (isSelect(_token)) {
-			collectSelectPtgs(temp);
-			return;
-		}
-		boolean isPreFixOperator = _token instanceof MemFuncPtg || _token instanceof MemAreaPtg;
+		boolean isPreFixOperator = _token instanceof MemFuncPtg || _token instanceof MemAreaPtg || _token instanceof FilterHelperPtg;
 		if (isPreFixOperator) {
 			temp.add(_token);
 		}
@@ -155,25 +150,6 @@ final class ParseNode {
 			if (FunctionMetadataRegistry.FUNCTION_NAME_IF.equals(func.getName())) {
 				return true;
 			}
-		}
-		return false;
-	}
-
-	private void collectSelectPtgs(TokenCollector temp) {
-		if (getChildren().length > 0) {
-			getChildren()[0].collectPtgs(temp);
-			temp.add(SelectHelperPtg.instance);
-			for (int i = 1; i < getChildren().length; i++) {
-				getChildren()[i].collectPtgs(temp);
-			}
-		}
-		temp.add(_token);
-	}
-
-	private static boolean isSelect(Ptg token) {
-		if (token instanceof FuncVarPtg) {
-			FuncVarPtg func = (FuncVarPtg) token;
-			return func.getName().equalsIgnoreCase("SELECT");
 		}
 		return false;
 	}

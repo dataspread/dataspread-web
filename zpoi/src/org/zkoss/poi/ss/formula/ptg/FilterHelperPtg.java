@@ -6,7 +6,7 @@
    (the "License"); you may not use this file except in compliance with
    the License.  You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+	   http://www.apache.org/licenses/LICENSE-2.0
 
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,34 +17,34 @@
 
 package org.zkoss.poi.ss.formula.ptg;
 
+import org.zkoss.poi.util.LittleEndianOutput;
+
 /**
- * This PTG implements the standard binomial divide "/"
- * @author  Andrew C. Oliver acoliver at apache dot org
- * @author Jason Height (jheight at chariot dot net dot au)
+ * This PTG helps with filters (from Select/Join)
+ * @author Tana
  */
-public final class SelectHelperPtg extends ValueOperatorPtg {
-    public final static byte sid  = 0x70;
+public final class FilterHelperPtg extends ValueOperatorPtg {
+	public final static byte sid  = 0x70;
 
-    public static final ValueOperatorPtg instance = new SelectHelperPtg();
+	public static final FilterHelperPtg instance = new FilterHelperPtg();
 
-    private SelectHelperPtg() {
-    	// enforce singleton
-    }
+	private FilterHelperPtg() {
+		// enforce singleton
+	}
 
-    @Override
-    public OperationPtg getInstance() {
-        return instance;
-    }
+	public FilterHelperPtg getInstance() {
+		return instance;
+	}
 
-    protected byte getSid() {
-    	return sid;
-    }
+	protected byte getSid() {
+		return sid;
+	}
 
-    public int getNumberOfOperands() {
-        return 0;
-    }
+	public int getNumberOfOperands() {
+		return 1;
+	}
 
-     public String toFormulaString(String[] operands) {
-        return "";
-    }      
+	 public String toFormulaString(String[] operands) {
+		return operands[0].toString();
+	}      
 }
