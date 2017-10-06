@@ -69,8 +69,7 @@ public class InsertRowHandler extends AbstractHandler {
 		//code for updating the max visible row
 		SSheet isheet = ctx.getSheet().getInternalSheet();
 		Spreadsheet ss = ctx.getSpreadsheet();
-		ss.setSheetMaxVisibleRows(isheet, ss.getSheetMaxVisibleRows(isheet) + 1);
-		//////////////////
+		ss.setSheetMaxVisibleRows(isheet, ss.getSheetMaxVisibleRows(isheet) + range.getRowCount());
 
 		return true;
 	}

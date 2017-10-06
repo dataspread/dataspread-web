@@ -26,6 +26,8 @@ import org.zkoss.zss.api.Range.InsertCopyOrigin;
 import org.zkoss.zss.api.Range.InsertShift;
 import org.zkoss.zss.api.model.Book;
 import org.zkoss.zss.api.model.Sheet;
+import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.ui.Spreadsheet;
 import org.zkoss.zss.ui.UserActionContext;
 import org.zkoss.zss.ui.impl.undo.InsertCellAction;
 import org.zkoss.zss.ui.sys.UndoableActionManager;
@@ -55,6 +57,11 @@ public class InsertColumnHandler extends AbstractHandler {
 				range.getLastRow(), range.getLastColumn(), 
 				InsertShift.RIGHT, InsertCopyOrigin.FORMAT_LEFT_ABOVE)); // ZSS-404, Excel default behavior is left or above
 		ctx.clearClipboard();
+
+		//code for updating the max visible row
+		SSheet isheet = ctx.getSheet().getInternalSheet();
+		Spreadsheet ss = ctx.getSpreadsheet();
+		ss.setSheetMaxVisibleColumns(isheet, ss.getSheetMaxVisibleColumns(isheet) + range.getColumnCount());
 		return true;
 	}
 
