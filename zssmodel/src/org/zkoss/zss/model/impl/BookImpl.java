@@ -20,7 +20,6 @@ import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.lang.Objects;
-import org.zkoss.util.logging.Log;
 import org.zkoss.zk.ui.Executions;
 import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.impl.sys.DependencyTableAdv;
@@ -38,7 +37,6 @@ import org.zkoss.zss.model.util.Strings;
 import org.zkoss.zss.model.util.Validations;
 import org.zkoss.zss.range.impl.StyleUtil;
 
-import java.awt.print.Book;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -356,7 +354,7 @@ public class BookImpl extends AbstractBookAdv{
 				rs.close();
 				DBContext dbContext = new DBContext(connection);
 				String modelName = bookTable + sheet.getDBId();
-				sheet.createModel(dbContext, modelName);
+                sheet.cloneModel(dbContext, modelName, src);
 				connection.commit();
 			}
 			catch (SQLException e)

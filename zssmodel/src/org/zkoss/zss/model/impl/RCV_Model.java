@@ -34,6 +34,20 @@ public class RCV_Model extends Model {
         loadMetaData(context);
     }
 
+    protected RCV_Model(DBContext context, SSheet sheet, String tableName, RCV_Model source) {
+        this.sheet = sheet;
+        rowMapping = source.rowMapping.clone(context, tableName + "_row_idx");
+        colMapping = source.colMapping.clone(context, tableName + "_col_idx");
+        this.tableName = tableName;
+        copySchema(context, source.tableName);
+        source.bs.clone(context, tableName + "_rcv_meta");
+        loadMetaData(context);
+    }
+
+    @Override
+    public Model clone(DBContext context, SSheet sheet, String tableName) {
+        return new RCV_Model(context, sheet, tableName, this);
+    }
 
     private void loadMetaData(DBContext context) {
         bs = new BlockStore(context, tableName + "_rcv_meta");
@@ -45,6 +59,22 @@ public class RCV_Model extends Model {
         }
     }
 
+    //Copy the table
+    private void copySchema(DBContext dbContext, String sourceTable) {
+        createSchema(dbContext);
+        String copyTable = (new StringBuffer())
+                .append("INSERT INTO ")
+                .append(tableName)
+                .append(" SELECT * FROM ")
+                .append(sourceTable)
+                .toString();
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute(copyTable);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
     //Create a table from the database
     private void createSchema(DBContext dbContext) {

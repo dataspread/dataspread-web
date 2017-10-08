@@ -42,6 +42,20 @@ public class BTree implements PosMapping {
         loadMetaData(context);
     }
 
+
+    /**
+     * Construct an BTree from an existing BTree, in-memory
+     */
+    protected BTree(DBContext context, String tableName, BlockStore sourceBlockStore) {
+        bs = sourceBlockStore.clone(context, tableName);
+        loadMetaData(context);
+    }
+
+    @Override
+    public BTree clone(DBContext context, String tableName){
+        return new BTree(context, tableName, bs);
+    }
+
     /**
      * Find the index, i, at which x should be inserted into the null-padded
      * sorted array, a

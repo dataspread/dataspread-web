@@ -91,6 +91,9 @@ public abstract class Model {
 
     public abstract boolean deleteTableColumns(DBContext dbContext, CellRegion cellRegion);
 
+    // Clone only the corresponding tables in postgres
+    public abstract Model clone(DBContext dbContext, SSheet sheet, String modelName);
+
     //
     public enum ModelType {
         ROM_Model, COM_Model, RCV_Model, HYBRID_Model, TOM_Model
