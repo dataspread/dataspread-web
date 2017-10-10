@@ -414,13 +414,6 @@ public class SheetOperationUtil {
 				String prefix = range.getSheetName();
 				int num = 1;
 				String name = null;
-//
-//				Pattern pattern = Pattern.compile("(.*) \\(([0-9]+)\\)$");
-//				Matcher matcher = pattern.matcher(prefix);
-//				if(matcher.find()) {
-//					prefix = matcher.group(1);
-//					num = Integer.parseInt(matcher.group(2));
-//				}
 
 				for(int i = 0, length = range.getBook().getNumberOfSheets(); i <= length; i++) {
 					String n = prefix + " (" + ++num + ")";
