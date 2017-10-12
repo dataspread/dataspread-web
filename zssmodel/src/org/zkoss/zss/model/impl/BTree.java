@@ -33,6 +33,14 @@ public class BTree implements PosMapping {
     protected BlockStore bs;
     private MetaDataBlock metaDataBlock;
 
+    /**
+     * Set serialization function
+     * True for use Kryo function
+     * @param useKryo
+     */
+    public void useKryo(Boolean useKryo) {
+        bs.setKryo(useKryo);
+    }
 
     /**
      * Construct an empty BTree, in-memory
