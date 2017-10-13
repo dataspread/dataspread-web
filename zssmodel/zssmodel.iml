@@ -9,10 +9,6 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="tomcat-dbcp" level="project" />
-    <orderEntry type="library" name="postgresql-9.4.1208" level="project" />
-    <orderEntry type="library" name="lib" level="project" />
-    <orderEntry type="library" name="tomcat-jdbc" level="project" />
     <orderEntry type="module" module-name="rtree" />
     <orderEntry type="library" name="Maven: com.github.davidmoten:guava-mini:0.1" level="project" />
     <orderEntry type="library" name="Maven: io.reactivex:rxjava:1.1.4" level="project" />
@@ -24,6 +20,9 @@
     <orderEntry type="library" name="Maven: com.google.errorprone:error_prone_annotations:2.0.18" level="project" />
     <orderEntry type="library" name="Maven: com.google.j2objc:j2objc-annotations:1.1" level="project" />
     <orderEntry type="library" name="Maven: org.codehaus.mojo:animal-sniffer-annotations:1.14" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.6.3" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.6.0" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.6.3" level="project" />
     <orderEntry type="module" module-name="zpoi" />
     <orderEntry type="library" name="Maven: org.zkoss.common:zcommon:7.0.3" level="project" />
     <orderEntry type="library" name="Maven: commons-fileupload:commons-fileupload:1.2.2" level="project" />
