@@ -7,6 +7,7 @@
 			<hlayout vflex="1" spacing="0">
 
 				<include vflex="1" src="~./zssapp/TablesBar.zul"></include>
+				<include vflex="1" src="~./zssapp/hierarchy.zul"></include>
 
 				<spreadsheet id="ss" hflex="1" showToolbar="true" showFormulabar="true" showSheetbar="true"
 							 showContextMenu="true" vflex="1"/>

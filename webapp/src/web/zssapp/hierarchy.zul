@@ -1,0 +1,32 @@
+<?xel-method prefix="c" name="formatStock" class="org.zkoss.zss.model.impl.navigation.FormatElNumber"
+   signature="java.lang.String formatStock(double)"?>
+<zk>
+	<style src="/navigation/grid/hierarchy/style.css" />
+	<div apply="org.zkoss.zss.model.impl.navigation.HierarchyController">
+		<grid id="hGrid" model="${$composer.stocks }">
+			<columns>
+				<column width="40px" />
+				<column label="Stock Name" sort="auto(name)" />
+				<column label="Avg. High" sort="auto(averageHigh)" align="center"/>
+				<column label="Avg. Low" sort="auto(averageLow)" align="center"/>
+				<column label="Avg. Volume" sort="auto(averageVolume)" align="center"/>
+			</columns>
+			<template name="model">
+				<row>
+					<!-- use custom-attributes to store quarters and stock in row, 
+				 		so it can be accessed later when detail onOpen -->				
+					<custom-attributes quarters="${each.quarters}" stock="${each}" />
+					<detail open="false" fulfill="onOpen">
+						<include src="/navigation/grid/hierarchy/season.zul"
+							stock="${stock}" quarters="${quarters}" />
+					</detail>
+					<label value="${each.name}" />
+					<label value="${c:formatStock(each.averageHigh)}" style="color:red;"/>
+					<label value="${c:formatStock(each.averageLow)}" style="color:green;"/>
+					<label value="${c:formatStock(each.averageVolume)}" style="font-weight:bold;"/>
+				</row>
+			</template>
+		</grid>
+	</div>
+</zk>
+

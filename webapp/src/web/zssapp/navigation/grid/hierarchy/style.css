@@ -1,0 +1,28 @@
+tr.z-row .z-detail-outer,tr.z-row .z-row-inner {
+	padding-top: 10px;
+	padding-bottom: 10px;
+}
+
+tr.z-row td.z-row-inner {
+	border-left-width: 0;
+	border-right-width: 0;
+	border-color: gray;
+}
+
+.z-column .z-column-content {
+	padding: 2px;
+	font-weight: bold;
+}
+
+tr.z-row.last td:first-child span {
+	font-weight: bold;
+	color: #06488E;
+}
+
+tr.z-row td.z-row-inner {
+	border: 0;
+}
+
+.sapphire .inner-grid tr.z-row .z-row-content {
+	color: black;
+}

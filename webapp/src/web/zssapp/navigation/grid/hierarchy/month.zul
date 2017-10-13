@@ -1,0 +1,20 @@
+<zk>
+	<grid model="${arg.months}">
+		<columns>
+			<column label="Month" />
+			<column label="High" sort="auto(high)" align="center"/>
+			<column label="Low" sort="auto(low)" align="center"/>
+			<column label="Volume" sort="auto(volume)" align="center"/>
+		</columns>
+		<template name="model">
+			<row sclass="last">
+				<label value="${each.month}" />
+				<label value="${c:formatStock(each.high)}" />
+				<label value="${c:formatStock(each.low)}" />
+				<label value="${c:formatStock(each.volume)}" />
+			</row>
+		</template>
+	</grid>
+	<chart type="line" width="600px" height="200px" bgColor="#fafafa"
+		model="${arg.quarter.chartModel}" />
+</zk>

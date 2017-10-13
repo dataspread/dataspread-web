@@ -1,0 +1,31 @@
+<grid model="${arg.quarters}" sclass="inner-grid">
+	<columns>
+		<column width="40px" />
+		<column label="Season" />
+		<column label="Avg. High" sort="auto(averageHigh)" align="center"/>
+		<column label="Avg. Low" sort="auto(averageLow)" align="center"/>
+		<column label="Avg. Volume" sort="auto(averageVolume)" align="center"/>
+	</columns>
+	<template name="model">
+		<row value="${forEachStatus.index}">
+			<!-- use custom-attributes to store quarter and months in row, 
+				 so it can be accessed later when detail onOpen -->
+			<custom-attributes quarter="${each}" months="${each.months}" />
+			<detail open="false" fulfill="onOpen">
+				<include src="/widgets/grid/hierarchy/month.zul" 
+					quarter="${quarter}" months="${months}" />
+			</detail>
+			<label value="Q${each.quarter}" />
+			<label value="${c:formatStock(each.averageHigh)}" />
+			<label value="${c:formatStock(each.averageLow)}" />
+			<label value="${c:formatStock(each.averageVolume)}" />
+		</row>
+	</template>
+	<foot>
+		<footer width="40px" />
+		<footer label="Avg:" />
+		<footer label="${c:formatStock(arg.stock.averageHigh)}" />
+		<footer label="${c:formatStock(arg.stock.averageLow)}" />
+		<footer label="${c:formatStock(arg.stock.averageVolume)}" />
+	</foot>
+</grid>
