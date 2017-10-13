@@ -14,14 +14,15 @@ public class BTreeTest {
         String url = "jdbc:postgresql://127.0.0.1:5432/ibd";
         String driver = "org.postgresql.Driver";
         String userName = "mangesh";
-        String password = "";
+        String password = "mangesh";
         DBHandler.connectToDB(url, driver, userName, password);
         DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
         BTree btree = new BTree(dbContext, "Test1");
+        btree.useKryo(false);
         ArrayList<Integer> arrayList = new ArrayList<>();
 
         // Random operations
-        final int operations=1000;
+        final int operations=10;
         Random random = new Random(1);
         Random randomOperation = new Random(1);
         int stats_add =0;
@@ -78,6 +79,7 @@ public class BTreeTest {
         else
             System.err.println("Results do not match");
 
+        dbContext.getConnection().commit();
         dbContext.getConnection().close();
     }
 }
