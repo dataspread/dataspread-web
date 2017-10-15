@@ -29,7 +29,6 @@ import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.SAutoFilter.FilterOp;
 import org.zkoss.zss.model.SAutoFilter.NFilterColumn;
 import org.zkoss.zss.model.SPicture.Format;
-import org.zkoss.zss.model.impl.sys.formula.FormulaEngineImpl;
 import org.zkoss.zss.model.sys.EngineFactory;
 import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.dependency.ObjectRef.ObjectType;
@@ -40,9 +39,8 @@ import org.zkoss.zss.model.util.Validations;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
 /**
@@ -2187,6 +2185,11 @@ public class SheetImpl extends AbstractSheetAdv {
     @Override
     public void createModel(DBContext dbContext, String modelName) {
 		dataModel = Model.CreateModel(dbContext, this, Model.ModelType.HYBRID_Model, modelName);
+	}
+
+    @Override
+	public void cloneModel(DBContext dbContext, String modelName, SSheet src) {
+		dataModel = src.getDataModel().clone(dbContext,this, modelName);
 	}
 
 	@Override

@@ -20,6 +20,18 @@ public class COM_Model extends Model {
         rom_model = new ROM_Model(context, sheet, tableName);
     }
 
+    COM_Model(DBContext context, SSheet sheet, String tableName, COM_Model source) {
+        this.sheet = sheet;
+        this.tableName = tableName;
+        rom_model = source.rom_model.clone(context, sheet, tableName);
+    }
+
+    @Override
+    public COM_Model clone(DBContext dbContext, SSheet sheet, String modelName) {
+        return new COM_Model(dbContext, sheet, modelName, this);
+    }
+
+
     @Override
     public void dropSchema(DBContext context) {
         rom_model.dropSchema(context);

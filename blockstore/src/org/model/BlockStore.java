@@ -66,6 +66,24 @@ public class BlockStore {
         //logger.info("BlockStore created - " + dataStore);
     }
 
+    public BlockStore clone(DBContext context, String dataStore) {
+        BlockStore blockStore = new BlockStore(context, dataStore);
+        flushDirtyBlocks(context);
+        String copyTable = (new StringBuffer())
+                .append("INSERT INTO ")
+                .append(dataStore)
+                .append(" SELECT * FROM ")
+                .append(this.dataStore)
+                .toString();
+        AutoRollbackConnection connection = context.getConnection();
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute(copyTable);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return blockStore;
+    }
+
     public String getDataStore() {
         return dataStore;
     }

@@ -422,6 +422,11 @@ public interface SSheet {
 	 */
 	void createModel(DBContext dbContext, String modelName);
 
+	/**
+	 * Copy a model for the sheet
+	 */
+	void cloneModel(DBContext dbContext, String modelName, SSheet src);
+
     /**
      * Create a model for the sheet
      */

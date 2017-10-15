@@ -21,6 +21,8 @@ public interface PosMapping {
     // Rollback and Flush Cache
     void clearCache(DBContext context);
 
+    PosMapping clone(DBContext context, String tableName);
+
     int size(DBContext context);
 
     String getTableName();
