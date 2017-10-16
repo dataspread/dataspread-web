@@ -77,7 +77,7 @@ public class DBHandler implements ServletContextListener {
             dbListener = new DBListener();
             dbListener.start();
             graphCompressor = new GraphCompressor();
-            graphCompressor.start();
+            //graphCompressor.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -164,6 +164,8 @@ public class DBHandler implements ServletContextListener {
     private void createDependencyTable(DBContext dbContext) {
         AutoRollbackConnection connection = dbContext.getConnection();
         try (Statement stmt = connection.createStatement()) {
+            stmt.execute("CREATE EXTENSION IF NOT EXISTS  btree_gist");
+
             String createTable = "CREATE TABLE  IF NOT  EXISTS  dependency (" +
                     "bookname      TEXT    NOT NULL," +
                     "sheetname     TEXT    NOT NULL," +
@@ -177,6 +179,12 @@ public class DBHandler implements ServletContextListener {
                     "FOREIGN KEY (dep_bookname, dep_sheetname) REFERENCES sheets (bookname, sheetname)" +
                     " ON DELETE CASCADE ON UPDATE CASCADE )";
             stmt.execute(createTable);
+
+            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx1 " +
+                    " ON public.dependency using GIST (bookname, sheetname, range)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx2 " +
+                    "ON public.dependency using GIST (dep_bookname, dep_sheetname, dep_range)");
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
