@@ -5,13 +5,17 @@
 		<vlayout hflex="1" vflex="1" spacing="0">
 			<include hflex="1" src="~./zssapp/mainMenubar.zul" />
 			<hlayout vflex="1" spacing="0">
-
-				<include vflex="1" src="~./zssapp/TablesBar.zul"></include>
-				<include vflex="1" src="~./zssapp/hierarchy.zul"></include>
-
-				<spreadsheet id="ss" hflex="1" showToolbar="true" showFormulabar="true" showSheetbar="true"
+				<vlayout>
+					<div width="200px" height="86px" align="center" style="padding-bottom: 0;">
+						<label multiline="true" style="font-size: 24px; font-weight: bold">
+							<attribute name="value">								Navigation
+								Pane</attribute>
+						</label>
+					</div>
+					<include vflex="1" src="~./zssapp/hierarchy.zul"></include>
+				</vlayout>
+                <spreadsheet id="ss" hflex="1" showToolbar="true" showFormulabar="true" showSheetbar="true"
 							 showContextMenu="true" vflex="1"/>
-
 			</hlayout>
 		</vlayout>
 		<script id="confirmMsgWorkaround"><![CDATA[

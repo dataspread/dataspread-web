@@ -1,32 +1,119 @@
-<?xel-method prefix="c" name="formatStock" class="org.zkoss.zss.model.impl.navigation.FormatElNumber"
-   signature="java.lang.String formatStock(double)"?>
 <zk>
-	<style src="/navigation/grid/hierarchy/style.css" />
-	<div apply="org.zkoss.zss.model.impl.navigation.HierarchyController">
-		<grid id="hGrid" model="${$composer.stocks }">
-			<columns>
-				<column width="40px" />
-				<column label="Stock Name" sort="auto(name)" />
-				<column label="Avg. High" sort="auto(averageHigh)" align="center"/>
-				<column label="Avg. Low" sort="auto(averageLow)" align="center"/>
-				<column label="Avg. Volume" sort="auto(averageVolume)" align="center"/>
-			</columns>
-			<template name="model">
-				<row>
-					<!-- use custom-attributes to store quarters and stock in row, 
-				 		so it can be accessed later when detail onOpen -->				
-					<custom-attributes quarters="${each.quarters}" stock="${each}" />
-					<detail open="false" fulfill="onOpen">
-						<include src="/navigation/grid/hierarchy/season.zul"
-							stock="${stock}" quarters="${quarters}" />
-					</detail>
-					<label value="${each.name}" />
-					<label value="${c:formatStock(each.averageHigh)}" style="color:red;"/>
-					<label value="${c:formatStock(each.averageLow)}" style="color:green;"/>
-					<label value="${c:formatStock(each.averageVolume)}" style="font-weight:bold;"/>
-				</row>
-			</template>
-		</grid>
-	</div>
+    <tree id="tree" width="200px" rows="10">
+        <treechildren>
+            <treeitem open="false">
+                <treerow tooltip="summary">
+                    <treecell label="Value \le 5000" />
+                </treerow>
+                <treechildren>
+                    <treeitem open="false">
+                        <treerow tooltip="summary">
+                            <treecell label="Value \le 3000" />
+                        </treerow>
+                        <treechildren>
+                            <treeitem open="false">
+                                <treerow tooltip="summary">
+                                    <treecell label="Value \le 900" />
+                                </treerow>
+                            </treeitem>
+                            <treeitem open="false">
+                                <treerow tooltip="summary">
+                                    <treecell label="Value [900,1200)" />
+                                </treerow>
+                            </treeitem>
+                            <treeitem>
+                                <treerow tooltip="summary">
+                                    <treecell label="Value [1200,3000)" />
+                                </treerow>
+                            </treeitem>
+                        </treechildren>
+                    </treeitem>
+                    <treeitem open="false">
+                        <treerow tooltip="summary">
+                            <treecell label="Value [3000,5000)" />
+                        </treerow>
+                        <treechildren>
+                            <treeitem open="false">
+                                <treerow tooltip="summary">
+                                    <treecell label="Value \le3500" />
+                                </treerow>
+                            </treeitem>
+                            <treeitem open="false">
+                                <treerow tooltip="summary">
+                                    <treecell label="Value [3500,5000)" />
+                                </treerow>
+                            </treeitem>
+                        </treechildren>
+                    </treeitem>
+                </treechildren>
+            </treeitem>
+            <treeitem open="false">
+                <treerow tooltip="summary">
+                    <treecell label="Value [5000,10000)" />
+                </treerow>
+                <treechildren>
+                    <treeitem open="false">
+                        <treerow tooltip="summary">
+                            <treecell label="Value \le 8000" />
+                        </treerow>
+                        <treechildren>
+                            <treeitem open="false">
+                                <treerow tooltip="summary">
+                                    <treecell label="Value \le 7200" />
+                                </treerow>
+                            </treeitem>
+                            <treeitem open="false">
+                                <treerow tooltip="summary">
+                                    <treecell label="Value [7200,8000)" />
+                                </treerow>
+                            </treeitem>
+                        </treechildren>
+                    </treeitem>
+                    <treeitem open="false">
+                        <treerow tooltip="summary">
+                            <treecell label="Value [8000,10000)" />
+                        </treerow>
+                        <treechildren>
+                            <treeitem open="false">
+                                <treerow tooltip="summary">
+                                    <treecell label="Value \le 9000" />
+                                </treerow>
+                            </treeitem>
+                            <treeitem open="false">
+                                <treerow tooltip="summary">
+                                    <treecell label="Value [9000,10000)" />
+                                </treerow>
+                            </treeitem>
+                        </treechildren>
+                    </treeitem>
+                </treechildren>
+            </treeitem>
+        </treechildren>
+    </tree>
+
+    <popup id="summary" width="300px">
+        <div id="table">
+            <label value="Value XXX" style="font-size: 14px; font-weight: bold;" />
+            <grid>
+                <rows>
+                    <row>
+                        <label value="Sub-categories:" />
+                        <label value="5" />
+                    </row>
+                    <row>
+                        <label value="Tuples:" />
+                        <label value="5m" />
+                    </row>
+                    <row>
+                        <label value="[Start, End]:" />
+                        <label value="[1,5m]" />
+                    </row>
+                </rows>
+            </grid>
+        </div>
+        <div id="chart">
+            <image src="~./zssapp/img/popbar.JPG"/>
+        </div>
+    </popup>
 </zk>
 
