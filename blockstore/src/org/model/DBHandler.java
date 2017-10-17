@@ -77,7 +77,7 @@ public class DBHandler implements ServletContextListener {
             dbListener = new DBListener();
             dbListener.start();
             graphCompressor = new GraphCompressor();
-            graphCompressor.start();
+            //graphCompressor.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -187,7 +187,6 @@ public class DBHandler implements ServletContextListener {
                     "ON dependency using GIST (dep_bookname, dep_sheetname, dep_range)");
             stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx3 " +
                     "ON dependency (must_expand)");
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
