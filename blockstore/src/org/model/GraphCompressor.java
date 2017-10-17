@@ -35,51 +35,61 @@ public class GraphCompressor extends Thread {
         logger.info("Starting Graph Compressor");
         AutoRollbackConnection connection = DBHandler.instance.getConnection();
 
-        PreparedStatement compresslevel1 = connection.prepareStatement(
-                "INSERT INTO dependency\n" +
-                        "WITH RECURSIVE deps AS (  SELECT\n" +
-                        "                            bookname,\n" +
-                        "                            sheetname,\n" +
-                        "                            range::text,\n" +
-                        "                            dep_bookname,\n" +
-                        "                            dep_sheetname,\n" +
-                        "                            dep_range::text\n" +
-                        "                          FROM dependency\n" +
-                        "                          WHERE must_expand\n" +
-                        "                          UNION\n" +
-                        "                          SELECT\n" +
-                        "                            d.bookname,\n" +
-                        "                            d.sheetname,\n" +
-                        "                            d.range::text,\n" +
-                        "                            t.dep_bookname,\n" +
-                        "                            t.dep_sheetname,\n" +
-                        "                            t.dep_range::text\n" +
-                        "                          FROM dependency d INNER JOIN deps t\n" +
-                        "                              ON d.dep_bookname = t.bookname\n" +
-                        "                                 AND d.dep_sheetname = t.sheetname\n" +
-                        "                                 AND d.dep_range ??# t.range::box)\n" +
-                        "SELECT bookname,\n" +
-                        "  sheetname,\n" +
-                        "  range::box,\n" +
-                        "  dep_bookname,\n" +
-                        "  dep_sheetname,\n" +
-                        "  dep_range::box, FALSE FROM (\n" +
-                        "SELECT * from deps\n" +
-                        "EXCEPT\n" +
-                        "SELECT bookname,\n" +
-                        "  sheetname,\n" +
-                        "  range::text,\n" +
-                        "  dep_bookname,\n" +
-                        "  dep_sheetname,\n" +
-                        "  dep_range::text FROM  dependency) as deps2");
+        PreparedStatement toCompress = connection
+                .prepareStatement("WITH RECURSIVE deps AS (" +
+                        "  SELECT oid, dep_bookname, dep_sheetname, dep_range::text, must_expand " +
+                        "  FROM dependency" +
+                        "  WHERE must_expand" +
+                        "  UNION" +
+                        "  SELECT d.oid, d.dep_bookname, d.dep_sheetname, d.dep_range::text, d.must_expand " +
+                        "  FROM dependency d" +
+                        "    INNER JOIN deps t" +
+                        "    ON  d.bookname   =  t.dep_bookname" +
+                        "    AND t.must_expand" +
+                        "    AND d.sheetname =  t.dep_sheetname" +
+                        "    AND d.range      && t.dep_range::box)" +
+                        " SELECT oid FROM deps;");
 
-        PreparedStatement compresslevel2 = connection.prepareStatement(
-                "UPDATE dependency SET must_expand = FALSE");
+        PreparedStatement compress1 = connection.prepareStatement(
+                "INSERT INTO dependency" +
+                        " WITH RECURSIVE deps AS (SELECT" +
+                        "      bookname, sheetname, range::text, dep_bookname, dep_sheetname, dep_range::text" +
+                        "    FROM dependency" +
+                        "    WHERE oid = ?" +
+                        "    UNION" +
+                        "    SELECT" +
+                        "      d.bookname, d.sheetname, d.range::text, t.dep_bookname, t.dep_sheetname, t.dep_range::text" +
+                        "    FROM dependency d INNER JOIN deps t" +
+                        "        ON d.dep_bookname = t.bookname" +
+                        "           AND d.dep_sheetname = t.sheetname" +
+                        "           AND d.dep_range && t.range::box)" +
+                        " SELECT bookname, sheetname, range::box, dep_bookname, dep_sheetname, dep_range::box, FALSE" +
+                        " FROM (SELECT * FROM deps d2" +
+                        "   WHERE NOT EXISTS (" +
+                        "     SELECT 1" +
+                        "     FROM dependency d3" +
+                        "     WHERE d3.bookname      =  d2.bookname" +
+                        "     AND   d3.sheetname     =  d2.sheetname" +
+                        "     AND   d3.range         && d2.range::box" +
+                        "     AND   d3.dep_bookname  =  d2.dep_bookname" +
+                        "     AND   d3.dep_sheetname =  d2.dep_sheetname" +
+                        "     AND   d3.dep_range     && d2.dep_range::box)) as deps2");
+
+        PreparedStatement compress2 = connection.prepareStatement(
+                "UPDATE dependency SET must_expand = FALSE WHERE oid = ?");
         while (keepRunning) {
-            int recordsAdded = compresslevel1.executeUpdate();
-            if (recordsAdded>0)
-                logger.info(recordsAdded + " records added for level compress.");
-            compresslevel2.execute();
+            ResultSet resultSet = toCompress.executeQuery();
+            while (resultSet.next())
+            {
+                int oid = resultSet.getInt(1);
+                logger.info("Compressing oid = " + oid + ".");
+                compress1.setInt(1, oid);
+                int insertedRecords = compress1.executeUpdate();
+                logger.info("insertedRecords = " + insertedRecords + ".");
+                compress2.setInt(1, oid);
+                compress2.execute();
+            }
+            resultSet.close();
             connection.commit();
             Thread.sleep(2000L);
         }
