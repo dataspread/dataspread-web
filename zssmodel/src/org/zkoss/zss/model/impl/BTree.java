@@ -5,13 +5,13 @@ import org.model.BlockStore;
 import org.model.DBContext;
 import org.zkoss.util.logging.Log;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * An implementation of a B+ Tree
  */
-public class BTree implements PosMapping {
+public class BTree <K extends Comparable<K>, V> implements PosMapping {
     /**
      * The maximum number of children of a node (an odd number)
      */
@@ -59,13 +59,13 @@ public class BTree implements PosMapping {
      * @param x the value to search for
      * @return i
      */
-    protected static int findIt(int[] a, int x) {
-        int lo = 0, hi = a.length;
+    protected int findIt(ArrayList<K> a, K x) {
+        int lo = 0, hi = a.size();
         while (hi != lo) {
             int m = (hi + lo) / 2;
-            if (x < a[m] || a[m] == -1)
+            if (x.compareTo(a.get(m)) < 0)
                 hi = m;      // look in first half
-            else if (x > a[m])
+            else if (x.compareTo(a.get(m)) > 0)
                 lo = m + 1;    // look in second half
             else
                 return m + 1; // found it
@@ -100,11 +100,12 @@ public class BTree implements PosMapping {
         metaDataBlock = bs.getObject(context, METADATA_BLOCK_ID, MetaDataBlock.class);
         if (metaDataBlock == null) {
             metaDataBlock = new MetaDataBlock();
-            Node root = Node.create(context, bs);
+            Node root = new Node().create(context, bs);
             root.update(bs);
             metaDataBlock.ri = root.id;
             metaDataBlock.elementCount = 0;
-            metaDataBlock.maxValue = 0;
+            // TODO How to handle maxValue?
+            metaDataBlock.maxValue = null;
 
             /* Create Metadata */
             bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
@@ -129,16 +130,19 @@ public class BTree implements PosMapping {
      * @param val the value corresponding to key
      * @return
      */
-    public boolean add(DBContext context, int key, int val) {
+    public boolean add(DBContext context, K key, V val) {
+        // TODO How to handle maxValue?
+        /*
         if (val > metaDataBlock.maxValue) {
             metaDataBlock.maxValue = val;
             bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
         }
+        */
 
         Node w;
         w = addRecursive(context, key, metaDataBlock.ri, val);
         if (w != null) {   // root was split, make new root
-            Node newRoot = Node.create(context, bs);
+            Node newRoot = new Node().create(context, bs);
             key = w.removeKey(0);
             w.update(bs);
             // No longer a leaf node
@@ -152,11 +156,11 @@ public class BTree implements PosMapping {
             Arrays.fill(newRoot.childrenCount, 0, newRoot.childrenCount.length, 0);
 
             newRoot.children[0] = metaDataBlock.ri;
-            newRoot.keys[0] = key;
+            newRoot.keys.add(key);
             newRoot.children[1] = w.id;
 
             /* Update children count */
-            Node leftNode = Node.get(context, bs, metaDataBlock.ri);
+            Node leftNode = new Node().get(context, bs, metaDataBlock.ri);
             if (leftNode.isLeaf()) {
                 newRoot.childrenCount[0] = leftNode.size();
             } else {
@@ -195,8 +199,8 @@ public class BTree implements PosMapping {
      * @return a new node that was created when u was split, or null if u was
      * not split
      */
-    protected Node addRecursive(DBContext context, int key, int ui, int val) {
-        Node u = Node.get(context, bs, ui);
+    protected Node addRecursive(DBContext context, K key, int ui, V val) {
+        Node u = new Node().get(context, bs, ui);
         int i = findIt(u.keys, key);
         //if (i < 0) throw new DuplicateValueException();
         if (u.isLeaf()) { // leaf node, just add it
@@ -228,7 +232,7 @@ public class BTree implements PosMapping {
             return null;
     }
 
-    public boolean addByCount(DBContext context, long pos, int val) {
+    public boolean addByCount(DBContext context, long pos, V val) {
         return addByCount(context, pos, val, true);
     }
 
@@ -240,7 +244,7 @@ public class BTree implements PosMapping {
      * @param val the value corresponding to x
      * @return
      */
-    private boolean addByCount(DBContext context, long pos, int val, boolean flush) {
+    private boolean addByCount(DBContext context, long pos, V val, boolean flush) {
         if (pos > size(context)) {
             // Ignore inserts beyond the size of positional index.
             return false;
@@ -249,7 +253,7 @@ public class BTree implements PosMapping {
         Node w;
         w = addRecursiveByCount(context, pos, metaDataBlock.ri, val);
         if (w != null) {   // root was split, make new root
-            Node newroot = Node.create(context, bs);
+            Node newroot = new Node().create(context, bs);
             w.update(bs);
             // No longer a leaf node
             // First time leaf becomes a root
@@ -263,7 +267,7 @@ public class BTree implements PosMapping {
 
             newroot.children[0] = metaDataBlock.ri;
             newroot.children[1] = w.id;
-            Node leftNode = Node.get(context, bs, metaDataBlock.ri);
+            Node leftNode = new Node().get(context, bs, metaDataBlock.ri);
             if (leftNode.isLeaf()) {
                 newroot.childrenCount[0] = leftNode.valueSize();
             } else {
@@ -303,8 +307,8 @@ public class BTree implements PosMapping {
      * @return a new node that was created when u was split, or null if u was
      * not split
      */
-    protected Node addRecursiveByCount(DBContext context, long pos, int ui, int val) {
-        Node u = Node.get(context, bs, ui);
+    protected Node addRecursiveByCount(DBContext context, long pos, int ui, V val) {
+        Node u = new Node().get(context, bs, ui);
 
         int i;
         if (u.isLeaf()) { // leaf node, just add it
@@ -343,21 +347,21 @@ public class BTree implements PosMapping {
 
     }
 
-    public int removeByCount(DBContext context, long pos) {
+    public V removeByCount(DBContext context, long pos) {
         return removeByCount(context, pos, true);
     }
 
-    private int removeByCount(DBContext context, long pos, boolean flush) {
+    private V removeByCount(DBContext context, long pos, boolean flush) {
         if (pos >= size(context)) {
             // Ignore this delete
             // Do nothing
-            return -1;
+            return null;
         }
 
-        int id = removeRecursiveByCount(context, pos, metaDataBlock.ri);
-        if (id > -1) {
+        V id = removeRecursiveByCount(context, pos, metaDataBlock.ri);
+        if (id != null) {
             metaDataBlock.elementCount--;
-            Node r = Node.get(context, bs, metaDataBlock.ri);
+            Node r = new Node().get(context, bs, metaDataBlock.ri);
             if (!r.isLeaf() && r.childrenSize() <= 1 && metaDataBlock.elementCount > 0) { // root has only one child
                 r.free(bs);
                 metaDataBlock.ri = r.children[0];
@@ -367,7 +371,7 @@ public class BTree implements PosMapping {
                 bs.flushDirtyBlocks(context);
             return id;
         }
-        return -1;
+        return null;
     }
 
     /**
@@ -377,9 +381,9 @@ public class BTree implements PosMapping {
      * @param ui  the index of the subtree to remove x from
      * @return true if x was removed and false otherwise
      */
-    protected int removeRecursiveByCount(DBContext context, long pos, int ui) {
-        if (ui < 0) return -1;  // didn't find it
-        Node u = Node.get(context, bs, ui);
+    protected V removeRecursiveByCount(DBContext context, long pos, int ui) {
+        if (ui < 0) return null;  // didn't find it
+        Node u = new Node().get(context, bs, ui);
 
         int i;
         /* Need to go to leaf to delete */
@@ -387,7 +391,7 @@ public class BTree implements PosMapping {
             metaDataBlock.elementCount--;
             i = (int) pos;
             // if (i > 0) {
-            int id = u.removeBoth(i);
+            V id = u.removeBoth(i);
             u.update(bs);
             bs.flushDirtyBlocks(context);
             return id;
@@ -399,8 +403,8 @@ public class BTree implements PosMapping {
             for (int z = 0; z < i; z++) {
                 newn -= u.childrenCount[z];
             }
-            int id = removeRecursiveByCount(context, newn, u.children[i]);
-            if (id > -1) {
+            V id = removeRecursiveByCount(context, newn, u.children[i]);
+            if (id != null) {
                 checkUnderflowByCount(context, u, i);
                 u.update(bs);
                 return id;
@@ -408,7 +412,7 @@ public class BTree implements PosMapping {
             u.update(bs);
             bs.flushDirtyBlocks(context);
         }
-        return -1;
+        return null;
     }
 
     /**
@@ -441,12 +445,12 @@ public class BTree implements PosMapping {
         }
 
         if (v.isLeaf()) {
-            System.arraycopy(w.values, 0, v.values, sv, sw);
+            v.values.addAll(w.values);
             v.next_sibling = w.next_sibling;
         } else {
             System.arraycopy(w.children, 0, v.children, sv + 1, sw + 1);
             System.arraycopy(w.childrenCount, 0, v.childrenCount, sv + 1, sw + 1);
-            v.values[i + 1] = u.values[i];
+            v.values.add(i+1,u.values.get(i));
         }
         // add key to v and remove it from u
         // U should not be a leaf node
@@ -470,9 +474,9 @@ public class BTree implements PosMapping {
      * @param i the index of a child in u
      */
     protected void checkUnderflowNonZeroByCount(DBContext context, Node u, int i) {
-        Node w = Node.get(context, bs, u.children[i]);  // w is child of u
+        Node w = new Node().get(context, bs, u.children[i]);  // w is child of u
         if ((w.isLeaf() && w.valueSize() < B) || (!w.isLeaf() && w.childrenSize() < B + 1)) {  // underflow at w
-            Node v = Node.get(context, bs, u.children[i - 1]); // v left of w
+            Node v = new Node().get(context, bs, u.children[i - 1]); // v left of w
             if ((v.isLeaf() && v.valueSize() > B) || (!v.isLeaf() && v.childrenSize() > B + 1)) {  // underflow at w
                 shiftLRByCount(u, i - 1, v, w);
                 v.update(bs);
@@ -509,11 +513,8 @@ public class BTree implements PosMapping {
 
         if (v.isLeaf()) {
             // move keys and children out of v and into w
-
-            System.arraycopy(w.values, 0, w.values, shift, sw);
-
-            System.arraycopy(v.values, sv - shift, w.values, 0, shift);
-            Arrays.fill(v.values, sv - shift, sv, -1);
+            w.values.addAll(0,v.values.subList(sv-shift, sv));
+            v.values.subList(sv-shift, sv).clear();
             u.childrenCount[i] -= shift;
             u.childrenCount[i + 1] += shift;
 
@@ -540,9 +541,9 @@ public class BTree implements PosMapping {
     }
 
     protected void checkUnderflowZeroByCount(DBContext context, Node u, int i) {
-        Node w = Node.get(context, bs, u.children[i]); // w is child of u
+        Node w = new Node().get(context, bs, u.children[i]); // w is child of u
         if ((w.isLeaf() && w.valueSize() < B) || (!w.isLeaf() && w.childrenSize() < B + 1)) {  // underflow at w
-            Node v = Node.get(context, bs, u.children[i + 1]); // v right of w
+            Node v = new Node().get(context, bs, u.children[i + 1]); // v right of w
             if ((v.isLeaf() && v.valueSize() > B) || (!v.isLeaf() && v.childrenSize() > B + 1)) {  // underflow at w
                 shiftRLByCount(u, i, v, w);
                 v.update(bs);
@@ -579,9 +580,8 @@ public class BTree implements PosMapping {
         if (v.isLeaf()) // w should also be leaf
         {
             // Do not bring the key from u
-            System.arraycopy(v.values, 0, w.values, sw, shift);
-            System.arraycopy(v.values, shift, v.values, 0, b - shift);
-            Arrays.fill(v.values, sv - shift + 1, b, -1);
+            w.values.addAll(v.values.subList(0,shift));
+            v.values.subList(0,shift).clear();
             u.childrenCount[i + 1] -= shift;
             u.childrenCount[i] += shift;
         } else {
@@ -601,10 +601,10 @@ public class BTree implements PosMapping {
 
     }
 
-    public boolean remove(DBContext context, int x) {
+    public boolean remove(DBContext context, K x) {
         if (removeRecursive(context, x, metaDataBlock.ri).getDone() >= 0) {
             metaDataBlock.elementCount--;
-            Node r = Node.get(context, bs, metaDataBlock.ri);
+            Node r = new Node().get(context, bs, metaDataBlock.ri);
             if (!r.isLeaf() && r.size() == 0 && metaDataBlock.elementCount > 0) { // root has only one child
                 r.free(bs);
                 metaDataBlock.ri = r.children[0];
@@ -622,20 +622,20 @@ public class BTree implements PosMapping {
      * @param ui the index of the subtree to remove x from
      * @return true if x was removed and false otherwise
      */
-    protected ReturnRS removeRecursive(DBContext context, int x, int ui) {
+    protected ReturnRS removeRecursive(DBContext context, K x, int ui) {
         ReturnRS result = new ReturnRS(-1);
         if (ui < 0) return result;  // didn't find it
-        Node u = Node.get(context, bs, ui);
+        Node u = new Node().get(context, bs, ui);
         int i = findIt(u.keys, x);
         /* Need to go to leaf to delete */
         if (u.isLeaf()) {
             if (i > 0) {
-                if (u.keys[i - 1] == x) {
+                if (u.keys.get(i - 1) == x) {
                     // Found
                     result.setDone(0);
                     if (i == 1) {
                         result.setDone(1);
-                        result.setKey(u.keys[i]);
+                        result.setKey(u.keys.get(i));
                     }
                     u.removeBoth(i - 1);
                     u.update(bs);
@@ -647,8 +647,8 @@ public class BTree implements PosMapping {
             ReturnRS rs = removeRecursive(context, x, u.children[i]);
             if (rs.getDone() >= 0) {
                 if (i > 0) {
-                    if (u.keys[i - 1] == x) {
-                        u.keys[i - 1] = rs.getKey();
+                    if (u.keys.get(i - 1) == x) {
+                        u.keys.set(i - 1, rs.getKey());
                         rs.setDone(0);
                     }
                 }
@@ -680,27 +680,27 @@ public class BTree implements PosMapping {
     }
 
     protected void merge(DBContext context, Node u, int i, Node v, Node w) {
-        // w is merged with v
+        // w is merged with v, w will be destroyed
         int sv = v.size();
         int sw = w.size();
 
         if (v.isLeaf()) {
-            System.arraycopy(w.keys, 0, v.keys, sv, sw); // copy keys from w to v
-            System.arraycopy(w.values, 0, v.values, sv, sw);
+            // copy key and value from w to v
+            v.keys.addAll(w.keys);
+            v.values.addAll(w.values);
         } else {
-            System.arraycopy(w.keys, 0, v.keys, sv + 1, sw); // copy keys from w to v
             System.arraycopy(w.children, 0, v.children, sv + 1, sw + 1);
             System.arraycopy(w.childrenCount, 0, v.childrenCount, sv + 1, sw + 1);
-            v.keys[i + 1] = u.keys[i];
-            v.values[i + 1] = u.values[i];
+            // copy keys from w to v
+            v.keys.add(i+1,u.keys.get(i));
+            v.keys.addAll(w.keys);
+            v.values.add(i+1, u.values.get(i));
         }
         // add key to v and remove it from u
 
-        //v.keys[sv] = u.keys[i];
         // U should not be a leaf node
         u.childrenCount[i] += u.childrenCount[i + 1];
-        System.arraycopy(u.keys, i + 1, u.keys, i, b - i - 1);
-        u.keys[b - 1] = -1;
+        u.keys.remove(i);
 
         // w ids is in u.children[i+1]
         // Free block
@@ -720,9 +720,9 @@ public class BTree implements PosMapping {
      * @param i the index of a child in u
      */
     protected void checkUnderflowNonZero(DBContext context, Node u, int i) {
-        Node w = Node.get(context, bs, u.children[i]);  // w is child of u
+        Node w = new Node().get(context, bs, u.children[i]);  // w is child of u
         if (w.size() < B) {  // underflow at w
-            Node v = Node.get(context, bs, u.children[i - 1]); // v left of w
+            Node v = new Node().get(context, bs, u.children[i - 1]); // v left of w
             if (v.size() > B) {  // w can borrow from v
                 shiftLR(u, i - 1, v, w);
                 if (v.isLeaf()) {
@@ -758,31 +758,27 @@ public class BTree implements PosMapping {
         int sv = v.size();
         int shift = ((sw + sv) / 2) - sw;  // num. keys to shift from v to w
 
-        // make space for new keys in w
-        System.arraycopy(w.keys, 0, w.keys, shift, sw);
-
         if (v.isLeaf()) {
             // move keys and children out of v and into w
 
             System.arraycopy(w.values, 0, w.values, shift, sw);
-            u.keys[i] = v.keys[sv - shift];
+            u.keys.set(i, v.keys.get(sv - shift));
 
-            System.arraycopy(v.keys, sv - shift, w.keys, 0, shift);
-            Arrays.fill(v.keys, sv - shift, sv, -1);
-            System.arraycopy(v.values, sv - shift, w.values, 0, shift);
-            Arrays.fill(v.values, sv - shift, sv, -1);
+            w.keys.addAll(0, v.keys.subList(sv - shift, sv));
+            v.keys.subList(sv - shift, sv).clear();
+            w.values.addAll(0, v.values.subList(sv - shift, sv));
+            v.values.subList(sv - shift, sv).clear();
 
         } else {
             // Don't move this key for leaf
             // move keys and children out of v and into w (and u)
 
-            w.keys[shift - 1] = u.keys[i];
+            w.keys.set(shift - 1, u.keys.get(i));
             System.arraycopy(w.children, 0, w.children, shift, sw + 1);
             System.arraycopy(w.childrenCount, 0, w.childrenCount, shift, sw + 1);
-            u.keys[i] = v.keys[sv - shift];
-
-            System.arraycopy(v.keys, sv - shift + 1, w.keys, 0, shift - 1);
-            Arrays.fill(v.keys, sv - shift, sv, -1);
+            u.keys.set(i, v.keys.get(sv - shift));
+            w.keys.addAll(0, v.keys.subList(sv - shift + 1, sv));
+            v.keys.subList(sv - shift + 1, sv).clear();
 
             System.arraycopy(v.children, sv - shift + 1, w.children, 0, shift);
             System.arraycopy(v.childrenCount, sv - shift + 1, w.childrenCount, 0, shift);
@@ -794,9 +790,9 @@ public class BTree implements PosMapping {
     }
 
     protected void checkUnderflowZero(DBContext context, Node u, int i) {
-        Node w = Node.get(context, bs, u.children[i]); // w is child of u
+        Node w = new Node().get(context, bs, u.children[i]); // w is child of u
         if (w.size() < B) {  // underflow at w
-            Node v = Node.get(context, bs, u.children[i + 1]); // v right of w
+            Node v = new Node().get(context, bs, u.children[i + 1]); // v right of w
             if (v.size() > B) { // w can borrow from v
                 shiftRL(u, i, v, w);
                 if (v.isLeaf()) {
@@ -840,23 +836,22 @@ public class BTree implements PosMapping {
             // Do not bring the key from u
             System.arraycopy(v.keys, 0, w.keys, sw, shift);
             System.arraycopy(v.values, 0, w.values, sw, shift);
-            u.keys[i] = v.keys[shift];
+            u.keys.set(i, v.keys.get(shift));
         } else {
-            w.keys[sw] = u.keys[i];
-            System.arraycopy(v.keys, 0, w.keys, sw + 1, shift - 1);
+            w.keys.add(sw, u.keys.get(i));
+            w.keys.addAll(v.keys.subList(0, shift - 1));
+
             System.arraycopy(v.children, 0, w.children, sw + 1, shift);
             System.arraycopy(v.childrenCount, 0, w.childrenCount, sw + 1, shift);
-            u.keys[i] = v.keys[shift - 1];
+            u.keys.set(i, v.keys.get(shift - 1));
         }
 
 
         // delete keys and children from v
-        System.arraycopy(v.keys, shift, v.keys, 0, b - shift);
-        Arrays.fill(v.keys, sv - shift, b, -1);
+        v.keys.subList(0, shift).clear();
 
         if (v.isLeaf()) {
-            System.arraycopy(v.values, shift, v.values, 0, b - shift);
-            Arrays.fill(v.values, sv - shift + 1, b, -1);
+            v.values.subList(0,shift).clear();
         } else {
             System.arraycopy(v.children, shift, v.children, 0, b - shift + 1);
             Arrays.fill(v.children, sv - shift + 1, b + 1, -1);
@@ -874,7 +869,7 @@ public class BTree implements PosMapping {
     }
 
     private void clearRecursive(DBContext context, int ui) {
-        Node u = Node.get(context, bs, ui);
+        Node u = new Node().get(context, bs, ui);
         if (!u.isLeaf()) {
             for (int i = 0; i < u.childrenSize(); i++) {
                 clearRecursive(context, u.children[i]);
@@ -883,85 +878,90 @@ public class BTree implements PosMapping {
         u.free(bs);
     }
 
-    public boolean exists(DBContext context, int x) {
+    public boolean exists(DBContext context, K x) {
         int ui = metaDataBlock.ri;
         while (true) {
-            Node u = Node.get(context, bs, ui);
+            Node u = new Node().get(context, bs, ui);
             int i = findIt(u.keys, x);
             if (u.isLeaf()) {
-                return i > 0 && u.keys[i - 1] == x;
+                return i > 0 && u.keys.get(i - 1) == x;
             }
             ui = u.children[i];
         }
     }
 
-    public int get(DBContext context, int key) {
+    public V get(DBContext context, K key) {
         int ui = metaDataBlock.ri;
         while (true) {
-            Node u = Node.get(context, bs, ui);
+            Node u = new Node().get(context, bs, ui);
             int i = findIt(u.keys, key);
             if (u.isLeaf()) {
-                if (i > 0 && u.keys[i - 1] == key)
-                    return u.values[i - 1]; // found it
+                if (i > 0 && u.keys.get(i - 1) == key)
+                    return u.values.get(i - 1); // found it
                 else
-                    return -1;
+                    return null;
             }
             ui = u.children[i];
         }
     }
 
-    public Integer[] getIDsByCount(DBContext context, long pos, int count) {
+    public ArrayList<V> getIDsByCount(DBContext context, long pos, int count) {
         // Add required ID at the end.
         if ((pos + count) > size(context))
             createIDs(context, size(context), (int) pos + count - size(context));
 
-        Integer[] ids = new Integer[count];
+        ArrayList<V> ids = new ArrayList<>();
         if (count == 0)
             return ids;
         int ui = metaDataBlock.ri;
         long ct = pos;
         int get_count = 0;
         int first_index = -1;
-        Node u = Node.get(context, bs, ui);
+        Node u = new Node().get(context, bs, ui);
         while (first_index < 0) {
             int i = findItByCount(u.childrenCount, ct);
             if (u.isLeaf()) {
                 i = (int) ct;
                 first_index = i;
-                ids[get_count++] = u.values[i];
+                ids.add(u.values.get(i));
+                get_count++;
                 break;
             }
             ui = u.children[i];
             for (int z = 0; z < i; z++) {
                 ct -= u.childrenCount[z];
             }
-            u = Node.get(context, bs, ui);
+            u = new Node().get(context, bs, ui);
         }
         int index = first_index + 1;
         while (get_count < count && u.next_sibling != -1) {
-            while (index < u.valueSize() && get_count < count)
-                ids[get_count++] = u.values[index++];
+            while (index < u.valueSize() && get_count < count) {
+                ids.add(u.values.get(index++));
+                get_count++;
+            }
             ui = u.next_sibling;
-            u = Node.get(context, bs, ui);
+            u = new Node().get(context, bs, ui);
             index = 0;
         }
-        while (index < u.valueSize() && get_count < count)
-            ids[get_count++] = u.values[index++];
-
+        while (index < u.valueSize() && get_count < count) {
+            ids.add(u.values.get(index++));
+            get_count++;
+        }
         while (get_count < count)
-            ids[get_count++] = -1;
+            ids.add(null);
+            get_count++;
         return ids;
     }
 
-    public int getByCount(DBContext context, long pos) {
+    public V getByCount(DBContext context, long pos) {
         int ui = metaDataBlock.ri;
         long ct = pos;
         while (true) {
-            Node u = Node.get(context, bs, ui);
+            Node u = new Node().get(context, bs, ui);
             int i = findItByCount(u.childrenCount, ct);
             if (u.isLeaf()) {
                 i = (int) ct - 1;
-                return u.values[i];
+                return u.values.get(i);
             }
             ui = u.children[i];
             for (int z = 0; z < i; z++) {
@@ -985,6 +985,7 @@ public class BTree implements PosMapping {
         return bs.getDataStore();
     }
 
+
     /**
      * A recursive algorithm for converting this tree into a string
      *
@@ -993,21 +994,21 @@ public class BTree implements PosMapping {
      */
     public void toString(DBContext context, int ui, StringBuffer sb) {
         if (ui < 0) return;
-        Node u = Node.get(context, bs, ui);
+        Node u = new Node().get(context, bs, ui);
         sb.append("Block no:" + ui);
         sb.append(" Leaf:" + u.isLeaf() + " ");
 
         int i = 0;
         if (u.isLeaf()) {
-            while (i < b && u.keys[i] != -1) {
-                sb.append(u.keys[i] + "->");
-                sb.append(u.values[i] + ",");
+            while (i < u.keys.size()) {
+                sb.append(u.keys.get(i) + "->");
+                sb.append(u.values.get(i) + ",");
                 i++;
             }
         } else {
-            while (i < b && u.keys[i] != -1) {
+            while (i < u.keys.size()) {
                 sb.append(u.children[i]);
-                sb.append(" < " + u.keys[i] + " > ");
+                sb.append(" < " + u.keys.get(i) + " > ");
                 i++;
             }
             sb.append(u.children[i]);
@@ -1015,7 +1016,7 @@ public class BTree implements PosMapping {
         sb.append("\n");
         i = 0;
         if (!u.isLeaf()) {
-            while (i < b && u.keys[i] != -1) {
+            while (i < u.keys.size()) {
                 toString(context, u.children[i], sb);
                 i++;
             }
@@ -1023,23 +1024,25 @@ public class BTree implements PosMapping {
         }
     }
 
-    public Integer[] getIDs(DBContext context, int pos, int count) {
+    public ArrayList<V> getIDs(DBContext context, int pos, int count) {
         return getIDsByCount(context, pos, count);
     }
 
-    public Integer[] deleteIDs(DBContext context, int pos, int count) {
-        Integer[] ids = new Integer[count];
+    public ArrayList<V> deleteIDs(DBContext context, int pos, int count) {
+        ArrayList<V> ids = new ArrayList<>();
         for (int i = 0; i < count; i++)
-            ids[i] = removeByCount(context, pos, false);
+            ids.add(removeByCount(context, pos, false));
         bs.flushDirtyBlocks(context);
         return ids;
     }
 
-    public Integer[] createIDs(DBContext context, int pos, int count) {
-        Integer[] ids = new Integer[count];
+    public ArrayList<V> createIDs(DBContext context, int pos, int count) {
+        ArrayList<V> ids = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            ids[i] = ++metaDataBlock.maxValue;
-            addByCount(context, pos + i, ids[i], false);
+            // TODO How to handle maxValue
+            ids.add(metaDataBlock.maxValue);
+
+            addByCount(context, pos + i, ids.get(i), false);
         }
         bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
         bs.flushDirtyBlocks(context);
@@ -1047,22 +1050,23 @@ public class BTree implements PosMapping {
     }
 
     // TODO: Do it in batches. offline if possible.
-    public void insertIDs(DBContext context, int pos, List<Integer> ids) {
+    public void insertIDs(DBContext context, int pos, ArrayList ids) {
         int count = ids.size();
         for (int i = 0; i < count; i++) {
-            ++metaDataBlock.maxValue;
-            addByCount(context, pos + i, ids.get(i), false);
+            // TODO How to handle maxValue?
+            // ++metaDataBlock.maxValue;
+            addByCount(context, pos + i, (V)ids.get(i), false);
         }
         bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
         bs.flushDirtyBlocks(context);
     }
 
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-    private static class MetaDataBlock {
+    private class MetaDataBlock {
         // The ID of the root node
         int ri;
         // Maximum key value for data
-        int maxValue;
+        V maxValue;
         // Number of elements
         int elementCount;
     }
@@ -1071,7 +1075,7 @@ public class BTree implements PosMapping {
      * A node in a B-tree which has an array of up to b keys and up to b children
      */
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-    private static class Node {
+    private class Node {
         /**
          * This block's index
          */
@@ -1080,7 +1084,7 @@ public class BTree implements PosMapping {
         /**
          * The keys stored in this block
          */
-        int[] keys;
+        ArrayList<K> keys;
 
         /**
          * The ID of parent
@@ -1100,7 +1104,7 @@ public class BTree implements PosMapping {
         /**
          * Data stored in the leaf blocks
          */
-        int[] values;
+        ArrayList<V> values;
 
         /**
          * Leaf Node, no children, has values
@@ -1113,25 +1117,23 @@ public class BTree implements PosMapping {
         int next_sibling;
 
         private Node() {
-            keys = new int[b];
-            Arrays.fill(keys, -1);
+            keys = new ArrayList<>();
             children = null;
             childrenCount = null;
             leafNode = true;
-            values = new int[b];
-            Arrays.fill(values, -1);
+            values = new ArrayList<>();
             parent = -1;    // Root node
             next_sibling = -1;
         }
 
-        public static Node create(DBContext context, BlockStore bs) {
+        public Node create(DBContext context, BlockStore bs) {
             Node node = new Node();
             node.id = bs.getNewBlockID(context);
             bs.putObject(node.id, node);
             return node;
         }
 
-        public static Node get(DBContext context, BlockStore bs, int node_id) {
+        public Node get(DBContext context, BlockStore bs, int node_id) {
             Node node = bs.getObject(context, node_id, Node.class);
             node.id = node_id;
             return node;
@@ -1155,7 +1157,7 @@ public class BTree implements PosMapping {
          * @return true if the block is full
          */
         public boolean isFull() {
-            return keys[keys.length - 1] != -1;
+            return keys.size() >= b;
         }
 
         /**
@@ -1176,15 +1178,7 @@ public class BTree implements PosMapping {
          * @return the number of keys in this block
          */
         public int size() {
-            int lo = 0, h = keys.length;
-            while (h != lo) {
-                int m = (h + lo) / 2;
-                if (keys[m] == -1)
-                    h = m;
-                else
-                    lo = m + 1;
-            }
-            return lo;
+            return keys.size();
         }
 
         /**
@@ -1193,15 +1187,7 @@ public class BTree implements PosMapping {
          * @return the number of keys in this block
          */
         public int valueSize() {
-            int lo = 0, h = values.length;
-            while (h != lo) {
-                int m = (h + lo) / 2;
-                if (values[m] == -1)
-                    h = m;
-                else
-                    lo = m + 1;
-            }
-            return lo;
+            return values.size();
         }
 
         /**
@@ -1247,19 +1233,16 @@ public class BTree implements PosMapping {
          * @param node the node associated with key
          * @return true on success or false if key was not added
          */
-        public boolean add(DBContext context, int key, Node node, int value) {
+        public boolean add(DBContext context, K key, Node node, V value) {
             boolean shift = false;
             int i = findIt(keys, key);
             if (i < 0) return false;
-            if (i < keys.length - 1) {
+            if (i < children.length - 1) {
                 shift = true;
-                System.arraycopy(keys, i, keys, i + 1, b - i - 1);
             }
-            keys[i] = key;
+            keys.add(i, key);
             if (leafNode) {
-                if (shift) System.arraycopy(values, i, values, i + 1, b - i - 1);
-                values[i] = value;
-
+                values.add(i, value);
             } else {
                 if (shift) System.arraycopy(children, i + 1, children, i + 2, b - i - 1);
                 if (shift) System.arraycopy(childrenCount, i + 1, childrenCount, i + 2, b - i - 1);
@@ -1284,7 +1267,7 @@ public class BTree implements PosMapping {
          * @param node the node associated with x
          * @return true on success or false if x was not added
          */
-        public boolean addByCount(DBContext context, long pos, Node node, int value) {
+        public boolean addByCount(DBContext context, long pos, Node node, V value) {
             boolean shift = false;
             int i = findItByCount(childrenCount, pos);
             if (i < 0) return false;
@@ -1293,8 +1276,7 @@ public class BTree implements PosMapping {
             }
             if (leafNode) {
                 i = (int) pos;
-                if (i < valueSize()) System.arraycopy(values, i, values, i + 1, b - i - 1);
-                values[i] = value;
+                values.add(i, value);
             } else {
                 if (shift) System.arraycopy(children, i + 1, children, i + 2, b - i - 1);
                 if (shift) System.arraycopy(childrenCount, i + 1, childrenCount, i + 2, b - i - 1);
@@ -1320,24 +1302,18 @@ public class BTree implements PosMapping {
          * @param i the index of the element to remove
          * @return the value of the element removed
          */
-        public int removeKey(int i) {
-            int y = keys[i];
+        public K removeKey(int i) {
+            K key = keys.get(i);
             // Do not remove if it is leaf
             if (!leafNode) {
-                System.arraycopy(keys, i + 1, keys, i, b - i - 1);
-                keys[keys.length - 1] = -1;
+                keys.remove(i);
             }
-            return y;
+            return key;
         }
 
-        public int removeBoth(int i) {
-            int y = values[i];
-            System.arraycopy(keys, i + 1, keys, i, b - i - 1);
-            keys[keys.length - 1] = -1;
-            System.arraycopy(values, i + 1, values, i, b - i - 1);
-            values[values.length - 1] = -1;
-
-            return y;
+        public V removeBoth(int i) {
+            keys.remove(i);
+            return values.remove(i);
         }
 
         /**
@@ -1346,16 +1322,15 @@ public class BTree implements PosMapping {
          * @return the newly created block, which has the larger keys
          */
         protected Node split(DBContext context, BlockStore bs) {
-            Node w = Node.create(context, bs);
+            Node w = new Node().create(context, bs);
 
-            int j = keys.length / 2;
-            System.arraycopy(keys, j, w.keys, 0, keys.length - j);
-            Arrays.fill(keys, j, keys.length, -1);
-
+            int j = keys.size() / 2;
+            w.keys = new ArrayList<>(keys.subList(j, keys.size()-j));
+            keys.subList(j, keys.size()-j).clear();
             if (leafNode) {
                 // Copy Values
-                System.arraycopy(values, j, w.values, 0, values.length - j);
-                Arrays.fill(values, j, values.length, -1);
+                w.values = new ArrayList<>(values.subList(j, values.size()-j));
+                values.subList(j, values.size()-j).clear();
                 w.next_sibling = next_sibling;
                 next_sibling = w.id;
             } else {
@@ -1383,12 +1358,12 @@ public class BTree implements PosMapping {
             sb.append("[");
             if (leafNode) {
                 for (int i = 0; i < b; i++) {
-                    sb.append(keys[i] == -1 ? "_" : keys[i] + ">" + values[i] + ",");
+                    sb.append(keys.get(i) + ">" + values.get(i) + ",");
                 }
             } else {
                 for (int i = 0; i < b; i++) {
                     sb.append("(" + (children[i] < 0 ? "." : children[i]) + ")");
-                    sb.append(keys[i] == -1 ? "_" : keys[i]);
+                    sb.append(keys.get(i));
                 }
                 sb.append("(" + (children[b] < 0 ? "." : children[b]) + ")");
             }
@@ -1401,18 +1376,18 @@ public class BTree implements PosMapping {
 
     protected class ReturnRS {
         int done;
-        int key;
+        K key;
 
         public ReturnRS(int d) {
             done = d;
-            key = -1;
+            key = null;
         }
 
-        public int getKey() {
+        public K getKey() {
             return key;
         }
 
-        public void setKey(int k) {
+        public void setKey(K k) {
             key = k;
         }
 
