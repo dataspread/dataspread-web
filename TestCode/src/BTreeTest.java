@@ -17,12 +17,12 @@ public class BTreeTest {
         String password = "mangesh";
         DBHandler.connectToDB(url, driver, userName, password);
         DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
-        BTree btree = new BTree(dbContext, "Test1");
+        BTree btree = new BTree<Integer, Integer>(dbContext, "Test1");
         btree.useKryo(false);
         ArrayList<Integer> arrayList = new ArrayList<>();
 
         // Random operations
-        final int operations=10;
+        final int operations=5;
         Random random = new Random(1);
         Random randomOperation = new Random(1);
         int stats_add =0;
@@ -33,9 +33,10 @@ public class BTreeTest {
         {
             stats_add++;
             int randomValue = random.nextInt();
-            List<Integer> insertList = new ArrayList<>();
+            ArrayList<Integer> insertList = new ArrayList<>();
             insertList.add(randomValue);
             btree.insertIDs(dbContext, i, insertList);
+            dbContext.getConnection().commit();
             arrayList.add(i,randomValue);
         }
 
@@ -50,7 +51,7 @@ public class BTreeTest {
             {
                 case 0:
                     stats_add++;
-                    List<Integer> randomValueList = new ArrayList<>();
+                    ArrayList<Integer> randomValueList = new ArrayList<>();
                     randomValueList.add(randomValue);
                     //System.out.println(btree.size(dbContext) + " add " + randomPos + " " + randomValueList);
                     btree.insertIDs(dbContext, randomPos, randomValueList);
@@ -58,12 +59,13 @@ public class BTreeTest {
                     break;
                 case 1:
                     stats_remove++;
-                    List<Integer> randomPosList = new ArrayList<>();
+                    ArrayList<Integer> randomPosList = new ArrayList<>();
                     //System.out.println(btree.size(dbContext) + " remove " + randomPos);
                     btree.deleteIDs(dbContext, randomPos, 1);
                     arrayList.remove(randomPos);
                     break;
             }
+            dbContext.getConnection().commit();
         }
 
 

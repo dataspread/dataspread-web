@@ -99,12 +99,12 @@ public class RCV_Model extends Model {
 
     @Override
     public void deleteRows(DBContext dbContext, int row, int count) {
-        Integer[] ids = rowMapping.deleteIDs(dbContext, row, count);
+        ArrayList<Integer> ids = rowMapping.deleteIDs(dbContext, row, count);
 
         AutoRollbackConnection connection = dbContext.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(
                 "DELETE FROM " + tableName + " WHERE row = ANY(?)")) {
-            Array inArray = dbContext.getConnection().createArrayOf("integer", ids);
+            Array inArray = dbContext.getConnection().createArrayOf("integer", ids.toArray());
             stmt.setArray(1, inArray);
             stmt.execute();
 
@@ -115,9 +115,9 @@ public class RCV_Model extends Model {
 
     @Override
     public void deleteCols(DBContext context, int col, int count) {
-        Integer[] ids = colMapping.deleteIDs(context, col, count);
+        ArrayList<Integer> ids = colMapping.deleteIDs(context, col, count);
 
-        metaDataBlock.deletedColumns.addAll(Arrays.asList(ids));
+        metaDataBlock.deletedColumns.addAll(ids);
         // simplified conversion
         /*
         for (int id : ids)
@@ -170,10 +170,10 @@ public class RCV_Model extends Model {
         try (PreparedStatement stmt = connection.prepareStatement(update.toString())) {
             for (AbstractCellAdv cell : cells) {
                 // Extend sheet
-                Integer[] idsRow = rowMapping.getIDs(context, cell.getRowIndex(), 1);
-                int row = idsRow[0];
-                Integer[] idsCol = colMapping.getIDs(context, cell.getColumnIndex(), 1);
-                int col = idsCol[0];
+                ArrayList<Integer> idsRow = rowMapping.getIDs(context, cell.getRowIndex(), 1);
+                int row = idsRow.get(0);
+                ArrayList<Integer> idsCol = colMapping.getIDs(context, cell.getColumnIndex(), 1);
+                int col = idsCol.get(0);
                 stmt.setBytes(1, cell.toBytes());
                 stmt.setInt(2, row);
                 stmt.setInt(3, col);
@@ -191,8 +191,8 @@ public class RCV_Model extends Model {
     @Override
     public void deleteCells(DBContext dbContext, CellRegion range) {
 
-        Integer[] rowIds = rowMapping.getIDs(dbContext, range.getRow(), range.getLastRow() - range.getRow() + 1);
-        Integer[] colIds = colMapping.getIDs(dbContext, range.getColumn(), range.getLastColumn() - range.getColumn() + 1);
+        ArrayList<Integer> rowIds = rowMapping.getIDs(dbContext, range.getRow(), range.getLastRow() - range.getRow() + 1);
+        ArrayList<Integer> colIds = colMapping.getIDs(dbContext, range.getColumn(), range.getLastColumn() - range.getColumn() + 1);
 
         String delete = new StringBuffer("DELETE FROM ")
                 .append(tableName)
@@ -202,10 +202,10 @@ public class RCV_Model extends Model {
         AutoRollbackConnection connection = dbContext.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(delete)) {
 
-            Array inArrayRow = dbContext.getConnection().createArrayOf("integer", rowIds);
+            Array inArrayRow = dbContext.getConnection().createArrayOf("integer", rowIds.toArray());
             stmt.setArray(1, inArrayRow);
 
-            Array inArrayCol = dbContext.getConnection().createArrayOf("integer", colIds);
+            Array inArrayCol = dbContext.getConnection().createArrayOf("integer", colIds.toArray());
             stmt.setArray(2, inArrayCol);
 
             stmt.executeUpdate();
@@ -226,10 +226,10 @@ public class RCV_Model extends Model {
         AutoRollbackConnection connection = dbContext.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(delete)) {
             for (AbstractCellAdv cell : cells) {
-                Integer[] idsRow = rowMapping.getIDs(dbContext, cell.getRowIndex(), 1);
-                int row = idsRow[0];
-                Integer[] idsCol = colMapping.getIDs(dbContext, cell.getColumnIndex(), 1);
-                int col = idsCol[0];
+                ArrayList<Integer> idsRow = rowMapping.getIDs(dbContext, cell.getRowIndex(), 1);
+                int row = idsRow.get(0);
+                ArrayList<Integer> idsCol = colMapping.getIDs(dbContext, cell.getColumnIndex(), 1);
+                int col = idsCol.get(0);
                 stmt.setObject(1, row);
                 stmt.setObject(2, col);
                 stmt.execute();
@@ -258,13 +258,13 @@ public class RCV_Model extends Model {
         if (fetchRegion == null)
             return cells;
 
-        Integer[] rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
-        Integer[] colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
-        HashMap<Integer, Integer> row_map = IntStream.range(0, rowIds.length)
-                .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(rowIds[i], fetchRegion.getRow() + i), null);
+        ArrayList<Integer> rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
+        ArrayList<Integer> colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
+        HashMap<Integer, Integer> row_map = IntStream.range(0, rowIds.size())
+                .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(rowIds.get(i), fetchRegion.getRow() + i), null);
 
-        HashMap<Integer, Integer> col_map = IntStream.range(0, colIds.length)
-                .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(colIds[i], fetchRegion.getColumn() + i), null);
+        HashMap<Integer, Integer> col_map = IntStream.range(0, colIds.size())
+                .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(colIds.get(i), fetchRegion.getColumn() + i), null);
 
 
         String select = new StringBuffer("SELECT row, col, data FROM ")
@@ -275,10 +275,10 @@ public class RCV_Model extends Model {
         AutoRollbackConnection connection = context.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(select)) {
 
-            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
+            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds.toArray());
             stmt.setArray(1, inArrayRow);
 
-            Array inArrayCol = context.getConnection().createArrayOf("integer", colIds);
+            Array inArrayCol = context.getConnection().createArrayOf("integer", colIds.toArray());
             stmt.setArray(2, inArrayCol);
 
             ResultSet rs = stmt.executeQuery();

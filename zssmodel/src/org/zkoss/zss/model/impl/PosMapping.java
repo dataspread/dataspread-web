@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /* Store mapping between logical pos and ID */
-public interface PosMapping <V extends Comparable<V>> {
+public interface PosMapping <V> {
 
     void dropSchema(DBContext context);
 
@@ -26,6 +26,6 @@ public interface PosMapping <V extends Comparable<V>> {
 
     String getTableName();
 
-    void insertIDs(DBContext context, int pos, ArrayList ids);
+    void insertIDs(DBContext context, int pos, ArrayList<V> ids);
 }
 

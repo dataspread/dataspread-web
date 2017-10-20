@@ -216,9 +216,9 @@ public class Hybrid_Model extends RCV_Model {
         }
     }
 
-    public List<Integer> appendTableRows(DBContext dbContext, CellRegion range, String tableName) {
+    public ArrayList<Integer> appendTableRows(DBContext dbContext, CellRegion range, String tableName) {
 
-        List<Integer> oidList = new ArrayList<>();
+        ArrayList<Integer> oidList = new ArrayList<>();
         // Delete Header
 
         //++range.row;
@@ -743,7 +743,7 @@ public class Hybrid_Model extends RCV_Model {
     {
         logger.info("Importing sheet");
         // Create a ROM model and import the file to the ROM model.
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();)
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection())
         {
             DBContext dbContext = new DBContext(connection);
             String newTableName = this.tableName + "_"

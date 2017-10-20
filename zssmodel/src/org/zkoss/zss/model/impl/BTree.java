@@ -11,11 +11,11 @@ import java.util.Arrays;
 /**
  * An implementation of a B+ Tree
  */
-public class BTree <K extends Comparable<K>, V> implements PosMapping {
+public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
     /**
      * The maximum number of children of a node (an odd number)
      */
-    protected static final int b = 101;
+    protected static final int b = 5;
     /**
      * Logging
      */
@@ -267,6 +267,8 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping {
 
             newroot.children[0] = metaDataBlock.ri;
             newroot.children[1] = w.id;
+            newroot.keys.add(w.keys.get(0));
+            newroot.keys.add(null);
             Node leftNode = new Node().get(context, bs, metaDataBlock.ri);
             if (leftNode.isLeaf()) {
                 newroot.childrenCount[0] = leftNode.valueSize();
@@ -1050,12 +1052,12 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping {
     }
 
     // TODO: Do it in batches. offline if possible.
-    public void insertIDs(DBContext context, int pos, ArrayList ids) {
+    public void insertIDs(DBContext context, int pos, ArrayList<V> ids) {
         int count = ids.size();
         for (int i = 0; i < count; i++) {
             // TODO How to handle maxValue?
             // ++metaDataBlock.maxValue;
-            addByCount(context, pos + i, (V)ids.get(i), false);
+            addByCount(context, pos + i, ids.get(i), false);
         }
         bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
         bs.flushDirtyBlocks(context);
@@ -1276,8 +1278,10 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping {
             }
             if (leafNode) {
                 i = (int) pos;
+                keys.add(i, null);
                 values.add(i, value);
             } else {
+                keys.add(i, null);
                 if (shift) System.arraycopy(children, i + 1, children, i + 2, b - i - 1);
                 if (shift) System.arraycopy(childrenCount, i + 1, childrenCount, i + 2, b - i - 1);
                 children[i + 1] = node.id;
@@ -1325,12 +1329,12 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping {
             Node w = new Node().create(context, bs);
 
             int j = keys.size() / 2;
-            w.keys = new ArrayList<>(keys.subList(j, keys.size()-j));
-            keys.subList(j, keys.size()-j).clear();
+            w.keys = new ArrayList<>(keys.subList(j, keys.size()));
+            keys.subList(j, keys.size()).clear();
             if (leafNode) {
                 // Copy Values
-                w.values = new ArrayList<>(values.subList(j, values.size()-j));
-                values.subList(j, values.size()-j).clear();
+                w.values = new ArrayList<>(values.subList(j, values.size()));
+                values.subList(j, values.size()).clear();
                 w.next_sibling = next_sibling;
                 next_sibling = w.id;
             } else {
@@ -1357,7 +1361,7 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping {
             StringBuffer sb = new StringBuffer();
             sb.append("[");
             if (leafNode) {
-                for (int i = 0; i < b; i++) {
+                for (int i = 0; i < keys.size(); i++) {
                     sb.append(keys.get(i) + ">" + values.get(i) + ",");
                 }
             } else {
