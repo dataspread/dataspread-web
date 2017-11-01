@@ -354,7 +354,10 @@ public class BookImpl extends AbstractBookAdv{
 				rs.close();
 				DBContext dbContext = new DBContext(connection);
 				String modelName = bookTable + sheet.getDBId();
-                sheet.cloneModel(dbContext, modelName, src);
+				if (src==null)
+                	sheet.createModel(dbContext, modelName);
+				else
+					sheet.cloneModel(dbContext, modelName, src);
 				connection.commit();
 			}
 			catch (SQLException e)
