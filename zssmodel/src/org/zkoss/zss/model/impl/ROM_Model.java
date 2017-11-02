@@ -27,6 +27,8 @@ public class ROM_Model extends Model {
     private ArrayList<String> recordList;
     private int kHisto = 5;
 
+    private boolean isNav = true;
+
     //Create or load RCV_model.
     ROM_Model(DBContext context, SSheet sheet, String tableName) {
         this.sheet = sheet;
@@ -373,24 +375,37 @@ public class ROM_Model extends Model {
     public void createNavSchema(String firstRow,String indexCol)
     {
         StringBuffer createTable = new StringBuffer("CREATE TABLE IF NOT EXISTS ");
-        createTable.append(tableName+" ");
+        createTable.append(dataTable+" ");
 
         createTable.append(firstRow);
 
         StringBuffer indexTable = new StringBuffer("CREATE INDEX col_index ON ");
-        indexTable.append(tableName+" ("+indexCol+")");
+        indexTable.append(dataTable+" (\""+indexCol+"\")");
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-        Statement createStmt = connection.createStatement();
-        Statement indexStmt = connection.createStatement()) {
+        Statement createStmt = connection.createStatement())
+        {
             createStmt.executeUpdate(createTable.toString());
-            indexStmt.execute(indexStmt.toString());
+            connection.commit();
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
+        /*try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+             Statement indexStmt = connection.createStatement()) {
+            indexStmt.executeUpdate(indexStmt.toString());
+            connection.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }*/
     }
 
     @Override
     public void importSheet(Reader reader, char delimiter) throws IOException {
+        if(isNav)
+        {
+            importNavSheet(reader,delimiter);
+            return;
+        }
         final int COMMIT_SIZE_BYTES = 8 * 1000 * 1000;
         CSVReader csvReader = new CSVReader(reader, delimiter);
         String[] nextLine;
@@ -453,8 +468,7 @@ public class ROM_Model extends Model {
 
     public void importNavSheet(Reader reader, char delimiter) throws IOException {
 
-
-        BufferedReader br = new BufferedReader(reader);
+        dataTable = tableName+"_data";
         String line;
         String headerString = "";
         String indexString = "";
@@ -470,58 +484,47 @@ public class ROM_Model extends Model {
         logger.info("Importing sheet");
 
         //create table schema and index
-        try{
-
-            while((line=br.readLine())!=null)
-            {
-                String [] columns = line.split(String.valueOf(delimiter));
-                importedColumns = columns.length;
-                StringBuffer str = new StringBuffer();
-                StringBuffer header = new StringBuffer("(");
-                StringBuffer values = new StringBuffer("?");
-
-                str.append(columns[0]+" TEXT");
-                header.append(columns[0]);
-                for (int i = 1; i < columns.length; i++) {
-                    str.append(", ")
-                            .append(columns[i] + " TEXT");
-                    header.append(", ")
-                            .append(columns[i]);
-                    values.append(",?");
-                }
-                str.append(")");
-
-                headerString = "("+header.toString()+")";
-                valuesString = values.toString();
-                indexString = columns[selectedCol];
-                createNavSchema(str.toString(),indexString);
-                break;
-            }
-        }catch(Exception e)
-        {
-            e.printStackTrace();
-        }
-
-
-
 
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             DBContext dbContext = new DBContext(connection);
 
-            StringBuffer sb = new StringBuffer();
+            StringBuffer sbNav = new StringBuffer();
+
             while ((nextLine = csvReader.readNext()) != null)
             {
                 if(importedRows==0)
                 {
                     ++importedRows;
+
+                    importedColumns = nextLine.length;
+                    StringBuffer str = new StringBuffer("(");
+                    StringBuffer header = new StringBuffer("");
+                    StringBuffer values = new StringBuffer("?");
+
+                    str.append(nextLine[0]+" TEXT");
+                    header.append(nextLine[0]);
+                    for (int i = 1; i < nextLine.length; i++) {
+                        str.append(", ")
+                                .append(nextLine[i] + " TEXT");
+                        header.append(", ")
+                                .append(nextLine[i]);
+                        values.append(",?");
+                    }
+                    str.append(")");
+
+                    headerString = header.toString();
+                    valuesString = values.toString();
+                    indexString = nextLine[selectedCol];
+                    createNavSchema(str.toString(),indexString);
+
                     continue;
                 }
 
-                sb.append("INSERT into "+tableName+" "+headerString+" values("+valuesString+")");
+                sbNav.append("INSERT into "+dataTable+" ("+headerString+") values("+valuesString+")");
 
                 PreparedStatement pst = null;
 
-                pst = connection.prepareStatement(sb.toString());
+                pst = connection.prepareStatement(sbNav.toString());
 
                 for(int i=0;i<importedColumns;i++)
                     pst.setString(i+1,nextLine[i]);
@@ -529,6 +532,7 @@ public class ROM_Model extends Model {
                 pst.executeUpdate();
 
                 ++importedRows;
+                sbNav = new StringBuffer();
 
                 if ((importedRows-1)% sampleSize ==0 && importedRows!=1) {
                     connection.commit();
@@ -544,7 +548,17 @@ public class ROM_Model extends Model {
 
             }
 
-            insertRows(dbContext, 0, importedRows);
+            if ((importedRows-1)% sampleSize !=0 ) {
+                connection.commit();
+
+                createNavS(headerString,indexString,insertedRows==0?true:false);
+
+                insertRows(dbContext, 0, importedRows-1);
+                insertedRows += (importedRows-1);
+
+                logger.info((importedRows-1) + " rows imported ");
+            }
+
             logger.info("Import done: " + importedRows + " rows and "
                     + importedColumns + " columns imported");
             connection.commit();
@@ -561,7 +575,7 @@ public class ROM_Model extends Model {
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
              Statement statement = connection.createStatement()) {
 
-            ResultSet rs = statement.executeQuery("SELECT "+indexString+" FROM " + tableName+" ORDER by "+indexString);
+            ResultSet rs = statement.executeQuery("SELECT "+indexString+" FROM " + dataTable+" ORDER by "+indexString);
 
 
             while (rs.next())
@@ -574,11 +588,24 @@ public class ROM_Model extends Model {
 
         //create nav data structure
 
-        navSbuckets = getBucketsNoOverlap(1,recordList.size());
+        navSbuckets = getBucketsNoOverlap(0,recordList.size()-1);
 
+        printBuckets(navSbuckets);
 
     }
 
+    private void printBuckets(List<Bucket<String>> bucketList) {
+        for(int i=0;i<bucketList.size();i++)
+        {
+            System.out.println("Bucket "+(i+1));
+            System.out.println("Max: "+bucketList.get(i).maxValue);
+            System.out.println("Min: "+bucketList.get(i).minValue);
+            System.out.println("start: "+bucketList.get(i).maxValue);
+            System.out.println("end: "+bucketList.get(i).minValue);
+            System.out.println("Size: "+bucketList.get(i).size);
+            System.out.println("children: "+bucketList.get(i).childCount);
+        }
+    }
 
     private int getSampleSize() {
         return 10;
@@ -599,18 +626,18 @@ public class ROM_Model extends Model {
             int boundary_change = 0;
             int element_count = 0;
             int startIndex=startPos;
-            for (int i = 0; i < kHisto && startIndex < endPos; i++) {
+            for (int i = 0; i < kHisto && startIndex < endPos+1; i++) {
                 Bucket bucket = new Bucket();
                 bucket.minValue = recordList.get(startIndex);
                 bucket.startPos = startIndex;
-                if(startIndex+bucketSize-1 < endPos) {
+                if(startIndex+bucketSize-1 < endPos+1) {
                     bucket.maxValue = recordList.get(startIndex + bucketSize - 1);
                     bucket.endPos = startIndex + bucketSize - 1;
                 }
                 else
                 {
-                    bucket.maxValue = recordList.get(endPos-1);
-                    bucket.endPos = endPos - 1;
+                    bucket.maxValue = recordList.get(endPos);
+                    bucket.endPos = endPos;
 
                 }
 
@@ -638,7 +665,7 @@ public class ROM_Model extends Model {
                     {
                         bounday_inc++;
                         //Search where max value ends in next bucket
-                        for(int j=startIndex + bucketSize+1 ; j<endPos;j++)
+                        for(int j=startIndex + bucketSize+1 ; j<endPos+1;j++)
                         {
                             boundary_value = recordList.get(j);
                             if(boundary_value.equals(bucket.maxValue)) {
@@ -705,12 +732,12 @@ public class ROM_Model extends Model {
 
             }
 
-            if(startIndex<endPos)
+            if(startIndex<endPos+1)
             {
                 Bucket bucket = new Bucket();
                 bucket.minValue = recordList.get(startIndex);
-                bucket.maxValue = recordList.get(endPos-1);
-                bucket.size = endPos-1-startIndex+1;
+                bucket.maxValue = recordList.get(endPos);
+                bucket.size = endPos-startIndex+1;
                 bucketList.add(bucket);
             }
 

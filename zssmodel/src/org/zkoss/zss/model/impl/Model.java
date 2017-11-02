@@ -10,6 +10,7 @@ import java.util.Collection;
 
 public abstract class Model {
     protected String tableName;
+    protected String dataTable;
     protected SSheet sheet;
 
     public static Model CreateModel(DBContext context, SSheet sheet, ModelType modelType, String tableName) {
