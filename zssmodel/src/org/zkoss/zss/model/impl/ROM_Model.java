@@ -71,6 +71,7 @@ public class ROM_Model extends Model {
     }
 
 
+
     @Override
     public void insertRows(DBContext context, int row, int count) {
         rowMapping.createIDs(context, row, count);
@@ -399,6 +400,25 @@ public class ROM_Model extends Model {
         }*/
     }
 
+    public void upDateSchema(DBContext context,String [] columns) {
+        StringBuffer updateTable = (new StringBuffer())
+                .append("ALTER TABLE ")
+                .append(tableName)
+                .append(" ADD COLUMN col_1 BYTEA");
+
+        for(int i=1;i<columns.length;i++)
+            updateTable.append(", ADD COLUMN ")
+                    .append("col_").
+                    append(i+1)
+                    .append(" BYTEA");
+
+        try (Statement stmt = context.getConnection().createStatement()) {
+            stmt.execute(updateTable.toString());
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+    }
     @Override
     public void importSheet(Reader reader, char delimiter) throws IOException {
         if(isNav)
@@ -471,6 +491,7 @@ public class ROM_Model extends Model {
         dataTable = tableName+"_data";
         String line;
         String headerString = "";
+        String headerStringSS = "";
         String indexString = "";
         String valuesString = "";
         int selectedCol = 0;
@@ -489,6 +510,7 @@ public class ROM_Model extends Model {
             DBContext dbContext = new DBContext(connection);
 
             StringBuffer sbNav = new StringBuffer();
+            StringBuffer sbSS = new StringBuffer();
 
             while ((nextLine = csvReader.readNext()) != null)
             {
@@ -497,25 +519,46 @@ public class ROM_Model extends Model {
                     ++importedRows;
 
                     importedColumns = nextLine.length;
+                    insertCols(dbContext, 0, importedColumns);
                     StringBuffer str = new StringBuffer("(");
                     StringBuffer header = new StringBuffer("");
+                    StringBuffer headerSS = new StringBuffer("");
                     StringBuffer values = new StringBuffer("?");
 
                     str.append(nextLine[0]+" TEXT");
                     header.append(nextLine[0]);
+                    headerSS.append("row,col_1");
                     for (int i = 1; i < nextLine.length; i++) {
                         str.append(", ")
                                 .append(nextLine[i] + " TEXT");
                         header.append(", ")
                                 .append(nextLine[i]);
+                        headerSS.append(", col_")
+                                .append(i+1);
                         values.append(",?");
+
                     }
                     str.append(")");
 
                     headerString = header.toString();
+                    headerStringSS = headerSS.toString();
                     valuesString = values.toString();
                     indexString = nextLine[selectedCol];
+
                     createNavSchema(str.toString(),indexString);
+                 /*   upDateSchema(dbContext,nextLine);
+
+                    PreparedStatement pstSS = null;
+
+                    pstSS = connection.prepareStatement(sbSS.toString());
+
+                    pstSS.setInt(1,importedRows);
+                    for (int col = 0; col < importedColumns; col++)
+                        pstSS.setBytes(col+1,nextLine[col].getBytes());
+
+                    pstSS.executeUpdate();
+
+                    sbSS = new StringBuffer();*/
 
                     continue;
                 }
@@ -531,15 +574,28 @@ public class ROM_Model extends Model {
 
                 pst.executeUpdate();
 
+                sbSS.append("INSERT into "+tableName+" ("+headerStringSS+") values(?,"+valuesString+")");
+
+                /*PreparedStatement pstSS = null;
+
+                pstSS = connection.prepareStatement(sbSS.toString());
+
+                pstSS.setInt(1,importedRows+1);
+                for (int col = 0; col < importedColumns; col++)
+                    pstSS.setBytes(col+2,nextLine[col].getBytes());
+
+                pstSS.executeUpdate();*/
+
                 ++importedRows;
                 sbNav = new StringBuffer();
+                sbSS = new StringBuffer();
 
                 if ((importedRows-1)% sampleSize ==0 && importedRows!=1) {
                     connection.commit();
 
                     createNavS(headerString,indexString,insertedRows==0?true:false);
 
-                    insertRows(dbContext, insertedRows, importedRows-1);
+                    insertRows(dbContext, 0, importedRows);
                     insertedRows += (importedRows-1);
 
                     logger.info((importedRows-1) + " rows imported ");
@@ -553,7 +609,7 @@ public class ROM_Model extends Model {
 
                 createNavS(headerString,indexString,insertedRows==0?true:false);
 
-                insertRows(dbContext, 0, importedRows-1);
+                insertRows(dbContext, 0, importedRows);
                 insertedRows += (importedRows-1);
 
                 logger.info((importedRows-1) + " rows imported ");
