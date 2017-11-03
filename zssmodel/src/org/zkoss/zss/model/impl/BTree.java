@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import org.model.BlockStore;
 import org.model.DBContext;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * An implementation of a B+ Tree
@@ -75,14 +74,14 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
      * @param row the position to search for
      * @return i
      */
-    private static int findItByCount(long[] a, long row) {
+    private static int findItByCount(ArrayList<Integer> a, long row) {
         if (a == null) return 0;
-        int lo = 0, hi = a.length;
+        int lo = 0, hi = a.size();
         long ct = row + 1;
         while (hi != lo) {
-            if (a[lo] == 0) return lo - 1;
-            if (ct > a[lo]) {
-                ct -= a[lo];
+            if (a.get(lo) == 0) return lo - 1;
+            if (ct > a.get(lo)) {
+                ct -= a.get(lo);
                 lo++;
             } else {
                 return lo;
@@ -144,33 +143,21 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
             // First time leaf becomes a root
             newRoot.leafNode = false;
 
-            newRoot.children = new int[b + 1];
-            Arrays.fill(newRoot.children, 0, newRoot.children.length, -1);
-
-            newRoot.childrenCount = new long[b + 1];
-            Arrays.fill(newRoot.childrenCount, 0, newRoot.childrenCount.length, 0);
-
-            newRoot.children[0] = metaDataBlock.ri;
+            newRoot.children.add(0, metaDataBlock.ri);
             newRoot.keys.add(key);
-            newRoot.children[1] = w.id;
+            newRoot.children.add(1, w.id);
 
             /* Update children count */
             Node leftNode = new Node().get(context, bs, metaDataBlock.ri);
             if (leftNode.isLeaf()) {
-                newRoot.childrenCount[0] = leftNode.size();
+                newRoot.childrenCount.add(0, leftNode.size());
             } else {
-                int i;
-                for (i = 0; i < leftNode.childrenCount.length; i++) {
-                    newRoot.childrenCount[0] += leftNode.childrenCount[i];
-                }
+                newRoot.childrenCount.add(0, getStatistic(leftNode));
             }
             if (w.isLeaf()) {
-                newRoot.childrenCount[1] = w.size();
+                newRoot.childrenCount.add(1, w.size());
             } else {
-                int i;
-                for (i = 0; i < w.childrenCount.length; i++) {
-                    newRoot.childrenCount[1] += w.childrenCount[i];
-                }
+                newRoot.childrenCount.add(1, getStatistic(w));
             }
             metaDataBlock.ri = newRoot.id;
             bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
@@ -179,6 +166,14 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
         metaDataBlock.elementCount++;
         bs.flushDirtyBlocks(context);
         return true;
+    }
+
+    private int getStatistic(Node leftNode) {
+        int sum = 0;
+        for (int element: leftNode.childrenCount) {
+            sum += element;
+        }
+        return sum;
     }
 
     /**
@@ -201,19 +196,20 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
         if (u.isLeaf()) { // leaf node, just add it
             u.add(key, null, val);
         } else {
-            u.childrenCount[i]++;
-            Node w = addRecursive(context, key, u.children[i], val);
+            u.childrenCount.set(i, u.childrenCount.get(i) + 1);
+            Node w = addRecursive(context, key, u.children.get(i), val);
             if (w != null) {  // child was split, w is new child
                 key = w.removeKey(0);
                 w.update(bs);
                 u.add(key, w, val);
                 if (w.isLeaf()) {
-                    u.childrenCount[i] -= w.size();
+                    u.childrenCount.set(i, u.childrenCount.get(i) - w.size());
                 } else {
-                    int z;
-                    for (z = 0; z < w.childrenCount.length; z++) {
-                        u.childrenCount[i] -= w.childrenCount[z];
+                    int ct = 0;
+                    for (int z = 0; z < w.childrenCount.size(); z++) {
+                        ct -= w.childrenCount.get(z);
                     }
+                    u.childrenCount.set(i, ct);
                 }
             }
         }
@@ -250,32 +246,20 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
             // First time leaf becomes a root
             new_root.leafNode = false;
 
-            new_root.children = new int[b + 1];
-            Arrays.fill(new_root.children, 0, new_root.children.length, -1);
-
-            new_root.childrenCount = new long[b + 1];
-            Arrays.fill(new_root.childrenCount, 0, new_root.childrenCount.length, 0);
-
-            new_root.children[0] = metaDataBlock.ri;
-            new_root.children[1] = w.id;
+            new_root.children.add(0, metaDataBlock.ri);
+            new_root.children.add(1, w.id);
             new_root.keys.add(w.keys.get(0));
             new_root.keys.add(null);
             Node leftNode = new Node().get(context, bs, metaDataBlock.ri);
             if (leftNode.isLeaf()) {
-                new_root.childrenCount[0] = leftNode.valueSize();
+                new_root.childrenCount.add(0, leftNode.valueSize());
             } else {
-                int i;
-                for (i = 0; i < leftNode.childrenCount.length; i++) {
-                    new_root.childrenCount[0] += leftNode.childrenCount[i];
-                }
+                new_root.childrenCount.add(0, getStatistic(leftNode));
             }
             if (w.isLeaf()) {
-                new_root.childrenCount[1] = w.valueSize();
+                new_root.childrenCount.add(1, w.valueSize());
             } else {
-                int i;
-                for (i = 0; i < w.childrenCount.length; i++) {
-                    new_root.childrenCount[1] += w.childrenCount[i];
-                }
+                new_root.childrenCount.add(1, getStatistic(w));
             }
             metaDataBlock.ri = new_root.id;
             bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
@@ -311,20 +295,17 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
             i = findItByCount(u.childrenCount, pos);
             long new_pos = pos;
             for (int z = 0; z < i; z++) {
-                new_pos -= u.childrenCount[z];
+                new_pos -= u.childrenCount.get(z);
             }
-            u.childrenCount[i]++;
-            Node w = addRecursiveByCount(context, new_pos, u.children[i], val);
+            u.childrenCount.set(i, u.childrenCount.get(i) + 1);
+            Node w = addRecursiveByCount(context, new_pos, u.children.get(i), val);
             if (w != null) {  // child was split, w is new child
                 w.update(bs);
                 u.addByCount(pos, w, val);
                 if (w.isLeaf()) {
-                    u.childrenCount[i] -= w.valueSize();
+                    u.childrenCount.set(i, u.childrenCount.get(i) - w.valueSize());
                 } else {
-                    int z;
-                    for (z = 0; z < w.childrenCount.length; z++) {
-                        u.childrenCount[i] -= w.childrenCount[z];
-                    }
+                    u.childrenCount.set(i, u.childrenCount.get(i) - getStatistic(w));
                 }
             }
             u.update(bs);
@@ -353,7 +334,7 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
             Node r = new Node().get(context, bs, metaDataBlock.ri);
             if (!r.isLeaf() && r.childrenSize() <= 1 && metaDataBlock.elementCount > 0) { // root has only one child
                 r.free(bs);
-                metaDataBlock.ri = r.children[0];
+                metaDataBlock.ri = r.children.get(0);
                 bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
             }
             if (flush)
@@ -387,12 +368,12 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
             //}
         } else {
             i = findItByCount(u.childrenCount, pos);
-            u.childrenCount[i]--;
+            u.childrenCount.set(i, u.childrenCount.get(i) - 1);
             long new_pos = pos;
             for (int z = 0; z < i; z++) {
-                new_pos -= u.childrenCount[z];
+                new_pos -= u.childrenCount.get(z);
             }
-            V id = removeRecursiveByCount(context, new_pos, u.children[i]);
+            V id = removeRecursiveByCount(context, new_pos, u.children.get(i));
             if (id != null) {
                 checkUnderflowByCount(context, u, i);
                 u.update(bs);
@@ -412,42 +393,35 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
      * @param i
      */
     private void checkUnderflowByCount(DBContext context, Node u, int i) {
-        if (u.children[i] < 0) return;
+        if (u.children.get(i) < 0) return;
         if (i == 0)
             checkUnderflowZeroByCount(context, u, i); // use u's right sibling
         else if (i == u.childrenSize() - 1)
             checkUnderflowNonZeroByCount(context, u, i);
-        else if (u.childrenCount[i + 1] > u.childrenCount[i - 1])
+        else if (u.childrenCount.get(i + 1) > u.childrenCount.get(i - 1))
             checkUnderflowZeroByCount(context, u, i);
         else checkUnderflowNonZeroByCount(context, u, i);
     }
 
     private void mergeByCount(Node u, int i, Node v, Node w) {
-        // w is merged with v
-        int sv = v.size();
-        int sw = w.size();
-
-
+        // w is merged into v
         if (v.isLeaf()) {
             v.values.addAll(w.values);
             v.next_sibling = w.next_sibling;
         } else {
-            System.arraycopy(w.children, 0, v.children, sv + 1, sw + 1);
-            System.arraycopy(w.childrenCount, 0, v.childrenCount, sv + 1, sw + 1);
+            v.children.addAll(w.children);
+            v.childrenCount.addAll(w.childrenCount);
             v.values.add(i+1,u.values.get(i));
         }
         // add key to v and remove it from u
         // U should not be a leaf node
-        u.childrenCount[i] += u.childrenCount[i + 1];
+        u.childrenCount.set(i, u.childrenCount.get(i) + u.childrenCount.get(i + 1));
 
         // w ids is in u.children[i+1]
         // Free block
         w.free(bs);
-
-        System.arraycopy(u.children, i + 2, u.children, i + 1, b - i - 1);
-        System.arraycopy(u.childrenCount, i + 2, u.childrenCount, i + 1, b - i - 1);
-        u.children[b] = -1;
-        u.childrenCount[b] = 0;
+        u.children.remove(i + 1);
+        u.childrenCount.remove(i + 1);
     }
 
     /**
@@ -458,9 +432,9 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
      * @param i the index of a child in u
      */
     private void checkUnderflowNonZeroByCount(DBContext context, Node u, int i) {
-        Node w = new Node().get(context, bs, u.children[i]);  // w is child of u
+        Node w = new Node().get(context, bs, u.children.get(i));  // w is child of u
         if ((w.isLeaf() && w.valueSize() < B) || (!w.isLeaf() && w.childrenSize() < B + 1)) {  // underflow at w
-            Node v = new Node().get(context, bs, u.children[i - 1]); // v left of w
+            Node v = new Node().get(context, bs, u.children.get(i - 1)); // v left of w
             if ((v.isLeaf() && v.valueSize() > B) || (!v.isLeaf() && v.childrenSize() > B + 1)) {  // underflow at w
                 shiftLRByCount(u, i - 1, v, w);
                 v.update(bs);
@@ -493,35 +467,31 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
             // move keys and children out of v and into w
             w.values.addAll(0,v.values.subList(sv-shift, sv));
             v.values.subList(sv-shift, sv).clear();
-            u.childrenCount[i] -= shift;
-            u.childrenCount[i + 1] += shift;
+            u.childrenCount.set(i, u.childrenCount.get(i) - shift);
+            u.childrenCount.set(i + 1, u.childrenCount.get(i + 1) + shift);
 
         } else {
             // Don't move this key for leaf
             // move keys and children out of v and into w (and u)
-
-            System.arraycopy(w.children, 0, w.children, shift, sw + 1);
-            System.arraycopy(w.childrenCount, 0, w.childrenCount, shift, sw + 1);
-
-            System.arraycopy(v.children, sv - shift + 1, w.children, 0, shift);
-            System.arraycopy(v.childrenCount, sv - shift + 1, w.childrenCount, 0, shift);
-            Arrays.fill(v.children, sv - shift + 1, sv + 1, -1);
-            Arrays.fill(v.childrenCount, sv - shift + 1, sv + 1, 0);
-
+            w.children.addAll(v.children.subList(sv - shift + 1, sv + 1));
+            w.childrenCount.addAll(v.childrenCount.subList(sv - shift + 1, sv + 1));
+            v.children.subList(sv - shift + 1, sv + 1).clear();
+            v.childrenCount.subList(sv - shift + 1, sv + 1).clear();
+            int ct = 0;
             for (int shift_i = 0; shift_i < shift; shift_i++) {
-                u.childrenCount[i] -= w.childrenCount[shift_i];
-                u.childrenCount[i + 1] += w.childrenCount[shift_i];
+                ct += w.childrenCount.get(shift_i);
             }
-
+            u.childrenCount.set(i, u.childrenCount.get(i) - ct);
+            u.childrenCount.set(i + 1, u.childrenCount.get(i + 1) + ct);
         }
 
 
     }
 
     private void checkUnderflowZeroByCount(DBContext context, Node u, int i) {
-        Node w = new Node().get(context, bs, u.children[i]); // w is child of u
+        Node w = new Node().get(context, bs, u.children.get(i)); // w is child of u
         if ((w.isLeaf() && w.valueSize() < B) || (!w.isLeaf() && w.childrenSize() < B + 1)) {  // underflow at w
-            Node v = new Node().get(context, bs, u.children[i + 1]); // v right of w
+            Node v = new Node().get(context, bs, u.children.get(i + 1)); // v right of w
             if ((v.isLeaf() && v.valueSize() > B) || (!v.isLeaf() && v.childrenSize() > B + 1)) {  // underflow at w
                 shiftRLByCount(u, i, v, w);
                 v.update(bs);
@@ -552,23 +522,22 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
         if (v.isLeaf()) // w should also be leaf
         {
             // Do not bring the key from u
-            w.values.addAll(v.values.subList(0,shift));
+            w.values.addAll(v.values.subList(0, shift));
             v.values.subList(0,shift).clear();
-            u.childrenCount[i + 1] -= shift;
-            u.childrenCount[i] += shift;
+            u.childrenCount.set(i + 1, u.childrenCount.get(i + 1) - shift);
+            u.childrenCount.set(i, u.childrenCount.get(i) + shift);
         } else {
-            System.arraycopy(v.children, 0, w.children, sw + 1, shift);
-            System.arraycopy(v.childrenCount, 0, w.childrenCount, sw + 1, shift);
+            w.children.addAll(v.children.subList(0, shift));
+            w.childrenCount.addAll(v.childrenCount.subList(0, shift));
+            v.children.subList(0, shift).clear();
+            v.childrenCount.subList(0, shift).clear();
 
-            System.arraycopy(v.children, shift, v.children, 0, b - shift + 1);
-            Arrays.fill(v.children, sv - shift + 1, b + 1, -1);
-            System.arraycopy(v.childrenCount, shift, v.childrenCount, 0, b - shift + 1);
-            Arrays.fill(v.childrenCount, sv - shift + 1, b + 1, 0);
-
+            int ct = 0;
             for (int shift_i = 0; shift_i < shift; shift_i++) {
-                u.childrenCount[i + 1] -= w.childrenCount[shift_i];
-                u.childrenCount[i] += w.childrenCount[shift_i];
+                ct += w.childrenCount.get(shift_i);
             }
+            u.childrenCount.set(i + 1, u.childrenCount.get(i + 1) - ct);
+            u.childrenCount.set(i, u.childrenCount.get(i) + ct);
         }
 
     }
@@ -579,7 +548,7 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
             Node r = new Node().get(context, bs, metaDataBlock.ri);
             if (!r.isLeaf() && r.size() == 0 && metaDataBlock.elementCount > 0) { // root has only one child
                 r.free(bs);
-                metaDataBlock.ri = r.children[0];
+                metaDataBlock.ri = r.children.get(0);
                 bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
             }
             return true;
@@ -615,8 +584,8 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
                 }
             }
         } else {
-            u.childrenCount[i]--;
-            ReturnRS rs = removeRecursive(context, x, u.children[i]);
+            u.childrenCount.set(i, u.childrenCount.get(i) - 1);
+            ReturnRS rs = removeRecursive(context, x, u.children.get(i));
             if (rs.getDone() >= 0) {
                 if (i > 0) {
                     if (u.keys.get(i - 1) == x) {
@@ -641,28 +610,27 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
      * @param i
      */
     private void checkUnderflow(DBContext context, Node u, int i) {
-        if (u.children[i] < 0) return;
+        if (u.children.get(i) < 0) return;
         if (i == 0)
             checkUnderflowZero(context, u, i); // use u's right sibling
         else if (i == u.childrenSize() - 1)
             checkUnderflowNonZero(context, u, i);
-        else if (u.childrenCount[i + 1] > u.childrenCount[i - 1])
+        else if (u.childrenCount.get(i + 1) > u.childrenCount.get(i - 1))
             checkUnderflowZero(context, u, i);
         else checkUnderflowNonZero(context, u, i);
     }
 
     protected void merge(Node u, int i, Node v, Node w) {
-        // w is merged with v, w will be destroyed
-        int sv = v.size();
-        int sw = w.size();
+        // w is merged into v, w will be destroyed
 
         if (v.isLeaf()) {
             // copy key and value from w to v
             v.keys.addAll(w.keys);
             v.values.addAll(w.values);
         } else {
-            System.arraycopy(w.children, 0, v.children, sv + 1, sw + 1);
-            System.arraycopy(w.childrenCount, 0, v.childrenCount, sv + 1, sw + 1);
+            v.children.addAll(w.children);
+            v.childrenCount.addAll(w.childrenCount);
+
             // copy keys from w to v
             v.keys.add(i+1,u.keys.get(i));
             v.keys.addAll(w.keys);
@@ -671,17 +639,15 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
         // add key to v and remove it from u
 
         // U should not be a leaf node
-        u.childrenCount[i] += u.childrenCount[i + 1];
+        u.childrenCount.set(i, u.childrenCount.get(i) + u.childrenCount.get(i + 1));
         u.keys.remove(i);
 
         // w ids is in u.children[i+1]
         // Free block
         w.free(bs);
 
-        System.arraycopy(u.children, i + 2, u.children, i + 1, b - i - 1);
-        System.arraycopy(u.childrenCount, i + 2, u.childrenCount, i + 1, b - i - 1);
-        u.children[b] = -1;
-        u.childrenCount[b] = 0;
+        u.children.remove(i + 1);
+        u.childrenCount.remove(i + 1);
     }
 
     /**
@@ -692,20 +658,20 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
      * @param i the index of a child in u
      */
     private void checkUnderflowNonZero(DBContext context, Node u, int i) {
-        Node w = new Node().get(context, bs, u.children[i]);  // w is child of u
+        Node w = new Node().get(context, bs, u.children.get(i));  // w is child of u
         if (w.size() < B) {  // underflow at w
-            Node v = new Node().get(context, bs, u.children[i - 1]); // v left of w
+            Node v = new Node().get(context, bs, u.children.get(i - 1)); // v left of w
             if (v.size() > B) {  // w can borrow from v
                 shiftLR(u, i - 1, v, w);
                 if (v.isLeaf()) {
-                    u.childrenCount[i - 1]--;
+                    u.childrenCount.set(i - 1, u.childrenCount.get(i - 1) - 1);
                 } else {
-                    u.childrenCount[i - 1] -= w.childrenCount[0];
+                    u.childrenCount.set(i - 1, u.childrenCount.get(i - 1) - w.childrenCount.get(0));
                 }
                 if (w.isLeaf()) {
-                    u.childrenCount[i]++;
+                    u.childrenCount.set(i, u.childrenCount.get(i) + 1);
                 } else {
-                    u.childrenCount[i] += w.childrenCount[0];
+                    u.childrenCount.set(i, u.childrenCount.get(i) + w.childrenCount.get(0));
                 }
                 v.update(bs);
                 w.update(bs);
@@ -745,36 +711,35 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
             // move keys and children out of v and into w (and u)
 
             w.keys.set(shift - 1, u.keys.get(i));
-            System.arraycopy(w.children, 0, w.children, shift, sw + 1);
-            System.arraycopy(w.childrenCount, 0, w.childrenCount, shift, sw + 1);
             u.keys.set(i, v.keys.get(sv - shift));
             w.keys.addAll(0, v.keys.subList(sv - shift + 1, sv));
             v.keys.subList(sv - shift + 1, sv).clear();
 
-            System.arraycopy(v.children, sv - shift + 1, w.children, 0, shift);
-            System.arraycopy(v.childrenCount, sv - shift + 1, w.childrenCount, 0, shift);
-            Arrays.fill(v.children, sv - shift + 1, sv + 1, -1);
-            Arrays.fill(v.childrenCount, sv - shift + 1, sv + 1, 0);
+            w.children.addAll(0, v.children.subList(sv - shift + 1, sv + 1));
+            w.childrenCount.addAll(0, v.childrenCount.subList(sv - shift + 1, sv + 1));
+            v.children.subList(sv - shift + 1, sv + 1).clear();
+            v.childrenCount.subList(sv - shift + 1, sv + 1).clear();
+
         }
 
 
     }
 
     private void checkUnderflowZero(DBContext context, Node u, int i) {
-        Node w = new Node().get(context, bs, u.children[i]); // w is child of u
+        Node w = new Node().get(context, bs, u.children.get(i)); // w is child of u
         if (w.size() < B) {  // underflow at w
-            Node v = new Node().get(context, bs, u.children[i + 1]); // v right of w
+            Node v = new Node().get(context, bs, u.children.get(i + 1)); // v right of w
             if (v.size() > B) { // w can borrow from v
                 shiftRL(u, i, v, w);
                 if (v.isLeaf()) {
-                    u.childrenCount[i + 1]--;
+                    u.childrenCount.set(i + 1, u.childrenCount.get(i + 1) - 1);
                 } else {
-                    u.childrenCount[i + 1] -= w.childrenCount[w.childrenSize() - 1];
+                    u.childrenCount.set(i + 1, u.childrenCount.get(i + 1) - w.childrenCount.get(w.childrenSize() - 1));
                 }
                 if (w.isLeaf()) {
-                    u.childrenCount[i]++;
+                    u.childrenCount.set(i, u.childrenCount.get(i) + 1);
                 } else {
-                    u.childrenCount[i] += w.childrenCount[w.childrenSize() - 1];
+                    u.childrenCount.set(i, u.childrenCount.get(i) + w.childrenCount.get(w.childrenSize() - 1));
                 }
                 v.update(bs);
                 w.update(bs);
@@ -812,8 +777,9 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
             w.keys.add(sw, u.keys.get(i));
             w.keys.addAll(v.keys.subList(0, shift - 1));
 
-            System.arraycopy(v.children, 0, w.children, sw + 1, shift);
-            System.arraycopy(v.childrenCount, 0, w.childrenCount, sw + 1, shift);
+            w.children.addAll(v.children.subList(0, shift));
+            w.childrenCount.addAll(v.childrenCount.subList(0, shift));
+
             u.keys.set(i, v.keys.get(shift - 1));
         }
 
@@ -824,11 +790,8 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
         if (v.isLeaf()) {
             v.values.subList(0,shift).clear();
         } else {
-            System.arraycopy(v.children, shift, v.children, 0, b - shift + 1);
-            Arrays.fill(v.children, sv - shift + 1, b + 1, -1);
-            System.arraycopy(v.childrenCount, shift, v.childrenCount, 0, b - shift + 1);
-            Arrays.fill(v.childrenCount, sv - shift + 1, b + 1, 0);
-
+            v.children.subList(0, shift).clear();
+            v.childrenCount.subList(0, shift).clear();
         }
     }
 
@@ -843,7 +806,7 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
         Node u = new Node().get(context, bs, ui);
         if (!u.isLeaf()) {
             for (int i = 0; i < u.childrenSize(); i++) {
-                clearRecursive(context, u.children[i]);
+                clearRecursive(context, u.children.get(i));
             }
         }
         u.free(bs);
@@ -857,7 +820,7 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
             if (u.isLeaf()) {
                 return i > 0 && u.keys.get(i - 1) == x;
             }
-            ui = u.children[i];
+            ui = u.children.get(i);
         }
     }
 
@@ -872,7 +835,7 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
                 else
                     return null;
             }
-            ui = u.children[i];
+            ui = u.children.get(i);
         }
     }
 
@@ -898,9 +861,9 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
                 get_count++;
                 break;
             }
-            ui = u.children[i];
+            ui = u.children.get(i);
             for (int z = 0; z < i; z++) {
-                ct -= u.childrenCount[z];
+                ct -= u.childrenCount.get(z);
             }
             u = new Node().get(context, bs, ui);
         }
@@ -967,22 +930,21 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
             }
         } else {
             while (i < u.keys.size()) {
-                sb.append(u.children[i]);
+                sb.append(u.children.get(i));
                 sb.append(" < ");
                 sb.append(u.keys.get(i));
                 sb.append(" > ");
                 i++;
             }
-            sb.append(u.children[i]);
+            sb.append(u.children.get(i));
         }
         sb.append("\n");
         i = 0;
         if (!u.isLeaf()) {
-            while (i < u.keys.size()) {
-                toString(context, u.children[i], sb);
+            while (i < u.children.size()) {
+                toString(context, u.children.get(i), sb);
                 i++;
             }
-            toString(context, u.children[i], sb);
         }
     }
 
@@ -1056,12 +1018,12 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
         /**
          * The IDs of the children of this block (if any)
          */
-        int[] children;
+        ArrayList<Integer> children;
 
         /**
          * The cumulative count for children.
          */
-        long[] childrenCount;
+        ArrayList<Integer> childrenCount;
 
         /**
          * Data stored in the leaf blocks
@@ -1080,8 +1042,8 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
 
         private Node() {
             keys = new ArrayList<>();
-            children = null;
-            childrenCount = null;
+            children = new ArrayList<>();
+            childrenCount = new ArrayList<>();
             leafNode = true;
             values = new ArrayList<>();
             parent = -1;    // Root node
@@ -1158,16 +1120,7 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
          * @return the number of children in this block
          */
         private int childrenSize() {
-            if (children == null) return 1;
-            int lo = 0, h = children.length;
-            while (h != lo) {
-                int m = (h + lo) / 2;
-                if (children[m] == -1)
-                    h = m;
-                else
-                    lo = m + 1;
-            }
-            return lo;
+            return children.size();
         }
 
         /**
@@ -1178,27 +1131,22 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
          * @return true on success or false if key was not added
          */
         public boolean add(K key, Node node, V value) {
-            boolean shift = false;
             int i = findIt(keys, key);
             if (i < 0) return false;
-            if (i < children.length - 1) {
-                shift = true;
-            }
             keys.add(i, key);
             if (leafNode) {
                 values.add(i, value);
             } else {
-                if (shift) System.arraycopy(children, i + 1, children, i + 2, b - i - 1);
-                if (shift) System.arraycopy(childrenCount, i + 1, childrenCount, i + 2, b - i - 1);
-                children[i + 1] = node.id;
+                children.add(i + 1, node.id);
+
                 if (node.isLeaf()) {
-                    childrenCount[i + 1] = node.size();
+                    childrenCount.add(i + 1, node.size());
                 } else {
-                    childrenCount[i + 1] = 0;
-                    int z;
-                    for (z = 0; z < node.childrenCount.length; z++) {
-                        childrenCount[i + 1] += node.childrenCount[z];
+                    int ct = 0;
+                    for (int z = 0; z < node.childrenCount.size(); z++) {
+                        ct += node.childrenCount.get(z);
                     }
+                    childrenCount.add(i + 1, ct);
                 }
             }
             return true;
@@ -1212,29 +1160,23 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
          * @return true on success or false if x was not added
          */
         private boolean addByCount(long pos, Node node, V value) {
-            boolean shift = false;
             int i = findItByCount(childrenCount, pos);
             if (i < 0) return false;
-            if (i < childrenSize() - 1) {
-                shift = true;
-            }
             if (leafNode) {
                 i = (int) pos;
                 keys.add(i, null);
                 values.add(i, value);
             } else {
                 keys.add(i, null);
-                if (shift) System.arraycopy(children, i + 1, children, i + 2, b - i - 1);
-                if (shift) System.arraycopy(childrenCount, i + 1, childrenCount, i + 2, b - i - 1);
-                children[i + 1] = node.id;
+                children.add(i + 1, node.id);
                 if (node.isLeaf()) {
-                    childrenCount[i + 1] = node.valueSize();
+                    childrenCount.add(i + 1, node.valueSize());
                 } else {
-                    childrenCount[i + 1] = 0;
-                    int z;
-                    for (z = 0; z < node.childrenCount.length; z++) {
-                        childrenCount[i + 1] += node.childrenCount[z];
+                    int ct = 0;
+                    for (int z = 0; z < node.childrenCount.size(); z++) {
+                        ct += node.childrenCount.get(z);
                     }
+                    childrenCount.add(i + 1, ct);
                 }
             }
             return true;
@@ -1280,20 +1222,13 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
                 w.next_sibling = next_sibling;
                 next_sibling = w.id;
             } else {
-                w.children = new int[b + 1];
-                Arrays.fill(w.children, 0, w.children.length, -1);
-
                 // Copy Children
-                System.arraycopy(children, j + 1, w.children, 0, children.length - j - 1);
-                Arrays.fill(children, j + 1, children.length, -1);
-
-                //Create child counts
-                w.childrenCount = new long[b + 1];
-                Arrays.fill(w.childrenCount, 0, w.childrenCount.length, 0);
+                w.children = new ArrayList<>(children.subList(j+1, children.size() - j - 1));
+                children.subList(j+1, children.size() - j - 1).clear();
 
                 // Copy Counts
-                System.arraycopy(childrenCount, j + 1, w.childrenCount, 0, childrenCount.length - j - 1);
-                Arrays.fill(childrenCount, j + 1, childrenCount.length, 0);
+                w.childrenCount = new ArrayList<>(childrenCount.subList(j + 1, childrenCount.size() - j - 1));
+                childrenCount.subList(j + 1, childrenCount.size() - j - 1).clear();
             }
             w.leafNode = this.leafNode;
             return w;
@@ -1310,14 +1245,14 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
                     sb.append(",");
                 }
             } else {
-                for (int i = 0; i < b; i++) {
+                for (int i = 0; i < children.size(); i++) {
                     sb.append("(");
-                    sb.append((children[i] < 0 ? "." : children[i]));
+                    sb.append((children.get(i) < 0 ? "." : children.get(i)));
                     sb.append(")");
                     sb.append(keys.get(i));
                 }
                 sb.append("(");
-                sb.append(children[b] < 0 ? "." : children[b]);
+                sb.append(children.get(b) < 0 ? "." : children.get(b));
                 sb.append(")");
             }
             sb.append("]");
