@@ -11,9 +11,9 @@ import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SSheet;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
@@ -373,52 +373,21 @@ public class ROM_Model extends Model {
         colMapping.clearCache(context);
     }
 
-    public void createNavSchema(String firstRow,String indexCol)
+    public void updateNavSchema(String firstRow, String indexCol,int selectedCol)
     {
-        StringBuffer createTable = new StringBuffer("CREATE TABLE IF NOT EXISTS ");
-        createTable.append(dataTable+" ");
-
-        createTable.append(firstRow);
-
         StringBuffer indexTable = new StringBuffer("CREATE INDEX col_index ON ");
-        indexTable.append(dataTable+" (\""+indexCol+"\")");
+        indexTable.append(tableName+" (\"col_"+(selectedCol+1)+"\")");
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-        Statement createStmt = connection.createStatement())
-        {
-            createStmt.executeUpdate(createTable.toString());
+        //Statement createStmt = connection.createStatement();
+        Statement indexStmt = connection.createStatement()) {
+            //createStmt.executeUpdate(createTable.toString());
+            indexStmt.executeUpdate(indexTable.toString());
             connection.commit();
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
-        /*try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-             Statement indexStmt = connection.createStatement()) {
-            indexStmt.executeUpdate(indexStmt.toString());
-            connection.commit();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }*/
     }
 
-    public void upDateSchema(DBContext context,String [] columns) {
-        StringBuffer updateTable = (new StringBuffer())
-                .append("ALTER TABLE ")
-                .append(tableName)
-                .append(" ADD COLUMN col_1 BYTEA");
-
-        for(int i=1;i<columns.length;i++)
-            updateTable.append(", ADD COLUMN ")
-                    .append("col_").
-                    append(i+1)
-                    .append(" BYTEA");
-
-        try (Statement stmt = context.getConnection().createStatement()) {
-            stmt.execute(updateTable.toString());
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-    }
     @Override
     public void importSheet(Reader reader, char delimiter) throws IOException {
         if(isNav)
@@ -489,8 +458,7 @@ public class ROM_Model extends Model {
     public void importNavSheet(Reader reader, char delimiter) throws IOException {
 
         dataTable = tableName+"_data";
-        String line;
-        String headerString = "";
+
         String headerStringSS = "";
         String indexString = "";
         String valuesString = "";
@@ -509,9 +477,8 @@ public class ROM_Model extends Model {
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             DBContext dbContext = new DBContext(connection);
 
-            StringBuffer sbNav = new StringBuffer();
             StringBuffer sbSS = new StringBuffer();
-
+            PreparedStatement pstSS = null;
             while ((nextLine = csvReader.readNext()) != null)
             {
                 if(importedRows==0)
@@ -521,18 +488,14 @@ public class ROM_Model extends Model {
                     importedColumns = nextLine.length;
                     insertCols(dbContext, 0, importedColumns);
                     StringBuffer str = new StringBuffer("(");
-                    StringBuffer header = new StringBuffer("");
                     StringBuffer headerSS = new StringBuffer("");
                     StringBuffer values = new StringBuffer("?");
 
                     str.append(nextLine[0]+" TEXT");
-                    header.append(nextLine[0]);
                     headerSS.append("row,col_1");
                     for (int i = 1; i < nextLine.length; i++) {
                         str.append(", ")
                                 .append(nextLine[i] + " TEXT");
-                        header.append(", ")
-                                .append(nextLine[i]);
                         headerSS.append(", col_")
                                 .append(i+1);
                         values.append(",?");
@@ -540,43 +503,32 @@ public class ROM_Model extends Model {
                     }
                     str.append(")");
 
-                    headerString = header.toString();
                     headerStringSS = headerSS.toString();
                     valuesString = values.toString();
-                    indexString = nextLine[selectedCol];
+                    indexString = "col_"+(selectedCol+1);//nextLine[selectedCol];
 
-                    createNavSchema(str.toString(),indexString);
-                 /*   upDateSchema(dbContext,nextLine);
-
-                    PreparedStatement pstSS = null;
+                    sbSS.append("INSERT into "+tableName+" ("+headerStringSS+") values(?,"+valuesString+")");
 
                     pstSS = connection.prepareStatement(sbSS.toString());
 
                     pstSS.setInt(1,importedRows);
                     for (int col = 0; col < importedColumns; col++)
-                        pstSS.setBytes(col+1,nextLine[col].getBytes());
+                        pstSS.setBytes(col+2,nextLine[col].getBytes());
 
                     pstSS.executeUpdate();
 
-                    sbSS = new StringBuffer();*/
+                    sbSS = new StringBuffer();
+
+                    connection.commit();
+                    pstSS = null;
+                    updateNavSchema(str.toString(),indexString,selectedCol);
 
                     continue;
                 }
 
-                sbNav.append("INSERT into "+dataTable+" ("+headerString+") values("+valuesString+")");
-
-                PreparedStatement pst = null;
-
-                pst = connection.prepareStatement(sbNav.toString());
-
-                for(int i=0;i<importedColumns;i++)
-                    pst.setString(i+1,nextLine[i]);
-
-                pst.executeUpdate();
-
                 sbSS.append("INSERT into "+tableName+" ("+headerStringSS+") values(?,"+valuesString+")");
 
-                /*PreparedStatement pstSS = null;
+
 
                 pstSS = connection.prepareStatement(sbSS.toString());
 
@@ -584,16 +536,15 @@ public class ROM_Model extends Model {
                 for (int col = 0; col < importedColumns; col++)
                     pstSS.setBytes(col+2,nextLine[col].getBytes());
 
-                pstSS.executeUpdate();*/
+                pstSS.executeUpdate();
 
                 ++importedRows;
-                sbNav = new StringBuffer();
                 sbSS = new StringBuffer();
 
                 if ((importedRows-1)% sampleSize ==0 && importedRows!=1) {
                     connection.commit();
 
-                    createNavS(headerString,indexString,insertedRows==0?true:false);
+                    createNavS(headerStringSS,indexString,insertedRows==0?true:false);
 
                     insertRows(dbContext, 0, importedRows);
                     insertedRows += (importedRows-1);
@@ -607,7 +558,7 @@ public class ROM_Model extends Model {
             if ((importedRows-1)% sampleSize !=0 ) {
                 connection.commit();
 
-                createNavS(headerString,indexString,insertedRows==0?true:false);
+                createNavS(headerStringSS,indexString,insertedRows==0?true:false);
 
                 insertRows(dbContext, 0, importedRows);
                 insertedRows += (importedRows-1);
@@ -629,16 +580,19 @@ public class ROM_Model extends Model {
         //load sorted data from table
         recordList =  new ArrayList<String>();
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-             Statement statement = connection.createStatement()) {
 
-            ResultSet rs = statement.executeQuery("SELECT "+indexString+" FROM " + dataTable+" ORDER by "+indexString);
+            Statement statement = connection.createStatement()) {
+
+                ResultSet rs = statement.executeQuery("SELECT "+indexString+" FROM " + tableName+" WHERE row != 1 ORDER by "+indexString);
 
 
-            while (rs.next())
-                recordList.add(rs.getString(1));
-
+                while (rs.next()) {
+                    recordList.add(new String(rs.getBytes(1),"UTF-8"));
+            }
             rs.close();
         } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
 
