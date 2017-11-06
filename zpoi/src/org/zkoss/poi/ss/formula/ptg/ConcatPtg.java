@@ -29,7 +29,7 @@ public final class ConcatPtg extends ValueOperatorPtg {
     
     public static final ValueOperatorPtg instance = new ConcatPtg();
 
-    private ConcatPtg() {
+    public ConcatPtg() {
     	// enforce singleton
     }
 

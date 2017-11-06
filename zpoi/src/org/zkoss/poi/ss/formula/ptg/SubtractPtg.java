@@ -27,7 +27,7 @@ public final class SubtractPtg extends ValueOperatorPtg {
 
     public static final ValueOperatorPtg instance = new SubtractPtg();
 
-    private SubtractPtg() {
+    public SubtractPtg() {
     	// enforce singleton
     }
 

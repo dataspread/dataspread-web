@@ -9,11 +9,6 @@
   <component name="MavenProjectsManager">
     <option name="originalFiles">
       <list>
-        <option value="$PROJECT_DIR$/zpoi/pom.xml" />
-        <option value="$PROJECT_DIR$/zssmodel/pom.xml" />
-        <option value="$PROJECT_DIR$/zss/pom.xml" />
-        <option value="$PROJECT_DIR$/rtree/pom.xml" />
-        <option value="$PROJECT_DIR$/blockstore/pom.xml" />
         <option value="$PROJECT_DIR$/pom.xml" />
       </list>
     </option>

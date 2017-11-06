@@ -28,7 +28,7 @@ public final class UnionPtg extends OperationPtg {
 
     public static final OperationPtg instance = new UnionPtg();
 
-    private UnionPtg() {
+    public UnionPtg() {
     	// enforce singleton
     }
 
