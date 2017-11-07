@@ -7,11 +7,12 @@ import org.zkoss.zss.model.SSheet;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Collection;
+import java.util.List;
 
 public abstract class Model {
     protected String tableName;
-    protected String dataTable;
     protected SSheet sheet;
+    public List<Bucket<String>> navSbuckets;
 
     public static Model CreateModel(DBContext context, SSheet sheet, ModelType modelType, String tableName) {
         Model model = null;

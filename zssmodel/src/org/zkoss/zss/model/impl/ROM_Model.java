@@ -23,7 +23,6 @@ public class ROM_Model extends Model {
     private static final Logger logger = Logger.getLogger(ROM_Model.class.getName());
     private PosMapping rowMapping;
     private PosMapping colMapping;
-    private List<Bucket<String>> navSbuckets;
     private ArrayList<String> recordList;
     private int kHisto = 5;
 
@@ -457,8 +456,6 @@ public class ROM_Model extends Model {
 
     public void importNavSheet(Reader reader, char delimiter) throws IOException {
 
-        dataTable = tableName+"_data";
-
         String headerStringSS = "";
         String indexString = "";
         String valuesString = "";
@@ -600,7 +597,7 @@ public class ROM_Model extends Model {
 
         navSbuckets = getBucketsNoOverlap(0,recordList.size()-1);
 
-        printBuckets(navSbuckets);
+      //  printBuckets(navSbuckets);
 
     }
 
@@ -610,8 +607,8 @@ public class ROM_Model extends Model {
             System.out.println("Bucket "+(i+1));
             System.out.println("Max: "+bucketList.get(i).maxValue);
             System.out.println("Min: "+bucketList.get(i).minValue);
-            System.out.println("start: "+bucketList.get(i).maxValue);
-            System.out.println("end: "+bucketList.get(i).minValue);
+            System.out.println("start: "+bucketList.get(i).startPos);
+            System.out.println("end: "+bucketList.get(i).endPos);
             System.out.println("Size: "+bucketList.get(i).size);
             System.out.println("children: "+bucketList.get(i).childCount);
         }
@@ -755,31 +752,6 @@ public class ROM_Model extends Model {
 
         // printBuckets(bucketList);
         return bucketList;
-    }
-
-    public void createJSON()
-    {
-
-    }
-
-    static class Bucket<T> {
-        T minValue;
-        T maxValue;
-        int startPos;
-        int endPos;
-        int childCount;
-        int size;
-
-
-        @Override
-        public String toString() {
-            if (minValue==null || maxValue==null)
-                return null;
-
-            if(minValue.toString().equals(maxValue.toString()))
-                return minValue.toString();
-            return minValue.toString() + " to " + maxValue.toString();
-        }
     }
 
 }

@@ -754,6 +754,8 @@ public class Hybrid_Model extends RCV_Model {
 
             model.importSheet(reader, delimiter);
 
+            this.navSbuckets  = model.navSbuckets;
+
             CellRegion range = model.getBounds(dbContext);
 
             tableModels.add(new Pair<>(range, model));
