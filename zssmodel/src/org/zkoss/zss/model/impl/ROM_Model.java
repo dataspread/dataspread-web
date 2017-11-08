@@ -24,7 +24,7 @@ public class ROM_Model extends Model {
     private PosMapping rowMapping;
     private PosMapping colMapping;
     private ArrayList<String> recordList;
-    private int kHisto = 5;
+    private int kHisto = 2;
 
     private boolean isNav = true;
 
@@ -610,12 +610,12 @@ public class ROM_Model extends Model {
             System.out.println("start: "+bucketList.get(i).startPos);
             System.out.println("end: "+bucketList.get(i).endPos);
             System.out.println("Size: "+bucketList.get(i).size);
-            System.out.println("children: "+bucketList.get(i).childCount);
+            System.out.println("children: "+bucketList.get(i).getChildCount());
         }
     }
 
     private int getSampleSize() {
-        return 10;
+        return 100;
     }
 
     @Override
@@ -625,11 +625,12 @@ public class ROM_Model extends Model {
 
     public List<Bucket<String>> getBucketsNoOverlap(int startPos, int endPos)
     {
+
         List<Bucket<String>> bucketList = new ArrayList<Bucket<String>>();
+        int bucketSize = (endPos-startPos+1) / kHisto;
+        if (recordList.size()>0 && bucketSize > 0) {
 
-        if (recordList.size()>0) {
 
-            int bucketSize = (endPos-startPos+1) / kHisto;
             int boundary_change = 0;
             int element_count = 0;
             int startIndex=startPos;
@@ -715,9 +716,10 @@ public class ROM_Model extends Model {
 
 
                 bucket.size = bucketSize+boundary_change;
-                bucket.childCount = kHisto;
                 if(bucket.size>0) {
                     startIndex += bucket.size;
+
+                    bucket.setChildren(getBucketsNoOverlap(bucket.startPos,bucket.endPos));
                     bucketList.add(bucket);
 
                 }
@@ -728,7 +730,13 @@ public class ROM_Model extends Model {
                     Bucket bucketSplit = new Bucket();
                     bucketSplit.minValue = recordList.get(startIndex);
                     bucketSplit.maxValue = recordList.get(startIndex+bounday_dec+bounday_inc-1);
+                    bucketSplit.startPos = startIndex;
+                    bucketSplit.endPos = startIndex+bounday_dec+bounday_inc-1;
+
                     bucketSplit.size = bounday_dec+bounday_inc;
+
+                    bucketSplit.setChildren(getBucketsNoOverlap(bucketSplit.startPos,bucketSplit.endPos));
+
                     bucketList.add(bucketSplit);
 
                     if(bucket.size >0)
@@ -744,7 +752,11 @@ public class ROM_Model extends Model {
                 Bucket bucket = new Bucket();
                 bucket.minValue = recordList.get(startIndex);
                 bucket.maxValue = recordList.get(endPos);
+                bucket.startPos = startIndex;
+                bucket.endPos = endPos;
                 bucket.size = endPos-startIndex+1;
+
+                bucket.setChildren(getBucketsNoOverlap(bucket.startPos,bucket.endPos));
                 bucketList.add(bucket);
             }
 

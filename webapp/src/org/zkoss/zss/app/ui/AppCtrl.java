@@ -21,6 +21,7 @@ import org.zkoss.util.resource.Labels;
 import org.zkoss.web.servlet.http.Encodes;
 import org.zkoss.zk.ui.*;
 import org.zkoss.zk.ui.event.*;
+import org.zkoss.zk.ui.select.annotation.Listen;
 import org.zkoss.zk.ui.select.annotation.Wire;
 import org.zkoss.zk.ui.util.Clients;
 import org.zkoss.zk.ui.util.DesktopCleanup;
@@ -123,7 +124,6 @@ public class AppCtrl extends CtrlBase<Component> {
     private ModelEventListener dirtyChangeEventListener;
     private String username;
     private UnsavedAlertState isNeedUnsavedAlert = UnsavedAlertState.DISABLED;
-    private TreeModel<TreeNode<Bucket<String>>> bucketTreeModel;
 
     @Wire
     private Tree treeBucket;
@@ -140,8 +140,6 @@ public class AppCtrl extends CtrlBase<Component> {
     @Override
     public void doAfterCompose(Component comp) throws Exception {
         super.doAfterCompose(comp);
-        bucketTreeModel = new DefaultTreeModel<Bucket<String>>(new BucketTreeNode<Bucket<String>>(null,
-                new BucketTreeNodeCollection<Bucket<String>>()));
 
         boolean isEE = "EE".equals(Version.getEdition());
         boolean readonly = UiUtil.isRepositoryReadonly();
@@ -1155,17 +1153,28 @@ public class AppCtrl extends CtrlBase<Component> {
         void invoke();
     }
 
-    public TreeModel<TreeNode<Bucket<String>>> getTreeModel() {
-
-        return bucketTreeModel;
-    }
-
-    private void printBuckets(List<Bucket<String>> bucketList) {
+    private BucketTreeNodeCollection<Bucket<String>> childrenBuckets(List<Bucket<String>> bucketList) {
         BucketTreeNodeCollection<Bucket<String>> dtnc = new BucketTreeNodeCollection<Bucket<String>>();
 
-        for(int i=0;i<ss.getNavSBuckets().size();i++)
-            dtnc.add(new DefaultTreeNode<Bucket<String>>(ss.getNavSBuckets().get(i)));
-        treeBucket.setModel(new DefaultTreeModel<Bucket<String>>(new BucketTreeNode<Bucket<String>>(null,dtnc)));
+        for(int i=0;i<bucketList.size();i++) {
+            BucketTreeNodeCollection<Bucket<String>> btnc_ = new BucketTreeNodeCollection<Bucket<String>>();
+            if(bucketList.get(i).getChildCount()>0) {
+                btnc_ = childrenBuckets(bucketList.get(i).getChildren());
+                dtnc.add(new DefaultTreeNode<Bucket<String>>(bucketList.get(i),btnc_));
+            }
+            else
+                dtnc.add(new DefaultTreeNode<Bucket<String>>(bucketList.get(i)));
+        }
+
+        return dtnc;
+    }
+
+   private void printBuckets(List<Bucket<String>> bucketList) {
+        BucketTreeNodeCollection<Bucket<String>> btnc = new BucketTreeNodeCollection<Bucket<String>>();
+
+        btnc = childrenBuckets(bucketList);
+
+        treeBucket.setModel(new DefaultTreeModel<Bucket<String>>(new BucketTreeNode<Bucket<String>>(null,btnc)));
         for(int i=0;i<bucketList.size();i++)
         {
             System.out.println("Bucket "+(i+1));
@@ -1176,6 +1185,14 @@ public class AppCtrl extends CtrlBase<Component> {
             System.out.println("Size: "+bucketList.get(i).getSize());
             System.out.println("children: "+bucketList.get(i).getChildCount());
         }
+    }
+
+    @Listen("onSelect = #treeBucket")
+    public void nodeSelected() {
+        DefaultTreeNode<Bucket<String>> selectedNode = (DefaultTreeNode<Bucket<String>>)treeBucket.getSelectedItem().getValue();
+
+
+
     }
 
 }
