@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?page contentType="image/svg+xml;charset=UTF-8"?>
 <?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
 <zk>
 	<window id="mainWin" hflex="1" vflex="1" apply="org.zkoss.zss.app.ui.AppCtrl">
@@ -20,14 +20,17 @@
 								<treeitem>
 									<treerow>
 										<treecell label="${each.data.name}"/>
-										<treecell label="${each.data.size}"/>
+										<!--<treecell label="${each.data.childrenCount}"/>-->
+										<treecell>
+											<zhighcharts id="${each.data.name}" />
+										</treecell>
 									</treerow>
 								</treeitem>
 							</template>
 						</tree>
 					</div>
 
-					<!--<include vflex="1" src="~./zssapp/hierarchy.zul"></include>-->
+<!--<include vflex="1" src="~./zssapp/hierarchy.zul"></include>-->
 				</vlayout>
                 <spreadsheet id="ss" hflex="1" showToolbar="true" showFormulabar="true" showSheetbar="true"
 							 showContextMenu="true" vflex="1"/>

@@ -610,7 +610,7 @@ public class ROM_Model extends Model {
             System.out.println("start: "+bucketList.get(i).startPos);
             System.out.println("end: "+bucketList.get(i).endPos);
             System.out.println("Size: "+bucketList.get(i).size);
-            System.out.println("children: "+bucketList.get(i).getChildCount());
+            System.out.println("children: "+bucketList.get(i).getChildrenCount());
         }
     }
 

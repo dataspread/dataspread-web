@@ -68,6 +68,19 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import org.ngi.zhighcharts.SimpleExtXYModel;
+import org.ngi.zhighcharts.ZGauge;
+import org.ngi.zhighcharts.ZHighCharts;
+import org.zkoss.util.logging.Log;
+import org.zkoss.zk.ui.event.Event;
+import org.zkoss.zk.ui.event.EventListener;
+import org.zkoss.zul.SimplePieModel;
+import org.zkoss.zul.Window;
+
 /**
  *
  * @author dennis
@@ -124,6 +137,17 @@ public class AppCtrl extends CtrlBase<Component> {
     private ModelEventListener dirtyChangeEventListener;
     private String username;
     private UnsavedAlertState isNeedUnsavedAlert = UnsavedAlertState.DISABLED;
+
+    // Basic column
+
+    private ZHighCharts chartComp25;
+
+    private SimpleExtXYModel dataChartModel25 = new SimpleExtXYModel();
+
+
+    // Stacked and grouped column
+
+    private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
 
     @Wire
     private Tree treeBucket;
@@ -549,6 +573,7 @@ public class AppCtrl extends CtrlBase<Component> {
 
                         ss.setNavSBuckets(newSheet.getDataModel().navSbuckets);
                         printBuckets(newSheet.getDataModel().navSbuckets);
+
                         Messagebox.show("File imported", "DataSpread",
                                 Messagebox.OK, Messagebox.INFORMATION, null);
 
@@ -1158,7 +1183,7 @@ public class AppCtrl extends CtrlBase<Component> {
 
         for(int i=0;i<bucketList.size();i++) {
             BucketTreeNodeCollection<Bucket<String>> btnc_ = new BucketTreeNodeCollection<Bucket<String>>();
-            if(bucketList.get(i).getChildCount()>0) {
+            if(bucketList.get(i).getChildrenCount()>0) {
                 btnc_ = childrenBuckets(bucketList.get(i).getChildren());
                 dtnc.add(new DefaultTreeNode<Bucket<String>>(bucketList.get(i),btnc_));
             }
@@ -1169,12 +1194,16 @@ public class AppCtrl extends CtrlBase<Component> {
         return dtnc;
     }
 
-   private void printBuckets(List<Bucket<String>> bucketList) {
+   private void printBuckets(List<Bucket<String>> bucketList) throws Exception {
         BucketTreeNodeCollection<Bucket<String>> btnc = new BucketTreeNodeCollection<Bucket<String>>();
 
         btnc = childrenBuckets(bucketList);
 
         treeBucket.setModel(new DefaultTreeModel<Bucket<String>>(new BucketTreeNode<Bucket<String>>(null,btnc)));
+
+        for(int i=0;i<btnc.size();i++)
+            onCreate(btnc.get(i).getData().getName());
+
         for(int i=0;i<bucketList.size();i++)
         {
             System.out.println("Bucket "+(i+1));
@@ -1183,16 +1212,109 @@ public class AppCtrl extends CtrlBase<Component> {
             System.out.println("start: "+bucketList.get(i).getStartPos());
             System.out.println("end: "+bucketList.get(i).getEndPos());
             System.out.println("Size: "+bucketList.get(i).getSize());
-            System.out.println("children: "+bucketList.get(i).getChildCount());
+            System.out.println("children: "+bucketList.get(i).getChildrenCount());
         }
+    }
+
+
+
+    public void onCreate(String name) throws Exception {
+
+        //================================================================================
+
+        // Basic column
+
+        //================================================================================
+
+        chartComp25 = (ZHighCharts) Path.getComponent("/mainWin/treeBucket/"+name);
+        chartComp25.setType("column");
+        chartComp25.setTitle("Monthly Average New York");
+        chartComp25.setSubTitle("Source: WorldClimate.com");
+        chartComp25.setxAxisOptions("{" +
+                "categories: [" +
+                "'Jan', " +
+                "'Feb', " +
+                "'Mar', " +
+                "'Apr', " +
+                "'May', " +
+                "'Jun', " +
+                "'Jul', " +
+                "'Aug', " +
+                "'Sep', " +
+                "'Oct', " +
+                "'Nov', " +
+                "'Dec'" +
+                "]" +
+                "}");
+        chartComp25.setyAxisOptions("{ " +
+                "min:0" +
+                "}");
+
+        chartComp25.setYAxisTitle("New York (mm)");
+        chartComp25.setTooltipFormatter("function formatTooltip(obj){ " +
+                "return ''+obj.x +': '+ obj.y +' mm';" +
+                "}");
+
+        chartComp25.setLegend("{" +
+                "layout: 'vertical'," +
+                "backgroundColor: '#FFFFFF'," +
+                "align: 'left'," +
+                "verticalAlign: 'top'," +
+                "x: 100," +
+                "y: 70," +
+                "floating: true," +
+                "shadow: true" +
+
+                "}");
+        chartComp25.setPlotOptions("{" +
+                "column: {" +
+                "pointPadding: 0.2," +
+                "borderWidth: 0" +
+                "}" +
+                "}");
+
+        chartComp25.setModel(dataChartModel25);
+
+        //Adding some data to the model
+
+        Number TOKdata [] = { 49.9, 71.5, 106.4, 129.2, 144.0, 176.0,
+                135.6, 148.5, 216.4, 194.1, 95.6, 54.4};
+
+        for(int i = 0; i < TOKdata.length; i++)
+            dataChartModel25.addValue("Tokyo", i, TOKdata[i]);
+
+        Number NYdata [] = { 83.6, 78.8, 98.5, 93.4, 106.0, 84.5,
+                105.0, 104.3, 91.2, 83.5, 106.6, 92.3};
+
+        for(int i = 0; i < NYdata.length; i++)
+            dataChartModel25.addValue("New York", i, NYdata[i]);
+
+        Number LNDdata [] = { 48.9, 38.8, 39.3, 41.4, 47.0, 48.3, 59.0,
+                59.6, 52.4, 65.2, 59.3, 51.2};
+
+        for(int i = 0; i < LNDdata.length; i++)
+            dataChartModel25.addValue("London", i, LNDdata[i]);
+
+        Number BRLdata [] = { 42.4, 33.2, 34.5, 39.7, 52.6, 75.5, 57.4,
+                60.4, 47.6, 39.1, 46.8, 51.1};
+
+        for(int i = 0; i < BRLdata.length; i++)
+            dataChartModel25.addValue("Berlin", i, BRLdata[i]);
+
+    }
+
+    private long getDateTime(String date) throws Exception {
+        return sdf.parse(date).getTime();
+
     }
 
     @Listen("onSelect = #treeBucket")
     public void nodeSelected() {
         DefaultTreeNode<Bucket<String>> selectedNode = (DefaultTreeNode<Bucket<String>>)treeBucket.getSelectedItem().getValue();
 
-
+        System.out.println("Name: "+selectedNode.getData().getName());
 
     }
+
 
 }
