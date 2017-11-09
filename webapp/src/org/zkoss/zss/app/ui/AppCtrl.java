@@ -20,6 +20,7 @@ import org.zkoss.util.media.Media;
 import org.zkoss.util.resource.Labels;
 import org.zkoss.web.servlet.http.Encodes;
 import org.zkoss.zk.ui.*;
+import org.zkoss.zk.ui.Path;
 import org.zkoss.zk.ui.event.*;
 import org.zkoss.zk.ui.select.annotation.Listen;
 import org.zkoss.zk.ui.select.annotation.Wire;
@@ -131,6 +132,9 @@ public class AppCtrl extends CtrlBase<Component> {
     Script gaScript;
     @Wire
     Html usersPopContent; //ZSS-998
+    @Wire
+    Window mainWin;
+
     BookInfo selectedBookInfo;
     Book loadedBook;
     Desktop desktop = Executions.getCurrent().getDesktop();
@@ -1201,9 +1205,6 @@ public class AppCtrl extends CtrlBase<Component> {
 
         treeBucket.setModel(new DefaultTreeModel<Bucket<String>>(new BucketTreeNode<Bucket<String>>(null,btnc)));
 
-        for(int i=0;i<btnc.size();i++)
-            onCreate(btnc.get(i).getData().getName());
-
         for(int i=0;i<bucketList.size();i++)
         {
             System.out.println("Bucket "+(i+1));
@@ -1218,7 +1219,7 @@ public class AppCtrl extends CtrlBase<Component> {
 
 
 
-    public void onCreate(String name) throws Exception {
+    public void onChartsCreate(ZHighCharts chartComp25) throws Exception {
 
         //================================================================================
 
@@ -1226,7 +1227,12 @@ public class AppCtrl extends CtrlBase<Component> {
 
         //================================================================================
 
-        chartComp25 = (ZHighCharts) Path.getComponent("/mainWin/treeBucket/"+name);
+        //chartComp25 = (ZHighCharts) Path.getComponent("/mainWin/treeBucket/"+name);
+
+       // Include inc = (Include) mainWin.getFellow("indexContent");
+       // chartComp25 = (ZHighCharts) mainWin.getFellow(name);
+       // System.out.println(chartComp25);
+
         chartComp25.setType("column");
         chartComp25.setTitle("Monthly Average New York");
         chartComp25.setSubTitle("Source: WorldClimate.com");

@@ -1,4 +1,4 @@
-<?page contentType="image/svg+xml;charset=UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
 <zk>
 	<window id="mainWin" hflex="1" vflex="1" apply="org.zkoss.zss.app.ui.AppCtrl">
@@ -11,6 +11,7 @@
 							<attribute name="value">	Navigation
 								Pane</attribute>
 						</label>
+						<!--<zhighcharts id="chartComp25" />-->
 						<tree id="treeBucket">
 							<treecols>
 								<treecol label="Bucket" />
@@ -20,9 +21,9 @@
 								<treeitem>
 									<treerow>
 										<treecell label="${each.data.name}"/>
-										<!--<treecell label="${each.data.childrenCount}"/>-->
-										<treecell>
-											<zhighcharts id="${each.data.name}" />
+										<!--<treecell label="ch${each.data.id}"/>-->
+										<treecell >
+											<zhighcharts id="ch${each.data.id}" onCreate="$composer.onChartsCreate(self)" type="area"/>
 										</treecell>
 									</treerow>
 								</treeitem>

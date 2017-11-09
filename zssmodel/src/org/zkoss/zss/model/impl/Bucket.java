@@ -30,6 +30,7 @@ public class Bucket<T> {
     public int getChildrenCount(){return childrenCount;}
     public int getSize(){return size;}
     public String getName(){ return this.toString(); }
+    public String getId(){ return this.toString().replaceAll(" ","_"); }
     public List<Bucket<T>> getChildren(){return children;}
     public void setChildren(List<Bucket<T>> children){
         this.children=children;
