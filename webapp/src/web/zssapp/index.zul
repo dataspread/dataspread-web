@@ -6,13 +6,13 @@
 			<include hflex="1" src="~./zssapp/mainMenubar.zul" />
 			<hlayout vflex="1" spacing="0">
 				<vlayout>
-					<div width="200px" align="center" style="padding-bottom: 0;">
+					<div width="400px" align="center" style="padding-bottom: 0;">
 						<label multiline="true" style="font-size: 24px; font-weight: bold">
 							<attribute name="value">	Navigation
 								Pane</attribute>
 						</label>
 						<!--<zhighcharts id="chartComp25" />-->
-						<tree id="treeBucket">
+						<tree id="treeBucket" height="450px">
 							<treecols>
 								<treecol label="Bucket" />
 								<treecol label="Distribution" />
@@ -23,7 +23,7 @@
 										<treecell label="${each.data.name}"/>
 										<!--<treecell label="ch${each.data.id}"/>-->
 										<treecell >
-											<zhighcharts id="ch${each.data.id}" onCreate="$composer.onChartsCreate(self)" type="area"/>
+											<zhighcharts id="ch${each.data.id}" onCreate="$composer.onChartsCreate(self)"/>
 										</treecell>
 									</treerow>
 								</treeitem>

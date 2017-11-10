@@ -64,15 +64,11 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+
 import org.ngi.zhighcharts.SimpleExtXYModel;
 import org.ngi.zhighcharts.ZGauge;
 import org.ngi.zhighcharts.ZHighCharts;
@@ -146,8 +142,9 @@ public class AppCtrl extends CtrlBase<Component> {
 
     private ZHighCharts chartComp25;
 
-    private SimpleExtXYModel dataChartModel25 = new SimpleExtXYModel();
+    private SimpleExtXYModel dataChartModel25;
 
+    private Map<String,Bucket<String>> navSBucketMap = new HashMap<String,Bucket<String>>();
 
     // Stacked and grouped column
 
@@ -1187,18 +1184,24 @@ public class AppCtrl extends CtrlBase<Component> {
 
         for(int i=0;i<bucketList.size();i++) {
             BucketTreeNodeCollection<Bucket<String>> btnc_ = new BucketTreeNodeCollection<Bucket<String>>();
+            if(!navSBucketMap.containsKey("ch"+bucketList.get(i).getId()))
+                navSBucketMap.put("ch"+bucketList.get(i).getId(),bucketList.get(i));
             if(bucketList.get(i).getChildrenCount()>0) {
                 btnc_ = childrenBuckets(bucketList.get(i).getChildren());
                 dtnc.add(new DefaultTreeNode<Bucket<String>>(bucketList.get(i),btnc_));
             }
             else
+            {
                 dtnc.add(new DefaultTreeNode<Bucket<String>>(bucketList.get(i)));
+            }
         }
 
         return dtnc;
     }
 
    private void printBuckets(List<Bucket<String>> bucketList) throws Exception {
+
+        //treeBucket.setAutopaging(true);
         BucketTreeNodeCollection<Bucket<String>> btnc = new BucketTreeNodeCollection<Bucket<String>>();
 
         btnc = childrenBuckets(bucketList);
@@ -1227,41 +1230,42 @@ public class AppCtrl extends CtrlBase<Component> {
 
         //================================================================================
 
-        //chartComp25 = (ZHighCharts) Path.getComponent("/mainWin/treeBucket/"+name);
-
-       // Include inc = (Include) mainWin.getFellow("indexContent");
-       // chartComp25 = (ZHighCharts) mainWin.getFellow(name);
-       // System.out.println(chartComp25);
-
+        Bucket<String> currentBucket = navSBucketMap.get(chartComp25.getId());
         chartComp25.setType("column");
-        chartComp25.setTitle("Monthly Average New York");
-        chartComp25.setSubTitle("Source: WorldClimate.com");
-        chartComp25.setxAxisOptions("{" +
-                "categories: [" +
-                "'Jan', " +
-                "'Feb', " +
-                "'Mar', " +
-                "'Apr', " +
-                "'May', " +
-                "'Jun', " +
-                "'Jul', " +
-                "'Aug', " +
-                "'Sep', " +
-                "'Oct', " +
-                "'Nov', " +
-                "'Dec'" +
-                "]" +
+        //chartComp25.setOptions("{height: '20%'}");
+        //chartComp25.setTitle(currentBucket.getName());
+        String xAxisLabels = "";
+
+        if(currentBucket.getChildrenCount() > 0)
+            xAxisLabels = "{categories: ['"+currentBucket.getChildren().get(0).getName()+"'";
+        else
+            xAxisLabels = "{categories: ['"+currentBucket.getName()+"'";
+
+        for(int i=1;i<currentBucket.getChildrenCount();i++)
+            xAxisLabels += ",'"+currentBucket.getChildren().get(i).getName()+"'";
+
+        chartComp25.setxAxisOptions(xAxisLabels+"],"+
+                    "labels: {"+
+                    "rotation: -45,"+
+                    "align: 'right',"+
+                    "style: {"+
+                    "fontSize: '13px',"+
+                    "fontFamily: 'Verdana, sans-serif'"+
+                    "}"+
+                    "}" +
                 "}");
+
         chartComp25.setyAxisOptions("{ " +
                 "min:0" +
                 "}");
 
-        chartComp25.setYAxisTitle("New York (mm)");
+        chartComp25.setXAxisTitle("Sub-Categories");
+        chartComp25.setYAxisTitle("#Rows");
         chartComp25.setTooltipFormatter("function formatTooltip(obj){ " +
-                "return ''+obj.x +': '+ obj.y +' mm';" +
+                "return ''+obj.x +': '+ obj.y;" +
                 "}");
 
-        chartComp25.setLegend("{" +
+        /*chartComp25.setLegend("{" +
                 "layout: 'vertical'," +
                 "backgroundColor: '#FFFFFF'," +
                 "align: 'left'," +
@@ -1271,41 +1275,24 @@ public class AppCtrl extends CtrlBase<Component> {
                 "floating: true," +
                 "shadow: true" +
 
-                "}");
-        chartComp25.setPlotOptions("{" +
-                "column: {" +
-                "pointPadding: 0.2," +
-                "borderWidth: 0" +
-                "}" +
-                "}");
+                "}");*/
+        chartComp25.setPlotOptions(//"["+
+                "{" +
+                    "column: {" +
+                    "pointPadding: 0.2," +
+                    "borderWidth: 0" +
+                    "}"+
+                "}"
+                );
 
+        dataChartModel25 = new SimpleExtXYModel();
         chartComp25.setModel(dataChartModel25);
 
-        //Adding some data to the model
+        for(int i = 0; i < currentBucket.getChildrenCount(); i++)
+            dataChartModel25.addValue(currentBucket.getName(), i, currentBucket.getChildren().get(i).getSize());
 
-        Number TOKdata [] = { 49.9, 71.5, 106.4, 129.2, 144.0, 176.0,
-                135.6, 148.5, 216.4, 194.1, 95.6, 54.4};
-
-        for(int i = 0; i < TOKdata.length; i++)
-            dataChartModel25.addValue("Tokyo", i, TOKdata[i]);
-
-        Number NYdata [] = { 83.6, 78.8, 98.5, 93.4, 106.0, 84.5,
-                105.0, 104.3, 91.2, 83.5, 106.6, 92.3};
-
-        for(int i = 0; i < NYdata.length; i++)
-            dataChartModel25.addValue("New York", i, NYdata[i]);
-
-        Number LNDdata [] = { 48.9, 38.8, 39.3, 41.4, 47.0, 48.3, 59.0,
-                59.6, 52.4, 65.2, 59.3, 51.2};
-
-        for(int i = 0; i < LNDdata.length; i++)
-            dataChartModel25.addValue("London", i, LNDdata[i]);
-
-        Number BRLdata [] = { 42.4, 33.2, 34.5, 39.7, 52.6, 75.5, 57.4,
-                60.4, 47.6, 39.1, 46.8, 51.1};
-
-        for(int i = 0; i < BRLdata.length; i++)
-            dataChartModel25.addValue("Berlin", i, BRLdata[i]);
+        if(currentBucket.getChildrenCount()==0)
+            dataChartModel25.addValue(currentBucket.getName(),0,currentBucket.getSize());
 
     }
 
