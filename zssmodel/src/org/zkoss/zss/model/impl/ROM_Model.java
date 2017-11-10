@@ -11,9 +11,7 @@ import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SSheet;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
@@ -24,7 +22,7 @@ public class ROM_Model extends Model {
     private PosMapping rowMapping;
     private PosMapping colMapping;
     private ArrayList<String> recordList;
-    private int kHisto = 2;
+    private int kHisto = 10;
 
     private boolean isNav = true;
 
@@ -538,7 +536,7 @@ public class ROM_Model extends Model {
                 ++importedRows;
                 sbSS = new StringBuffer();
 
-                if ((importedRows-1)% sampleSize ==0 && importedRows!=1) {
+                /*if ((importedRows-1)% sampleSize ==0 && importedRows!=1) {
                     connection.commit();
 
                     createNavS(headerStringSS,indexString,insertedRows==0?true:false);
@@ -546,13 +544,15 @@ public class ROM_Model extends Model {
                     insertRows(dbContext, 0, importedRows);
                     insertedRows += (importedRows-1);
 
+                    System.out.println((importedRows-1) + " rows imported ");
                     logger.info((importedRows-1) + " rows imported ");
-                }
+                }*/
 
 
             }
 
-            if ((importedRows-1)% sampleSize !=0 ) {
+            //if ((importedRows-1)% sampleSize !=0 )
+            {
                 connection.commit();
 
                 createNavS(headerStringSS,indexString,insertedRows==0?true:false);
@@ -595,7 +595,7 @@ public class ROM_Model extends Model {
 
         //create nav data structure
 
-        navSbuckets = getBucketsNoOverlap(0,recordList.size()-1);
+        navSbuckets = getBucketsNoOverlap(0,recordList.size()-1,true);
 
       //  printBuckets(navSbuckets);
 
@@ -623,18 +623,28 @@ public class ROM_Model extends Model {
         throw new UnsupportedOperationException();
     }
 
-    public List<Bucket<String>> getBucketsNoOverlap(int startPos, int endPos)
+    public List<Bucket<String>> getBucketsNoOverlap(int startPos, int endPos,boolean initBucket)
     {
+        int parentBucketEnd = endPos+1;
+        if(initBucket)
+            parentBucketEnd = recordList.size();
+
+        if(startPos==20 && endPos==29)
+            System.out.println("Gotcha");
 
         List<Bucket<String>> bucketList = new ArrayList<Bucket<String>>();
         int bucketSize = (endPos-startPos+1) / kHisto;
-        if (recordList.size()>0 && bucketSize > 0) {
+
+        System.out.println("(start,end): ("+startPos+","+endPos+"), BUCKET Size: "+bucketSize);
+
+        if (bucketSize > 0) {
 
 
             int boundary_change = 0;
             int element_count = 0;
             int startIndex=startPos;
             for (int i = 0; i < kHisto && startIndex < endPos+1; i++) {
+                System.out.println("---------------BUCKET NO: "+i);
                 Bucket bucket = new Bucket();
                 bucket.minValue = recordList.get(startIndex);
                 bucket.startPos = startIndex;
@@ -659,13 +669,13 @@ public class ROM_Model extends Model {
                 int bounday_inc = 0;//count maxValue in next bucket
                 int bounday_dec = 0;//count maxValue in current bucket
 
-                if(recordList.size()-1-startIndex+1 < bucketSize)
-                    bucketSize = recordList.size()-1-startIndex; //forcefully set bucket 1 size smaller to pass through next if else
+                if(parentBucketEnd-1-startIndex+1 < bucketSize)
+                    bucketSize = parentBucketEnd-1-startIndex; //forcefully set bucket 1 size smaller to pass through next if else
 
                 // System.out.println("startIndex: "+startIndex+", bucketSize: "+bucketSize+", subList.size(): "+subList.size());
 
 
-                if((startIndex + bucketSize) < recordList.size()) //if not end of list
+                if((startIndex + bucketSize) < parentBucketEnd) //if not end of list
                 {
                     String boundary_value = recordList.get(startIndex + bucketSize);
 
@@ -675,6 +685,7 @@ public class ROM_Model extends Model {
                         //Search where max value ends in next bucket
                         for(int j=startIndex + bucketSize+1 ; j<endPos+1;j++)
                         {
+                           // System.out.println("i: "+i+", j:  "+j);
                             boundary_value = recordList.get(j);
                             if(boundary_value.equals(bucket.maxValue)) {
                                 bounday_inc++;
@@ -684,10 +695,11 @@ public class ROM_Model extends Model {
                                 break;
                             }
                         }
-
+                        //System.out.println("----------From boundary inc to dec----------");
                         //count maxValue in current bucket
                         for(int j=startIndex + bucketSize-1;j>startIndex -1;j--)
                         {
+                           // System.out.println("i: "+i+", j:  "+j);
                             boundary_value = recordList.get(j);
                             if(boundary_value.equals(bucket.maxValue)) {
                                 bounday_dec++;
@@ -706,8 +718,8 @@ public class ROM_Model extends Model {
                         }
                         else
                         {
-                            bucket.maxValue = recordList.get(startIndex + bucketSize - 1-bounday_dec);
-                            bucket.endPos = startIndex + bucketSize - 1-bounday_dec;
+                            bucket.maxValue = recordList.get(startIndex + bucketSize -bounday_dec);
+                            bucket.endPos = startIndex + bucketSize - bounday_dec;
                             boundary_change = -bounday_dec;
                         }
                     }
@@ -719,7 +731,7 @@ public class ROM_Model extends Model {
                 if(bucket.size>0) {
                     startIndex += bucket.size;
 
-                    bucket.setChildren(getBucketsNoOverlap(bucket.startPos,bucket.endPos));
+                    bucket.setChildren(getBucketsNoOverlap(bucket.startPos,bucket.endPos,false));
                     bucketList.add(bucket);
 
                 }
@@ -735,7 +747,7 @@ public class ROM_Model extends Model {
 
                     bucketSplit.size = bounday_dec+bounday_inc;
 
-                    bucketSplit.setChildren(getBucketsNoOverlap(bucketSplit.startPos,bucketSplit.endPos));
+                    bucketSplit.setChildren(getBucketsNoOverlap(bucketSplit.startPos,bucketSplit.endPos,false));
 
                     bucketList.add(bucketSplit);
 
@@ -756,7 +768,7 @@ public class ROM_Model extends Model {
                 bucket.endPos = endPos;
                 bucket.size = endPos-startIndex+1;
 
-                bucket.setChildren(getBucketsNoOverlap(bucket.startPos,bucket.endPos));
+                bucket.setChildren(getBucketsNoOverlap(bucket.startPos,bucket.endPos,false));
                 bucketList.add(bucket);
             }
 
