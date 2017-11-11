@@ -3,12 +3,14 @@ package org.zkoss.zss.model.impl;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import org.model.BlockStore;
 import org.model.DBContext;
+import org.zkoss.zss.model.impl.statistic.AbstractStatistic;
+
 import java.util.ArrayList;
 
 /**
  * An implementation of a B+ Tree
  */
-public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
+public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
     /**
      * The maximum number of children of a node (an odd number)
      */
@@ -27,7 +29,6 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
      */
     private BlockStore bs;
     private MetaDataBlock metaDataBlock;
-
     /**
      * Set serialization function
      * True for use Kryo function
@@ -43,28 +44,6 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
     public BTree(DBContext context, String tableName) {
         bs = new BlockStore(context, tableName);
         loadMetaData(context);
-    }
-
-    /**
-     * Find the index, i, at which x should be inserted into the null-padded
-     * sorted array, a
-     *
-     * @param a the sorted array (padded with null entries)
-     * @param x the value to search for
-     * @return i
-     */
-    private int findIt(ArrayList<K> a, K x) {
-        int lo = 0, hi = a.size();
-        while (hi != lo) {
-            int m = (hi + lo) / 2;
-            if (x.compareTo(a.get(m)) < 0)
-                hi = m;      // look in first half
-            else if (x.compareTo(a.get(m)) > 0)
-                lo = m + 1;    // look in second half
-            else
-                return m + 1; // found it
-        }
-        return lo;
     }
 
     /**
@@ -98,8 +77,6 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
             root.update(bs);
             metaDataBlock.ri = root.id;
             metaDataBlock.elementCount = 0;
-            // TODO How to handle maxValue?
-            metaDataBlock.maxValue = null;
 
             /* Create Metadata */
             bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
@@ -124,27 +101,19 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
      * @param val the value corresponding to key
      * @return
      */
-    public boolean add(DBContext context, K key, V val) {
-        // TODO How to handle maxValue?
-        /*
-        if (val > metaDataBlock.maxValue) {
-            metaDataBlock.maxValue = val;
-            bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
-        }
-        */
-
+    public boolean add(DBContext context, K statistic, V val) {
         Node w;
-        w = addRecursive(context, key, metaDataBlock.ri, val);
+        w = addRecursive(context, statistic, metaDataBlock.ri, val);
         if (w != null) {   // root was split, make new root
             Node newRoot = new Node().create(context, bs);
-            key = w.removeKey(0);
+            statistic = w.removeKey(0);
             w.update(bs);
             // No longer a leaf node
             // First time leaf becomes a root
             newRoot.leafNode = false;
 
             newRoot.children.add(0, metaDataBlock.ri);
-            newRoot.keys.add(key);
+            newRoot.keys.add(statistic);
             newRoot.children.add(1, w.id);
 
             /* Update children count */
@@ -189,19 +158,21 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
      * @return a new node that was created when u was split, or null if u was
      * not split
      */
-    private Node addRecursive(DBContext context, K key, int ui, V val) {
+    private Node addRecursive(DBContext context, K statistic, int ui, V val) {
         Node u = new Node().get(context, bs, ui);
-        int i = findIt(u.keys, key);
+        int i = statistic.findIndex(u.keys);
         //if (i < 0) throw new DuplicateValueException();
         if (u.isLeaf()) { // leaf node, just add it
-            u.add(key, null, val);
+            u.addLeaf(statistic, val);
         } else {
-            u.childrenCount.set(i, u.childrenCount.get(i) + 1);
-            Node w = addRecursive(context, key, u.children.get(i), val);
+            AbstractStatistic current_stat = u.statistics.get(i);
+            if (current_stat.requireUpdate())
+                u.statistics.set(i, current_stat.updateStatistic(AbstractStatistic.Mode.ADD));
+            Node w = addRecursive(context, statistic, u.children.get(i), val);
             if (w != null) {  // child was split, w is new child
-                key = w.removeKey(0);
+                statistic = w.removeKey(0);
                 w.update(bs);
-                u.add(key, w, val);
+                u.addInternal(statistic, w, val);
                 if (w.isLeaf()) {
                     u.childrenCount.set(i, u.childrenCount.get(i) - w.size());
                 } else {
@@ -567,7 +538,7 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
         ReturnRS result = new ReturnRS(-1);
         if (ui < 0) return result;  // didn't find it
         Node u = new Node().get(context, bs, ui);
-        int i = findIt(u.keys, x);
+        int i = x.findChildrenIndex(u.keys);
         /* Need to go to leaf to delete */
         if (u.isLeaf()) {
             if (i > 0) {
@@ -576,7 +547,7 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
                     result.setDone(0);
                     if (i == 1) {
                         result.setDone(1);
-                        result.setKey(u.keys.get(i));
+                        result.setKey((K) u.keys.get(i));
                     }
                     u.removeBoth(i - 1);
                     u.update(bs);
@@ -840,10 +811,6 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
     }
 
     public ArrayList<V> getIDsByCount(DBContext context, long pos, int count) {
-        // Add required ID at the end.
-        if ((pos + count) > size(context))
-            createIDs(context, size(context), (int) pos + count - size(context));
-
         ArrayList<V> ids = new ArrayList<>();
         if (count == 0)
             return ids;
@@ -960,25 +927,15 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
         return ids;
     }
 
+    @Override
     public ArrayList<V> createIDs(DBContext context, int pos, int count) {
-        ArrayList<V> ids = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-            // TODO How to handle maxValue
-            ids.add(metaDataBlock.maxValue);
-
-            addByCount(context, pos + i, ids.get(i), false);
-        }
-        bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
-        bs.flushDirtyBlocks(context);
-        return ids;
+        return null;
     }
 
     // TODO: Do it in batches. offline if possible.
     public void insertIDs(DBContext context, int pos, ArrayList<V> ids) {
         int count = ids.size();
         for (int i = 0; i < count; i++) {
-            // TODO How to handle maxValue?
-            // ++metaDataBlock.maxValue;
             addByCount(context, pos + i, ids.get(i), false);
         }
         bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
@@ -989,8 +946,7 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
     private class MetaDataBlock {
         // The ID of the root node
         int ri;
-        // Maximum key value for data
-        V maxValue;
+
         // Number of elements
         int elementCount;
     }
@@ -1008,7 +964,7 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
         /**
          * The keys stored in this block
          */
-        ArrayList<K> keys;
+        ArrayList<AbstractStatistic> keys;
 
         /**
          * The ID of parent
@@ -1023,7 +979,7 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
         /**
          * The cumulative count for children.
          */
-        ArrayList<Integer> childrenCount;
+        ArrayList<AbstractStatistic> statistics;
 
         /**
          * Data stored in the leaf blocks
@@ -1043,7 +999,7 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
         private Node() {
             keys = new ArrayList<>();
             children = new ArrayList<>();
-            childrenCount = new ArrayList<>();
+            statistics = new ArrayList<>();
             leafNode = true;
             values = new ArrayList<>();
             parent = -1;    // Root node
@@ -1124,64 +1080,34 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
         }
 
         /**
-         * Add the value key to this block
+         * Add the value & statistic to this leaf node
          *
-         * @param key  the value to add
-         * @param node the node associated with key
-         * @return true on success or false if key was not added
+         * @param statistic the statistic to add
+         * @param value the value to add
+         * @return true on success or false if not added
          */
-        public boolean add(K key, Node node, V value) {
-            int i = findIt(keys, key);
+        public boolean addLeaf(K statistic, V value) {
+            int i = statistic.findIndex(statistics);
             if (i < 0) return false;
-            keys.add(i, key);
-            if (leafNode) {
-                values.add(i, value);
-            } else {
-                children.add(i + 1, node.id);
-
-                if (node.isLeaf()) {
-                    childrenCount.add(i + 1, node.size());
-                } else {
-                    int ct = 0;
-                    for (int z = 0; z < node.childrenCount.size(); z++) {
-                        ct += node.childrenCount.get(z);
-                    }
-                    childrenCount.add(i + 1, ct);
-                }
-            }
+            this.statistics.add(i, statistic.getStatistic(this.statistics, AbstractStatistic.Mode.ADD));
+            this.values.add(i, value);
             return true;
         }
 
         /**
-         * Add the value x to this block
+         * Add the value & statistic to this internal node
          *
-         * @param pos  the value to add
-         * @param node the node associated with x
-         * @return true on success or false if x was not added
+         * @param statistic the statistic to add
+         * @param value the value to add
+         * @return true on success or false if not added
          */
-        private boolean addByCount(long pos, Node node, V value) {
-            int i = findItByCount(childrenCount, pos);
+        public boolean addInternal(Node node, int i) {
             if (i < 0) return false;
-            if (leafNode) {
-                i = (int) pos;
-                keys.add(i, null);
-                values.add(i, value);
-            } else {
-                keys.add(i, null);
-                children.add(i + 1, node.id);
-                if (node.isLeaf()) {
-                    childrenCount.add(i + 1, node.valueSize());
-                } else {
-                    int ct = 0;
-                    for (int z = 0; z < node.childrenCount.size(); z++) {
-                        ct += node.childrenCount.get(z);
-                    }
-                    childrenCount.add(i + 1, ct);
-                }
-            }
+            this.children.add(i, node.id);
+            this.statistics.add(i + 1, statistic.getStatistic(node.statistics, AbstractStatistic.Mode.ADD));
+            this.statistics.add(i, statistic.getStatistic(node.statistics, AbstractStatistic.Mode.DELETE));
             return true;
         }
-
 
         /**
          * Remove the i'th value from this block - don't affect this block's
@@ -1191,7 +1117,7 @@ public class BTree <K extends Comparable<K>, V> implements PosMapping<V> {
          * @return the value of the element removed
          */
         private K removeKey(int i) {
-            K key = keys.get(i);
+            K key = (K) keys.get(i);
             // Do not remove if it is leaf
             if (!leafNode) {
                 keys.remove(i);
