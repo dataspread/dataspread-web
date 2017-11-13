@@ -13,6 +13,7 @@ public class Bucket<T> {
     int size;
     int childrenCount;
     String name;
+    String summary;
     List<Bucket<T>> children;
 
 
@@ -35,5 +36,14 @@ public class Bucket<T> {
     public void setChildren(List<Bucket<T>> children){
         this.children=children;
         this.childrenCount = children.size();
+        this.size = this.endPos-this.startPos+1;
     }
+    public String getSummary(){
+        summary = "Name: "+ this.toString()+"\n";
+        summary += "Sub-categories: " + this.childrenCount+"\n";
+        summary += "[Start,End]: ["+(this.startPos+2)+","+(this.endPos+2)+"]\n";
+        summary += "Rows: "+this.size;
+        return summary;
+    }
+
 }

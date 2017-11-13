@@ -20,8 +20,12 @@
 							<template name="model">
 								<treeitem>
 									<treerow>
-										<treecell label="${each.data.name}"/>
-										<!--<treecell label="ch${each.data.id}"/>-->
+										<treecell>
+											<label value="${each.data.summary}" multiline="true"/>
+										</treecell>
+										<!--<treecell>
+											<textbox value="${each.data.summary}" readonly="true" multiline="true"/>
+										</treecell>-->
 										<treecell >
 											<zhighcharts id="ch${each.data.id}" onCreate="$composer.onChartsCreate(self)"/>
 										</treecell>

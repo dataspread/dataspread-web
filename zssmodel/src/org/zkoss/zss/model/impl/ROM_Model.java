@@ -536,7 +536,7 @@ public class ROM_Model extends Model {
                 ++importedRows;
                 sbSS = new StringBuffer();
 
-                /*if ((importedRows-1)% sampleSize ==0 && importedRows!=1) {
+               /* if ((importedRows-1)% sampleSize ==0 && importedRows!=1) {
                     connection.commit();
 
                     createNavS(headerStringSS,indexString,insertedRows==0?true:false);
@@ -710,7 +710,7 @@ public class ROM_Model extends Model {
                             }
                         }
 
-                        if(bounday_dec>bounday_inc)//keep everything in current bucket
+                        if(bounday_dec>=bounday_inc)//keep everything in current bucket
                         {
                             bucket.maxValue = recordList.get(startIndex + bucketSize - 1+bounday_inc);
                             bucket.endPos = startIndex + bucketSize - 1+bounday_inc;

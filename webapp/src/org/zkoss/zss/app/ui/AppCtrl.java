@@ -52,6 +52,7 @@ import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.Bucket;
 import org.zkoss.zss.ui.*;
 import org.zkoss.zss.ui.Version;
+import org.zkoss.zss.ui.au.out.AuCellFocusTo;
 import org.zkoss.zss.ui.event.Events;
 import org.zkoss.zss.ui.event.SyncFriendFocusEvent;
 import org.zkoss.zss.ui.impl.DefaultUserActionManagerCtrl;
@@ -1249,7 +1250,7 @@ public class AppCtrl extends CtrlBase<Component> {
                     "rotation: -45,"+
                     "align: 'right',"+
                     "style: {"+
-                    "fontSize: '13px',"+
+                    "fontSize: '8px',"+
                     "fontFamily: 'Verdana, sans-serif'"+
                     "}"+
                     "}" +
@@ -1306,6 +1307,9 @@ public class AppCtrl extends CtrlBase<Component> {
         DefaultTreeNode<Bucket<String>> selectedNode = (DefaultTreeNode<Bucket<String>>)treeBucket.getSelectedItem().getValue();
 
         System.out.println("Name: "+selectedNode.getData().getName());
+
+        ss.focusTo(selectedNode.getData().getStartPos()+1,0);
+
 
     }
 
