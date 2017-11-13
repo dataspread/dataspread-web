@@ -8,7 +8,7 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Created by zekun.fan@gmail.com on 8/16/17.
  */
-
+// TODO- Remove this
 public enum TransactionManager {
     INSTANCE;
 

@@ -65,10 +65,11 @@ public abstract class AbstractCellAdv implements SCell,Serializable{
 		}
 	}
 	
-	/*package*/ abstract void evalFormula();
+	/*package*/ abstract void evalFormula(boolean sync);
 
     /*package*/
     public abstract Object getValue(boolean evaluatedVal);
+	public abstract Object getValue(boolean evaluatedVal, boolean sync);
 
     @Override
 	public Object getValue(){
@@ -82,8 +83,13 @@ public abstract class AbstractCellAdv implements SCell,Serializable{
 
 	@Override
 	public String getStringValue() {
+		return 	getStringValue(false);
+	}
+
+	@Override
+	public String getStringValue(boolean sync) {
 		if(getType() == CellType.FORMULA){
-			evalFormula();
+			evalFormula(sync);
 			checkFormulaResultType(CellType.STRING,CellType.BLANK);
 		}else{
 			checkType(CellType.STRING,CellType.BLANK);
@@ -98,9 +104,15 @@ public abstract class AbstractCellAdv implements SCell,Serializable{
 	}
 
 	@Override
-	public Double getNumberValue() {
+	public Double getNumberValue()
+	{
+		return getNumberValue(false);
+	}
+
+	@Override
+	public Double getNumberValue(boolean sync) {
 		if(getType() == CellType.FORMULA){
-			evalFormula();
+			evalFormula(sync);
 			checkFormulaResultType(CellType.NUMBER,CellType.BLANK);
 		}else{
 			checkType(CellType.NUMBER,CellType.BLANK);
@@ -123,11 +135,16 @@ public abstract class AbstractCellAdv implements SCell,Serializable{
 
 	@Override
 	public Date getDateValue() {
+			return getDateValue(false);
+	}
+
+	@Override
+	public Date getDateValue(boolean sync) {
 		//compatible with 3.0(poi)
 		if (CellType.BLANK.equals(getType())) {
             return null;
         }
-		Number num = getNumberValue();
+		Number num = getNumberValue(sync);
 		return EngineFactory.getInstance().getCalendarUtil().doubleValueToDate(num.doubleValue());
 	}
 	
@@ -138,9 +155,14 @@ public abstract class AbstractCellAdv implements SCell,Serializable{
 
 	@Override
 	public Boolean getBooleanValue() {
+		return 	getBooleanValue(false);
+	}
+
+	@Override
+	public Boolean getBooleanValue(boolean sync) {
 		CellType type = getType();
 		if(getType() == CellType.FORMULA){
-			evalFormula();
+			evalFormula(sync);
 			checkFormulaResultType(CellType.BOOLEAN,CellType.BLANK);
 		}else{
 			checkType(CellType.BOOLEAN,CellType.BLANK);
@@ -151,8 +173,13 @@ public abstract class AbstractCellAdv implements SCell,Serializable{
 
 	@Override
 	public ErrorValue getErrorValue() {
+		return getErrorValue(false);
+	}
+
+	@Override
+	public ErrorValue getErrorValue(boolean sync) {
 		if(getType() == CellType.FORMULA){
-			evalFormula();
+			evalFormula(sync);
 			checkFormulaResultType(CellType.ERROR);
 		}else{
 			checkType(CellType.ERROR);
@@ -193,8 +220,13 @@ public abstract class AbstractCellAdv implements SCell,Serializable{
 
 	@Override
 	public SRichText getRichTextValue() {
+		return getRichTextValue(false);
+	}
+
+	@Override
+	public SRichText getRichTextValue(boolean sync) {
 		if(getType() == CellType.FORMULA){
-			evalFormula();
+			evalFormula(sync);
 			checkFormulaResultType(CellType.STRING,CellType.BLANK);
 		}else{
 			checkType(CellType.STRING,CellType.BLANK);
@@ -234,7 +266,7 @@ public abstract class AbstractCellAdv implements SCell,Serializable{
 		return comment;
 	}
 	
-	/*package*/ abstract Ref getRef();
+	/*package*/ public abstract Ref getRef();
 
 	//ZSS-565: Support input with Swedish locale into formula 
 	public abstract void setFormulaValue(String formula, Locale locale, AutoRollbackConnection connection, boolean updateToDB);
@@ -261,7 +293,7 @@ public abstract class AbstractCellAdv implements SCell,Serializable{
 		return false;
 	}
 
-	public void setValueParse(String valueParse, AutoRollbackConnection connection, boolean updateToDB) {
+	public void setValueParse(String valueParse, AutoRollbackConnection connection, int trxId, boolean updateToDB) {
 		final InputEngine ie = EngineFactory.getInstance().createInputEngine();
 		Locale locale = ZssContext.getCurrent().getLocale();
 		InputResult result;

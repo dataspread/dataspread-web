@@ -27,8 +27,8 @@ import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.TransactionManager;
 import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.dependency.Ref;
+import org.zkoss.zss.model.sys.formula.DirtyManager;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
-import org.zkoss.zss.model.sys.formula.FormulaCacheMasker;
 import org.zkoss.zss.range.impl.ModelUpdateCollector;
 
 /**
@@ -37,12 +37,12 @@ import org.zkoss.zss.range.impl.ModelUpdateCollector;
  * @since 3.5.0
  */
 /*package*/ class ModelUpdateUtil {
-	/*package*/ static void handlePrecedentUpdate(SBookSeries bookSeries, Ref precedent){
-		handlePrecedentUpdate(bookSeries, precedent, true);
+	/*package*/ static void handlePrecedentUpdate(SBookSeries bookSeries, AbstractSheetAdv sheet, Ref precedent){
+		handlePrecedentUpdate(bookSeries, sheet, precedent, true);
 	}
 	//ZSS-1047: (side-effect of ZSS-988 and ZSS-1007 which consider setHidden() of SUBTOTAL() function)
 	// see ColumnArrayImpl#setHidden()
-	/*package*/ static void handlePrecedentUpdate(SBookSeries bookSeries, Ref precedent, boolean includePrecedent){
+	/*package*/ static void handlePrecedentUpdate(SBookSeries bookSeries, AbstractSheetAdv sheet, Ref precedent, boolean includePrecedent){
 		//clear formula cache (that reval the unexisted sheet before
 		FormulaCacheCleaner clearer = FormulaCacheCleaner.getCurrent();
 		ModelUpdateCollector collector = ModelUpdateCollector.getCurrent();
@@ -52,11 +52,19 @@ import org.zkoss.zss.range.impl.ModelUpdateCollector;
 			DependencyTable table = ((AbstractBookSeriesAdv)bookSeries).getDependencyTable();
 			dependents = table.getDependents(precedent);
 		}
+		//TODO: if dependents are from different sheets, increment the trxId of those sheet.
+		// Sheets Seems a nice granularity to have the trxId.
+		// If we have it on a book or global level might trigger to many lookups.
+
+		//TODO get trxid from the action
+		int trxId = sheet.getNewTrxId();
+
 		//zekun.fan@gmail.com - Masking and Scheduling
 		if (includePrecedent) { //ZSS-1047
 			addRefUpdate(precedent);
-			FormulaCacheMasker.INSTANCE.mask(precedent);
-			FormulaAsyncScheduler.getScheduler().addTask(precedent);
+			DirtyManager.dirtyManagerInstance.addDirtyRegion(precedent, trxId);
+			//FormulaCacheMasker.INSTANCE.mask(precedent);
+			//FormulaAsyncScheduler.getScheduler().addTask(sheet.getTrxId(), precedent);
 		}
 		if (dependents != null && dependents.size() > 0) {
 			if (clearer != null) {
@@ -68,8 +76,10 @@ import org.zkoss.zss.range.impl.ModelUpdateCollector;
 				collector.addRefs(dependents);
 			}
 			dependents.forEach(v -> {
-				FormulaCacheMasker.INSTANCE.mask(v);
-				FormulaAsyncScheduler.getScheduler().addTask(v);
+				DirtyManager.dirtyManagerInstance.addDirtyRegion(v, trxId);
+				//FormulaCacheMasker.INSTANCE.mask(v);
+				//TODO: Handle if the sheets are different
+				//FormulaAsyncScheduler.getScheduler().addTask(sheet.getTrxId(), v);
 			});
 		}
 	}

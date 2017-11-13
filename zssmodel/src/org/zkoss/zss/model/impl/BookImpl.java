@@ -291,7 +291,7 @@ public class BookImpl extends AbstractBookAdv{
 		//create formula cache for any sheet, sheet name, position change
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
 
-		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new RefImpl(sheet, -1));
+		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(), sheet, new RefImpl(sheet, -1));
 		return sheet;
 	}
 	
@@ -400,7 +400,7 @@ public class BookImpl extends AbstractBookAdv{
 		//create formula cache for any sheet, sheet name, position change
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
 
-		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new RefImpl(sheet, -1));
+		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(), sheet, new RefImpl(sheet, -1));
 
 		return sheet;
 	}
@@ -421,8 +421,8 @@ public class BookImpl extends AbstractBookAdv{
 		//create formula cache for any sheet, sheet name, position change
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
 
-		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new RefImpl(this.getBookName(),newname, index));//to clear the cache of formula that has unexisted name
-		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new RefImpl(this.getBookName(),oldname, index));
+		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(), (AbstractSheetAdv) sheet, new RefImpl(this.getBookName(),newname, index));//to clear the cache of formula that has unexisted name
+		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(), (AbstractSheetAdv) sheet, new RefImpl(this.getBookName(),oldname, index));
 
 		renameSheetFormula(oldname,newname,index);
 	}
@@ -548,7 +548,7 @@ public class BookImpl extends AbstractBookAdv{
 //		sendModelInternalEvent(ModelInternalEvents.createModelInternalEvent(ModelInternalEvents.ON_SHEET_DELETED,
 //				this,ModelInternalEvents.createDataMap(ModelInternalEvents.PARAM_SHEET_OLD_INDEX, index)));
 
-		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new RefImpl(this.getBookName(),sheet.getSheetName(), index));
+		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(), (AbstractSheetAdv) sheet, new RefImpl(this.getBookName(),sheet.getSheetName(), index));
 
 		renameSheetFormula(oldName, null, index);
 
@@ -625,9 +625,9 @@ public class BookImpl extends AbstractBookAdv{
 		//create formula cache for any sheet, sheet name, position change
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
 
-		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new RefImpl(this.getBookName(),sheet.getSheetName(), index));
+		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(), (AbstractSheetAdv) sheet, new RefImpl(this.getBookName(),sheet.getSheetName(), index));
 		//ZSS-1049: should consider formulas that referred to the old index
-		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new RefImpl(this.getBookName(),sheet.getSheetName(), oldindex));
+		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(), (AbstractSheetAdv) sheet, new RefImpl(this.getBookName(),sheet.getSheetName(), oldindex));
 
 		// adjust sheet index
 		moveSheetIndex(getBookName(), oldindex, index);
@@ -928,13 +928,15 @@ public class BookImpl extends AbstractBookAdv{
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
 
 		//notify the (old) name is change before update name
-		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new NameRefImpl((AbstractNameAdv)name));
+		//TODO - Fix the below line by finding a sheet instance
+		//ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(), new NameRefImpl((AbstractNameAdv)name));
 
 		final String oldName = name.getName(); // ZSS-661
 
 		//ZSS-966: notify the (old) table name is change before update name
 		if (name instanceof TableNameImpl) {
-			ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(), new TablePrecedentRefImpl(this.getBookName(), oldName));
+			//TODO - Fix the below line by finding a sheet instance
+			//ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(), new TablePrecedentRefImpl(this.getBookName(), oldName));
 		}
 
 		((AbstractNameAdv)name).setName(newname,sheetName); //will change Table's name if the name is a TableName

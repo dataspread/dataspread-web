@@ -200,7 +200,13 @@ class CellProxy extends AbstractCellAdv {
 
 	@Override
 	public CellType getFormulaResultType() {
-		return _proxy == null ? null : _proxy.getFormulaResultType();
+		return getFormulaResultType(false);
+	}
+
+
+	@Override
+	public CellType getFormulaResultType(boolean sync) {
+		return _proxy == null ? null : _proxy.getFormulaResultType(sync);
 	}
 
 	@Override
@@ -216,14 +222,19 @@ class CellProxy extends AbstractCellAdv {
 	}
 
 	@Override
-	protected void evalFormula() {
+	protected void evalFormula(boolean sync) {
 		if (_proxy != null)
-			_proxy.evalFormula();
+			_proxy.evalFormula(sync);
 	}
 
 	@Override
-    public Object getValue(boolean eval) {
-		return _proxy == null ? null : _proxy.getValue(eval);
+	public Object getValue(boolean eval) {
+		return getValue(eval, false);
+	}
+
+	@Override
+    public Object getValue(boolean eval, boolean sync) {
+		return _proxy == null ? null : _proxy.getValue(eval, sync);
 	}
 
 	@Override
@@ -259,7 +270,7 @@ class CellProxy extends AbstractCellAdv {
 		return _proxy != null && _proxy.isFormulaParsingError();
 	}
 
-	protected Ref getRef(){
+	public Ref getRef(){
 		return new RefImpl(this);
 	}
 

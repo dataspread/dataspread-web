@@ -41,6 +41,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -104,8 +105,10 @@ public class SheetImpl extends AbstractSheetAdv {
     private HashMap<String,Object> _attributes;
 	private int _defaultColumnWidth = 64; //in pixel
 	private int _defaultRowHeight = 20;//in pixel
+	private AtomicInteger trxId;
 
 	public SheetImpl(AbstractBookAdv book,String id){
+		trxId = new AtomicInteger(); //TODO - store this in the DB and use that.
 		this._book = book;
 		this._id = id;
 		sheetDataCache = new LruCache<>(CACHE_SIZE, CACHE_EVICT);
@@ -1580,10 +1583,10 @@ public class SheetImpl extends AbstractSheetAdv {
 		}
 		
 		//should use precedent update since the value might be changed and need to clear cache
-		ModelUpdateUtil.handlePrecedentUpdate(getBook().getBookSeries(),
+		ModelUpdateUtil.handlePrecedentUpdate(getBook().getBookSeries(), this,
 				new RefImpl(getBook().getBookName(), getSheetName(), rowIdx,
 						columnIdx, lastRowIdx, lastColumnIdx));
-		ModelUpdateUtil.handlePrecedentUpdate(getBook().getBookSeries(),
+		ModelUpdateUtil.handlePrecedentUpdate(getBook().getBookSeries(), this,
 				new RefImpl(getBook().getBookName(), getSheetName(), rowIdx
 						+ rowOffset, columnIdx + columnOffset, lastRowIdx
 						+ rowOffset, lastColumnIdx + columnOffset));
@@ -2273,7 +2276,17 @@ public class SheetImpl extends AbstractSheetAdv {
 		_tables.clear();
     }
 
-    public String getHashValue() {
+	@Override
+	public int getTrxId() {
+		return trxId.get();
+	}
+
+	@Override
+	public int getNewTrxId() {
+		return trxId.getAndIncrement();
+	}
+
+	public String getHashValue() {
         return _hashValue;
     }
 

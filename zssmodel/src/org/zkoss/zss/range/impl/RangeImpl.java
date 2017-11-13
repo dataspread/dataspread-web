@@ -452,19 +452,21 @@ public class RangeImpl implements SRange {
 		final ResultWrap<HyperlinkType> hyperlinkType = new ResultWrap<HyperlinkType>();
 		new CellVisitorTask(new CellVisitorForUpdate() {
 			AutoRollbackConnection connection = null;
+			int trxId = -1;
 
 			public boolean visit(SCell cell) {
 				if (connection==null)
 					initConnection(cell);
 
-				cell.setValueParse(editText, connection, true);
+				cell.setValueParse(editText, connection, trxId, true);
 				return true;
 			}
 
 			private void initConnection(SCell cell)  {
 				cell.getSheet().getBook().checkDBSchema();
 				connection = DBHandler.instance.getConnection();
-
+				// Mark as a new transaction by updating the trxId
+				//trxId = ((AbstractSheetAdv) cell.getSheet()).getNewTrxId();
 			}
 
 			//ZSS-939

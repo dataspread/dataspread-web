@@ -16,8 +16,10 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model;
 
+import org.zkoss.poi.ss.usermodel.Cell;
 import org.zkoss.poi.ss.util.AreaReference;
 import org.zkoss.poi.ss.util.CellReference;
+import org.zkoss.zss.model.sys.dependency.Ref;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -45,7 +47,17 @@ public class CellRegion implements Serializable {
 	}
 
 	/**
-	 * Create a region which only contains 1 cell. 
+	 * Create a region based on ref.
+	 * Ignore the book and sheet names.
+	 */
+	public CellRegion(Ref ref)
+	{
+		this(ref.getRow(), ref.getColumn(),
+				ref.getLastRow(), ref.getLastColumn());
+	}
+
+	/**
+	 * Create a region which only contains 1 cell.
 	 */
 	public CellRegion(int row, int column) {
 		this(row, column, row, column);

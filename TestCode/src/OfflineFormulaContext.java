@@ -16,7 +16,6 @@ public class OfflineFormulaContext {
     public static void main(String[] args) throws Exception {
         SBook testBook = SBooks.createOrGetBook("testbook");
         try {
-            TransactionManager.INSTANCE.startTransaction(testBook);
             SheetImpl testSheet = (SheetImpl) testBook.createSheet("testsheet");
 
             AbstractCellAdv testCell = testSheet.createCell(0, 0),
@@ -24,11 +23,10 @@ public class OfflineFormulaContext {
             testCell.setValue(1.0, null, false);
 
             testFormula.setValue("=A1*2", null, false);
-            FormulaAsyncScheduler.getScheduler().addTask(new RefImpl(testFormula));
+            //FormulaAsyncScheduler.getScheduler().addTask(1, new RefImpl(testFormula));
             Thread.sleep(2000);
             System.out.println(testFormula.getValue());
         }finally {
-            TransactionManager.INSTANCE.endTransaction(testBook);
             FormulaAsyncScheduler.getScheduler().shutdown();
         }
     }

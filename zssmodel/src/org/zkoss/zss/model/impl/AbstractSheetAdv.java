@@ -68,4 +68,8 @@ public abstract class AbstractSheetAdv implements SSheet,LinkedModelObject,Seria
 	
 	//ZSS-1001
 	abstract public void clearTables();
+
+    abstract public int getTrxId();
+
+	abstract public int getNewTrxId();
 }
