@@ -13,9 +13,9 @@
 						</label>
 						<!--<zhighcharts id="chartComp25" />-->
 						<tree id="treeBucket" height="450px">
-							<treecols>
-								<treecol label="Bucket" />
-								<treecol label="Distribution" />
+							<treecols sizable="true">
+								<treecol width="130px" label="Bucket" />
+								<treecol width="270px" label="Distribution" />
 							</treecols>
 							<template name="model">
 								<treeitem>
