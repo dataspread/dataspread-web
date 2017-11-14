@@ -17,8 +17,6 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 package org.zkoss.zss.model.impl;
 
 import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
 
 import org.zkoss.zss.model.ModelEvent;
 import org.zkoss.zss.model.SBook;
@@ -67,4 +65,5 @@ public abstract class AbstractBookAdv implements SBook,EvaluationContributorCont
 	//ZSS-967
 	//return null if newName is not duplicated in the Table
 	public abstract String setTableColumnName(STable table, String oldName, String newName);
+
 }
