@@ -1265,10 +1265,7 @@ public class AppCtrl extends CtrlBase<Component> {
 
         //chartComp25.setXAxisTitle("Sub-Categories");
         chartComp25.setYAxisTitle("#Rows");
-        /*chartComp25.setTooltipOptions(
-                "positioner: function () {" +
-                "            return { x: 80, y: 50 };" +
-                "}");*/
+        chartComp25.setTooltipOptions("{followPointer:true}");
         chartComp25.setTooltipFormatter("function formatTooltip(obj){ " +
                 "return '<b>'+obj.x +'</b> has <b>'+ obj.y+'</b> rows';" +
                 "}");

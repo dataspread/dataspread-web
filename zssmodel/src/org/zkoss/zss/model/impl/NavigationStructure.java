@@ -52,21 +52,16 @@ public class NavigationStructure {
 
         //create nav data structure
 
-        return getBucketsNoOverlap(0,recordList.size()-1,true);
+        return getNonOverlappingBuckets(0,recordList.size()-1,true);//getBucketsNoOverlap(0,recordList.size()-1,true);
 
         //  printBuckets(navSbuckets);
 
     }
 
-
-    private List<Bucket<String>> getBucketsNoOverlap(int startPos, int endPos, boolean initBucket)
+    private List<Bucket<String>> getNonOverlappingBuckets(int startPos, int endPos, boolean initBucket)
     {
-        int parentBucketEnd = endPos+1;
-        if(initBucket)
-            parentBucketEnd = recordList.size();
-
-        if(startPos==20 && endPos==29)
-            System.out.println("Gotcha");
+        if(recordList.get(startPos).equals(recordList.get(endPos)))
+            return getOverlappingBuckets(startPos,endPos,false);
 
         List<Bucket<String>> bucketList = new ArrayList<Bucket<String>>();
         int bucketSize = (endPos-startPos+1) / kHisto;
@@ -74,10 +69,6 @@ public class NavigationStructure {
         System.out.println("(start,end): ("+startPos+","+endPos+"), BUCKET Size: "+bucketSize);
 
         if (bucketSize > 0) {
-
-
-            int boundary_change = 0;
-            int element_count = 0;
             int startIndex=startPos;
             for (int i = 0; i < kHisto && startIndex < endPos+1; i++) {
                 System.out.println("---------------BUCKET NO: "+i);
@@ -95,102 +86,39 @@ public class NavigationStructure {
 
                 }
 
-                /*
-                * if the value next to maxValue is same as maxValue, we need to increase bucket boundary
-                * Search where max value ends: binary search in maxValue index+bucketSize
-                * Search where maxValue stated in current bucket
-                * if count maxValue in current bucket > count maxValue in next bucket. Merge the two else update current
-                * bucket boundary to be the index just before the maxValue in current bucket
-                * */
-                int bounday_inc = 0;//count maxValue in next bucket
-                int bounday_dec = 0;//count maxValue in current bucket
+                int [] start_end = new int[2];
 
-                if(parentBucketEnd-1-startIndex+1 < bucketSize)
-                    bucketSize = parentBucketEnd-1-startIndex; //forcefully set bucket 1 size smaller to pass through next if else
+                start_end = getStartEnd(bucket.maxValue,bucket.startPos,bucket.endPos);
 
-                // System.out.println("startIndex: "+startIndex+", bucketSize: "+bucketSize+", subList.size(): "+subList.size());
+                int boundary_inc = 0;//count maxValue in next bucket
+                int boundary_dec = 0;//count maxValue in current bucket
 
+                boundary_dec = bucket.endPos-start_end[0]+1;
+                boundary_inc = start_end[1]-bucket.endPos+1;
 
-                if((startIndex + bucketSize) < parentBucketEnd) //if not end of list
+                if(bucket.maxValue.equals(bucket.minValue))
                 {
-                    String boundary_value = recordList.get(startIndex + bucketSize);
-
-                    if(boundary_value.equals(bucket.maxValue))
+                    bucket.maxValue = recordList.get(start_end[1]);
+                    bucket.endPos = start_end[1];
+                    bucket.size = bucket.endPos-bucket.startPos+1;
+                    startIndex += bucket.size;
+                    bucket.setChildren(getOverlappingBuckets(bucket.startPos,bucket.endPos,false));
+                    bucketList.add(bucket);
+                }
+                else {
+                    if (boundary_dec >= boundary_inc)//keep everything in current bucket
                     {
-                        bounday_inc++;
-                        //Search where max value ends in next bucket
-                        for(int j=startIndex + bucketSize+1 ; j<endPos+1;j++)
-                        {
-                            // System.out.println("i: "+i+", j:  "+j);
-                            boundary_value = recordList.get(j);
-                            if(boundary_value.equals(bucket.maxValue)) {
-                                bounday_inc++;
-                            }
-                            else
-                            {
-                                break;
-                            }
-                        }
-                        //System.out.println("----------From boundary inc to dec----------");
-                        //count maxValue in current bucket
-                        for(int j=startIndex + bucketSize-1;j>startIndex -1;j--)
-                        {
-                            // System.out.println("i: "+i+", j:  "+j);
-                            boundary_value = recordList.get(j);
-                            if(boundary_value.equals(bucket.maxValue)) {
-                                bounday_dec++;
-                            }
-                            else
-                            {
-                                break;
-                            }
-                        }
-
-                        if(bounday_dec>=bounday_inc)//keep everything in current bucket
-                        {
-                            bucket.maxValue = recordList.get(startIndex + bucketSize - 1+bounday_inc);
-                            bucket.endPos = startIndex + bucketSize - 1+bounday_inc;
-                            boundary_change = bounday_inc;
-                        }
-                        else
-                        {
-                            bucket.maxValue = recordList.get(startIndex + bucketSize -bounday_dec);
-                            bucket.endPos = startIndex + bucketSize - bounday_dec;
-                            boundary_change = -bounday_dec;
-                        }
+                        bucket.maxValue = recordList.get(start_end[1]);
+                        bucket.endPos = start_end[1];
+                    } else {
+                        bucket.maxValue = recordList.get(start_end[0] - 1);
+                        bucket.endPos = start_end[0] - 1;
                     }
 
-                }
-
-
-                bucket.size = bucketSize+boundary_change;
-                if(bucket.size>0) {
+                    bucket.size = bucket.endPos-bucket.startPos+1;
                     startIndex += bucket.size;
-
-                    bucket.setChildren(getBucketsNoOverlap(bucket.startPos,bucket.endPos,false));
+                    bucket.setChildren(getNonOverlappingBuckets(bucket.startPos,bucket.endPos,false));
                     bucketList.add(bucket);
-
-                }
-
-
-                if(bounday_dec < bounday_inc) //create new bucket as the current bucket is shrinked
-                {
-                    Bucket bucketSplit = new Bucket();
-                    bucketSplit.minValue = recordList.get(startIndex);
-                    bucketSplit.maxValue = recordList.get(startIndex+bounday_dec+bounday_inc-1);
-                    bucketSplit.startPos = startIndex;
-                    bucketSplit.endPos = startIndex+bounday_dec+bounday_inc-1;
-
-                    bucketSplit.size = bounday_dec+bounday_inc;
-
-                    bucketSplit.setChildren(getBucketsNoOverlap(bucketSplit.startPos,bucketSplit.endPos,false));
-
-                    bucketList.add(bucketSplit);
-
-                    if(bucket.size >0)
-                        i++;
-                    startIndex += bucketSplit.size;
-
                 }
 
             }
@@ -203,8 +131,10 @@ public class NavigationStructure {
                 bucket.startPos = startIndex;
                 bucket.endPos = endPos;
                 bucket.size = endPos-startIndex+1;
-
-                bucket.setChildren(getBucketsNoOverlap(bucket.startPos,bucket.endPos,false));
+                if(bucket.maxValue.equals(bucket.minValue))
+                    bucket.setChildren(getOverlappingBuckets(bucket.startPos,bucket.endPos,false));
+                else
+                    bucket.setChildren(getNonOverlappingBuckets(bucket.startPos,bucket.endPos,false));
                 bucketList.add(bucket);
             }
 
@@ -212,6 +142,87 @@ public class NavigationStructure {
 
         // printBuckets(bucketList);
         return bucketList;
+    }
+
+    private List<Bucket<String>> getOverlappingBuckets(int startPos, int endPos, boolean b) {
+        List<Bucket<String>> bucketList = new ArrayList<Bucket<String>>();
+        int bucketSize = (endPos-startPos+1) / kHisto;
+
+        System.out.println("(start,end): ("+startPos+","+endPos+"), BUCKET Size: "+bucketSize);
+
+        if (bucketSize > 0) {
+            int startIndex=startPos;
+            for (int i = 0; i < kHisto && startIndex < endPos+1; i++) {
+                System.out.println("---------------BUCKET NO: " + i);
+                Bucket bucket = new Bucket();
+                bucket.minValue = recordList.get(startIndex);
+                bucket.startPos = startIndex;
+                if (startIndex + bucketSize - 1 < endPos + 1) {
+                    bucket.maxValue = recordList.get(startIndex + bucketSize - 1);
+                    bucket.endPos = startIndex + bucketSize - 1;
+                } else {
+                    bucket.maxValue = recordList.get(endPos);
+                    bucket.endPos = endPos;
+
+                }
+
+                bucket.size = bucket.endPos - bucket.startPos + 1;
+                startIndex += bucket.size;
+                bucket.setChildren(getOverlappingBuckets(bucket.startPos, bucket.endPos, false));
+                bucketList.add(bucket);
+            }
+
+            if(startIndex<endPos+1)
+            {
+                Bucket bucket = new Bucket();
+                bucket.minValue = recordList.get(startIndex);
+                bucket.maxValue = recordList.get(endPos);
+                bucket.startPos = startIndex;
+                bucket.endPos = endPos;
+                bucket.size = endPos-startIndex+1;
+
+                bucket.setChildren(getOverlappingBuckets(bucket.startPos,bucket.endPos,false));
+                bucketList.add(bucket);
+            }
+        }
+
+        // printBuckets(bucketList);
+        return bucketList;
+    }
+
+    private int[] getStartEnd(Object maxValue,int startPos, int currentPos) {
+        int [] indexes = new int[2];
+
+        if(currentPos==0)
+            indexes[0] = currentPos;
+        else if(recordList.get(currentPos-1).equals(maxValue))
+        {
+            int i = currentPos-1;
+            while(i> startPos && recordList.get(i-1).equals(maxValue))
+            {
+                i--;
+            }
+            indexes[0] = i;
+        }
+        else
+            indexes[0] = currentPos;
+
+        if(currentPos==recordList.size()-1)
+            indexes[1] = currentPos;
+        else if(recordList.get(currentPos+1).equals(maxValue))
+        {
+            int i = currentPos+1;
+            while(i< recordList.size()-1 && recordList.get(i+1).equals(maxValue))
+            {
+                i++;
+            }
+            indexes[1] = i;
+        }
+        else
+            indexes[1] = currentPos;
+
+
+        return indexes;
     }
 
     public void printBuckets(List<Bucket<String>> bucketList) {
