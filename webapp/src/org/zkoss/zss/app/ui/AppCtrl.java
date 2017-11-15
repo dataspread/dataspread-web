@@ -1233,9 +1233,12 @@ public class AppCtrl extends CtrlBase<Component> {
 
         Bucket<String> currentBucket = navSBucketMap.get(chartComp25.getId());
         chartComp25.setType("column");
-        //chartComp25.setOptions("{height: '20%'}");
+        chartComp25.setOptions("{margin:[-30,0,50,30]}");
         //chartComp25.setTitle(currentBucket.getName());
         String xAxisLabels = "";
+
+        chartComp25.setHeight("200px");
+
 
         if(currentBucket.getChildrenCount() > 0)
             xAxisLabels = "{categories: ['"+currentBucket.getChildren().get(0).getName()+"'";
@@ -1260,13 +1263,19 @@ public class AppCtrl extends CtrlBase<Component> {
                 "min:0" +
                 "}");
 
-        chartComp25.setXAxisTitle("Sub-Categories");
+        //chartComp25.setXAxisTitle("Sub-Categories");
         chartComp25.setYAxisTitle("#Rows");
+        /*chartComp25.setTooltipOptions(
+                "positioner: function () {" +
+                "            return { x: 80, y: 50 };" +
+                "}");*/
         chartComp25.setTooltipFormatter("function formatTooltip(obj){ " +
-                "return ''+obj.x +': '+ obj.y;" +
+                "return '<b>'+obj.x +'</b> has <b>'+ obj.y+'</b> rows';" +
                 "}");
 
-        /*chartComp25.setLegend("{" +
+        chartComp25.setLegend("{enabled:false}");
+        /*
+        * "{" +
                 "layout: 'vertical'," +
                 "backgroundColor: '#FFFFFF'," +
                 "align: 'left'," +
@@ -1276,7 +1285,8 @@ public class AppCtrl extends CtrlBase<Component> {
                 "floating: true," +
                 "shadow: true" +
 
-                "}");*/
+                "}"
+                */
         chartComp25.setPlotOptions(//"["+
                 "{" +
                     "column: {" +
