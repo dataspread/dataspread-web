@@ -1,12 +1,14 @@
 package org.zkoss.zss.model.impl;
 
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 /**
  * Created by Sajjadur on 11/6/2017.
  */
-public class Bucket<T> {
+public class Bucket<T> implements Serializable{
     T minValue;
     T maxValue;
     int startPos;
@@ -16,7 +18,7 @@ public class Bucket<T> {
     String name;
     String id;
     String summary;
-    List<Bucket<T>> children;
+    ArrayList<Bucket<T>> children;
 
 
     @Override
@@ -43,8 +45,8 @@ public class Bucket<T> {
     public String getId(){
         return this.id;
     }
-    public List<Bucket<T>> getChildren(){return children;}
-    public void setChildren(List<Bucket<T>> children){
+    public ArrayList<Bucket<T>> getChildren(){return children;}
+    public void setChildren(ArrayList<Bucket<T>> children){
         this.children=children;
         this.childrenCount = children.size();
         this.size = this.endPos-this.startPos+1;

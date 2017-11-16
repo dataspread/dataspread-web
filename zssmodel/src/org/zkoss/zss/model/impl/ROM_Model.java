@@ -570,6 +570,9 @@ public class ROM_Model extends Model {
             e.printStackTrace();
         }
 
+        this.navS.writeJavaObject(this.navSbuckets);
+
+       // this.navS.readJavaObject(this.tableName);
 
     }
 

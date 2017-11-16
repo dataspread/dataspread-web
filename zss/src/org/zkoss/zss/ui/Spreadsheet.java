@@ -359,7 +359,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 	// a local flag indicates that skip the validation and force this editing (ZSS-351)
 	private boolean forceStopEditing0 = false;
 
-	private List<Bucket<String>> navSBuckets;
+	private ArrayList<Bucket<String>> navSBuckets;
 	
 	public Spreadsheet() {
 		FormulaAsyncScheduler.initUiController(new FormulaAsyncUIControllerImpl());
@@ -6113,12 +6113,12 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 		}
 	}
 
-	public void setNavSBuckets(List<Bucket<String>> ls)
+	public void setNavSBuckets(ArrayList<Bucket<String>> ls)
 	{
 		this.navSBuckets = ls;
 	}
 
-	public List<Bucket<String>> getNavSBuckets()
+	public ArrayList<Bucket<String>> getNavSBuckets()
 	{
 		return  this.navSBuckets;
 	}

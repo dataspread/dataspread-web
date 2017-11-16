@@ -20,7 +20,6 @@ import org.zkoss.util.media.Media;
 import org.zkoss.util.resource.Labels;
 import org.zkoss.web.servlet.http.Encodes;
 import org.zkoss.zk.ui.*;
-import org.zkoss.zk.ui.Path;
 import org.zkoss.zk.ui.event.*;
 import org.zkoss.zk.ui.select.annotation.Listen;
 import org.zkoss.zk.ui.select.annotation.Wire;
@@ -50,9 +49,9 @@ import org.zkoss.zss.model.ModelEventListener;
 import org.zkoss.zss.model.ModelEvents;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.Bucket;
+import org.zkoss.zss.model.impl.NavigationStructure;
 import org.zkoss.zss.ui.*;
 import org.zkoss.zss.ui.Version;
-import org.zkoss.zss.ui.au.out.AuCellFocusTo;
 import org.zkoss.zss.ui.event.Events;
 import org.zkoss.zss.ui.event.SyncFriendFocusEvent;
 import org.zkoss.zss.ui.impl.DefaultUserActionManagerCtrl;
@@ -67,16 +66,11 @@ import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.ngi.zhighcharts.SimpleExtXYModel;
-import org.ngi.zhighcharts.ZGauge;
 import org.ngi.zhighcharts.ZHighCharts;
-import org.zkoss.util.logging.Log;
 import org.zkoss.zk.ui.event.Event;
-import org.zkoss.zk.ui.event.EventListener;
-import org.zkoss.zul.SimplePieModel;
 import org.zkoss.zul.Window;
 
 /**
@@ -574,7 +568,7 @@ public class AppCtrl extends CtrlBase<Component> {
                                         m.getReaderData(), delimiter);
 
                         ss.setNavSBuckets(newSheet.getDataModel().navSbuckets);
-                        printBuckets(newSheet.getDataModel().navSbuckets);
+                        createNavSTree(newSheet.getDataModel().navSbuckets);
 
                         Messagebox.show("File imported", "DataSpread",
                                 Messagebox.OK, Messagebox.INFORMATION, null);
@@ -637,6 +631,13 @@ public class AppCtrl extends CtrlBase<Component> {
         pushAppEvent(AppEvts.ON_LOADED_BOOK, loadedBook);
         pushAppEvent(AppEvts.ON_CHANGED_SPREADSHEET, ss);
         updatePageInfo();
+        NavigationStructure navS = new NavigationStructure(loadedBook.getInternalBook().getId()+"2_2");
+        ss.setNavSBuckets(navS.readJavaObject(loadedBook.getInternalBook().getId()+"2_2"));
+        try {
+            createNavSTree(ss.getNavSBuckets());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -1180,7 +1181,7 @@ public class AppCtrl extends CtrlBase<Component> {
         void invoke();
     }
 
-    private BucketTreeNodeCollection<Bucket<String>> childrenBuckets(List<Bucket<String>> bucketList) {
+    private BucketTreeNodeCollection<Bucket<String>> childrenBuckets(ArrayList<Bucket<String>> bucketList) {
         BucketTreeNodeCollection<Bucket<String>> dtnc = new BucketTreeNodeCollection<Bucket<String>>();
 
         for(int i=0;i<bucketList.size();i++) {
@@ -1200,7 +1201,7 @@ public class AppCtrl extends CtrlBase<Component> {
         return dtnc;
     }
 
-   private void printBuckets(List<Bucket<String>> bucketList) throws Exception {
+   private void createNavSTree(ArrayList<Bucket<String>> bucketList) throws Exception {
 
         //treeBucket.setAutopaging(true);
         BucketTreeNodeCollection<Bucket<String>> btnc = new BucketTreeNodeCollection<Bucket<String>>();
@@ -1209,7 +1210,7 @@ public class AppCtrl extends CtrlBase<Component> {
 
         treeBucket.setModel(new DefaultTreeModel<Bucket<String>>(new BucketTreeNode<Bucket<String>>(null,btnc)));
 
-        for(int i=0;i<bucketList.size();i++)
+        /*for(int i=0;i<bucketList.size();i++)
         {
             System.out.println("Bucket "+(i+1));
             System.out.println("Max: "+bucketList.get(i).getMaxValue());
@@ -1218,7 +1219,7 @@ public class AppCtrl extends CtrlBase<Component> {
             System.out.println("end: "+bucketList.get(i).getEndPos());
             System.out.println("Size: "+bucketList.get(i).getSize());
             System.out.println("children: "+bucketList.get(i).getChildrenCount());
-        }
+        }*/
     }
 
 

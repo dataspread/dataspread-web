@@ -1,9 +1,16 @@
 package org.zkoss.zss.model.impl;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -13,24 +20,26 @@ import java.util.List;
 /**
  * Created by Sajjadur on 11/14/2017.
  */
-public class NavigationStructure {
+public class NavigationStructure{
     private ArrayList<String> recordList;
     private int kHisto;
     private int selectedColumn;
     private String tableName;
+    private Kryo kryo;
 
     public NavigationStructure(String tableName)
     {
         this.tableName = tableName;
         this.recordList = new ArrayList<String>();
         this.kHisto = 10;
+        kryo = new Kryo();
     }
 
     public int getSampleSize() {
         return 100;
     }
 
-    public List<Bucket<String>> createNavS(String headerString,String indexString,boolean isFirst) {
+    public ArrayList<Bucket<String>> createNavS(String headerString,String indexString,boolean isFirst) {
         //load sorted data from table
         recordList =  new ArrayList<String>();
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
@@ -58,20 +67,20 @@ public class NavigationStructure {
 
     }
 
-    private List<Bucket<String>> getNonOverlappingBuckets(int startPos, int endPos, boolean initBucket)
+    private ArrayList<Bucket<String>> getNonOverlappingBuckets(int startPos, int endPos, boolean initBucket)
     {
         if(recordList.get(startPos).equals(recordList.get(endPos)))
             return getOverlappingBuckets(startPos,endPos,false);
 
-        List<Bucket<String>> bucketList = new ArrayList<Bucket<String>>();
+        ArrayList<Bucket<String>> bucketList = new ArrayList<Bucket<String>>();
         int bucketSize = (endPos-startPos+1) / kHisto;
 
-        System.out.println("(start,end): ("+startPos+","+endPos+"), BUCKET Size: "+bucketSize);
+        //System.out.println("(start,end): ("+startPos+","+endPos+"), BUCKET Size: "+bucketSize);
 
         if (bucketSize > 0) {
             int startIndex=startPos;
             for (int i = 0; i < kHisto && startIndex < endPos+1; i++) {
-                System.out.println("---------------BUCKET NO: "+i);
+                //System.out.println("---------------BUCKET NO: "+i);
                 Bucket bucket = new Bucket();
                 bucket.minValue = recordList.get(startIndex);
                 bucket.startPos = startIndex;
@@ -144,11 +153,11 @@ public class NavigationStructure {
         return bucketList;
     }
 
-    private List<Bucket<String>> getOverlappingBuckets(int startPos, int endPos, boolean b) {
-        List<Bucket<String>> bucketList = new ArrayList<Bucket<String>>();
+    private ArrayList<Bucket<String>> getOverlappingBuckets(int startPos, int endPos, boolean b) {
+        ArrayList<Bucket<String>> bucketList = new ArrayList<Bucket<String>>();
         int bucketSize = (endPos-startPos+1) / kHisto;
 
-        System.out.println("(start,end): ("+startPos+","+endPos+"), BUCKET Size: "+bucketSize);
+        //System.out.println("(start,end): ("+startPos+","+endPos+"), BUCKET Size: "+bucketSize);
 
         if (bucketSize > 0) {
             int startIndex=startPos;
@@ -235,10 +244,91 @@ public class NavigationStructure {
             System.out.println("end: "+bucketList.get(i).endPos);
             System.out.println("Size: "+bucketList.get(i).size);
             System.out.println("children: "+bucketList.get(i).getChildrenCount());
+            printBuckets(bucketList.get(i).getChildren());
         }
     }
 
     public void setSelectedColumn(int selectedColumn) {
         this.selectedColumn = selectedColumn;
+    }
+
+    public void writeJavaObject(ArrayList<Bucket<String>> object_ls){
+        String className = object_ls.get(0).getClass().getName();
+
+        PreparedStatement pstmt = null;
+
+        String createTable = (new StringBuffer())
+                .append("CREATE TABLE IF NOT EXISTS ")
+                .append(tableName+"_nav")
+                .append("(id INT PRIMARY KEY,data BYTEA)")
+                .toString();
+
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+             Statement stmt = connection.createStatement()) {
+            stmt.execute(createTable.toString());
+            connection.commit();
+            // set input parameters
+            StringBuffer navSB = new StringBuffer();
+            for(int i=0;i<object_ls.size();i++) {
+                navSB.append("INSERT into "+tableName+"_nav (id,data) values(?,?)");
+
+                pstmt = connection.prepareStatement(navSB.toString());
+                pstmt.setInt(1,i);
+
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                Output out = new Output(byteArrayOutputStream);
+                kryo.writeObject(out, object_ls.get(i));
+                pstmt.setBytes(2, out.toBytes());
+                out.close();
+                byteArrayOutputStream.close();
+
+                pstmt.executeUpdate();
+                navSB = new StringBuffer();
+
+            }
+
+            connection.commit();
+            pstmt.close();
+
+            System.out.println("writeJavaObject: done serializing: " + className);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
+    public ArrayList<Bucket<String>> readJavaObject(String dataTable){
+
+        ArrayList<Bucket<String>> bucketList = new ArrayList<Bucket<String>>();
+
+        PreparedStatement pstmt = null;
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();) {
+
+            StringBuffer navSB = new StringBuffer();
+            navSB.append("SELECT data from "+dataTable+"_nav ORDER BY id");
+            pstmt = connection.prepareStatement(navSB.toString());
+
+            ResultSet rs = pstmt.executeQuery();
+            while(rs.next()) {
+                Input in = new Input(rs.getBytes(1));
+                Bucket<String> object = new Bucket<String>();
+                object = kryo.readObject(in, object.getClass());
+                in.close();
+                bucketList.add(object);
+            }
+            rs.close();
+            pstmt.close();
+            //String className = bucketList.get(0).getClass().getName();
+            System.out.println("readJavaObject: done de-serializing: ");
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        printBuckets(bucketList);
+        return bucketList;
     }
 }
