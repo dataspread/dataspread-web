@@ -1288,8 +1288,16 @@ public class AppCtrl extends CtrlBase<Component> {
         chartComp25.setPlotOptions(//"["+
                 "{" +
                     "column: {" +
-                    "pointPadding: 0.2," +
-                    "borderWidth: 0" +
+                        "pointPadding: 0.2," +
+                        "borderWidth: 0," +
+                        "point: {"+
+                            "events: {"+
+                                "click: function() {"+
+                                    "zk.Widget.$('$mainWin').fire('onFocusByChartColumn');"+
+                                    "zAu.send(new zk.Event(zk.Widget.$('$mainWin'), 'onFocusByChartColumn',this.category,{toServer:true}));"+
+                                "}"+
+                            "}"+
+                        "}"+
                     "}"+
                 "}"
                 );
@@ -1317,6 +1325,24 @@ public class AppCtrl extends CtrlBase<Component> {
         System.out.println("Name: "+selectedNode.getData().getName());
 
         ss.focusTo(selectedNode.getData().getStartPos()+1,0);
+
+
+    }
+
+    @Listen("onFocusByChartColumn = #mainWin")
+    public void onFocusByChartColumn(Event evt)
+    {
+        System.out.println("Client Screen Size:" + evt.getData());
+
+        String eventData = evt.getData().toString();
+        String bucketName = "ch";
+
+        if(eventData.contains("Rows:"))
+            bucketName += eventData.split("Rows:")[1].replaceAll("-","_");
+        else
+            bucketName += eventData;
+
+        ss.focusTo(navSBucketMap.get(bucketName).getStartPos()+1,0);
 
 
     }

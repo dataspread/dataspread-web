@@ -35,11 +35,16 @@ public class Bucket<T> implements Serializable{
     public int getChildrenCount(){return childrenCount;}
     public int getSize(){return size;}
 
-    public void setName()
+    public void setName(boolean isUniform)
     {
-        name = this.toString();
+        if(isUniform)
+            name = (this.startPos+2)+"_"+(this.endPos+2);
+        else
+            name = this.toString();
     }
     public String getName(){
+        if(name.contains("_"))
+            return "Rows:"+name.replaceAll("_","-");
         return name;
     }
     public String getId(){
@@ -50,13 +55,12 @@ public class Bucket<T> implements Serializable{
         this.children=children;
         this.childrenCount = children.size();
         this.size = this.endPos-this.startPos+1;
-        this.setName();
-        this.setId();
     }
 
-    private void setId() {
+    public void setId() {
 
-        this.id = this.name.replaceAll(" ","_")+this.getSaltString();
+        this.id = this.name.replaceAll(" ","_");
+        //this.id = this.name.replaceAll(" ","_")+this.getSaltString();
     }
 
     public String getSummary(){

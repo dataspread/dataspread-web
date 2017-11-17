@@ -8,7 +8,6 @@ import org.model.DBHandler;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -70,7 +69,7 @@ public class NavigationStructure{
     private ArrayList<Bucket<String>> getNonOverlappingBuckets(int startPos, int endPos, boolean initBucket)
     {
         if(recordList.get(startPos).equals(recordList.get(endPos)))
-            return getOverlappingBuckets(startPos,endPos,false);
+            return getUniformBuckets(startPos,endPos,false);
 
         ArrayList<Bucket<String>> bucketList = new ArrayList<Bucket<String>>();
         int bucketSize = (endPos-startPos+1) / kHisto;
@@ -111,7 +110,9 @@ public class NavigationStructure{
                     bucket.endPos = start_end[1];
                     bucket.size = bucket.endPos-bucket.startPos+1;
                     startIndex += bucket.size;
-                    bucket.setChildren(getOverlappingBuckets(bucket.startPos,bucket.endPos,false));
+                    bucket.setName(false);
+                    bucket.setId();
+                    bucket.setChildren(getUniformBuckets(bucket.startPos,bucket.endPos,false));
                     bucketList.add(bucket);
                 }
                 else {
@@ -126,6 +127,8 @@ public class NavigationStructure{
 
                     bucket.size = bucket.endPos-bucket.startPos+1;
                     startIndex += bucket.size;
+                    bucket.setName(false);
+                    bucket.setId();
                     bucket.setChildren(getNonOverlappingBuckets(bucket.startPos,bucket.endPos,false));
                     bucketList.add(bucket);
                 }
@@ -140,8 +143,10 @@ public class NavigationStructure{
                 bucket.startPos = startIndex;
                 bucket.endPos = endPos;
                 bucket.size = endPos-startIndex+1;
+                bucket.setName(false);
+                bucket.setId();
                 if(bucket.maxValue.equals(bucket.minValue))
-                    bucket.setChildren(getOverlappingBuckets(bucket.startPos,bucket.endPos,false));
+                    bucket.setChildren(getUniformBuckets(bucket.startPos,bucket.endPos,false));
                 else
                     bucket.setChildren(getNonOverlappingBuckets(bucket.startPos,bucket.endPos,false));
                 bucketList.add(bucket);
@@ -153,7 +158,7 @@ public class NavigationStructure{
         return bucketList;
     }
 
-    private ArrayList<Bucket<String>> getOverlappingBuckets(int startPos, int endPos, boolean b) {
+    private ArrayList<Bucket<String>> getUniformBuckets(int startPos, int endPos, boolean b) {
         ArrayList<Bucket<String>> bucketList = new ArrayList<Bucket<String>>();
         int bucketSize = (endPos-startPos+1) / kHisto;
 
@@ -162,7 +167,7 @@ public class NavigationStructure{
         if (bucketSize > 0) {
             int startIndex=startPos;
             for (int i = 0; i < kHisto && startIndex < endPos+1; i++) {
-                System.out.println("---------------BUCKET NO: " + i);
+                //System.out.println("---------------BUCKET NO: " + i);
                 Bucket bucket = new Bucket();
                 bucket.minValue = recordList.get(startIndex);
                 bucket.startPos = startIndex;
@@ -177,7 +182,9 @@ public class NavigationStructure{
 
                 bucket.size = bucket.endPos - bucket.startPos + 1;
                 startIndex += bucket.size;
-                bucket.setChildren(getOverlappingBuckets(bucket.startPos, bucket.endPos, false));
+                bucket.setName(true);
+                bucket.setId();
+                bucket.setChildren(getUniformBuckets(bucket.startPos, bucket.endPos, false));
                 bucketList.add(bucket);
             }
 
@@ -189,8 +196,10 @@ public class NavigationStructure{
                 bucket.startPos = startIndex;
                 bucket.endPos = endPos;
                 bucket.size = endPos-startIndex+1;
+                bucket.setName(true);
+                bucket.setId();
 
-                bucket.setChildren(getOverlappingBuckets(bucket.startPos,bucket.endPos,false));
+                bucket.setChildren(getUniformBuckets(bucket.startPos,bucket.endPos,false));
                 bucketList.add(bucket);
             }
         }
@@ -328,7 +337,7 @@ public class NavigationStructure{
             e.printStackTrace();
         }
 
-        printBuckets(bucketList);
+        //printBuckets(bucketList);
         return bucketList;
     }
 }
