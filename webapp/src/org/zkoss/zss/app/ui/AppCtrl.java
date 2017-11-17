@@ -1340,7 +1340,7 @@ public class AppCtrl extends CtrlBase<Component> {
         if(eventData.contains("Rows:"))
             bucketName += eventData.split("Rows:")[1].replaceAll("-","_");
         else
-            bucketName += eventData;
+            bucketName += eventData.replaceAll(" ","_");
 
         ss.focusTo(navSBucketMap.get(bucketName).getStartPos()+1,0);
 
