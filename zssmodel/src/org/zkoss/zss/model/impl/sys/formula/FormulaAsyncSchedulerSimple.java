@@ -38,20 +38,24 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
             SSheet sheet=BookBindings.getSheetByRef(dirtyRecord.region,true);
 
             //TODO - Change to streaming.
+            // Or break a big region into smaller parts.
             Collection<SCell> cells=sheet.getCells(new CellRegion(dirtyRecord.region));
             for (SCell sCell:cells)
             {
+                // Delay to demonstrate.
+                //try {
+                //    Thread.sleep(1000);
+                //} catch (InterruptedException e) {
+                //    e.printStackTrace();
+                //}
                 CellImpl cell = (CellImpl) sCell;
                 if (cell.getType()== SCell.CellType.FORMULA) {
-                    FormulaEvaluationContext evalContext =
-                            new FormulaEvaluationContext(sCell, ((CellImpl) sCell).getRef());
-                    FormulaExpression expr = cell.getFormulaExpression();
-                    FormulaEngine fe = EngineFactory.getInstance().createFormulaEngine();
-                    fe.clearCache(new FormulaClearContext(sheet));
-                    EvaluationResult result = fe.evaluate(expr, evalContext);
-                    cell.updateFormulaResultValue(result, dirtyRecord.trxId);
+                    // A sync call should synchronously compute the cells value.
+                    cell.getValue(true,true);
                 }
             }
+            DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,
+                    dirtyRecord.trxId);
             update(sheet,new CellRegion(dirtyRecord.region));
         }
     }

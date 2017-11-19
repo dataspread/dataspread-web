@@ -53,5 +53,18 @@ public abstract class DirtyManager {
         public int compareTo(Object o) {
             return Integer.compare(trxId, ((DirtyRecord) o).trxId );
         }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (!(o instanceof DirtyRecord))
+                return false;
+            DirtyRecord dirtyRecord = (DirtyRecord) o;
+            if (region == dirtyRecord.region &&
+                    trxId == dirtyRecord.trxId)
+                return true;
+            else
+                return false;
+        }
     }
 }

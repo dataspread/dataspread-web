@@ -16,10 +16,11 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
-import org.model.LruCache;
 import org.zkoss.lang.Library;
 import org.zkoss.poi.ss.util.CellReference;
 import org.zkoss.poi.ss.util.SheetUtil;
@@ -41,6 +42,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -68,7 +71,6 @@ public class SheetImpl extends AbstractSheetAdv {
 
     /* Shoud be more then prefetch region */
     final int CACHE_SIZE = 50000;
-    final int CACHE_EVICT = 100;
     private final String _id;
 	private final IndexPool<AbstractRowAdv> _rows = new IndexPool<AbstractRowAdv>(){
 		private static final long serialVersionUID = 1L;
@@ -88,7 +90,8 @@ public class SheetImpl extends AbstractSheetAdv {
     //ZSS-855
     private final List<STable> _tables = new ArrayList<STable>();
     Model dataModel;
-    LruCache<CellRegion, AbstractCellAdv> sheetDataCache;
+
+	Cache<CellRegion, AbstractCellAdv> sheetDataCache;
     private AbstractBookAdv _book;
     private String _name;
     private int _dbid;
@@ -111,7 +114,9 @@ public class SheetImpl extends AbstractSheetAdv {
 		trxId = new AtomicInteger(); //TODO - store this in the DB and use that.
 		this._book = book;
 		this._id = id;
-		sheetDataCache = new LruCache<>(CACHE_SIZE, CACHE_EVICT);
+		sheetDataCache = CacheBuilder.newBuilder()
+				.maximumSize(CACHE_SIZE)
+				.build();
     }
 	
 	protected void checkOwnership(SPicture picture){
@@ -354,8 +359,9 @@ public class SheetImpl extends AbstractSheetAdv {
 	}
 
 
-	private void preFetchCells(CellRegion cellRegion)
+	private AbstractCellAdv preFetchCells(CellRegion cellRegion)
 	{
+		AbstractCellAdv ret=null;
 		int minRow = Math.max(0,cellRegion.getRow()- PreFetchRows);
 		int maxRow = minRow + PreFetchRows * 2;
 
@@ -371,23 +377,28 @@ public class SheetImpl extends AbstractSheetAdv {
 			//Update book reference for the cells.
 			cells.stream().forEach(e -> e.setSheet(this));
 
-
-			/*cells.stream()
-					.filter(e -> e.getType() == SCell.CellType.FORMULA)
-					.forEach(e ->
-							e.setFormulaValue(((FormulaEngineImpl.FormulaExpressionImpl) e.getValue(false))
-									.getFormulaString(), connection, false)); */
-
-            cells.stream().forEach(e->sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
-        }
+			for(AbstractCellAdv e:cells)
+			{
+				CellRegion newCellRegion = new CellRegion(e.getRowIndex(), e.getColumnIndex());
+				if (newCellRegion.equals(cellRegion))
+					ret = e;
+				sheetDataCache.put(newCellRegion, e);
+			}
+		}
 
         for (int row=fetchRange.getRow();row<=fetchRange.getLastRow();++row) {
             for (int col = fetchRange.getColumn(); col <= fetchRange.getLastColumn(); ++col) {
-				CellRegion cellRange = new CellRegion(row, col);
-                if (!sheetDataCache.containsKey(cellRange))
-                    sheetDataCache.put(cellRange, new CellProxy(this, row, col));
-            }
+				CellRegion newCellRegion = new CellRegion(row, col);
+                if (sheetDataCache.getIfPresent(newCellRegion)==null) {
+					AbstractCellAdv proxyCell = new CellProxy(this, row, col);
+
+					sheetDataCache.put(newCellRegion, proxyCell);
+					if (newCellRegion.equals(cellRegion))
+						ret = proxyCell;
+                }
+			}
         }
+        return ret;
 	}
 
 	//zekun.fan@gmail.com
@@ -398,19 +409,8 @@ public class SheetImpl extends AbstractSheetAdv {
 		int lc=region.getLastColumn(),lr=region.getLastRow();
 		ArrayList<SCell> result=new ArrayList<>(region.getCellCount());
 		for (int i=region.getRow();i<=lr;++i)
-			for (int j=region.getColumn();j<=lc;++j){
-				//...Don't like creating new temporal objects in a loop
-				//but it seems read-only...
-				CellRegion tmp=new CellRegion(i,j);
-				SCell cell=sheetDataCache.get(tmp);
-				if (cell==null) {
-					//one fail, load all, save future time
-					preFetchCells(region);
-					cell=sheetDataCache.get(tmp);
-				}
-				if (cell!=null)
-					result.add(cell);
-			}
+			for (int j=region.getColumn();j<=lc;++j)
+				result.add(getCell(i,j));
 		return result;
 	}
 
@@ -426,29 +426,19 @@ public class SheetImpl extends AbstractSheetAdv {
 		}
 		return getCell(region.getRow(),region.getColumn(),true);
 	}
+
+
 	
 	@Override
 	AbstractCellAdv getCell(int rowIdx, int columnIdx, boolean proxy) {
 		CellRegion cellRegion = new CellRegion(rowIdx, columnIdx);
-        AbstractCellAdv cell = sheetDataCache.get(cellRegion);
-		if (cell == null) {
-			//Data not cached.
-			// Cache Data.
-			if (getBook().hasSchema()) {
-				preFetchCells(cellRegion);
-				// After prefetch assume this can get a cell.
-				return getCell(rowIdx, columnIdx, proxy);
-			} else {
-                if (proxy) {
-                    CellProxy cellProxy = new CellProxy(this, rowIdx, columnIdx);
-                    sheetDataCache.put(cellRegion, cellProxy);
-                    return cellProxy;
-                } else {
-                    return null;
-                }
-            }
-		}
-		else {
+		if (getBook().hasSchema()) {
+			AbstractCellAdv cell = null;
+			try {
+				cell = sheetDataCache.get(cellRegion, () -> preFetchCells(cellRegion));
+			} catch (ExecutionException e) {
+				e.printStackTrace();
+			}
 			if (proxy) {
 				return cell;
 			} else {
@@ -456,6 +446,16 @@ public class SheetImpl extends AbstractSheetAdv {
 					return null;
 				else
 					return cell;
+			}
+		}
+		else
+		{
+			if (proxy) {
+				CellProxy cellProxy = new CellProxy(this, rowIdx, columnIdx);
+				sheetDataCache.put(cellRegion, cellProxy);
+				return cellProxy;
+			} else {
+				return null;
 			}
 		}
 	}
@@ -618,9 +618,7 @@ public class SheetImpl extends AbstractSheetAdv {
 				connection.commit();
 			}
 		}
-
-		/*TODO: Check if it works for deleting a region */
-		sheetDataCache.remove(deleted_region);
+		clearCache(deleted_region);
 	}
 
 	@Override
@@ -645,7 +643,7 @@ public class SheetImpl extends AbstractSheetAdv {
 		//		.filter(e -> e.getRowIndex() >= rowIdx)
 		//		.forEach(e -> e.shift(size, 0));
 
-		sheetDataCache.clear();
+		sheetDataCache.invalidateAll();
 		//cellsToShift.stream()
 		//		.forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
 
@@ -743,7 +741,7 @@ public class SheetImpl extends AbstractSheetAdv {
 		//        .filter(e -> e.getRowIndex() >= rowIdx)
 		//        .forEach(e -> e.shift(-size, 0));
 
-        sheetDataCache.clear();
+        sheetDataCache.invalidateAll();
 		//cellsToShift.stream()
 		//        .forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
 
@@ -1165,7 +1163,7 @@ public class SheetImpl extends AbstractSheetAdv {
 		//        .filter(e -> e.getColumnIndex() >= columnIdx)
 		//        .forEach(e -> e.shift(0, size));
 
-		sheetDataCache.clear();
+		sheetDataCache.invalidateAll();
 		//cellsToShift.stream()
 		//		.forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
 
@@ -1328,15 +1326,14 @@ public class SheetImpl extends AbstractSheetAdv {
 
 	@Override
 	public void clearCache(CellRegion cellRegion) {
-		List<CellRegion> cellsToRemove = sheetDataCache.keySet()
-				.stream()
+		CellRegion[] cache = (CellRegion[]) sheetDataCache.asMap().keySet().toArray();
+		Arrays.stream(cache)
 				.filter(e -> cellRegion.contains(e))
-				.collect(Collectors.toList());
-		cellsToRemove.stream().forEach(sheetDataCache::remove);
+				.forEach(sheetDataCache::invalidate);;
 	}
 
     public void clearCache() {
-        sheetDataCache.clear();
+        sheetDataCache.invalidateAll();
     }
 
 	@Override
@@ -1364,7 +1361,7 @@ public class SheetImpl extends AbstractSheetAdv {
 		//        .filter(e -> e.getColumnIndex() >= columnIdx)
 		//        .forEach(e -> e.shift(0, - size));
 
-        sheetDataCache.clear();
+		sheetDataCache.invalidateAll();
 		//cellsToShift.stream()
 		//        .forEach(e -> sheetDataCache.put(new CellRegion(e.getRowIndex(), e.getColumnIndex()), e));
 

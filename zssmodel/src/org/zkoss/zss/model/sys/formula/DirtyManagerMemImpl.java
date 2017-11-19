@@ -1,21 +1,21 @@
 package org.zkoss.zss.model.sys.formula;
 
-import org.zkoss.util.Pair;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /* Simple in-memory implementation for DirtyManager */
 public class DirtyManagerMemImpl extends DirtyManager {
     PriorityBlockingQueue<DirtyRecord> dirtyRecordPriorityBlockingQueue;
-    ArrayList<DirtyRecord> dirtyRecordArrayList;
+    ConcurrentSkipListSet<DirtyRecord> dirtyRecords;
 
     DirtyManagerMemImpl()
     {
-        dirtyRecordArrayList = new ArrayList<>();
+        dirtyRecords = new ConcurrentSkipListSet<>();
         dirtyRecordPriorityBlockingQueue = new PriorityBlockingQueue<>();
     }
 
@@ -33,7 +33,7 @@ public class DirtyManagerMemImpl extends DirtyManager {
 
     @Override
     public int getDirtyTrxId(Ref region) {
-         return dirtyRecordArrayList.stream().filter(e->
+         return dirtyRecords.stream().filter(e->
                 e.region.getBookName().equals(region.getBookName())
                         && e.region.getSheetName().equals(region.getSheetName())
                         && e.region.getBookName().equals(region.getBookName())
@@ -51,7 +51,7 @@ public class DirtyManagerMemImpl extends DirtyManager {
         if (region.getType()== Ref.RefType.AREA || region.getType()== Ref.RefType.CELL) {
             dirtyRecord.region = region;
             dirtyRecord.trxId = trxId;
-            dirtyRecordArrayList.add(dirtyRecord);
+            dirtyRecords.add(dirtyRecord);
             dirtyRecordPriorityBlockingQueue.add(dirtyRecord);
 
         }
@@ -59,7 +59,10 @@ public class DirtyManagerMemImpl extends DirtyManager {
 
     @Override
     public void removeDirtyRegion(Ref region, int trxId) {
-        //TODO: Implement this but should be able to functionally with w/o this.
+        DirtyRecord dirtyRecord = new DirtyRecord();
+        dirtyRecord.region = region;
+        dirtyRecord.trxId = trxId;
+        dirtyRecords.remove(dirtyRecord);
     }
 
     @Override
