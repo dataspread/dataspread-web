@@ -1,12 +1,11 @@
 package org.zkoss.zss.model.sys.formula;
 
 import org.zkoss.poi.ss.formula.eval.ValueEval;
-import org.zkoss.util.Pair;
 import org.zkoss.zss.model.impl.FormulaResultCellValue;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
 public abstract class DirtyManager {
-    static public DirtyManager dirtyManagerInstance = new DirtyManagerMemImpl();
+    static public DirtyManager dirtyManagerInstance = new DirtyManagerPGImpl();
 
     /* Check if the given region is dirty
     *  Return the trxId that made this region dirty
