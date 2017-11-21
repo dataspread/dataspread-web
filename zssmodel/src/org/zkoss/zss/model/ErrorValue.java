@@ -17,8 +17,8 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 package org.zkoss.zss.model;
 
 import java.io.Serializable;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * An error result of a evaluated formula.
@@ -73,6 +73,12 @@ public class ErrorValue implements Serializable{
 	
 	private byte _code;
 	private String _message;
+
+	@SuppressWarnings("unused")
+	private ErrorValue()
+	{
+		/* For serialization */
+	}
 
 	public ErrorValue(byte code) {
 		this(code, null);
