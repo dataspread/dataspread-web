@@ -37,7 +37,10 @@ import org.zkoss.zss.model.util.Strings;
 import org.zkoss.zss.model.util.Validations;
 import org.zkoss.zss.range.impl.StyleUtil;
 
-import java.sql.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -1098,30 +1101,41 @@ public class BookImpl extends AbstractBookAdv{
 	}
 
 	@Override
-	public void setIdAndLoad(String id){
+	public void setNameAndLoad(String _bookName){
 		schemaPresent = true;
-		this._bookId = id;
+		this._bookName = _bookName;
+
 		this._sheets.clear();
 
 		// Load Schema
-		String bookTable = getId();
+		//String bookTable = getId();
 		logger.info("Loading " + getBookName());
-		String query = "SELECT * FROM sheets WHERE booktable = ? ORDER BY sheetindex";
-		String updateLastOpened = "UPDATE books SET lastopened = now() 	WHERE bookname = ?";
+
+		String bookQuery = "UPDATE books SET lastopened = now() WHERE bookname = ? RETURNING booktable";
+		String sheetsQuery = "SELECT * FROM sheets WHERE booktable = ? ORDER BY sheetindex";
 
 		try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-			 PreparedStatement stmt = connection.prepareStatement(query);
-			 PreparedStatement updateLastOpenedstmt = connection.prepareStatement(updateLastOpened)) {
-			stmt.setString(1, getId());
-			ResultSet rs = stmt.executeQuery();
-			while (rs.next())
-			{
-				SSheet sheet = createExistingSheet(rs.getString("sheetname"), rs.getInt("sheetid"));
-				sheet.setDataModel(rs.getString("modelname"));
-			}
+			 PreparedStatement bookStmt = connection.prepareStatement(bookQuery);
+			 PreparedStatement sheetsStmt = connection.prepareStatement(sheetsQuery)) {
+
+
+			bookStmt.setString(1, getBookName());
+			ResultSet rs = bookStmt.executeQuery();
+			if (rs.next())
+				_bookId = rs.getString(1);
+			else
+				throw new RuntimeException(getBookName() + " does not exist");
 			rs.close();
-			updateLastOpenedstmt.setString(1,getBookName());
-			updateLastOpenedstmt.execute();
+
+			sheetsStmt.setString(1, getId());
+			ResultSet rsSheets = sheetsStmt.executeQuery();
+			while (rsSheets.next())
+			{
+				SSheet sheet = createExistingSheet(rsSheets.getString("sheetname"),
+						rsSheets.getInt("sheetid"));
+				sheet.setDataModel(rsSheets.getString("modelname"));
+			}
+			rsSheets.close();
 			connection.commit();
 		}
 		catch (SQLException e)

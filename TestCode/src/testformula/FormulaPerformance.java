@@ -6,8 +6,6 @@ import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SBooks;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.FormulaCacheCleaner;
-import org.zkoss.zss.model.sys.TransactionManager;
-import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -55,7 +53,7 @@ public class FormulaPerformance {
     private static void loadAndShuffleTest(String dbid) throws Exception{
         SBook book= SBooks.createOrGetBook(dbid);
         //TransactionManager.INSTANCE.startTransaction(book);
-        book.setIdAndLoad(dbid);
+        book.setNameAndLoad(dbid);
         shuffle(book.getSheet(0));
         //TransactionManager.INSTANCE.endTransaction(book);
     }

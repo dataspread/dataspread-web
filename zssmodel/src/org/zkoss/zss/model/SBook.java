@@ -16,12 +16,12 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model;
 
+import org.zkoss.zss.model.util.CellStyleMatcher;
+import org.zkoss.zss.model.util.FontMatcher;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-
-import org.zkoss.zss.model.util.CellStyleMatcher;
-import org.zkoss.zss.model.util.FontMatcher;
 
 /**
  * The root of Spreadsheet's data model which contains sheets.
@@ -362,7 +362,7 @@ public interface SBook {
 	public SCellStyle getOrCreateDefaultHyperlinkStyle();
 
 	public String getId();
-	public void setIdAndLoad(String id);
+	public void setNameAndLoad(String bookName);
 
 	public boolean hasSchema();
 }

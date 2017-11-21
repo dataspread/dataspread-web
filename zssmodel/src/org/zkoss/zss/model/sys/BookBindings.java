@@ -34,15 +34,15 @@ public class BookBindings {
         SBook result=_bindings.get(ref.getBookName());
         if (result==null && load) {
             result=new BookImpl(ref.getBookName());
-            result.setIdAndLoad(ref.getBookName());
+            result.setNameAndLoad(ref.getBookName());
             _bindings.put(ref.getBookName(),result);
         }
         return result;
     }
 
-    static public SSheet getSheetByRef(Ref ref,boolean load)
+    static public SSheet getSheetByRef(Ref ref, boolean load)
     {
-        SBook book=getBookByRef(ref,load);
+        SBook book=getBookByRef(ref, load);
         return book.getSheetByName(ref.getSheetName());
     }
 }
