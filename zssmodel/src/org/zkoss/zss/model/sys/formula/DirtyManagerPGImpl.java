@@ -145,6 +145,9 @@ public class DirtyManagerPGImpl extends DirtyManager {
                     " ON DELETE CASCADE ON UPDATE CASCADE," +
                     " UNIQUE (oid) ) WITH oids";
             stmt.execute(createTable);
+            String resetRecords = "UPDATE dirty_regions" +
+                    " SET trxid = 1, status = 'W'";
+            stmt.execute(resetRecords);
             connection.commit();
         } catch (SQLException e) {
             e.printStackTrace();

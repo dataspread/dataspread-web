@@ -40,12 +40,9 @@ import org.zkoss.zss.model.util.Validations;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.*;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 /**
  * 
@@ -111,7 +108,9 @@ public class SheetImpl extends AbstractSheetAdv {
 	private AtomicInteger trxId;
 
 	public SheetImpl(AbstractBookAdv book,String id){
-		trxId = new AtomicInteger(); //TODO - store this in the DB and use that.
+		// Start
+		trxId = new AtomicInteger(10); //TODO - store this in the DB and use that.
+
 		this._book = book;
 		this._id = id;
 		sheetDataCache = CacheBuilder.newBuilder()
