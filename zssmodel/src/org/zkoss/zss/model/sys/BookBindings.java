@@ -29,20 +29,20 @@ public class BookBindings {
         return _bindings.remove(key);
     }
 
-    static public SBook getBookByRef(Ref ref,boolean load)
+    static public SBook getBookByName(String bookName,boolean load)
     {
-        SBook result=_bindings.get(ref.getBookName());
+        SBook result=_bindings.get(bookName);
         if (result==null && load) {
-            result=new BookImpl(ref.getBookName());
-            result.setNameAndLoad(ref.getBookName());
-            _bindings.put(ref.getBookName(),result);
+            result=new BookImpl(bookName);
+            result.setNameAndLoad(bookName);
+            _bindings.put(bookName,result);
         }
         return result;
     }
 
     static public SSheet getSheetByRef(Ref ref, boolean load)
     {
-        SBook book=getBookByRef(ref, load);
+        SBook book=getBookByName(ref.getBookName()  , load);
         return book.getSheetByName(ref.getSheetName());
     }
 }

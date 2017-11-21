@@ -268,7 +268,6 @@ public class OpenManageBookCtrl extends DlgCtrlBase{
 	
 	private Book loadBook(String bookName, String bookTable) {
 		Book book = new org.zkoss.zss.api.model.impl.BookImpl(bookName);
-		book.getInternalBook().setNameAndLoad(bookName);
 		return book;
 	}
 
