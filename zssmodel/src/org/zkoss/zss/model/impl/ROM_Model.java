@@ -35,6 +35,19 @@ public class ROM_Model extends Model {
         createSchema(context);
     }
 
+    private void createIndexOnSortAttr(int selectedCol)
+    {
+        StringBuffer indexTable = new StringBuffer("CREATE INDEX col_index ON ");
+        indexTable.append(tableName+" (\"col_"+(selectedCol+1)+"\")");
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+             Statement indexStmt = connection.createStatement()) {
+            indexStmt.executeUpdate(indexTable.toString());
+            connection.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void createSchema(DBContext context) {
         String createTable = (new StringBuffer())
                 .append("CREATE TABLE IF NOT EXISTS ")
@@ -368,21 +381,6 @@ public class ROM_Model extends Model {
         colMapping.clearCache(context);
     }
 
-    public void updateNavSchema(String firstRow, String indexCol,int selectedCol)
-    {
-        StringBuffer indexTable = new StringBuffer("CREATE INDEX col_index ON ");
-        indexTable.append(tableName+" (\"col_"+(selectedCol+1)+"\")");
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-        //Statement createStmt = connection.createStatement();
-        Statement indexStmt = connection.createStatement()) {
-            //createStmt.executeUpdate(createTable.toString());
-            indexStmt.executeUpdate(indexTable.toString());
-            connection.commit();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
     @Override
     public void importSheet(Reader reader, char delimiter) throws IOException {
         if(isNav)
@@ -516,7 +514,9 @@ public class ROM_Model extends Model {
 
                     connection.commit();
                     pstSS = null;
-                    updateNavSchema(str.toString(),indexString,selectedCol);
+                    createIndexOnSortAttr(selectedCol);
+                    navS.setHeaderString(headerStringSS);
+                    navS.setIndexString(indexString);
 
                     continue;
                 }
@@ -555,7 +555,7 @@ public class ROM_Model extends Model {
             {
                 connection.commit();
 
-                this.navSbuckets = navS.createNavS(headerStringSS,indexString,insertedRows==0?true:false);
+                this.navSbuckets = navS.createNavS(null);
 
                 insertRows(dbContext, 0, importedRows);
                 insertedRows += (importedRows-1);

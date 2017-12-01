@@ -1326,6 +1326,16 @@ public class AppCtrl extends CtrlBase<Component> {
 
         ss.focusTo(selectedNode.getData().getStartPos()+1,0);
 
+        ArrayList<Bucket<String>> arr = new ArrayList<Bucket<String>>();
+
+        arr.add(ss.getNavSBuckets().get(0));
+
+        try {
+            createNavSTree(arr);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
 
     }
 

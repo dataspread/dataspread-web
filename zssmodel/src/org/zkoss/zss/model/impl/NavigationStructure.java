@@ -3,6 +3,8 @@ package org.zkoss.zss.model.impl;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
 
@@ -24,7 +26,12 @@ public class NavigationStructure{
     private int kHisto;
     private int selectedColumn;
     private String tableName;
+    private String headerString;
+    private String indexString;
     private Kryo kryo;
+    private boolean useKryo;
+    private PosMapping rowMapping;
+    private PosMapping colMapping;
 
     public NavigationStructure(String tableName)
     {
@@ -32,20 +39,34 @@ public class NavigationStructure{
         this.recordList = new ArrayList<String>();
         this.kHisto = 10;
         kryo = new Kryo();
+        this.useKryo = true;
     }
 
     public int getSampleSize() {
         return 100;
     }
 
-    public ArrayList<Bucket<String>> createNavS(String headerString,String indexString,boolean isFirst) {
+    public void setHeaderString(String str)
+    {
+        this.headerString = str;
+    }
+
+    public void setIndexString(String str)
+    {
+        this.indexString = str;
+    }
+
+    public ArrayList<Bucket<String>> createNavS(Bucket<String> bkt) {
         //load sorted data from table
         recordList =  new ArrayList<String>();
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-
              Statement statement = connection.createStatement()) {
 
-            ResultSet rs = statement.executeQuery("SELECT "+indexString+" FROM " + tableName+" WHERE row != 1 ORDER by "+indexString);
+            ResultSet rs = null;
+            if(bkt == null)
+                rs = statement.executeQuery("SELECT "+indexString+" FROM " + tableName+" WHERE row != 1 ORDER by "+indexString);
+            else
+                rs = statement.executeQuery("SELECT "+indexString+" FROM " + tableName+" WHERE row != 1 AND row >= "+(bkt.startPos+2)+" AND row <= "+(bkt.endPos+2)+" ORDER by "+indexString);
 
 
             while (rs.next()) {
@@ -60,13 +81,13 @@ public class NavigationStructure{
 
         //create nav data structure
 
-        return getNonOverlappingBuckets(0,recordList.size()-1,true);//getBucketsNoOverlap(0,recordList.size()-1,true);
+        return getNonOverlappingBuckets(0,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
 
         //  printBuckets(navSbuckets);
 
     }
 
-    private ArrayList<Bucket<String>> getNonOverlappingBuckets(int startPos, int endPos, boolean initBucket)
+    private ArrayList<Bucket<String>> getNonOverlappingBuckets(int startPos, int endPos)
     {
         if(recordList.get(startPos).equals(recordList.get(endPos)))
             return getUniformBuckets(startPos,endPos,false);
@@ -112,7 +133,7 @@ public class NavigationStructure{
                     startIndex += bucket.size;
                     bucket.setName(false);
                     bucket.setId();
-                    bucket.setChildren(getUniformBuckets(bucket.startPos,bucket.endPos,false));
+                    //bucket.setChildren(getUniformBuckets(bucket.startPos,bucket.endPos,false));
                     bucketList.add(bucket);
                 }
                 else {
@@ -129,7 +150,7 @@ public class NavigationStructure{
                     startIndex += bucket.size;
                     bucket.setName(false);
                     bucket.setId();
-                    bucket.setChildren(getNonOverlappingBuckets(bucket.startPos,bucket.endPos,false));
+                    //bucket.setChildren(getNonOverlappingBuckets(bucket.startPos,bucket.endPos,false));
                     bucketList.add(bucket);
                 }
 
@@ -145,10 +166,10 @@ public class NavigationStructure{
                 bucket.size = endPos-startIndex+1;
                 bucket.setName(false);
                 bucket.setId();
-                if(bucket.maxValue.equals(bucket.minValue))
+                /*if(bucket.maxValue.equals(bucket.minValue))
                     bucket.setChildren(getUniformBuckets(bucket.startPos,bucket.endPos,false));
                 else
-                    bucket.setChildren(getNonOverlappingBuckets(bucket.startPos,bucket.endPos,false));
+                    bucket.setChildren(getNonOverlappingBuckets(bucket.startPos,bucket.endPos,false));*/
                 bucketList.add(bucket);
             }
 
@@ -184,7 +205,7 @@ public class NavigationStructure{
                 startIndex += bucket.size;
                 bucket.setName(true);
                 bucket.setId();
-                bucket.setChildren(getUniformBuckets(bucket.startPos, bucket.endPos, false));
+                //bucket.setChildren(getUniformBuckets(bucket.startPos, bucket.endPos, false));
                 bucketList.add(bucket);
             }
 
@@ -199,7 +220,7 @@ public class NavigationStructure{
                 bucket.setName(true);
                 bucket.setId();
 
-                bucket.setChildren(getUniformBuckets(bucket.startPos,bucket.endPos,false));
+                //bucket.setChildren(getUniformBuckets(bucket.startPos,bucket.endPos,false));
                 bucketList.add(bucket);
             }
         }
@@ -284,12 +305,19 @@ public class NavigationStructure{
                 pstmt = connection.prepareStatement(navSB.toString());
                 pstmt.setInt(1,i);
 
-                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                Output out = new Output(byteArrayOutputStream);
-                kryo.writeObject(out, object_ls.get(i));
-                pstmt.setBytes(2, out.toBytes());
-                out.close();
-                byteArrayOutputStream.close();
+                if (useKryo) {
+                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                    Output out = new Output(byteArrayOutputStream);
+                    kryo.writeObject(out, object_ls.get(i));
+                    pstmt.setBytes(2, out.toBytes());
+                    out.close();
+                    byteArrayOutputStream.close();
+                } else {
+                    ObjectMapper mapper = new ObjectMapper();
+                    Object o = object_ls.get(i);
+                    String value = mapper.writeValueAsString(o);
+                    pstmt.setBytes(2, value.getBytes());
+                }
 
                 pstmt.executeUpdate();
                 navSB = new StringBuffer();
@@ -321,12 +349,26 @@ public class NavigationStructure{
             pstmt = connection.prepareStatement(navSB.toString());
 
             ResultSet rs = pstmt.executeQuery();
-            while(rs.next()) {
-                Input in = new Input(rs.getBytes(1));
-                Bucket<String> object = new Bucket<String>();
-                object = kryo.readObject(in, object.getClass());
-                in.close();
-                bucketList.add(object);
+            try {
+                while(rs.next()) {
+                    if (useKryo) {
+                        Input in = new Input(rs.getBytes(1));
+                        Bucket<String> object = new Bucket<String>();
+                        object = kryo.readObject(in, object.getClass());
+                        in.close();
+                        bucketList.add(object);
+                    } else {
+                        ObjectMapper mapper = new ObjectMapper();
+                        Bucket<String> object = new Bucket<String>();
+                        String value = new String(rs.getBytes(1));
+                        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+                        object = mapper.readValue(value,Bucket.class);
+                        bucketList.add(object);
+                    }
+
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
             rs.close();
             pstmt.close();
