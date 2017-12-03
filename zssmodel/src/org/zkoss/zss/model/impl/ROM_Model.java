@@ -21,7 +21,7 @@ public class ROM_Model extends Model {
     private static final Logger logger = Logger.getLogger(ROM_Model.class.getName());
     private PosMapping rowMapping;
     private PosMapping colMapping;
-    private NavigationStructure navS;
+
     private boolean isNav = true;
 
     //Create or load RCV_model.
@@ -33,7 +33,9 @@ public class ROM_Model extends Model {
         this.navSbuckets = new ArrayList<Bucket<String>>();
         this.navS = new NavigationStructure(tableName);
         createSchema(context);
+        indexString = "";
     }
+
 
     private void createIndexOnSortAttr(int selectedCol)
     {
@@ -451,7 +453,7 @@ public class ROM_Model extends Model {
     public void importNavSheet(Reader reader, char delimiter) throws IOException {
 
         String headerStringSS = "";
-        String indexString = "";
+
         String valuesString = "";
         int selectedCol = 0;//rember to make it -1 for initial load
         int sampleSize = navS.getSampleSize();
@@ -536,29 +538,34 @@ public class ROM_Model extends Model {
                 ++importedRows;
                 sbSS = new StringBuffer();
 
-               /* if ((importedRows-1)% sampleSize ==0 && importedRows!=1) {
+               if ((importedRows-1)% sampleSize ==0 && importedRows!=1) {
                     connection.commit();
 
-                    createNavS(headerStringSS,indexString,insertedRows==0?true:false);
+                    insertRows(dbContext, insertedRows, importedRows-insertedRows);//there's am implicit +1 in imprtedrows
 
-                    insertRows(dbContext, 0, importedRows);
-                    insertedRows += (importedRows-1);
+                   if(insertedRows==0)
+                   {
+                       insertedRows += (importedRows-insertedRows);
+                       this.navSbuckets = this.createNavS(null,0,insertedRows);
+                   }
+                   else
+                       insertedRows += (importedRows-insertedRows);
 
                     System.out.println((importedRows-1) + " rows imported ");
                     logger.info((importedRows-1) + " rows imported ");
-                }*/
+                }
 
 
             }
 
-            //if ((importedRows-1)% sampleSize !=0 )
+            if ((importedRows-1)% sampleSize !=0 )
             {
                 connection.commit();
 
-                this.navSbuckets = navS.createNavS(null);
+                //this.navSbuckets = navS.createNavS(this.navSbuckets);
 
-                insertRows(dbContext, 0, importedRows);
-                insertedRows += (importedRows-1);
+                insertRows(dbContext, insertedRows, importedRows-insertedRows);
+                insertedRows += (importedRows-insertedRows);
 
                 logger.info((importedRows-1) + " rows imported ");
             }
@@ -573,6 +580,52 @@ public class ROM_Model extends Model {
         this.navS.writeJavaObject(this.navSbuckets);
 
        // this.navS.readJavaObject(this.tableName);
+
+    }
+
+    @Override
+    public ArrayList<Bucket<String>> createNavS(String bucketName, int start, int count) {
+        //load sorted data from table
+        ArrayList<String> recordList =  new ArrayList<String>();
+
+        AutoRollbackConnection connection = DBHandler.instance.getConnection();
+        DBContext context = new DBContext(connection);
+
+        Integer [] rowIds = rowMapping.getIDs(context,start,count);
+
+
+        StringBuffer select = new StringBuffer("SELECT row, "+indexString);
+
+        select.append(" FROM ")
+                .append(tableName)
+                .append(" WHERE row = ANY (?) AND row != 1");
+
+        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
+            stmt.setArray(1, inArrayRow);
+
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                int row_id = rs.getInt(1);
+                recordList.add(new String(rs.getBytes(2),"UTF-8"));
+            }
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        //create nav data structure
+        this.navS.setRecordList(recordList);
+        ArrayList<Bucket<String>> newList = this.navS.getNonOverlappingBuckets(0,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
+
+        if(bucketName==null)
+        {
+            return newList;
+        }
+
+        return this.navS.recomputeNavS(bucketName,this.navSbuckets,newList);
+        //  printBuckets(navSbuckets);
 
     }
 

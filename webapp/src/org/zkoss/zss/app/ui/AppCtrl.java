@@ -44,10 +44,7 @@ import org.zkoss.zss.app.repository.BookRepositoryFactory;
 import org.zkoss.zss.app.repository.impl.BookUtil;
 import org.zkoss.zss.app.repository.impl.SimpleBookInfo;
 import org.zkoss.zss.app.ui.dlg.*;
-import org.zkoss.zss.model.ModelEvent;
-import org.zkoss.zss.model.ModelEventListener;
-import org.zkoss.zss.model.ModelEvents;
-import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.impl.Bucket;
 import org.zkoss.zss.model.impl.NavigationStructure;
 import org.zkoss.zss.ui.*;
@@ -638,6 +635,7 @@ public class AppCtrl extends CtrlBase<Component> {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
     }
 
 
@@ -1324,14 +1322,16 @@ public class AppCtrl extends CtrlBase<Component> {
 
         System.out.println("Name: "+selectedNode.getData().getName());
 
-        ss.focusTo(selectedNode.getData().getStartPos()+1,0);
+        int start = selectedNode.getData().getStartPos();
+        int end = selectedNode.getData().getEndPos();
+        String bucketName = selectedNode.getData().getName();
+                ss.focusTo(start+1,0);
 
-        ArrayList<Bucket<String>> arr = new ArrayList<Bucket<String>>();
-
-        arr.add(ss.getNavSBuckets().get(0));
-
+        String sheetName = ss.getSelectedSheetName();
+        SBook currentBook = loadedBook.getInternalBook();
+        SSheet currentSheet = currentBook.getSheetByName(sheetName);
         try {
-            createNavSTree(arr);
+            createNavSTree(currentSheet.getDataModel().createNavS(bucketName,start,end-start+1));
         } catch (Exception e) {
             e.printStackTrace();
         }

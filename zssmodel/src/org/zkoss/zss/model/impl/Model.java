@@ -14,6 +14,8 @@ public abstract class Model {
     protected String tableName;
     protected SSheet sheet;
     public ArrayList<Bucket<String>> navSbuckets;
+    public NavigationStructure navS;
+    public String indexString;
 
     public static Model CreateModel(DBContext context, SSheet sheet, ModelType modelType, String tableName) {
         Model model = null;
@@ -40,6 +42,7 @@ public abstract class Model {
         return model;
     }
 
+    public abstract ArrayList<Bucket<String>> createNavS(String bucketName, int start, int count);
     // Drop the tables created.
     public abstract void dropSchema(DBContext context);
 

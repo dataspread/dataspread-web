@@ -30,8 +30,7 @@ public class NavigationStructure{
     private String indexString;
     private Kryo kryo;
     private boolean useKryo;
-    private PosMapping rowMapping;
-    private PosMapping colMapping;
+
 
     public NavigationStructure(String tableName)
     {
@@ -43,7 +42,7 @@ public class NavigationStructure{
     }
 
     public int getSampleSize() {
-        return 100;
+        return 1000;
     }
 
     public void setHeaderString(String str)
@@ -56,11 +55,19 @@ public class NavigationStructure{
         this.indexString = str;
     }
 
+    public void setRecordList(ArrayList<String> ls)
+    {
+        this.recordList = ls;
+    }
+
     public ArrayList<Bucket<String>> createNavS(Bucket<String> bkt) {
         //load sorted data from table
         recordList =  new ArrayList<String>();
+
+
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-             Statement statement = connection.createStatement()) {
+
+            Statement statement = connection.createStatement()) {
 
             ResultSet rs = null;
             if(bkt == null)
@@ -87,7 +94,7 @@ public class NavigationStructure{
 
     }
 
-    private ArrayList<Bucket<String>> getNonOverlappingBuckets(int startPos, int endPos)
+    public ArrayList<Bucket<String>> getNonOverlappingBuckets(int startPos, int endPos)
     {
         if(recordList.get(startPos).equals(recordList.get(endPos)))
             return getUniformBuckets(startPos,endPos,false);
@@ -179,7 +186,7 @@ public class NavigationStructure{
         return bucketList;
     }
 
-    private ArrayList<Bucket<String>> getUniformBuckets(int startPos, int endPos, boolean b) {
+    public ArrayList<Bucket<String>> getUniformBuckets(int startPos, int endPos, boolean b) {
         ArrayList<Bucket<String>> bucketList = new ArrayList<Bucket<String>>();
         int bucketSize = (endPos-startPos+1) / kHisto;
 
@@ -381,5 +388,42 @@ public class NavigationStructure{
 
         //printBuckets(bucketList);
         return bucketList;
+    }
+
+    public ArrayList<Bucket<String>> recomputeNavS(String bucketName, ArrayList<Bucket<String>> navSbuckets, ArrayList<Bucket<String>> newList) {
+        ArrayList<Bucket<String>> newNavs = navSbuckets;
+
+        for(int i=0;i<newNavs.size();i++)
+        {
+            Bucket<String> newParent = updateParentBucket(bucketName,newNavs.get(i),newList);
+            if(newParent!=null)
+            {
+                newNavs.remove(i);
+                newNavs.add(i,newParent);
+                return newNavs;
+            }
+        }
+
+        return newNavs;
+
+    }
+
+    private Bucket<String> updateParentBucket(String bucketName, Bucket<String> parent, ArrayList<Bucket<String>> children) {
+
+        if(parent.getName().equals(bucketName))
+        {
+            parent.setChildren(children);
+            return parent;
+        }
+        for(int i=0;i<parent.children.size();i++)
+        {
+            Bucket<String> newParent = updateParentBucket(bucketName,parent.children.get(i),children);
+            if(newParent!=null) {
+                parent.children.remove(i);
+                parent.children.add(i,newParent);
+                return parent;
+            }
+        }
+        return null;
     }
 }
