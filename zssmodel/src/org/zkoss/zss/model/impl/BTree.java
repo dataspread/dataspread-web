@@ -113,8 +113,8 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
             newRoot.children.add(0, metaDataBlock.ri);
             newRoot.children.add(1, rightNode.id);
             // Update two children's statistics
-            newRoot.statistics.add(0, statistic.getStatistic(leftNode.statistics, AbstractStatistic.Mode.ADD));
-            newRoot.statistics.add(1, statistic.getStatistic(rightNode.statistics, AbstractStatistic.Mode.ADD));
+            newRoot.statistics.add(0, statistic.getAggregation(leftNode.statistics));
+            newRoot.statistics.add(1, statistic.getAggregation(rightNode.statistics));
             // Update new root id
             metaDataBlock.ri = newRoot.id;
             // Update to block store
@@ -156,7 +156,7 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
             if (current_stat.requireUpdate())
                 u.statistics.set(i, current_stat.updateStatistic(AbstractStatistic.Mode.ADD));
             // Get the new statistic we are looking for
-            K new_statistic = (K) statistic.applyAggregation(u.statistics, i);
+            K new_statistic = (K) statistic.getLowerStatistic(u.statistics, i);
             Node rightNode = addRecursive(context, new_statistic, u.children.get(i), val);
             if (rightNode != null) {  // child was split, w is new child
                 rightNode.update(bs);
@@ -164,7 +164,7 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
                 u.addInternal(rightNode, i + 1);
                 // Update children i statistic
                 Node leftNode = new Node().get(context, bs, u.children.get(i));
-                u.statistics.set(i, statistic.getStatistic(leftNode.statistics, AbstractStatistic.Mode.ADD));
+                u.statistics.set(i, statistic.getAggregation(leftNode.statistics));
             }
         }
         u.update(bs);

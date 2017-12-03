@@ -9,6 +9,14 @@ public class BinarySearch<T extends Comparable<T>> implements AbstractStatistic 
     T key;
 
     /**
+     * Constructor
+     * @param key the specified key to initialize
+     */
+    public BinarySearch(T key){
+        this.key = key;
+    }
+
+    /**
      * Compare this key with the specified key
      * @param obj the specified key to compare to
      * @returna negative integer, zero, or a positive integer as this key is less than, equal to, or greater than the specified key.
