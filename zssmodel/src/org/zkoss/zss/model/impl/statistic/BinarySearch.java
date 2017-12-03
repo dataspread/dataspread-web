@@ -23,17 +23,17 @@ public class BinarySearch<T extends Comparable<T>> implements AbstractStatistic 
     /**
      * Find the index, i, where this key should be inserted into the sorted array stat_list
      * Using minimum as the aggregation function
-     * @param stat_list a sorted array of keys
+     * @param keys a sorted array of keys
      * @return children index
      */
     @Override
-    public int findIndex(ArrayList<AbstractStatistic> stat_list) {
-        int lo = 0, hi = stat_list.size();
+    public int findIndex(ArrayList<AbstractStatistic> keys) {
+        int lo = 0, hi = keys.size();
         while (hi > lo) {
             int m = (hi + lo) / 2;
-            if (this.compareTo(stat_list.get(m)) < 0)
+            if (this.compareTo(keys.get(m)) < 0)
                 hi = m - 1;     // look in first half
-            else if (this.compareTo(stat_list.get(m)) > 0)
+            else if (this.compareTo(keys.get(m)) > 0)
                 lo = m;     // look in second half
             else
                 return m;   // found the index
@@ -52,7 +52,7 @@ public class BinarySearch<T extends Comparable<T>> implements AbstractStatistic 
 
     /**
      * Get the minimum key of the stat_list
-     * @param stat_list an array of keys of a node
+     * @param keys an array of keys of a node
      * @return always the first key
      */
     @Override
@@ -62,7 +62,7 @@ public class BinarySearch<T extends Comparable<T>> implements AbstractStatistic 
 
     /**
      * Get the next level lookup key
-     * @param stat_list an array of keys of a node
+     * @param keys an array of keys of a node
      * @param limit the end index of the array to find
      * @return always this key
      */
