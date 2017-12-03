@@ -42,13 +42,17 @@ public class BinarySearch<T extends Comparable<T>> implements AbstractStatistic 
     }
 
     @Override
-    public AbstractStatistic getStatistic(ArrayList<AbstractStatistic> stat_list, Mode mode) {
-        AbstractStatistic statistic = stat_list.remove(0);
-        return statistic;
+    public BinarySearch<T> getStatistic(ArrayList<AbstractStatistic> stat_list, Mode mode) {
+        return (BinarySearch<T>) stat_list.get(0);
     }
 
     @Override
-    public AbstractStatistic updateStatistic(Mode mode) {
+    public BinarySearch<T> getStatistic(ArrayList<AbstractStatistic> stat_list, int offset, Mode mode) {
+        return (BinarySearch<T>) stat_list.get(0);
+    }
+
+    @Override
+    public BinarySearch<T> updateStatistic(Mode mode) {
         return this;
     }
 }

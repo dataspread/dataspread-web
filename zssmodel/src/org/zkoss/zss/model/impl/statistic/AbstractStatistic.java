@@ -11,5 +11,6 @@ public interface AbstractStatistic {
     int compareTo(AbstractStatistic abstractStatistic);
     int findIndex(ArrayList<AbstractStatistic> stat_list);
     AbstractStatistic getStatistic(ArrayList<AbstractStatistic> stat_list, Mode mode);
+    AbstractStatistic getStatistic(ArrayList<AbstractStatistic> stat_list, int offset, Mode mode);
     AbstractStatistic updateStatistic(Mode mode);
 }

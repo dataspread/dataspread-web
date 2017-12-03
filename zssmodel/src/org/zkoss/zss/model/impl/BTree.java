@@ -101,48 +101,31 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
      * @param val the value corresponding to key
      * @return
      */
-    public boolean add(DBContext context, K statistic, V val) {
+    public boolean add(DBContext context, K statistic, V val, boolean flush) {
         Node w;
         w = addRecursive(context, statistic, metaDataBlock.ri, val);
         if (w != null) {   // root was split, make new root
             Node newRoot = new Node().create(context, bs);
-            statistic = w.removeKey(0);
             w.update(bs);
             // No longer a leaf node
             // First time leaf becomes a root
             newRoot.leafNode = false;
 
             newRoot.children.add(0, metaDataBlock.ri);
-            newRoot.keys.add(statistic);
             newRoot.children.add(1, w.id);
 
             /* Update children count */
             Node leftNode = new Node().get(context, bs, metaDataBlock.ri);
-            if (leftNode.isLeaf()) {
-                newRoot.childrenCount.add(0, leftNode.size());
-            } else {
-                newRoot.childrenCount.add(0, getStatistic(leftNode));
-            }
-            if (w.isLeaf()) {
-                newRoot.childrenCount.add(1, w.size());
-            } else {
-                newRoot.childrenCount.add(1, getStatistic(w));
-            }
+            newRoot.statistics.add(0, statistic.getStatistic(leftNode.statistics, AbstractStatistic.Mode.ADD));
+            newRoot.statistics.add(1, statistic.getStatistic(w.statistics, AbstractStatistic.Mode.ADD));
             metaDataBlock.ri = newRoot.id;
             bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
             newRoot.update(bs);
         }
         metaDataBlock.elementCount++;
-        bs.flushDirtyBlocks(context);
+        if (flush)
+            bs.flushDirtyBlocks(context);
         return true;
-    }
-
-    private int getStatistic(Node leftNode) {
-        int sum = 0;
-        for (int element: leftNode.childrenCount) {
-            sum += element;
-        }
-        return sum;
     }
 
     /**
@@ -160,28 +143,22 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
      */
     private Node addRecursive(DBContext context, K statistic, int ui, V val) {
         Node u = new Node().get(context, bs, ui);
-        int i = statistic.findIndex(u.keys);
-        //if (i < 0) throw new DuplicateValueException();
+        int i = statistic.findIndex(u.statistics);
         if (u.isLeaf()) { // leaf node, just add it
             u.addLeaf(statistic, val);
         } else {
             AbstractStatistic current_stat = u.statistics.get(i);
             if (current_stat.requireUpdate())
                 u.statistics.set(i, current_stat.updateStatistic(AbstractStatistic.Mode.ADD));
-            Node w = addRecursive(context, statistic, u.children.get(i), val);
+            K new_statistic = (K) statistic.getStatistic(u.statistics, i, AbstractStatistic.Mode.DELETE);
+            Node w = addRecursive(context, new_statistic, u.children.get(i), val);
             if (w != null) {  // child was split, w is new child
-                statistic = w.removeKey(0);
                 w.update(bs);
-                u.addInternal(statistic, w, val);
-                if (w.isLeaf()) {
-                    u.childrenCount.set(i, u.childrenCount.get(i) - w.size());
-                } else {
-                    int ct = 0;
-                    for (int z = 0; z < w.childrenCount.size(); z++) {
-                        ct -= w.childrenCount.get(z);
-                    }
-                    u.childrenCount.set(i, ct);
-                }
+                // add w at position (i+1)
+                u.addInternal(w, i + 1);
+                // update children i statistic
+                Node leftNode = new Node().get(context, bs, u.children.get(i));
+                u.statistics.set(i, statistic.getStatistic(leftNode.statistics, AbstractStatistic.Mode.ADD));
             }
         }
         u.update(bs);
@@ -194,103 +171,7 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
             return null;
     }
 
-    /**
-     * Find the index, i, at which value should be inserted into the null-padded
-     * sorted array, a
-     *
-     * @param pos the position for the value
-     * @param val the value corresponding to x
-     * @return
-     */
-    private boolean addByCount(DBContext context, long pos, V val, boolean flush) {
-        if (pos > size(context)) {
-            // Ignore inserts beyond the size of positional index.
-            return false;
-            //throw new RuntimeException("pos should be <= size");
-        }
-        Node w;
-        w = addRecursiveByCount(context, pos, metaDataBlock.ri, val);
-        if (w != null) {   // root was split, make new root
-            Node new_root = new Node().create(context, bs);
-            w.update(bs);
-            // No longer a leaf node
-            // First time leaf becomes a root
-            new_root.leafNode = false;
 
-            new_root.children.add(0, metaDataBlock.ri);
-            new_root.children.add(1, w.id);
-            new_root.keys.add(w.keys.get(0));
-            new_root.keys.add(null);
-            Node leftNode = new Node().get(context, bs, metaDataBlock.ri);
-            if (leftNode.isLeaf()) {
-                new_root.childrenCount.add(0, leftNode.valueSize());
-            } else {
-                new_root.childrenCount.add(0, getStatistic(leftNode));
-            }
-            if (w.isLeaf()) {
-                new_root.childrenCount.add(1, w.valueSize());
-            } else {
-                new_root.childrenCount.add(1, getStatistic(w));
-            }
-            metaDataBlock.ri = new_root.id;
-            bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
-            new_root.update(bs);
-        }
-        metaDataBlock.elementCount++;
-        if (flush)
-            bs.flushDirtyBlocks(context);
-        return true;
-    }
-
-    /**
-     * Add the value x in the subtree rooted at the node with index ui
-     * <p>
-     * This method adds x into the subtree rooted at the node u whose index is
-     * ui. If u is split by this operation then the return value is the Node
-     * that was created when u was split
-     *
-     * @param pos the element to add
-     * @param ui  the index of the node, u, at which to add x
-     * @param val
-     * @return a new node that was created when u was split, or null if u was
-     * not split
-     */
-    private Node addRecursiveByCount(DBContext context, long pos, int ui, V val) {
-        Node u = new Node().get(context, bs, ui);
-
-        int i;
-        if (u.isLeaf()) { // leaf node, just add it
-            u.addByCount(pos, null, val);
-            u.update(bs);
-        } else {
-            i = findItByCount(u.childrenCount, pos);
-            long new_pos = pos;
-            for (int z = 0; z < i; z++) {
-                new_pos -= u.childrenCount.get(z);
-            }
-            u.childrenCount.set(i, u.childrenCount.get(i) + 1);
-            Node w = addRecursiveByCount(context, new_pos, u.children.get(i), val);
-            if (w != null) {  // child was split, w is new child
-                w.update(bs);
-                u.addByCount(pos, w, val);
-                if (w.isLeaf()) {
-                    u.childrenCount.set(i, u.childrenCount.get(i) - w.valueSize());
-                } else {
-                    u.childrenCount.set(i, u.childrenCount.get(i) - getStatistic(w));
-                }
-            }
-            u.update(bs);
-        }
-
-        if (u.isFullByCount()) {
-            Node splitNode = u.split(context, bs);
-            u.update(bs);
-            return splitNode;
-        } else
-            return null;
-
-
-    }
 
     private V removeByCount(DBContext context, long pos, boolean flush) {
         if (pos >= size(context)) {
@@ -787,21 +668,21 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
         int ui = metaDataBlock.ri;
         while (true) {
             Node u = new Node().get(context, bs, ui);
-            int i = findIt(u.keys, x);
+            int i = x.findIndex(u.statistics);
             if (u.isLeaf()) {
-                return i > 0 && u.keys.get(i - 1) == x;
+                return i > 0 && u.statistics.get(i - 1) == x;
             }
             ui = u.children.get(i);
         }
     }
 
-    public V get(DBContext context, K key) {
+    public V get(DBContext context, K statistic) {
         int ui = metaDataBlock.ri;
         while (true) {
             Node u = new Node().get(context, bs, ui);
-            int i = findIt(u.keys, key);
+            int i = statistic.findIndex(u.statistics);
             if (u.isLeaf()) {
-                if (i > 0 && u.keys.get(i - 1) == key)
+                if (i > 0 && u.statistics.get(i - 1) == statistic)
                     return u.values.get(i - 1); // found it
                 else
                     return null;
@@ -820,7 +701,7 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
         int first_index;
         Node u = new Node().get(context, bs, ui);
         while (true) {
-            int i = findItByCount(u.childrenCount, ct);
+            int i = findItByCount(u.statistics, ct);
             if (u.isLeaf()) {
                 i = (int) ct;
                 first_index = i;
@@ -888,18 +769,18 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
 
         int i = 0;
         if (u.isLeaf()) {
-            while (i < u.keys.size()) {
-                sb.append(u.keys.get(i));
+            while (i < u.statistics.size()) {
+                sb.append(u.statistics.get(i));
                 sb.append("->");
                 sb.append(u.values.get(i));
                 sb.append(",");
                 i++;
             }
         } else {
-            while (i < u.keys.size()) {
+            while (i < u.statistics.size()) {
                 sb.append(u.children.get(i));
                 sb.append(" < ");
-                sb.append(u.keys.get(i));
+                sb.append(u.statistics.get(i));
                 sb.append(" > ");
                 i++;
             }
@@ -933,10 +814,10 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
     }
 
     // TODO: Do it in batches. offline if possible.
-    public void insertIDs(DBContext context, int pos, ArrayList<V> ids) {
+    public void insertIDs(DBContext context, K statistic, ArrayList<V> ids) {
         int count = ids.size();
         for (int i = 0; i < count; i++) {
-            addByCount(context, pos + i, ids.get(i), false);
+            add(context, pos + i, ids.get(i), false);
         }
         bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
         bs.flushDirtyBlocks(context);
@@ -960,11 +841,6 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
          * This block's index
          */
         int id;
-
-        /**
-         * The keys stored in this block
-         */
-        ArrayList<AbstractStatistic> keys;
 
         /**
          * The ID of parent
@@ -997,7 +873,6 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
         int next_sibling;
 
         private Node() {
-            keys = new ArrayList<>();
             children = new ArrayList<>();
             statistics = new ArrayList<>();
             leafNode = true;
@@ -1037,7 +912,7 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
          * @return true if the block is full
          */
         public boolean isFull() {
-            return keys.size() >= b;
+            return statistics.size() >= b;
         }
 
         /**
@@ -1058,7 +933,7 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
          * @return the number of keys in this block
          */
         public int size() {
-            return keys.size();
+            return statistics.size();
         }
 
         /**
@@ -1089,7 +964,7 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
         public boolean addLeaf(K statistic, V value) {
             int i = statistic.findIndex(statistics);
             if (i < 0) return false;
-            this.statistics.add(i, statistic.getStatistic(this.statistics, AbstractStatistic.Mode.ADD));
+            this.statistics.add(i, statistic);
             this.values.add(i, value);
             return true;
         }
@@ -1104,31 +979,10 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
         public boolean addInternal(Node node, int i) {
             if (i < 0) return false;
             this.children.add(i, node.id);
-            this.statistics.add(i + 1, statistic.getStatistic(node.statistics, AbstractStatistic.Mode.ADD));
-            this.statistics.add(i, statistic.getStatistic(node.statistics, AbstractStatistic.Mode.DELETE));
+            this.statistics.add(i, statistic.getStatistic(node.statistics, AbstractStatistic.Mode.ADD));
             return true;
         }
 
-        /**
-         * Remove the i'th value from this block - don't affect this block's
-         * children
-         *
-         * @param i the index of the element to remove
-         * @return the value of the element removed
-         */
-        private K removeKey(int i) {
-            K key = (K) keys.get(i);
-            // Do not remove if it is leaf
-            if (!leafNode) {
-                keys.remove(i);
-            }
-            return key;
-        }
-
-        private V removeBoth(int i) {
-            keys.remove(i);
-            return values.remove(i);
-        }
 
         /**
          * Split this node into two nodes
@@ -1138,9 +992,9 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
         protected Node split(DBContext context, BlockStore bs) {
             Node w = new Node().create(context, bs);
 
-            int j = keys.size() / 2;
-            w.keys = new ArrayList<>(keys.subList(j, keys.size()));
-            keys.subList(j, keys.size()).clear();
+            int j = statistics.size() / 2;
+            w.statistics = new ArrayList<>(statistics.subList(j, statistics.size()));
+            statistics.subList(j, statistics.size()).clear();
             if (leafNode) {
                 // Copy Values
                 w.values = new ArrayList<>(values.subList(j, values.size()));
@@ -1149,12 +1003,8 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
                 next_sibling = w.id;
             } else {
                 // Copy Children
-                w.children = new ArrayList<>(children.subList(j+1, children.size() - j - 1));
-                children.subList(j+1, children.size() - j - 1).clear();
-
-                // Copy Counts
-                w.childrenCount = new ArrayList<>(childrenCount.subList(j + 1, childrenCount.size() - j - 1));
-                childrenCount.subList(j + 1, childrenCount.size() - j - 1).clear();
+                w.children = new ArrayList<>(children.subList(j + 1, children.size() - j - 1));
+                children.subList(j + 1, children.size() - j - 1).clear();
             }
             w.leafNode = this.leafNode;
             return w;
@@ -1164,8 +1014,8 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
             StringBuilder sb = new StringBuilder();
             sb.append("[");
             if (leafNode) {
-                for (int i = 0; i < keys.size(); i++) {
-                    sb.append(keys.get(i));
+                for (int i = 0; i < statistics.size(); i++) {
+                    sb.append(statistics.get(i));
                     sb.append(">");
                     sb.append(values.get(i));
                     sb.append(",");
@@ -1175,7 +1025,7 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
                     sb.append("(");
                     sb.append((children.get(i) < 0 ? "." : children.get(i)));
                     sb.append(")");
-                    sb.append(keys.get(i));
+                    sb.append(statistics.get(i));
                 }
                 sb.append("(");
                 sb.append(children.get(b) < 0 ? "." : children.get(b));
