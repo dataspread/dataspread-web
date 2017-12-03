@@ -1,10 +1,18 @@
 package org.zkoss.zss.model.impl.statistic;
-
 import java.util.ArrayList;
 
+/**
+ * A key based statistic using the minimum aggregation function
+ * @param <T> type of key
+ */
 public class BinarySearch<T extends Comparable<T>> implements AbstractStatistic {
     T key;
 
+    /**
+     * Compare this key with the specified key
+     * @param obj the specified key to compare to
+     * @returna negative integer, zero, or a positive integer as this key is less than, equal to, or greater than the specified key.
+     */
     @Override
     public int compareTo(AbstractStatistic obj) {
         if (obj instanceof BinarySearch)
@@ -13,44 +21,61 @@ public class BinarySearch<T extends Comparable<T>> implements AbstractStatistic 
     }
 
     /**
-     * Find the index, i, at which x should be inserted into the null-padded
-     * sorted array, a
-     *
-     * @param stat_list the sorted array (padded with null entries)
-     * @param obj the key to search for
+     * Find the index, i, where this key should be inserted into the sorted array stat_list
+     * Using minimum as the aggregation function
+     * @param stat_list a sorted array of keys
      * @return children index
      */
     @Override
     public int findIndex(ArrayList<AbstractStatistic> stat_list) {
         int lo = 0, hi = stat_list.size();
-        // TODO: Need explanation of the shift
-        while (hi != lo) {
+        while (hi > lo) {
             int m = (hi + lo) / 2;
             if (this.compareTo(stat_list.get(m)) < 0)
-                hi = m;      // look in first half
+                hi = m - 1;     // look in first half
             else if (this.compareTo(stat_list.get(m)) > 0)
-                lo = m + 1;    // look in second half
+                lo = m;     // look in second half
             else
-                return m + 1; // found it
+                return m;   // found the index
         }
         return lo;
     }
 
+    /**
+     * Key statistic doesn't require update
+     * @return always false
+     */
     @Override
     public boolean requireUpdate() {
         return false;
     }
 
+    /**
+     * Get the minimum key of the stat_list
+     * @param stat_list an array of keys of a node
+     * @return always the first key
+     */
     @Override
-    public BinarySearch<T> getStatistic(ArrayList<AbstractStatistic> stat_list, Mode mode) {
-        return (BinarySearch<T>) stat_list.get(0);
+    public BinarySearch<T> getAggregation(ArrayList<AbstractStatistic> keys) {
+        return (BinarySearch<T>) keys.get(0);
     }
 
+    /**
+     * Get the next level lookup key
+     * @param stat_list an array of keys of a node
+     * @param limit the end index of the array to find
+     * @return always this key
+     */
     @Override
-    public BinarySearch<T> getStatistic(ArrayList<AbstractStatistic> stat_list, int offset, Mode mode) {
-        return (BinarySearch<T>) stat_list.get(0);
+    public BinarySearch<T> getLowerStatistic(ArrayList<AbstractStatistic> keys, int limit) {
+        return this;
     }
 
+    /**
+     * Update the current key which is not required for this class
+     * @param mode ADD or DELETE operation
+     * @return always this key
+     */
     @Override
     public BinarySearch<T> updateStatistic(Mode mode) {
         return this;

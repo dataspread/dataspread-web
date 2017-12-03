@@ -102,27 +102,27 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
      * @return
      */
     public boolean add(DBContext context, K statistic, V val, boolean flush) {
-        Node w;
-        w = addRecursive(context, statistic, metaDataBlock.ri, val);
-        if (w != null) {   // root was split, make new root
+        Node rightNode = addRecursive(context, statistic, metaDataBlock.ri, val);
+        if (rightNode != null) {   // root was split, make new root
+            Node leftNode = new Node().get(context, bs, metaDataBlock.ri);
             Node newRoot = new Node().create(context, bs);
-            w.update(bs);
-            // No longer a leaf node
+            rightNode.update(bs);
             // First time leaf becomes a root
             newRoot.leafNode = false;
-
+            // Add two children
             newRoot.children.add(0, metaDataBlock.ri);
-            newRoot.children.add(1, w.id);
-
-            /* Update children count */
-            Node leftNode = new Node().get(context, bs, metaDataBlock.ri);
+            newRoot.children.add(1, rightNode.id);
+            // Update two children's statistics
             newRoot.statistics.add(0, statistic.getStatistic(leftNode.statistics, AbstractStatistic.Mode.ADD));
-            newRoot.statistics.add(1, statistic.getStatistic(w.statistics, AbstractStatistic.Mode.ADD));
+            newRoot.statistics.add(1, statistic.getStatistic(rightNode.statistics, AbstractStatistic.Mode.ADD));
+            // Update new root id
             metaDataBlock.ri = newRoot.id;
+            // Update to block store
             bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
             newRoot.update(bs);
         }
         metaDataBlock.elementCount++;
+        // Update Database
         if (flush)
             bs.flushDirtyBlocks(context);
         return true;
@@ -142,21 +142,27 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
      * not split
      */
     private Node addRecursive(DBContext context, K statistic, int ui, V val) {
+        // TODO: Create a statistic object
+        // Get the current node
         Node u = new Node().get(context, bs, ui);
+        // Find the position to insert
         int i = statistic.findIndex(u.statistics);
-        if (u.isLeaf()) { // leaf node, just add it
+        // If the node is leaf node, add the value
+        if (u.isLeaf()) {
             u.addLeaf(statistic, val);
         } else {
+            // Update the statistic of the node we found
             AbstractStatistic current_stat = u.statistics.get(i);
             if (current_stat.requireUpdate())
                 u.statistics.set(i, current_stat.updateStatistic(AbstractStatistic.Mode.ADD));
-            K new_statistic = (K) statistic.getStatistic(u.statistics, i, AbstractStatistic.Mode.DELETE);
-            Node w = addRecursive(context, new_statistic, u.children.get(i), val);
-            if (w != null) {  // child was split, w is new child
-                w.update(bs);
-                // add w at position (i+1)
-                u.addInternal(w, i + 1);
-                // update children i statistic
+            // Get the new statistic we are looking for
+            K new_statistic = (K) statistic.applyAggregation(u.statistics, i);
+            Node rightNode = addRecursive(context, new_statistic, u.children.get(i), val);
+            if (rightNode != null) {  // child was split, w is new child
+                rightNode.update(bs);
+                // Add w after position i
+                u.addInternal(rightNode, i + 1);
+                // Update children i statistic
                 Node leftNode = new Node().get(context, bs, u.children.get(i));
                 u.statistics.set(i, statistic.getStatistic(leftNode.statistics, AbstractStatistic.Mode.ADD));
             }
@@ -836,7 +842,7 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
      * A node in a B-tree which has an array of up to b keys and up to b children
      */
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-    private class Node {
+    public class Node {
         /**
          * This block's index
          */
@@ -872,7 +878,7 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
          */
         int next_sibling;
 
-        private Node() {
+        public Node() {
             children = new ArrayList<>();
             statistics = new ArrayList<>();
             leafNode = true;
@@ -979,7 +985,7 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
         public boolean addInternal(Node node, int i) {
             if (i < 0) return false;
             this.children.add(i, node.id);
-            this.statistics.add(i, statistic.getStatistic(node.statistics, AbstractStatistic.Mode.ADD));
+            this.statistics.add(i, statistic.getStatistic(node.statistics));
             return true;
         }
 
