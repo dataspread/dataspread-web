@@ -16,20 +16,13 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
-import java.util.Set;
-
-import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.SBookSeries;
-import org.zkoss.zss.model.SCell;
-import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.model.STable;
-import org.zkoss.zss.model.sys.BookBindings;
-import org.zkoss.zss.model.sys.TransactionManager;
+import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.formula.DirtyManager;
-import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 import org.zkoss.zss.range.impl.ModelUpdateCollector;
+
+import java.util.Set;
 
 /**
  * 
@@ -59,13 +52,11 @@ import org.zkoss.zss.range.impl.ModelUpdateCollector;
 		//TODO get trxid from the action
 		int trxId = sheet.getNewTrxId();
 
-		//zekun.fan@gmail.com - Masking and Scheduling
 		if (includePrecedent) { //ZSS-1047
 			addRefUpdate(precedent);
 			DirtyManager.dirtyManagerInstance.addDirtyRegion(precedent, trxId);
-			//FormulaCacheMasker.INSTANCE.mask(precedent);
-			//FormulaAsyncScheduler.getScheduler().addTask(sheet.getTrxId(), precedent);
 		}
+
 		if (dependents != null && dependents.size() > 0) {
 			if (clearer != null) {
 				clearer.clear(dependents);
@@ -75,12 +66,8 @@ import org.zkoss.zss.range.impl.ModelUpdateCollector;
 			if (collector != null) {
 				collector.addRefs(dependents);
 			}
-			dependents.forEach(v -> {
-				DirtyManager.dirtyManagerInstance.addDirtyRegion(v, trxId);
-				//FormulaCacheMasker.INSTANCE.mask(v);
-				//TODO: Handle if the sheets are different
-				//FormulaAsyncScheduler.getScheduler().addTask(sheet.getTrxId(), v);
-			});
+			dependents.forEach(v ->
+					DirtyManager.dirtyManagerInstance.addDirtyRegion(v, trxId));
 		}
 	}
 

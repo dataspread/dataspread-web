@@ -32,7 +32,6 @@ import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.STableColumn.STotalsRowFunction;
 import org.zkoss.zss.model.impl.sys.formula.FormulaEngineImpl;
 import org.zkoss.zss.model.sys.EngineFactory;
-import org.zkoss.zss.model.sys.TransactionManager;
 import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.format.FormatContext;
@@ -422,7 +421,7 @@ public class CellImpl extends AbstractCellAdv {
 	@Override
 	public synchronized Object getValue(boolean evaluatedVal, boolean sync) {
 		CellValue val = getCellValue();
-		if (evaluatedVal && val!=null && val.getType() == CellType.FORMULA) {
+		if (evaluatedVal && val.getType() == CellType.FORMULA) {
 			evalFormula(sync);
 			return this._formulaResultValue.getValue();
 		}

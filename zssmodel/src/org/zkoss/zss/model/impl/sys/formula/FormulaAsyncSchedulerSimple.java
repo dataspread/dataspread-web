@@ -25,7 +25,7 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
             if (dirtyRecord==null)
                 continue;
             logger.info("Processing " + dirtyRecord.region );
-            SSheet sheet=BookBindings.getSheetByRef(dirtyRecord.region,true);
+            SSheet sheet=BookBindings.getSheetByRef(dirtyRecord.region);
 
             //TODO - Change to streaming.
             // Or break a big region into smaller parts.
@@ -33,11 +33,11 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
             for (SCell sCell:cells)
             {
                 // Delay to demonstrate.
-                //try {
-                //    Thread.sleep(1000);
-                //} catch (InterruptedException e) {
-                //    e.printStackTrace();
-                //}
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 CellImpl cell = (CellImpl) sCell;
                 if (cell.getType()== SCell.CellType.FORMULA) {
                     // A sync call should synchronously compute the cells value.

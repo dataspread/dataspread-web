@@ -109,7 +109,7 @@ public class SheetImpl extends AbstractSheetAdv {
 
 	public SheetImpl(AbstractBookAdv book,String id){
 		// Start
-		trxId = new AtomicInteger(10); //TODO - store this in the DB and use that.
+		trxId = new AtomicInteger(10);
 
 		this._book = book;
 		this._id = id;
