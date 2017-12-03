@@ -31,18 +31,22 @@ public class BookBindings {
 
     static public SBook getBookByName(String bookName,boolean load)
     {
-        SBook result=_bindings.get(bookName);
-        if (result==null && load) {
-            result=new BookImpl(bookName);
-            result.setNameAndLoad(bookName);
-            _bindings.put(bookName,result);
+        SBook book=_bindings.get(bookName);
+        if (book==null && load) {
+            book=new BookImpl(bookName);
+            if (!book.setNameAndLoad(bookName))
+            {
+                book.createSheet("Sheet1");
+                book.createSheet("Sheet2");
+            }
+            _bindings.put(bookName,book);
         }
-        return result;
+        return book;
     }
 
     static public SSheet getSheetByRef(Ref ref, boolean load)
     {
-        SBook book=getBookByName(ref.getBookName()  , load);
+        SBook book=getBookByName(ref.getBookName(), load);
         return book.getSheetByName(ref.getSheetName());
     }
 }

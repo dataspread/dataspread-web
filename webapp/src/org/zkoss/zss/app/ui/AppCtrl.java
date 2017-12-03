@@ -47,7 +47,6 @@ import org.zkoss.zss.model.ModelEvent;
 import org.zkoss.zss.model.ModelEventListener;
 import org.zkoss.zss.model.ModelEvents;
 import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.model.impl.AbstractBookAdv;
 import org.zkoss.zss.ui.*;
 import org.zkoss.zss.ui.Version;
 import org.zkoss.zss.ui.event.Events;
@@ -613,8 +612,7 @@ public class AppCtrl extends CtrlBase<Component> {
             SimpleDateFormat ft =
                     new SimpleDateFormat("yyyyMMdd_hhmmss_S");
             Book book = new org.zkoss.zss.api.model.impl.BookImpl("New Book_".concat(ft.format(dNow)));
-            book.getInternalBook().createSheet("Sheet1");
-            book.getInternalBook().createSheet("Sheet2");
+
             book.setShareScope(EventQueues.APPLICATION);
             setBook(book, null);
         } catch (Exception e) {

@@ -20,8 +20,6 @@ import org.zkoss.zss.model.impl.AbstractBookAdv;
 import org.zkoss.zss.model.impl.BookImpl;
 import org.zkoss.zss.model.sys.BookBindings;
 
-import static java.awt.SystemColor.info;
-
 /**
  * Contains factory methods to create a {@link SBook}.
  * @author dennis
@@ -35,7 +33,7 @@ public class SBooks {
 	 * @return the book instance
 	 */
 	public static SBook createOrGetBook(String bookName){
-		SBook book = BookBindings.get(bookName);
+		SBook book = BookBindings.getBookByName(bookName, true);
 		if (book==null){
 			book=new BookImpl(bookName);
 			((AbstractBookAdv) book).initDefaultCellStyles();

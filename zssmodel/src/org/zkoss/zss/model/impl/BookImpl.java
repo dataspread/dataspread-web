@@ -68,7 +68,7 @@ public class BookImpl extends AbstractBookAdv{
 	private final HashMap<String,AtomicInteger> _objIdCounter = new HashMap<>();
 	private final int _maxRowSize = Integer.MAX_VALUE;
 	private final int _maxColumnSize = Integer.MAX_VALUE;
-	boolean schemaPresent = false;
+	private boolean schemaPresent = false;
 	private String _bookName;
 	private String _shareScope;
 	private SBookSeries _bookSeries;
@@ -98,7 +98,7 @@ public class BookImpl extends AbstractBookAdv{
 		_bookId = ((char)('a'+_random.nextInt(26))) + Long.toString(System.currentTimeMillis()+_bookCount.getAndIncrement(), Character.MAX_RADIX) ;
 		_tables = new HashMap<String, STable>(0);
 		//zekun.fan@gmail.com added bindings
-		BookBindings.put(_bookId, this);
+		//BookBindings.put(bookName, this);
 	}
 
 	public static void deleteBook(String bookName, String bookTable) {
@@ -1101,8 +1101,7 @@ public class BookImpl extends AbstractBookAdv{
 	}
 
 	@Override
-	public void setNameAndLoad(String _bookName){
-		schemaPresent = true;
+	public boolean setNameAndLoad(String _bookName){
 		this._bookName = _bookName;
 
 		this._sheets.clear();
@@ -1123,8 +1122,12 @@ public class BookImpl extends AbstractBookAdv{
 			ResultSet rs = bookStmt.executeQuery();
 			if (rs.next())
 				_bookId = rs.getString(1);
-			else
-				throw new RuntimeException(getBookName() + " does not exist");
+			else {
+				logger.info(getBookName() + " does not exist");
+				rs.close();
+
+				return false;
+			}
 			rs.close();
 
 			sheetsStmt.setString(1, getId());
@@ -1141,7 +1144,10 @@ public class BookImpl extends AbstractBookAdv{
 		catch (SQLException e)
 		{
 			e.printStackTrace();
+			return false;
 		}
+		schemaPresent = true;
+		return true;
 	}
 
 	@Override
