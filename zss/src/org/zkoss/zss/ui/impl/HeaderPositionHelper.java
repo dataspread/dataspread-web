@@ -18,7 +18,13 @@ Copyright (C) 2007 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.ui.impl;
 
+import org.model.AutoRollbackConnection;
+import org.model.BlockStore;
+import org.model.DBContext;
+import org.model.DBHandler;
+
 import java.io.Serializable;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,9 +44,35 @@ public class HeaderPositionHelper {
 	private List<HeaderPositionInfo> _infos;
 	//int[][] _customizedSize; //[0]: column/row index, [1]: width/height, [2]: column/row id
 
+	private BlockStore blockStore;
+
 	public HeaderPositionHelper(int defaultSize, List<HeaderPositionInfo> infos, String sheetName) {
 		this._defaultSize = defaultSize;
 		this._infos = infos;
+		sheetName = sheetName + "_position_helper";
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+			DBContext dbContext = new DBContext(connection);
+			blockStore = new BlockStore(dbContext, sheetName);
+			for (HeaderPositionInfo info:_infos){
+				blockStore.putObject(info.index, info);
+			}
+
+			_infos.clear();
+			for (Integer i:blockStore.keySet(dbContext)){
+				HeaderPositionInfo info = blockStore.getObject(dbContext,i, HeaderPositionInfo.class);
+				if (info == null){
+					System.out.println("Error:HeaderPositionHelper");
+				}
+				_infos.add(info);
+			}
+			blockStore.flushDirtyBlocks(dbContext);
+			connection.commit();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
 	}
 	
 	public int getDefaultSize() {
@@ -156,6 +188,15 @@ public class HeaderPositionHelper {
 			info.id = id;
 			info.hidden = hidden;
 		}
+
+		AutoRollbackConnection connection = DBHandler.instance.getConnection();
+		DBContext dbContext = new DBContext(connection);
+
+		blockStore.putObject(Integer.valueOf(cellIndex),_infos.get(index));
+		blockStore.flushDirtyBlocks(dbContext);
+
+		connection.commit();
+
 	}
 
 	public void removeInfo(int cellIndex) {
@@ -325,6 +366,10 @@ public class HeaderPositionHelper {
 		public int id; //column/row uuid
 		public boolean hidden; //whether the column/row is hidden
 		private boolean custom = true;
+
+		private HeaderPositionInfo(){
+
+		}
 		
 		public HeaderPositionInfo(int index, int size, int id, boolean hidden, boolean isCustom) {
 			this.index = index;

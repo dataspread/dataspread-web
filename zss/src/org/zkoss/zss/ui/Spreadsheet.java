@@ -2223,7 +2223,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 				}
 			}
 
-			String sheetName = sheet.getBook().getId() + sheet.getDBId();
+			String sheetName = sheet.getBook().getId() + sheet.getDBId()+ "_row";
 
 			helpers.putHelper(sheetId, helper = new HeaderPositionHelper(defaultSize, infos, sheetName));
 		}
@@ -2395,7 +2395,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 				}
 			}
 
-			String sheetName = sheet.getBook().getId() + sheet.getDBId();
+			String sheetName = sheet.getBook().getId() + sheet.getDBId() + "_col";
 			helpers.putHelper(sheetId, helper = new HeaderPositionHelper(defaultColSize, infos, sheetName));
 		}
 		return helper;

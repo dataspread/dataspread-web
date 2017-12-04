@@ -220,19 +220,8 @@ public class BlockStore {
         AutoRollbackConnection connection = dbContext.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(read)) {
             ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                if (useKryo) {
-                    Input in = new Input(rs.getBytes(1));
-                    Integer block_id = kryo.readObject(in, Integer.class);
-                    in.close();
-                    result.add(block_id);
-                } else {
-                    ObjectMapper mapper = new ObjectMapper();
-                    String value = new String(rs.getBytes(1));
-                    mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-                    Integer block_id = mapper.readValue(value, Integer.class);
-                    result.add(block_id);
-                }
+            while (rs.next()) {
+                result.add(Integer.valueOf(new String(rs.getBytes(1))));
             }
             rs.close();
             stmt.close();
