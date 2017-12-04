@@ -170,9 +170,9 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
         u.update(bs);
 
         if (u.isFull()) {
-            Node splitNode = u.split(context, bs);
+            Node rightNode = u.split(context, bs);
             u.update(bs);
-            return splitNode;
+            return rightNode;
         } else
             return null;
     }
@@ -182,7 +182,6 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
     private V removeByCount(DBContext context, long pos, boolean flush) {
         if (pos >= size(context)) {
             // Ignore this delete
-            // Do nothing
             return null;
         }
 
@@ -401,6 +400,24 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
     }
 
     public boolean remove(DBContext context, K x) {
+        if (pos >= size(context)) {
+            // Ignore this delete
+            return null;
+        }
+
+        V id = removeRecursiveByCount(context, pos, metaDataBlock.ri);
+        if (id != null) {
+            metaDataBlock.elementCount--;
+            Node r = new Node().get(context, bs, metaDataBlock.ri);
+            if (!r.isLeaf() && r.childrenSize() <= 1 && metaDataBlock.elementCount > 0) { // root has only one child
+                r.free(bs);
+                metaDataBlock.ri = r.children.get(0);
+                bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
+            }
+            if (flush)
+                bs.flushDirtyBlocks(context);
+            return id;
+        }
         if (removeRecursive(context, x, metaDataBlock.ri).getDone() >= 0) {
             metaDataBlock.elementCount--;
             Node r = new Node().get(context, bs, metaDataBlock.ri);
@@ -996,24 +1013,24 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
          * @return the newly created block, which has the larger keys
          */
         protected Node split(DBContext context, BlockStore bs) {
-            Node w = new Node().create(context, bs);
+            Node rightNode = new Node().create(context, bs);
 
             int j = statistics.size() / 2;
-            w.statistics = new ArrayList<>(statistics.subList(j, statistics.size()));
+            rightNode.statistics = new ArrayList<>(statistics.subList(j, statistics.size()));
             statistics.subList(j, statistics.size()).clear();
             if (leafNode) {
                 // Copy Values
-                w.values = new ArrayList<>(values.subList(j, values.size()));
+                rightNode.values = new ArrayList<>(values.subList(j, values.size()));
                 values.subList(j, values.size()).clear();
-                w.next_sibling = next_sibling;
-                next_sibling = w.id;
+                rightNode.next_sibling = next_sibling;
+                next_sibling = rightNode.id;
             } else {
                 // Copy Children
-                w.children = new ArrayList<>(children.subList(j + 1, children.size() - j - 1));
+                rightNode.children = new ArrayList<>(children.subList(j + 1, children.size() - j - 1));
                 children.subList(j + 1, children.size() - j - 1).clear();
             }
-            w.leafNode = this.leafNode;
-            return w;
+            rightNode.leafNode = this.leafNode;
+            return rightNode;
         }
 
         public String toString() {
