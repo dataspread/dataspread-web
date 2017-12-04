@@ -39,7 +39,10 @@ public class ROM_Model extends Model {
 
     private void createIndexOnSortAttr(int selectedCol)
     {
-        StringBuffer indexTable = new StringBuffer("CREATE INDEX col_index ON ");
+        Random rand = new Random();
+        int randomNum = rand.nextInt((100000 - 100) + 1) + 100;
+
+        StringBuffer indexTable = new StringBuffer("CREATE INDEX col_index_"+randomNum+" ON ");
         indexTable.append(tableName+" (\"col_"+(selectedCol+1)+"\")");
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
              Statement indexStmt = connection.createStatement()) {
