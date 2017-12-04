@@ -16,10 +16,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
-import org.model.AutoRollbackConnection;
-import org.model.DBContext;
-import org.model.DBHandler;
-import org.model.LruCache;
+import org.model.*;
 import org.zkoss.lang.Library;
 import org.zkoss.poi.ss.util.CellReference;
 import org.zkoss.poi.ss.util.SheetUtil;
@@ -2189,6 +2186,14 @@ public class SheetImpl extends AbstractSheetAdv {
 
     @Override
 	public void cloneModel(DBContext dbContext, String modelName, SSheet src) {
+		BlockStore srcColumnHelper = new BlockStore(dbContext,
+                src.getBook().getId() + src.getDBId() + "_col_position_helper");
+        srcColumnHelper.clone(dbContext, getBook().getId() + getDBId() + "_col_position_helper");
+
+        BlockStore srcRowHelper = new BlockStore(dbContext,
+                src.getBook().getId() + src.getDBId() + "_row_position_helper");
+        srcRowHelper.clone(dbContext, getBook().getId() + getDBId() + "_row_position_helper");
+
 		dataModel = src.getDataModel().clone(dbContext,this, modelName);
 	}
 
