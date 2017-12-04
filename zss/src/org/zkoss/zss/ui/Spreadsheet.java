@@ -2223,7 +2223,9 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 				}
 			}
 
-			helpers.putHelper(sheetId, helper = new HeaderPositionHelper(defaultSize, infos));
+			String sheetName = sheet.getBook().getId() + sheet.getDBId();
+
+			helpers.putHelper(sheetId, helper = new HeaderPositionHelper(defaultSize, infos, sheetName));
 		}
 		return new HeaderPositionHelper[] {helper, myGetColumnPositionHelper(sheet)};
 	}
@@ -2393,7 +2395,8 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 				}
 			}
 
-			helpers.putHelper(sheetId, helper = new HeaderPositionHelper(defaultColSize, infos));
+			String sheetName = sheet.getBook().getId() + sheet.getDBId();
+			helpers.putHelper(sheetId, helper = new HeaderPositionHelper(defaultColSize, infos, sheetName));
 		}
 		return helper;
 	}

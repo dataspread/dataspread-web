@@ -38,7 +38,7 @@ public class HeaderPositionHelper {
 	private List<HeaderPositionInfo> _infos;
 	//int[][] _customizedSize; //[0]: column/row index, [1]: width/height, [2]: column/row id
 
-	public HeaderPositionHelper(int defaultSize, List<HeaderPositionInfo> infos) {
+	public HeaderPositionHelper(int defaultSize, List<HeaderPositionInfo> infos, String sheetName) {
 		this._defaultSize = defaultSize;
 		this._infos = infos;
 	}
