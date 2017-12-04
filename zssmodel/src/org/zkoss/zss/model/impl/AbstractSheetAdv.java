@@ -72,4 +72,9 @@ public abstract class AbstractSheetAdv implements SSheet,LinkedModelObject,Seria
     abstract public int getTrxId();
 
 	abstract public int getNewTrxId();
+
+	abstract public boolean isSyncCalc();
+
+	abstract public void setSyncComputation(boolean syncComputation);
+
 }

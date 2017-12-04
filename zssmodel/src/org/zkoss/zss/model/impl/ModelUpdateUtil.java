@@ -49,13 +49,15 @@ import java.util.Set;
 		// Sheets Seems a nice granularity to have the trxId.
 		// If we have it on a book or global level might trigger to many lookups.
 
-		//TODO get trxid from the action
+		//TODO get trxid for the action
 		int trxId = sheet.getNewTrxId();
 
 		if (includePrecedent) { //ZSS-1047
 			addRefUpdate(precedent);
+			if(!sheet.isSyncCalc())
 			DirtyManager.dirtyManagerInstance.addDirtyRegion(precedent, trxId);
 		}
+
 
 		if (dependents != null && dependents.size() > 0) {
 			if (clearer != null) {
@@ -66,8 +68,15 @@ import java.util.Set;
 			if (collector != null) {
 				collector.addRefs(dependents);
 			}
-			dependents.forEach(v ->
-					DirtyManager.dirtyManagerInstance.addDirtyRegion(v, trxId));
+			if(sheet.isSyncCalc())
+			{
+				//TODO assuming single sheet
+				dependents.forEach(v -> sheet.getCell(v.getRow(), v.getColumn()).getValueSync());
+			}
+			else {
+				dependents.forEach(v ->
+						DirtyManager.dirtyManagerInstance.addDirtyRegion(v, trxId));
+			}
 		}
 	}
 

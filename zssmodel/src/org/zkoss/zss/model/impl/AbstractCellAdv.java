@@ -31,7 +31,6 @@ import org.zkoss.zss.model.sys.input.InputParseContext;
 import org.zkoss.zss.model.sys.input.InputResult;
 
 import java.io.Serializable;
-import java.sql.Connection;
 import java.util.*;
 
 /**
@@ -75,7 +74,13 @@ public abstract class AbstractCellAdv implements SCell,Serializable{
 	public Object getValue(){
 		return getValue(true);
 	}
-	
+
+	@Override
+	public Object getValueSync(){
+		return getValue(true, true);
+	}
+
+
 	@Override
 	public void setStringValue(String value, AutoRollbackConnection connection, boolean updateToDB) {
 		setValue(value, true, connection, updateToDB); //ZSS-853

@@ -33,15 +33,14 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
             for (SCell sCell:cells)
             {
                 // Delay to demonstrate.
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                CellImpl cell = (CellImpl) sCell;
-                if (cell.getType()== SCell.CellType.FORMULA) {
+                //try {
+                //    Thread.sleep(1000);
+                //} catch (InterruptedException e) {
+                //    e.printStackTrace();
+                //}
+                if (sCell.getType()== SCell.CellType.FORMULA) {
                     // A sync call should synchronously compute the cells value.
-                    cell.getValue(true,true);
+                    ((CellImpl) sCell).getValue(true,true);
                 }
             }
             DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,

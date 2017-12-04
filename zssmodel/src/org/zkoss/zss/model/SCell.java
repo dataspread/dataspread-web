@@ -21,7 +21,6 @@ import org.zkoss.poi.ss.usermodel.CellStyle;
 import org.zkoss.zss.model.SHyperlink.HyperlinkType;
 import org.zkoss.zss.model.SSemantics.Semantics;
 
-import java.sql.Connection;
 import java.util.Date;
 /**
  * Represent a cell of a sheet in a Spreadsheet. A cell contains value and style ({@link CellStyle}), and its type is one of {@link CellType}.
@@ -48,7 +47,13 @@ public interface SCell extends CellStyleHolder,FormulaContent{
 	 * @return cell value.
 	 */
 	Object getValue();
+	/**
+	 * @return cell value.
+	 */
+	Object getValueSync();
 
+
+	void setValue(Object value);
 	void setValue(Object value, AutoRollbackConnection connection, boolean updateToDB);
 	
 	/**
@@ -116,7 +121,14 @@ public interface SCell extends CellStyleHolder,FormulaContent{
 	 * @param formula
 	 */
 	void setFormulaValue(String formula, AutoRollbackConnection connection, boolean updateToDB);
-	
+
+	/**
+	 * set formula with string without '=', e.g. SUM(A1:B2)
+	 * @param formula
+	 */
+	void setFormulaValue(String formula);
+
+
 	/**
 	 * @return returns formula string without '=', e.g. SUM(A1:B2)
 	 */

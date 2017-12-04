@@ -337,7 +337,16 @@ public class CellImpl extends AbstractCellAdv {
 	private void addCellUpdate(CellAttribute cellAttr){ //ZSS-939
 		ModelUpdateUtil.addCellUpdate(getSheet(), getRowIndex(), getColumnIndex(), cellAttr);
 	}
-	
+
+	@Override
+	public void setFormulaValue(String formula)
+	{
+		try(AutoRollbackConnection connection = DBHandler.instance.getConnection())
+		{
+			setFormulaValue(formula, connection, true);
+		}
+	}
+
 	@Override
 	public void setFormulaValue(String formula, AutoRollbackConnection connection, boolean updateToDB) {
 		//ZSS-565: enforce internal US locale
@@ -438,7 +447,9 @@ public class CellImpl extends AbstractCellAdv {
 	
 	private void setCellValue(CellValue value, boolean destroy, AutoRollbackConnection connection, boolean updateToDB){ //ZSS-985
 		this._localValue = value!=null&&value.getType()== CellType.BLANK?null:value;
-		
+		if (updateToDB)
+			getSheet().getBook().checkDBSchema();
+
 		//clear the dependent's formula result cache
 		SBook book = getSheet().getBook();
 		SBookSeries bookSeries = book.getBookSeries();
@@ -476,9 +487,7 @@ public class CellImpl extends AbstractCellAdv {
 			}
 
 			if (updateToDB)
-			{
 				updateCelltoDB(connection);
-			}
 		}
 	}
 
@@ -528,7 +537,15 @@ public class CellImpl extends AbstractCellAdv {
 		}
 		tbCol.setTotalsRowFunction(func);
 	}
-	
+
+	@Override
+	public void setValue(Object newVal)
+	{
+		try(AutoRollbackConnection connection=DBHandler.instance.getConnection()) {
+			setValue(newVal, connection, true);
+		}
+	}
+
 	@Override
 	public void setValue(Object newVal, AutoRollbackConnection connection, boolean updateToDB) {
 		setValue(newVal, false, connection, updateToDB); //ZSS-853
