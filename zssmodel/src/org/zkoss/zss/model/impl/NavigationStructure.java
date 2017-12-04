@@ -409,12 +409,16 @@ public class NavigationStructure{
     }
 
     private Bucket<String> updateParentBucket(String bucketName, Bucket<String> parent, ArrayList<Bucket<String>> children) {
-
+        System.out.println("Calling: "+parent.getName());
         if(parent.getName().equals(bucketName))
         {
             parent.setChildren(children);
             return parent;
         }
+
+        if(parent.children==null)
+            return null;
+
         for(int i=0;i<parent.children.size();i++)
         {
             Bucket<String> newParent = updateParentBucket(bucketName,parent.children.get(i),children);
