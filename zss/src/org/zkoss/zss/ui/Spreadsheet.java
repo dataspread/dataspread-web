@@ -76,7 +76,7 @@ import org.zkoss.zss.ui.au.in.Command;
 import org.zkoss.zss.ui.au.out.*;
 import org.zkoss.zss.ui.event.*;
 import org.zkoss.zss.ui.impl.*;
-import org.zkoss.zss.ui.impl.HeaderPositionHelper.HeaderPositionInfo;
+import org.zkoss.zss.ui.impl.HeaderPositionInfo;
 import org.zkoss.zss.ui.impl.MergeAggregation.MergeIndex;
 import org.zkoss.zss.ui.impl.undo.AggregatedAction;
 import org.zkoss.zss.ui.impl.undo.CellEditTextAction;
