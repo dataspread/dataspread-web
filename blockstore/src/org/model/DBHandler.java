@@ -28,10 +28,11 @@ public class DBHandler implements ServletContextListener {
         p.setDefaultAutoCommit(false);
         p.setUsername(userName);
         p.setPassword(password);
-        org.apache.tomcat.jdbc.pool.DataSource datasource
+        org.apache.tomcat.jdbc.pool.DataSource dataSource
                 = new org.apache.tomcat.jdbc.pool.DataSource();
-        datasource.setPoolProperties(p);
-        instance.ds = datasource;
+        dataSource.setPoolProperties(p);
+        instance.ds = dataSource;
+        instance.initApplication();
     }
 
     public AutoRollbackConnection getConnection()
@@ -57,6 +58,27 @@ public class DBHandler implements ServletContextListener {
         }
     }
 
+
+    private void initApplication()
+    {
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            DBContext dbContext = new DBContext(connection);
+            createBookTable(dbContext);
+            createUserAccountTable(dbContext);
+            createUserTable(dbContext);
+            createTableOrders(dbContext);
+            createDependencyTable(dbContext);
+            connection.commit();
+            //dbListener = new DBListener();
+            //dbListener.start();
+            //TODO - fix issues with the graph compressor
+            //graphCompressor = new GraphCompressor();
+            //graphCompressor.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
         instance = this;
@@ -66,21 +88,7 @@ public class DBHandler implements ServletContextListener {
             System.err.println("Unable to connect to a Database");
             e.printStackTrace();
         }
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
-            DBContext dbContext = new DBContext(connection);
-            createBookTable(dbContext);
-            createUserAccountTable(dbContext);
-            createUserTable(dbContext);
-            createTableOrders(dbContext);
-            createDependencyTable(dbContext);
-            connection.commit();
-            dbListener = new DBListener();
-            dbListener.start();
-            graphCompressor = new GraphCompressor();
-            //graphCompressor.start();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        initApplication();
     }
 
     @Override

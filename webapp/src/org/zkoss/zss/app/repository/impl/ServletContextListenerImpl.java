@@ -5,6 +5,7 @@ import org.zkoss.zk.ui.WebApps;
 import org.zkoss.zss.app.BookManager;
 import org.zkoss.zss.app.impl.BookManagerImpl;
 import org.zkoss.zss.app.repository.BookRepositoryFactory;
+import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerSimple;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
 import javax.servlet.ServletContextEvent;
@@ -17,7 +18,11 @@ public class ServletContextListenerImpl implements ServletContextListener, Seria
 	private static final Log logger = Log.lookup(ServletContextListenerImpl.class.getName());
 
 	@Override
-	public void contextInitialized(ServletContextEvent sce) {}
+	public void contextInitialized(ServletContextEvent sce) {
+		FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerSimple();
+		Thread thread = new Thread(formulaAsyncScheduler);
+		thread.start();
+	}
 
 	@Override
 	public void contextDestroyed(ServletContextEvent sce) {

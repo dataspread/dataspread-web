@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class represents an external memory block storage system.
@@ -32,7 +33,7 @@ public class BlockStore {
      */
 
     private LruCache<Integer, Object> blockCache;
-    private Map<Integer, Object> dirtyBlocks;
+    private ConcurrentHashMap<Integer, Object> dirtyBlocks;
     private Set<Integer> deletedBlocks;
     private int inMemBlockId = 1;
     /* Serializer */
@@ -52,7 +53,7 @@ public class BlockStore {
 
     // On DB block store.
     public BlockStore(DBContext context, String dataStore) {
-        dirtyBlocks = new HashMap<>();
+        dirtyBlocks = new ConcurrentHashMap<>();
         deletedBlocks = new HashSet<>();
         kryo = new Kryo();
         this.dataStore = dataStore;
