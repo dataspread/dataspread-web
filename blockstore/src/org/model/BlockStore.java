@@ -228,6 +228,9 @@ public class BlockStore {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        result.removeAll(deletedBlocks);
+
         return result;
     }
 

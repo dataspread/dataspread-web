@@ -62,7 +62,6 @@ import org.zkoss.zss.model.SCellStyle.VerticalAlignment;
 import org.zkoss.zss.model.SSheet.SheetVisible;
 import org.zkoss.zss.model.impl.AbstractBookAdv;
 import org.zkoss.zss.model.impl.AbstractSheetAdv;
-import org.zkoss.zss.model.impl.AbstractTableAdv;
 import org.zkoss.zss.model.impl.TableImpl.DummyTable;
 import org.zkoss.zss.model.sys.TransactionManager;
 import org.zkoss.zss.model.sys.format.FormatResult;
@@ -438,10 +437,10 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 		for (HeaderPositionInfo info : infos) {
 			if (csc.length() > 0)
 				csc.append(",");
-			csc.append(info.index).append(",")
-					.append(info.size).append(",")
-					.append(info.id).append(",")
-					.append(info.hidden).append(",")
+			csc.append(info.getIndex()).append(",")
+					.append(info.getSize()).append(",")
+					.append(info.getId()).append(",")
+					.append(info.getHidden()).append(",")
 					.append(info.isCustom());
 		}
 		return csc.toString();
@@ -2130,8 +2129,8 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 		final boolean newHidden = sheet.getColumn(col).isHidden();
 		HeaderPositionHelper posHelper = getColumnPositionHelper(sheet);
 		HeaderPositionInfo info = posHelper.getInfo(col);
-		if ((info == null && (width != posHelper.getDefaultSize() || newHidden)) || (info != null && (info.size != width || info.hidden != newHidden))) {
-			int id = info == null ? _custColId.next() : info.id;
+		if ((info == null && (width != posHelper.getDefaultSize() || newHidden)) || (info != null && (info.getSize() != width || info.getHidden() != newHidden))) {
+			int id = info == null ? _custColId.next() : info.getId();
 			posHelper.setInfoValues(col, width, id, newHidden, true);
 			((ExtraCtrl) getExtraCtrl()).setColumnWidth(sheet, col, width, id, newHidden);
 		}
@@ -2143,8 +2142,8 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 		final boolean newHidden = rowobj.isHidden();
 		HeaderPositionHelper posHelper = getRowPositionHelper(sheet);
 		HeaderPositionInfo info = posHelper.getInfo(row);
-		if ((info == null && (height != posHelper.getDefaultSize() || newHidden)) || (info != null && (info.size != height || info.hidden != newHidden))) {
-			int id = info == null ? _custRowId.next() : info.id;
+		if ((info == null && (height != posHelper.getDefaultSize() || newHidden)) || (info != null && (info.getSize() != height || info.getHidden() != newHidden))) {
+			int id = info == null ? _custRowId.next() : info.getId();
 			posHelper.setInfoValues(row, height, id, newHidden, rowobj.isCustomHeight());
 			((ExtraCtrl) getExtraCtrl()).setRowHeight(sheet, row, height, id, newHidden, rowobj.isCustomHeight());
 		}
@@ -2709,10 +2708,10 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 
 		List<HeaderPositionInfo> infos = colHelper.getInfos();
 		for (HeaderPositionInfo info : infos) {
-			boolean hidden = info.hidden;
-			int index = info.index;
-			int width = hidden ? 0 : info.size;
-			int cid = info.id;
+			boolean hidden = info.getHidden();
+			int index = info.getIndex();
+			int width = hidden ? 0 : info.getSize();
+			int cid = info.getId();
 
 			celltextwidth = width - 2 * cp;
 
@@ -2740,10 +2739,10 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 
 		infos = rowHelper.getInfos();
 		for (HeaderPositionInfo info : infos) {
-			boolean hidden = info.hidden;
-			int index = info.index;
-			int height = hidden ? 0 : info.size;
-			int cid = info.id;
+			boolean hidden = info.getHidden();
+			int index = info.getIndex();
+			int height = hidden ? 0 : info.getSize();
+			int cid = info.getId();
 			cellheight = height;
 
 			if (height <= 0) {
@@ -2809,8 +2808,8 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 			for (int i = left; i <= right; i++) {
 				final HeaderPositionInfo info = colHelper.getInfo(i);
 				if (info != null) {
-					final boolean hidden = info.hidden;
-					final int colSize = hidden ? 0 : info.size;
+					final boolean hidden = info.getHidden();
+					final int colSize = hidden ? 0 : info.getSize();
 					width += colSize;
 				} else {
 					width += defaultSize ;
@@ -2822,8 +2821,8 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 			for (int i = top; i <= bottom; i++) {
 				final HeaderPositionInfo info = rowHelper.getInfo(i);
 				if (info != null) {
-					final boolean hidden = info.hidden;
-					final int rowSize = hidden ? 0 : info.size;
+					final boolean hidden = info.getHidden();
+					final int rowSize = hidden ? 0 : info.getSize();
 					height += rowSize;
 				} else {
 					height += defaultRowSize ;
@@ -5322,11 +5321,11 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 			HeaderPositionHelper colHelper = Spreadsheet.this.getColumnPositionHelper(sheet);
 			HeaderPositionInfo info = colHelper.getInfo(col);
 			if (info != null) {
-				attrs.put("p", info.id);
-//				if (info.size != defaultSize) {
-//					attrs.put("s", info.size);
+				attrs.put("p", info.getId());
+//				if (info.getSize() != defaultSize) {
+//					attrs.put("s", info.getSize());
 //				}
-//				if (info.hidden) {
+//				if (info.getHidden()) {
 //					attrs.put("h", 1); //1 stand for true;
 //				}
 			}
@@ -5358,8 +5357,8 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 			HeaderPositionHelper rowHelper = Spreadsheet.this.getRowPositionHelper(sheet);
 			HeaderPositionInfo info = rowHelper.getInfo(row);
 			if (info != null) {
-				attrs.put("p", info.id);
-//				if (info.hidden)
+				attrs.put("p", info.getId());
+//				if (info.getHidden())
 //					attrs.put("h", 1);
 			}
 			return attrs;
@@ -5465,8 +5464,8 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 
 			HeaderPositionInfo info = helper.getInfo(row);
 			if (info != null) {
-				attrs.put("h", info.id);
-				if (info.hidden) {
+				attrs.put("h", info.getId());
+				if (info.getHidden()) {
 					attrs.put("hd", "t"); //t stand for true
 				}
 			}
@@ -6070,7 +6069,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 			HeaderPositionHelper rowHelper = Spreadsheet.this
 					.getRowPositionHelper(sheet);
 			HeaderPositionInfo info = rowHelper.getInfo(row);
-			return info == null ? Boolean.FALSE : Boolean.valueOf(info.hidden);
+			return info == null ? Boolean.FALSE : Boolean.valueOf(info.getHidden());
 		}
 
 		@Override
@@ -6079,7 +6078,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 			HeaderPositionHelper colHelper = Spreadsheet.this
 					.getColumnPositionHelper(sheet);
 			HeaderPositionInfo info = colHelper.getInfo(col);
-			return info == null ? Boolean.FALSE : Boolean.valueOf(info.hidden);
+			return info == null ? Boolean.FALSE : Boolean.valueOf(info.getHidden());
 		}
 
 		@Override
