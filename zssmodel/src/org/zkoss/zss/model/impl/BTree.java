@@ -30,7 +30,7 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
     private BlockStore bs;
     private MetaDataBlock metaDataBlock;
 
-    private K emptyStatistic;
+    K emptyStatistic;
     /**
      * Set serialization function
      * True for use Kryo function
@@ -44,9 +44,9 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
      * Construct an empty BTree, in-memory
      */
     public BTree(DBContext context, String tableName, K emptyStatistic) {
+        this.emptyStatistic = emptyStatistic;
         bs = new BlockStore(context, tableName);
         loadMetaData(context);
-        this.emptyStatistic = emptyStatistic;
     }
 
     /**
@@ -76,7 +76,7 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
         metaDataBlock = bs.getObject(context, METADATA_BLOCK_ID, MetaDataBlock.class);
         if (metaDataBlock == null) {
             metaDataBlock = new MetaDataBlock();
-            Node root = new Node(emptyStatistic).create(context, bs);
+            Node root = new Node().create(context, bs);
             root.update(bs);
             metaDataBlock.ri = root.id;
             metaDataBlock.elementCount = 0;
@@ -870,7 +870,7 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
         /**
          * The cumulative count for children.
          */
-        K statistics;
+        ArrayList<K> statistics;
 
         /**
          * Data stored in the leaf blocks
@@ -889,7 +889,7 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
 
         public Node() {
             children = new ArrayList<>();
-            statistics = emptyStatistic;
+            statistics = new ArrayList<>();
             leafNode = true;
             values = new ArrayList<>();
             parent = -1;    // Root node
@@ -927,7 +927,7 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
          * @return true if the block is full
          */
         public boolean isFull() {
-            return statistics.getSize() >= b;
+            return statistics.size() >= b;
         }
 
         /**
@@ -936,7 +936,7 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
          * @return the number of keys in this block
          */
         public int size() {
-            return statistics.getSize();
+            return statistics.size();
         }
 
 
@@ -957,7 +957,7 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
          * @return true on success or false if not added
          */
         public boolean addLeaf(K statistic, V value) {
-            int i = statistics.findIndex(statistic);
+            int i = statistic.findIndex(statistics);
             if (i < 0) return false;
             this.statistics.add(i, statistic);
             this.values.add(i, value);
@@ -971,10 +971,10 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
          * @param value the value to add
          * @return true on success or false if not added
          */
-        public boolean addInternal(Node node, int i) {
+        public boolean addInternal(Node node, int i, AbstractStatistic.Type type) {
             if (i < 0) return false;
             this.children.add(i, node.id);
-            this.statistics.add(i, node.statistics.getStatistic());
+            this.statistics.add(i, emptyStatistic.getAggregation(node.statistics, type));
             return true;
         }
 

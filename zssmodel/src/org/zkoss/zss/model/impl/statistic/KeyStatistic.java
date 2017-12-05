@@ -6,19 +6,24 @@ import java.util.ArrayList;
  * @param <T> type of key
  */
 public class KeyStatistic<T extends Comparable<T>> implements AbstractStatistic {
-    ArrayList<T> keys;
-
-    public KeyStatistic() {
-        this.keys = new ArrayList<>();
-    }
+    T key;
 
     /**
      * Constructor
      * @param key the specified key to initialize
      */
     public KeyStatistic(T key) {
-        this.keys = new ArrayList<>();
-        this.keys.add(key);
+        this.key = key;
+    }
+
+    /**
+     * Compare this key with the specified key
+     * @param obj the specified key to compare to
+     * @return a negative integer, zero, or a positive integer as this key is less than, equal to, or greater than the specified key.
+     */
+    @Override
+    public int compareTo(AbstractStatistic obj) {
+        return this.key.compareTo(((KeyStatistic<T>) obj).key);
     }
 
     /**
@@ -28,14 +33,13 @@ public class KeyStatistic<T extends Comparable<T>> implements AbstractStatistic 
      * @return children index
      */
     @Override
-    public int findIndex(AbstractStatistic obj, Type type) {
-        T key = ((KeyStatistic<T>) obj).keys.get(0);
-        int lo = 0, hi = this.keys.size();
+    public int findIndex(ArrayList<AbstractStatistic> keys, Type type) {
+        int lo = 0, hi = keys.size();
         while (hi > lo) {
             int m = (hi + lo) / 2;
-            if (key.compareTo(this.keys.get(m)) > 0)
+            if (this.compareTo(keys.get(m)) < 0)
                 hi = m - 1;     // look in first half
-            else if (key.compareTo(this.keys.get(m)) < 0)
+            else if (this.compareTo(keys.get(m)) > 0)
                 lo = m;     // look in second half
             else
                 return m;   // found the index
@@ -57,8 +61,8 @@ public class KeyStatistic<T extends Comparable<T>> implements AbstractStatistic 
      * @return always the first key
      */
     @Override
-    public KeyStatistic<T> getAggregation(Type type) {
-        return new KeyStatistic<>(this.keys.get(0));
+    public KeyStatistic<T> getAggregation(ArrayList<AbstractStatistic> keys, Type type) {
+        return (KeyStatistic<T>) keys.get(0);
     }
 
     /**
@@ -68,8 +72,8 @@ public class KeyStatistic<T extends Comparable<T>> implements AbstractStatistic 
      * @return always this key
      */
     @Override
-    public KeyStatistic<T> getLowerStatistic(AbstractStatistic obj, int limit, Type type) {
-        return (KeyStatistic<T>) obj;
+    public KeyStatistic<T> getLowerStatistic(ArrayList<AbstractStatistic> keys, int limit, Type type) {
+        return this;
     }
 
     /**

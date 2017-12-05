@@ -1,5 +1,7 @@
 package org.zkoss.zss.model.impl.statistic;
 
+import java.util.ArrayList;
+
 public interface AbstractStatistic {
     /**
      * Indicate the operation
@@ -22,25 +24,33 @@ public interface AbstractStatistic {
     boolean requireUpdate();
 
     /**
+     * Compare this statistic with the specified statistic
+     * @param abstractStatistic the statistic to compare to
+     * @return a negative integer, zero, or a positive integer as this statistic is less than, equal to, or greater than the specified statistic.
+     */
+    int compareTo(AbstractStatistic abstractStatistic);
+
+    /**
      * Lookup the index of the current node based on the statistic
-     * @param stat_list an array of statistics of the current node
+     * @param stat_list an array of statistics
      * @return a integer between 0 and the length of stat_list
      */
-    int findIndex(AbstractStatistic stat_list, Type type);
+    int findIndex(ArrayList<AbstractStatistic> stat_list, Type type);
 
     /**
      * Get the aggregation value of the stat_list
+     * @param stat_list an array of statistics
      * @return the aggregated statistic
      */
-    AbstractStatistic getAggregation(Type type);
+    AbstractStatistic getAggregation(ArrayList<AbstractStatistic> stat_list, Type type);
 
     /**
      * Get the next level lookup statistic
-     * @param stat_list an array of statistics of a node
+     * @param stat_list the stat_list to lookup in
      * @param limit the end of the index to aggregate
      * @return new statistic for lookup
      */
-    AbstractStatistic getLowerStatistic(AbstractStatistic stat_list, int limit, Type type);
+    AbstractStatistic getLowerStatistic(ArrayList<AbstractStatistic> stat_list, int limit, Type type);
 
     /**
      * Update the current statistic affected by the operation
