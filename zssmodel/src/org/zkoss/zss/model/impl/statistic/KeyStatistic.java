@@ -22,9 +22,9 @@ public class KeyStatistic<T extends Comparable<T>> implements AbstractStatistic 
     }
 
     /**
-     * Find the index, i, where this key should be inserted into the sorted array stat_list
+     * Find the index, i, where the key should be inserted into the sorted array keys
      * Using minimum as the aggregation function
-     * @param keys a sorted array of keys
+     * @param obj the key to lookup
      * @return children index
      */
     @Override
@@ -54,7 +54,6 @@ public class KeyStatistic<T extends Comparable<T>> implements AbstractStatistic 
 
     /**
      * Get the minimum key of the stat_list
-     * @param keys an array of keys of a node
      * @return always the first key
      */
     @Override
@@ -64,7 +63,7 @@ public class KeyStatistic<T extends Comparable<T>> implements AbstractStatistic 
 
     /**
      * Get the next level lookup key
-     * @param keys an array of keys of a node
+     * @param obj the current lookup key
      * @param limit the end index of the array to find
      * @return always this key
      */
