@@ -1,7 +1,5 @@
 package org.zkoss.zss.model.impl.statistic;
 
-import java.util.ArrayList;
-
 public interface AbstractStatistic {
     /**
      * Indicate the operation
@@ -11,6 +9,12 @@ public interface AbstractStatistic {
         DELETE
     }
 
+    enum Type {
+        KEY,
+        COUNT,
+        SHIFT
+    }
+
     /**
      * Check if the statistic require update
      * @return True if require update
@@ -18,25 +22,18 @@ public interface AbstractStatistic {
     boolean requireUpdate();
 
     /**
-     * Compare this statistic with the specified statistic
-     * @param abstractStatistic the statistic to compare to
-     * @return a negative integer, zero, or a positive integer as this statistic is less than, equal to, or greater than the specified statistic.
-     */
-    int compareTo(AbstractStatistic abstractStatistic);
-
-    /**
      * Lookup the index of the current node based on the statistic
      * @param stat_list an array of statistics of the current node
      * @return a integer between 0 and the length of stat_list
      */
-    int findIndex(ArrayList<AbstractStatistic> stat_list);
+    int findIndex(AbstractStatistic stat_list, Type type);
 
     /**
      * Get the aggregation value of the stat_list
      * @param stat_list an array of statistics of a node
      * @return the aggregated statistic
      */
-    AbstractStatistic getAggregation(ArrayList<AbstractStatistic> stat_list);
+    AbstractStatistic getAggregation(Type type);
 
     /**
      * Get the next level lookup statistic
@@ -44,7 +41,7 @@ public interface AbstractStatistic {
      * @param limit the end of the index to aggregate
      * @return new statistic for lookup
      */
-    AbstractStatistic getLowerStatistic(ArrayList<AbstractStatistic> stat_list, int limit);
+    AbstractStatistic getLowerStatistic(AbstractStatistic stat_list, int limit, Type type);
 
     /**
      * Update the current statistic affected by the operation

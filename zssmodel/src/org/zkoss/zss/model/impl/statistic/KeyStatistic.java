@@ -5,27 +5,20 @@ import java.util.ArrayList;
  * A key based statistic using the minimum aggregation function
  * @param <T> type of key
  */
-public class BinarySearch<T extends Comparable<T>> implements AbstractStatistic {
-    T key;
+public class KeyStatistic<T extends Comparable<T>> implements AbstractStatistic {
+    ArrayList<T> keys;
+
+    public KeyStatistic() {
+        this.keys = new ArrayList<>();
+    }
 
     /**
      * Constructor
      * @param key the specified key to initialize
      */
-    public BinarySearch(T key){
-        this.key = key;
-    }
-
-    /**
-     * Compare this key with the specified key
-     * @param obj the specified key to compare to
-     * @returna negative integer, zero, or a positive integer as this key is less than, equal to, or greater than the specified key.
-     */
-    @Override
-    public int compareTo(AbstractStatistic obj) {
-        if (obj instanceof BinarySearch)
-            return this.key.compareTo(((BinarySearch<T>) obj).key);
-        else return this.compareTo(obj);
+    public KeyStatistic(T key) {
+        this.keys = new ArrayList<>();
+        this.keys.add(key);
     }
 
     /**
@@ -35,13 +28,14 @@ public class BinarySearch<T extends Comparable<T>> implements AbstractStatistic 
      * @return children index
      */
     @Override
-    public int findIndex(ArrayList<AbstractStatistic> keys) {
-        int lo = 0, hi = keys.size();
+    public int findIndex(AbstractStatistic obj, Type type) {
+        T key = ((KeyStatistic<T>) obj).keys.get(0);
+        int lo = 0, hi = this.keys.size();
         while (hi > lo) {
             int m = (hi + lo) / 2;
-            if (this.compareTo(keys.get(m)) < 0)
+            if (key.compareTo(this.keys.get(m)) > 0)
                 hi = m - 1;     // look in first half
-            else if (this.compareTo(keys.get(m)) > 0)
+            else if (key.compareTo(this.keys.get(m)) < 0)
                 lo = m;     // look in second half
             else
                 return m;   // found the index
@@ -64,8 +58,8 @@ public class BinarySearch<T extends Comparable<T>> implements AbstractStatistic 
      * @return always the first key
      */
     @Override
-    public BinarySearch<T> getAggregation(ArrayList<AbstractStatistic> keys) {
-        return (BinarySearch<T>) keys.get(0);
+    public KeyStatistic<T> getAggregation(Type type) {
+        return new KeyStatistic<>(this.keys.get(0));
     }
 
     /**
@@ -75,8 +69,8 @@ public class BinarySearch<T extends Comparable<T>> implements AbstractStatistic 
      * @return always this key
      */
     @Override
-    public BinarySearch<T> getLowerStatistic(ArrayList<AbstractStatistic> keys, int limit) {
-        return this;
+    public KeyStatistic<T> getLowerStatistic(AbstractStatistic obj, int limit, Type type) {
+        return (KeyStatistic<T>) obj;
     }
 
     /**
@@ -85,7 +79,7 @@ public class BinarySearch<T extends Comparable<T>> implements AbstractStatistic 
      * @return always this key
      */
     @Override
-    public BinarySearch<T> updateStatistic(Mode mode) {
+    public KeyStatistic<T> updateStatistic(Mode mode) {
         return this;
     }
 }
