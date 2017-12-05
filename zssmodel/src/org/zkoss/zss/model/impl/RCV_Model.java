@@ -30,7 +30,10 @@ public class RCV_Model extends Model {
         rowMapping = new BTree(context, tableName + "_row_idx");
         colMapping = new BTree(context, tableName + "_col_idx");
         this.tableName = tableName;
+        this.navSbuckets = new ArrayList<Bucket<String>>();
+        this.navS = new NavigationStructure(tableName);
         createSchema(context);
+        indexString = "";
         loadMetaData(context);
     }
 
@@ -76,11 +79,33 @@ public class RCV_Model extends Model {
 
         AutoRollbackConnection connection = DBHandler.instance.getConnection();
         DBContext context = new DBContext(connection);
+        StringBuffer select = null;
+        if(bucketName==null)
+        {
+            select = new StringBuffer("SELECT COUNT(*)");
+            select.append(" FROM ")
+                    .append(tableName+"_2")
+                    .append(" WHERE row !=1");
+            try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    count = rs.getInt(1);
+                }
+                rs.close();
+                stmt.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 
         Integer [] rowIds = rowMapping.getIDs(context,start,count);
 
-
-        StringBuffer select = new StringBuffer("SELECT row, "+indexString);
+        select = null;
+        if(indexString.length()==0)
+            select = new StringBuffer("SELECT row, col_1");
+        else
+            select = new StringBuffer("SELECT row, "+indexString);
 
         select.append(" FROM ")
                 .append(tableName+"_2")
@@ -92,7 +117,6 @@ public class RCV_Model extends Model {
 
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
-                int row_id = rs.getInt(1);
                 recordList.add(new String(rs.getBytes(2),"UTF-8"));
             }
             rs.close();
@@ -112,6 +136,39 @@ public class RCV_Model extends Model {
 
         return this.navS.recomputeNavS(bucketName,this.navSbuckets,newList);
         //  printBuckets(navSbuckets);
+
+    }
+
+    @Override
+    public ArrayList<String> getHeaders()
+    {
+        ArrayList<String> headers = new ArrayList<String>();
+
+        AutoRollbackConnection connection = DBHandler.instance.getConnection();
+        DBContext context = new DBContext(connection);
+        StringBuffer select = null;
+        select = new StringBuffer("SELECT *");
+        select.append(" FROM ")
+                .append(tableName+"_2")
+                .append(" WHERE row =1");
+        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+
+            ResultSet rs = stmt.executeQuery();
+            int i=2;
+            ResultSetMetaData meta = rs.getMetaData();
+            int columnCount = meta.getColumnCount();
+
+            while (rs.next()) {
+                for(;i<=columnCount;i++)
+                    headers.add(new String(rs.getBytes(i),"UTF-8"));
+            }
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return headers;
 
     }
 

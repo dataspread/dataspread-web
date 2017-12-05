@@ -145,6 +145,9 @@ public class AppCtrl extends CtrlBase<Component> {
     @Wire
     private Tree treeBucket;
 
+    @Wire
+    private Selectbox colSelectbox;
+
     public AppCtrl() {
         super(true);
     }
@@ -628,16 +631,19 @@ public class AppCtrl extends CtrlBase<Component> {
         pushAppEvent(AppEvts.ON_LOADED_BOOK, loadedBook);
         pushAppEvent(AppEvts.ON_CHANGED_SPREADSHEET, ss);
         updatePageInfo();
-        NavigationStructure navS = new NavigationStructure(loadedBook.getInternalBook().getId()+"2_2");
-        ss.setNavSBuckets(navS.readJavaObject(loadedBook.getInternalBook().getId()+"2_2"));
+
+        SBook currentBook = loadedBook.getInternalBook();
+        SSheet currentSheet = currentBook.getSheet(2);
         try {
+            createNavSTree(currentSheet.getDataModel().createNavS(null,0,0));
+            updateColModel(currentSheet);
+
             createNavSTree(ss.getNavSBuckets());
         } catch (Exception e) {
             e.printStackTrace();
         }
 
     }
-
 
     private void doOpenNewBook0(boolean renewState) {
         try {
@@ -1355,6 +1361,18 @@ public class AppCtrl extends CtrlBase<Component> {
         ss.focusTo(navSBucketMap.get(bucketName).getStartPos()+1,0);
 
 
+    }
+
+
+    private void updateColModel(SSheet currentSheet) {
+
+        try {
+            ListModelList<String> colModel = new ListModelList<String>(currentSheet.getDataModel().getHeaders());
+            colSelectbox.setModel(colModel);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 

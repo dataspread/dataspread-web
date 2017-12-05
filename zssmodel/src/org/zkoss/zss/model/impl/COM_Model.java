@@ -113,6 +113,11 @@ public class COM_Model extends Model {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public ArrayList<String> getHeaders() {
+        return null;
+    }
+
 
     @Override
     public boolean deleteTableRows(DBContext context, CellRegion cellRegion) {

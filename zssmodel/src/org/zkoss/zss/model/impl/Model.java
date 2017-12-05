@@ -97,6 +97,8 @@ public abstract class Model {
 
     public abstract boolean deleteTableColumns(DBContext dbContext, CellRegion cellRegion);
 
+    public abstract ArrayList<String> getHeaders();
+
     //
     public enum ModelType {
         ROM_Model, COM_Model, RCV_Model, HYBRID_Model, TOM_Model
