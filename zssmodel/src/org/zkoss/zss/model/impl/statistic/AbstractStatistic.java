@@ -30,7 +30,6 @@ public interface AbstractStatistic {
 
     /**
      * Get the aggregation value of the stat_list
-     * @param stat_list an array of statistics of a node
      * @return the aggregated statistic
      */
     AbstractStatistic getAggregation(Type type);
