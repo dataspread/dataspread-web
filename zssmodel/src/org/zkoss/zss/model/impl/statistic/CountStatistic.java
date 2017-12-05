@@ -13,26 +13,16 @@ public class CountStatistic implements AbstractStatistic {
 
     public CountStatistic(int Count) {
         this.count = Count;
+
     }
 
-    public int compareTo(AbstractStatistic obj){
-        if (obj instanceof CountStatistic){
-            if(this.count > ((CountStatistic) obj).count)
-                return 1;
-            else if(this.count > ((CountStatistic) obj).count)
-                return -1;
-            else
-                return 0;
-        }
-        else return this.compareTo(obj);
-    }
 
-    public int findIndex(ArrayList<AbstractStatistic> stat_list){
-        int lo = 0, hi = stat_list.size();
-        int remain = this.count;
+    public int findIndex(AbstractStatistic obj, Type type){
+        int lo = 0, hi = this.count.size();
+        int remain = ((CountStatistic) obj).count;
         while (hi != lo) {
-            if (remain > ((CountStatistic) stat_list.get(lo)).count) {
-                remain -= ((CountStatistic) stat_list.get(lo)).count;
+            if (remain >  this.count.get(lo)) {
+                remain -= this.count.get(lo);
                 lo++;
             } else {
                 return lo;
@@ -45,18 +35,18 @@ public class CountStatistic implements AbstractStatistic {
         return true;
     }
 
-    public AbstractStatistic getAggregation(ArrayList<AbstractStatistic> stat_list) {
-        CountStatistic aggregate = new CountStatistic();
-        for(int i = 0; i < stat_list.size(); i++){
-            aggregate.count += ((CountStatistic) stat_list.get(i)).count;
+    public AbstractStatistic getAggregation(Type type) {
+        int aggregate = 0;
+        for(int i = 0; i < this.count.size(); i++){
+            aggregate += this.count.get(i);
         }
-        return aggregate;
+        return new CountStatistic(aggregate);
     }
 
-    public AbstractStatistic getLowerStatistic(ArrayList<AbstractStatistic> stat_list, int limit) {
-        int new_count = this.count;
+    public AbstractStatistic getLowerStatistic(AbstractStatistic obj, int limit, Type type) {
+        int new_count = ((CountStatistic) obj).count.get(0);
         for(int i = 0; i < limit; i++){
-            new_count -= ((CountStatistic) stat_list.get(i)).count;
+            new_count -= this.count.get(i);
         }
         return new CountStatistic(new_count);
     }
