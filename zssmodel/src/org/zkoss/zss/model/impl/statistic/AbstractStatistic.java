@@ -25,10 +25,10 @@ public interface AbstractStatistic {
 
     /**
      * Compare this statistic with the specified statistic
-     * @param abstractStatistic the statistic to compare to
+     * @param obj the statistic to compare to
      * @return a negative integer, zero, or a positive integer as this statistic is less than, equal to, or greater than the specified statistic.
      */
-    int compareTo(AbstractStatistic abstractStatistic);
+    int compareTo(AbstractStatistic obj, Type type);
 
     /**
      * Lookup the index of the current node based on the statistic
@@ -58,4 +58,13 @@ public interface AbstractStatistic {
      * @return the updated statistic
      */
     AbstractStatistic updateStatistic(Mode mode);
+
+    /**
+     * Check if the statistic is the exact match
+     * @param stat_list
+     * @param index the statistic to match with
+     * @param type
+     * @return true if this statistic matches the designated statistic
+     */
+    boolean match(ArrayList<AbstractStatistic> stat_list, int index, Type type);
 }

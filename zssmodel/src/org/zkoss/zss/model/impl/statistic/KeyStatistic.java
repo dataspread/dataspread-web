@@ -22,7 +22,7 @@ public class KeyStatistic<T extends Comparable<T>> implements AbstractStatistic 
      * @return a negative integer, zero, or a positive integer as this key is less than, equal to, or greater than the specified key.
      */
     @Override
-    public int compareTo(AbstractStatistic obj) {
+    public int compareTo(AbstractStatistic obj, Type type) {
         return this.key.compareTo(((KeyStatistic<T>) obj).key);
     }
 
@@ -37,9 +37,9 @@ public class KeyStatistic<T extends Comparable<T>> implements AbstractStatistic 
         int lo = 0, hi = keys.size();
         while (hi > lo) {
             int m = (hi + lo) / 2;
-            if (this.compareTo(keys.get(m)) < 0)
+            if (this.compareTo(keys.get(m), type) < 0)
                 hi = m - 1;     // look in first half
-            else if (this.compareTo(keys.get(m)) > 0)
+            else if (this.compareTo(keys.get(m), type) > 0)
                 lo = m;     // look in second half
             else
                 return m;   // found the index
@@ -84,5 +84,16 @@ public class KeyStatistic<T extends Comparable<T>> implements AbstractStatistic 
     @Override
     public KeyStatistic<T> updateStatistic(Mode mode) {
         return this;
+    }
+
+    /**
+     * Check if the two keys are the same
+     * @param keys
+     * @param index the index of the key to match with
+     * @param type
+     * @return
+     */
+    public boolean match(ArrayList<AbstractStatistic> keys, int index, Type type) {
+        return this.compareTo(keys.get(index), type) == 0;
     }
 }

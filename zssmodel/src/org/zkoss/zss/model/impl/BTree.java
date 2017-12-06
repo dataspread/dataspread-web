@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import org.model.BlockStore;
 import org.model.DBContext;
 import org.zkoss.zss.model.impl.statistic.AbstractStatistic;
+import org.zkoss.zss.model.impl.statistic.CombinedStatistic;
 
 import java.util.ArrayList;
 
@@ -49,29 +50,6 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
         loadMetaData(context);
     }
 
-    /**
-     * Find the index, i, at which x should be inserted into the null-padded
-     *
-     * @param a   the array (padded with null entries)
-     * @param row the position to search for
-     * @return i
-     */
-    private static int findItByCount(ArrayList<Integer> a, long row) {
-        if (a == null) return 0;
-        int lo = 0, hi = a.size();
-        long ct = row + 1;
-        while (hi != lo) {
-            if (a.get(lo) == 0) return lo - 1;
-            if (ct > a.get(lo)) {
-                ct -= a.get(lo);
-                lo++;
-            } else {
-                return lo;
-            }
-        }
-        return lo - 1;
-    }
-
     private void loadMetaData(DBContext context) {
         metaDataBlock = bs.getObject(context, METADATA_BLOCK_ID, MetaDataBlock.class);
         if (metaDataBlock == null) {
@@ -104,20 +82,22 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
      * @param val the value corresponding to key
      * @return
      */
-    public boolean add(DBContext context, K statistic, V val, boolean flush) {
-        Node rightNode = addRecursive(context, statistic, metaDataBlock.ri, val);
+    public boolean add(DBContext context, K statistic, V val, boolean flush, AbstractStatistic.Type type) {
+        Node rightNode = addRecursive(context, statistic, metaDataBlock.ri, val, type);
         if (rightNode != null) {   // root was split, make new root
             Node leftNode = new Node().get(context, bs, metaDataBlock.ri);
             Node newRoot = new Node().create(context, bs);
             rightNode.update(bs);
             // First time leaf becomes a root
             newRoot.leafNode = false;
-            // Add two children
+            // Add two children and their count
             newRoot.children.add(0, metaDataBlock.ri);
             newRoot.children.add(1, rightNode.id);
+            newRoot.childrenCount.add(0, leftNode.size());
+            newRoot.childrenCount.add(1, rightNode.size());
             // Update two children's statistics
-            newRoot.statistics.add(0, statistic.getAggregation(leftNode.statistics));
-            newRoot.statistics.add(1, statistic.getAggregation(rightNode.statistics));
+            newRoot.statistics.add(0, statistic.getAggregation(leftNode.statistics, type));
+            newRoot.statistics.add(1, statistic.getAggregation(rightNode.statistics, type));
             // Update new root id
             metaDataBlock.ri = newRoot.id;
             // Update to block store
@@ -144,30 +124,30 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
      * @return a new node that was created when u was split, or null if u was
      * not split
      */
-    private Node addRecursive(DBContext context, K statistic, int ui, V val) {
+    private Node addRecursive(DBContext context, K statistic, int ui, V val, AbstractStatistic.Type type) {
         // TODO: Create a statistic object
         // Get the current node
         Node u = new Node().get(context, bs, ui);
         // Find the position to insert
-        int i = statistic.findIndex(u.statistics);
+        int i = statistic.findIndex(u.statistics, type);
         // If the node is leaf node, add the value
         if (u.isLeaf()) {
-            u.addLeaf(statistic, val);
+            u.addLeaf(statistic, val, type);
         } else {
             // Update the statistic of the node we found
             AbstractStatistic current_stat = u.statistics.get(i);
             if (current_stat.requireUpdate())
                 u.statistics.set(i, current_stat.updateStatistic(AbstractStatistic.Mode.ADD));
             // Get the new statistic we are looking for
-            K new_statistic = (K) statistic.getLowerStatistic(u.statistics, i);
-            Node rightNode = addRecursive(context, new_statistic, u.children.get(i), val);
+            K new_statistic = (K) statistic.getLowerStatistic(u.statistics, i, type);
+            Node rightNode = addRecursive(context, new_statistic, u.children.get(i), val, type);
             if (rightNode != null) {  // child was split, w is new child
                 rightNode.update(bs);
                 // Add w after position i
-                u.addInternal(rightNode, i + 1);
+                u.addInternal(rightNode, i + 1, type);
                 // Update children i statistic
                 Node leftNode = new Node().get(context, bs, u.children.get(i));
-                u.statistics.set(i, statistic.getAggregation(leftNode.statistics));
+                u.statistics.set(i, emptyStatistic.getAggregation(leftNode.statistics, type));
             }
         }
         u.update(bs);
@@ -180,220 +160,20 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
             return null;
     }
 
-
-    /**
-     * Remove the value x from the subtree rooted at the node with index ui
-     *
-     * @param pos the value to remove
-     * @param ui  the index of the subtree to remove x from
-     * @return true if x was removed and false otherwise
-     */
-    private V removeRecursiveByCount(DBContext context, long pos, int ui) {
-        if (ui < 0) return null;  // didn't find it
-        Node u = new Node().get(context, bs, ui);
-
-        int i;
-        /* Need to go to leaf to delete */
-        if (u.isLeaf()) {
-            metaDataBlock.elementCount--;
-            i = (int) pos;
-            // if (i > 0) {
-            V id = u.removeBoth(i);
-            u.update(bs);
-            bs.flushDirtyBlocks(context);
-            return id;
-            //}
-        } else {
-            i = findItByCount(u.childrenCount, pos);
-            u.childrenCount.set(i, u.childrenCount.get(i) - 1);
-            long new_pos = pos;
-            for (int z = 0; z < i; z++) {
-                new_pos -= u.childrenCount.get(z);
-            }
-            V id = removeRecursiveByCount(context, new_pos, u.children.get(i));
-            if (id != null) {
-                checkUnderflowByCount(context, u, i);
-                u.update(bs);
-                return id;
-            }
-            u.update(bs);
-            bs.flushDirtyBlocks(context);
-        }
-        return null;
-    }
-
-    /**
-     * Check if an underflow has occurred in the i'th child of u and, if so, fix it
-     * by borrowing from or merging with a sibling
-     *
-     * @param u
-     * @param i
-     */
-    private void checkUnderflowByCount(DBContext context, Node u, int i) {
-        if (u.children.get(i) < 0) return;
-        if (i == 0)
-            checkUnderflowZeroByCount(context, u, i); // use u's right sibling
-        else if (i == u.childrenSize() - 1)
-            checkUnderflowNonZeroByCount(context, u, i);
-        else if (u.childrenCount.get(i + 1) > u.childrenCount.get(i - 1))
-            checkUnderflowZeroByCount(context, u, i);
-        else checkUnderflowNonZeroByCount(context, u, i);
-    }
-
-    private void mergeByCount(Node u, int i, Node v, Node w) {
-        // w is merged into v
-        if (v.isLeaf()) {
-            v.values.addAll(w.values);
-            v.next_sibling = w.next_sibling;
-        } else {
-            v.children.addAll(w.children);
-            v.childrenCount.addAll(w.childrenCount);
-            v.values.add(i+1,u.values.get(i));
-        }
-        // add key to v and remove it from u
-        // U should not be a leaf node
-        u.childrenCount.set(i, u.childrenCount.get(i) + u.childrenCount.get(i + 1));
-
-        // w ids is in u.children[i+1]
-        // Free block
-        w.free(bs);
-        u.children.remove(i + 1);
-        u.childrenCount.remove(i + 1);
-    }
-
-    /**
-     * Check if an underflow has occurred in the i'th child of u and, if so, fix
-     * it
-     *
-     * @param u a node
-     * @param i the index of a child in u
-     */
-    private void checkUnderflowNonZeroByCount(DBContext context, Node u, int i) {
-        Node w = new Node().get(context, bs, u.children.get(i));  // w is child of u
-        if ((w.isLeaf() && w.valueSize() < B) || (!w.isLeaf() && w.childrenSize() < B + 1)) {  // underflow at w
-            Node v = new Node().get(context, bs, u.children.get(i - 1)); // v left of w
-            if ((v.isLeaf() && v.valueSize() > B) || (!v.isLeaf() && v.childrenSize() > B + 1)) {  // underflow at w
-                shiftLRByCount(u, i - 1, v, w);
-                v.update(bs);
-            } else { // v will absorb w
-                mergeByCount(u, i - 1, v, w);
-                v.update(bs);
-            }
-            bs.flushDirtyBlocks(context);
-        }
-
-    }
-
-    /**
-     * Shift keys from v into w
-     *
-     * @param u the parent of v and w
-     * @param i the index w in u.children
-     * @param v the right sibling of w
-     * @param w the left sibling of v
-     */
-    private void shiftLRByCount(Node u, int i, Node v, Node w) {
-        int sv = v.size();
-        int sw = w.size();
-        int shift = ((sw + sv) / 2) - sw;  // num. keys to shift from v to w
-
-
-        // make space for new keys in w
-
-        if (v.isLeaf()) {
-            // move keys and children out of v and into w
-            w.values.addAll(0,v.values.subList(sv-shift, sv));
-            v.values.subList(sv-shift, sv).clear();
-            u.childrenCount.set(i, u.childrenCount.get(i) - shift);
-            u.childrenCount.set(i + 1, u.childrenCount.get(i + 1) + shift);
-
-        } else {
-            // Don't move this key for leaf
-            // move keys and children out of v and into w (and u)
-            w.children.addAll(v.children.subList(sv - shift + 1, sv + 1));
-            w.childrenCount.addAll(v.childrenCount.subList(sv - shift + 1, sv + 1));
-            v.children.subList(sv - shift + 1, sv + 1).clear();
-            v.childrenCount.subList(sv - shift + 1, sv + 1).clear();
-            int ct = 0;
-            for (int shift_i = 0; shift_i < shift; shift_i++) {
-                ct += w.childrenCount.get(shift_i);
-            }
-            u.childrenCount.set(i, u.childrenCount.get(i) - ct);
-            u.childrenCount.set(i + 1, u.childrenCount.get(i + 1) + ct);
-        }
-
-
-    }
-
-    private void checkUnderflowZeroByCount(DBContext context, Node u, int i) {
-        Node w = new Node().get(context, bs, u.children.get(i)); // w is child of u
-        if ((w.isLeaf() && w.valueSize() < B) || (!w.isLeaf() && w.childrenSize() < B + 1)) {  // underflow at w
-            Node v = new Node().get(context, bs, u.children.get(i + 1)); // v right of w
-            if ((v.isLeaf() && v.valueSize() > B) || (!v.isLeaf() && v.childrenSize() > B + 1)) {  // underflow at w
-                shiftRLByCount(u, i, v, w);
-                v.update(bs);
-                w.update(bs);
-            } else { // w will absorb v
-                mergeByCount(u, i, w, v);
-                w.update(bs);
-            }
-        }
-    }
-
-    /**
-     * Shift keys from node v into node w
-     *
-     * @param u the parent of v and w
-     * @param i the index w in u.children
-     * @param v the left sibling of w
-     * @param w the right sibling of v
-     */
-    private void shiftRLByCount(Node u, int i, Node v, Node w) {
-        int sw = w.size();
-        int sv = v.size();
-        int shift = ((sw + sv) / 2) - sw;  // num. keys to shift from v to w
-
-        // shift keys and children from v to w
-        // Intermediate keys are not important and can be eliminated
-
-        if (v.isLeaf()) // w should also be leaf
-        {
-            // Do not bring the key from u
-            w.values.addAll(v.values.subList(0, shift));
-            v.values.subList(0,shift).clear();
-            u.childrenCount.set(i + 1, u.childrenCount.get(i + 1) - shift);
-            u.childrenCount.set(i, u.childrenCount.get(i) + shift);
-        } else {
-            w.children.addAll(v.children.subList(0, shift));
-            w.childrenCount.addAll(v.childrenCount.subList(0, shift));
-            v.children.subList(0, shift).clear();
-            v.childrenCount.subList(0, shift).clear();
-
-            int ct = 0;
-            for (int shift_i = 0; shift_i < shift; shift_i++) {
-                ct += w.childrenCount.get(shift_i);
-            }
-            u.childrenCount.set(i + 1, u.childrenCount.get(i + 1) - ct);
-            u.childrenCount.set(i, u.childrenCount.get(i) + ct);
-        }
-
-    }
-
-    public V remove(DBContext context, K statistic, boolean flush) {
-        V id = removeRecursive(context, statistic, metaDataBlock.ri);
-        if (id != null) {
+    public boolean remove(DBContext context, K statistic, boolean flush, AbstractStatistic.Type type) {
+        if (removeRecursive(context, statistic, metaDataBlock.ri, type)) {
             metaDataBlock.elementCount--;
             Node r = new Node().get(context, bs, metaDataBlock.ri);
-            if (!r.isLeaf() && r.childrenSize() <= 1 && metaDataBlock.elementCount > 0) { // root has only one child
+            if (!r.isLeaf() && r.size() <= 1 && metaDataBlock.elementCount > 0) { // root has only one child
                 r.free(bs);
                 metaDataBlock.ri = r.children.get(0);
                 bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
             }
             if (flush)
                 bs.flushDirtyBlocks(context);
-            return id;
+            return true;
         }
-        return null;
+        return false;
     }
 
     /**
@@ -403,70 +183,42 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
      * @param ui the index of the subtree to remove x from
      * @return true if x was removed and false otherwise
      */
-    private V removeRecursive(DBContext context, K statistic, int ui) {
-        if (ui < 0) return null;  // didn't find it
+    private boolean removeRecursive(DBContext context, K statistic, int ui, AbstractStatistic.Type type) {
+        if (ui < 0) return false;  // didn't find it
         Node u = new Node().get(context, bs, ui);
 
-        int i = statistic.findIndex(u.statistics);
+        int i = statistic.findIndex(u.statistics, type);
         /* Need to go to leaf to delete */
         if (u.isLeaf()) {
-            metaDataBlock.elementCount--;
-
-            V id = statistics.remove(u.statistics, i);
-            u.update(bs);
-            bs.flushDirtyBlocks(context);
-            return id;
-            //}
-        } else {
-            i = statistics.findIndex(, pos);
-            u.statistics.set(i, u.statistics.get(i)u.childrenCount.get(i) - 1);
-            long new_pos = pos;
-            for (int z = 0; z < i; z++) {
-                new_pos -= u.childrenCount.get(z);
-            }
-            V id = removeRecursiveByCount(context, new_pos, u.children.get(i));
-            if (id != null) {
-                checkUnderflowByCount(context, u, i);
+            // Check if the statistic is exactly matched
+            if (statistic.match(u.statistics, i, type)) {
+                metaDataBlock.elementCount--;
+                u.statistics.remove(i);
+                u.values.remove(i);
                 u.update(bs);
-                return id;
+                bs.flushDirtyBlocks(context);
+                return true;
+            } else
+                return false;
+        } else {
+            // Update the statistic of the node we found
+            AbstractStatistic current_stat = u.statistics.get(i);
+            if (current_stat.requireUpdate())
+                u.statistics.set(i, current_stat.updateStatistic(AbstractStatistic.Mode.DELETE));
+            // Get the new statistic we are looking for
+            K new_statistic = (K) statistic.getLowerStatistic(u.statistics, i, type);
+            if (removeRecursive(context, new_statistic, u.children.get(i), type)) {
+                Node child = new Node().get(context, bs, u.children.get(i));
+                u.statistics.set(i, emptyStatistic.getAggregation(child.statistics, type));
+                u.childrenCount.set(i, child.size());
+                checkUnderflow(context, u, child, i, type);
+                u.update(bs);
+                return true;
             }
             u.update(bs);
             bs.flushDirtyBlocks(context);
         }
-        return null;
-
-        /* Need to go to leaf to delete */
-        if (u.isLeaf()) {
-            if (i > 0) {
-                if (u.keys.get(i - 1) == x) {
-                    // Found
-                    result.setDone(0);
-                    if (i == 1) {
-                        result.setDone(1);
-                        result.setKey((K) u.keys.get(i));
-                    }
-                    u.removeBoth(i - 1);
-                    u.update(bs);
-                    return result;
-                }
-            }
-        } else {
-            u.childrenCount.set(i, u.childrenCount.get(i) - 1);
-            ReturnRS rs = removeRecursive(context, x, u.children.get(i));
-            if (rs.getDone() >= 0) {
-                if (i > 0) {
-                    if (u.keys.get(i - 1) == x) {
-                        u.keys.set(i - 1, rs.getKey());
-                        rs.setDone(0);
-                    }
-                }
-                checkUnderflow(context, u, i);
-                u.update(bs);
-                return rs;
-            }
-            u.update(bs);
-        }
-        return result;
+        return false;
     }
 
     /**
@@ -476,193 +228,96 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
      * @param u
      * @param i
      */
-    private void checkUnderflow(DBContext context, Node u, int i) {
+    private void checkUnderflow(DBContext context, Node u, Node checkNode, int i, AbstractStatistic.Type type) {
         if (u.children.get(i) < 0) return;
-        if (i == 0)
-            checkUnderflowZero(context, u, i); // use u's right sibling
-        else if (i == u.childrenSize() - 1)
-            checkUnderflowNonZero(context, u, i);
-        else if (u.childrenCount.get(i + 1) > u.childrenCount.get(i - 1))
-            checkUnderflowZero(context, u, i);
-        else checkUnderflowNonZero(context, u, i);
+        if (checkNode.size() < B) {  // underflow at checkNode
+            int borrowIndex;
+            if (i == 0) {
+                borrowIndex = i + 1; // Use checkNode's right sibling
+            } else if (i == u.size() - 1) {
+                borrowIndex = i - 1; // Use checkNode's left sibling
+            } else if (u.childrenCount.get(i + 1) > u.childrenCount.get(i - 1)) {
+                borrowIndex = i + 1; // Use checkNode's right sibling
+            } else {
+                borrowIndex = i - 1; // Use checkNode's left sibling
+            }
+            Node borrowNode = new Node().get(context, bs, u.children.get(borrowIndex));
+            if (borrowNode.size() > B) { // checkNode can borrow from borrowNode
+                if (borrowIndex < i) { // borrowNode is the leftNode
+                    int insert = 0;
+                    int start = (borrowNode.size() + checkNode.size()) / 2;
+                    int end = borrowNode.size();
+                    shift(borrowNode, checkNode, start, end, insert);
+                } else { // borrowNode is the rightNode
+                    int insert = checkNode.size();
+                    int start = 0;
+                    int end = (borrowNode.size() - checkNode.size()) / 2;
+                    shift(borrowNode, checkNode, start, end, insert);
+                }
+                u.statistics.set(borrowIndex, emptyStatistic.getAggregation(borrowNode.statistics, type));
+                u.statistics.set(i, emptyStatistic.getAggregation(checkNode.statistics, type));
+                u.childrenCount.set(borrowIndex, borrowNode.size());
+                u.childrenCount.set(i, checkNode.size());
+                borrowNode.update(bs);
+                checkNode.update(bs);
+            } else { // checkNode will absorb borrowNode
+                if (borrowIndex < i) { // borrowNode is the leftNode
+                    merge(borrowNode, checkNode);
+                    u.updateMerge(borrowIndex, i, borrowNode, type);
+                } else { // borrowNode is the rightNode
+                    merge(checkNode, borrowNode);
+                    u.updateMerge(i, borrowIndex, checkNode, type);
+                }
+            }
+        }
     }
 
-    protected void merge(Node u, int i, Node v, Node w) {
-        // w is merged into v, w will be destroyed
-
-        if (v.isLeaf()) {
-            // copy key and value from w to v
-            v.keys.addAll(w.keys);
-            v.values.addAll(w.values);
+    /**
+     * rightNode is merged into leftNode, rightNode will be destroyed
+     * @param leftNode
+     * @param rightNode
+     */
+    protected void merge(Node leftNode, Node rightNode) {
+        // copy statistics from rightNode to leftNode
+        leftNode.statistics.addAll(rightNode.statistics);
+        if (leftNode.isLeaf()) {
+            // copy values from leftNode to rightNode
+            leftNode.values.addAll(rightNode.values);
         } else {
-            v.children.addAll(w.children);
-            v.childrenCount.addAll(w.childrenCount);
-
-            // copy keys from w to v
-            v.keys.add(i+1,u.keys.get(i));
-            v.keys.addAll(w.keys);
-            v.values.add(i+1, u.values.get(i));
+            leftNode.children.addAll(rightNode.children);
+            leftNode.childrenCount.addAll(rightNode.childrenCount);
         }
-        // add key to v and remove it from u
-
-        // U should not be a leaf node
-        u.childrenCount.set(i, u.childrenCount.get(i) + u.childrenCount.get(i + 1));
-        u.keys.remove(i);
-
-        // w ids is in u.children[i+1]
         // Free block
-        w.free(bs);
-
-        u.children.remove(i + 1);
-        u.childrenCount.remove(i + 1);
+        rightNode.free(bs);
+        leftNode.update(bs);
     }
 
     /**
-     * Check if an underflow has occurred in the i'th child of u and, if so, fix
-     * it
-     *
-     * @param u a node
-     * @param i the index of a child in u
+     * Shift from borrowNode to checkNode
+     * @param borrowNode
+     * @param checkNode
+     * @param start the starting position of borrowNode to shift
+     * @param end the end position of borrowNode to shift
+     * @param insert the position of checkNode to insert into
      */
-    private void checkUnderflowNonZero(DBContext context, Node u, int i) {
-        Node w = new Node().get(context, bs, u.children.get(i));  // w is child of u
-        if (w.size() < B) {  // underflow at w
-            Node v = new Node().get(context, bs, u.children.get(i - 1)); // v left of w
-            if (v.size() > B) {  // w can borrow from v
-                shiftLR(u, i - 1, v, w);
-                if (v.isLeaf()) {
-                    u.childrenCount.set(i - 1, u.childrenCount.get(i - 1) - 1);
-                } else {
-                    u.childrenCount.set(i - 1, u.childrenCount.get(i - 1) - w.childrenCount.get(0));
-                }
-                if (w.isLeaf()) {
-                    u.childrenCount.set(i, u.childrenCount.get(i) + 1);
-                } else {
-                    u.childrenCount.set(i, u.childrenCount.get(i) + w.childrenCount.get(0));
-                }
-                v.update(bs);
-                w.update(bs);
-            } else { // v will absorb w
-                merge(u, i - 1, v, w);
-                v.update(bs);
-            }
-            bs.flushDirtyBlocks(context);
-        }
-    }
-
-    /**
-     * Shift keys from v into w
-     *
-     * @param u the parent of v and w
-     * @param i the index w in u.children
-     * @param v the right sibling of w
-     * @param w the left sibling of v
-     */
-    private void shiftLR(Node u, int i, Node v, Node w) {
-        int sw = w.size();
-        int sv = v.size();
-        int shift = ((sw + sv) / 2) - sw;  // num. keys to shift from v to w
-
-        if (v.isLeaf()) {
-            // move keys and children out of v and into w
-
-            u.keys.set(i, v.keys.get(sv - shift));
-
-            w.keys.addAll(0, v.keys.subList(sv - shift, sv));
-            v.keys.subList(sv - shift, sv).clear();
-            w.values.addAll(0, v.values.subList(sv - shift, sv));
-            v.values.subList(sv - shift, sv).clear();
-
+    private void shift(Node borrowNode, Node checkNode, int start, int end, int insert) {
+        // move statistics from borrowNode to checkNode
+        checkNode.statistics.addAll(insert, borrowNode.statistics.subList(start, end));
+        borrowNode.statistics.subList(start, end).clear();
+        if (borrowNode.isLeaf()) {
+            // move values from borrowNode to checkNode
+            checkNode.values.addAll(insert, borrowNode.values.subList(start, end));
+            borrowNode.values.subList(start, end).clear();
         } else {
-            // Don't move this key for leaf
-            // move keys and children out of v and into w (and u)
-
-            w.keys.set(shift - 1, u.keys.get(i));
-            u.keys.set(i, v.keys.get(sv - shift));
-            w.keys.addAll(0, v.keys.subList(sv - shift + 1, sv));
-            v.keys.subList(sv - shift + 1, sv).clear();
-
-            w.children.addAll(0, v.children.subList(sv - shift + 1, sv + 1));
-            w.childrenCount.addAll(0, v.childrenCount.subList(sv - shift + 1, sv + 1));
-            v.children.subList(sv - shift + 1, sv + 1).clear();
-            v.childrenCount.subList(sv - shift + 1, sv + 1).clear();
-
-        }
-
-
-    }
-
-    private void checkUnderflowZero(DBContext context, Node u, int i) {
-        Node w = new Node().get(context, bs, u.children.get(i)); // w is child of u
-        if (w.size() < B) {  // underflow at w
-            Node v = new Node().get(context, bs, u.children.get(i + 1)); // v right of w
-            if (v.size() > B) { // w can borrow from v
-                shiftRL(u, i, v, w);
-                if (v.isLeaf()) {
-                    u.childrenCount.set(i + 1, u.childrenCount.get(i + 1) - 1);
-                } else {
-                    u.childrenCount.set(i + 1, u.childrenCount.get(i + 1) - w.childrenCount.get(w.childrenSize() - 1));
-                }
-                if (w.isLeaf()) {
-                    u.childrenCount.set(i, u.childrenCount.get(i) + 1);
-                } else {
-                    u.childrenCount.set(i, u.childrenCount.get(i) + w.childrenCount.get(w.childrenSize() - 1));
-                }
-                v.update(bs);
-                w.update(bs);
-            } else { // w will absorb v
-                merge(u, i, w, v);
-                w.update(bs);
-            }
+            // move children and childrenCount from borrowNode to checkNode
+            checkNode.children.addAll(insert, borrowNode.children.subList(start, end));
+            checkNode.childrenCount.addAll(insert, borrowNode.childrenCount.subList(start, end));
+            borrowNode.children.subList(start, end).clear();
+            borrowNode.childrenCount.subList(start, end).clear();
         }
     }
 
-    /**
-     * Shift keys from node v into node w
-     *
-     * @param u the parent of v and w
-     * @param i the index w in u.children
-     * @param v the left sibling of w
-     * @param w the right sibling of v
-     */
-    private void shiftRL(Node u, int i, Node v, Node w) {
-        int sw = w.size();
-        int sv = v.size();
-        int shift = ((sw + sv) / 2) - sw;  // num. keys to shift from v to w
-
-
-        // shift keys and children from v to w
-        // Intermediate keys are not important and can be eliminated
-
-        if (v.isLeaf()) // w should also be leaf
-        {
-            // Do not bring the key from u
-            w.keys.addAll(v.keys.subList(0, shift));
-            w.values.addAll(v.values.subList(0, shift));
-            u.keys.set(i, v.keys.get(shift));
-        } else {
-            w.keys.add(sw, u.keys.get(i));
-            w.keys.addAll(v.keys.subList(0, shift - 1));
-
-            w.children.addAll(v.children.subList(0, shift));
-            w.childrenCount.addAll(v.childrenCount.subList(0, shift));
-
-            u.keys.set(i, v.keys.get(shift - 1));
-        }
-
-
-        // delete keys and children from v
-        v.keys.subList(0, shift).clear();
-
-        if (v.isLeaf()) {
-            v.values.subList(0,shift).clear();
-        } else {
-            v.children.subList(0, shift).clear();
-            v.childrenCount.subList(0, shift).clear();
-        }
-    }
-
-    public void clear(DBContext context) throws Exception {
+    public void clear(DBContext context) {
         metaDataBlock.elementCount = 0;
         clearRecursive(context, metaDataBlock.ri);
         bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
@@ -672,83 +327,38 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
     private void clearRecursive(DBContext context, int ui) {
         Node u = new Node().get(context, bs, ui);
         if (!u.isLeaf()) {
-            for (int i = 0; i < u.childrenSize(); i++) {
+            for (int i = 0; i < u.size(); i++) {
                 clearRecursive(context, u.children.get(i));
             }
         }
         u.free(bs);
     }
 
-    public boolean exists(DBContext context, K x) {
+    public boolean exists(DBContext context, K statistic, AbstractStatistic.Type type) {
         int ui = metaDataBlock.ri;
         while (true) {
             Node u = new Node().get(context, bs, ui);
-            int i = x.findIndex(u.statistics);
+            int i = statistic.findIndex(u.statistics, type);
             if (u.isLeaf()) {
-                return i > 0 && u.statistics.get(i - 1) == x;
+                return i >= 0 && statistic.match(u.statistics, i, type);
             }
             ui = u.children.get(i);
         }
     }
 
-    public V get(DBContext context, K statistic) {
+    public V get(DBContext context, K statistic, AbstractStatistic.Type type) {
         int ui = metaDataBlock.ri;
         while (true) {
             Node u = new Node().get(context, bs, ui);
-            int i = statistic.findIndex(u.statistics);
+            int i = statistic.findIndex(u.statistics, type);
             if (u.isLeaf()) {
-                if (i > 0 && u.statistics.get(i - 1) == statistic)
-                    return u.values.get(i - 1); // found it
+                if (i > 0 && statistic.match(u.statistics, i, type))
+                    return u.values.get(i); // found it
                 else
                     return null;
             }
             ui = u.children.get(i);
         }
-    }
-
-    public ArrayList<V> getIDsByCount(DBContext context, long pos, int count) {
-        ArrayList<V> ids = new ArrayList<>();
-        if (count == 0)
-            return ids;
-        int ui = metaDataBlock.ri;
-        long ct = pos;
-        int get_count = 0;
-        int first_index;
-        Node u = new Node().get(context, bs, ui);
-        while (true) {
-            int i = findItByCount(u.statistics, ct);
-            if (u.isLeaf()) {
-                i = (int) ct;
-                first_index = i;
-                ids.add(u.values.get(i));
-                get_count++;
-                break;
-            }
-            ui = u.children.get(i);
-            for (int z = 0; z < i; z++) {
-                ct -= u.childrenCount.get(z);
-            }
-            u = new Node().get(context, bs, ui);
-        }
-        int index = first_index + 1;
-        while (get_count < count && u.next_sibling != -1) {
-            while (index < u.valueSize() && get_count < count) {
-                ids.add(u.values.get(index++));
-                get_count++;
-            }
-            ui = u.next_sibling;
-            u = new Node().get(context, bs, ui);
-            index = 0;
-        }
-        while (index < u.valueSize() && get_count < count) {
-            ids.add(u.values.get(index++));
-            get_count++;
-        }
-        while (get_count < count) {
-            ids.add(null);
-            get_count++;
-        }
-        return ids;
     }
 
     public int size(DBContext context) {
@@ -764,6 +374,11 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
     @Override
     public String getTableName() {
         return bs.getDataStore();
+    }
+
+    @Override
+    public void insertIDs(DBContext context, int pos, ArrayList<V> ids) {
+
     }
 
 
@@ -799,7 +414,6 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
                 sb.append(" > ");
                 i++;
             }
-            sb.append(u.children.get(i));
         }
         sb.append("\n");
         i = 0;
@@ -815,10 +429,57 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
         return getIDsByCount(context, pos, count);
     }
 
+    public ArrayList<V> getIDsByCount(DBContext context, long pos, int count, AbstractStatistic.Type type) {
+        ArrayList<V> ids = new ArrayList<>();
+        if (count == 0)
+            return ids;
+        int ui = metaDataBlock.ri;
+        long ct = pos;
+        int get_count = 0;
+        int first_index;
+
+        CombinedStatistic<Integer> statistic = new CombinedStatistic<>()
+        Node u = new Node().get(context, bs, ui);
+        while (true) {
+            int i = statistic.findIndex(u.statistics, type);
+            if (u.isLeaf()) {
+                i = (int) ct;
+                first_index = i;
+                ids.add(u.values.get(i));
+                get_count++;
+                break;
+            }
+            ui = u.children.get(i);
+            for (int z = 0; z < i; z++) {
+                ct -= u.childrenCount.get(z);
+            }
+            u = new Node().get(context, bs, ui);
+        }
+        int index = first_index + 1;
+        while (get_count < count && u.next_sibling != -1) {
+            while (index < u.size() && get_count < count) {
+                ids.add(u.values.get(index++));
+                get_count++;
+            }
+            ui = u.next_sibling;
+            u = new Node().get(context, bs, ui);
+            index = 0;
+        }
+        while (index < u.size() && get_count < count) {
+            ids.add(u.values.get(index++));
+            get_count++;
+        }
+        while (get_count < count) {
+            ids.add(null);
+            get_count++;
+        }
+        return ids;
+    }
+
     public ArrayList<V> deleteIDs(DBContext context, int pos, int count) {
         ArrayList<V> ids = new ArrayList<>();
         for (int i = 0; i < count; i++)
-            ids.add(removeByCount(context, pos, false));
+            ids.add(remove(context, pos, false));
         bs.flushDirtyBlocks(context);
         return ids;
     }
@@ -868,9 +529,14 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
         ArrayList<Integer> children;
 
         /**
+         * The count of nodes of each children
+         */
+        ArrayList<Integer> childrenCount;
+
+        /**
          * The cumulative count for children.
          */
-        ArrayList<K> statistics;
+        ArrayList<AbstractStatistic> statistics;
 
         /**
          * Data stored in the leaf blocks
@@ -889,10 +555,11 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
 
         public Node() {
             children = new ArrayList<>();
+            childrenCount = new ArrayList<>();
             statistics = new ArrayList<>();
             leafNode = true;
             values = new ArrayList<>();
-            parent = -1;    // Root node
+            parent = -1; // Root node
             next_sibling = -1;
         }
 
@@ -927,26 +594,16 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
          * @return true if the block is full
          */
         public boolean isFull() {
-            return statistics.size() >= b;
+            return this.size() >= b;
         }
 
         /**
-         * Count the number of keys in this block, using binary search
-         *
-         * @return the number of keys in this block
+         * Count the number of elements in this block
+         * @return the number of elements in this block
          */
         public int size() {
-            return statistics.size();
-        }
-
-
-        /**
-         * Count the number of children in this block, using binary search
-         *
-         * @return the number of children in this block
-         */
-        private int childrenSize() {
-            return children.size();
+            if (this.isLeaf()) return values.size();
+            else return children.size();
         }
 
         /**
@@ -956,8 +613,8 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
          * @param value the value to add
          * @return true on success or false if not added
          */
-        public boolean addLeaf(K statistic, V value) {
-            int i = statistic.findIndex(statistics);
+        public boolean addLeaf(K statistic, V value, AbstractStatistic.Type type) {
+            int i = statistic.findIndex(statistics, type);
             if (i < 0) return false;
             this.statistics.add(i, statistic);
             this.values.add(i, value);
@@ -974,10 +631,24 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
         public boolean addInternal(Node node, int i, AbstractStatistic.Type type) {
             if (i < 0) return false;
             this.children.add(i, node.id);
+            this.childrenCount.add(i, node.size());
             this.statistics.add(i, emptyStatistic.getAggregation(node.statistics, type));
             return true;
         }
 
+        /**
+         *
+         * @param leftIndex
+         * @param rightIndex
+         * @param leftNode
+         */
+        public void updateMerge(int leftIndex, int rightIndex, Node leftNode, AbstractStatistic.Type type) {
+            childrenCount.set(leftIndex, leftNode.size());
+            statistics.set(leftIndex, emptyStatistic.getAggregation(leftNode.statistics, type));
+            children.remove(rightIndex);
+            childrenCount.remove(rightIndex);
+            statistics.remove(rightIndex);
+        }
 
         /**
          * Split this node into two nodes
@@ -997,9 +668,11 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
                 rightNode.next_sibling = next_sibling;
                 next_sibling = rightNode.id;
             } else {
-                // Copy Children
+                // Copy Children and ChildrenCount
                 rightNode.children = new ArrayList<>(children.subList(j + 1, children.size() - j - 1));
                 children.subList(j + 1, children.size() - j - 1).clear();
+                rightNode.childrenCount = new ArrayList<>(childrenCount.subList(j + 1, childrenCount.size() - j - 1));
+                childrenCount.subList(j + 1, childrenCount.size() - j - 1).clear();
             }
             rightNode.leafNode = this.leafNode;
             return rightNode;
@@ -1022,41 +695,11 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
                     sb.append(")");
                     sb.append(statistics.get(i));
                 }
-                sb.append("(");
-                sb.append(children.get(b) < 0 ? "." : children.get(b));
-                sb.append(")");
             }
             sb.append("]");
             return sb.toString();
         }
 
-
-    }
-
-    private class ReturnRS {
-        int done;
-        K key;
-
-        private ReturnRS(int d) {
-            done = d;
-            key = null;
-        }
-
-        public K getKey() {
-            return key;
-        }
-
-        public void setKey(K k) {
-            key = k;
-        }
-
-        public int getDone() {
-            return done;
-        }
-
-        public void setDone(int d) {
-            done = d;
-        }
 
     }
 

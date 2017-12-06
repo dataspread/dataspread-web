@@ -1,6 +1,8 @@
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.zss.model.impl.BTree;
+import org.zkoss.zss.model.impl.statistic.CombinedStatistic;
+import org.zkoss.zss.model.impl.statistic.KeyStatistic;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,14 +12,16 @@ import java.util.stream.IntStream;
 
 public class BTreeTest {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         String url = "jdbc:postgresql://127.0.0.1:5432/ibd";
         String driver = "org.postgresql.Driver";
         String userName = "mangesh";
         String password = "mangesh";
         DBHandler.connectToDB(url, driver, userName, password);
         DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
-        BTree btree = new BTree<Integer, Integer>(dbContext, "Test1");
+        KeyStatistic<Integer> key = new KeyStatistic<>(0);
+        CombinedStatistic<Integer> emptyStatistic = new CombinedStatistic<>(key);
+        BTree btree = new BTree<CombinedStatistic<Integer>, Integer>(dbContext, "Test1", emptyStatistic);
         btree.useKryo(false);
         ArrayList<Integer> arrayList = new ArrayList<>();
 

@@ -1,30 +1,31 @@
 package org.zkoss.zss.model.impl.statistic;
-
 import java.util.ArrayList;
-/**
- * Created by Stan on 12/3/2017.
- */
+
+
 public class CombinedStatistic<T extends Comparable<T>> implements AbstractStatistic {
-    CountStatistic ct;
-    BinarySearch<T> key;
-    public CombinedStatistic(T key){
-        this.key = new BinarySearch(key);
-        this.ct = new CountStatistic();
+    CountStatistic count;
+    KeyStatistic<T> key;
+
+    public CombinedStatistic(KeyStatistic<T> key){
+        this.key = key;
+        this.count = new CountStatistic();
     }
 
-    public CombinedStatistic(T key, int count){
-        this.key = new BinarySearch(key);
-        this.ct = new CountStatistic(count);
+    public CombinedStatistic(KeyStatistic<T> key, CountStatistic count){
+        this.key = key;
+        this.count = count;
     }
+
     public boolean requireUpdate(){
         return true;
     }
-    public int compareTo(AbstractStatistic obj, Class type) {
+
+    public int compareTo(AbstractStatistic obj, Type type) {
         if (obj instanceof CombinedStatistic){
-            if (type == Class.BINARYSEARCH) {
+            if (type == Type.KEY) {
                 return this.key.compareTo(((CombinedStatistic)obj).key, type);
             } else {
-                return this.ct.compareTo(((CombinedStatistic)obj).ct, type);
+                return this.count.compareTo(((CombinedStatistic)obj).count, type);
             }
         }
         else {
@@ -32,21 +33,62 @@ public class CombinedStatistic<T extends Comparable<T>> implements AbstractStati
             return 0;
         }
     }
-    public int findIndex(ArrayList<AbstractStatistic> stat_list, Class type){
-        if (type == Class.BINARYSEARCH){
-            return this.key.findIndex(stat_list, type);
+    public int findIndex(ArrayList<AbstractStatistic> stat_list, Type type){
+        if (type == Type.KEY){
+            ArrayList<AbstractStatistic> new_list = new ArrayList<>();
+            for (int i = 0; i < stat_list.size(); i++){
+                new_list.add(((CombinedStatistic<T>) stat_list.get(i)).key);
+            }
+            return this.key.findIndex(new_list, type);
         }
-        else{
-
+        else {
+            ArrayList<AbstractStatistic> new_list = new ArrayList<>();
+            for (int i = 0; i < stat_list.size(); i++){
+                new_list.add(((CombinedStatistic<T>) stat_list.get(i)).count);
+            }
+            return this.count.findIndex(new_list, type);
         }
     }
-    public AbstractStatistic getAggregation(ArrayList<AbstractStatistic> stat_list, Class type){
 
+    public CombinedStatistic<T> getAggregation(ArrayList<AbstractStatistic> stat_list, Type type){
+        ArrayList<AbstractStatistic> key_list = new ArrayList<>();
+        ArrayList<AbstractStatistic> count_list = new ArrayList<>();
+        for (int i = 0; i < stat_list.size(); i++){
+            key_list.add(((CombinedStatistic<T>) stat_list.get(i)).key);
+            count_list.add(((CombinedStatistic<T>) stat_list.get(i)).count);
+        }
+        return new CombinedStatistic<>(this.key.getAggregation(key_list, type), this.count.getAggregation(count_list, type));
     }
-    public AbstractStatistic getLowerStatistic(ArrayList<AbstractStatistic> stat_list, int limit, Class type){
 
+    public CombinedStatistic<T> getLowerStatistic(ArrayList<AbstractStatistic> stat_list, int limit, Type type){
+        ArrayList<AbstractStatistic> key_list = new ArrayList<>();
+        ArrayList<AbstractStatistic> count_list = new ArrayList<>();
+        for (int i = 0; i < stat_list.size(); i++){
+            key_list.add(((CombinedStatistic<T>) stat_list.get(i)).key);
+            count_list.add(((CombinedStatistic<T>) stat_list.get(i)).count);
+        }
+        return new CombinedStatistic<>(this.key.getLowerStatistic(key_list, limit, type), this.count.getLowerStatistic(count_list, limit, type));
     }
-    public AbstractStatistic updateStatistic(Mode mode){
 
+    public CombinedStatistic<T> updateStatistic(Mode mode){
+        return new CombinedStatistic<>(this.key.updateStatistic(mode), this.count.updateStatistic(mode));
+    }
+
+    @Override
+    public boolean match(ArrayList<AbstractStatistic> stat_list, int index, Type type) {
+        if (type == Type.KEY){
+            ArrayList<AbstractStatistic> new_list = new ArrayList<>();
+            for (int i = 0; i < stat_list.size(); i++){
+                new_list.add(((CombinedStatistic<T>) stat_list.get(i)).key);
+            }
+            return this.key.match(new_list, index, type);
+        }
+        else {
+            ArrayList<AbstractStatistic> new_list = new ArrayList<>();
+            for (int i = 0; i < stat_list.size(); i++){
+                new_list.add(((CombinedStatistic<T>) stat_list.get(i)).count);
+            }
+            return this.count.match(new_list, index, type);
+        }
     }
 }
