@@ -160,8 +160,9 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
             return null;
     }
 
-    public boolean remove(DBContext context, K statistic, boolean flush, AbstractStatistic.Type type) {
-        if (removeRecursive(context, statistic, metaDataBlock.ri, type)) {
+    public V remove(DBContext context, K statistic, boolean flush, AbstractStatistic.Type type) {
+        V value = removeRecursive(context, statistic, metaDataBlock.ri, type);
+        if (value != null) {
             metaDataBlock.elementCount--;
             Node r = new Node().get(context, bs, metaDataBlock.ri);
             if (!r.isLeaf() && r.size() <= 1 && metaDataBlock.elementCount > 0) { // root has only one child
@@ -171,9 +172,9 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
             }
             if (flush)
                 bs.flushDirtyBlocks(context);
-            return true;
+            return value;
         }
-        return false;
+        return null;
     }
 
     /**
@@ -183,8 +184,8 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
      * @param ui the index of the subtree to remove x from
      * @return true if x was removed and false otherwise
      */
-    private boolean removeRecursive(DBContext context, K statistic, int ui, AbstractStatistic.Type type) {
-        if (ui < 0) return false;  // didn't find it
+    private V removeRecursive(DBContext context, K statistic, int ui, AbstractStatistic.Type type) {
+        if (ui < 0) return null;  // didn't find it
         Node u = new Node().get(context, bs, ui);
 
         int i = statistic.findIndex(u.statistics, type);
@@ -194,12 +195,12 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
             if (statistic.match(u.statistics, i, type)) {
                 metaDataBlock.elementCount--;
                 u.statistics.remove(i);
-                u.values.remove(i);
+                V value = u.values.remove(i);
                 u.update(bs);
                 bs.flushDirtyBlocks(context);
-                return true;
+                return value;
             } else
-                return false;
+                return null;
         } else {
             // Update the statistic of the node we found
             AbstractStatistic current_stat = u.statistics.get(i);
@@ -207,18 +208,53 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
                 u.statistics.set(i, current_stat.updateStatistic(AbstractStatistic.Mode.DELETE));
             // Get the new statistic we are looking for
             K new_statistic = (K) statistic.getLowerStatistic(u.statistics, i, type);
-            if (removeRecursive(context, new_statistic, u.children.get(i), type)) {
+            V value = removeRecursive(context, new_statistic, u.children.get(i), type);
+            if (value != null) {
                 Node child = new Node().get(context, bs, u.children.get(i));
                 u.statistics.set(i, emptyStatistic.getAggregation(child.statistics, type));
                 u.childrenCount.set(i, child.size());
                 checkUnderflow(context, u, child, i, type);
                 u.update(bs);
-                return true;
+                return value;
             }
             u.update(bs);
             bs.flushDirtyBlocks(context);
         }
-        return false;
+        return null;
+    }
+
+
+    public V lookup(DBContext context, K statistic, AbstractStatistic.Type type) {
+        return lookupRecursive(context, statistic, metaDataBlock.ri, type);
+    }
+
+    /**
+     * Remove the value x from the subtree rooted at the node with index ui
+     *
+     * @param x  the value to remove
+     * @param ui the index of the subtree to remove x from
+     * @return true if x was removed and false otherwise
+     */
+    private V lookupRecursive(DBContext context, K statistic, int ui, AbstractStatistic.Type type) {
+        if (ui < 0) return null;  // didn't find it
+        Node u = new Node().get(context, bs, ui);
+        int i = statistic.findIndex(u.statistics, type);
+        /* Need to go to leaf to delete */
+        if (u.isLeaf()) {
+            // Check if the statistic is exactly matched
+            if (statistic.match(u.statistics, i, type)) {
+                return u.values.get(i);
+            } else
+                return null;
+        } else {
+            // Update the statistic of the node we found
+            AbstractStatistic current_stat = u.statistics.get(i);
+            if (current_stat.requireUpdate())
+                u.statistics.set(i, current_stat.updateStatistic(AbstractStatistic.Mode.DELETE));
+            // Get the new statistic we are looking for
+            K new_statistic = (K) statistic.getLowerStatistic(u.statistics, i, type);
+            return lookupRecursive(context, new_statistic, u.children.get(i), type);
+        }
     }
 
     /**
@@ -429,8 +465,9 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
         return getIDsByCount(context, pos, count);
     }
 
-    public ArrayList<V> getIDsByCount(DBContext context, long pos, int count, AbstractStatistic.Type type) {
+    public ArrayList<V> getIDsByCount(DBContext context, long pos, int count) {
         ArrayList<V> ids = new ArrayList<>();
+        /*
         if (count == 0)
             return ids;
         int ui = metaDataBlock.ri;
@@ -438,7 +475,6 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
         int get_count = 0;
         int first_index;
 
-        CombinedStatistic<Integer> statistic = new CombinedStatistic<>()
         Node u = new Node().get(context, bs, ui);
         while (true) {
             int i = statistic.findIndex(u.statistics, type);
@@ -473,14 +509,18 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
             ids.add(null);
             get_count++;
         }
+        */
         return ids;
     }
 
     public ArrayList<V> deleteIDs(DBContext context, int pos, int count) {
+
         ArrayList<V> ids = new ArrayList<>();
+        /*
         for (int i = 0; i < count; i++)
             ids.add(remove(context, pos, false));
         bs.flushDirtyBlocks(context);
+        */
         return ids;
     }
 
@@ -490,14 +530,33 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
     }
 
     // TODO: Do it in batches. offline if possible.
-    public void insertIDs(DBContext context, K statistic, ArrayList<V> ids) {
+    public void insertIDsCombined(DBContext context, ArrayList<K> statistics, ArrayList<V> ids, AbstractStatistic.Type type) {
         int count = ids.size();
         for (int i = 0; i < count; i++) {
-            add(context, pos + i, ids.get(i), false);
+            add(context, statistics.get(i), ids.get(i), false, type);
         }
         bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
         bs.flushDirtyBlocks(context);
     }
+
+    public ArrayList<V> deleteIDsCombined(DBContext context, ArrayList<K> statistics, AbstractStatistic.Type type) {
+        ArrayList<V> ids = new ArrayList<>();
+        int count = statistics.size();
+        for (int i = 0; i < count; i++)
+            ids.add(remove(context, statistics.get(i), false, type));
+        bs.flushDirtyBlocks(context);
+        return ids;
+    }
+
+    public ArrayList<V> getIDsCombined(DBContext context, ArrayList<K> statistics, AbstractStatistic.Type type) {
+        ArrayList<V> ids = new ArrayList<>();
+        int count = statistics.size();
+        for (int i = 0; i < count; i++)
+            ids.add(lookup(context, statistics.get(i), type));
+        bs.flushDirtyBlocks(context);
+        return ids;
+    }
+
 
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private class MetaDataBlock {

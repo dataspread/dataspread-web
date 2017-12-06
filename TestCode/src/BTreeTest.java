@@ -1,7 +1,9 @@
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.zss.model.impl.BTree;
+import org.zkoss.zss.model.impl.statistic.AbstractStatistic;
 import org.zkoss.zss.model.impl.statistic.CombinedStatistic;
+import org.zkoss.zss.model.impl.statistic.CountStatistic;
 import org.zkoss.zss.model.impl.statistic.KeyStatistic;
 
 import java.util.ArrayList;
@@ -78,8 +80,15 @@ public class BTreeTest {
         System.out.println("BTree size:" + btree.size(dbContext));
         System.out.println("ArrayList size:" + arrayList.size());
 
+        ArrayList<CombinedStatistic<Integer>> lookup_statistics = new ArrayList<>();
+        for (int i = 0; i < arrayList.size(); i++) {
+            CountStatistic count = new CountStatistic(i);
+            CombinedStatistic<Integer> statistic = new CombinedStatistic<>(key, count);
+            lookup_statistics.add(statistic);
+        }
+
         if (btree.size(dbContext) == arrayList.size()
-                && Arrays.asList((btree.getIDsByCount(dbContext, 0, arrayList.size())))
+                && Arrays.asList((btree.getIDsCombined(dbContext, lookup_statistics, AbstractStatistic.Type.COUNT)))
                 .equals(arrayList))
             System.out.println("Results Match");
         else
