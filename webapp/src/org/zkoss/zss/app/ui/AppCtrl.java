@@ -635,10 +635,10 @@ public class AppCtrl extends CtrlBase<Component> {
         SBook currentBook = loadedBook.getInternalBook();
         SSheet currentSheet = currentBook.getSheet(2);
         try {
-            createNavSTree(currentSheet.getDataModel().createNavS(null,0,0));
+            ss.setNavSBuckets(currentSheet.getDataModel().createNavS(null,0,0));
+            createNavSTree(ss.getNavSBuckets());
             updateColModel(currentSheet);
 
-            createNavSTree(ss.getNavSBuckets());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1331,16 +1331,19 @@ public class AppCtrl extends CtrlBase<Component> {
         int start = selectedNode.getData().getStartPos();
         int end = selectedNode.getData().getEndPos();
         String bucketName = selectedNode.getData().getName();
-                ss.focusTo(start+1,0);
+        ss.focusTo(start+1,0);
 
+        /*
+        ####for ondemand loading
         String sheetName = ss.getSelectedSheetName();
         SBook currentBook = loadedBook.getInternalBook();
         SSheet currentSheet = currentBook.getSheetByName(sheetName);
         try {
-            createNavSTree(currentSheet.getDataModel().createNavS(bucketName,start,end-start+1));
+            createNavSTree(currentSheet.getDataModel().createNavSOnDemand(bucketName,start,end-start+1));
         } catch (Exception e) {
             e.printStackTrace();
         }
+        */
 
 
     }
@@ -1375,5 +1378,19 @@ public class AppCtrl extends CtrlBase<Component> {
         }
     }
 
+    @Listen("onSelect = #colSelectbox")
+    public void changeType() {
+        int index = colSelectbox.getSelectedIndex()+1;
+
+        SBook currentBook = loadedBook.getInternalBook();
+        SSheet currentSheet = currentBook.getSheet(2);
+        try {
+            currentSheet.getDataModel().setIndexString("col_"+index);
+            ss.setNavSBuckets(currentSheet.getDataModel().createNavS(null,0,0));
+            createNavSTree(ss.getNavSBuckets());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
 }

@@ -33,7 +33,6 @@ public class ROM_Model extends Model {
         this.navSbuckets = new ArrayList<Bucket<String>>();
         this.navS = new NavigationStructure(tableName);
         createSchema(context);
-        indexString = "";
     }
 
 
@@ -598,7 +597,7 @@ public class ROM_Model extends Model {
         {
             select = new StringBuffer("SELECT COUNT(*)");
             select.append(" FROM ")
-                    .append(tableName+"_2")
+                    .append(tableName)
                     .append(" WHERE row !=1");
             try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
 
@@ -622,7 +621,7 @@ public class ROM_Model extends Model {
             select = new StringBuffer("SELECT row, "+indexString);
 
         select.append(" FROM ")
-                .append(tableName+"_2")
+                .append(tableName)
                 .append(" WHERE row = ANY (?) AND row !=1");
 
         try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
@@ -663,7 +662,7 @@ public class ROM_Model extends Model {
         StringBuffer select = null;
         select = new StringBuffer("SELECT *");
         select.append(" FROM ")
-                .append(tableName+"_2")
+                .append(tableName)
                 .append(" WHERE row =1");
         try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
 
@@ -681,6 +680,11 @@ public class ROM_Model extends Model {
 
         return headers;
 
+    }
+
+    @Override
+    public void setIndexString(String str) {
+        this.indexString = str;
     }
 
     @Override

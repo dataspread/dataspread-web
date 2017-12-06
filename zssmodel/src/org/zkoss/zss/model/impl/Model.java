@@ -98,6 +98,7 @@ public abstract class Model {
     public abstract boolean deleteTableColumns(DBContext dbContext, CellRegion cellRegion);
 
     public abstract ArrayList<String> getHeaders();
+    public abstract void setIndexString(String str);
 
     //
     public enum ModelType {

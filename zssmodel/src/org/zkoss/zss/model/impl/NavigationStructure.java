@@ -197,13 +197,13 @@ public class NavigationStructure{
             for (int i = 0; i < kHisto && startIndex < endPos+1; i++) {
                 //System.out.println("---------------BUCKET NO: " + i);
                 Bucket bucket = new Bucket();
-                bucket.minValue = recordList.get(startIndex);
+                //bucket.minValue = recordList.get(startIndex);
                 bucket.startPos = startIndex;
                 if (startIndex + bucketSize - 1 < endPos + 1) {
-                    bucket.maxValue = recordList.get(startIndex + bucketSize - 1);
+                    //bucket.maxValue = recordList.get(startIndex + bucketSize - 1);
                     bucket.endPos = startIndex + bucketSize - 1;
                 } else {
-                    bucket.maxValue = recordList.get(endPos);
+                    //bucket.maxValue = recordList.get(endPos);
                     bucket.endPos = endPos;
 
                 }
@@ -219,8 +219,8 @@ public class NavigationStructure{
             if(startIndex<endPos+1)
             {
                 Bucket bucket = new Bucket();
-                bucket.minValue = recordList.get(startIndex);
-                bucket.maxValue = recordList.get(endPos);
+                //bucket.minValue = recordList.get(startIndex);
+                //bucket.maxValue = recordList.get(endPos);
                 bucket.startPos = startIndex;
                 bucket.endPos = endPos;
                 bucket.size = endPos-startIndex+1;

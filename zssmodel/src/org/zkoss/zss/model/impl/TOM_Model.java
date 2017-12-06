@@ -172,6 +172,11 @@ public class TOM_Model extends Model {
     }
 
     @Override
+    public void setIndexString(String str) {
+        this.indexString = str;
+    }
+
+    @Override
     public void dropSchema(DBContext context) {
         // Do nothing
     }

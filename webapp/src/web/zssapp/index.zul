@@ -9,9 +9,14 @@
 					<div width="400px" align="center" style="padding-bottom: 0;">
 						<label multiline="true" style="font-size: 24px; font-weight: bold">
 							<attribute name="value">	Navigation
-								Pane</attribute>
+								Pane
+							</attribute>
 						</label>
-						<!--<zhighcharts id="chartComp25" />-->
+						Sort By: <selectbox id="colSelectbox">
+							<template name="model">
+								<label value="${each}" />
+							</template>
+						</selectbox>
 						<tree id="treeBucket" height="450px">
 							<treecols sizable="true">
 								<treecol width="130px" label="Bucket" />
@@ -41,6 +46,7 @@
 							 showContextMenu="true" vflex="1"/>
 			</hlayout>
 		</vlayout>
+
 		<script id="confirmMsgWorkaround"><![CDATA[
 			(function(){
 				var fn = 'onunload',

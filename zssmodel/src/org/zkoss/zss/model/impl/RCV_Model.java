@@ -33,7 +33,6 @@ public class RCV_Model extends Model {
         this.navSbuckets = new ArrayList<Bucket<String>>();
         this.navS = new NavigationStructure(tableName);
         createSchema(context);
-        indexString = "";
         loadMetaData(context);
     }
 
@@ -99,13 +98,80 @@ public class RCV_Model extends Model {
             }
         }
 
+        if(this.indexString==null)
+        {
+            return this.navS.getUniformBuckets(0,count);
+        }
+
+
+       // rowMapping.deleteIDs(context,start,count);
+        select = new StringBuffer("SELECT row, "+indexString);
+
+        select.append(" FROM ")
+                .append(tableName+"_2")
+                .append(" WHERE row !=1 ORDER BY "+indexString);
+
+        ArrayList<Integer> ids = new ArrayList<Integer>();
+
+        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            ResultSet rs = stmt.executeQuery();
+            int i=0;
+            while (rs.next()) {
+                int row = rs.getInt(1);
+                ids.add(row);
+                recordList.add(new String(rs.getBytes(2),"UTF-8"));
+            }
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        rowMapping.insertIDs(context,start,ids);
+
+        //create nav data structure
+        this.navS.setRecordList(recordList);
+        ArrayList<Bucket<String>> newList = this.navS.getNonOverlappingBuckets(0,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
+
+        //addByCount(context, pos + i, ids[i], false);
+        return newList;
+
+    }
+
+    public ArrayList<Bucket<String>> createNavSOnDemand(String bucketName, int start, int count) {
+        //load sorted data from table
+        ArrayList<String> recordList =  new ArrayList<String>();
+
+        AutoRollbackConnection connection = DBHandler.instance.getConnection();
+        DBContext context = new DBContext(connection);
+        StringBuffer select = null;
+        if(bucketName==null)
+        {
+            select = new StringBuffer("SELECT COUNT(*)");
+            select.append(" FROM ")
+                    .append(tableName+"_2")
+                    .append(" WHERE row !=1");
+            try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    count = rs.getInt(1);
+                }
+                rs.close();
+                stmt.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        if(this.indexString==null)
+        {
+            return this.navS.getUniformBuckets(0,count);
+        }
+
         Integer [] rowIds = rowMapping.getIDs(context,start,count);
 
-        select = null;
-        if(indexString.length()==0)
-            select = new StringBuffer("SELECT row, col_1");
-        else
-            select = new StringBuffer("SELECT row, "+indexString);
+        select = new StringBuffer("SELECT row, "+indexString);
 
         select.append(" FROM ")
                 .append(tableName+"_2")
@@ -133,7 +199,7 @@ public class RCV_Model extends Model {
         {
             return newList;
         }
-
+        //addByCount(context, pos + i, ids[i], false);
         return this.navS.recomputeNavS(bucketName,this.navSbuckets,newList);
         //  printBuckets(navSbuckets);
 
@@ -170,6 +236,11 @@ public class RCV_Model extends Model {
 
         return headers;
 
+    }
+
+    @Override
+    public void setIndexString(String str) {
+        this.indexString = str;
     }
 
 
