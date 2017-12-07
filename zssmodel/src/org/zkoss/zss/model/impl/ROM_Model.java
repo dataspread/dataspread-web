@@ -540,7 +540,7 @@ public class ROM_Model extends Model {
                 ++importedRows;
                 sbSS = new StringBuffer();
 
-               if ((importedRows-1)% sampleSize ==0 && importedRows!=1) {
+               /*if ((importedRows-1)% sampleSize ==0 && importedRows!=1) {
                     connection.commit();
 
                     insertRows(dbContext, insertedRows, importedRows-insertedRows);//there's am implicit +1 in imprtedrows
@@ -555,22 +555,21 @@ public class ROM_Model extends Model {
 
                     System.out.println((importedRows-1) + " rows imported ");
                     logger.info((importedRows-1) + " rows imported ");
-                }
+                }*/
 
 
             }
 
-            if ((importedRows-1)% sampleSize !=0 )
-            {
-                connection.commit();
+            connection.commit();
 
-                //this.navSbuckets = navS.createNavS(this.navSbuckets);
+            //this.navSbuckets = navS.createNavS(this.navSbuckets);
 
-                insertRows(dbContext, insertedRows, importedRows-insertedRows);
-                insertedRows += (importedRows-insertedRows);
+            insertRows(dbContext, insertedRows, importedRows-insertedRows);
+            insertedRows += (importedRows-insertedRows);
 
-                logger.info((importedRows-1) + " rows imported ");
-            }
+            this.navSbuckets = this.createNavS(null,0,importedRows);
+
+            logger.info((importedRows-1) + " rows imported ");
 
             logger.info("Import done: " + importedRows + " rows and "
                     + importedColumns + " columns imported");

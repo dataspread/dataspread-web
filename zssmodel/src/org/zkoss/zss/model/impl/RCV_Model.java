@@ -103,8 +103,6 @@ public class RCV_Model extends Model {
             return this.navS.getUniformBuckets(0,count);
         }
 
-
-       // rowMapping.deleteIDs(context,start,count);
         select = new StringBuffer("SELECT row, "+indexString);
 
         select.append(" FROM ")
@@ -127,7 +125,10 @@ public class RCV_Model extends Model {
             e.printStackTrace();
         }
 
+        rowMapping.deleteIDs(context,start,count);
+
         rowMapping.insertIDs(context,start,ids);
+
 
         //create nav data structure
         this.navS.setRecordList(recordList);

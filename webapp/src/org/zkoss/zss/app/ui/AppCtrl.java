@@ -1332,20 +1332,6 @@ public class AppCtrl extends CtrlBase<Component> {
         int end = selectedNode.getData().getEndPos();
         String bucketName = selectedNode.getData().getName();
         ss.focusTo(start+1,0);
-
-        /*
-        ####for ondemand loading
-        String sheetName = ss.getSelectedSheetName();
-        SBook currentBook = loadedBook.getInternalBook();
-        SSheet currentSheet = currentBook.getSheetByName(sheetName);
-        try {
-            createNavSTree(currentSheet.getDataModel().createNavSOnDemand(bucketName,start,end-start+1));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        */
-
-
     }
 
     @Listen("onFocusByChartColumn = #mainWin")
