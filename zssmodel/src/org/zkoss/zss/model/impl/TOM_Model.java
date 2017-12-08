@@ -30,6 +30,19 @@ public class TOM_Model extends Model {
         loadColumnInfo(context);
     }
 
+
+    TOM_Model(DBContext context, SSheet sheet, String modelName, TOM_Model source) {
+        rowMapping = source.rowMapping.clone(context, tableName + "_row_idx");
+        colMapping = source.colMapping.clone(context, tableName + "_col_idx");
+        this.tableName = tableName;
+        loadColumnInfo(context);
+    }
+
+    @Override
+    public TOM_Model clone(DBContext dbContext, SSheet sheet, String modelName) {
+        return new TOM_Model(dbContext,sheet,modelName, this);
+    }
+
     public void loadColumnInfo(DBContext dbContext) {
         columnNames = new TreeMap<>();
         String tableCols = (new StringBuffer())

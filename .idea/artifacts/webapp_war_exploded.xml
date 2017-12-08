@@ -28,6 +28,9 @@
           <element id="library" level="project" name="Maven: com.google.errorprone:error_prone_annotations:2.0.18" />
           <element id="library" level="project" name="Maven: com.google.j2objc:j2objc-annotations:1.1" />
           <element id="library" level="project" name="Maven: org.codehaus.mojo:animal-sniffer-annotations:1.14" />
+          <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.6.3" />
+          <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.6.0" />
+          <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-core:2.6.3" />
           <element id="archive" name="zss-3.8.1.jar">
             <element id="module-output" name="zss" />
           </element>

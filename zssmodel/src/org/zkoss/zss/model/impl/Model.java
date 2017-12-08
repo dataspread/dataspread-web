@@ -97,6 +97,8 @@ public abstract class Model {
 
     public abstract boolean deleteTableColumns(DBContext dbContext, CellRegion cellRegion);
 
+    // Clone only the corresponding tables in postgres
+    public abstract Model clone(DBContext dbContext, SSheet sheet, String modelName);
     public abstract ArrayList<String> getHeaders();
     public abstract void setIndexString(String str);
 

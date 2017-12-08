@@ -33,6 +33,18 @@ public class Hybrid_Model extends RCV_Model {
         loadMetaData(context);
     }
 
+    public Hybrid_Model(DBContext context, SSheet sheet, String tableName, Hybrid_Model source) {
+        super(context,sheet,tableName,source);
+        source.bs.clone(context, tableName + "_hb_meta");
+        loadMetaData(context);
+
+    }
+
+    @Override
+    public Model clone(DBContext context, SSheet sheet, String tableName) {
+        return new Hybrid_Model(context, sheet, tableName, this);
+    }
+
     public boolean checkOverlap(CellRegion cellRegion) {
         return metaDataBlock.modelEntryList
                 .stream()

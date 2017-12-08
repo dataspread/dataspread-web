@@ -1,5 +1,6 @@
 package org.zkoss.zss.model.impl;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import org.model.BlockStore;
 import org.model.DBContext;
 import org.zkoss.util.logging.Log;
@@ -48,6 +49,20 @@ public class BTree implements PosMapping {
     public BTree(DBContext context, String tableName) {
         bs = new BlockStore(context, tableName);
         loadMetaData(context);
+    }
+
+
+    /**
+     * Construct an BTree from an existing BTree, in-memory
+     */
+    protected BTree(DBContext context, String tableName, BlockStore sourceBlockStore) {
+        bs = sourceBlockStore.clone(context, tableName);
+        loadMetaData(context);
+    }
+
+    @Override
+    public BTree clone(DBContext context, String tableName){
+        return new BTree(context, tableName, bs);
     }
 
     /**
@@ -383,6 +398,7 @@ public class BTree implements PosMapping {
         int i;
         /* Need to go to leaf to delete */
         if (u.isLeaf()) {
+            metaDataBlock.elementCount--;
             i = (int) pos;
             // if (i > 0) {
             int id = u.removeBoth(i);
@@ -1055,6 +1071,7 @@ public class BTree implements PosMapping {
         bs.flushDirtyBlocks(context);
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class MetaDataBlock {
         // The ID of the root node
         int ri;
@@ -1067,6 +1084,7 @@ public class BTree implements PosMapping {
     /**
      * A node in a B-tree which has an array of up to b keys and up to b children
      */
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class Node {
         /**
          * This block's index

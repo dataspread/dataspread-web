@@ -15,7 +15,7 @@ public class FormulaTesting {
         DBHandler.connectToDB(url, driver, userName, password);
 
         AbstractBookAdv book = new BookImpl("Test Book");
-        book.setIdAndLoad("biycbh4vq");
+        book.setNameAndLoad("biycbh4vq");
         System.out.println("Sheets " + book.getNumOfSheet());
         SSheet sheet = book.getSheet(0);
         long startTime, endTime;

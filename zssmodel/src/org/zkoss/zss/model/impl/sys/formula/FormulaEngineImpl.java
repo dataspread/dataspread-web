@@ -817,6 +817,21 @@ public class FormulaEngineImpl implements FormulaEngine {
 							} else {
 								tokens[i] = PtgShifter.createDeletedRef(aptg);
 							}
+						} else if (ptg instanceof FuncVarPtg) {
+							FuncVarPtg funcVarPtg = (FuncVarPtg) ptg;
+							/* Special Handing for index function */
+							if (funcVarPtg.getName().equals("INDEX"))
+							{
+								if (i>2 &&
+										tokens[i-1] instanceof IntPtg &&
+										tokens[i-2] instanceof IntPtg)
+								{
+									IntPtg row = (IntPtg) tokens[i-2];
+									IntPtg col = (IntPtg) tokens[i-1];
+									tokens[i-2] = new IntPtg(row.getValue() + rowOffset);
+									tokens[i-1] = new IntPtg(col.getValue() + columnOffset);
+								}
+							}
 						}
 					}
 					return true;

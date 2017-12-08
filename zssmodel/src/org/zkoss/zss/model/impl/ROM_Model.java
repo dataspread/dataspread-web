@@ -35,6 +35,39 @@ public class ROM_Model extends Model {
         createSchema(context);
     }
 
+    ROM_Model(DBContext context, SSheet sheet, String tableName, ROM_Model source) {
+        this.sheet = sheet;
+        rowMapping = source.rowMapping.clone(context, tableName + "_row_idx");
+        colMapping = source.colMapping.clone(context, tableName + "_col_idx");
+        this.tableName = tableName;
+        copySchema(context, source.tableName);
+    }
+
+    @Override
+    public ROM_Model clone(DBContext dbContext, SSheet sheet, String modelName) {
+        return new ROM_Model(dbContext, sheet, tableName, this);
+    }
+
+    private void copySchema(DBContext context, String sourceTable){
+        String createTable = (new StringBuffer())
+                .append("CREATE TABLE IF NOT EXISTS ")
+                .append(tableName)
+                .append("(row INT PRIMARY KEY)")
+                .toString();
+        String copyTable = (new StringBuffer())
+                .append("INSERT INTO ")
+                .append(tableName)
+                .append(" SELECT * FROM ")
+                .append(sourceTable)
+                .toString();
+        AutoRollbackConnection connection = context.getConnection();
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute(createTable);
+            stmt.execute(copyTable);
+         } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
     private void createIndexOnSortAttr(int selectedCol)
     {

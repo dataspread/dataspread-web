@@ -3,20 +3,12 @@ package testformula;
 import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
 import org.zkoss.zss.model.SBook;
-import org.zkoss.zss.model.SBooks;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.FormulaCacheCleaner;
-import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerCoverFIFO;
-import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerCoverLTF;
 import org.zkoss.zss.model.sys.BookBindings;
-import org.zkoss.zss.model.sys.TransactionManager;
-import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.sql.Connection;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Random;
 import java.util.UUID;
 
@@ -41,8 +33,7 @@ public class FormulaPerformance {
 
         String logpath=String.format("%s_%s_r%d_m%d_%s.csv",xlsPath,"LTF",range,modification, UUID.randomUUID());
         log=new FileWriter(new File(logpath));
-        FormulaAsyncScheduler.initLogWriter(log);
-        FormulaAsyncScheduler.initScheduler(new FormulaAsyncSchedulerCoverLTF());
+        //FormulaAsyncScheduler.initScheduler(new FormulaAsyncSchedulerCoverLTF());
 
         importAndShuffleTest(xlsPath);
     }
@@ -53,18 +44,18 @@ public class FormulaPerformance {
         //System.out.printf("Imported %s,id=%s @%s\n",path,importedId, LocalDateTime.now());
         //System.out.printf("Shuffled @%s",LocalDateTime.now());
         SBook book= XlsxOfflineImporter.loadToDB(path);
-        TransactionManager.INSTANCE.startTransaction(book);
+        //TransactionManager.INSTANCE.startTransaction(book);
         FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(book.getBookSeries()));
         shuffle(book.getSheet(0));
-        TransactionManager.INSTANCE.endTransaction(book);
+        //TransactionManager.INSTANCE.endTransaction(book);
     }
 
     private static void loadAndShuffleTest(String dbid) throws Exception{
-        SBook book= SBooks.createOrGetBook(dbid);
-        TransactionManager.INSTANCE.startTransaction(book);
-        book.setIdAndLoad(dbid);
+        SBook book= BookBindings.getBookByName(dbid);
+        //TransactionManager.INSTANCE.startTransaction(book);
+        book.setNameAndLoad(dbid);
         shuffle(book.getSheet(0));
-        TransactionManager.INSTANCE.endTransaction(book);
+        //TransactionManager.INSTANCE.endTransaction(book);
     }
 
     private static void shuffle(SSheet sheet){

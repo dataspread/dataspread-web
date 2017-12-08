@@ -17,10 +17,6 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 package org.zkoss.zss.range.impl.imexp;
 
 import org.model.AutoRollbackConnection;
-import java.io.*;
-import java.sql.Connection;
-import java.util.*;
-
 import org.model.DBHandler;
 import org.zkoss.poi.hssf.usermodel.HSSFRichTextString;
 import org.zkoss.poi.ss.formula.eval.*;
@@ -38,12 +34,11 @@ import org.zkoss.zss.model.SFill.FillPattern;
 import org.zkoss.zss.model.SPicture.Format;
 import org.zkoss.zss.model.SSheet.SheetVisible;
 import org.zkoss.zss.model.impl.*;
-import org.zkoss.zss.model.sys.TransactionManager;
+import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.formula.FormulaExpression;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.Connection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -138,8 +133,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 		importedFont.clear();
 
 		workbook = createPoiBook(is);
-		book = SBooks.createOrGetBook(bookName);
-		TransactionManager.INSTANCE.startTransaction(book);
+		book = BookBindings.getBookByName(bookName);
 //		book.setDefaultCellStyle(importCellStyle(workbook.getCellStyleAt((short) 0), false)); //ZSS-780
 		//ZSS-854
 		importDefaultCellStyles();
@@ -182,7 +176,6 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 		} finally {
 			book.getBookSeries().setAutoFormulaCacheClean(isCacheClean);
 			Locales.setThreadLocal(old);
-			TransactionManager.INSTANCE.endTransaction(book);
 		}
 
 		return book;
