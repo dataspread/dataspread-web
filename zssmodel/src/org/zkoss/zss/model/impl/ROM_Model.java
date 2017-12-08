@@ -622,8 +622,6 @@ public class ROM_Model extends Model {
         //load sorted data from table
         ArrayList<String> recordList =  new ArrayList<String>();
 
-        AutoRollbackConnection connection = DBHandler.instance.getConnection();
-        DBContext context = new DBContext(connection);
         StringBuffer select = null;
         if(bucketName==null)
         {
@@ -631,7 +629,8 @@ public class ROM_Model extends Model {
             select.append(" FROM ")
                     .append(tableName)
                     .append(" WHERE row !=1");
-            try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(select.toString())) {
 
                 ResultSet rs = stmt.executeQuery();
                 while (rs.next()) {
@@ -644,7 +643,7 @@ public class ROM_Model extends Model {
             }
         }
 
-        Integer [] rowIds = rowMapping.getIDs(context,start,count);
+
 
         select = null;
         if(indexString.length()==0)
@@ -656,7 +655,10 @@ public class ROM_Model extends Model {
                 .append(tableName)
                 .append(" WHERE row = ANY (?) AND row !=1");
 
-        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+        PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            DBContext context = new DBContext(connection);
+            Integer [] rowIds = rowMapping.getIDs(context,start,count);
             Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
             stmt.setArray(1, inArrayRow);
 

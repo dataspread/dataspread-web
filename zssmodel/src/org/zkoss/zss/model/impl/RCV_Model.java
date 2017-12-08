@@ -106,8 +106,6 @@ public class RCV_Model extends Model {
         //load sorted data from table
         ArrayList<String> recordList =  new ArrayList<String>();
 
-        AutoRollbackConnection connection = DBHandler.instance.getConnection();
-        DBContext context = new DBContext(connection);
         StringBuffer select = null;
         if(bucketName==null)
         {
@@ -115,8 +113,11 @@ public class RCV_Model extends Model {
             select.append(" FROM ")
                     .append(tableName+"_2")
                     .append(" WHERE row !=1");
-            try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            try (
+                    AutoRollbackConnection connection = DBHandler.instance.getConnection();
 
+                    PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+                DBContext context = new DBContext(connection);
                 ResultSet rs = stmt.executeQuery();
                 while (rs.next()) {
                     count = rs.getInt(1);
@@ -141,7 +142,9 @@ public class RCV_Model extends Model {
 
         ArrayList<Integer> ids = new ArrayList<Integer>();
 
-        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+        PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            DBContext context = new DBContext(connection);
             ResultSet rs = stmt.executeQuery();
             int i=0;
             while (rs.next()) {
@@ -151,13 +154,16 @@ public class RCV_Model extends Model {
             }
             rs.close();
             stmt.close();
+
+            rowMapping.deleteIDs(context,start,count);
+
+            rowMapping.insertIDs(context,start,ids);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        rowMapping.deleteIDs(context,start,count);
 
-        rowMapping.insertIDs(context,start,ids);
 
 
         //create nav data structure
@@ -241,15 +247,17 @@ public class RCV_Model extends Model {
     {
         ArrayList<String> headers = new ArrayList<String>();
 
-        AutoRollbackConnection connection = DBHandler.instance.getConnection();
-        DBContext context = new DBContext(connection);
+
         StringBuffer select = null;
         select = new StringBuffer("SELECT *");
         select.append(" FROM ")
                 .append(tableName+"_2")
                 .append(" WHERE row =1");
-        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+        try (
+                AutoRollbackConnection connection = DBHandler.instance.getConnection();
 
+                PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            DBContext context = new DBContext(connection);
             ResultSet rs = stmt.executeQuery();
             int i=2;
             ResultSetMetaData meta = rs.getMetaData();
