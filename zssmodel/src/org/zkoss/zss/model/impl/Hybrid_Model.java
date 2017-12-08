@@ -26,7 +26,7 @@ public class Hybrid_Model extends RCV_Model {
     private MetaDataBlock metaDataBlock;
 
     // This list is synchronized with modelEntryList in metaDataBlock
-    private List<Pair<CellRegion, Model>> tableModels;
+    public List<Pair<CellRegion, Model>> tableModels;
 
     Hybrid_Model(DBContext context, SSheet sheet, String tableName) {
         super(context, sheet, tableName);

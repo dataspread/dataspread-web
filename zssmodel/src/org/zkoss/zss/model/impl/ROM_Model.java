@@ -11,7 +11,8 @@ import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SSheet;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.Reader;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
@@ -19,7 +20,7 @@ import java.util.stream.IntStream;
 
 public class ROM_Model extends Model {
     private static final Logger logger = Logger.getLogger(ROM_Model.class.getName());
-    private PosMapping rowMapping;
+    public PosMapping rowMapping;
     private PosMapping colMapping;
 
     private boolean isNav = true;

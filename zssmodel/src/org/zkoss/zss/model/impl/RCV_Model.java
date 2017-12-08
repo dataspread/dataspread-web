@@ -2,7 +2,10 @@ package org.zkoss.zss.model.impl;
 
 import com.opencsv.CSVReader;
 import org.apache.tomcat.dbcp.dbcp2.DelegatingConnection;
-import org.model.*;
+import org.model.AutoRollbackConnection;
+import org.model.BlockStore;
+import org.model.DBContext;
+import org.model.DBHandler;
 import org.postgresql.copy.CopyIn;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.jdbc.PgConnection;
@@ -155,9 +158,13 @@ public class RCV_Model extends Model {
             rs.close();
             stmt.close();
 
-            rowMapping.deleteIDs(context,start,count);
+            Hybrid_Model hybrid_model = (Hybrid_Model) this;
+            ROM_Model rom_model = (ROM_Model) hybrid_model.tableModels.get(0).y;
 
-            rowMapping.insertIDs(context,start,ids);
+            rom_model.rowMapping.dropSchema(context);
+            rom_model.rowMapping = new BTree(context, tableName + "_row_idx");
+            rom_model.rowMapping.insertIDs(context,start,ids);
+            connection.commit();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -564,7 +571,7 @@ public class RCV_Model extends Model {
             }
             if (sb.length() > 0)
                 cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
-            cpIN.endCopy();
+                cpIN.endCopy();
             rawConn.commit();
             DBContext dbContext = new DBContext(connection);
             insertRows(dbContext, 0, importedRows);

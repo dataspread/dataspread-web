@@ -5,7 +5,6 @@ import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
-import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncUIController;
 import org.zkoss.zss.ui.sys.SpreadsheetCtrl;
@@ -14,10 +13,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
-
-/**
- * Created by zekun.fan@gmail.com on 7/19/17.
- */
 
 public class FormulaAsyncUIControllerImpl implements FormulaAsyncUIController {
 
