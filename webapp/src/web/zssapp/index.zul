@@ -5,14 +5,48 @@
 		<vlayout hflex="1" vflex="1" spacing="0">
 			<include hflex="1" src="~./zssapp/mainMenubar.zul" />
 			<hlayout vflex="1" spacing="0">
+				<vlayout>
+					<div width="400px" align="center" style="padding-bottom: 0;">
+						<label multiline="true" style="font-size: 24px; font-weight: bold">
+							<attribute name="value">	Navigation
+								Pane
+							</attribute>
+						</label>
+						Sort By: <selectbox id="colSelectbox">
+							<template name="model">
+								<label value="${each}" />
+							</template>
+						</selectbox>
+						<tree id="treeBucket" height="450px">
+							<treecols sizable="true">
+								<treecol width="130px" label="Bucket" />
+								<treecol width="270px" label="Distribution" />
+							</treecols>
+							<template name="model">
+								<treeitem>
+									<treerow>
+										<treecell>
+											<label value="${each.data.summary}" multiline="true"/>
+										</treecell>
+										<!--<treecell>
+											<textbox value="${each.data.summary}" readonly="true" multiline="true"/>
+										</treecell>-->
+										<treecell >
+											<zhighcharts id="ch${each.data.id}" onCreate="$composer.onChartsCreate(self)"/>
+										</treecell>
+									</treerow>
+								</treeitem>
+							</template>
+						</tree>
+					</div>
 
-				<include vflex="1" src="~./zssapp/TablesBar.zul"></include>
-
-				<spreadsheet id="ss" hflex="1" showToolbar="true" showFormulabar="true" showSheetbar="true"
+<!--<include vflex="1" src="~./zssapp/hierarchy.zul"></include>-->
+				</vlayout>
+                <spreadsheet id="ss" hflex="1" showToolbar="true" showFormulabar="true" showSheetbar="true"
 							 showContextMenu="true" vflex="1"/>
-
 			</hlayout>
 		</vlayout>
+
 		<script id="confirmMsgWorkaround"><![CDATA[
 			(function(){
 				var fn = 'onunload',

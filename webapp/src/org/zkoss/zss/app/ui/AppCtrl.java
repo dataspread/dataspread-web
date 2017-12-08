@@ -21,6 +21,7 @@ import org.zkoss.util.resource.Labels;
 import org.zkoss.web.servlet.http.Encodes;
 import org.zkoss.zk.ui.*;
 import org.zkoss.zk.ui.event.*;
+import org.zkoss.zk.ui.select.annotation.Listen;
 import org.zkoss.zk.ui.select.annotation.Wire;
 import org.zkoss.zk.ui.util.Clients;
 import org.zkoss.zk.ui.util.DesktopCleanup;
@@ -43,10 +44,9 @@ import org.zkoss.zss.app.repository.BookRepositoryFactory;
 import org.zkoss.zss.app.repository.impl.BookUtil;
 import org.zkoss.zss.app.repository.impl.SimpleBookInfo;
 import org.zkoss.zss.app.ui.dlg.*;
-import org.zkoss.zss.model.ModelEvent;
-import org.zkoss.zss.model.ModelEventListener;
-import org.zkoss.zss.model.ModelEvents;
-import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.*;
+import org.zkoss.zss.model.impl.Bucket;
+import org.zkoss.zss.model.impl.NavigationStructure;
 import org.zkoss.zss.ui.*;
 import org.zkoss.zss.ui.Version;
 import org.zkoss.zss.ui.event.Events;
@@ -55,16 +55,20 @@ import org.zkoss.zss.ui.impl.DefaultUserActionManagerCtrl;
 import org.zkoss.zss.ui.impl.Focus;
 import org.zkoss.zss.ui.sys.UndoableActionManager;
 import org.zkoss.zul.*;
-
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.*;
+
 import java.util.Date;
+
+import org.ngi.zhighcharts.SimpleExtXYModel;
+import org.ngi.zhighcharts.ZHighCharts;
+import org.zkoss.zk.ui.event.Event;
+import org.zkoss.zul.Window;
 
 /**
  *
@@ -116,12 +120,33 @@ public class AppCtrl extends CtrlBase<Component> {
     Script gaScript;
     @Wire
     Html usersPopContent; //ZSS-998
+    @Wire
+    Window mainWin;
+
     BookInfo selectedBookInfo;
     Book loadedBook;
     Desktop desktop = Executions.getCurrent().getDesktop();
     private ModelEventListener dirtyChangeEventListener;
     private String username;
     private UnsavedAlertState isNeedUnsavedAlert = UnsavedAlertState.DISABLED;
+
+    // Basic column
+
+    private ZHighCharts chartComp25;
+
+    private SimpleExtXYModel dataChartModel25;
+
+    private Map<String,Bucket<String>> navSBucketMap = new HashMap<String,Bucket<String>>();
+
+    // Stacked and grouped column
+
+    private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+
+    @Wire
+    private Tree treeBucket;
+
+    @Wire
+    private Selectbox colSelectbox;
 
     public AppCtrl() {
         super(true);
@@ -542,6 +567,9 @@ public class AppCtrl extends CtrlBase<Component> {
                                 m.isBinary() ? new BufferedReader(new InputStreamReader(m.getStreamData())) :
                                         m.getReaderData(), delimiter);
 
+                        ss.setNavSBuckets(newSheet.getDataModel().navSbuckets);
+                        createNavSTree(newSheet.getDataModel().navSbuckets);
+
                         Messagebox.show("File imported", "DataSpread",
                                 Messagebox.OK, Messagebox.INFORMATION, null);
 
@@ -603,8 +631,19 @@ public class AppCtrl extends CtrlBase<Component> {
         pushAppEvent(AppEvts.ON_LOADED_BOOK, loadedBook);
         pushAppEvent(AppEvts.ON_CHANGED_SPREADSHEET, ss);
         updatePageInfo();
-    }
 
+        SBook currentBook = loadedBook.getInternalBook();
+        SSheet currentSheet = currentBook.getSheet(2);
+        try {
+            ss.setNavSBuckets(currentSheet.getDataModel().createNavS(null,0,0));
+            createNavSTree(ss.getNavSBuckets());
+            updateColModel(currentSheet);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
 
     private void doOpenNewBook0(boolean renewState) {
         try {
@@ -1144,4 +1183,199 @@ public class AppCtrl extends CtrlBase<Component> {
     interface AsyncFunction {
         void invoke();
     }
+
+    private BucketTreeNodeCollection<Bucket<String>> childrenBuckets(ArrayList<Bucket<String>> bucketList) {
+        BucketTreeNodeCollection<Bucket<String>> dtnc = new BucketTreeNodeCollection<Bucket<String>>();
+
+        for(int i=0;i<bucketList.size();i++) {
+            BucketTreeNodeCollection<Bucket<String>> btnc_ = new BucketTreeNodeCollection<Bucket<String>>();
+            if(!navSBucketMap.containsKey("ch"+bucketList.get(i).getId()))
+                navSBucketMap.put("ch"+bucketList.get(i).getId(),bucketList.get(i));
+            if(bucketList.get(i).getChildrenCount()>0) {
+                btnc_ = childrenBuckets(bucketList.get(i).getChildren());
+                dtnc.add(new DefaultTreeNode<Bucket<String>>(bucketList.get(i),btnc_));
+            }
+            else
+            {
+                dtnc.add(new DefaultTreeNode<Bucket<String>>(bucketList.get(i)));
+            }
+        }
+
+        return dtnc;
+    }
+
+   private void createNavSTree(ArrayList<Bucket<String>> bucketList) throws Exception {
+
+        //treeBucket.setAutopaging(true);
+        BucketTreeNodeCollection<Bucket<String>> btnc = new BucketTreeNodeCollection<Bucket<String>>();
+
+        btnc = childrenBuckets(bucketList);
+
+        treeBucket.setModel(new DefaultTreeModel<Bucket<String>>(new BucketTreeNode<Bucket<String>>(null,btnc)));
+
+        /*for(int i=0;i<bucketList.size();i++)
+        {
+            System.out.println("Bucket "+(i+1));
+            System.out.println("Max: "+bucketList.get(i).getMaxValue());
+            System.out.println("Min: "+bucketList.get(i).getMinValue());
+            System.out.println("start: "+bucketList.get(i).getStartPos());
+            System.out.println("end: "+bucketList.get(i).getEndPos());
+            System.out.println("Size: "+bucketList.get(i).getSize());
+            System.out.println("children: "+bucketList.get(i).getChildrenCount());
+        }*/
+    }
+
+
+
+    public void onChartsCreate(ZHighCharts chartComp25) throws Exception {
+
+        //================================================================================
+
+        // Basic column
+
+        //================================================================================
+
+        Bucket<String> currentBucket = navSBucketMap.get(chartComp25.getId());
+        chartComp25.setType("column");
+        chartComp25.setOptions("{margin:[-30,0,50,30]}");
+        //chartComp25.setTitle(currentBucket.getName());
+        String xAxisLabels = "";
+
+        chartComp25.setHeight("200px");
+
+
+        if(currentBucket.getChildrenCount() > 0)
+            xAxisLabels = "{categories: ['"+currentBucket.getChildren().get(0).getName()+"'";
+        else
+            xAxisLabels = "{categories: ['"+currentBucket.getName()+"'";
+
+        for(int i=1;i<currentBucket.getChildrenCount();i++)
+            xAxisLabels += ",'"+currentBucket.getChildren().get(i).getName()+"'";
+
+        chartComp25.setxAxisOptions(xAxisLabels+"],"+
+                    "labels: {"+
+                    "rotation: -45,"+
+                    "align: 'right',"+
+                    "style: {"+
+                    "fontSize: '8px',"+
+                    "fontFamily: 'Verdana, sans-serif'"+
+                    "}"+
+                    "}" +
+                "}");
+
+        chartComp25.setyAxisOptions("{ " +
+                "min:0" +
+                "}");
+
+        //chartComp25.setXAxisTitle("Sub-Categories");
+        chartComp25.setYAxisTitle("#Rows");
+        chartComp25.setTooltipOptions("{followPointer:true}");
+        chartComp25.setTooltipFormatter("function formatTooltip(obj){ " +
+                "return '<b>'+obj.x +'</b> has <b>'+ obj.y+'</b> rows';" +
+                "}");
+
+        chartComp25.setLegend("{enabled:false}");
+        /*
+        * "{" +
+                "layout: 'vertical'," +
+                "backgroundColor: '#FFFFFF'," +
+                "align: 'left'," +
+                "verticalAlign: 'top'," +
+                "x: 100," +
+                "y: 70," +
+                "floating: true," +
+                "shadow: true" +
+
+                "}"
+                */
+        chartComp25.setPlotOptions(//"["+
+                "{" +
+                    "column: {" +
+                        "pointPadding: 0.2," +
+                        "borderWidth: 0," +
+                        "point: {"+
+                            "events: {"+
+                                "click: function() {"+
+                                    "zk.Widget.$('$mainWin').fire('onFocusByChartColumn');"+
+                                    "zAu.send(new zk.Event(zk.Widget.$('$mainWin'), 'onFocusByChartColumn',this.category,{toServer:true}));"+
+                                "}"+
+                            "}"+
+                        "}"+
+                    "}"+
+                "}"
+                );
+
+        dataChartModel25 = new SimpleExtXYModel();
+        chartComp25.setModel(dataChartModel25);
+
+        for(int i = 0; i < currentBucket.getChildrenCount(); i++)
+            dataChartModel25.addValue(currentBucket.getName(), i, currentBucket.getChildren().get(i).getSize());
+
+        if(currentBucket.getChildrenCount()==0)
+            dataChartModel25.addValue(currentBucket.getName(),0,currentBucket.getSize());
+
+    }
+
+    private long getDateTime(String date) throws Exception {
+        return sdf.parse(date).getTime();
+
+    }
+
+    @Listen("onSelect = #treeBucket")
+    public void nodeSelected() {
+        DefaultTreeNode<Bucket<String>> selectedNode = (DefaultTreeNode<Bucket<String>>)treeBucket.getSelectedItem().getValue();
+
+        System.out.println("Name: "+selectedNode.getData().getName());
+
+        int start = selectedNode.getData().getStartPos();
+        int end = selectedNode.getData().getEndPos();
+        String bucketName = selectedNode.getData().getName();
+        ss.focusTo(start+1,0);
+    }
+
+    @Listen("onFocusByChartColumn = #mainWin")
+    public void onFocusByChartColumn(Event evt)
+    {
+        System.out.println("Client Screen Size:" + evt.getData());
+
+        String eventData = evt.getData().toString();
+        String bucketName = "ch";
+
+        if(eventData.contains("Rows:"))
+            bucketName += eventData.split("Rows:")[1].replaceAll("-","_");
+        else
+            bucketName += eventData.replaceAll(" ","_");
+
+        ss.focusTo(navSBucketMap.get(bucketName).getStartPos()+1,0);
+
+
+    }
+
+
+    private void updateColModel(SSheet currentSheet) {
+
+        try {
+            ListModelList<String> colModel = new ListModelList<String>(currentSheet.getDataModel().getHeaders());
+            colSelectbox.setModel(colModel);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Listen("onSelect = #colSelectbox")
+    public void changeType() {
+        int index = colSelectbox.getSelectedIndex()+1;
+
+        SBook currentBook = loadedBook.getInternalBook();
+        SSheet currentSheet = currentBook.getSheet(2);
+        try {
+            currentSheet.getDataModel().setIndexString("col_"+index);
+            ss.setNavSBuckets(currentSheet.getDataModel().createNavS(null,0,0));
+            createNavSTree(ss.getNavSBuckets());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 }

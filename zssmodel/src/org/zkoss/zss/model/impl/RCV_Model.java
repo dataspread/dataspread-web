@@ -30,6 +30,8 @@ public class RCV_Model extends Model {
         rowMapping = new BTree(context, tableName + "_row_idx");
         colMapping = new BTree(context, tableName + "_col_idx");
         this.tableName = tableName;
+        this.navSbuckets = new ArrayList<Bucket<String>>();
+        this.navS = new NavigationStructure(tableName);
         createSchema(context);
         loadMetaData(context);
     }
@@ -98,6 +100,180 @@ public class RCV_Model extends Model {
             e.printStackTrace();
         }
     }
+
+    @Override
+    public ArrayList<Bucket<String>> createNavS(String bucketName, int start, int count) {
+        //load sorted data from table
+        ArrayList<String> recordList =  new ArrayList<String>();
+
+        AutoRollbackConnection connection = DBHandler.instance.getConnection();
+        DBContext context = new DBContext(connection);
+        StringBuffer select = null;
+        if(bucketName==null)
+        {
+            select = new StringBuffer("SELECT COUNT(*)");
+            select.append(" FROM ")
+                    .append(tableName+"_2")
+                    .append(" WHERE row !=1");
+            try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    count = rs.getInt(1);
+                }
+                rs.close();
+                stmt.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        if(this.indexString==null)
+        {
+            return this.navS.getUniformBuckets(0,count);
+        }
+
+        select = new StringBuffer("SELECT row, "+indexString);
+
+        select.append(" FROM ")
+                .append(tableName+"_2")
+                .append(" WHERE row !=1 ORDER BY "+indexString);
+
+        ArrayList<Integer> ids = new ArrayList<Integer>();
+
+        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            ResultSet rs = stmt.executeQuery();
+            int i=0;
+            while (rs.next()) {
+                int row = rs.getInt(1);
+                ids.add(row);
+                recordList.add(new String(rs.getBytes(2),"UTF-8"));
+            }
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        rowMapping.deleteIDs(context,start,count);
+
+        rowMapping.insertIDs(context,start,ids);
+
+
+        //create nav data structure
+        this.navS.setRecordList(recordList);
+        ArrayList<Bucket<String>> newList = this.navS.getNonOverlappingBuckets(0,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
+
+        //addByCount(context, pos + i, ids[i], false);
+        return newList;
+
+    }
+
+    public ArrayList<Bucket<String>> createNavSOnDemand(String bucketName, int start, int count) {
+        //load sorted data from table
+        ArrayList<String> recordList =  new ArrayList<String>();
+
+        AutoRollbackConnection connection = DBHandler.instance.getConnection();
+        DBContext context = new DBContext(connection);
+        StringBuffer select = null;
+        if(bucketName==null)
+        {
+            select = new StringBuffer("SELECT COUNT(*)");
+            select.append(" FROM ")
+                    .append(tableName+"_2")
+                    .append(" WHERE row !=1");
+            try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    count = rs.getInt(1);
+                }
+                rs.close();
+                stmt.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        if(this.indexString==null)
+        {
+            return this.navS.getUniformBuckets(0,count);
+        }
+
+        Integer [] rowIds = rowMapping.getIDs(context,start,count);
+
+        select = new StringBuffer("SELECT row, "+indexString);
+
+        select.append(" FROM ")
+                .append(tableName+"_2")
+                .append(" WHERE row = ANY (?) AND row !=1");
+
+        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
+            stmt.setArray(1, inArrayRow);
+
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                recordList.add(new String(rs.getBytes(2),"UTF-8"));
+            }
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        //create nav data structure
+        this.navS.setRecordList(recordList);
+        ArrayList<Bucket<String>> newList = this.navS.getNonOverlappingBuckets(0,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
+
+        if(bucketName==null)
+        {
+            return newList;
+        }
+        //addByCount(context, pos + i, ids[i], false);
+        return this.navS.recomputeNavS(bucketName,this.navSbuckets,newList);
+        //  printBuckets(navSbuckets);
+
+    }
+
+    @Override
+    public ArrayList<String> getHeaders()
+    {
+        ArrayList<String> headers = new ArrayList<String>();
+
+        AutoRollbackConnection connection = DBHandler.instance.getConnection();
+        DBContext context = new DBContext(connection);
+        StringBuffer select = null;
+        select = new StringBuffer("SELECT *");
+        select.append(" FROM ")
+                .append(tableName+"_2")
+                .append(" WHERE row =1");
+        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+
+            ResultSet rs = stmt.executeQuery();
+            int i=2;
+            ResultSetMetaData meta = rs.getMetaData();
+            int columnCount = meta.getColumnCount();
+
+            while (rs.next()) {
+                for(;i<=columnCount;i++)
+                    headers.add(new String(rs.getBytes(i),"UTF-8"));
+            }
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return headers;
+
+    }
+
+    @Override
+    public void setIndexString(String str) {
+        this.indexString = str;
+    }
+
 
     @Override
     public void dropSchema(DBContext context) {

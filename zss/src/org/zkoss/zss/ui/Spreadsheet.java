@@ -62,6 +62,7 @@ import org.zkoss.zss.model.SCellStyle.VerticalAlignment;
 import org.zkoss.zss.model.SSheet.SheetVisible;
 import org.zkoss.zss.model.impl.AbstractBookAdv;
 import org.zkoss.zss.model.impl.AbstractSheetAdv;
+import org.zkoss.zss.model.impl.Bucket;
 import org.zkoss.zss.model.impl.TableImpl.DummyTable;
 import org.zkoss.zss.model.sys.format.FormatResult;
 import org.zkoss.zss.model.sys.formula.EvaluationContributorContainer;
@@ -355,6 +356,8 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 	private boolean _showContextMenu;
 	// a local flag indicates that skip the validation and force this editing (ZSS-351)
 	private boolean forceStopEditing0 = false;
+
+	private ArrayList<Bucket<String>> navSBuckets;
 	
 	public Spreadsheet() {
 		FormulaAsyncScheduler.initUiController(new FormulaAsyncUIControllerImpl());
@@ -6094,5 +6097,15 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 		public void putHelper(String sheetId, T helper) {
 			helpers.put(sheetId, helper);
 		}
+	}
+
+	public void setNavSBuckets(ArrayList<Bucket<String>> ls)
+	{
+		this.navSBuckets = ls;
+	}
+
+	public ArrayList<Bucket<String>> getNavSBuckets()
+	{
+		return  this.navSBuckets;
 	}
 }

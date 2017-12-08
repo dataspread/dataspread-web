@@ -11,8 +11,7 @@ import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SSheet;
 
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
@@ -23,6 +22,7 @@ public class ROM_Model extends Model {
     private PosMapping rowMapping;
     private PosMapping colMapping;
 
+    private boolean isNav = true;
 
     //Create or load RCV_model.
     ROM_Model(DBContext context, SSheet sheet, String tableName) {
@@ -30,6 +30,8 @@ public class ROM_Model extends Model {
         rowMapping = new BTree(context, tableName + "_row_idx");
         colMapping = new BTree(context, tableName + "_col_idx");
         this.tableName = tableName;
+        this.navSbuckets = new ArrayList<Bucket<String>>();
+        this.navS = new NavigationStructure(tableName);
         createSchema(context);
     }
 
@@ -62,6 +64,22 @@ public class ROM_Model extends Model {
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(createTable);
             stmt.execute(copyTable);
+         } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void createIndexOnSortAttr(int selectedCol)
+    {
+        Random rand = new Random();
+        int randomNum = rand.nextInt((100000 - 100) + 1) + 100;
+
+        StringBuffer indexTable = new StringBuffer("CREATE INDEX col_index_"+randomNum+" ON ");
+        indexTable.append(tableName+" (\"col_"+(selectedCol+1)+"\")");
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+             Statement indexStmt = connection.createStatement()) {
+            indexStmt.executeUpdate(indexTable.toString());
+            connection.commit();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -96,6 +114,7 @@ public class ROM_Model extends Model {
         rowMapping.dropSchema(context);
         colMapping.dropSchema(context);
     }
+
 
 
     @Override
@@ -401,6 +420,11 @@ public class ROM_Model extends Model {
 
     @Override
     public void importSheet(Reader reader, char delimiter) throws IOException {
+        if(isNav)
+        {
+            importNavSheet(reader,delimiter);
+            return;
+        }
         final int COMMIT_SIZE_BYTES = 8 * 1000 * 1000;
         CSVReader csvReader = new CSVReader(reader, delimiter);
         String[] nextLine;
@@ -461,10 +485,243 @@ public class ROM_Model extends Model {
 
     }
 
+    public void importNavSheet(Reader reader, char delimiter) throws IOException {
+
+        String headerStringSS = "";
+
+        String valuesString = "";
+        int selectedCol = 0;//rember to make it -1 for initial load
+        int sampleSize = navS.getSampleSize();
+
+        navS.setSelectedColumn(selectedCol);
+
+        CSVReader csvReader = new CSVReader(reader, delimiter);
+        String[] nextLine;
+        int importedRows = 0;
+        int importedColumns = 0;
+        int insertedRows = 0;
+        logger.info("Importing sheet");
+
+        //create table schema and index
+
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            DBContext dbContext = new DBContext(connection);
+
+            StringBuffer sbSS = new StringBuffer();
+            PreparedStatement pstSS = null;
+            while ((nextLine = csvReader.readNext()) != null)
+            {
+                if(importedRows==0)
+                {
+                    ++importedRows;
+
+                    importedColumns = nextLine.length;
+                    insertCols(dbContext, 0, importedColumns);
+                    StringBuffer str = new StringBuffer("(");
+                    StringBuffer headerSS = new StringBuffer("");
+                    StringBuffer values = new StringBuffer("?");
+
+                    str.append(nextLine[0]+" TEXT");
+                    headerSS.append("row,col_1");
+                    for (int i = 1; i < nextLine.length; i++) {
+                        str.append(", ")
+                                .append(nextLine[i] + " TEXT");
+                        headerSS.append(", col_")
+                                .append(i+1);
+                        values.append(",?");
+
+                    }
+                    str.append(")");
+
+                    headerStringSS = headerSS.toString();
+                    valuesString = values.toString();
+                    indexString = "col_"+(selectedCol+1);//nextLine[selectedCol];
+
+                    sbSS.append("INSERT into "+tableName+" ("+headerStringSS+") values(?,"+valuesString+")");
+
+                    pstSS = connection.prepareStatement(sbSS.toString());
+
+                    pstSS.setInt(1,importedRows);
+                    for (int col = 0; col < importedColumns; col++)
+                        pstSS.setBytes(col+2,nextLine[col].getBytes());
+
+                    pstSS.executeUpdate();
+
+                    sbSS = new StringBuffer();
+
+                    connection.commit();
+                    pstSS = null;
+                    createIndexOnSortAttr(selectedCol);
+                    navS.setHeaderString(headerStringSS);
+                    navS.setIndexString(indexString);
+
+                    continue;
+                }
+
+                sbSS.append("INSERT into "+tableName+" ("+headerStringSS+") values(?,"+valuesString+")");
+
+
+
+                pstSS = connection.prepareStatement(sbSS.toString());
+
+                pstSS.setInt(1,importedRows+1);
+                for (int col = 0; col < importedColumns; col++)
+                    pstSS.setBytes(col+2,nextLine[col].getBytes());
+
+                pstSS.executeUpdate();
+
+                ++importedRows;
+                sbSS = new StringBuffer();
+
+               /*if ((importedRows-1)% sampleSize ==0 && importedRows!=1) {
+                    connection.commit();
+
+                    insertRows(dbContext, insertedRows, importedRows-insertedRows);//there's am implicit +1 in imprtedrows
+
+                   if(insertedRows==0)
+                   {
+                       insertedRows += (importedRows-insertedRows);
+                       this.navSbuckets = this.createNavS(null,0,insertedRows);
+                   }
+                   else
+                       insertedRows += (importedRows-insertedRows);
+
+                    System.out.println((importedRows-1) + " rows imported ");
+                    logger.info((importedRows-1) + " rows imported ");
+                }*/
+
+
+            }
+
+            connection.commit();
+
+            //this.navSbuckets = navS.createNavS(this.navSbuckets);
+
+            insertRows(dbContext, insertedRows, importedRows-insertedRows);
+            insertedRows += (importedRows-insertedRows);
+
+            this.navSbuckets = this.createNavS(null,0,importedRows);
+
+            logger.info((importedRows-1) + " rows imported ");
+
+            logger.info("Import done: " + importedRows + " rows and "
+                    + importedColumns + " columns imported");
+            connection.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        this.navS.writeJavaObject(this.navSbuckets);
+
+       // this.navS.readJavaObject(this.tableName);
+
+    }
+
+    @Override
+    public ArrayList<Bucket<String>> createNavS(String bucketName, int start, int count) {
+        //load sorted data from table
+        ArrayList<String> recordList =  new ArrayList<String>();
+
+        AutoRollbackConnection connection = DBHandler.instance.getConnection();
+        DBContext context = new DBContext(connection);
+        StringBuffer select = null;
+        if(bucketName==null)
+        {
+            select = new StringBuffer("SELECT COUNT(*)");
+            select.append(" FROM ")
+                    .append(tableName)
+                    .append(" WHERE row !=1");
+            try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    count = rs.getInt(1);
+                }
+                rs.close();
+                stmt.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        Integer [] rowIds = rowMapping.getIDs(context,start,count);
+
+        select = null;
+        if(indexString.length()==0)
+            select = new StringBuffer("SELECT row, col_1");
+        else
+            select = new StringBuffer("SELECT row, "+indexString);
+
+        select.append(" FROM ")
+                .append(tableName)
+                .append(" WHERE row = ANY (?) AND row !=1");
+
+        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
+            stmt.setArray(1, inArrayRow);
+
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                recordList.add(new String(rs.getBytes(2),"UTF-8"));
+            }
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        //create nav data structure
+        this.navS.setRecordList(recordList);
+        ArrayList<Bucket<String>> newList = this.navS.getNonOverlappingBuckets(0,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
+
+        if(bucketName==null)
+        {
+            return newList;
+        }
+
+        return this.navS.recomputeNavS(bucketName,this.navSbuckets,newList);
+        //  printBuckets(navSbuckets);
+
+    }
+
+    @Override
+    public ArrayList<String> getHeaders()
+    {
+        ArrayList<String> headers = new ArrayList<String>();
+
+        AutoRollbackConnection connection = DBHandler.instance.getConnection();
+        DBContext context = new DBContext(connection);
+        StringBuffer select = null;
+        select = new StringBuffer("SELECT *");
+        select.append(" FROM ")
+                .append(tableName)
+                .append(" WHERE row =1");
+        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+
+            ResultSet rs = stmt.executeQuery();
+            int i=1;
+            while (rs.next()) {
+                headers.add(new String(rs.getBytes(i),"UTF-8"));
+                i++;
+            }
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return headers;
+
+    }
+
+    @Override
+    public void setIndexString(String str) {
+        this.indexString = str;
+    }
+
     @Override
     public boolean deleteTableColumns(DBContext dbContext, CellRegion cellRegion) {
         throw new UnsupportedOperationException();
     }
-
 
 }
