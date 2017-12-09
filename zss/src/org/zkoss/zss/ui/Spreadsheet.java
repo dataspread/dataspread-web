@@ -3024,7 +3024,8 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 		// remove this, beacuse invalidate will cause client side rebuild,
 		// i must reinitial size helper since there are maybe some customized is
 		// from client.
-		// System.out.println(">>>>>>>>>>>remove this");
+		// System.out.println(">>>>>>
+    >>remove this");
 		// removeAttribute(MERGE_MATRIX_KEY);//TODO remove this, for insert
 		// column test only
 
