@@ -1,11 +1,17 @@
 package org.zkoss.zss.model.impl;
 
+import org.model.AutoRollbackConnection;
 import org.model.DBContext;
+import org.model.DBHandler;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SSheet;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.sql.Array;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
@@ -31,6 +37,12 @@ public class COM_Model extends Model {
         return new COM_Model(dbContext, sheet, modelName, this);
     }
 
+
+    @Override
+    public ArrayList<Bucket<String>> createNavS(String bucketName, int start, int count) {
+       return null;
+
+    }
 
     @Override
     public void dropSchema(DBContext context) {
@@ -111,6 +123,16 @@ public class COM_Model extends Model {
     @Override
     public boolean deleteTableColumns(DBContext dbContext, CellRegion cellRegion) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ArrayList<String> getHeaders() {
+        return null;
+    }
+
+    @Override
+    public void setIndexString(String str) {
+        this.indexString = str;
     }
 
 
