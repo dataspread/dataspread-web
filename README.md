@@ -64,15 +64,9 @@ To host DataSpread locally you can either use one of the pre-build war files, av
 
 3. Install Apache Tomcat. You can use the guide [here][tomcat_install]. Make a note of the directory where tomcat is installed. This is known as `TOMCAT_HOME` in all documentation. 
 
-4. Update the Tomcat configuration. You need to update the following two files, which are present in `conf` folder under `TOMCAT_HOME` folder.  
+4. Update the Tomcat configuration. You need to update the following file, which is present in `conf` folder under `TOMCAT_HOME` folder.  
 
-    1. `web.xml` by adding the following text at the end of the file before the closing XML tag.   
-	```
-	<listener>
-	    <listener-class>org.model.DBHandler</listener-class>
-	</listener>
-	```
-    2. `context.xml` by adding the following text at the end of the file before the closing XML tag.   
+    1. `context.xml` by adding the following text at the end of the file before the closing XML tag.   
 
 	```
 	<Resource name="jdbc/ibd" auth="Container"
