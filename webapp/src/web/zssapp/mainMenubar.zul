@@ -31,6 +31,10 @@
 					label="${c:l('zssapp.mainMenu.view.formulaBar')}" forward="mainMenubar.onToggleFormulaBar"
 					autocheck="true" checked="true" sclass="zsmenuitem-app appmenu" />
 				<menuseparator />
+				<menuitem id="toggleNavPanel"
+						  label="Navigation Panel" forward="mainMenubar.onToggleNavPanel"
+						  autocheck="true" checked="false" sclass="zsmenuitem-app appmenu" />
+				<menuseparator />
 				<menuitem id="freezePanel"
 					label="${c:l('zssapp.mainMenu.view.freeze')}" forward="mainMenubar.onFreezePanel" sclass="zsmenuitem-app appmenu" />
 				<menuitem id="unfreezePanel"

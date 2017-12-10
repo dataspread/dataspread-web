@@ -42,6 +42,7 @@ public class AppEvts {
 	public static String ON_EXPORT_BOOK_PDF = "onExportBookPdf";
 	
 	public static String ON_TOGGLE_FORMULA_BAR = "onToggleFormulaBar";
+	public static String ON_TOGGLE_NAV_PANEL = "onToggleNavPanel";
 	public static String ON_FREEZE_PNAEL = "onFreezePanel";
 	public static String ON_UNFREEZE_PANEL = "onUnFreezePanel";
 	public static String ON_FREEZE_ROW = "onFreezeRow";
