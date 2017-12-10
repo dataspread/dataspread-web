@@ -134,7 +134,9 @@ public class RCV_Model extends Model {
 
         if(this.indexString==null)
         {
-            return this.navS.getUniformBuckets(0,count);
+            ArrayList<Bucket<String>> newList = this.navS.getUniformBuckets(0,count);
+            this.navS.setTotalRows(count+1);
+            return newList;
         }
 
         select = new StringBuffer("SELECT row, "+indexString);
@@ -150,6 +152,7 @@ public class RCV_Model extends Model {
             DBContext context = new DBContext(connection);
             ResultSet rs = stmt.executeQuery();
             int i=0;
+            ids.add(1);
             while (rs.next()) {
                 int row = rs.getInt(1);
                 ids.add(row);
@@ -164,6 +167,7 @@ public class RCV_Model extends Model {
             rom_model.rowMapping.dropSchema(context);
             rom_model.rowMapping = new BTree(context, tableName + "_row_idx");
             rom_model.rowMapping.insertIDs(context,start,ids);
+
             connection.commit();
 
         } catch (Exception e) {

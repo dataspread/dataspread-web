@@ -692,20 +692,25 @@ public class ROM_Model extends Model {
     {
         ArrayList<String> headers = new ArrayList<String>();
 
-        AutoRollbackConnection connection = DBHandler.instance.getConnection();
-        DBContext context = new DBContext(connection);
+
         StringBuffer select = null;
         select = new StringBuffer("SELECT *");
         select.append(" FROM ")
-                .append(tableName)
+                .append(tableName+"_2")
                 .append(" WHERE row =1");
-        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+        try (
+                AutoRollbackConnection connection = DBHandler.instance.getConnection();
 
+                PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            DBContext context = new DBContext(connection);
             ResultSet rs = stmt.executeQuery();
-            int i=1;
+            int i=2;
+            ResultSetMetaData meta = rs.getMetaData();
+            int columnCount = meta.getColumnCount();
+
             while (rs.next()) {
-                headers.add(new String(rs.getBytes(i),"UTF-8"));
-                i++;
+                for(;i<=columnCount;i++)
+                    headers.add(new String(rs.getBytes(i),"UTF-8"));
             }
             rs.close();
             stmt.close();

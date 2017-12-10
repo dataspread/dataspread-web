@@ -28,9 +28,7 @@ import org.zkoss.zss.app.ui.UiUtil;
 import org.zkoss.zss.ui.Spreadsheet;
 import org.zkoss.zss.ui.Version;
 import org.zkoss.zss.ui.sys.UndoableActionManager;
-import org.zkoss.zul.Menu;
-import org.zkoss.zul.Menubar;
-import org.zkoss.zul.Menuitem;
+import org.zkoss.zul.*;
 
 import java.util.Date;
 /**
@@ -301,6 +299,19 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 	@Listen("onToggleFormulaBar=#mainMenubar")
 	public void onToggleFormulaBar(){
 		pushAppEvent(AppEvts.ON_TOGGLE_FORMULA_BAR);
+	}
+
+	@Listen("onToggleNavPanel=#mainMenubar")
+	public void onToggleNavPanel(){
+		Window win = (Window) this.getAppComp();
+		if(win.getFellow("navs").isVisible()) {
+			win.getFellow("navs").setVisible(false);
+			((Div)win.getFellow("navs")).setWidth("0px");
+		}
+		else {
+			win.getFellow("navs").setVisible(true);
+			((Div)win.getFellow("navs")).setWidth("400px");
+		}
 	}
 	
 	@Listen("onFreezePanel=#mainMenubar")

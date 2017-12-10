@@ -567,7 +567,7 @@ public class AppCtrl extends CtrlBase<Component> {
 
                         ss.setNavSBuckets(newSheet.getDataModel().navSbuckets);
                         createNavSTree(newSheet.getDataModel().navSbuckets);
-
+                        updateColModel(newSheet);
                         Messagebox.show("File imported", "DataSpread",
                                 Messagebox.OK, Messagebox.INFORMATION, null);
 
@@ -575,6 +575,7 @@ public class AppCtrl extends CtrlBase<Component> {
                         pushAppEvent(AppEvts.ON_CHANGED_SPREADSHEET, ss);
                         updatePageInfo();
                         ss.setSelectedSheet(sheetName);
+                        updateColModel(newSheet);
                         return;
                     }
 
@@ -640,6 +641,7 @@ public class AppCtrl extends CtrlBase<Component> {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
 
     }
 
@@ -1362,7 +1364,7 @@ public class AppCtrl extends CtrlBase<Component> {
     }
 
     @Listen("onSelect = #colSelectbox")
-    public void changeType() {
+    public void sort() {
         int index = colSelectbox.getSelectedIndex()+1;
 
         SBook currentBook = loadedBook.getInternalBook();
@@ -1372,11 +1374,10 @@ public class AppCtrl extends CtrlBase<Component> {
             ((SheetImpl) currentSheet).clearCache();
             ss.setNavSBuckets(currentSheet.getDataModel().createNavS(null,0,0));
             createNavSTree(ss.getNavSBuckets());
-
             AbstractBookAdv book = (AbstractBookAdv) BookBindings.get(currentBook.getBookName());
-
+            System.out.println("Total Rows: "+currentSheet.getDataModel().navS.getTotalRows());
             CellRegion tableRegion =  new CellRegion(0, 0,
-                    10000, 100);
+                    currentSheet.getDataModel().navS.getTotalRows(),currentSheet.getEndColumnIndex()+1);
 
             book.sendModelEvent(ModelEvents.createModelEvent(ModelEvents.ON_CELL_CONTENT_CHANGE,
                     currentSheet, tableRegion));
@@ -1384,6 +1385,8 @@ public class AppCtrl extends CtrlBase<Component> {
             pushAppEvent(AppEvts.ON_LOADED_BOOK, currentBook);
             pushAppEvent(AppEvts.ON_CHANGED_SPREADSHEET, ss);
             updatePageInfo();
+
+
         } catch (Exception e) {
             e.printStackTrace();
         }
