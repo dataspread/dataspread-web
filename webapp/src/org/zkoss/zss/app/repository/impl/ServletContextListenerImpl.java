@@ -1,5 +1,6 @@
 package org.zkoss.zss.app.repository.impl;
 
+import org.model.DBHandler;
 import org.zkoss.util.logging.Log;
 import org.zkoss.zk.ui.WebApps;
 import org.zkoss.zss.app.BookManager;
@@ -19,6 +20,16 @@ public class ServletContextListenerImpl implements ServletContextListener, Seria
 
 	@Override
 	public void contextInitialized(ServletContextEvent sce) {
+		/* Startup the applicaction */
+		DBHandler.initDBHandler();
+		try {
+			DBHandler.instance.cacheDS();
+		} catch (Exception e) {
+			System.err.println("Unable to connect to a Database");
+			e.printStackTrace();
+		}
+		DBHandler.instance.initApplication();
+
 		FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerSimple();
 		Thread thread = new Thread(formulaAsyncScheduler);
 		thread.start();
