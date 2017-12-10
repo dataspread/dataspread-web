@@ -30,6 +30,7 @@ public class NavigationStructure{
     private String indexString;
     private Kryo kryo;
     private boolean useKryo;
+    private int totalRows;
 
 
     public NavigationStructure(String tableName)
@@ -58,6 +59,16 @@ public class NavigationStructure{
     public void setRecordList(ArrayList<String> ls)
     {
         this.recordList = ls;
+    }
+
+    public void setTotalRows(int rows)
+    {
+        this.totalRows = rows;
+    }
+
+    public int getTotalRows()
+    {
+        return this.totalRows;
     }
 
     public ArrayList<Bucket<String>> createNavS(Bucket<String> bkt) {

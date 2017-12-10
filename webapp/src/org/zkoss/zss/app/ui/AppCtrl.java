@@ -11,6 +11,8 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.app.ui;
 
+import org.ngi.zhighcharts.SimpleExtXYModel;
+import org.ngi.zhighcharts.ZHighCharts;
 import org.zkoss.image.AImage;
 import org.zkoss.lang.Library;
 import org.zkoss.lang.Strings;
@@ -45,8 +47,10 @@ import org.zkoss.zss.app.repository.impl.BookUtil;
 import org.zkoss.zss.app.repository.impl.SimpleBookInfo;
 import org.zkoss.zss.app.ui.dlg.*;
 import org.zkoss.zss.model.*;
+import org.zkoss.zss.model.impl.AbstractBookAdv;
 import org.zkoss.zss.model.impl.Bucket;
-import org.zkoss.zss.model.impl.NavigationStructure;
+import org.zkoss.zss.model.impl.SheetImpl;
+import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.ui.*;
 import org.zkoss.zss.ui.Version;
 import org.zkoss.zss.ui.event.Events;
@@ -55,6 +59,7 @@ import org.zkoss.zss.ui.impl.DefaultUserActionManagerCtrl;
 import org.zkoss.zss.ui.impl.Focus;
 import org.zkoss.zss.ui.sys.UndoableActionManager;
 import org.zkoss.zul.*;
+
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -62,13 +67,6 @@ import java.io.*;
 import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
 import java.util.*;
-
-import java.util.Date;
-
-import org.ngi.zhighcharts.SimpleExtXYModel;
-import org.ngi.zhighcharts.ZHighCharts;
-import org.zkoss.zk.ui.event.Event;
-import org.zkoss.zul.Window;
 
 /**
  *
@@ -569,7 +567,7 @@ public class AppCtrl extends CtrlBase<Component> {
 
                         ss.setNavSBuckets(newSheet.getDataModel().navSbuckets);
                         createNavSTree(newSheet.getDataModel().navSbuckets);
-
+                        updateColModel(newSheet);
                         Messagebox.show("File imported", "DataSpread",
                                 Messagebox.OK, Messagebox.INFORMATION, null);
 
@@ -577,6 +575,7 @@ public class AppCtrl extends CtrlBase<Component> {
                         pushAppEvent(AppEvts.ON_CHANGED_SPREADSHEET, ss);
                         updatePageInfo();
                         ss.setSelectedSheet(sheetName);
+                        updateColModel(newSheet);
                         return;
                     }
 
@@ -642,6 +641,7 @@ public class AppCtrl extends CtrlBase<Component> {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
 
     }
 
@@ -1364,15 +1364,29 @@ public class AppCtrl extends CtrlBase<Component> {
     }
 
     @Listen("onSelect = #colSelectbox")
-    public void changeType() {
+    public void sort() {
         int index = colSelectbox.getSelectedIndex()+1;
 
         SBook currentBook = loadedBook.getInternalBook();
         SSheet currentSheet = currentBook.getSheet(2);
         try {
             currentSheet.getDataModel().setIndexString("col_"+index);
+            ((SheetImpl) currentSheet).clearCache();
             ss.setNavSBuckets(currentSheet.getDataModel().createNavS(null,0,0));
             createNavSTree(ss.getNavSBuckets());
+            AbstractBookAdv book = (AbstractBookAdv) BookBindings.get(currentBook.getBookName());
+            System.out.println("Total Rows: "+currentSheet.getDataModel().navS.getTotalRows());
+            CellRegion tableRegion =  new CellRegion(0, 0,
+                    currentSheet.getDataModel().navS.getTotalRows(),currentSheet.getEndColumnIndex()+1);
+
+            book.sendModelEvent(ModelEvents.createModelEvent(ModelEvents.ON_CELL_CONTENT_CHANGE,
+                    currentSheet, tableRegion));
+
+            pushAppEvent(AppEvts.ON_LOADED_BOOK, currentBook);
+            pushAppEvent(AppEvts.ON_CHANGED_SPREADSHEET, ss);
+            updatePageInfo();
+
+
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -2,7 +2,10 @@ package org.zkoss.zss.model.impl;
 
 import com.opencsv.CSVReader;
 import org.apache.tomcat.dbcp.dbcp2.DelegatingConnection;
-import org.model.*;
+import org.model.AutoRollbackConnection;
+import org.model.BlockStore;
+import org.model.DBContext;
+import org.model.DBHandler;
 import org.postgresql.copy.CopyIn;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.jdbc.PgConnection;
@@ -106,8 +109,6 @@ public class RCV_Model extends Model {
         //load sorted data from table
         ArrayList<String> recordList =  new ArrayList<String>();
 
-        AutoRollbackConnection connection = DBHandler.instance.getConnection();
-        DBContext context = new DBContext(connection);
         StringBuffer select = null;
         if(bucketName==null)
         {
@@ -115,8 +116,11 @@ public class RCV_Model extends Model {
             select.append(" FROM ")
                     .append(tableName+"_2")
                     .append(" WHERE row !=1");
-            try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            try (
+                    AutoRollbackConnection connection = DBHandler.instance.getConnection();
 
+                    PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+                DBContext context = new DBContext(connection);
                 ResultSet rs = stmt.executeQuery();
                 while (rs.next()) {
                     count = rs.getInt(1);
@@ -130,7 +134,9 @@ public class RCV_Model extends Model {
 
         if(this.indexString==null)
         {
-            return this.navS.getUniformBuckets(0,count);
+            ArrayList<Bucket<String>> newList = this.navS.getUniformBuckets(0,count);
+            this.navS.setTotalRows(count+1);
+            return newList;
         }
 
         select = new StringBuffer("SELECT row, "+indexString);
@@ -141,9 +147,12 @@ public class RCV_Model extends Model {
 
         ArrayList<Integer> ids = new ArrayList<Integer>();
 
-        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+        PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            DBContext context = new DBContext(connection);
             ResultSet rs = stmt.executeQuery();
             int i=0;
+            ids.add(1);
             while (rs.next()) {
                 int row = rs.getInt(1);
                 ids.add(row);
@@ -151,13 +160,21 @@ public class RCV_Model extends Model {
             }
             rs.close();
             stmt.close();
+
+            Hybrid_Model hybrid_model = (Hybrid_Model) this;
+            ROM_Model rom_model = (ROM_Model) hybrid_model.tableModels.get(0).y;
+
+            rom_model.rowMapping.dropSchema(context);
+            rom_model.rowMapping = new BTree(context, tableName + "_row_idx");
+            rom_model.rowMapping.insertIDs(context,start,ids);
+
+            connection.commit();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        rowMapping.deleteIDs(context,start,count);
 
-        rowMapping.insertIDs(context,start,ids);
 
 
         //create nav data structure
@@ -241,15 +258,17 @@ public class RCV_Model extends Model {
     {
         ArrayList<String> headers = new ArrayList<String>();
 
-        AutoRollbackConnection connection = DBHandler.instance.getConnection();
-        DBContext context = new DBContext(connection);
+
         StringBuffer select = null;
         select = new StringBuffer("SELECT *");
         select.append(" FROM ")
                 .append(tableName+"_2")
                 .append(" WHERE row =1");
-        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+        try (
+                AutoRollbackConnection connection = DBHandler.instance.getConnection();
 
+                PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            DBContext context = new DBContext(connection);
             ResultSet rs = stmt.executeQuery();
             int i=2;
             ResultSetMetaData meta = rs.getMetaData();
@@ -556,7 +575,7 @@ public class RCV_Model extends Model {
             }
             if (sb.length() > 0)
                 cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
-            cpIN.endCopy();
+                cpIN.endCopy();
             rawConn.commit();
             DBContext dbContext = new DBContext(connection);
             insertRows(dbContext, 0, importedRows);

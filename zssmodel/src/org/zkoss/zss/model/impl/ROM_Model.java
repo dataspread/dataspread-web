@@ -11,7 +11,8 @@ import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SSheet;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.Reader;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
@@ -19,7 +20,7 @@ import java.util.stream.IntStream;
 
 public class ROM_Model extends Model {
     private static final Logger logger = Logger.getLogger(ROM_Model.class.getName());
-    private PosMapping rowMapping;
+    public PosMapping rowMapping;
     private PosMapping colMapping;
 
     private boolean isNav = true;
@@ -622,8 +623,6 @@ public class ROM_Model extends Model {
         //load sorted data from table
         ArrayList<String> recordList =  new ArrayList<String>();
 
-        AutoRollbackConnection connection = DBHandler.instance.getConnection();
-        DBContext context = new DBContext(connection);
         StringBuffer select = null;
         if(bucketName==null)
         {
@@ -631,7 +630,8 @@ public class ROM_Model extends Model {
             select.append(" FROM ")
                     .append(tableName)
                     .append(" WHERE row !=1");
-            try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(select.toString())) {
 
                 ResultSet rs = stmt.executeQuery();
                 while (rs.next()) {
@@ -644,7 +644,7 @@ public class ROM_Model extends Model {
             }
         }
 
-        Integer [] rowIds = rowMapping.getIDs(context,start,count);
+
 
         select = null;
         if(indexString.length()==0)
@@ -656,7 +656,10 @@ public class ROM_Model extends Model {
                 .append(tableName)
                 .append(" WHERE row = ANY (?) AND row !=1");
 
-        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+        PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            DBContext context = new DBContext(connection);
+            Integer [] rowIds = rowMapping.getIDs(context,start,count);
             Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
             stmt.setArray(1, inArrayRow);
 
@@ -689,20 +692,25 @@ public class ROM_Model extends Model {
     {
         ArrayList<String> headers = new ArrayList<String>();
 
-        AutoRollbackConnection connection = DBHandler.instance.getConnection();
-        DBContext context = new DBContext(connection);
+
         StringBuffer select = null;
         select = new StringBuffer("SELECT *");
         select.append(" FROM ")
-                .append(tableName)
+                .append(tableName+"_2")
                 .append(" WHERE row =1");
-        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+        try (
+                AutoRollbackConnection connection = DBHandler.instance.getConnection();
 
+                PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            DBContext context = new DBContext(connection);
             ResultSet rs = stmt.executeQuery();
-            int i=1;
+            int i=2;
+            ResultSetMetaData meta = rs.getMetaData();
+            int columnCount = meta.getColumnCount();
+
             while (rs.next()) {
-                headers.add(new String(rs.getBytes(i),"UTF-8"));
-                i++;
+                for(;i<=columnCount;i++)
+                    headers.add(new String(rs.getBytes(i),"UTF-8"));
             }
             rs.close();
             stmt.close();
