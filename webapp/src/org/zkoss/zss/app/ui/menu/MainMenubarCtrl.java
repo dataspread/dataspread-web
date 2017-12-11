@@ -263,6 +263,10 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 	@Listen("onClick=#closeFile")
 	public void onClose(){
 		pushAppEvent(AppEvts.ON_CLOSE_BOOK);
+		Window win = (Window) this.getAppComp();
+		win.getFellow("navs").setVisible(false);
+		((Div)win.getFellow("navs")).setWidth("0px");
+		
 	}
 	@Listen("onClick=#importFile")
 	public void onImport(){
