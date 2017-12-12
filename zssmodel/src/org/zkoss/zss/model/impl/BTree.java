@@ -78,7 +78,7 @@ public class BTree <K extends AbstractStatistic, V> {
      * Find the index, i, at which key should be inserted into the null-padded
      * sorted array, a
      *
-     * @param key the key for the value
+     * @param statistic the key for the value
      * @param val the value corresponding to key
      * @return
      */
@@ -118,7 +118,7 @@ public class BTree <K extends AbstractStatistic, V> {
      * ui. If u is split by this operation then the return value is the Node
      * that was created when u was split
      *
-     * @param key the element to add
+     * @param statistic the element to add
      * @param ui  the index of the node, u, at which to add key
      * @param val
      * @return a new node that was created when u was split, or null if u was
@@ -179,7 +179,7 @@ public class BTree <K extends AbstractStatistic, V> {
     /**
      * Remove the value x from the subtree rooted at the node with index ui
      *
-     * @param x  the value to remove
+     * @param statistic  the value to remove
      * @param ui the index of the subtree to remove x from
      * @return true if x was removed and false otherwise
      */
@@ -230,7 +230,7 @@ public class BTree <K extends AbstractStatistic, V> {
     /**
      * Remove the value x from the subtree rooted at the node with index ui
      *
-     * @param x  the value to remove
+     * @param statistic  the value to remove
      * @param ui the index of the subtree to remove x from
      * @return true if x was removed and false otherwise
      */
@@ -571,7 +571,7 @@ public class BTree <K extends AbstractStatistic, V> {
         ArrayList<Integer> childrenCount;
 
         /**
-         * The cumulative count for children.
+         * The keys of the tree for traversal (insert, delete, update, etc)
          */
         ArrayList<AbstractStatistic> statistics;
 
@@ -661,8 +661,8 @@ public class BTree <K extends AbstractStatistic, V> {
         /**
          * Add the value & statistic to this internal node
          *
-         * @param statistic the statistic to add
-         * @param value the value to add
+         * @param node the child node added
+         * @param i the index of the node associated
          * @return true on success or false if not added
          */
         public boolean addInternal(Node node, int i, AbstractStatistic.Type type) {
