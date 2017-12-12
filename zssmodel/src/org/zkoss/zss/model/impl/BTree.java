@@ -11,7 +11,7 @@ import java.util.ArrayList;
 /**
  * An implementation of a B+ Tree
  */
-public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
+public class BTree <K extends AbstractStatistic, V> {
     /**
      * The maximum number of children of a node (an odd number)
      */
@@ -58,7 +58,7 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
             root.update(bs);
             metaDataBlock.ri = root.id;
             metaDataBlock.elementCount = 0;
-
+            metaDataBlock.max_value = null;
             /* Create Metadata */
             bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
             bs.flushDirtyBlocks(context);
@@ -125,7 +125,6 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
      * not split
      */
     private Node addRecursive(DBContext context, K statistic, int ui, V val, AbstractStatistic.Type type) {
-        // TODO: Create a statistic object
         // Get the current node
         Node u = new Node().get(context, bs, ui);
         // Find the position to insert
@@ -247,10 +246,6 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
             } else
                 return null;
         } else {
-            // Update the statistic of the node we found
-            AbstractStatistic current_stat = u.statistics.get(i);
-            if (current_stat.requireUpdate())
-                u.statistics.set(i, current_stat.updateStatistic(AbstractStatistic.Mode.DELETE));
             // Get the new statistic we are looking for
             K new_statistic = (K) statistic.getLowerStatistic(u.statistics, i, type);
             return lookupRecursive(context, new_statistic, u.children.get(i), type);
@@ -407,14 +402,8 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
         return sb.toString();
     }
 
-    @Override
     public String getTableName() {
         return bs.getDataStore();
-    }
-
-    @Override
-    public void insertIDs(DBContext context, int pos, ArrayList<V> ids) {
-
     }
 
 
@@ -461,35 +450,69 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
         }
     }
 
-    public ArrayList<V> getIDs(DBContext context, int pos, int count) {
-        return getIDsByCount(context, pos, count);
+    public V getMaxValue() {
+        return metaDataBlock.max_value;
     }
 
-    public ArrayList<V> getIDsByCount(DBContext context, long pos, int count) {
+    public void updateMaxValue(DBContext context, V max_value) {
+        metaDataBlock.max_value = max_value;
+        bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
+        bs.flushDirtyBlocks(context);
+    }
+
+    public void insertIDs(DBContext context, ArrayList<K> statistics, ArrayList<V> ids, AbstractStatistic.Type type) {
+        int count = ids.size();
+        for (int i = 0; i < count; i++) {
+            add(context, statistics.get(i), ids.get(i), false, type);
+        }
+        bs.flushDirtyBlocks(context);
+    }
+
+    public ArrayList<V> deleteIDs(DBContext context, ArrayList<K> statistics, AbstractStatistic.Type type) {
         ArrayList<V> ids = new ArrayList<>();
-        /*
+        int count = statistics.size();
+        for (int i = 0; i < count; i++)
+            ids.add(remove(context, statistics.get(i), false, type));
+        bs.flushDirtyBlocks(context);
+        return ids;
+    }
+
+    public ArrayList<V> getIDs(DBContext context, ArrayList<K> statistics, AbstractStatistic.Type type) {
+        ArrayList<V> ids = new ArrayList<>();
+        int count = statistics.size();
+        for (int i = 0; i < count; i++)
+            ids.add(lookup(context, statistics.get(i), type));
+        bs.flushDirtyBlocks(context);
+        return ids;
+    }
+
+    public ArrayList<V> getIDs(DBContext context, K statistic, int count, AbstractStatistic.Type type) {
+        ArrayList<V> ids = new ArrayList<>();
         if (count == 0)
             return ids;
         int ui = metaDataBlock.ri;
-        long ct = pos;
         int get_count = 0;
         int first_index;
+        K new_statistic = statistic;
 
         Node u = new Node().get(context, bs, ui);
         while (true) {
-            int i = statistic.findIndex(u.statistics, type);
+            int i = new_statistic.findIndex(u.statistics, type);
+            /* Need to go to leaf to delete */
             if (u.isLeaf()) {
-                i = (int) ct;
-                first_index = i;
-                ids.add(u.values.get(i));
-                get_count++;
-                break;
+                // Check if the statistic is exactly matched
+                if (new_statistic.match(u.statistics, i, type)) {
+                    first_index = i;
+                    ids.add(u.values.get(i));
+                    get_count++;
+                    break;
+                } else
+                    return null;
+            } else {
+                // Get the new statistic we are looking for
+                new_statistic = (K) statistic.getLowerStatistic(u.statistics, i, type);
+                u = new Node().get(context, bs, ui);
             }
-            ui = u.children.get(i);
-            for (int z = 0; z < i; z++) {
-                ct -= u.childrenCount.get(z);
-            }
-            u = new Node().get(context, bs, ui);
         }
         int index = first_index + 1;
         while (get_count < count && u.next_sibling != -1) {
@@ -509,51 +532,6 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
             ids.add(null);
             get_count++;
         }
-        */
-        return ids;
-    }
-
-    public ArrayList<V> deleteIDs(DBContext context, int pos, int count) {
-
-        ArrayList<V> ids = new ArrayList<>();
-        /*
-        for (int i = 0; i < count; i++)
-            ids.add(remove(context, pos, false));
-        bs.flushDirtyBlocks(context);
-        */
-        return ids;
-    }
-
-    @Override
-    public ArrayList<V> createIDs(DBContext context, int pos, int count) {
-        return null;
-    }
-
-    // TODO: Do it in batches. offline if possible.
-    public void insertIDsCombined(DBContext context, ArrayList<K> statistics, ArrayList<V> ids, AbstractStatistic.Type type) {
-        int count = ids.size();
-        for (int i = 0; i < count; i++) {
-            add(context, statistics.get(i), ids.get(i), false, type);
-        }
-        bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
-        bs.flushDirtyBlocks(context);
-    }
-
-    public ArrayList<V> deleteIDsCombined(DBContext context, ArrayList<K> statistics, AbstractStatistic.Type type) {
-        ArrayList<V> ids = new ArrayList<>();
-        int count = statistics.size();
-        for (int i = 0; i < count; i++)
-            ids.add(remove(context, statistics.get(i), false, type));
-        bs.flushDirtyBlocks(context);
-        return ids;
-    }
-
-    public ArrayList<V> getIDsCombined(DBContext context, ArrayList<K> statistics, AbstractStatistic.Type type) {
-        ArrayList<V> ids = new ArrayList<>();
-        int count = statistics.size();
-        for (int i = 0; i < count; i++)
-            ids.add(lookup(context, statistics.get(i), type));
-        bs.flushDirtyBlocks(context);
         return ids;
     }
 
@@ -562,7 +540,7 @@ public class BTree <K extends AbstractStatistic, V> implements PosMapping<V> {
     private class MetaDataBlock {
         // The ID of the root node
         int ri;
-
+        V max_value;
         // Number of elements
         int elementCount;
     }

@@ -6,18 +6,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 /* Store mapping between logical pos and ID */
-public interface PosMapping <V> {
+public interface PosMapping {
 
     void dropSchema(DBContext context);
 
     // Get count IDs starting from position pos(inclusive)
-    ArrayList<V> getIDs(DBContext context, int pos, int count);
+    ArrayList getIDs(DBContext context, int pos, int count);
 
     // Delete count IDs starting from position pos(inclusive), and return deleted IDs
-    ArrayList<V> deleteIDs(DBContext context, int pos, int count);
+    ArrayList deleteIDs(DBContext context, int pos, int count);
 
     // Add and return count IDs starting from position pos(inclusive)
-    ArrayList<V> createIDs(DBContext context, int pos, int count);
+    ArrayList createIDs(DBContext context, int pos, int count);
 
     // Rollback and Flush Cache
     void clearCache(DBContext context);
@@ -26,6 +26,6 @@ public interface PosMapping <V> {
 
     String getTableName();
 
-    void insertIDs(DBContext context, int pos, ArrayList<V> ids);
+    void insertIDs(DBContext context, int pos, ArrayList ids);
 }
 
