@@ -132,10 +132,10 @@ public class RCV_Model extends Model {
             }
         }
 
+        this.navS.setTotalRows(count+1);
         if(this.indexString==null)
         {
             ArrayList<Bucket<String>> newList = this.navS.getUniformBuckets(0,count);
-            this.navS.setTotalRows(count+1);
             return newList;
         }
 

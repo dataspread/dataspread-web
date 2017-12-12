@@ -626,10 +626,6 @@ public class AppCtrl extends CtrlBase<Component> {
         collaborationInfo.removeRelationship(username);
         ss.setBook(loadedBook);
         initSaveNotification(loadedBook);
-        pushAppEvent(AppEvts.ON_CHANGED_FILE_STATE, BookInfo.STATE_UNSAVED);
-        pushAppEvent(AppEvts.ON_LOADED_BOOK, loadedBook);
-        pushAppEvent(AppEvts.ON_CHANGED_SPREADSHEET, ss);
-        updatePageInfo();
 
         SBook currentBook = loadedBook.getInternalBook();
         SSheet currentSheet = currentBook.getSheet(2);
@@ -638,9 +634,23 @@ public class AppCtrl extends CtrlBase<Component> {
             createNavSTree(ss.getNavSBuckets());
             updateColModel(currentSheet);
 
+            AbstractBookAdv abook = (AbstractBookAdv) BookBindings.get(currentBook.getBookName());
+            System.out.println("Total Rows: "+currentSheet.getDataModel().navS.getTotalRows());
+
+            CellRegion tableRegion =  new CellRegion(0, 0,//100000,20);
+                    currentSheet.getDataModel().navS.getTotalRows(),currentSheet.getEndColumnIndex()+1);
+
+            abook.sendModelEvent(ModelEvents.createModelEvent(ModelEvents.ON_CELL_CONTENT_CHANGE,
+                    currentSheet, tableRegion));
+
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        pushAppEvent(AppEvts.ON_CHANGED_FILE_STATE, BookInfo.STATE_UNSAVED);
+        pushAppEvent(AppEvts.ON_LOADED_BOOK, loadedBook);
+        pushAppEvent(AppEvts.ON_CHANGED_SPREADSHEET, ss);
+        updatePageInfo();
 
 
     }
@@ -1375,10 +1385,8 @@ public class AppCtrl extends CtrlBase<Component> {
             ss.setNavSBuckets(currentSheet.getDataModel().createNavS(null,0,0));
             createNavSTree(ss.getNavSBuckets());
             AbstractBookAdv book = (AbstractBookAdv) BookBindings.get(currentBook.getBookName());
-            System.out.println("Total Rows: "+currentSheet.getDataModel().navS.getTotalRows());
-            //TODO: make tableRegion automated, see next commented line (doesn't work)
-            CellRegion tableRegion =  new CellRegion(0, 0,100000,20);
-                    //currentSheet.getDataModel().navS.getTotalRows(),currentSheet.getEndColumnIndex()+1);
+            CellRegion tableRegion =  new CellRegion(0, 0,//100000,20);
+                    currentSheet.getDataModel().navS.getTotalRows(),currentSheet.getEndColumnIndex()+1);
 
             book.sendModelEvent(ModelEvents.createModelEvent(ModelEvents.ON_CELL_CONTENT_CHANGE,
                     currentSheet, tableRegion));
