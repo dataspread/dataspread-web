@@ -1376,8 +1376,9 @@ public class AppCtrl extends CtrlBase<Component> {
             createNavSTree(ss.getNavSBuckets());
             AbstractBookAdv book = (AbstractBookAdv) BookBindings.get(currentBook.getBookName());
             System.out.println("Total Rows: "+currentSheet.getDataModel().navS.getTotalRows());
-            CellRegion tableRegion =  new CellRegion(0, 0,
-                    currentSheet.getDataModel().navS.getTotalRows(),currentSheet.getEndColumnIndex()+1);
+            //TODO: make tableRegion automated, see next commented line (doesn't work)
+            CellRegion tableRegion =  new CellRegion(0, 0,100000,20);
+                    //currentSheet.getDataModel().navS.getTotalRows(),currentSheet.getEndColumnIndex()+1);
 
             book.sendModelEvent(ModelEvents.createModelEvent(ModelEvents.ON_CELL_CONTENT_CHANGE,
                     currentSheet, tableRegion));
