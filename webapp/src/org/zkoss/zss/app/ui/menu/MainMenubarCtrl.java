@@ -84,6 +84,8 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 	@Wire
 	Menuitem toggleFormulaBar;
 	@Wire
+	Menuitem toggleNavPanel;
+	@Wire
 	Menuitem freezePanel;
 	@Wire
 	Menuitem unfreezePanel;
@@ -243,10 +245,14 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 	@Listen("onClick=#newFile")
 	public void onNew(){
 		pushAppEvent(AppEvts.ON_NEW_BOOK);
+		Window win = (Window) this.getAppComp();
+		win.getFellow("ss").setVisible(true);
 	}
 	@Listen("onClick=#openManageFile")
 	public void onOpen(){
 		pushAppEvent(AppEvts.ON_OPEN_MANAGE_BOOK);
+		Window win = (Window) this.getAppComp();
+		win.getFellow("ss").setVisible(true);
 	}
 	@Listen("onClick=#saveFile")
 	public void onSave(){
@@ -266,11 +272,15 @@ public class MainMenubarCtrl extends CtrlBase<Menubar> {
 		Window win = (Window) this.getAppComp();
 		win.getFellow("navs").setVisible(false);
 		((Div)win.getFellow("navs")).setWidth("0px");
-		
+		win.getFellow("ss").setVisible(false);
+		toggleNavPanel.setChecked(false);
+
 	}
 	@Listen("onClick=#importFile")
 	public void onImport(){
 		pushAppEvent(AppEvts.ON_IMPORT_BOOK);
+		Window win = (Window) this.getAppComp();
+		win.getFellow("ss").setVisible(true);
 	}
 	@Listen("onClick=#exportFile")
 	public void onExport(){
