@@ -313,7 +313,7 @@ public class AppCtrl extends CtrlBase<Component> {
     private void createNavS(SheetImpl currentSheet) {
 
         try {
-            ss.setNavSBuckets(currentSheet.getDataModel().createNavS((String) null,0,0));
+            ss.setNavSBuckets(currentSheet.getDataModel().createNavS(currentSheet,0,0));
             createNavSTree(ss.getNavSBuckets());
             updateColModel(currentSheet);
 
@@ -1391,7 +1391,7 @@ public class AppCtrl extends CtrlBase<Component> {
         try {
             currentSheet.getDataModel().setIndexString("col_"+index);
             ((SheetImpl) currentSheet).clearCache();
-            ss.setNavSBuckets(currentSheet.getDataModel().createNavS((String) null,0,0));
+            ss.setNavSBuckets(currentSheet.getDataModel().createNavS(currentSheet,0,0));
             createNavSTree(ss.getNavSBuckets());
             ((SheetImpl) currentSheet).fullRefresh();
 
