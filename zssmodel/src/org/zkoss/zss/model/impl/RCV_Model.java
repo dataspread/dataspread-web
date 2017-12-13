@@ -10,6 +10,8 @@ import org.postgresql.copy.CopyIn;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.ModelEvents;
+import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 
 import java.io.IOException;
@@ -110,27 +112,26 @@ public class RCV_Model extends Model {
         ArrayList<String> recordList =  new ArrayList<String>();
 
         StringBuffer select = null;
-        if(bucketName==null)
-        {
-            select = new StringBuffer("SELECT COUNT(*)");
-            select.append(" FROM ")
-                    .append(tableName+"_2")
-                    .append(" WHERE row !=1");
-            try (
-                    AutoRollbackConnection connection = DBHandler.instance.getConnection();
 
-                    PreparedStatement stmt = connection.prepareStatement(select.toString())) {
-                DBContext context = new DBContext(connection);
-                ResultSet rs = stmt.executeQuery();
-                while (rs.next()) {
-                    count = rs.getInt(1);
-                }
-                rs.close();
-                stmt.close();
-            } catch (Exception e) {
-                e.printStackTrace();
+        select = new StringBuffer("SELECT COUNT(*)");
+        select.append(" FROM ")
+                .append(tableName+"_2")
+                .append(" WHERE row !=1");
+        try (
+                AutoRollbackConnection connection = DBHandler.instance.getConnection();
+
+                PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            DBContext context = new DBContext(connection);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                count = rs.getInt(1);
             }
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+
 
         this.navS.setTotalRows(count+1);
         if(this.indexString==null)
@@ -160,6 +161,67 @@ public class RCV_Model extends Model {
             }
             rs.close();
             stmt.close();
+
+            Hybrid_Model hybrid_model = (Hybrid_Model) this;
+            ROM_Model rom_model = (ROM_Model) hybrid_model.tableModels.get(0).y;
+
+            rom_model.rowMapping.dropSchema(context);
+            rom_model.rowMapping = new BTree(context, tableName + "_row_idx");
+            rom_model.rowMapping.insertIDs(context,start,ids);
+
+            connection.commit();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+
+
+        //create nav data structure
+        this.navS.setRecordList(recordList);
+        ArrayList<Bucket<String>> newList = this.navS.getNonOverlappingBuckets(0,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
+
+        //addByCount(context, pos + i, ids[i], false);
+        return newList;
+
+    }
+
+
+    @Override
+    public ArrayList<Bucket<String>> createNavS(SSheet currentSheet, int start, int count) {
+        //load sorted data from table
+        ArrayList<String> recordList =  new ArrayList<String>();
+
+        StringBuffer select = null;
+
+        if(this.indexString==null)
+        {
+            ArrayList<Bucket<String>> newList = this.navS.getUniformBuckets(0,currentSheet.getEndRowIndex()+1);
+            return newList;
+        }
+
+        int columnIndex = Integer.parseInt(indexString.split("_")[1])-1;
+        CellRegion tableRegion =  new CellRegion(1, columnIndex,//100000,20);
+                currentSheet.getEndRowIndex(),columnIndex);
+
+        ArrayList<SCell> result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
+
+        Collections.sort(result, new Comparator<SCell>() {
+            @Override public int compare(SCell p1, SCell p2) {
+                return p1.getStringValue().compareTo(p2.getStringValue()); // Ascending
+            }
+
+        });
+        ArrayList<Integer> ids = new ArrayList<Integer>();
+
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();) {
+            DBContext context = new DBContext(connection);
+            ids.add(1);
+            for(int i=0;i<result.size();i++){
+                ids.add(result.get(i).getRowIndex()+1);
+                recordList.add(result.get(i).getStringValue());
+            }
 
             Hybrid_Model hybrid_model = (Hybrid_Model) this;
             ROM_Model rom_model = (ROM_Model) hybrid_model.tableModels.get(0).y;

@@ -49,6 +49,11 @@ public class ROM_Model extends Model {
         return new ROM_Model(dbContext, sheet, tableName, this);
     }
 
+    @Override
+    public ArrayList<Bucket<String>> createNavS(SSheet currentsheet, int start, int count) {
+        return null;
+    }
+
     private void copySchema(DBContext context, String sourceTable){
         String createTable = (new StringBuffer())
                 .append("CREATE TABLE IF NOT EXISTS ")
@@ -601,7 +606,7 @@ public class ROM_Model extends Model {
             insertRows(dbContext, insertedRows, importedRows-insertedRows);
             insertedRows += (importedRows-insertedRows);
 
-            this.navSbuckets = this.createNavS(null,0,importedRows);
+            this.navSbuckets = this.createNavS((String) null,0,importedRows);
 
             logger.info((importedRows-1) + " rows imported ");
 

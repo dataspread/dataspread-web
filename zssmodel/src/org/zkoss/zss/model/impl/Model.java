@@ -99,6 +99,9 @@ public abstract class Model {
 
     // Clone only the corresponding tables in postgres
     public abstract Model clone(DBContext dbContext, SSheet sheet, String modelName);
+
+    public abstract ArrayList<Bucket<String>> createNavS(SSheet currentsheet, int start, int count);
+
     public abstract ArrayList<String> getHeaders();
     public abstract void setIndexString(String str);
 

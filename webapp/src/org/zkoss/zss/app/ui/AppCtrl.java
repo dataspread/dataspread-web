@@ -630,19 +630,21 @@ public class AppCtrl extends CtrlBase<Component> {
         SBook currentBook = loadedBook.getInternalBook();
         SSheet currentSheet = currentBook.getSheet(2);
         try {
-            ss.setNavSBuckets(currentSheet.getDataModel().createNavS(null,0,0));
+            ss.setNavSBuckets(currentSheet.getDataModel().createNavS((String) null,0,0));
             createNavSTree(ss.getNavSBuckets());
             updateColModel(currentSheet);
 
             AbstractBookAdv abook = (AbstractBookAdv) BookBindings.get(currentBook.getBookName());
-            System.out.println("Total Rows: "+currentSheet.getDataModel().navS.getTotalRows());
+            System.out.println("Total Rows: "+(currentSheet.getEndRowIndex()+1));
 
             CellRegion tableRegion =  new CellRegion(0, 0,//100000,20);
-                    currentSheet.getDataModel().navS.getTotalRows(),currentSheet.getEndColumnIndex()+1);
+                    currentSheet.getEndRowIndex()+1,currentSheet.getEndColumnIndex()+1);
 
             abook.sendModelEvent(ModelEvents.createModelEvent(ModelEvents.ON_CELL_CONTENT_CHANGE,
                     currentSheet, tableRegion));
 
+            ArrayList<SCell> result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
+            System.out.println(result.size());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1382,11 +1384,11 @@ public class AppCtrl extends CtrlBase<Component> {
         try {
             currentSheet.getDataModel().setIndexString("col_"+index);
             ((SheetImpl) currentSheet).clearCache();
-            ss.setNavSBuckets(currentSheet.getDataModel().createNavS(null,0,0));
+            ss.setNavSBuckets(currentSheet.getDataModel().createNavS((String) null,0,0));
             createNavSTree(ss.getNavSBuckets());
             AbstractBookAdv book = (AbstractBookAdv) BookBindings.get(currentBook.getBookName());
             CellRegion tableRegion =  new CellRegion(0, 0,//100000,20);
-                    currentSheet.getDataModel().navS.getTotalRows(),currentSheet.getEndColumnIndex()+1);
+                    currentSheet.getEndRowIndex()+1,currentSheet.getEndColumnIndex()+1);
 
             book.sendModelEvent(ModelEvents.createModelEvent(ModelEvents.ON_CELL_CONTENT_CHANGE,
                     currentSheet, tableRegion));
