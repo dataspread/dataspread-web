@@ -193,6 +193,7 @@ public class RCV_Model extends Model {
         //load sorted data from table
         ArrayList<String> recordList =  new ArrayList<String>();
 
+
         StringBuffer select = null;
 
         if(this.indexString==null)
@@ -206,7 +207,11 @@ public class RCV_Model extends Model {
                 currentSheet.getEndRowIndex(),columnIndex);
 
         ArrayList<SCell> result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
+        for(int i=0;i<result.size();i++){
+            System.out.println("("+(result.get(i).getRowIndex()+1)+","+result.get(i).getStringValue()+")");
+        }
 
+        System.out.println("After Sort");
         Collections.sort(result, new Comparator<SCell>() {
             @Override public int compare(SCell p1, SCell p2) {
                 return p1.getStringValue().compareTo(p2.getStringValue()); // Ascending
@@ -221,6 +226,9 @@ public class RCV_Model extends Model {
             for(int i=0;i<result.size();i++){
                 ids.add(result.get(i).getRowIndex()+1);
                 recordList.add(result.get(i).getStringValue());
+
+                System.out.println("("+(result.get(i).getRowIndex()+1)+","+result.get(i).getStringValue()+")");
+
             }
 
             Hybrid_Model hybrid_model = (Hybrid_Model) this;
