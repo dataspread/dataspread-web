@@ -584,9 +584,10 @@ public class AppCtrl extends CtrlBase<Component> {
                                 m.isBinary() ? new BufferedReader(new InputStreamReader(m.getStreamData())) :
                                         m.getReaderData(), delimiter);
 
-                        ss.setNavSBuckets(newSheet.getDataModel().navSbuckets);
+                        /*ss.setNavSBuckets(newSheet.getDataModel().navSbuckets);
                         createNavSTree(newSheet.getDataModel().navSbuckets);
-                        updateColModel(newSheet);
+                        updateColModel(newSheet);*/
+                        createNavS((SheetImpl) newSheet);
                         Messagebox.show("File imported", "DataSpread",
                                 Messagebox.OK, Messagebox.INFORMATION, null);
 

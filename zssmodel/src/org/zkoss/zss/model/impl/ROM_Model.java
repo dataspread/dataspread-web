@@ -9,6 +9,7 @@ import org.postgresql.copy.CopyIn;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 
 import java.io.IOException;
@@ -47,11 +48,6 @@ public class ROM_Model extends Model {
     @Override
     public ROM_Model clone(DBContext dbContext, SSheet sheet, String modelName) {
         return new ROM_Model(dbContext, sheet, tableName, this);
-    }
-
-    @Override
-    public ArrayList<Bucket<String>> createNavS(SSheet currentsheet, int start, int count) {
-        return null;
     }
 
     private void copySchema(DBContext context, String sourceTable){
@@ -680,7 +676,7 @@ public class ROM_Model extends Model {
 
         //create nav data structure
         this.navS.setRecordList(recordList);
-        ArrayList<Bucket<String>> newList = this.navS.getNonOverlappingBuckets(0,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
+        ArrayList<Bucket<String>> newList = this.navS.getUniformBuckets(0,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
 
         if(bucketName==null)
         {
@@ -690,6 +686,12 @@ public class ROM_Model extends Model {
         return this.navS.recomputeNavS(bucketName,this.navSbuckets,newList);
         //  printBuckets(navSbuckets);
 
+    }
+
+    @Override
+    public ArrayList<Bucket<String>> createNavS(SSheet currentSheet, int start, int count) {
+        ArrayList<Bucket<String>> newList = this.navS.getUniformBuckets(0,currentSheet.getEndRowIndex()+1);
+        return newList;
     }
 
     @Override
