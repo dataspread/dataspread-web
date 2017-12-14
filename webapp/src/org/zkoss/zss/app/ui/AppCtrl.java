@@ -313,6 +313,10 @@ public class AppCtrl extends CtrlBase<Component> {
     private void createNavS(SheetImpl currentSheet) {
 
         try {
+            if(currentSheet.getEndRowIndex()<1) {
+                treeBucket.setModel(new DefaultTreeModel<Bucket<String>>(new BucketTreeNode<Bucket<String>>(null,new BucketTreeNodeCollection<Bucket<String>>())));
+                return;
+            }
             ss.setNavSBuckets(currentSheet.getDataModel().createNavS(currentSheet,0,0));
             createNavSTree(ss.getNavSBuckets());
             updateColModel(currentSheet);
@@ -646,6 +650,11 @@ public class AppCtrl extends CtrlBase<Component> {
         collaborationInfo.removeRelationship(username);
         ss.setBook(loadedBook);
         initSaveNotification(loadedBook);
+
+        SSheet currentsheet = ss.getSelectedSSheet();
+
+        if(currentsheet.getEndRowIndex()<1)
+            treeBucket.setModel(new DefaultTreeModel<Bucket<String>>(new BucketTreeNode<Bucket<String>>(null,new BucketTreeNodeCollection<Bucket<String>>())));
 
         pushAppEvent(AppEvts.ON_CHANGED_FILE_STATE, BookInfo.STATE_UNSAVED);
         pushAppEvent(AppEvts.ON_LOADED_BOOK, loadedBook);
