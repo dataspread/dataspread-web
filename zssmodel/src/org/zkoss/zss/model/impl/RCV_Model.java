@@ -198,7 +198,12 @@ public class RCV_Model extends Model {
 
         if(this.indexString==null)
         {
-            ArrayList<Bucket<String>> newList = this.navS.getUniformBuckets(0,currentSheet.getEndRowIndex()+1);
+            trueOrder = new HashMap<Integer,Integer>();
+
+            for(int i=1;i<currentSheet.getEndRowIndex()+2;i++)
+                trueOrder.put(i,i);
+
+            ArrayList<Bucket<String>> newList = this.navS.getUniformBuckets(0,currentSheet.getEndRowIndex());
             return newList;
         }
 
@@ -207,11 +212,7 @@ public class RCV_Model extends Model {
                 currentSheet.getEndRowIndex(),columnIndex);
 
         ArrayList<SCell> result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
-        for(int i=0;i<result.size();i++){
-            System.out.println("("+(result.get(i).getRowIndex()+1)+","+result.get(i).getStringValue()+")");
-        }
 
-        System.out.println("After Sort");
         Collections.sort(result, new Comparator<SCell>() {
             @Override public int compare(SCell p1, SCell p2) {
                 return p1.getStringValue().compareTo(p2.getStringValue()); // Ascending
@@ -224,12 +225,14 @@ public class RCV_Model extends Model {
             DBContext context = new DBContext(connection);
             ids.add(1);
             for(int i=0;i<result.size();i++){
-                ids.add(result.get(i).getRowIndex()+1);
+                ids.add(trueOrder.get(result.get(i).getRowIndex()+1));
+                //trueOrder.put(result.get(i).getRowIndex()+1,ids.get(i+1));
                 recordList.add(result.get(i).getStringValue());
 
-                System.out.println("("+(result.get(i).getRowIndex()+1)+","+result.get(i).getStringValue()+")");
-
             }
+
+            for(int i=1;i<ids.size();i++)
+                trueOrder.put(i+1,ids.get(i));
 
             Hybrid_Model hybrid_model = (Hybrid_Model) this;
             ROM_Model rom_model = (ROM_Model) hybrid_model.tableModels.get(0).y;

@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 
 public abstract class Model {
@@ -16,6 +17,7 @@ public abstract class Model {
     public ArrayList<Bucket<String>> navSbuckets;
     public NavigationStructure navS;
     public String indexString;
+    public HashMap<Integer,Integer> trueOrder;
 
     public static Model CreateModel(DBContext context, SSheet sheet, ModelType modelType, String tableName) {
         Model model = null;

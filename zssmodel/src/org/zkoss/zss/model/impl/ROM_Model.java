@@ -690,7 +690,7 @@ public class ROM_Model extends Model {
 
     @Override
     public ArrayList<Bucket<String>> createNavS(SSheet currentSheet, int start, int count) {
-        ArrayList<Bucket<String>> newList = this.navS.getUniformBuckets(0,currentSheet.getEndRowIndex()+1);
+        ArrayList<Bucket<String>> newList = this.navS.getUniformBuckets(0,currentSheet.getEndRowIndex());
         return newList;
     }
 
