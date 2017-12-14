@@ -432,7 +432,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 	}
 
 	private static String getSizeHelperStr(HeaderPositionHelper helper) {
-		List<HeaderPositionInfo> infos = helper.getInfos();
+ 		List<HeaderPositionInfo> infos = helper.getInfos();
 		StringBuffer csc = new StringBuffer();
 		for (HeaderPositionInfo info : infos) {
 			if (csc.length() > 0)
@@ -4548,6 +4548,12 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 
 	}
 
+	public void manuallyTriggerEvent(String name, SSheet sheet,Range range){
+		ModelEvent event = ModelEvents.createModelEvent(name, sheet, new CellRegion(range.getRow(), range.getColumn(),
+				range.getLastRow(), range.getLastColumn()));
+		((InnerModelEventDispatcher)_modelEventListener).onRowColumnInsertDelete(event);
+	}
+
 	//ZSS-1082
 
 	/* DataListener to handle sheet data event */
@@ -5413,6 +5419,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 
 			StringAggregation styleAggregation = new StringAggregation();
 			StringAggregation textAggregation = new StringAggregation();
+			getSBook();
 			MergeAggregation mergeAggregation = new MergeAggregation(getMergeMatrixHelper(sheet));
 			for (int row = top; row <= bottom; row++) {
 				JSONObject r = getRowAttrs(row);
