@@ -3,8 +3,8 @@ import java.util.ArrayList;
 
 
 public class CombinedStatistic<T extends Comparable<T>> implements AbstractStatistic {
-    CountStatistic count;
-    KeyStatistic<T> key;
+    public CountStatistic count;
+    public KeyStatistic<T> key;
 
     public CombinedStatistic(KeyStatistic<T> key){
         this.key = key;
@@ -90,5 +90,14 @@ public class CombinedStatistic<T extends Comparable<T>> implements AbstractStati
             }
             return this.count.match(new_list, index, type);
         }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(key.toString());
+        sb.append(',');
+        sb.append(count.toString());
+        return sb.toString();
     }
 }

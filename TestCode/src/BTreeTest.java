@@ -22,8 +22,7 @@ public class BTreeTest {
         String password = "mangesh";
         DBHandler.connectToDB(url, driver, userName, password);
         DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
-        CountedBTree btree = new CountedBTree(dbContext, "Test1");
-        btree.useKryo(false);
+        CountedBTree btree = new CountedBTree(dbContext, "Test1", false);
         ArrayList<Integer> arrayList = new ArrayList<>();
 
         // Random operations
@@ -33,6 +32,8 @@ public class BTreeTest {
         int stats_add =0;
         int stats_remove =0;
 
+
+        System.out.println("Start adding Initial Records");
         // Add initial data points.
         for (int i=0;i<operations;i++)
         {
@@ -41,10 +42,12 @@ public class BTreeTest {
             ArrayList<Integer> insertList = new ArrayList<>();
             insertList.add(randomValue);
             btree.insertIDs(dbContext, i, insertList);
+            System.out.println("Records added:" + randomValue);
             dbContext.getConnection().commit();
             arrayList.add(i,randomValue);
         }
 
+        System.out.println("Random operations");
         // Perform RANDOM operations.
         for (int i=0;i<operations;i++)
         {
@@ -89,12 +92,13 @@ public class BTreeTest {
         dbContext.getConnection().commit();
         dbContext.getConnection().close();
     }
+
     public static void testRootInsDelByCount(DBContext context) {
 
         String tableName = "testRootInsDelByCount";
         KeyStatistic<Integer> key = new KeyStatistic<>(0);
         CombinedStatistic<Integer> emptyStatistic = new CombinedStatistic<>(key);
-        BTree testTree = new BTree<CombinedStatistic<Integer>, Integer>(context, tableName, emptyStatistic);
+        BTree testTree = new BTree<CombinedStatistic<Integer>, Integer>(context, tableName, emptyStatistic, false);
 
 
         testTree.add(context, key, 10, false, AbstractStatistic.Type.COUNT);
@@ -124,7 +128,7 @@ public class BTreeTest {
         CombinedStatistic<Integer> emptyStatistic = new CombinedStatistic<>(key.get(0));
         for(int i = 0; i < 3; i++){
             String testName = "testRootSplit"+i;
-            BTree testTree = new BTree<CombinedStatistic<Integer>, Integer>(context, testName, emptyStatistic);
+            BTree testTree = new BTree<CombinedStatistic<Integer>, Integer>(context, testName, emptyStatistic, false);
             testTree.add(context, key.get(0), 100, false, AbstractStatistic.Type.COUNT);
             testTree.add(context, key.get(1), 200, false, AbstractStatistic.Type.COUNT);
             testTree.add(context, key.get(2), 300, false, AbstractStatistic.Type.COUNT);
@@ -141,7 +145,7 @@ public class BTreeTest {
             key.add(new KeyStatistic<>(x));
         }
         CombinedStatistic<Integer> emptyStatistic = new CombinedStatistic<>(key.get(0));
-        BTree testTree = new BTree<CombinedStatistic<Integer>, Integer>(context, "tSNBC", emptyStatistic);
+        BTree testTree = new BTree<CombinedStatistic<Integer>, Integer>(context, "tSNBC", emptyStatistic, false);
 
         testTree.add(context, key.get(0), 50, false, AbstractStatistic.Type.COUNT);
         testTree.add(context, key.get(1), 100, false, AbstractStatistic.Type.COUNT);
@@ -176,7 +180,7 @@ public class BTreeTest {
         int[] aa = {3, 8, 17};
         boolean valid;
         for(int i = 0; i < 3; i++){
-            BTree testTree = new BTree<CombinedStatistic<Integer>, Integer>(context, "tSNSPBC"+i, emptyStatistic);
+            BTree testTree = new BTree<CombinedStatistic<Integer>, Integer>(context, "tSNSPBC"+i, emptyStatistic, false);
             testTree.add(context, key.get(0), 50, false, AbstractStatistic.Type.COUNT);
             testTree.add(context, key.get(1), 100, false, AbstractStatistic.Type.COUNT);
             testTree.add(context, key.get(2), 200, false, AbstractStatistic.Type.COUNT);
@@ -211,7 +215,7 @@ public class BTreeTest {
 
 
 
-        BTree testTree = new BTree<CombinedStatistic<Integer>, Integer>(context, "tNMBC", emptyStatistic);
+        BTree testTree = new BTree<CombinedStatistic<Integer>, Integer>(context, "tNMBC", emptyStatistic,false);
         testTree.add(context, key.get(0), 100, false, AbstractStatistic.Type.COUNT);
         testTree.add(context, key.get(1), 200, false, AbstractStatistic.Type.COUNT);
         testTree.add(context, key.get(2), 300, false, AbstractStatistic.Type.COUNT);
@@ -232,7 +236,7 @@ public class BTreeTest {
 
 
 
-        BTree testTree = new BTree<CombinedStatistic<Integer>, Integer>(context, "NMRNBC", emptyStatistic);
+        BTree testTree = new BTree<CombinedStatistic<Integer>, Integer>(context, "NMRNBC", emptyStatistic,false);
         testTree.add(context, key.get(0), 50, false, AbstractStatistic.Type.COUNT);
         testTree.add(context, key.get(1), 100, false, AbstractStatistic.Type.COUNT);
         testTree.add(context, key.get(2), 200, false, AbstractStatistic.Type.COUNT);
@@ -258,7 +262,7 @@ public class BTreeTest {
         CombinedStatistic<Integer> emptyStatistic = new CombinedStatistic<>(key.get(0));
 
         // left rotate
-        BTree testTree = new BTree<CombinedStatistic<Integer>, Integer>(context, "NMRMBC", emptyStatistic);
+        BTree testTree = new BTree<CombinedStatistic<Integer>, Integer>(context, "NMRMBC", emptyStatistic, false);
         testTree.add(context, key.get(0), 50, false, AbstractStatistic.Type.COUNT);
         testTree.add(context, key.get(1), 100, false, AbstractStatistic.Type.COUNT);
         testTree.add(context, key.get(2), 200, false, AbstractStatistic.Type.COUNT);

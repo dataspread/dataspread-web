@@ -67,4 +67,6 @@ public interface AbstractStatistic {
      * @return true if this statistic matches the designated statistic
      */
     boolean match(ArrayList<AbstractStatistic> stat_list, int index, Type type);
+
+    String toString();
 }

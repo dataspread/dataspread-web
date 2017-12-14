@@ -6,7 +6,7 @@ import java.util.ArrayList;
  * @param <T> type of key
  */
 public class KeyStatistic<T extends Comparable<T>> implements AbstractStatistic {
-    T key;
+    public T key;
 
     /**
      * Constructor
@@ -93,7 +93,13 @@ public class KeyStatistic<T extends Comparable<T>> implements AbstractStatistic 
      * @param type
      * @return
      */
+    @Override
     public boolean match(ArrayList<AbstractStatistic> keys, int index, Type type) {
         return this.compareTo(keys.get(index), type) == 0;
+    }
+
+    @Override
+    public String toString() {
+        return key.toString();
     }
 }

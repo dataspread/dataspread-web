@@ -2,7 +2,7 @@ package org.zkoss.zss.model.impl.statistic;
 import java.util.ArrayList;
 
 public class CountStatistic implements AbstractStatistic {
-    int count;
+    public int count;
 
     public CountStatistic() {
         this.count = 0;
@@ -12,7 +12,7 @@ public class CountStatistic implements AbstractStatistic {
         this.count = Count;
     }
 
-
+    @Override
     public int findIndex(ArrayList<AbstractStatistic> counts, Type type){
         int lo = 0, hi = counts.size();
         int remain = this.count;
@@ -23,6 +23,7 @@ public class CountStatistic implements AbstractStatistic {
         return lo;
     }
 
+    @Override
     public boolean requireUpdate(){
         return true;
     }
@@ -50,6 +51,7 @@ public class CountStatistic implements AbstractStatistic {
         return new CountStatistic(new_count);
     }
 
+    @Override
     public CountStatistic updateStatistic(Mode mode){
         int new_count = (mode == Mode.ADD)? (this.count + 1) : (this.count - 1);
         return new CountStatistic(new_count);
@@ -62,5 +64,10 @@ public class CountStatistic implements AbstractStatistic {
             total += ((CountStatistic) counts.get(i)).count;
         }
         return this.count == total;
+    }
+
+    @Override
+    public String toString() {
+        return Integer.toString(count);
     }
 }
