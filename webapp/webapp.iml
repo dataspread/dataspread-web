@@ -22,6 +22,7 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="zhighcharts-0.2.0" level="project" />
+    <orderEntry type="library" name="Maven: org.ngi:zhighcharts:0.2.0" level="project" />
     <orderEntry type="module" module-name="rtree" />
     <orderEntry type="library" name="Maven: com.github.davidmoten:guava-mini:0.1" level="project" />
     <orderEntry type="library" name="Maven: io.reactivex:rxjava:1.1.4" level="project" />
