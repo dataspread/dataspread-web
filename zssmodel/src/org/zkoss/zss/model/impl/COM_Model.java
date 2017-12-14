@@ -37,6 +37,11 @@ public class COM_Model extends Model {
         return new COM_Model(dbContext, sheet, modelName, this);
     }
 
+    @Override
+    public ArrayList<Bucket<String>> createNavS(SSheet currentsheet, int start, int count) {
+        return null;
+    }
+
 
     @Override
     public ArrayList<Bucket<String>> createNavS(String bucketName, int start, int count) {

@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 
 public abstract class Model {
@@ -16,6 +17,7 @@ public abstract class Model {
     public ArrayList<Bucket<String>> navSbuckets;
     public NavigationStructure navS;
     public String indexString;
+    public HashMap<Integer,Integer> trueOrder;
 
     public static Model CreateModel(DBContext context, SSheet sheet, ModelType modelType, String tableName) {
         Model model = null;
@@ -99,6 +101,9 @@ public abstract class Model {
 
     // Clone only the corresponding tables in postgres
     public abstract Model clone(DBContext dbContext, SSheet sheet, String modelName);
+
+    public abstract ArrayList<Bucket<String>> createNavS(SSheet currentsheet, int start, int count);
+
     public abstract ArrayList<String> getHeaders();
     public abstract void setIndexString(String str);
 

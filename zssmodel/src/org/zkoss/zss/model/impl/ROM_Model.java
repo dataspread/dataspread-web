@@ -9,6 +9,7 @@ import org.postgresql.copy.CopyIn;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 
 import java.io.IOException;
@@ -357,9 +358,11 @@ public class ROM_Model extends Model {
         Integer[] rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
         Integer[] colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
         HashMap<Integer, Integer> row_map = IntStream.range(0, rowIds.length)
-                .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(rowIds[i], fetchRegion.getRow() + i), null);
+                .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(rowIds[i], fetchRegion.getRow() + i),
+                        (map1, map2) -> map1.putAll(map2));
         HashMap<Integer, Integer> col_map = IntStream.range(0, colIds.length)
-                .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(colIds[i], fetchRegion.getColumn() + i), null);
+                .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(colIds[i], fetchRegion.getColumn() + i),
+                        (map1, map2) -> map1.putAll(map2));
 
         StringBuffer select = new StringBuffer("SELECT row");
         for (int i = 0; i < colIds.length; i++)
@@ -601,7 +604,7 @@ public class ROM_Model extends Model {
             insertRows(dbContext, insertedRows, importedRows-insertedRows);
             insertedRows += (importedRows-insertedRows);
 
-            this.navSbuckets = this.createNavS(null,0,importedRows);
+            this.navSbuckets = this.createNavS((String) null,0,importedRows);
 
             logger.info((importedRows-1) + " rows imported ");
 
@@ -612,7 +615,7 @@ public class ROM_Model extends Model {
             e.printStackTrace();
         }
 
-        this.navS.writeJavaObject(this.navSbuckets);
+       // this.navS.writeJavaObject(this.navSbuckets);
 
        // this.navS.readJavaObject(this.tableName);
 
@@ -675,7 +678,7 @@ public class ROM_Model extends Model {
 
         //create nav data structure
         this.navS.setRecordList(recordList);
-        ArrayList<Bucket<String>> newList = this.navS.getNonOverlappingBuckets(0,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
+        ArrayList<Bucket<String>> newList = this.navS.getUniformBuckets(0,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
 
         if(bucketName==null)
         {
@@ -685,6 +688,12 @@ public class ROM_Model extends Model {
         return this.navS.recomputeNavS(bucketName,this.navSbuckets,newList);
         //  printBuckets(navSbuckets);
 
+    }
+
+    @Override
+    public ArrayList<Bucket<String>> createNavS(SSheet currentSheet, int start, int count) {
+        ArrayList<Bucket<String>> newList = this.navS.getUniformBuckets(0,currentSheet.getEndRowIndex());
+        return newList;
     }
 
     @Override

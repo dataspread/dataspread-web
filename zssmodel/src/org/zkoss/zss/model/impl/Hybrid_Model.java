@@ -768,7 +768,7 @@ public class Hybrid_Model extends RCV_Model {
 
             this.navSbuckets  = model.navSbuckets;
             this.navS = model.navS;
-            this.indexString = model.indexString;
+            //this.indexString = model.indexString;
 
             CellRegion range = model.getBounds(dbContext);
 

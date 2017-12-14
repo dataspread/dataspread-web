@@ -43,6 +43,11 @@ public class TOM_Model extends Model {
         return new TOM_Model(dbContext,sheet,modelName, this);
     }
 
+    @Override
+    public ArrayList<Bucket<String>> createNavS(SSheet currentsheet, int start, int count) {
+        return null;
+    }
+
     public void loadColumnInfo(DBContext dbContext) {
         columnNames = new TreeMap<>();
         String tableCols = (new StringBuffer())

@@ -48,12 +48,14 @@ import org.zkoss.zss.app.repository.impl.SimpleBookInfo;
 import org.zkoss.zss.app.ui.dlg.*;
 import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.impl.AbstractBookAdv;
+import org.zkoss.zss.model.impl.AbstractSheetAdv;
 import org.zkoss.zss.model.impl.Bucket;
 import org.zkoss.zss.model.impl.SheetImpl;
 import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.ui.*;
 import org.zkoss.zss.ui.Version;
 import org.zkoss.zss.ui.event.Events;
+import org.zkoss.zss.ui.event.SheetSelectEvent;
 import org.zkoss.zss.ui.event.SyncFriendFocusEvent;
 import org.zkoss.zss.ui.impl.DefaultUserActionManagerCtrl;
 import org.zkoss.zss.ui.impl.Focus;
@@ -233,6 +235,7 @@ public class AppCtrl extends CtrlBase<Component> {
             @Override
             public void onEvent(Event event) throws Exception {
                 onSheetSelect();
+                createNavS((SheetImpl) ((SheetSelectEvent) event).getSheet().getInternalSheet());
             }
         });
 
@@ -305,6 +308,22 @@ public class AppCtrl extends CtrlBase<Component> {
 
         setupUsername(false);
         initBook();
+    }
+
+    private void createNavS(SheetImpl currentSheet) {
+
+        try {
+            ss.setNavSBuckets(currentSheet.getDataModel().createNavS(currentSheet,0,0));
+            createNavSTree(ss.getNavSBuckets());
+            updateColModel(currentSheet);
+
+            currentSheet.fullRefresh();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
     }
 
     private void setBookmark(String bookmark) {
@@ -565,9 +584,10 @@ public class AppCtrl extends CtrlBase<Component> {
                                 m.isBinary() ? new BufferedReader(new InputStreamReader(m.getStreamData())) :
                                         m.getReaderData(), delimiter);
 
-                        ss.setNavSBuckets(newSheet.getDataModel().navSbuckets);
+                        /*ss.setNavSBuckets(newSheet.getDataModel().navSbuckets);
                         createNavSTree(newSheet.getDataModel().navSbuckets);
-                        updateColModel(newSheet);
+                        updateColModel(newSheet);*/
+                        createNavS((SheetImpl) newSheet);
                         Messagebox.show("File imported", "DataSpread",
                                 Messagebox.OK, Messagebox.INFORMATION, null);
 
@@ -626,21 +646,11 @@ public class AppCtrl extends CtrlBase<Component> {
         collaborationInfo.removeRelationship(username);
         ss.setBook(loadedBook);
         initSaveNotification(loadedBook);
+
         pushAppEvent(AppEvts.ON_CHANGED_FILE_STATE, BookInfo.STATE_UNSAVED);
         pushAppEvent(AppEvts.ON_LOADED_BOOK, loadedBook);
         pushAppEvent(AppEvts.ON_CHANGED_SPREADSHEET, ss);
         updatePageInfo();
-
-        SBook currentBook = loadedBook.getInternalBook();
-        SSheet currentSheet = currentBook.getSheet(2);
-        try {
-            ss.setNavSBuckets(currentSheet.getDataModel().createNavS(null,0,0));
-            createNavSTree(ss.getNavSBuckets());
-            updateColModel(currentSheet);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
 
     }
@@ -1355,7 +1365,18 @@ public class AppCtrl extends CtrlBase<Component> {
     private void updateColModel(SSheet currentSheet) {
 
         try {
-            ListModelList<String> colModel = new ListModelList<String>(currentSheet.getDataModel().getHeaders());
+
+            CellRegion tableRegion =  new CellRegion(0, 0,//100000,20);
+                    0,currentSheet.getEndColumnIndex());
+
+            ArrayList<SCell> result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
+
+            ArrayList<String> headers = new ArrayList<String>();
+
+            for(int i=0;i<result.size();i++){
+                headers.add(result.get(i).getStringValue());
+            }
+            ListModelList<String> colModel = new ListModelList<String>(headers);
             colSelectbox.setModel(colModel);
 
         } catch (Exception e) {
@@ -1367,25 +1388,13 @@ public class AppCtrl extends CtrlBase<Component> {
     public void sort() {
         int index = colSelectbox.getSelectedIndex()+1;
 
-        SBook currentBook = loadedBook.getInternalBook();
-        SSheet currentSheet = currentBook.getSheet(2);
+        SSheet currentSheet = ss.getSelectedSSheet();
         try {
             currentSheet.getDataModel().setIndexString("col_"+index);
             ((SheetImpl) currentSheet).clearCache();
-            ss.setNavSBuckets(currentSheet.getDataModel().createNavS(null,0,0));
+            ss.setNavSBuckets(currentSheet.getDataModel().createNavS(currentSheet,0,0));
             createNavSTree(ss.getNavSBuckets());
-            AbstractBookAdv book = (AbstractBookAdv) BookBindings.get(currentBook.getBookName());
-            System.out.println("Total Rows: "+currentSheet.getDataModel().navS.getTotalRows());
-            CellRegion tableRegion =  new CellRegion(0, 0,
-                    currentSheet.getDataModel().navS.getTotalRows(),currentSheet.getEndColumnIndex()+1);
-
-            book.sendModelEvent(ModelEvents.createModelEvent(ModelEvents.ON_CELL_CONTENT_CHANGE,
-                    currentSheet, tableRegion));
-
-            pushAppEvent(AppEvts.ON_LOADED_BOOK, currentBook);
-            pushAppEvent(AppEvts.ON_CHANGED_SPREADSHEET, ss);
-            updatePageInfo();
-
+            ((SheetImpl) currentSheet).fullRefresh();
 
         } catch (Exception e) {
             e.printStackTrace();

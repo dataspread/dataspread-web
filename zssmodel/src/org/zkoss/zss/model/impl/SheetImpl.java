@@ -387,6 +387,10 @@ public class SheetImpl extends AbstractSheetAdv {
 				sheetDataCache.put(newCellRegion, e);
 			}
 		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
 
         for (int row=fetchRange.getRow();row<=fetchRange.getLastRow();++row) {
             for (int col = fetchRange.getColumn(); col <= fetchRange.getLastColumn(); ++col) {
