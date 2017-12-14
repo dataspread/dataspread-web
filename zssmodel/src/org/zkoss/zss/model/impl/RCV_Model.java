@@ -27,8 +27,8 @@ public class RCV_Model extends Model {
     //Create or load RCV_model.
     protected RCV_Model(DBContext context, SSheet sheet, String tableName) {
         this.sheet = sheet;
-        rowMapping = new BTree(context, tableName + "_row_idx");
-        colMapping = new BTree(context, tableName + "_col_idx");
+        rowMapping = new CountedBTree(context, tableName + "_row_idx");
+        colMapping = new CountedBTree(context, tableName + "_col_idx");
         this.tableName = tableName;
         createSchema(context);
         loadMetaData(context);

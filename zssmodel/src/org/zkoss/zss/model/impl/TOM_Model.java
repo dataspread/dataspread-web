@@ -23,8 +23,8 @@ public class TOM_Model extends Model {
 
     //Create or load TOM_model.
     TOM_Model(DBContext context, String tableName) {
-        rowMapping = new BTree(context, tableName + "_row_idx");
-        colMapping = new BTree(context, tableName + "_col_idx");
+        rowMapping = new CountedBTree(context, tableName + "_row_idx");
+        colMapping = new CountedBTree(context, tableName + "_col_idx");
         this.tableName = tableName;
         loadColumnInfo(context);
     }
@@ -454,7 +454,7 @@ public class TOM_Model extends Model {
     }
 
     @Override
-    public void importSheet(Reader reader, char delimiter) throws IOException {
+    public void importSheet(Reader reader, char delimiter) {
         throw new UnsupportedOperationException();
     }
 

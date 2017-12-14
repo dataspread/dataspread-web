@@ -27,8 +27,8 @@ public class ROM_Model extends Model {
     //Create or load RCV_model.
     ROM_Model(DBContext context, SSheet sheet, String tableName) {
         this.sheet = sheet;
-        rowMapping = new BTree<Integer,Integer>(context, tableName + "_row_idx");
-        colMapping = new BTree<Integer,Integer>(context, tableName + "_col_idx");
+        rowMapping = new CountedBTree(context, tableName + "_row_idx");
+        colMapping = new CountedBTree(context, tableName + "_col_idx");
         this.tableName = tableName;
         createSchema(context);
     }
