@@ -1,6 +1,7 @@
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.zss.model.impl.BTree;
+import org.zkoss.zss.model.impl.CountedBTree;
 import org.zkoss.zss.model.impl.statistic.AbstractStatistic;
 import org.zkoss.zss.model.impl.statistic.CombinedStatistic;
 import org.zkoss.zss.model.impl.statistic.CountStatistic;
@@ -21,9 +22,7 @@ public class BTreeTest {
         String password = "mangesh";
         DBHandler.connectToDB(url, driver, userName, password);
         DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
-        KeyStatistic<Integer> key = new KeyStatistic<>(0);
-        CombinedStatistic<Integer> emptyStatistic = new CombinedStatistic<>(key);
-        BTree btree = new BTree<CombinedStatistic<Integer>, Integer>(dbContext, "Test1", emptyStatistic);
+        CountedBTree btree = new CountedBTree(dbContext, "Test1");
         btree.useKryo(false);
         ArrayList<Integer> arrayList = new ArrayList<>();
 
@@ -80,15 +79,8 @@ public class BTreeTest {
         System.out.println("BTree size:" + btree.size(dbContext));
         System.out.println("ArrayList size:" + arrayList.size());
 
-        ArrayList<CombinedStatistic<Integer>> lookup_statistics = new ArrayList<>();
-        for (int i = 0; i < arrayList.size(); i++) {
-            CountStatistic count = new CountStatistic(i);
-            CombinedStatistic<Integer> statistic = new CombinedStatistic<>(key, count);
-            lookup_statistics.add(statistic);
-        }
-
         if (btree.size(dbContext) == arrayList.size()
-                && Arrays.asList((btree.getIDsCombined(dbContext, lookup_statistics, AbstractStatistic.Type.COUNT)))
+                && Arrays.asList((btree.getIDs(dbContext, 0, arrayList.size())))
                 .equals(arrayList))
             System.out.println("Results Match");
         else
@@ -97,7 +89,7 @@ public class BTreeTest {
         dbContext.getConnection().commit();
         dbContext.getConnection().close();
     }
-    public static void testRootInsDelByCount(DBContext context)throws Exception{
+    public static void testRootInsDelByCount(DBContext context) {
 
         String tableName = "testRootInsDelByCount";
         KeyStatistic<Integer> key = new KeyStatistic<>(0);
@@ -120,7 +112,7 @@ public class BTreeTest {
 
     }
 
-    public static void testRootSplitByCount(DBContext context)throws Exception{
+    public static void testRootSplitByCount(DBContext context) {
 
         int[] a = {5, 25, 50};
         int[] rootids = {0, 0, 0};
@@ -143,7 +135,7 @@ public class BTreeTest {
 
     }
 
-    public static void testSplitNodeByCount(DBContext context)throws Exception{
+    public static void testSplitNodeByCount(DBContext context) {
         ArrayList<KeyStatistic<Integer>> key = new ArrayList<>();
         for(int x = 0; x < 16; x++) {
             key.add(new KeyStatistic<>(x));
@@ -173,7 +165,7 @@ public class BTreeTest {
 
     }
 
-    public static void testSplitNodeSplitParentByCount(DBContext context)throws Exception{
+    public static void testSplitNodeSplitParentByCount(DBContext context) {
         ArrayList<KeyStatistic<Integer>> key = new ArrayList<>();
         for(int x = 0; x < 16; x++) {
             key.add(new KeyStatistic<>(x));
@@ -210,7 +202,7 @@ public class BTreeTest {
         }
     }
 
-    public static void testNodeMergeByCount(DBContext context) throws Exception {
+    public static void testNodeMergeByCount(DBContext context) {
         ArrayList<KeyStatistic<Integer>> key = new ArrayList<>();
         for(int x = 0; x < 6; x++) {
             key.add(new KeyStatistic<>(x));
@@ -231,7 +223,7 @@ public class BTreeTest {
 
     }
 
-    public static void NodeMergeRootMergeByCount(DBContext context) throws Exception {
+    public static void NodeMergeRootMergeByCount(DBContext context) {
         ArrayList<KeyStatistic<Integer>> key = new ArrayList<>();
         for(int x = 0; x < 12; x++) {
             key.add(new KeyStatistic<>(x));
@@ -258,7 +250,7 @@ public class BTreeTest {
 
     }
 
-    public static void NodeMergeRootMerge1ByCount(DBContext context) throws Exception {
+    public static void NodeMergeRootMerge1ByCount(DBContext context) {
         ArrayList<KeyStatistic<Integer>> key = new ArrayList<>();
         for(int x = 0; x < 18; x++) {
             key.add(new KeyStatistic<>(x));

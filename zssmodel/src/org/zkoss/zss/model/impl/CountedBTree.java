@@ -9,7 +9,7 @@ import java.util.ArrayList;
 public class CountedBTree implements PosMapping{
     BTree<CountStatistic, Integer> btree;
 
-    CountedBTree(DBContext context, String tableName) {
+    public CountedBTree(DBContext context, String tableName) {
         CountStatistic emptyStatistic = new CountStatistic();
         btree = new BTree<>(context, tableName, emptyStatistic);
     }
@@ -72,5 +72,9 @@ public class CountedBTree implements PosMapping{
             statistics.add(new CountStatistic(pos + i));
         }
         btree.insertIDs(context, statistics, ids, AbstractStatistic.Type.COUNT);
+    }
+
+    public void useKryo(boolean useKryo) {
+        btree.useKryo(useKryo);
     }
 }
