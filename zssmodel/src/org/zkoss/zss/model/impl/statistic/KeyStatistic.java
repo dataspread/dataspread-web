@@ -33,18 +33,28 @@ public class KeyStatistic<T extends Comparable<T>> implements AbstractStatistic 
      * @return children index
      */
     @Override
-    public int findIndex(ArrayList<AbstractStatistic> keys, Type type) {
+    public int findIndex(ArrayList<AbstractStatistic> keys, Type type, boolean isLeaf) {
         int lo = 0, hi = keys.size();
+        int index = lo;
         while (hi > lo) {
             int m = (hi + lo) / 2;
             if (this.compareTo(keys.get(m), type) < 0)
                 hi = m - 1;     // look in first half
-            else if (this.compareTo(keys.get(m), type) > 0)
+            else if (this.compareTo(keys.get(m), type) > 0) {
                 lo = m;     // look in second half
-            else
-                return m;   // found the index
+                index = lo;
+            } else {
+                index = m;   // found the index
+                break;
+            }
         }
-        return lo;
+        if (isLeaf) {
+            if (this.compareTo(keys.get(index), type) <= 0)
+                return index;
+            else
+                return index + 1;
+        }
+        return index;
     }
 
     /**
@@ -73,6 +83,12 @@ public class KeyStatistic<T extends Comparable<T>> implements AbstractStatistic 
      */
     @Override
     public KeyStatistic<T> getLowerStatistic(ArrayList<AbstractStatistic> keys, int limit, Type type) {
+        return this;
+    }
+
+
+    @Override
+    public KeyStatistic<T> getLeafStatistic(Type type) {
         return this;
     }
 

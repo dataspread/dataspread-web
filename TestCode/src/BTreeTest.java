@@ -82,9 +82,9 @@ public class BTreeTest {
         System.out.println("BTree size:" + btree.size(dbContext));
         System.out.println("ArrayList size:" + arrayList.size());
 
+        ArrayList<Integer> btree_list = btree.getIDs(dbContext, 0, arrayList.size());
         if (btree.size(dbContext) == arrayList.size()
-                && Arrays.asList((btree.getIDs(dbContext, 0, arrayList.size())))
-                .equals(arrayList))
+                && btree_list.equals(arrayList))
             System.out.println("Results Match");
         else
             System.err.println("Results do not match");

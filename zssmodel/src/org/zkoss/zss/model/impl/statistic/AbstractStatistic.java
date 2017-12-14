@@ -35,7 +35,7 @@ public interface AbstractStatistic {
      * @param stat_list an array of statistics
      * @return a integer between 0 and the length of stat_list
      */
-    int findIndex(ArrayList<AbstractStatistic> stat_list, Type type);
+    int findIndex(ArrayList<AbstractStatistic> stat_list, Type type, boolean isLeaf);
 
     /**
      * Get the aggregation value of the stat_list
@@ -53,6 +53,13 @@ public interface AbstractStatistic {
     AbstractStatistic getLowerStatistic(ArrayList<AbstractStatistic> stat_list, int limit, Type type);
 
     /**
+     *
+     * @param type
+     * @return
+     */
+    AbstractStatistic getLeafStatistic(Type type);
+
+    /**
      * Update the current statistic affected by the operation
      * @param mode indicate ADD or DELETE operation
      * @return the updated statistic
@@ -68,5 +75,9 @@ public interface AbstractStatistic {
      */
     boolean match(ArrayList<AbstractStatistic> stat_list, int index, Type type);
 
+    /**
+     *
+     * @return
+     */
     String toString();
 }

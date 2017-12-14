@@ -128,10 +128,10 @@ public class BTree <K extends AbstractStatistic, V> {
         // Get the current node
         Node u = new Node().get(context, bs, ui);
         // Find the position to insert
-        int i = statistic.findIndex(u.statistics, type);
+        int i = statistic.findIndex(u.statistics, type, u.isLeaf());
         // If the node is leaf node, add the value
         if (u.isLeaf()) {
-            u.addLeaf(statistic, val, type);
+            u.addLeaf(i, statistic, val, type);
         } else {
             // Update the statistic of the node we found
             AbstractStatistic current_stat = u.statistics.get(i);
@@ -162,9 +162,8 @@ public class BTree <K extends AbstractStatistic, V> {
     public V remove(DBContext context, K statistic, boolean flush, AbstractStatistic.Type type) {
         V value = removeRecursive(context, statistic, metaDataBlock.ri, type);
         if (value != null) {
-            metaDataBlock.elementCount--;
             Node r = new Node().get(context, bs, metaDataBlock.ri);
-            if (!r.isLeaf() && r.size() <= 1 && metaDataBlock.elementCount > 0) { // root has only one child
+            if ((!r.isLeaf()) && (r.size() <= 1) && (metaDataBlock.elementCount > 0)) { // root has only one child
                 r.free(bs);
                 metaDataBlock.ri = r.children.get(0);
                 bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
@@ -187,7 +186,7 @@ public class BTree <K extends AbstractStatistic, V> {
         if (ui < 0) return null;  // didn't find it
         Node u = new Node().get(context, bs, ui);
 
-        int i = statistic.findIndex(u.statistics, type);
+        int i = statistic.findIndex(u.statistics, type, u.isLeaf());
         /* Need to go to leaf to delete */
         if (u.isLeaf()) {
             // Check if the statistic is exactly matched
@@ -214,6 +213,7 @@ public class BTree <K extends AbstractStatistic, V> {
                 u.childrenCount.set(i, child.size());
                 checkUnderflow(context, u, child, i, type);
                 u.update(bs);
+                bs.flushDirtyBlocks(context);
                 return value;
             }
             u.update(bs);
@@ -237,7 +237,7 @@ public class BTree <K extends AbstractStatistic, V> {
     private V lookupRecursive(DBContext context, K statistic, int ui, AbstractStatistic.Type type) {
         if (ui < 0) return null;  // didn't find it
         Node u = new Node().get(context, bs, ui);
-        int i = statistic.findIndex(u.statistics, type);
+        int i = statistic.findIndex(u.statistics, type, u.isLeaf());
         /* Need to go to leaf to delete */
         if (u.isLeaf()) {
             // Check if the statistic is exactly matched
@@ -369,11 +369,12 @@ public class BTree <K extends AbstractStatistic, V> {
         int ui = metaDataBlock.ri;
         while (true) {
             Node u = new Node().get(context, bs, ui);
-            int i = statistic.findIndex(u.statistics, type);
+            int i = statistic.findIndex(u.statistics, type, u.isLeaf());
             if (u.isLeaf()) {
                 return i >= 0 && statistic.match(u.statistics, i, type);
+            } else {
+                ui = u.children.get(i);
             }
-            ui = u.children.get(i);
         }
     }
 
@@ -381,14 +382,15 @@ public class BTree <K extends AbstractStatistic, V> {
         int ui = metaDataBlock.ri;
         while (true) {
             Node u = new Node().get(context, bs, ui);
-            int i = statistic.findIndex(u.statistics, type);
+            int i = statistic.findIndex(u.statistics, type, u.isLeaf());
             if (u.isLeaf()) {
                 if (i > 0 && statistic.match(u.statistics, i, type))
                     return u.values.get(i); // found it
                 else
                     return null;
+            } else {
+                ui = u.children.get(i);
             }
-            ui = u.children.get(i);
         }
     }
 
@@ -425,7 +427,7 @@ public class BTree <K extends AbstractStatistic, V> {
         int i = 0;
         if (u.isLeaf()) {
             while (i < u.statistics.size()) {
-                sb.append(u.statistics.get(i));
+                sb.append(u.statistics.get(i).toString());
                 sb.append("->");
                 sb.append(u.values.get(i));
                 sb.append(",");
@@ -435,7 +437,7 @@ public class BTree <K extends AbstractStatistic, V> {
             while (i < u.statistics.size()) {
                 sb.append(u.children.get(i));
                 sb.append(" < ");
-                sb.append(u.statistics.get(i));
+                sb.append(u.statistics.get(i).toString());
                 sb.append(" > ");
                 i++;
             }
@@ -497,7 +499,7 @@ public class BTree <K extends AbstractStatistic, V> {
 
         Node u = new Node().get(context, bs, ui);
         while (true) {
-            int i = new_statistic.findIndex(u.statistics, type);
+            int i = new_statistic.findIndex(u.statistics, type, u.isLeaf());
             /* Need to go to leaf to delete */
             if (u.isLeaf()) {
                 // Check if the statistic is exactly matched
@@ -511,7 +513,7 @@ public class BTree <K extends AbstractStatistic, V> {
             } else {
                 // Get the new statistic we are looking for
                 new_statistic = (K) statistic.getLowerStatistic(u.statistics, i, type);
-                u = new Node().get(context, bs, ui);
+                u = new Node().get(context, bs, u.children.get(i));
             }
         }
         int index = first_index + 1;
@@ -650,10 +652,9 @@ public class BTree <K extends AbstractStatistic, V> {
          * @param value the value to add
          * @return true on success or false if not added
          */
-        public boolean addLeaf(K statistic, V value, AbstractStatistic.Type type) {
-            int i = statistic.findIndex(statistics, type);
+        public boolean addLeaf(int i, K statistic, V value, AbstractStatistic.Type type) {
             if (i < 0) return false;
-            this.statistics.add(i, statistic);
+            this.statistics.add(i, statistic.getLeafStatistic(type));
             this.values.add(i, value);
             return true;
         }
@@ -720,7 +721,7 @@ public class BTree <K extends AbstractStatistic, V> {
             sb.append("[");
             if (leafNode) {
                 for (int i = 0; i < statistics.size(); i++) {
-                    sb.append(statistics.get(i));
+                    sb.append(statistics.get(i).toString());
                     sb.append(">");
                     sb.append(values.get(i));
                     sb.append(",");
@@ -730,7 +731,7 @@ public class BTree <K extends AbstractStatistic, V> {
                     sb.append("(");
                     sb.append((children.get(i) < 0 ? "." : children.get(i)));
                     sb.append(")");
-                    sb.append(statistics.get(i));
+                    sb.append(statistics.get(i).toString());
                 }
             }
             sb.append("]");

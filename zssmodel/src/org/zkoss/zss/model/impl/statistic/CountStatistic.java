@@ -13,15 +13,23 @@ public class CountStatistic implements AbstractStatistic {
     }
 
     @Override
-    public int findIndex(ArrayList<AbstractStatistic> counts, Type type){
+    public int findIndex(ArrayList<AbstractStatistic> counts, Type type, boolean isLeaf){
         int lo = 0, hi = counts.size();
         int remain = this.count;
+        if (remain <= 0) return lo;
         while (hi != lo) {
             remain -= ((CountStatistic) counts.get(lo)).count;
-            if (remain <= 0) return lo;
+            if (remain <= 0) {
+                if (isLeaf)
+                    lo++;
+                return lo;
+            }
+            lo++;
         }
+        if (isLeaf) lo++;
         return lo;
     }
+
 
     @Override
     public boolean requireUpdate(){
@@ -52,6 +60,11 @@ public class CountStatistic implements AbstractStatistic {
     }
 
     @Override
+    public CountStatistic getLeafStatistic(Type type) {
+        return new CountStatistic(1);
+    }
+
+    @Override
     public CountStatistic updateStatistic(Mode mode){
         int new_count = (mode == Mode.ADD)? (this.count + 1) : (this.count - 1);
         return new CountStatistic(new_count);
@@ -59,11 +72,7 @@ public class CountStatistic implements AbstractStatistic {
 
     @Override
     public boolean match(ArrayList<AbstractStatistic> counts, int index, Type type) {
-        int total = 0;
-        for(int i = 0; i < index; i++){
-            total += ((CountStatistic) counts.get(i)).count;
-        }
-        return this.count == total;
+        return true;
     }
 
     @Override

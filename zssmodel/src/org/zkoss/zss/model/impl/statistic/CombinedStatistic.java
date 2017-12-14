@@ -16,10 +16,12 @@ public class CombinedStatistic<T extends Comparable<T>> implements AbstractStati
         this.count = count;
     }
 
+    @Override
     public boolean requireUpdate(){
         return true;
     }
 
+    @Override
     public int compareTo(AbstractStatistic obj, Type type) {
         if (obj instanceof CombinedStatistic){
             if (type == Type.KEY) {
@@ -33,23 +35,26 @@ public class CombinedStatistic<T extends Comparable<T>> implements AbstractStati
             return 0;
         }
     }
-    public int findIndex(ArrayList<AbstractStatistic> stat_list, Type type){
+
+    @Override
+    public int findIndex(ArrayList<AbstractStatistic> stat_list, Type type, boolean isLeaf){
         if (type == Type.KEY){
             ArrayList<AbstractStatistic> new_list = new ArrayList<>();
             for (int i = 0; i < stat_list.size(); i++){
                 new_list.add(((CombinedStatistic<T>) stat_list.get(i)).key);
             }
-            return this.key.findIndex(new_list, type);
+            return this.key.findIndex(new_list, type, isLeaf);
         }
         else {
             ArrayList<AbstractStatistic> new_list = new ArrayList<>();
             for (int i = 0; i < stat_list.size(); i++){
                 new_list.add(((CombinedStatistic<T>) stat_list.get(i)).count);
             }
-            return this.count.findIndex(new_list, type);
+            return this.count.findIndex(new_list, type, isLeaf);
         }
     }
 
+    @Override
     public CombinedStatistic<T> getAggregation(ArrayList<AbstractStatistic> stat_list, Type type){
         ArrayList<AbstractStatistic> key_list = new ArrayList<>();
         ArrayList<AbstractStatistic> count_list = new ArrayList<>();
@@ -60,6 +65,7 @@ public class CombinedStatistic<T extends Comparable<T>> implements AbstractStati
         return new CombinedStatistic<>(this.key.getAggregation(key_list, type), this.count.getAggregation(count_list, type));
     }
 
+    @Override
     public CombinedStatistic<T> getLowerStatistic(ArrayList<AbstractStatistic> stat_list, int limit, Type type){
         ArrayList<AbstractStatistic> key_list = new ArrayList<>();
         ArrayList<AbstractStatistic> count_list = new ArrayList<>();
@@ -70,6 +76,16 @@ public class CombinedStatistic<T extends Comparable<T>> implements AbstractStati
         return new CombinedStatistic<>(this.key.getLowerStatistic(key_list, limit, type), this.count.getLowerStatistic(count_list, limit, type));
     }
 
+    @Override
+    public AbstractStatistic getLeafStatistic(Type type) {
+        if (type == Type.KEY){
+            return this.key.getLeafStatistic(type);
+        } else {
+            return this.count.getLeafStatistic(type);
+        }
+    }
+
+    @Override
     public CombinedStatistic<T> updateStatistic(Mode mode){
         return new CombinedStatistic<>(this.key.updateStatistic(mode), this.count.updateStatistic(mode));
     }
