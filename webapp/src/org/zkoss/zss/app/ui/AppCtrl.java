@@ -1231,7 +1231,8 @@ public class AppCtrl extends CtrlBase<Component> {
 
         //treeBucket.setAutopaging(true);
         BucketTreeNodeCollection<Bucket<String>> btnc = new BucketTreeNodeCollection<Bucket<String>>();
-
+        navSBucketMap.clear();
+        navSBucketLevel.clear();
         btnc = childrenBuckets(bucketList,0);
 
         treeBucket.setModel(new DefaultTreeModel<Bucket<String>>(new BucketTreeNode<Bucket<String>>(null,btnc)));
