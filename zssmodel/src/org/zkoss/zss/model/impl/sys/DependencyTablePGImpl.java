@@ -58,7 +58,7 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
 		String deleteQuery = "DELETE FROM dependency" +
                 " WHERE dep_bookname  = ?" +
                 " AND   dep_sheetname =  ?" +
-                " AND   dep_range ??# ?";
+                " AND   dep_range && ?";
 
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
              PreparedStatement stmt = connection.prepareStatement(deleteQuery)) {
@@ -77,17 +77,17 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
 	@Override
 	public Set<Ref> getDependents(Ref precedent) {
         String selectQuery = "WITH RECURSIVE deps AS (" +
-                "  SELECT dep_bookname, dep_sheetname, dep_range::text FROM dependency" +
+                "  SELECT dep_bookname, dep_sheetname, dep_range::text, must_expand FROM dependency" +
                 "  WHERE  bookname  = ?" +
                 "  AND    sheetname =  ?" +
-                "  AND    range ??# ?" +
+                "  AND    range && ?" +
                 "  UNION " +
-                "  SELECT d.dep_bookname, d.dep_sheetname, d.dep_range::text FROM dependency d" +
+                "  SELECT d.dep_bookname, d.dep_sheetname, d.dep_range::text, d.must_expand FROM dependency d" +
                 "    INNER JOIN deps t" +
                 "    ON  d.bookname   =  t.dep_bookname" +
-                "    AND d.must_expand" +
+                "    AND t.must_expand" +
 				"    AND d.sheetname =  t.dep_sheetname" +
-                "    AND d.range      ??# t.dep_range::box)" +
+                "    AND d.range      && t.dep_range::box)" +
                 " SELECT dep_bookname, dep_sheetname, dep_range::box FROM deps";
         return getDependentsQuery(precedent, selectQuery);
 	}
@@ -126,7 +126,7 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
         String selectQuery = "SELECT dep_bookname, dep_sheetname, dep_range  FROM dependency " +
                 " WHERE bookname = ? " +
                 " AND   sheetname = ? " +
-                " AND   range ??# ?";
+                " AND   range && ?";
         return getDependentsQuery(precedent, selectQuery);
 	}
 
@@ -146,7 +146,7 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
         String selectQuery = "SELECT bookname, sheetname, range FROM dependency " +
                 " WHERE dep_bookname = ? " +
                 " AND   dep_sheetname = ? " +
-                " AND   dep_range ??# ?";
+                " AND   dep_range && ?";
         return getDependentsQuery(dependent, selectQuery);
 	}
 

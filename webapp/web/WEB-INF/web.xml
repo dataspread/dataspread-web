@@ -7,13 +7,10 @@
 	<description><![CDATA[My ZK Application]]></description>
 	<display-name>zssdemo3</display-name>
 
-	<listener>
-		<listener-class>org.model.DBHandler</listener-class>
-	</listener>
 
 	<!-- ZK Spreadsheet App -->
 	<listener>
-		<description>Saving all books when server is shutting down</description>
+		<description>Startup background processes</description>
 		<listener-class>org.zkoss.zss.app.repository.impl.ServletContextListenerImpl</listener-class>
 	</listener>
 

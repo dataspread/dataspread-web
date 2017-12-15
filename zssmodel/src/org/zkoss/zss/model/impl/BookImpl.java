@@ -20,7 +20,6 @@ import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.lang.Objects;
-import org.zkoss.util.logging.Log;
 import org.zkoss.zk.ui.Executions;
 import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.impl.sys.DependencyTableAdv;
@@ -38,8 +37,10 @@ import org.zkoss.zss.model.util.Strings;
 import org.zkoss.zss.model.util.Validations;
 import org.zkoss.zss.range.impl.StyleUtil;
 
-import java.awt.print.Book;
-import java.sql.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -67,7 +68,7 @@ public class BookImpl extends AbstractBookAdv{
 	private final HashMap<String,AtomicInteger> _objIdCounter = new HashMap<>();
 	private final int _maxRowSize = Integer.MAX_VALUE;
 	private final int _maxColumnSize = Integer.MAX_VALUE;
-	boolean schemaPresent = false;
+	private boolean schemaPresent = false;
 	private String _bookName;
 	private String _shareScope;
 	private SBookSeries _bookSeries;
@@ -97,7 +98,7 @@ public class BookImpl extends AbstractBookAdv{
 		_bookId = ((char)('a'+_random.nextInt(26))) + Long.toString(System.currentTimeMillis()+_bookCount.getAndIncrement(), Character.MAX_RADIX) ;
 		_tables = new HashMap<String, STable>(0);
 		//zekun.fan@gmail.com added bindings
-		BookBindings.put(_bookId, this);
+		//BookBindings.put(bookName, this);
 	}
 
 	public static void deleteBook(String bookName, String bookTable) {
@@ -293,7 +294,7 @@ public class BookImpl extends AbstractBookAdv{
 		//create formula cache for any sheet, sheet name, position change
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
 
-		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new RefImpl(sheet, -1));
+		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(), sheet, new RefImpl(sheet, -1));
 		return sheet;
 	}
 	
@@ -356,7 +357,10 @@ public class BookImpl extends AbstractBookAdv{
 				rs.close();
 				DBContext dbContext = new DBContext(connection);
 				String modelName = bookTable + sheet.getDBId();
-				sheet.createModel(dbContext, modelName);
+				if (src==null)
+                	sheet.createModel(dbContext, modelName);
+				else
+					sheet.cloneModel(dbContext, modelName, src);
 				connection.commit();
 			}
 			catch (SQLException e)
@@ -399,7 +403,7 @@ public class BookImpl extends AbstractBookAdv{
 		//create formula cache for any sheet, sheet name, position change
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
 
-		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new RefImpl(sheet, -1));
+		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(), sheet, new RefImpl(sheet, -1));
 
 		return sheet;
 	}
@@ -420,8 +424,8 @@ public class BookImpl extends AbstractBookAdv{
 		//create formula cache for any sheet, sheet name, position change
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
 
-		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new RefImpl(this.getBookName(),newname, index));//to clear the cache of formula that has unexisted name
-		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new RefImpl(this.getBookName(),oldname, index));
+		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(), (AbstractSheetAdv) sheet, new RefImpl(this.getBookName(),newname, index));//to clear the cache of formula that has unexisted name
+		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(), (AbstractSheetAdv) sheet, new RefImpl(this.getBookName(),oldname, index));
 
 		renameSheetFormula(oldname,newname,index);
 	}
@@ -547,7 +551,7 @@ public class BookImpl extends AbstractBookAdv{
 //		sendModelInternalEvent(ModelInternalEvents.createModelInternalEvent(ModelInternalEvents.ON_SHEET_DELETED,
 //				this,ModelInternalEvents.createDataMap(ModelInternalEvents.PARAM_SHEET_OLD_INDEX, index)));
 
-		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new RefImpl(this.getBookName(),sheet.getSheetName(), index));
+		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(), (AbstractSheetAdv) sheet, new RefImpl(this.getBookName(),sheet.getSheetName(), index));
 
 		renameSheetFormula(oldName, null, index);
 
@@ -624,9 +628,9 @@ public class BookImpl extends AbstractBookAdv{
 		//create formula cache for any sheet, sheet name, position change
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
 
-		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new RefImpl(this.getBookName(),sheet.getSheetName(), index));
+		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(), (AbstractSheetAdv) sheet, new RefImpl(this.getBookName(),sheet.getSheetName(), index));
 		//ZSS-1049: should consider formulas that referred to the old index
-		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new RefImpl(this.getBookName(),sheet.getSheetName(), oldindex));
+		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(), (AbstractSheetAdv) sheet, new RefImpl(this.getBookName(),sheet.getSheetName(), oldindex));
 
 		// adjust sheet index
 		moveSheetIndex(getBookName(), oldindex, index);
@@ -927,13 +931,15 @@ public class BookImpl extends AbstractBookAdv{
 		EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(this));
 
 		//notify the (old) name is change before update name
-		ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(),new NameRefImpl((AbstractNameAdv)name));
+		//TODO - Fix the below line by finding a sheet instance
+		//ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(), new NameRefImpl((AbstractNameAdv)name));
 
 		final String oldName = name.getName(); // ZSS-661
 
 		//ZSS-966: notify the (old) table name is change before update name
 		if (name instanceof TableNameImpl) {
-			ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(), new TablePrecedentRefImpl(this.getBookName(), oldName));
+			//TODO - Fix the below line by finding a sheet instance
+			//ModelUpdateUtil.handlePrecedentUpdate(getBookSeries(), new TablePrecedentRefImpl(this.getBookName(), oldName));
 		}
 
 		((AbstractNameAdv)name).setName(newname,sheetName); //will change Table's name if the name is a TableName
@@ -1095,36 +1101,53 @@ public class BookImpl extends AbstractBookAdv{
 	}
 
 	@Override
-	public void setIdAndLoad(String id){
-		schemaPresent = true;
-		this._bookId = id;
+	public boolean setNameAndLoad(String _bookName){
+		this._bookName = _bookName;
+
 		this._sheets.clear();
 
 		// Load Schema
-		String bookTable = getId();
+		//String bookTable = getId();
 		logger.info("Loading " + getBookName());
-		String query = "SELECT * FROM sheets WHERE booktable = ? ORDER BY sheetindex";
-		String updateLastOpened = "UPDATE books SET lastopened = now() 	WHERE bookname = ?";
+
+		String bookQuery = "UPDATE books SET lastopened = now() WHERE bookname = ? RETURNING booktable";
+		String sheetsQuery = "SELECT * FROM sheets WHERE booktable = ? ORDER BY sheetindex";
 
 		try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-			 PreparedStatement stmt = connection.prepareStatement(query);
-			 PreparedStatement updateLastOpenedstmt = connection.prepareStatement(updateLastOpened)) {
-			stmt.setString(1, getId());
-			ResultSet rs = stmt.executeQuery();
-			while (rs.next())
-			{
-				SSheet sheet = createExistingSheet(rs.getString("sheetname"), rs.getInt("sheetid"));
-				sheet.setDataModel(rs.getString("modelname"));
+			 PreparedStatement bookStmt = connection.prepareStatement(bookQuery);
+			 PreparedStatement sheetsStmt = connection.prepareStatement(sheetsQuery)) {
+
+
+			bookStmt.setString(1, getBookName());
+			ResultSet rs = bookStmt.executeQuery();
+			if (rs.next())
+				_bookId = rs.getString(1);
+			else {
+				logger.info(getBookName() + " does not exist");
+				rs.close();
+
+				return false;
 			}
 			rs.close();
-			updateLastOpenedstmt.setString(1,getBookName());
-			updateLastOpenedstmt.execute();
+
+			sheetsStmt.setString(1, getId());
+			ResultSet rsSheets = sheetsStmt.executeQuery();
+			while (rsSheets.next())
+			{
+				SSheet sheet = createExistingSheet(rsSheets.getString("sheetname"),
+						rsSheets.getInt("sheetid"));
+				sheet.setDataModel(rsSheets.getString("modelname"));
+			}
+			rsSheets.close();
 			connection.commit();
 		}
 		catch (SQLException e)
 		{
 			e.printStackTrace();
+			return false;
 		}
+		schemaPresent = true;
+		return true;
 	}
 
 	@Override

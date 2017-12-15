@@ -41,7 +41,7 @@ To host DataSpread locally you can either use one of the pre-build war files, av
 
 * [Java Platform (JDK)][java] >= 8
 * [PostgreSQL][posrgres] >= 9.5
-* [PostgreSQL JDBC driver][jdbc] - 9.4.1208
+* [PostgreSQL JDBC driver][jdbc] = 42.1.4
 * [Apache Tomcat][tomcat] >= 8.5.4
 * [Apache Maven][maven] >= 3.5.0
 
@@ -64,15 +64,9 @@ To host DataSpread locally you can either use one of the pre-build war files, av
 
 3. Install Apache Tomcat. You can use the guide [here][tomcat_install]. Make a note of the directory where tomcat is installed. This is known as `TOMCAT_HOME` in all documentation. 
 
-4. Update the Tomcat configuration. You need to update the following two files, which are present in `conf` folder under `TOMCAT_HOME` folder.  
+4. Update the Tomcat configuration. You need to update the following file, which is present in `conf` folder under `TOMCAT_HOME` folder.  
 
-    1. `web.xml` by adding the following text at the end of the file before the closing XML tag.   
-	```
-	<listener>
-	    <listener-class>org.model.DBHandler</listener-class>
-	</listener>
-	```
-    2. `context.xml` by adding the following text at the end of the file before the closing XML tag.   
+    1. `context.xml` by adding the following text at the end of the file before the closing XML tag.   
 
 	```
 	<Resource name="jdbc/ibd" auth="Container"
@@ -84,7 +78,7 @@ To host DataSpread locally you can either use one of the pre-build war files, av
 
 	Replace `<database_name>`, `<username>` and `<password>` with your PostgreSQL's database name, user name and password respectively.
 
-5. Copy `postgresql-9.4.1208` (Download from [here][jdbc]) to `lib` folder under `TOMCAT_HOME`.  It is crucial to have the exact version of this file. 
+5. Copy `postgresql-42.1.4.jar` (Download from [here][jdbc]) to `lib` folder under `TOMCAT_HOME`.  It is crucial to have the exact version of this file. 
  
 6. Deploy the war file within Tomcat. This can be done via Tomcat's web interface or by manually copying the war file in the `webapps` folder under `TOMCAT_HOME`.
 
@@ -99,7 +93,7 @@ MIT
 [tomcat_install]: https://www.ntu.edu.sg/home/ehchua/programming/howto/Tomcat_HowTo.html
 [postgre_install]: https://wiki.postgresql.org/wiki/Detailed_installation_guides
 [Postgres.app]: http://postgresapp.com
-[jdbc]: https://jdbc.postgresql.org/download/postgresql-9.4.1208.jar
+[jdbc]: http://central.maven.org/maven2/org/postgresql/postgresql/42.1.4/postgresql-42.1.4.jar
 [ant]: https://ant.apache.org/bindownload.cgi
 [tomcat]: http://tomcat.apache.org/download-80.cgi
 [java]: http://www.oracle.com/technetwork/java/javase/downloads/index-jsp-138363.html

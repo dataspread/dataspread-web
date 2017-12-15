@@ -3,8 +3,6 @@ package org.model;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
 
 import javax.naming.InitialContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
 import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -13,7 +11,7 @@ import java.util.logging.Logger;
 /**
  * Created by Mangesh Bendre on 4/22/2016.
  */
-public class DBHandler implements ServletContextListener {
+public class DBHandler {
     private static final Logger logger = Logger.getLogger(DBHandler.class.getName());
     public static DBHandler instance;
     private DataSource ds;
@@ -28,10 +26,11 @@ public class DBHandler implements ServletContextListener {
         p.setDefaultAutoCommit(false);
         p.setUsername(userName);
         p.setPassword(password);
-        org.apache.tomcat.jdbc.pool.DataSource datasource
+        org.apache.tomcat.jdbc.pool.DataSource dataSource
                 = new org.apache.tomcat.jdbc.pool.DataSource();
-        datasource.setPoolProperties(p);
-        instance.ds = datasource;
+        dataSource.setPoolProperties(p);
+        instance.ds = dataSource;
+        instance.initApplication();
     }
 
     public AutoRollbackConnection getConnection()
@@ -44,7 +43,7 @@ public class DBHandler implements ServletContextListener {
         }
     }
 
-    private void cacheDS() throws Exception
+    public void cacheDS() throws Exception
     {
         InitialContext cxt = new InitialContext();
         if ( cxt == null ) {
@@ -57,15 +56,13 @@ public class DBHandler implements ServletContextListener {
         }
     }
 
-    @Override
-    public void contextInitialized(ServletContextEvent servletContextEvent) {
-        instance = this;
-        try {
-            cacheDS();
-        } catch (Exception e) {
-            System.err.println("Unable to connect to a Database");
-            e.printStackTrace();
-        }
+    public static void initDBHandler()
+    {
+        instance = new DBHandler();
+    }
+
+    public void initApplication()
+    {
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             DBContext dbContext = new DBContext(connection);
             createBookTable(dbContext);
@@ -74,19 +71,21 @@ public class DBHandler implements ServletContextListener {
             createTableOrders(dbContext);
             createDependencyTable(dbContext);
             connection.commit();
-            dbListener = new DBListener();
-            dbListener.start();
-            graphCompressor = new GraphCompressor();
-            graphCompressor.start();
+            //dbListener = new DBListener();
+            //dbListener.start();
+            //TODO - fix issues with the graph compressor
+            //graphCompressor = new GraphCompressor();
+            //graphCompressor.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    @Override
-    public void contextDestroyed(ServletContextEvent servletContextEvent) {
+    private void shutdownApplication()
+    {
         dbListener.stopListener();
     }
+
 
     private void createBookTable(DBContext dbContext)
     {
@@ -154,7 +153,7 @@ public class DBHandler implements ServletContextListener {
                     "colIdxTable TEXT, " +
                     "PRIMARY KEY (tablename, ordername)," +
                     "UNIQUE (oid)" +
-                    ") WITH oids;";
+                    ") WITH oids";
             stmt.execute(createTable);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -164,6 +163,8 @@ public class DBHandler implements ServletContextListener {
     private void createDependencyTable(DBContext dbContext) {
         AutoRollbackConnection connection = dbContext.getConnection();
         try (Statement stmt = connection.createStatement()) {
+            stmt.execute("CREATE EXTENSION IF NOT EXISTS  btree_gist");
+
             String createTable = "CREATE TABLE  IF NOT  EXISTS  dependency (" +
                     "bookname      TEXT    NOT NULL," +
                     "sheetname     TEXT    NOT NULL," +
@@ -175,8 +176,16 @@ public class DBHandler implements ServletContextListener {
                     "FOREIGN KEY (bookname, sheetname) REFERENCES sheets (bookname, sheetname)" +
                     " ON DELETE CASCADE ON UPDATE CASCADE," +
                     "FOREIGN KEY (dep_bookname, dep_sheetname) REFERENCES sheets (bookname, sheetname)" +
-                    " ON DELETE CASCADE ON UPDATE CASCADE )";
+                    " ON DELETE CASCADE ON UPDATE CASCADE," +
+                    " UNIQUE (oid) ) WITH oids";
             stmt.execute(createTable);
+
+            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx1 " +
+                    " ON dependency using GIST (bookname, sheetname, range)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx2 " +
+                    "ON dependency using GIST (dep_bookname, dep_sheetname, dep_range)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx3 " +
+                    "ON dependency (must_expand)");
         } catch (SQLException e) {
             e.printStackTrace();
         }

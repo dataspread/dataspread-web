@@ -2,6 +2,7 @@ package org.zkoss.zss.model.impl;
 
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
+import org.model.DBHandler;
 import org.zkoss.zss.model.*;
 
 import java.io.IOException;
@@ -27,6 +28,24 @@ public class TOM_Model extends Model {
         colMapping = new CountedBTree(context, tableName + "_col_idx");
         this.tableName = tableName;
         loadColumnInfo(context);
+    }
+
+
+    TOM_Model(DBContext context, SSheet sheet, String modelName, TOM_Model source) {
+        rowMapping = source.rowMapping.clone(context, tableName + "_row_idx");
+        colMapping = source.colMapping.clone(context, tableName + "_col_idx");
+        this.tableName = tableName;
+        loadColumnInfo(context);
+    }
+
+    @Override
+    public TOM_Model clone(DBContext dbContext, SSheet sheet, String modelName) {
+        return new TOM_Model(dbContext,sheet,modelName, this);
+    }
+
+    @Override
+    public ArrayList<Bucket<String>> createNavS(SSheet currentsheet, int start, int count) {
+        return null;
     }
 
     public void loadColumnInfo(DBContext dbContext) {
@@ -72,6 +91,108 @@ public class TOM_Model extends Model {
         throw new UnsupportedOperationException();
     }
 
+
+    @Override
+    public ArrayList<Bucket<String>> createNavS(String bucketName, int start, int count) {
+        //load sorted data from table
+        ArrayList<String> recordList =  new ArrayList<String>();
+
+        AutoRollbackConnection connection = DBHandler.instance.getConnection();
+        DBContext context = new DBContext(connection);
+        StringBuffer select = null;
+        if(bucketName==null)
+        {
+            select = new StringBuffer("SELECT COUNT(*)");
+            select.append(" FROM ")
+                    .append(tableName+"_2")
+                    .append(" WHERE row !=1");
+            try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    count = rs.getInt(1);
+                }
+                rs.close();
+                stmt.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        Integer [] rowIds = rowMapping.getIDs(context,start,count);
+
+        select = null;
+        if(indexString.length()==0)
+            select = new StringBuffer("SELECT row, col_1");
+        else
+            select = new StringBuffer("SELECT row, "+indexString);
+
+        select.append(" FROM ")
+                .append(tableName+"_2")
+                .append(" WHERE row = ANY (?) AND row !=1");
+
+        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
+            stmt.setArray(1, inArrayRow);
+
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                recordList.add(new String(rs.getBytes(2),"UTF-8"));
+            }
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        //create nav data structure
+        this.navS.setRecordList(recordList);
+        ArrayList<Bucket<String>> newList = this.navS.getNonOverlappingBuckets(0,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
+
+        if(bucketName==null)
+        {
+            return newList;
+        }
+
+        return this.navS.recomputeNavS(bucketName,this.navSbuckets,newList);
+        //  printBuckets(navSbuckets);
+
+    }
+
+    @Override
+    public ArrayList<String> getHeaders()
+    {
+        ArrayList<String> headers = new ArrayList<String>();
+
+        AutoRollbackConnection connection = DBHandler.instance.getConnection();
+        DBContext context = new DBContext(connection);
+        StringBuffer select = null;
+        select = new StringBuffer("SELECT *");
+        select.append(" FROM ")
+                .append(tableName+"_2")
+                .append(" WHERE row =1");
+        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+
+            ResultSet rs = stmt.executeQuery();
+            int i=1;
+            while (rs.next()) {
+                headers.add(new String(rs.getBytes(i),"UTF-8"));
+                i++;
+            }
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return headers;
+
+    }
+
+    @Override
+    public void setIndexString(String str) {
+        this.indexString = str;
+    }
 
     @Override
     public void dropSchema(DBContext context) {

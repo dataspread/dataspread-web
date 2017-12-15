@@ -1,11 +1,17 @@
 package org.zkoss.zss.model.impl;
 
+import org.model.AutoRollbackConnection;
 import org.model.DBContext;
+import org.model.DBHandler;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SSheet;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.sql.Array;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
@@ -18,6 +24,29 @@ public class COM_Model extends Model {
         this.sheet = sheet;
         this.tableName = tableName;
         rom_model = new ROM_Model(context, sheet, tableName);
+    }
+
+    COM_Model(DBContext context, SSheet sheet, String tableName, COM_Model source) {
+        this.sheet = sheet;
+        this.tableName = tableName;
+        rom_model = source.rom_model.clone(context, sheet, tableName);
+    }
+
+    @Override
+    public COM_Model clone(DBContext dbContext, SSheet sheet, String modelName) {
+        return new COM_Model(dbContext, sheet, modelName, this);
+    }
+
+    @Override
+    public ArrayList<Bucket<String>> createNavS(SSheet currentsheet, int start, int count) {
+        return null;
+    }
+
+
+    @Override
+    public ArrayList<Bucket<String>> createNavS(String bucketName, int start, int count) {
+       return null;
+
     }
 
     @Override
@@ -99,6 +128,16 @@ public class COM_Model extends Model {
     @Override
     public boolean deleteTableColumns(DBContext dbContext, CellRegion cellRegion) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ArrayList<String> getHeaders() {
+        return null;
+    }
+
+    @Override
+    public void setIndexString(String str) {
+        this.indexString = str;
     }
 
 

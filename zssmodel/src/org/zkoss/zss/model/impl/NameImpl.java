@@ -147,7 +147,7 @@ public class NameImpl extends AbstractNameAdv {
 			_refersToCellRegion = new CellRegion(refs[0].getRow(),refs[0].getColumn(),refs[0].getLastRow(),refs[0].getLastColumn());				
 			
 			//ZSS-294, should clear dependents that have referenced to this new created Name
-			ModelUpdateUtil.handlePrecedentUpdate(_book.getBookSeries(), ref);
+			ModelUpdateUtil.handlePrecedentUpdate(_book.getBookSeries(), (AbstractSheetAdv) _book.getSheet(0), ref);
 		}
 	}
 	

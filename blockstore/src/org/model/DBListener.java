@@ -43,7 +43,7 @@ public class DBListener  extends Thread {
             while (rs.next()) {
                 no_records = false;
                 logger.info("Got message " + rs.getString(1) + " " + rs.getString(2));
-                handleEvenet(rs.getInt(1), rs.getString(2));
+                handleEvent(rs.getInt(1), rs.getString(2));
                 connection.commit();
             }
             rs.close();
@@ -53,7 +53,7 @@ public class DBListener  extends Thread {
         }
     }
 
-    private void handleEvenet(int event, String data) {
+    private void handleEvent(int event, String data) {
         switch (event)
         {
             case 1: // Table refresh

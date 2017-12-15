@@ -26,11 +26,23 @@ public class Hybrid_Model extends RCV_Model {
     private MetaDataBlock metaDataBlock;
 
     // This list is synchronized with modelEntryList in metaDataBlock
-    private List<Pair<CellRegion, Model>> tableModels;
+    public List<Pair<CellRegion, Model>> tableModels;
 
     Hybrid_Model(DBContext context, SSheet sheet, String tableName) {
         super(context, sheet, tableName);
         loadMetaData(context);
+    }
+
+    public Hybrid_Model(DBContext context, SSheet sheet, String tableName, Hybrid_Model source) {
+        super(context,sheet,tableName,source);
+        source.bs.clone(context, tableName + "_hb_meta");
+        loadMetaData(context);
+
+    }
+
+    @Override
+    public Model clone(DBContext context, SSheet sheet, String tableName) {
+        return new Hybrid_Model(context, sheet, tableName, this);
     }
 
     public boolean checkOverlap(CellRegion cellRegion) {
@@ -753,6 +765,10 @@ public class Hybrid_Model extends RCV_Model {
             connection.commit(); //TODO: pass connection to import
 
             model.importSheet(reader, delimiter);
+
+            this.navSbuckets  = model.navSbuckets;
+            this.navS = model.navS;
+            //this.indexString = model.indexString;
 
             CellRegion range = model.getBounds(dbContext);
 

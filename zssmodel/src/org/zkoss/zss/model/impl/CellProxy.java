@@ -22,7 +22,6 @@ import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.formula.FormulaExpression;
 
-import java.sql.Connection;
 import java.util.Locale;
 /**
  * 
@@ -93,6 +92,13 @@ class CellProxy extends AbstractCellAdv {
 
 	}
 
+	@Override
+	public void setFormulaValue(String formula) {
+		if (_proxy == null)
+			_proxy = _sheet.createCell(_rowIdx, _columnIdx);
+		_proxy.setFormulaValue(formula);
+	}
+
 	//ZSS-565: Support input with Swedish locale into Formula
 	@Override
 	public void setFormulaValue(String formula, Locale locale, AutoRollbackConnection connection, boolean updateToDB) {
@@ -124,6 +130,25 @@ class CellProxy extends AbstractCellAdv {
 			return null;
 		}else{
 			return  _proxy.getValue();
+		}
+	}
+
+	@Override
+	public Object getValueSync() {
+		if(_proxy==null){
+			return null;
+		}else{
+			return  _proxy.getValueSync();
+		}
+	}
+
+	@Override
+	public void setValue(Object value) {
+		if (_proxy == null && value != null) {
+			_proxy = _sheet.createCell(_rowIdx, _columnIdx);
+			_proxy.setValue(value);
+		} else if (_proxy != null) {
+			_proxy.setValue(value);
 		}
 	}
 
@@ -200,7 +225,13 @@ class CellProxy extends AbstractCellAdv {
 
 	@Override
 	public CellType getFormulaResultType() {
-		return _proxy == null ? null : _proxy.getFormulaResultType();
+		return getFormulaResultType(false);
+	}
+
+
+	@Override
+	public CellType getFormulaResultType(boolean sync) {
+		return _proxy == null ? null : _proxy.getFormulaResultType(sync);
 	}
 
 	@Override
@@ -216,14 +247,19 @@ class CellProxy extends AbstractCellAdv {
 	}
 
 	@Override
-	protected void evalFormula() {
+	protected void evalFormula(boolean sync) {
 		if (_proxy != null)
-			_proxy.evalFormula();
+			_proxy.evalFormula(sync);
 	}
 
 	@Override
-    public Object getValue(boolean eval) {
-		return _proxy == null ? null : _proxy.getValue(eval);
+	public Object getValue(boolean eval) {
+		return getValue(eval, false);
+	}
+
+	@Override
+    public Object getValue(boolean eval, boolean sync) {
+		return _proxy == null ? null : _proxy.getValue(eval, sync);
 	}
 
 	@Override
@@ -259,7 +295,7 @@ class CellProxy extends AbstractCellAdv {
 		return _proxy != null && _proxy.isFormulaParsingError();
 	}
 
-	protected Ref getRef(){
+	public Ref getRef(){
 		return new RefImpl(this);
 	}
 

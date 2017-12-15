@@ -16,20 +16,13 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
-import java.util.Set;
-
-import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.SBookSeries;
-import org.zkoss.zss.model.SCell;
-import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.model.STable;
-import org.zkoss.zss.model.sys.BookBindings;
-import org.zkoss.zss.model.sys.TransactionManager;
+import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.dependency.Ref;
-import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
-import org.zkoss.zss.model.sys.formula.FormulaCacheMasker;
+import org.zkoss.zss.model.sys.formula.DirtyManager;
 import org.zkoss.zss.range.impl.ModelUpdateCollector;
+
+import java.util.Set;
 
 /**
  * 
@@ -37,40 +30,57 @@ import org.zkoss.zss.range.impl.ModelUpdateCollector;
  * @since 3.5.0
  */
 /*package*/ class ModelUpdateUtil {
-	/*package*/ static void handlePrecedentUpdate(SBookSeries bookSeries, Ref precedent){
-		handlePrecedentUpdate(bookSeries, precedent, true);
+	/*package*/ static void handlePrecedentUpdate(SBookSeries bookSeries, AbstractSheetAdv sheet, Ref precedent){
+		handlePrecedentUpdate(bookSeries, sheet, precedent, true);
 	}
 	//ZSS-1047: (side-effect of ZSS-988 and ZSS-1007 which consider setHidden() of SUBTOTAL() function)
 	// see ColumnArrayImpl#setHidden()
-	/*package*/ static void handlePrecedentUpdate(SBookSeries bookSeries, Ref precedent, boolean includePrecedent){
+	/*package*/ static void handlePrecedentUpdate(SBookSeries bookSeries, AbstractSheetAdv sheet, Ref precedent, boolean includePrecedent){
 		//clear formula cache (that reval the unexisted sheet before
 		FormulaCacheCleaner clearer = FormulaCacheCleaner.getCurrent();
 		ModelUpdateCollector collector = ModelUpdateCollector.getCurrent();
 		Set<Ref> dependents = null; 
 		//get table when collector and clearer is not ignored (in import case, we should ignore clear cache)
-		if(collector!=null || clearer!=null || bookSeries.isAutoFormulaCacheClean()){
-			DependencyTable table = ((AbstractBookSeriesAdv)bookSeries).getDependencyTable();
-			dependents = table.getDependents(precedent);
-		}
-		//zekun.fan@gmail.com - Masking and Scheduling
+		//if(collector!=null || clearer!=null || bookSeries.isAutoFormulaCacheClean()){
+        DependencyTable table = ((AbstractBookSeriesAdv)bookSeries).getDependencyTable();
+        dependents = table.getDependents(precedent);
+		//}
+		//TODO: if dependents are from different sheets, increment the trxId of those sheet.
+		// Sheets Seems a nice granularity to have the trxId.
+		// If we have it on a book or global level might trigger to many lookups.
+
+		//TODO get trxid for the action
+		int trxId = sheet.getNewTrxId();
+
 		if (includePrecedent) { //ZSS-1047
 			addRefUpdate(precedent);
-			FormulaCacheMasker.INSTANCE.mask(precedent);
-			FormulaAsyncScheduler.getScheduler().addTask(precedent);
+			if(!sheet.isSyncCalc())
+				DirtyManager.dirtyManagerInstance.addDirtyRegion(precedent, trxId);
 		}
+
+
 		if (dependents != null && dependents.size() > 0) {
-			if (clearer != null) {
-				clearer.clear(dependents);
-			} else if (bookSeries.isAutoFormulaCacheClean()) {
-				new FormulaCacheClearHelper(bookSeries).clear(dependents);
+			if (sheet.isSyncCalc()) {
+				// Cleaner is only required for sync.
+				if (clearer != null) {
+					clearer.clear(dependents);
+				} else if (bookSeries.isAutoFormulaCacheClean()) {
+					new FormulaCacheClearHelper(bookSeries).clear(dependents);
+				}
 			}
+
 			if (collector != null) {
 				collector.addRefs(dependents);
 			}
-			dependents.forEach(v -> {
-				FormulaCacheMasker.INSTANCE.mask(v);
-				FormulaAsyncScheduler.getScheduler().addTask(v);
-			});
+			if(sheet.isSyncCalc())
+			{
+				//TODO assuming single sheet
+				dependents.forEach(v -> sheet.getCell(v.getRow(), v.getColumn()).getValueSync());
+			}
+			else {
+				dependents.forEach(v ->
+						DirtyManager.dirtyManagerInstance.addDirtyRegion(v, trxId));
+			}
 		}
 	}
 
