@@ -12,11 +12,13 @@ public class CountedBTree implements PosMapping{
     public CountedBTree(DBContext context, String tableName) {
         CountStatistic emptyStatistic = new CountStatistic();
         btree = new BTree<>(context, tableName, emptyStatistic, true);
+        btree.updateMaxValue(context, 0);
     }
 
     public CountedBTree(DBContext context, String tableName, boolean useKryo) {
         CountStatistic emptyStatistic = new CountStatistic();
         btree = new BTree<>(context, tableName, emptyStatistic, useKryo);
+        btree.updateMaxValue(context, 0);
     }
 
     @Override
@@ -43,13 +45,12 @@ public class CountedBTree implements PosMapping{
     @Override
     public ArrayList createIDs(DBContext context, int pos, int count) {
         Integer max_value = btree.getMaxValue();
+        CountStatistic statistic = new CountStatistic(pos);
         ArrayList<Integer> ids = new ArrayList<>();
-        ArrayList<CountStatistic> statistics = new ArrayList<>();
+        btree.createIDs(context, statistic, max_value + 1, count, false, AbstractStatistic.Type.COUNT);
         for (int i = 0; i < count; i++) {
             ids.add(++max_value);
-            statistics.add(new CountStatistic(pos + i));
         }
-        btree.insertIDs(context, statistics, ids, AbstractStatistic.Type.COUNT);
         btree.updateMaxValue(context, max_value);
         return ids;
     }

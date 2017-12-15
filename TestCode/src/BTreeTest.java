@@ -30,7 +30,9 @@ public class BTreeTest {
         //testNodeMergeByCount(dbContext);
         //testSplitNodeSplitParentByCount(dbContext);
 
-        NodeMergeRootMerge1ByCount(dbContext);
+        //NodeMergeRootMerge1ByCount(dbContext);
+
+        sparseTest(dbContext);
         dbContext.getConnection().commit();
         dbContext.getConnection().close();
     }
@@ -112,6 +114,13 @@ public class BTreeTest {
 
         dbContext.getConnection().commit();
         dbContext.getConnection().close();
+    }
+
+    public static void sparseTest(DBContext dbContext){
+        CountedBTree btree = new CountedBTree(dbContext, "Test1", false);
+        btree.createIDs(dbContext, 0, 10);
+        btree.createIDs(dbContext,3, 1);
+        System.out.println(btree.getIDs(dbContext, 0, 10));
     }
 
     public static void testRootInsDelByCount(DBContext context, CountedBTree testTree) {

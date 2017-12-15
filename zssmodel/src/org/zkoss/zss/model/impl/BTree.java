@@ -106,6 +106,7 @@ public class BTree <K extends AbstractStatistic> {
             // Update to block store
             newRoot.update(bs);
         }
+        if (val > metaDataBlock.max_value) metaDataBlock.max_value = val;
         bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
         // Update Database
         if (flush)
@@ -489,6 +490,11 @@ public class BTree <K extends AbstractStatistic> {
         bs.flushDirtyBlocks(context);
     }
 
+    public void createIDs(DBContext context, K statistic, Integer val, int count, boolean flush, AbstractStatistic.Type type) {
+        add(context, statistic, val, count, flush, type);
+        bs.flushDirtyBlocks(context);
+    }
+
     public void insertIDs(DBContext context, ArrayList<K> statistics, ArrayList<Integer> ids, AbstractStatistic.Type type) {
         int count = ids.size();
         for (int i = 0; i < count; i++) {
@@ -522,6 +528,7 @@ public class BTree <K extends AbstractStatistic> {
         int ui = metaDataBlock.ri;
         int get_count = 0;
         int first_index;
+        int split = 0;
         K new_statistic = statistic;
 
         Node u = new Node().get(context, bs, ui);
@@ -530,7 +537,7 @@ public class BTree <K extends AbstractStatistic> {
             /* Need to go to leaf to delete */
             if (u.isLeaf()) {
                 if (u.childrenCount.get(i) > 1) {
-                    int split = statistic.splitIndex(u.statistics, type);
+                    split = statistic.splitIndex(u.statistics, type);
                     if (split != 0) {
                         first_index = i;
                         break;
@@ -550,18 +557,16 @@ public class BTree <K extends AbstractStatistic> {
             }
         }
         int index = first_index;
-        while (get_count < count && u.next_sibling != -1) {
+        while (get_count < count) {
             while (index < u.size() && get_count < count) {
                 if (u.childrenCount.get(index) > 1) {
-                    int split = statistic.splitIndex(u.statistics, type);
-                    if (split != 0) {
-                        while (split < u.childrenCount.get(index) && get_count < count) {
-                            ids.add(u.values.get(index) + split);
-                            get_count++;
-                            split++;
-                        }
-                        index++;
+                    while (split < u.childrenCount.get(index) && get_count < count) {
+                        ids.add(u.values.get(index) + split);
+                        get_count++;
+                        split++;
                     }
+                    split = 0;
+                    index++;
                 } else {
                     ids.add(u.values.get(index++));
                     get_count++;
