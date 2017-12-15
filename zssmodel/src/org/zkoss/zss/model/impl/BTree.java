@@ -140,6 +140,8 @@ public class BTree <K extends AbstractStatistic, V> {
             // Get the new statistic we are looking for
             K new_statistic = (K) statistic.getLowerStatistic(u.statistics, i, type);
             Node rightNode = addRecursive(context, new_statistic, u.children.get(i), val, type);
+            Node child = new Node().get(context, bs, u.children.get(i));
+            u.childrenCount.set(i, child.childrenCount.size());
             if (rightNode != null) {  // child was split, w is new child
                 rightNode.update(bs);
                 // Add w after position i

@@ -159,18 +159,33 @@ public class BTreeTest {
     public static void testSplitNodeByCount(DBContext context, CountedBTree testTree) {
         ArrayList<Integer> ids = new ArrayList<>();
         ids.add(50);
-        ids.add(100);
-        ids.add(200);
-        ids.add(250);
-        ids.add(300);
-        ids.add(400);
-        ids.add(500);
+        testTree.insertIDs(context, 0, ids);
+
+        ids.set(0, 100);
+        testTree.insertIDs(context, 1, ids);
+
+        ids.set(0, 200);
+        testTree.insertIDs(context, 2, ids);
+
+        ids.set(0, 250);
+        testTree.insertIDs(context, 3, ids);
+
+        ids.set(0, 300);
+        testTree.insertIDs(context, 4, ids);
+
+        ids.set(0, 400);
+        testTree.insertIDs(context, 5, ids);
+        context.getConnection().commit();
+
+        ids.set(0, 500);
+        testTree.insertIDs(context, 6, ids);
+
         /*
         ids.add(600);
         ids.add(700);
         ids.add(800);
         */
-        testTree.insertIDs(context, 0, ids);
+
         /*
         ArrayList<Integer> new_ids = new ArrayList<>();
         new_ids.add(30);
