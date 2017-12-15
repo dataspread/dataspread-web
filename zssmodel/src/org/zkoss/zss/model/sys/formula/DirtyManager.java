@@ -6,6 +6,7 @@ import org.zkoss.zss.model.sys.dependency.Ref;
 
 public abstract class DirtyManager {
     static public DirtyManager dirtyManagerInstance = new DirtyManagerPGImpl();
+    //static public DirtyManager dirtyManagerInstance = new DirtyManagerMemImpl();
 
     /* Check if the given region is dirty
     *  Return the trxId that made this region dirty

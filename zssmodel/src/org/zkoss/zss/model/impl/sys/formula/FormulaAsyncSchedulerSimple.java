@@ -24,7 +24,7 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
             DirtyManager.DirtyRecord dirtyRecord=DirtyManager.dirtyManagerInstance.getDirtyRegionFromQueue();
             if (dirtyRecord==null)
                 continue;
-            logger.info("Processing " + dirtyRecord.region );
+            //logger.info("Processing " + dirtyRecord.region );
             SSheet sheet=BookBindings.getSheetByRef(dirtyRecord.region);
 
             //TODO - Change to streaming.
@@ -46,6 +46,7 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
             DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,
                     dirtyRecord.trxId);
             update(sheet,new CellRegion(dirtyRecord.region));
+            //logger.info("Done computing " + dirtyRecord.region );
         }
     }
 

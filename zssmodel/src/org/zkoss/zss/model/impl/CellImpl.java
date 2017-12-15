@@ -261,8 +261,8 @@ public class CellImpl extends AbstractCellAdv {
 		if(val==null ||  val.getType() != CellType.FORMULA)
 			return;
 
-		if (sync)
-			logger.info("Sync eval - " + this.getReferenceString());
+		//if (sync)
+		//	logger.info("Sync eval - " + this.getReferenceString());
 
 		if (trxId == _sheet.getTrxId() && _formulaResultValue!=null) {
 			// Computation not required. _formulaResultValue should have correct value.
@@ -277,7 +277,7 @@ public class CellImpl extends AbstractCellAdv {
 			return;
 		}
 
-		/* if the value is not dirty then update it */
+		/* if the value is not dirty then update trxId */
 		if (dirtyTrxId<0 && _formulaResultValue!=null) {
 			trxId = _sheet.getTrxId();
 		}
@@ -302,7 +302,7 @@ public class CellImpl extends AbstractCellAdv {
 
 	@Override
 	public synchronized CellType getFormulaResultType() {
-		return getFormulaResultType(false);
+		return getFormulaResultType(_sheet.isSyncCalc());
 	}
 
 	@Override
@@ -344,6 +344,7 @@ public class CellImpl extends AbstractCellAdv {
 		try(AutoRollbackConnection connection = DBHandler.instance.getConnection())
 		{
 			setFormulaValue(formula, connection, true);
+			connection.commit();
 		}
 	}
 
@@ -394,7 +395,7 @@ public class CellImpl extends AbstractCellAdv {
 
 	@Override
 	public synchronized void clearFormulaResultCache() {
-		logger.info("Clear formula cache" + this + " " + getReferenceString());
+		//logger.info("Clear formula cache" + this + " " + getReferenceString());
 		//ZSS-818: better performance
 		if(_formulaResultValue!=null){
 			//only clear when there is a formula result, or poi will do full cache scan to clean blank.
@@ -424,7 +425,7 @@ public class CellImpl extends AbstractCellAdv {
 	@Override
 	public Object getValue(boolean evaluatedVal)
 	{
-		return getValue(evaluatedVal, false);
+		return getValue(evaluatedVal, _sheet.isSyncCalc());
 	}
 
 	@Override
@@ -543,6 +544,7 @@ public class CellImpl extends AbstractCellAdv {
 	{
 		try(AutoRollbackConnection connection=DBHandler.instance.getConnection()) {
 			setValue(newVal, connection, true);
+			connection.commit();
 		}
 	}
 

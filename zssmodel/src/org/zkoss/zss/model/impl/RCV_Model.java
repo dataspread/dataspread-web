@@ -117,11 +117,8 @@ public class RCV_Model extends Model {
         select.append(" FROM ")
                 .append(tableName+"_2")
                 .append(" WHERE row !=1");
-        try (
-                AutoRollbackConnection connection = DBHandler.instance.getConnection();
-
-                PreparedStatement stmt = connection.prepareStatement(select.toString())) {
-            DBContext context = new DBContext(connection);
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(select.toString())) {
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 count = rs.getInt(1);
@@ -152,7 +149,6 @@ public class RCV_Model extends Model {
         PreparedStatement stmt = connection.prepareStatement(select.toString())) {
             DBContext context = new DBContext(connection);
             ResultSet rs = stmt.executeQuery();
-            int i=0;
             ids.add(1);
             while (rs.next()) {
                 int row = rs.getInt(1);
@@ -213,12 +209,8 @@ public class RCV_Model extends Model {
 
         ArrayList<SCell> result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
 
-        Collections.sort(result, new Comparator<SCell>() {
-            @Override public int compare(SCell p1, SCell p2) {
-                return p1.getStringValue().compareTo(p2.getStringValue()); // Ascending
-            }
+        Collections.sort(result, Comparator.comparing(SCell::getStringValue));
 
-        });
         ArrayList<Integer> ids = new ArrayList<Integer>();
 
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();) {

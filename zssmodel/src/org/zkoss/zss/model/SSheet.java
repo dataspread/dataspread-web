@@ -192,6 +192,7 @@ public interface SSheet {
 	 * Clear the cache
 	 */
 	void clearCache(CellRegion cellRegion);
+	void clearCache();
 
 	/**
 	 * @see #insertCell(CellRegion, boolean)
