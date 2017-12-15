@@ -16,6 +16,26 @@ import java.util.stream.IntStream;
 public class BTreeTest {
 
     public static void main(String[] args) {
+        deepTest();
+    }
+
+    public static void deepTest(){
+        String url = "jdbc:postgresql://127.0.0.1:5432/ibd";
+        String driver = "org.postgresql.Driver";
+        String userName = "mangesh";
+        String password = "mangesh";
+        DBHandler.connectToDB(url, driver, userName, password);
+        DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
+        CountedBTree btree = new CountedBTree(dbContext, "tNMBC", false);
+        testSplitNodeByCount(dbContext, btree);
+        //testNodeMergeByCount(dbContext);
+        //testSplitNodeSplitParentByCount(dbContext);
+        //NodeMergeRootMergeByCount(dbContext);
+        //NodeMergeRootMerge1ByCount(dbContext);
+        dbContext.getConnection().commit();
+        dbContext.getConnection().close();
+    }
+    public static void simpleTest(){
         String url = "jdbc:postgresql://127.0.0.1:5432/ibd";
         String driver = "org.postgresql.Driver";
         String userName = "mangesh";
@@ -89,29 +109,29 @@ public class BTreeTest {
         else
             System.err.println("Results do not match");
 
+
+
         dbContext.getConnection().commit();
         dbContext.getConnection().close();
     }
 
-    public static void testRootInsDelByCount(DBContext context) {
-
-        String tableName = "testRootInsDelByCount";
-        KeyStatistic<Integer> key = new KeyStatistic<>(0);
-        CombinedStatistic<Integer> emptyStatistic = new CombinedStatistic<>(key);
-        BTree testTree = new BTree<CombinedStatistic<Integer>, Integer>(context, tableName, emptyStatistic, false);
+    public static void testRootInsDelByCount(DBContext context, CountedBTree testTree) {
 
 
-        testTree.add(context, key, 10, false, AbstractStatistic.Type.COUNT);
+        ArrayList<Integer> key = new ArrayList<>();
+        key.add(1);
+
+        testTree.insertIDs(context, 0, key);
         //Integer test = testTree.lookup(context, key, AbstractStatistic.Type.COUNT);
-        testTree.remove(context, key, false, AbstractStatistic.Type.COUNT);
+        testTree.deleteIDs(context, 0, 1);
 
-        testTree.add(context, key, 20, false, AbstractStatistic.Type.COUNT);
+        testTree.insertIDs(context, 0, key);
         //test = testTree.getByCount(context, 0);
-        KeyStatistic<Integer> key1 = new KeyStatistic<>(1);
-        testTree.add(context, key1, 10, false, AbstractStatistic.Type.COUNT);
+        ArrayList<Integer> key1 = new ArrayList<>();
+        testTree.insertIDs(context, 1, key1);
         //test = testTree.getByCount(context, 2);
-        testTree.remove(context, key, false, AbstractStatistic.Type.COUNT);
-        testTree.remove(context, key, false, AbstractStatistic.Type.COUNT);
+        testTree.insertIDs(context, 1, key);
+        testTree.insertIDs(context, 1, key);
 
 
     }
@@ -120,171 +140,174 @@ public class BTreeTest {
 
         int[] a = {5, 25, 50};
         int[] rootids = {0, 0, 0};
-        boolean valid;
-        ArrayList<KeyStatistic<Integer>> key = new ArrayList<>();
-        for(int x = 0; x < 6; x++) {
-            key.add(new KeyStatistic<>(x));
-        }
-        CombinedStatistic<Integer> emptyStatistic = new CombinedStatistic<>(key.get(0));
+
         for(int i = 0; i < 3; i++){
             String testName = "testRootSplit"+i;
-            BTree testTree = new BTree<CombinedStatistic<Integer>, Integer>(context, testName, emptyStatistic, false);
-            testTree.add(context, key.get(0), 100, false, AbstractStatistic.Type.COUNT);
-            testTree.add(context, key.get(1), 200, false, AbstractStatistic.Type.COUNT);
-            testTree.add(context, key.get(2), 300, false, AbstractStatistic.Type.COUNT);
-            testTree.add(context, key.get(3), 400, false, AbstractStatistic.Type.COUNT);
+            CountedBTree testTree = new CountedBTree(context, testName, false);
+            ArrayList<Integer> ids = new ArrayList<>();
+            ids.add(100);
+            ids.add(200);
+            ids.add(300);
+            ids.add(400);
+            ids.add(a[i]*10);
+            testTree.insertIDs(context, 0, ids);
 
-            testTree.add(context, key.get(i*2), a[i]*10, false,AbstractStatistic.Type.COUNT);
         }
 
     }
 
-    public static void testSplitNodeByCount(DBContext context) {
-        ArrayList<KeyStatistic<Integer>> key = new ArrayList<>();
-        for(int x = 0; x < 16; x++) {
-            key.add(new KeyStatistic<>(x));
-        }
-        CombinedStatistic<Integer> emptyStatistic = new CombinedStatistic<>(key.get(0));
-        BTree testTree = new BTree<CombinedStatistic<Integer>, Integer>(context, "tSNBC", emptyStatistic, false);
-
-        testTree.add(context, key.get(0), 50, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(1), 100, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(2), 200, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(3), 250, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(4), 300, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(5), 400, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(6), 500, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(7), 600, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(8), 700, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(9), 800, false, AbstractStatistic.Type.COUNT);
-
-        testTree.add(context, key.get(0), 30, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(3), 150, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(5), 230, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(7), 270, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(9), 350, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(11), 450, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(13), 550, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(16), 800, false, AbstractStatistic.Type.COUNT);
-
+    public static void testSplitNodeByCount(DBContext context, CountedBTree testTree) {
+        ArrayList<Integer> ids = new ArrayList<>();
+        ids.add(50);
+        ids.add(100);
+        ids.add(200);
+        ids.add(250);
+        ids.add(300);
+        ids.add(400);
+        ids.add(500);
+        /*
+        ids.add(600);
+        ids.add(700);
+        ids.add(800);
+        */
+        testTree.insertIDs(context, 0, ids);
+        /*
+        ArrayList<Integer> new_ids = new ArrayList<>();
+        new_ids.add(30);
+        testTree.insertIDs(context, 1, new_ids);
+        new_ids.remove(0);
+        new_ids.add(150);
+        testTree.insertIDs(context, 3, new_ids);
+        new_ids.remove(0);
+        new_ids.add(230);
+        testTree.insertIDs(context, 5, new_ids);
+        new_ids.remove(0);
+        new_ids.add(270);
+        testTree.insertIDs(context, 7, new_ids);
+        new_ids.remove(0);
+        new_ids.add(350);
+        testTree.insertIDs(context, 9, new_ids);
+        new_ids.remove(0);
+        new_ids.add(450);
+        testTree.insertIDs(context, 11, new_ids);
+        new_ids.remove(0);
+        new_ids.add(550);
+        testTree.insertIDs(context, 13, new_ids);
+        new_ids.remove(0);
+        new_ids.add(800);
+        testTree.insertIDs(context, 16, new_ids);
+        */
     }
 
     public static void testSplitNodeSplitParentByCount(DBContext context) {
-        ArrayList<KeyStatistic<Integer>> key = new ArrayList<>();
-        for(int x = 0; x < 16; x++) {
-            key.add(new KeyStatistic<>(x));
-        }
-        CombinedStatistic<Integer> emptyStatistic = new CombinedStatistic<>(key.get(0));
+        ArrayList<Integer> ids = new ArrayList<>();
+        ids.add(50);
+        ids.add(100);
+        ids.add(200);
+        ids.add(250);
+        ids.add(300);
+        ids.add(400);
+        ids.add(500);
+        ids.add(600);
+        ids.add(700);
+        ids.add(800);
 
         int[] a = {1, 8, 16};
         int[] aa = {3, 8, 17};
         boolean valid;
         for(int i = 0; i < 3; i++){
-            BTree testTree = new BTree<CombinedStatistic<Integer>, Integer>(context, "tSNSPBC"+i, emptyStatistic, false);
-            testTree.add(context, key.get(0), 50, false, AbstractStatistic.Type.COUNT);
-            testTree.add(context, key.get(1), 100, false, AbstractStatistic.Type.COUNT);
-            testTree.add(context, key.get(2), 200, false, AbstractStatistic.Type.COUNT);
-            testTree.add(context, key.get(3), 250, false, AbstractStatistic.Type.COUNT);
-            testTree.add(context, key.get(4), 300, false, AbstractStatistic.Type.COUNT);
-            testTree.add(context, key.get(5), 400, false, AbstractStatistic.Type.COUNT);
-            testTree.add(context, key.get(6), 500, false, AbstractStatistic.Type.COUNT);
-            testTree.add(context, key.get(7), 600, false, AbstractStatistic.Type.COUNT);
-            testTree.add(context, key.get(8), 700, false, AbstractStatistic.Type.COUNT);
-            testTree.add(context, key.get(9), 800, false, AbstractStatistic.Type.COUNT);
-
-            testTree.add(context, key.get(0), 30, false, AbstractStatistic.Type.COUNT);
-            testTree.add(context, key.get(3), 150, false, AbstractStatistic.Type.COUNT);
-            testTree.add(context, key.get(5), 230, false, AbstractStatistic.Type.COUNT);
-            testTree.add(context, key.get(7), 270, false, AbstractStatistic.Type.COUNT);
-            testTree.add(context, key.get(9), 350, false, AbstractStatistic.Type.COUNT);
-            testTree.add(context, key.get(11), 450, false, AbstractStatistic.Type.COUNT);
-            testTree.add(context, key.get(13), 550, false, AbstractStatistic.Type.COUNT);
-            testTree.add(context, key.get(16), 800, false, AbstractStatistic.Type.COUNT);
-
-            testTree.add(context, key.get(aa[i]), a[i]*10, false, AbstractStatistic.Type.COUNT);
+            CountedBTree testTree = new CountedBTree(context, "tSNSPBC"+i, false);
+            testTree.insertIDs(context, 0, ids);
+            ArrayList<Integer> new_ids = new ArrayList<>();
+            new_ids.add(30);
+            testTree.insertIDs(context, 1, new_ids);
+            new_ids.remove(0);
+            new_ids.add(150);
+            testTree.insertIDs(context, 3, new_ids);
+            new_ids.remove(0);
+            new_ids.add(230);
+            testTree.insertIDs(context, 5, new_ids);
+            new_ids.remove(0);
+            new_ids.add(270);
+            testTree.insertIDs(context, 7, new_ids);
+            new_ids.remove(0);
+            new_ids.add(350);
+            testTree.insertIDs(context, 9, new_ids);
+            new_ids.remove(0);
+            new_ids.add(450);
+            testTree.insertIDs(context, 11, new_ids);
+            new_ids.remove(0);
+            new_ids.add(550);
+            testTree.insertIDs(context, 13, new_ids);
+            new_ids.remove(0);
+            new_ids.add(800);
+            testTree.insertIDs(context, 16, new_ids);
+            new_ids.remove(0);
+            new_ids.add(a[i]*10);
+            testTree.insertIDs(context, aa[i], new_ids);
 
         }
     }
 
-    public static void testNodeMergeByCount(DBContext context) {
-        ArrayList<KeyStatistic<Integer>> key = new ArrayList<>();
-        for(int x = 0; x < 6; x++) {
-            key.add(new KeyStatistic<>(x));
+    public static void testNodeMergeByCount(DBContext context, CountedBTree testTree) {
+        ArrayList<Integer> ids = new ArrayList<>();
+        for(int i = 0; i < 7; i++){
+            ids.add(i*100+100);
         }
-        CombinedStatistic<Integer> emptyStatistic = new CombinedStatistic<>(key.get(0));
-
-
-
-        BTree testTree = new BTree<CombinedStatistic<Integer>, Integer>(context, "tNMBC", emptyStatistic,false);
-        testTree.add(context, key.get(0), 100, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(1), 200, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(2), 300, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(3), 400, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(4), 500, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(5), 600, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(6), 700, false, AbstractStatistic.Type.COUNT);
-        testTree.remove(context, key.get(2), false, AbstractStatistic.Type.COUNT);
+        testTree.insertIDs(context, 0, ids);
+        testTree.deleteIDs(context, 2, 1);
 
     }
 
-    public static void NodeMergeRootMergeByCount(DBContext context) {
-        ArrayList<KeyStatistic<Integer>> key = new ArrayList<>();
-        for(int x = 0; x < 12; x++) {
-            key.add(new KeyStatistic<>(x));
-        }
-        CombinedStatistic<Integer> emptyStatistic = new CombinedStatistic<>(key.get(0));
+    public static void NodeMergeRootMergeByCount(DBContext context, CountedBTree testTree) {
+        ArrayList<Integer> ids = new ArrayList<>();
+        ids.add(50);
+        ids.add(100);
+        ids.add(200);
+        ids.add(230);
+        ids.add(270);
+        ids.add(300);
+        ids.add(330);
+        ids.add(400);
+        ids.add(500);
+        ids.add(550);
+        ids.add(700);
+        ids.add(800);
+        ids.add(850);
 
 
-
-        BTree testTree = new BTree<CombinedStatistic<Integer>, Integer>(context, "NMRNBC", emptyStatistic,false);
-        testTree.add(context, key.get(0), 50, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(1), 100, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(2), 200, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(3), 230, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(4), 270, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(5), 300, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(6), 330, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(7), 400, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(8), 500, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(9), 550, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(10), 700, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(11), 800, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(12), 850, false, AbstractStatistic.Type.COUNT);
-        testTree.remove(context, key.get(0), false, AbstractStatistic.Type.COUNT);
+        testTree.insertIDs(context, 0 , ids);
+        testTree.deleteIDs(context, 0, 1);
 
     }
 
-    public static void NodeMergeRootMerge1ByCount(DBContext context) {
-        ArrayList<KeyStatistic<Integer>> key = new ArrayList<>();
-        for(int x = 0; x < 18; x++) {
-            key.add(new KeyStatistic<>(x));
-        }
-        CombinedStatistic<Integer> emptyStatistic = new CombinedStatistic<>(key.get(0));
+    public static void NodeMergeRootMerge1ByCount(DBContext context, CountedBTree testTree) {
+        ArrayList<Integer> ids = new ArrayList<>();
+        ids.add(50);
+        ids.add(100);
+        ids.add(200);
+        ids.add(230);
+        ids.add(270);
+        ids.add(300);
+        ids.add(330);
+        ids.add(400);
+        ids.add(500);
+        ids.add(550);
+        ids.add(700);
+        ids.add(800);
+        ids.add(850);
+        ids.add(900);
+        ids.add(950);
+        ids.add(1000);
+        ids.add(1050);
+        ids.add(1100);
+        ids.add(1150);
 
-        // left rotate
-        BTree testTree = new BTree<CombinedStatistic<Integer>, Integer>(context, "NMRMBC", emptyStatistic, false);
-        testTree.add(context, key.get(0), 50, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(1), 100, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(2), 200, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(3), 230, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(4), 270, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(5), 300, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(6), 330, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(7), 400, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(8), 500, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(9), 550, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(10), 700, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(11), 800, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(12), 850, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(13), 900, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(14), 950, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(15), 1000, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(16), 1050, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(17), 1100, false, AbstractStatistic.Type.COUNT);
-        testTree.add(context, key.get(18), 1150, false, AbstractStatistic.Type.COUNT);
-        testTree.remove(context, key.get(0), false, AbstractStatistic.Type.COUNT);
-        testTree.remove(context, key.get(13), false, AbstractStatistic.Type.COUNT);
-        testTree.remove(context, key.get(16), false, AbstractStatistic.Type.COUNT);
+
+        testTree.insertIDs(context, 0, ids);
+        testTree.deleteIDs(context, 0, 1);
+        testTree.deleteIDs(context, 13, 1);
+        testTree.deleteIDs(context, 16, 1);
 
 
     }

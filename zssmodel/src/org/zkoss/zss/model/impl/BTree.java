@@ -707,10 +707,10 @@ public class BTree <K extends AbstractStatistic, V> {
                 next_sibling = rightNode.id;
             } else {
                 // Copy Children and ChildrenCount
-                rightNode.children = new ArrayList<>(children.subList(j + 1, children.size() - j - 1));
-                children.subList(j + 1, children.size() - j - 1).clear();
-                rightNode.childrenCount = new ArrayList<>(childrenCount.subList(j + 1, childrenCount.size() - j - 1));
-                childrenCount.subList(j + 1, childrenCount.size() - j - 1).clear();
+                rightNode.children = new ArrayList<>(children.subList(j, children.size()));
+                children.subList(j, children.size()).clear();
+                rightNode.childrenCount = new ArrayList<>(childrenCount.subList(j, childrenCount.size()));
+                childrenCount.subList(j, childrenCount.size()).clear();
             }
             rightNode.leafNode = this.leafNode;
             return rightNode;
