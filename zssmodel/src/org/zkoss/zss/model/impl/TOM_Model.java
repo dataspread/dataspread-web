@@ -119,7 +119,7 @@ public class TOM_Model extends Model {
             }
         }
 
-        Integer [] rowIds = rowMapping.getIDs(context,start,count);
+        ArrayList<Integer> rowIds = rowMapping.getIDs(context,start,count);
 
         select = null;
         if(indexString.length()==0)
@@ -132,7 +132,7 @@ public class TOM_Model extends Model {
                 .append(" WHERE row = ANY (?) AND row !=1");
 
         try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
-            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
+            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds.toArray());
             stmt.setArray(1, inArrayRow);
 
             ResultSet rs = stmt.executeQuery();

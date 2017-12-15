@@ -162,7 +162,7 @@ public class RCV_Model extends Model {
             ROM_Model rom_model = (ROM_Model) hybrid_model.tableModels.get(0).y;
 
             rom_model.rowMapping.dropSchema(context);
-            rom_model.rowMapping = new BTree(context, tableName + "_row_idx");
+            rom_model.rowMapping = new CountedBTree(context, tableName + "_row_idx");
             rom_model.rowMapping.insertIDs(context,start,ids);
 
             connection.commit();
@@ -230,7 +230,7 @@ public class RCV_Model extends Model {
             ROM_Model rom_model = (ROM_Model) hybrid_model.tableModels.get(0).y;
 
             rom_model.rowMapping.dropSchema(context);
-            rom_model.rowMapping = new BTree(context, tableName + "_row_idx");
+            rom_model.rowMapping = new CountedBTree(context, tableName + "_row_idx");
             rom_model.rowMapping.insertIDs(context,start,ids);
 
             connection.commit();
@@ -282,7 +282,7 @@ public class RCV_Model extends Model {
             return this.navS.getUniformBuckets(0,count);
         }
 
-        Integer [] rowIds = rowMapping.getIDs(context,start,count);
+        ArrayList<Integer> rowIds = rowMapping.getIDs(context,start,count);
 
         select = new StringBuffer("SELECT row, "+indexString);
 
@@ -291,7 +291,7 @@ public class RCV_Model extends Model {
                 .append(" WHERE row = ANY (?) AND row !=1");
 
         try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
-            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
+            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds.toArray());
             stmt.setArray(1, inArrayRow);
 
             ResultSet rs = stmt.executeQuery();

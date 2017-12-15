@@ -1,5 +1,6 @@
 package org.zkoss.zss.model.impl;
 
+import org.model.BlockStore;
 import org.model.DBContext;
 import org.zkoss.zss.model.impl.statistic.AbstractStatistic;
 import org.zkoss.zss.model.impl.statistic.CountStatistic;
@@ -8,6 +9,11 @@ import java.util.ArrayList;
 
 public class CountedBTree implements PosMapping{
     BTree<CountStatistic> btree;
+
+    public CountedBTree(DBContext context, String tableName, BlockStore sourceBlockStore) {
+        CountStatistic emptyStatistic = new CountStatistic();
+        btree = new BTree<>(context, tableName, sourceBlockStore, emptyStatistic, true);
+    }
 
     public CountedBTree(DBContext context, String tableName) {
         CountStatistic emptyStatistic = new CountStatistic();
@@ -58,6 +64,11 @@ public class CountedBTree implements PosMapping{
     @Override
     public void clearCache(DBContext context) {
         btree.clearCache(context);
+    }
+
+    @Override
+    public PosMapping clone(DBContext context, String tableName) {
+        return new CountedBTree(context, tableName, btree.bs);
     }
 
     @Override

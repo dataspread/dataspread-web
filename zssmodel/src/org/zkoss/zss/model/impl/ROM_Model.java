@@ -24,7 +24,7 @@ public class ROM_Model extends Model {
     public PosMapping rowMapping;
     private PosMapping colMapping;
 
-    private boolean isNav = true;
+    private boolean isNav = false;
 
     //Create or load RCV_model.
     ROM_Model(DBContext context, SSheet sheet, String tableName) {
@@ -662,8 +662,8 @@ public class ROM_Model extends Model {
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
         PreparedStatement stmt = connection.prepareStatement(select.toString())) {
             DBContext context = new DBContext(connection);
-            Integer [] rowIds = rowMapping.getIDs(context,start,count);
-            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
+            ArrayList<Integer> rowIds = rowMapping.getIDs(context,start,count);
+            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds.toArray());
             stmt.setArray(1, inArrayRow);
 
             ResultSet rs = stmt.executeQuery();

@@ -27,7 +27,7 @@ public class BTree <K extends AbstractStatistic> {
     /**
      * The block storage mechanism
      */
-    private BlockStore bs;
+    public BlockStore bs;
     private MetaDataBlock metaDataBlock;
 
     K emptyStatistic;
@@ -46,6 +46,13 @@ public class BTree <K extends AbstractStatistic> {
     public BTree(DBContext context, String tableName, K emptyStatistic, boolean useKryo) {
         this.emptyStatistic = emptyStatistic;
         bs = new BlockStore(context, tableName);
+        useKryo(useKryo);
+        loadMetaData(context);
+    }
+
+    public BTree(DBContext context, String tableName, BlockStore sourceBlockStore, K emptyStatistic, boolean useKryo) {
+        this.emptyStatistic = emptyStatistic;
+        bs = sourceBlockStore.clone(context, tableName);
         useKryo(useKryo);
         loadMetaData(context);
     }
