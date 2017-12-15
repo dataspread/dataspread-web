@@ -57,7 +57,7 @@ public interface AbstractStatistic {
      * @param type
      * @return
      */
-    AbstractStatistic getLeafStatistic(Type type);
+    AbstractStatistic getLeafStatistic(int count, Type type);
 
     /**
      * Update the current statistic affected by the operation
@@ -74,6 +74,14 @@ public interface AbstractStatistic {
      * @return true if this statistic matches the designated statistic
      */
     boolean match(ArrayList<AbstractStatistic> stat_list, int index, Type type);
+
+    /**
+     *
+     * @param statistic
+     * @param type
+     * @return
+     */
+    int splitIndex(ArrayList<AbstractStatistic> statistic, Type type);
 
     /**
      *

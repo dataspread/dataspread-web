@@ -7,7 +7,7 @@ import org.zkoss.zss.model.impl.statistic.CountStatistic;
 import java.util.ArrayList;
 
 public class CountedBTree implements PosMapping{
-    BTree<CountStatistic, Integer> btree;
+    BTree<CountStatistic> btree;
 
     public CountedBTree(DBContext context, String tableName) {
         CountStatistic emptyStatistic = new CountStatistic();

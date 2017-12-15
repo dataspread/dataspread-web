@@ -10,7 +10,7 @@ import java.util.ArrayList;
 /**
  * An implementation of a B+ Tree
  */
-public class BTree <K extends AbstractStatistic, V> {
+public class BTree <K extends AbstractStatistic> {
     /**
      * The maximum number of children of a node (an odd number)
      */
@@ -74,6 +74,9 @@ public class BTree <K extends AbstractStatistic, V> {
         bs.dropSchemaAndClear(context);
     }
 
+    public boolean add(DBContext context, K statistic, Integer val, boolean flush, AbstractStatistic.Type type) {
+        return add(context, statistic, val, 1, flush, type);
+    }
     /**
      * Find the index, i, at which key should be inserted into the null-padded
      * sorted array, a
@@ -82,8 +85,8 @@ public class BTree <K extends AbstractStatistic, V> {
      * @param val the value corresponding to key
      * @return
      */
-    public boolean add(DBContext context, K statistic, V val, boolean flush, AbstractStatistic.Type type) {
-        Node rightNode = addRecursive(context, statistic, metaDataBlock.ri, val, type);
+    public boolean add(DBContext context, K statistic, Integer val, int count, boolean flush, AbstractStatistic.Type type) {
+        Node rightNode = addRecursive(context, statistic, metaDataBlock.ri, val, count, type);
         if (rightNode != null) {   // root was split, make new root
             Node leftNode = new Node().get(context, bs, metaDataBlock.ri);
             Node newRoot = new Node().create(context, bs);
@@ -104,7 +107,6 @@ public class BTree <K extends AbstractStatistic, V> {
             bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
             newRoot.update(bs);
         }
-        metaDataBlock.elementCount++;
         // Update Database
         if (flush)
             bs.flushDirtyBlocks(context);
@@ -124,14 +126,19 @@ public class BTree <K extends AbstractStatistic, V> {
      * @return a new node that was created when u was split, or null if u was
      * not split
      */
-    private Node addRecursive(DBContext context, K statistic, int ui, V val, AbstractStatistic.Type type) {
+    private Node addRecursive(DBContext context, K statistic, int ui, Integer val, int count,  AbstractStatistic.Type type) {
         // Get the current node
         Node u = new Node().get(context, bs, ui);
         // Find the position to insert
-        int i = statistic.findIndex(u.statistics, type, u.isLeaf());
+        int i = statistic.findIndex(u.statistics, type, false);
         // If the node is leaf node, add the value
         if (u.isLeaf()) {
-            u.addLeaf(i, statistic, val, type);
+            // If the node is a sparse node, split
+            if (u.childrenCount.get(i) > 1) {
+                u.splitSparseNode(i, statistic, type, false);
+            }
+            i = statistic.findIndex(u.statistics, type, true);
+            u.addLeaf(i, statistic, val, count, type);
         } else {
             // Update the statistic of the node we found
             AbstractStatistic current_stat = u.statistics.get(i);
@@ -139,7 +146,7 @@ public class BTree <K extends AbstractStatistic, V> {
                 u.statistics.set(i, current_stat.updateStatistic(AbstractStatistic.Mode.ADD));
             // Get the new statistic we are looking for
             K new_statistic = (K) statistic.getLowerStatistic(u.statistics, i, type);
-            Node rightNode = addRecursive(context, new_statistic, u.children.get(i), val, type);
+            Node rightNode = addRecursive(context, new_statistic, u.children.get(i), val, count, type);
             Node child = new Node().get(context, bs, u.children.get(i));
             u.childrenCount.set(i, child.childrenCount.size());
             if (rightNode != null) {  // child was split, w is new child
@@ -161,8 +168,8 @@ public class BTree <K extends AbstractStatistic, V> {
             return null;
     }
 
-    public V remove(DBContext context, K statistic, boolean flush, AbstractStatistic.Type type) {
-        V value = removeRecursive(context, statistic, metaDataBlock.ri, type);
+    public Integer remove(DBContext context, K statistic, boolean flush, AbstractStatistic.Type type) {
+        Integer value = removeRecursive(context, statistic, metaDataBlock.ri, type);
         if (value != null) {
             Node r = new Node().get(context, bs, metaDataBlock.ri);
             if ((!r.isLeaf()) && (r.size() <= 1) && (metaDataBlock.elementCount > 0)) { // root has only one child
@@ -184,18 +191,22 @@ public class BTree <K extends AbstractStatistic, V> {
      * @param ui the index of the subtree to remove x from
      * @return true if x was removed and false otherwise
      */
-    private V removeRecursive(DBContext context, K statistic, int ui, AbstractStatistic.Type type) {
+    private Integer removeRecursive(DBContext context, K statistic, int ui, AbstractStatistic.Type type) {
         if (ui < 0) return null;  // didn't find it
         Node u = new Node().get(context, bs, ui);
 
-        int i = statistic.findIndex(u.statistics, type, u.isLeaf());
+        int i = statistic.findIndex(u.statistics, type, false);
         /* Need to go to leaf to delete */
         if (u.isLeaf()) {
+            if (u.childrenCount.get(i) > 1) {
+                u.splitSparseNode(i, statistic, type, true);
+            }
+            i = statistic.findIndex(u.statistics, type, true);
             // Check if the statistic is exactly matched
             if (statistic.match(u.statistics, i, type)) {
                 metaDataBlock.elementCount--;
                 u.statistics.remove(i);
-                V value = u.values.remove(i);
+                Integer value = u.values.remove(i);
                 u.update(bs);
                 bs.flushDirtyBlocks(context);
                 return value;
@@ -208,7 +219,7 @@ public class BTree <K extends AbstractStatistic, V> {
                 u.statistics.set(i, current_stat.updateStatistic(AbstractStatistic.Mode.DELETE));
             // Get the new statistic we are looking for
             K new_statistic = (K) statistic.getLowerStatistic(u.statistics, i, type);
-            V value = removeRecursive(context, new_statistic, u.children.get(i), type);
+            Integer value = removeRecursive(context, new_statistic, u.children.get(i), type);
             if (value != null) {
                 Node child = new Node().get(context, bs, u.children.get(i));
                 u.statistics.set(i, emptyStatistic.getAggregation(child.statistics, type));
@@ -225,7 +236,7 @@ public class BTree <K extends AbstractStatistic, V> {
     }
 
 
-    public V lookup(DBContext context, K statistic, AbstractStatistic.Type type) {
+    public Integer lookup(DBContext context, K statistic, AbstractStatistic.Type type) {
         return lookupRecursive(context, statistic, metaDataBlock.ri, type);
     }
 
@@ -236,12 +247,17 @@ public class BTree <K extends AbstractStatistic, V> {
      * @param ui the index of the subtree to remove x from
      * @return true if x was removed and false otherwise
      */
-    private V lookupRecursive(DBContext context, K statistic, int ui, AbstractStatistic.Type type) {
+    private Integer lookupRecursive(DBContext context, K statistic, int ui, AbstractStatistic.Type type) {
         if (ui < 0) return null;  // didn't find it
         Node u = new Node().get(context, bs, ui);
-        int i = statistic.findIndex(u.statistics, type, u.isLeaf());
+        int i = statistic.findIndex(u.statistics, type, false);
         /* Need to go to leaf to delete */
         if (u.isLeaf()) {
+            if (u.childrenCount.get(i) > 1) {
+                int split = statistic.splitIndex(u.statistics, type);
+                if (split != 0) return u.values.get(i) + split;
+            }
+            i = statistic.findIndex(u.statistics, type, true);
             // Check if the statistic is exactly matched
             if (statistic.match(u.statistics, i, type)) {
                 return u.values.get(i);
@@ -380,12 +396,17 @@ public class BTree <K extends AbstractStatistic, V> {
         }
     }
 
-    public V get(DBContext context, K statistic, AbstractStatistic.Type type) {
+    public Integer get(DBContext context, K statistic, AbstractStatistic.Type type) {
         int ui = metaDataBlock.ri;
         while (true) {
             Node u = new Node().get(context, bs, ui);
-            int i = statistic.findIndex(u.statistics, type, u.isLeaf());
+            int i = statistic.findIndex(u.statistics, type, false);
             if (u.isLeaf()) {
+                if (u.childrenCount.get(i) > 1) {
+                    int split = statistic.splitIndex(u.statistics, type);
+                    if (split != 0) return u.values.get(i) + split;
+                }
+                i = statistic.findIndex(u.statistics, type, true);
                 if (i > 0 && statistic.match(u.statistics, i, type))
                     return u.values.get(i); // found it
                 else
@@ -454,17 +475,17 @@ public class BTree <K extends AbstractStatistic, V> {
         }
     }
 
-    public V getMaxValue() {
+    public Integer getMaxValue() {
         return metaDataBlock.max_value;
     }
 
-    public void updateMaxValue(DBContext context, V max_value) {
+    public void updateMaxValue(DBContext context, Integer max_value) {
         metaDataBlock.max_value = max_value;
         bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
         bs.flushDirtyBlocks(context);
     }
 
-    public void insertIDs(DBContext context, ArrayList<K> statistics, ArrayList<V> ids, AbstractStatistic.Type type) {
+    public void insertIDs(DBContext context, ArrayList<K> statistics, ArrayList<Integer> ids, AbstractStatistic.Type type) {
         int count = ids.size();
         for (int i = 0; i < count; i++) {
             add(context, statistics.get(i), ids.get(i), false, type);
@@ -472,8 +493,8 @@ public class BTree <K extends AbstractStatistic, V> {
         bs.flushDirtyBlocks(context);
     }
 
-    public ArrayList<V> deleteIDs(DBContext context, ArrayList<K> statistics, AbstractStatistic.Type type) {
-        ArrayList<V> ids = new ArrayList<>();
+    public ArrayList<Integer> deleteIDs(DBContext context, ArrayList<K> statistics, AbstractStatistic.Type type) {
+        ArrayList<Integer> ids = new ArrayList<>();
         int count = statistics.size();
         for (int i = 0; i < count; i++)
             ids.add(remove(context, statistics.get(i), false, type));
@@ -481,8 +502,8 @@ public class BTree <K extends AbstractStatistic, V> {
         return ids;
     }
 
-    public ArrayList<V> getIDs(DBContext context, ArrayList<K> statistics, AbstractStatistic.Type type) {
-        ArrayList<V> ids = new ArrayList<>();
+    public ArrayList<Integer> getIDs(DBContext context, ArrayList<K> statistics, AbstractStatistic.Type type) {
+        ArrayList<Integer> ids = new ArrayList<>();
         int count = statistics.size();
         for (int i = 0; i < count; i++)
             ids.add(lookup(context, statistics.get(i), type));
@@ -490,8 +511,8 @@ public class BTree <K extends AbstractStatistic, V> {
         return ids;
     }
 
-    public ArrayList<V> getIDs(DBContext context, K statistic, int count, AbstractStatistic.Type type) {
-        ArrayList<V> ids = new ArrayList<>();
+    public ArrayList<Integer> getIDs(DBContext context, K statistic, int count, AbstractStatistic.Type type) {
+        ArrayList<Integer> ids = new ArrayList<>();
         if (count == 0)
             return ids;
         int ui = metaDataBlock.ri;
@@ -504,11 +525,17 @@ public class BTree <K extends AbstractStatistic, V> {
             int i = new_statistic.findIndex(u.statistics, type, u.isLeaf());
             /* Need to go to leaf to delete */
             if (u.isLeaf()) {
+                if (u.childrenCount.get(i) > 1) {
+                    int split = statistic.splitIndex(u.statistics, type);
+                    if (split != 0) {
+                        first_index = i;
+                        break;
+                    }
+                }
+                i = statistic.findIndex(u.statistics, type, true);
                 // Check if the statistic is exactly matched
                 if (new_statistic.match(u.statistics, i, type)) {
                     first_index = i;
-                    ids.add(u.values.get(i));
-                    get_count++;
                     break;
                 } else
                     return null;
@@ -518,19 +545,28 @@ public class BTree <K extends AbstractStatistic, V> {
                 u = new Node().get(context, bs, u.children.get(i));
             }
         }
-        int index = first_index + 1;
+        int index = first_index;
         while (get_count < count && u.next_sibling != -1) {
             while (index < u.size() && get_count < count) {
-                ids.add(u.values.get(index++));
-                get_count++;
+                if (u.childrenCount.get(index) > 1) {
+                    int split = statistic.splitIndex(u.statistics, type);
+                    if (split != 0) {
+                        while (split < u.childrenCount.get(index) && get_count < count) {
+                            ids.add(u.values.get(index) + split);
+                            get_count++;
+                            split++;
+                        }
+                        index++;
+                    }
+                } else {
+                    ids.add(u.values.get(index++));
+                    get_count++;
+                }
             }
+            if (u.next_sibling == -1) break;
             ui = u.next_sibling;
             u = new Node().get(context, bs, ui);
             index = 0;
-        }
-        while (index < u.size() && get_count < count) {
-            ids.add(u.values.get(index++));
-            get_count++;
         }
         while (get_count < count) {
             ids.add(null);
@@ -544,7 +580,7 @@ public class BTree <K extends AbstractStatistic, V> {
     private class MetaDataBlock {
         // The ID of the root node
         int ri;
-        V max_value;
+        Integer max_value;
         // Number of elements
         int elementCount;
     }
@@ -582,7 +618,7 @@ public class BTree <K extends AbstractStatistic, V> {
         /**
          * Data stored in the leaf blocks
          */
-        ArrayList<V> values;
+        ArrayList<Integer> values;
 
         /**
          * Leaf Node, no children, has values
@@ -654,10 +690,12 @@ public class BTree <K extends AbstractStatistic, V> {
          * @param value the value to add
          * @return true on success or false if not added
          */
-        public boolean addLeaf(int i, K statistic, V value, AbstractStatistic.Type type) {
+        public boolean addLeaf(int i, K statistic, Integer value, int count, AbstractStatistic.Type type) {
             if (i < 0) return false;
-            this.statistics.add(i, statistic.getLeafStatistic(type));
+            this.childrenCount.add(i, count);
+            this.statistics.add(i, statistic.getLeafStatistic(count, type));
             this.values.add(i, value);
+            metaDataBlock.elementCount += count;
             return true;
         }
 
@@ -701,6 +739,8 @@ public class BTree <K extends AbstractStatistic, V> {
             int j = statistics.size() / 2;
             rightNode.statistics = new ArrayList<>(statistics.subList(j, statistics.size()));
             statistics.subList(j, statistics.size()).clear();
+            rightNode.childrenCount = new ArrayList<>(childrenCount.subList(j, childrenCount.size()));
+            childrenCount.subList(j, childrenCount.size()).clear();
             if (leafNode) {
                 // Copy Values
                 rightNode.values = new ArrayList<>(values.subList(j, values.size()));
@@ -711,8 +751,6 @@ public class BTree <K extends AbstractStatistic, V> {
                 // Copy Children and ChildrenCount
                 rightNode.children = new ArrayList<>(children.subList(j, children.size()));
                 children.subList(j, children.size()).clear();
-                rightNode.childrenCount = new ArrayList<>(childrenCount.subList(j, childrenCount.size()));
-                childrenCount.subList(j, childrenCount.size()).clear();
             }
             rightNode.leafNode = this.leafNode;
             return rightNode;
@@ -741,6 +779,25 @@ public class BTree <K extends AbstractStatistic, V> {
         }
 
 
+        public void splitSparseNode(int i, K statistic, AbstractStatistic.Type type, boolean splitSingle) {
+            int split = statistic.splitIndex(statistics, type);
+            if (split == 0) return;
+            int count = childrenCount.get(i) - split;
+            this.childrenCount.set(i, split);
+            this.statistics.set(i, statistic.getLeafStatistic(split, type));
+            if (splitSingle) {
+                count--;
+                split++;
+            }
+            this.childrenCount.add(i + 1, count);
+            this.statistics.add(i + 1, statistic.getLeafStatistic(count, type));
+            this.values.add(i + 1, values.get(i) + split);
+            if (splitSingle) {
+                this.childrenCount.add(i + 1, 1);
+                this.statistics.add(i + 1, statistic.getLeafStatistic(1, type));
+                this.values.add(i + 1, values.get(i) + split - 1);
+            }
+        }
     }
 
 }

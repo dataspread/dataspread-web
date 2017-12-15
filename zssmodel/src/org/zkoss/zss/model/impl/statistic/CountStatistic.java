@@ -60,8 +60,20 @@ public class CountStatistic implements AbstractStatistic {
     }
 
     @Override
-    public CountStatistic getLeafStatistic(Type type) {
-        return new CountStatistic(1);
+    public CountStatistic getLeafStatistic(int count, Type type) {
+        return new CountStatistic(count);
+    }
+
+    @Override
+    public int splitIndex(ArrayList<AbstractStatistic> counts, Type type) {
+        int lo = 0, hi = counts.size();
+        int remain = this.count;
+        if (remain <= 0) return lo;
+        while ((remain > ((CountStatistic) counts.get(lo)).count) && (lo < hi)) {
+            remain -= ((CountStatistic) counts.get(lo)).count;
+            lo++;
+        }
+        return remain;
     }
 
     @Override

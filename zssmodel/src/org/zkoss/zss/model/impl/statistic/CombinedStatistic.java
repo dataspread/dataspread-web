@@ -55,6 +55,23 @@ public class CombinedStatistic<T extends Comparable<T>> implements AbstractStati
     }
 
     @Override
+    public int splitIndex(ArrayList<AbstractStatistic> stat_list, Type type) {
+        if (type == Type.KEY) {
+            ArrayList<AbstractStatistic> new_list = new ArrayList<>();
+            for (int i = 0; i < stat_list.size(); i++){
+                new_list.add(((CombinedStatistic<T>) stat_list.get(i)).key);
+            }
+            return this.key.splitIndex(new_list, type);
+        } else {
+            ArrayList<AbstractStatistic> new_list = new ArrayList<>();
+            for (int i = 0; i < stat_list.size(); i++){
+                new_list.add(((CombinedStatistic<T>) stat_list.get(i)).count);
+            }
+            return this.count.splitIndex(new_list, type);
+        }
+    }
+
+    @Override
     public CombinedStatistic<T> getAggregation(ArrayList<AbstractStatistic> stat_list, Type type){
         ArrayList<AbstractStatistic> key_list = new ArrayList<>();
         ArrayList<AbstractStatistic> count_list = new ArrayList<>();
@@ -77,11 +94,11 @@ public class CombinedStatistic<T extends Comparable<T>> implements AbstractStati
     }
 
     @Override
-    public AbstractStatistic getLeafStatistic(Type type) {
+    public AbstractStatistic getLeafStatistic(int count, Type type) {
         if (type == Type.KEY){
-            return this.key.getLeafStatistic(type);
+            return this.key.getLeafStatistic(count, type);
         } else {
-            return this.count.getLeafStatistic(type);
+            return this.count.getLeafStatistic(count, type);
         }
     }
 

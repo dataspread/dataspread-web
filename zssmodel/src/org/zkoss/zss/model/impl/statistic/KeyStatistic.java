@@ -57,6 +57,11 @@ public class KeyStatistic<T extends Comparable<T>> implements AbstractStatistic 
         return index;
     }
 
+    @Override
+    public int splitIndex(ArrayList<AbstractStatistic> statistic, Type type) {
+        return 0;
+    }
+
     /**
      * Key statistic doesn't require update
      * @return always false
@@ -88,7 +93,7 @@ public class KeyStatistic<T extends Comparable<T>> implements AbstractStatistic 
 
 
     @Override
-    public KeyStatistic<T> getLeafStatistic(Type type) {
+    public KeyStatistic<T> getLeafStatistic(int count, Type type) {
         return this;
     }
 
