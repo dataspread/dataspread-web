@@ -80,7 +80,9 @@ public class DirtyManagerPGImpl extends DirtyManager {
                     region.getColumn(), region.getLastRow(),
                     region.getLastColumn()), Types.OTHER);
             removeRegion.setInt(4, trxId);
-            removeRegion.execute();
+            int deletedRecords = removeRegion.executeUpdate();
+            if (deletedRecords==0)
+                System.out.println("Error deleting dirty records");
             connection.commit();
         } catch (SQLException e) {
             e.printStackTrace();

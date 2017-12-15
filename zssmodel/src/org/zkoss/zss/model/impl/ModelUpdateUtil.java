@@ -41,10 +41,10 @@ import java.util.Set;
 		ModelUpdateCollector collector = ModelUpdateCollector.getCurrent();
 		Set<Ref> dependents = null; 
 		//get table when collector and clearer is not ignored (in import case, we should ignore clear cache)
-		if(collector!=null || clearer!=null || bookSeries.isAutoFormulaCacheClean()){
-			DependencyTable table = ((AbstractBookSeriesAdv)bookSeries).getDependencyTable();
-			dependents = table.getDependents(precedent);
-		}
+		//if(collector!=null || clearer!=null || bookSeries.isAutoFormulaCacheClean()){
+        DependencyTable table = ((AbstractBookSeriesAdv)bookSeries).getDependencyTable();
+        dependents = table.getDependents(precedent);
+		//}
 		//TODO: if dependents are from different sheets, increment the trxId of those sheet.
 		// Sheets Seems a nice granularity to have the trxId.
 		// If we have it on a book or global level might trigger to many lookups.
@@ -55,16 +55,20 @@ import java.util.Set;
 		if (includePrecedent) { //ZSS-1047
 			addRefUpdate(precedent);
 			if(!sheet.isSyncCalc())
-			DirtyManager.dirtyManagerInstance.addDirtyRegion(precedent, trxId);
+				DirtyManager.dirtyManagerInstance.addDirtyRegion(precedent, trxId);
 		}
 
 
 		if (dependents != null && dependents.size() > 0) {
-			if (clearer != null) {
-				clearer.clear(dependents);
-			} else if (bookSeries.isAutoFormulaCacheClean()) {
-				new FormulaCacheClearHelper(bookSeries).clear(dependents);
+			if (sheet.isSyncCalc()) {
+				// Cleaner is only required for sync.
+				if (clearer != null) {
+					clearer.clear(dependents);
+				} else if (bookSeries.isAutoFormulaCacheClean()) {
+					new FormulaCacheClearHelper(bookSeries).clear(dependents);
+				}
 			}
+
 			if (collector != null) {
 				collector.addRefs(dependents);
 			}

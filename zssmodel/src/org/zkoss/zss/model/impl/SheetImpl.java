@@ -53,15 +53,16 @@ public class SheetImpl extends AbstractSheetAdv {
 	private static final long serialVersionUID = 1L;
 	private static final Log _logger = Log.lookup(SheetImpl.class);
     //Mangesh
-    static final private int PreFetchRows = 50;
-    static final private int PreFetchColumns = 30;
+    static final private int PreFetchRows = Library.getIntProperty("PreFetchRows", 200);
+    static final private int PreFetchColumns = Library.getIntProperty("PreFetchColumns", 30);;
     /**
      * internal use only for developing/test state, should remove when stable
      */
     private static boolean COLUMN_ARRAY_CHECK = false;
 
     /* Set this to true to enable syncronous computation */
-    public boolean syncComputation = false;
+    public static boolean syncComputation =
+			"true".equalsIgnoreCase(Library.getProperty("ds.model.syncComputation","false"));
 
     static {
         if ("true".equalsIgnoreCase(Library.getProperty("org.zkoss.zss.model.internal.CollumnArrayCheck"))) {
@@ -410,15 +411,10 @@ public class SheetImpl extends AbstractSheetAdv {
 					cellRegion.getRow(), cellRegion.getColumn());
 
 			sheetDataCache.put(cellRegion, proxyCell);
-			if (cellRegion.equals(cellRegion))
-				ret = proxyCell;
-			System.out.println("Null out");
+			ret = proxyCell;
 		}
         return ret;
 	}
-
-	//zekun.fan@gmail.com
-
 
 	@Override
 	public Collection<SCell> getCells(CellRegion region) {
