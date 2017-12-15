@@ -30,7 +30,7 @@ public class BTreeTest {
         //testNodeMergeByCount(dbContext);
         //testSplitNodeSplitParentByCount(dbContext);
 
-        NodeMergeRootMergeByCount(dbContext);
+        NodeMergeRootMerge1ByCount(dbContext);
         dbContext.getConnection().commit();
         dbContext.getConnection().close();
     }
@@ -242,7 +242,10 @@ public class BTreeTest {
             ids.set(0, numbers[i]);
             testTree.insertIDs(context, i, ids);
         }
-        testTree.insertIDs(context, 0 , ids);
+        testTree.deleteIDs(context, 0, 1);
+        testTree.deleteIDs(context, 0, 1);
+        testTree.deleteIDs(context, 0, 1);
+        testTree.deleteIDs(context, 0, 1);
         testTree.deleteIDs(context, 0, 1);
 
     }
