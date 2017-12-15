@@ -9,10 +9,10 @@
 					<div id="navs" width="400px" align="center" style="padding-bottom: 0;" visible="false">
 						<label multiline="true" style="font-size: 24px; font-weight: bold">
 							<attribute name="value">	Navigation
-								Pane
+								Panel
 							</attribute>
 						</label>
-						Sort By: <selectbox id="colSelectbox">
+						Organize By: <selectbox id="colSelectbox">
 							<template name="model">
 								<label value="${each}" />
 							</template>

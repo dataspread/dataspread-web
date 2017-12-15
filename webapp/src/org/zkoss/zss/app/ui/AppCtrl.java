@@ -138,6 +138,8 @@ public class AppCtrl extends CtrlBase<Component> {
 
     private Map<String,Bucket<String>> navSBucketMap = new HashMap<String,Bucket<String>>();
 
+    private Map<String,Integer> navSBucketLevel = new HashMap<String,Integer>();
+
     // Stacked and grouped column
 
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
@@ -1203,15 +1205,17 @@ public class AppCtrl extends CtrlBase<Component> {
         void invoke();
     }
 
-    private BucketTreeNodeCollection<Bucket<String>> childrenBuckets(ArrayList<Bucket<String>> bucketList) {
+    private BucketTreeNodeCollection<Bucket<String>> childrenBuckets(ArrayList<Bucket<String>> bucketList, int level) {
         BucketTreeNodeCollection<Bucket<String>> dtnc = new BucketTreeNodeCollection<Bucket<String>>();
 
         for(int i=0;i<bucketList.size();i++) {
             BucketTreeNodeCollection<Bucket<String>> btnc_ = new BucketTreeNodeCollection<Bucket<String>>();
-            if(!navSBucketMap.containsKey("ch"+bucketList.get(i).getId()))
-                navSBucketMap.put("ch"+bucketList.get(i).getId(),bucketList.get(i));
+            if(!navSBucketMap.containsKey("ch"+bucketList.get(i).getId())) {
+                navSBucketMap.put("ch" + bucketList.get(i).getId(), bucketList.get(i));
+                navSBucketLevel.put("ch" + bucketList.get(i).getId(), level);
+            }
             if(bucketList.get(i).getChildrenCount()>0) {
-                btnc_ = childrenBuckets(bucketList.get(i).getChildren());
+                btnc_ = childrenBuckets(bucketList.get(i).getChildren(),level+1);
                 dtnc.add(new DefaultTreeNode<Bucket<String>>(bucketList.get(i),btnc_));
             }
             else
@@ -1228,7 +1232,7 @@ public class AppCtrl extends CtrlBase<Component> {
         //treeBucket.setAutopaging(true);
         BucketTreeNodeCollection<Bucket<String>> btnc = new BucketTreeNodeCollection<Bucket<String>>();
 
-        btnc = childrenBuckets(bucketList);
+        btnc = childrenBuckets(bucketList,0);
 
         treeBucket.setModel(new DefaultTreeModel<Bucket<String>>(new BucketTreeNode<Bucket<String>>(null,btnc)));
 
@@ -1255,8 +1259,10 @@ public class AppCtrl extends CtrlBase<Component> {
         //================================================================================
 
         Bucket<String> currentBucket = navSBucketMap.get(chartComp25.getId());
+
+        String [] colors = {"#F6546A","#C998FD","#FF8247","#B9E4F1","#A99A91","#382755"};
         chartComp25.setType("column");
-        chartComp25.setOptions("{margin:[-30,0,50,30]}");
+        //chartComp25.setOptions("{margin:[-30,0,50,30]}");
         //chartComp25.setTitle(currentBucket.getName());
         String xAxisLabels = "";
 
@@ -1310,6 +1316,7 @@ public class AppCtrl extends CtrlBase<Component> {
         chartComp25.setPlotOptions(//"["+
                 "{" +
                     "column: {" +
+                        "color: \'"+colors[navSBucketLevel.get(chartComp25.getId())]+"\',"+
                         "pointPadding: 0.2," +
                         "borderWidth: 0," +
                         "point: {"+
