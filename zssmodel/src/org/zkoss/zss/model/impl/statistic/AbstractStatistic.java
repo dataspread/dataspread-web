@@ -35,7 +35,7 @@ public interface AbstractStatistic {
      * @param stat_list an array of statistics
      * @return a integer between 0 and the length of stat_list
      */
-    int findIndex(ArrayList<AbstractStatistic> stat_list, Type type, boolean isLeaf);
+    int findIndex(ArrayList<AbstractStatistic> stat_list, Type type, boolean isLeaf, boolean isAdd);
 
     /**
      * Get the aggregation value of the stat_list

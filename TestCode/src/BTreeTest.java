@@ -26,12 +26,11 @@ public class BTreeTest {
         String password = "mangesh";
         DBHandler.connectToDB(url, driver, userName, password);
         DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
-        CountedBTree btree = new CountedBTree(dbContext, "tNMBC", false);
-        testSplitNodeByCount(dbContext, btree);
+
         //testNodeMergeByCount(dbContext);
         //testSplitNodeSplitParentByCount(dbContext);
-        //NodeMergeRootMergeByCount(dbContext);
-        //NodeMergeRootMerge1ByCount(dbContext);
+
+        NodeMergeRootMergeByCount(dbContext);
         dbContext.getConnection().commit();
         dbContext.getConnection().close();
     }
@@ -158,167 +157,106 @@ public class BTreeTest {
 
     public static void testSplitNodeByCount(DBContext context, CountedBTree testTree) {
         ArrayList<Integer> ids = new ArrayList<>();
+        int [] numbers = {50, 100, 200, 250, 300, 400, 500, 600, 700, 800};
         ids.add(50);
-        testTree.insertIDs(context, 0, ids);
+        for(int i = 0; i < 10; i++){
+            ids.set(0, numbers[i]);
+            testTree.insertIDs(context, i, ids);
+        }
 
-        ids.set(0, 100);
-        testTree.insertIDs(context, 1, ids);
-
-        ids.set(0, 200);
-        testTree.insertIDs(context, 2, ids);
-
-        ids.set(0, 250);
-        testTree.insertIDs(context, 3, ids);
-
-        ids.set(0, 300);
-        testTree.insertIDs(context, 4, ids);
-
-        ids.set(0, 400);
-        testTree.insertIDs(context, 5, ids);
-        context.getConnection().commit();
-
-        ids.set(0, 500);
-        testTree.insertIDs(context, 6, ids);
-
-        /*
-        ids.add(600);
-        ids.add(700);
-        ids.add(800);
-        */
-
-        /*
         ArrayList<Integer> new_ids = new ArrayList<>();
         new_ids.add(30);
         testTree.insertIDs(context, 1, new_ids);
-        new_ids.remove(0);
-        new_ids.add(150);
+        new_ids.set(0, 150);
         testTree.insertIDs(context, 3, new_ids);
-        new_ids.remove(0);
-        new_ids.add(230);
+        new_ids.set(0, 230);
         testTree.insertIDs(context, 5, new_ids);
-        new_ids.remove(0);
-        new_ids.add(270);
+        new_ids.set(0, 270);
         testTree.insertIDs(context, 7, new_ids);
-        new_ids.remove(0);
-        new_ids.add(350);
+        new_ids.set(0, 350);
         testTree.insertIDs(context, 9, new_ids);
-        new_ids.remove(0);
-        new_ids.add(450);
+        new_ids.set(0, 450);
         testTree.insertIDs(context, 11, new_ids);
-        new_ids.remove(0);
-        new_ids.add(550);
+        new_ids.set(0, 550);
         testTree.insertIDs(context, 13, new_ids);
-        new_ids.remove(0);
-        new_ids.add(800);
+        new_ids.set(0, 800);
         testTree.insertIDs(context, 16, new_ids);
-        */
+
     }
 
     public static void testSplitNodeSplitParentByCount(DBContext context) {
         ArrayList<Integer> ids = new ArrayList<>();
-        ids.add(50);
-        ids.add(100);
-        ids.add(200);
-        ids.add(250);
-        ids.add(300);
-        ids.add(400);
-        ids.add(500);
-        ids.add(600);
-        ids.add(700);
-        ids.add(800);
+        int [] numbers = {50, 100, 200, 250, 300, 400, 500, 600, 700};
+        for(int i = 0; i < 9; i++){
+            ids.add( numbers[i]);
+        }
 
         int[] a = {1, 8, 16};
-        int[] aa = {3, 8, 17};
-        boolean valid;
+        int[] aa = {0, 2, 4};
         for(int i = 0; i < 3; i++){
             CountedBTree testTree = new CountedBTree(context, "tSNSPBC"+i, false);
             testTree.insertIDs(context, 0, ids);
             ArrayList<Integer> new_ids = new ArrayList<>();
             new_ids.add(30);
-            testTree.insertIDs(context, 1, new_ids);
-            new_ids.remove(0);
-            new_ids.add(150);
+            testTree.insertIDs(context, 0, new_ids);
+            new_ids.set(0, 150);
             testTree.insertIDs(context, 3, new_ids);
-            new_ids.remove(0);
-            new_ids.add(230);
+            new_ids.set(0, 230);
             testTree.insertIDs(context, 5, new_ids);
-            new_ids.remove(0);
-            new_ids.add(270);
+            new_ids.set(0, 270);
             testTree.insertIDs(context, 7, new_ids);
-            new_ids.remove(0);
-            new_ids.add(350);
+            new_ids.set(0, 350);
             testTree.insertIDs(context, 9, new_ids);
-            new_ids.remove(0);
-            new_ids.add(450);
+            new_ids.set(0, 450);
             testTree.insertIDs(context, 11, new_ids);
-            new_ids.remove(0);
-            new_ids.add(550);
+            new_ids.set(0, 550);
             testTree.insertIDs(context, 13, new_ids);
-            new_ids.remove(0);
-            new_ids.add(800);
-            testTree.insertIDs(context, 16, new_ids);
-            new_ids.remove(0);
-            new_ids.add(a[i]*10);
+            new_ids.set(0, a[i]*10);
             testTree.insertIDs(context, aa[i], new_ids);
 
         }
     }
 
-    public static void testNodeMergeByCount(DBContext context, CountedBTree testTree) {
+    public static void testNodeMergeByCount(DBContext context) {
+        String testName = "tNMBC";
+        CountedBTree testTree = new CountedBTree(context, testName, false);
         ArrayList<Integer> ids = new ArrayList<>();
-        for(int i = 0; i < 7; i++){
-            ids.add(i*100+100);
+        for(int i = 1; i <= 7; i++){
+            ids.add(i*100);
         }
         testTree.insertIDs(context, 0, ids);
-        testTree.deleteIDs(context, 2, 1);
+        ids = new ArrayList<>();
+        ids.add(50);
+        testTree.insertIDs(context, 0, ids);
+        testTree.deleteIDs(context, 3, 1);
 
     }
 
-    public static void NodeMergeRootMergeByCount(DBContext context, CountedBTree testTree) {
+    public static void NodeMergeRootMergeByCount(DBContext context) {
+        String testName = "NMRMBC";
+        CountedBTree testTree = new CountedBTree(context, testName, false);
         ArrayList<Integer> ids = new ArrayList<>();
+        int [] numbers = {50, 100, 200, 230, 270, 300, 330, 400, 500, 550, 700, 800, 850};
         ids.add(50);
-        ids.add(100);
-        ids.add(200);
-        ids.add(230);
-        ids.add(270);
-        ids.add(300);
-        ids.add(330);
-        ids.add(400);
-        ids.add(500);
-        ids.add(550);
-        ids.add(700);
-        ids.add(800);
-        ids.add(850);
-
-
+        for(int i = 0; i < 13; i++){
+            ids.set(0, numbers[i]);
+            testTree.insertIDs(context, i, ids);
+        }
         testTree.insertIDs(context, 0 , ids);
         testTree.deleteIDs(context, 0, 1);
 
     }
 
-    public static void NodeMergeRootMerge1ByCount(DBContext context, CountedBTree testTree) {
+    public static void NodeMergeRootMerge1ByCount(DBContext context) {
+        String testName = "tNMRM1BC";
+        CountedBTree testTree = new CountedBTree(context, testName, false);
         ArrayList<Integer> ids = new ArrayList<>();
+        int [] numbers = {50, 100, 200, 230, 270, 300, 330, 400, 500, 550, 700, 800, 850, 900, 950, 1000, 1050, 1100, 1150};
         ids.add(50);
-        ids.add(100);
-        ids.add(200);
-        ids.add(230);
-        ids.add(270);
-        ids.add(300);
-        ids.add(330);
-        ids.add(400);
-        ids.add(500);
-        ids.add(550);
-        ids.add(700);
-        ids.add(800);
-        ids.add(850);
-        ids.add(900);
-        ids.add(950);
-        ids.add(1000);
-        ids.add(1050);
-        ids.add(1100);
-        ids.add(1150);
-
-
+        for(int i = 0; i < 19; i++){
+            ids.set(0, numbers[i]);
+            testTree.insertIDs(context, i, ids);
+        }
         testTree.insertIDs(context, 0, ids);
         testTree.deleteIDs(context, 0, 1);
         testTree.deleteIDs(context, 13, 1);

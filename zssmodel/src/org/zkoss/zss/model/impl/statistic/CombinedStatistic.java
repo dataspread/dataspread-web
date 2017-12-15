@@ -37,20 +37,20 @@ public class CombinedStatistic<T extends Comparable<T>> implements AbstractStati
     }
 
     @Override
-    public int findIndex(ArrayList<AbstractStatistic> stat_list, Type type, boolean isLeaf){
+    public int findIndex(ArrayList<AbstractStatistic> stat_list, Type type, boolean isLeaf, boolean isAdd){
         if (type == Type.KEY){
             ArrayList<AbstractStatistic> new_list = new ArrayList<>();
             for (int i = 0; i < stat_list.size(); i++){
                 new_list.add(((CombinedStatistic<T>) stat_list.get(i)).key);
             }
-            return this.key.findIndex(new_list, type, isLeaf);
+            return this.key.findIndex(new_list, type, isLeaf, isAdd);
         }
         else {
             ArrayList<AbstractStatistic> new_list = new ArrayList<>();
             for (int i = 0; i < stat_list.size(); i++){
                 new_list.add(((CombinedStatistic<T>) stat_list.get(i)).count);
             }
-            return this.count.findIndex(new_list, type, isLeaf);
+            return this.count.findIndex(new_list, type, isLeaf, isAdd);
         }
     }
 

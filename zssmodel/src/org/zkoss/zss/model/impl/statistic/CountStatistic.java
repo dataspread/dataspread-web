@@ -13,20 +13,22 @@ public class CountStatistic implements AbstractStatistic {
     }
 
     @Override
-    public int findIndex(ArrayList<AbstractStatistic> counts, Type type, boolean isLeaf){
+    public int findIndex(ArrayList<AbstractStatistic> counts, Type type, boolean isLeaf, boolean isAdd){
         int lo = 0, hi = counts.size();
         int remain = this.count;
         if (remain <= 0) return lo;
+        int check = 1;
+        if (!isAdd) check--;
         while (hi != lo) {
             remain -= ((CountStatistic) counts.get(lo)).count;
-            if (remain <= 0) {
-                if (isLeaf)
+            if (remain < check) {
+                if (isAdd && isLeaf)
                     lo++;
                 return lo;
             }
             lo++;
         }
-        if (isLeaf) lo++;
+        if (isAdd && isLeaf) lo++;
         return lo;
     }
 

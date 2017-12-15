@@ -33,7 +33,7 @@ public class KeyStatistic<T extends Comparable<T>> implements AbstractStatistic 
      * @return children index
      */
     @Override
-    public int findIndex(ArrayList<AbstractStatistic> keys, Type type, boolean isLeaf) {
+    public int findIndex(ArrayList<AbstractStatistic> keys, Type type, boolean isLeaf, boolean isAdd) {
         int lo = 0, hi = keys.size();
         int index = lo;
         while (hi > lo) {
