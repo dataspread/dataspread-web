@@ -237,7 +237,7 @@ public class AppCtrl extends CtrlBase<Component> {
             @Override
             public void onEvent(Event event) throws Exception {
                 onSheetSelect();
-                createNavS((SheetImpl) ((SheetSelectEvent) event).getSheet().getInternalSheet());
+                //createNavS((SheetImpl) ((SheetSelectEvent) event).getSheet().getInternalSheet());
             }
         });
 
@@ -593,7 +593,7 @@ public class AppCtrl extends CtrlBase<Component> {
                         /*ss.setNavSBuckets(newSheet.getDataModel().navSbuckets);
                         createNavSTree(newSheet.getDataModel().navSbuckets);
                         updateColModel(newSheet);*/
-                        createNavS((SheetImpl) newSheet);
+                        //createNavS((SheetImpl) newSheet);
                         Messagebox.show("File imported", "DataSpread",
                                 Messagebox.OK, Messagebox.INFORMATION, null);
 

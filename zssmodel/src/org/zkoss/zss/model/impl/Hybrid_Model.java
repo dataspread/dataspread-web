@@ -765,6 +765,7 @@ public class Hybrid_Model extends RCV_Model {
             connection.commit(); //TODO: pass connection to import
 
             model.importSheet(reader, delimiter);
+            logger.info("Import Sheet Commited");
 
             this.navSbuckets  = model.navSbuckets;
             this.navS = model.navS;
