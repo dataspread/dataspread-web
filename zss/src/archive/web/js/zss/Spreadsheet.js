@@ -1126,7 +1126,7 @@ zss.Spreadsheet = zk.$extends(zul.wgt.Div, {
 			colFreeze = this.getColumnFreeze();
 		if ((rowFreeze != undefined && rowFreeze > -1) || (colFreeze != undefined && colFreeze > -1)) { // ZSS-392: minor issue
 			var sheet = this.sheetCtrl;
-			if (!sheet)
+			if (!sheet) return;
 			
 //			Bug ZSS-766: the modification fix the issue. but it also causes other issue when 
 //			tiny size of width and height of browser window with frozen column and row. 
