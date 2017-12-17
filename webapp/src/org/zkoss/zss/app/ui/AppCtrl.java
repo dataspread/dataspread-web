@@ -235,7 +235,7 @@ public class AppCtrl extends CtrlBase<Component> {
             private static final long serialVersionUID = -6317703235308792786L;
 
             @Override
-            public void onEvent(Event event) throws Exception {
+            public void onEvent(Event event) {
                 onSheetSelect();
                 //createNavS((SheetImpl) ((SheetSelectEvent) event).getSheet().getInternalSheet());
             }
@@ -245,7 +245,7 @@ public class AppCtrl extends CtrlBase<Component> {
             private static final long serialVersionUID = -2428002022759075909L;
 
             @Override
-            public void onEvent(Event event) throws Exception {
+            public void onEvent(Event event) {
                 onAfterUndoableManagerAction();
             }
         });
@@ -255,7 +255,7 @@ public class AppCtrl extends CtrlBase<Component> {
             private static final long serialVersionUID = 1870486146113521339L;
 
             @Override
-            public void onEvent(Event event) throws Exception {
+            public void onEvent(Event event) {
                 final SyncFriendFocusEvent fe = (SyncFriendFocusEvent) event;
                 onSyncFriendFocus(fe.getInBook(), fe.getInSheet());
             }
@@ -267,7 +267,7 @@ public class AppCtrl extends CtrlBase<Component> {
                         private static final long serialVersionUID = 5699364737927805458L;
 
                         @Override
-                        public void onEvent(BookmarkEvent event) throws Exception {
+                        public void onEvent(BookmarkEvent event) {
                             String bookmark = null;
                             try {
                                 bookmark = URLDecoder.decode(event.getBookmark(), UTF8);
@@ -302,7 +302,7 @@ public class AppCtrl extends CtrlBase<Component> {
 
         Executions.getCurrent().getDesktop().addListener(new DesktopCleanup() {
             @Override
-            public void cleanup(Desktop desktop) throws Exception {
+            public void cleanup(Desktop desktop) {
                 doCloseBook();
                 collaborationInfo.removeUsername(username);
             }
@@ -337,7 +337,7 @@ public class AppCtrl extends CtrlBase<Component> {
             desktop.setBookmark(bookmark);
     }
 
-    private void initBook() throws UnsupportedEncodingException {
+    private void initBook() {
         String bookName = null;
         Execution exec = Executions.getCurrent();
         if (bookName == null) {
@@ -401,7 +401,7 @@ public class AppCtrl extends CtrlBase<Component> {
             SaveBookAsCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
                 private static final long serialVersionUID = 5953139810992856892L;
 
-                public void onEvent(DlgCallbackEvent event) throws Exception {
+                public void onEvent(DlgCallbackEvent event) {
                     if (SaveBookAsCtrl.ON_SAVE.equals(event.getName())) {
 
                         String name = (String) event.getData(SaveBookAsCtrl.ARG_NAME);
@@ -454,7 +454,7 @@ public class AppCtrl extends CtrlBase<Component> {
         RegisterCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
             private static final long serialVersionUID = -6819708673820196683L;
 
-            public void onEvent(DlgCallbackEvent event) throws Exception {
+            public void onEvent(DlgCallbackEvent event) {
                 if (RegisterCtrl.ON_USERNAME_CHANGE.equals(event.getName())) {
                     String name = (String) event.getData(UsernameCtrl.ARG_NAME);
                     if (name.equals(username))
@@ -482,7 +482,7 @@ public class AppCtrl extends CtrlBase<Component> {
             UsernameCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
                 private static final long serialVersionUID = -6819708673820196683L;
 
-                public void onEvent(DlgCallbackEvent event) throws Exception {
+                public void onEvent(DlgCallbackEvent event) {
                     if (UsernameCtrl.ON_USERNAME_CHANGE.equals(event.getName())) {
                         String name = (String) event.getData(UsernameCtrl.ARG_NAME);
                         if (name.equals(username))
@@ -738,7 +738,7 @@ public class AppCtrl extends CtrlBase<Component> {
                     private static final long serialVersionUID = -7373178956047605810L;
 
                     @Override
-                    public void onEvent(Event event) throws Exception {
+                    public void onEvent(Event event) {
                         if (event.getData().equals(Messagebox.OK)) {
                             yesCallback.invoke();
                         }
@@ -835,7 +835,7 @@ public class AppCtrl extends CtrlBase<Component> {
         SaveBookAsCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
             private static final long serialVersionUID = 3378482725465871522L;
 
-            public void onEvent(DlgCallbackEvent event) throws Exception {
+            public void onEvent(DlgCallbackEvent event) {
                 if (SaveBookAsCtrl.ON_SAVE.equals(event.getName())) {
                     updatePageInfo();
                 }
@@ -984,7 +984,7 @@ public class AppCtrl extends CtrlBase<Component> {
         OpenManageBookCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
             private static final long serialVersionUID = 7753635062865984294L;
 
-            public void onEvent(DlgCallbackEvent event) throws Exception {
+            public void onEvent(DlgCallbackEvent event) {
                 if (OpenManageBookCtrl.ON_OPEN.equals(event.getName())) {
                     Book book = (Book) event.getData(OpenManageBookCtrl.ARG_BOOK);
                     doOpenExistingBook(book);
@@ -1118,7 +1118,7 @@ public class AppCtrl extends CtrlBase<Component> {
         Fileupload.get(1, new SerializableEventListener<UploadEvent>() {
             private static final long serialVersionUID = -3555918387396107106L;
 
-            public void onEvent(UploadEvent event) throws Exception {
+            public void onEvent(UploadEvent event) {
                 Media media = event.getMedia();
                 if (media == null) {
                     return;
@@ -1187,7 +1187,7 @@ public class AppCtrl extends CtrlBase<Component> {
         HyperlinkCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
             private static final long serialVersionUID = -2571984995170497501L;
 
-            public void onEvent(DlgCallbackEvent event) throws Exception {
+            public void onEvent(DlgCallbackEvent event) {
                 if (HyperlinkCtrl.ON_OK.equals(event.getName())) {
                     final String address = (String) event.getData(HyperlinkCtrl.ARG_ADDRESS);
                     final String label = (String) event.getData(HyperlinkCtrl.ARG_DISPLAY);
@@ -1227,7 +1227,7 @@ public class AppCtrl extends CtrlBase<Component> {
         return dtnc;
     }
 
-   private void createNavSTree(ArrayList<Bucket<String>> bucketList) throws Exception {
+   private void createNavSTree(ArrayList<Bucket<String>> bucketList) {
 
         //treeBucket.setAutopaging(true);
         BucketTreeNodeCollection<Bucket<String>> btnc = new BucketTreeNodeCollection<Bucket<String>>();
@@ -1251,7 +1251,7 @@ public class AppCtrl extends CtrlBase<Component> {
 
 
 
-    public void onChartsCreate(ZHighCharts chartComp25) throws Exception {
+    public void onChartsCreate(ZHighCharts chartComp25) {
 
         //================================================================================
 
@@ -1350,7 +1350,7 @@ public class AppCtrl extends CtrlBase<Component> {
 
     @Listen("onSelect = #treeBucket")
     public void nodeSelected() {
-        DefaultTreeNode<Bucket<String>> selectedNode = (DefaultTreeNode<Bucket<String>>)treeBucket.getSelectedItem().getValue();
+        DefaultTreeNode<Bucket<String>> selectedNode = treeBucket.getSelectedItem().getValue();
 
         System.out.println("Name: "+selectedNode.getData().getName());
 
@@ -1408,7 +1408,7 @@ public class AppCtrl extends CtrlBase<Component> {
         SSheet currentSheet = ss.getSelectedSSheet();
         try {
             currentSheet.getDataModel().setIndexString("col_"+index);
-            ((SheetImpl) currentSheet).clearCache();
+            currentSheet.clearCache();
             ss.setNavSBuckets(currentSheet.getDataModel().createNavS(currentSheet,0,0));
             createNavSTree(ss.getNavSBuckets());
             ((SheetImpl) currentSheet).fullRefresh();

@@ -54,7 +54,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	private static final Log _logger = Log.lookup(SheetImpl.class);
     //Mangesh
     static final private int PreFetchRows = Library.getIntProperty("PreFetchRows", 200);
-    static final private int PreFetchColumns = Library.getIntProperty("PreFetchColumns", 30);;
+    static final private int PreFetchColumns = Library.getIntProperty("PreFetchColumns", 30);
     /**
      * internal use only for developing/test state, should remove when stable
      */
@@ -1341,7 +1341,7 @@ public class SheetImpl extends AbstractSheetAdv {
 		CellRegion[] cache = (CellRegion[]) sheetDataCache.asMap().keySet().toArray();
 		Arrays.stream(cache)
 				.filter(e -> cellRegion.contains(e))
-				.forEach(sheetDataCache::invalidate);;
+				.forEach(sheetDataCache::invalidate);
 	}
 
     public void clearCache() {
@@ -2303,7 +2303,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	@Override
 	public void setSyncComputation(boolean syncComputation)
 	{
-		this.syncComputation = syncComputation;
+		SheetImpl.syncComputation = syncComputation;
 	}
 
 	public String getHashValue() {

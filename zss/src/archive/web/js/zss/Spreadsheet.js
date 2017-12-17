@@ -36,7 +36,7 @@ Copyright (C) 2007 Potix Corporation. All Rights Reserved.
 		if (zss.Spreadsheet.scrollWidth == 0)
 			zss.Spreadsheet.scrollWidth = scr.offsetHeight - scr.clientHeight;
 		body.removeChild(scr);
-		return;
+
 	}
 	
 	function doUpdate(wgt, shtId, data, token) {
@@ -653,7 +653,7 @@ zss.Spreadsheet = zk.$extends(zul.wgt.Div, {
             }
         },
 		actionDisabled: function (v) {
-			var tb = this._toolbar
+			var tb = this._toolbar;
 			if (tb)
 				tb.setDisabled(v);
 			if (this.getShowContextMenu()) {
@@ -1126,7 +1126,7 @@ zss.Spreadsheet = zk.$extends(zul.wgt.Div, {
 			colFreeze = this.getColumnFreeze();
 		if ((rowFreeze != undefined && rowFreeze > -1) || (colFreeze != undefined && colFreeze > -1)) { // ZSS-392: minor issue
 			var sheet = this.sheetCtrl;
-			if (!sheet) return;
+			if (!sheet)
 			
 //			Bug ZSS-766: the modification fix the issue. but it also causes other issue when 
 //			tiny size of width and height of browser window with frozen column and row. 

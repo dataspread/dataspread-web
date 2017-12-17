@@ -363,7 +363,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 		FormulaAsyncScheduler.initUiController(new FormulaAsyncUIControllerImpl());
 		this.addEventListener("onStartEditingImpl", new SerializableEventListener() {
 			private static final long serialVersionUID = 2401696322103957589L;
-			public void onEvent(Event event) throws Exception {
+			public void onEvent(Event event) {
 				Object[] data = (Object[]) event.getData();
 				processStartEditing((String) data[0],
 						(StartEditingEvent) data[1], (String) data[2]);
@@ -371,7 +371,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 		});
 		this.addEventListener("onStopEditingImpl", new SerializableEventListener() {
 			private static final long serialVersionUID = 2412586322103952998L;
-			public void onEvent(Event event) throws Exception {
+			public void onEvent(Event event) {
 					Object[] data = (Object[]) event.getData();
 					processStopEditing((String) data[0], (StopEditingEvent) data[1], (String) data[2]);
 				}
@@ -379,7 +379,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 		//ZSS-816
 		this.addEventListener(_ON_PROCESS_DEFER_OPERATIONS,  new SerializableEventListener() {
 			private static final long serialVersionUID = 2401758232103952998L;
-			public void onEvent(Event event) throws Exception {
+			public void onEvent(Event event) {
 				Map<String, DeferOperation> map = (Map<String, DeferOperation>) event.getData();
 				processDeferOperations(map);
 			}
@@ -814,7 +814,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 				this.addEventListener(Events.ON_CELL_FOUCS, _focusListener = new SerializableEventListener() {
 					private static final long serialVersionUID = 2716358947569822998L;
 					@Override
-					public void onEvent(Event event) throws Exception {
+					public void onEvent(Event event) {
 						doMoveSelfFocus((CellEvent) event);
 					}
 				});
@@ -3206,7 +3206,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 				//callback
 				new EventListener() {
 					@Override
-					public void onEvent(Event event) throws Exception {
+					public void onEvent(Event event) {
 						final String eventname = event.getName();
 						if (Messagebox.ON_CANCEL.equals(eventname)) { //cancel
 							Spreadsheet.this.processCancelEditing0(token, sheet, rowIdx, colIdx, true, editingType); //skipMove
@@ -4463,7 +4463,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 		}
 
 		@Override
-		public void cleanup(Desktop desktop) throws Exception {
+		public void cleanup(Desktop desktop) {
 			Component comp = desktop.getComponentByUuid(_ssid);
 			if (comp instanceof Spreadsheet) {
 				try {

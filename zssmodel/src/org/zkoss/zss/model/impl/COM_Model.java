@@ -114,7 +114,7 @@ public class COM_Model extends Model {
     }
 
     @Override
-    public void importSheet(Reader reader, char delimiter) throws IOException {
+    public void importSheet(Reader reader, char delimiter) {
         throw new RuntimeException("Not Supported");
     }
 

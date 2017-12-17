@@ -50,11 +50,14 @@ public class BTree <K extends AbstractStatistic> {
         loadMetaData(context);
     }
 
-    public BTree(DBContext context, String tableName, BlockStore sourceBlockStore, K emptyStatistic, boolean useKryo) {
-        this.emptyStatistic = emptyStatistic;
+    /**
+     * Construct an BTree from an existing BTree, in-memory
+     */
+    protected BTree(DBContext context, String tableName, BlockStore sourceBlockStore, K emptyStatistic, boolean useKryo) {
         bs = sourceBlockStore.clone(context, tableName);
-        useKryo(useKryo);
+        this.emptyStatistic = emptyStatistic;
         loadMetaData(context);
+        useKryo(useKryo);
     }
 
     private void loadMetaData(DBContext context) {

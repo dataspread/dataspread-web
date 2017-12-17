@@ -213,7 +213,7 @@ public class RCV_Model extends Model {
 
         ArrayList<Integer> ids = new ArrayList<Integer>();
 
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();) {
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             DBContext context = new DBContext(connection);
             ids.add(1);
             for(int i=0;i<result.size();i++){

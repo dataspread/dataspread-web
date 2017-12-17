@@ -7,7 +7,7 @@ import java.util.stream.IntStream;
 
 public class FormulaTesting {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         String url = "jdbc:postgresql://127.0.0.1:5432/ibd";
         String driver = "org.postgresql.Driver";
         String userName = "mangesh";

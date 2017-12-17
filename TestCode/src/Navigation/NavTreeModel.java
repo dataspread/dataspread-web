@@ -43,8 +43,7 @@ public class NavTreeModel implements TreeModel {
         if (node instanceof NavIndex.Bucket)
         {
             NavIndex.Bucket bucket = (NavIndex.Bucket) node;
-            if (bucket.size>1000)
-                return false;
+            return bucket.size <= 1000;
         }
         return true;
     }

@@ -80,12 +80,9 @@ public class BookImpl implements Book{
 			return false;
 		BookImpl other = (BookImpl) obj;
 		if (_bookRef == null) {
-			if (other._bookRef != null)
-				return false;
-		} else if (!_bookRef.equals(other._bookRef))
-			return false;
-		return true;
-	}
+            return other._bookRef == null;
+		} else return _bookRef.equals(other._bookRef);
+    }
 
 	public String getBookName() {
 		return getNative().getBookName();

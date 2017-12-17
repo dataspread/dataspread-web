@@ -153,7 +153,7 @@ public class NameImpl extends AbstractNameAdv {
 	
 	@Override
 	public boolean isFormulaParsingError() {
-		return _refersToExprFormula==null?false:_refersToExprFormula.hasError();
+		return _refersToExprFormula != null && _refersToExprFormula.hasError();
 	}
 
 	private void clearFormulaDependency(String nameName) {
