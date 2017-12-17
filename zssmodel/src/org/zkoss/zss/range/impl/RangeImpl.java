@@ -2125,7 +2125,7 @@ public class RangeImpl implements SRange {
 						showError, alertStyle, errorTitle,
 						errorMessage);
 				//ZSS-729
-				new NotifyChangeHelper().notifyDataValidationChange(getSheet(), dv == null ? null : dv.getId());
+				new NotifyChangeHelper().notifyDataValidationChange(getSheet(), dv == null ? null : (String) dv.getId());
 				return null;
 			}
 		}.doInWriteLock(getLock());
