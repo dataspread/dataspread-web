@@ -36,7 +36,7 @@ Copyright (C) 2007 Potix Corporation. All Rights Reserved.
 		if (zss.Spreadsheet.scrollWidth == 0)
 			zss.Spreadsheet.scrollWidth = scr.offsetHeight - scr.clientHeight;
 		body.removeChild(scr);
-
+		return;
 	}
 	
 	function doUpdate(wgt, shtId, data, token) {

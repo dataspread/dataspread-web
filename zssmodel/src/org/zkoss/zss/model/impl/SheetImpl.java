@@ -2303,7 +2303,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	@Override
 	public void setSyncComputation(boolean syncComputation)
 	{
-		SheetImpl.syncComputation = syncComputation;
+		this.syncComputation = syncComputation;
 	}
 
 	public String getHashValue() {
