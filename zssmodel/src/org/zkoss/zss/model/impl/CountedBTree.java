@@ -12,12 +12,12 @@ public class CountedBTree implements PosMapping{
 
     public CountedBTree(DBContext context, String tableName, BlockStore sourceBlockStore) {
         CountStatistic emptyStatistic = new CountStatistic();
-        btree = new BTree<>(context, tableName, sourceBlockStore, emptyStatistic, true);
+        btree = new BTree<>(context, tableName, sourceBlockStore, emptyStatistic, false);
     }
 
     public CountedBTree(DBContext context, String tableName) {
         CountStatistic emptyStatistic = new CountStatistic();
-        btree = new BTree<>(context, tableName, emptyStatistic, true);
+        btree = new BTree<>(context, tableName, emptyStatistic, false);
         btree.updateMaxValue(context, 0);
     }
 

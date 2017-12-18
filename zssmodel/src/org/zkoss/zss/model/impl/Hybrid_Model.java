@@ -779,6 +779,8 @@ public class Hybrid_Model extends RCV_Model {
             modelEntry.modelType = ModelType.ROM_Model;
             modelEntry.tableName = model.getTableName();
             metaDataBlock.modelEntryList.add(modelEntry);
+            super.insertRows(dbContext, range.row, range.lastRow);
+            super.insertCols(dbContext, range.column, range.lastColumn);
             bs.putObject(0, metaDataBlock);
             bs.flushDirtyBlocks(dbContext);
             connection.commit();
