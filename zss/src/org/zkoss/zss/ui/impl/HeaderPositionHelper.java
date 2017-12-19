@@ -25,6 +25,7 @@ import org.model.DBHandler;
 
 import java.io.Serializable;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -154,40 +155,48 @@ public class HeaderPositionHelper {
 	
 	public void shiftMeta(int cellIndex, int offset) {
 
-		AutoRollbackConnection connection = DBHandler.instance.getConnection();
-		DBContext dbContext = new DBContext(connection);
+		;
 
-		final int index = getListIndex(cellIndex);
-		for (int j = _infos.size() - 1; j >= index; --j) {
-			final HeaderPositionInfo info = _infos.get(j);
-			info.setIndex(info.getIndex() + offset);
-			blockStore.putObject(info.getIndex(), info);
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+			DBContext dbContext = new DBContext(connection);
+			String createTable = "CREATE TABLE  IF NOT  EXISTS  db_events (" +
+					"action INTEGER NOT NULL," +
+					"data TEXT);";
+			final int index = getListIndex(cellIndex);
+			for (int j = _infos.size() - 1; j >= index; --j) {
+				final HeaderPositionInfo info = _infos.get(j);
+				info.setIndex(info.getIndex() + offset);
+				blockStore.putObject(info.getIndex(), info);
+			}
+
+			blockStore.flushDirtyBlocks(dbContext);
+			connection.commit();
 		}
 
-		blockStore.flushDirtyBlocks(dbContext);
-		connection.commit();
+
 	}
 
 	public void unshiftMeta(int cellIndex, int offset) {
 
-		AutoRollbackConnection connection = DBHandler.instance.getConnection();
-		DBContext dbContext = new DBContext(connection);
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            DBContext dbContext = new DBContext(connection);
 
-		final int bindex = getListIndex(cellIndex);
-		final int eindex = getListIndex(cellIndex + offset);
-		for (int j = eindex - 1; j >= bindex; --j) {
-			blockStore.freeBlock(_infos.get(j).getIndex());
-			_infos.remove(j);
-		}
+            final int bindex = getListIndex(cellIndex);
+            final int eindex = getListIndex(cellIndex + offset);
+            for (int j = eindex - 1; j >= bindex; --j) {
+                blockStore.freeBlock(_infos.get(j).getIndex());
+                _infos.remove(j);
+            }
 
-		for (int j = _infos.size() - 1; j >= bindex; --j) {
-			final HeaderPositionInfo info = _infos.get(j);
-			info.setIndex(info.getIndex() - offset);
-			blockStore.putObject(info.getIndex(), info);
-		}
+            for (int j = _infos.size() - 1; j >= bindex; --j) {
+                final HeaderPositionInfo info = _infos.get(j);
+                info.setIndex(info.getIndex() - offset);
+                blockStore.putObject(info.getIndex(), info);
+            }
 
-		blockStore.flushDirtyBlocks(dbContext);
-		connection.commit();
+            blockStore.flushDirtyBlocks(dbContext);
+            connection.commit();
+        }
 	}
 
 	public HeaderPositionInfo getInfo(int cellIndex) {
@@ -208,28 +217,30 @@ public class HeaderPositionHelper {
 			info.setHidden(hidden);
 		}
 
-		AutoRollbackConnection connection = DBHandler.instance.getConnection();
-		DBContext dbContext = new DBContext(connection);
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            DBContext dbContext = new DBContext(connection);
 
-		blockStore.putObject(Integer.valueOf(cellIndex),_infos.get(index));
+            blockStore.putObject(Integer.valueOf(cellIndex), _infos.get(index));
 
-		blockStore.flushDirtyBlocks(dbContext);
-		connection.commit();
+            blockStore.flushDirtyBlocks(dbContext);
+            connection.commit();
+        }
 
 	}
 
 	public void removeInfo(int cellIndex) {
-		AutoRollbackConnection connection = DBHandler.instance.getConnection();
-		DBContext dbContext = new DBContext(connection);
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            DBContext dbContext = new DBContext(connection);
 
-		final int j = Collections.binarySearch(_infos, Integer.valueOf(cellIndex), new HeaderPositionInfoComparator());
-		final int index = j < 0 ? (-j - 1) : j;
-		if (j >= 0) {
-			blockStore.freeBlock(cellIndex);
-			_infos.remove(index);
-		}
-		blockStore.flushDirtyBlocks(dbContext);
-		connection.commit();
+            final int j = Collections.binarySearch(_infos, Integer.valueOf(cellIndex), new HeaderPositionInfoComparator());
+            final int index = j < 0 ? (-j - 1) : j;
+            if (j >= 0) {
+                blockStore.freeBlock(cellIndex);
+                _infos.remove(index);
+            }
+            blockStore.flushDirtyBlocks(dbContext);
+            connection.commit();
+        }
 	}
 	
 	//given size in pixels, return the related cellIndex

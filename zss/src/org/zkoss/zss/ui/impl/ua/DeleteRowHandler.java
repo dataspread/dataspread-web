@@ -57,7 +57,7 @@ public class DeleteRowHandler extends AbstractHandler {
 				DeleteShift.UP));
 		SSheet isheet = ctx.getSheet().getInternalSheet();
 		Spreadsheet ss = ctx.getSpreadsheet();
-		ss.manuallyTriggerEvent(ModelEvents.ON_COLUMN_INSERT, isheet, range);
+		ss.manuallyTriggerEvent(ModelEvents.ON_ROW_DELETE, isheet, range);
 		ctx.clearClipboard();
 		return true;
 	}

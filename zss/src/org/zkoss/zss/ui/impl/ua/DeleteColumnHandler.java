@@ -57,7 +57,7 @@ public class DeleteColumnHandler extends AbstractHandler {
 				DeleteShift.LEFT));
 		SSheet isheet = ctx.getSheet().getInternalSheet();
 		Spreadsheet ss = ctx.getSpreadsheet();
-		ss.manuallyTriggerEvent(ModelEvents.ON_COLUMN_INSERT, isheet, range);
+		ss.manuallyTriggerEvent(ModelEvents.ON_COLUMN_DELETE, isheet, range);
 		ctx.clearClipboard();
 		return true;
 	}
