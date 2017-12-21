@@ -575,7 +575,7 @@ public class TOM_Model extends Model {
     }
 
     @Override
-    public void importSheet(Reader reader, char delimiter) {
+    public void importSheet(Reader reader, char delimiter, boolean useNav) {
         throw new UnsupportedOperationException();
     }
 

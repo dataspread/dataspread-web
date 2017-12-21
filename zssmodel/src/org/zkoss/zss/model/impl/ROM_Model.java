@@ -24,8 +24,6 @@ public class ROM_Model extends Model {
     public PosMapping rowMapping;
     private PosMapping colMapping;
 
-    private boolean isNav = false;
-
     //Create or load RCV_model.
     ROM_Model(DBContext context, SSheet sheet, String tableName) {
         this.sheet = sheet;
@@ -423,8 +421,8 @@ public class ROM_Model extends Model {
     }
 
     @Override
-    public void importSheet(Reader reader, char delimiter) throws IOException {
-        if(isNav)
+    public void importSheet(Reader reader, char delimiter, boolean useNav) throws IOException {
+        if(useNav)
         {
             importNavSheet(reader,delimiter);
             return;

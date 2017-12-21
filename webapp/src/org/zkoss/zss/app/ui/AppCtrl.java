@@ -237,7 +237,8 @@ public class AppCtrl extends CtrlBase<Component> {
             @Override
             public void onEvent(Event event) {
                 onSheetSelect();
-                //createNavS((SheetImpl) ((SheetSelectEvent) event).getSheet().getInternalSheet());
+
+                createNavS((SheetImpl) ((SheetSelectEvent) event).getSheet().getInternalSheet());
             }
         });
 
@@ -591,14 +592,15 @@ public class AppCtrl extends CtrlBase<Component> {
                         // Create a new Sheet and import file
                         loadedBook.getInternalBook().checkDBSchema();
                         SSheet newSheet = loadedBook.getInternalBook().createSheet(sheetName);
+
                         newSheet.getDataModel().importSheet(
                                 m.isBinary() ? new BufferedReader(new InputStreamReader(m.getStreamData())) :
-                                        m.getReaderData(), delimiter);
+                                        m.getReaderData(), delimiter, (((SheetImpl) newSheet).getEndRowIndex() > 100000));
 
                         /*ss.setNavSBuckets(newSheet.getDataModel().navSbuckets);
                         createNavSTree(newSheet.getDataModel().navSbuckets);
                         updateColModel(newSheet);*/
-                        //createNavS((SheetImpl) newSheet);
+                        createNavS((SheetImpl) newSheet);
                         Messagebox.show("File imported", "DataSpread",
                                 Messagebox.OK, Messagebox.INFORMATION, null);
 

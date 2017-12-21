@@ -751,7 +751,7 @@ public class Hybrid_Model extends RCV_Model {
 
 
     @Override
-    public void importSheet(Reader reader, char delimiter) throws IOException
+    public void importSheet(Reader reader, char delimiter, boolean useNav) throws IOException
     {
         logger.info("Importing sheet");
         // Create a ROM model and import the file to the ROM model.
@@ -764,7 +764,7 @@ public class Hybrid_Model extends RCV_Model {
 
             connection.commit(); //TODO: pass connection to import
 
-            model.importSheet(reader, delimiter);
+            model.importSheet(reader, delimiter, useNav);
             logger.info("Import Sheet Commited");
 
             this.navSbuckets  = model.navSbuckets;

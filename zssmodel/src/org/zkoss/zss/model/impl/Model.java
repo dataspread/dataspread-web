@@ -95,7 +95,7 @@ public abstract class Model {
 
     // Import a sheet from a inputStream
     // Gets a connection from handler and commits.
-    public abstract void importSheet(Reader reader, char delimiter) throws IOException;
+    public abstract void importSheet(Reader reader, char delimiter, boolean useNav) throws IOException;
 
     public abstract boolean deleteTableColumns(DBContext dbContext, CellRegion cellRegion);
 
