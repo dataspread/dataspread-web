@@ -60,11 +60,8 @@ public abstract class DirtyManager {
             if (!(o instanceof DirtyRecord))
                 return false;
             DirtyRecord dirtyRecord = (DirtyRecord) o;
-            if (region == dirtyRecord.region &&
-                    trxId == dirtyRecord.trxId)
-                return true;
-            else
-                return false;
+            return region == dirtyRecord.region &&
+                    trxId == dirtyRecord.trxId;
         }
     }
 }

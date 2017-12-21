@@ -1425,7 +1425,7 @@ public class BookImpl extends AbstractBookAdv{
 		
 		renameColumnNameFormula(table, oldName, newName1);
 		
-		return newName0 != null ? newName0 : null;
+		return newName0;
 	}
 	
 	//ZSS-967

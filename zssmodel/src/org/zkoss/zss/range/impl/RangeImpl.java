@@ -610,9 +610,7 @@ public class RangeImpl implements SRange {
 								//search name that has var prefix, (we use NAME to achieve var binding)
 								if(ref.getBookName().equals(bookName) && ref.getType()==RefType.NAME){
 									String refNameName = ((NameRef)ref).getNameName();
-									if(refNameName.equals(var) || refNameName.startsWith(var+".")){
-										return true;
-									}
+                                    return refNameName.equals(var) || refNameName.startsWith(var + ".");
 								}
 								return false;
 							}
@@ -2127,7 +2125,7 @@ public class RangeImpl implements SRange {
 						showError, alertStyle, errorTitle,
 						errorMessage);
 				//ZSS-729
-				new NotifyChangeHelper().notifyDataValidationChange(getSheet(), (String) (dv == null ? null : dv.getId()));
+				new NotifyChangeHelper().notifyDataValidationChange(getSheet(), dv == null ? null : (String) dv.getId());
 				return null;
 			}
 		}.doInWriteLock(getLock());
@@ -2487,7 +2485,7 @@ public class RangeImpl implements SRange {
 					initConnection(cell);
 				Object cellval = cell.getValue();
 				if (!equalObjects(cellval, value)) {
-					((AbstractCellAdv)cell).setStringValue(value, connection, true);
+					cell.setStringValue(value, connection, true);
 				}
 				return true;
 			}

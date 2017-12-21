@@ -653,7 +653,7 @@ zss.Spreadsheet = zk.$extends(zul.wgt.Div, {
             }
         },
 		actionDisabled: function (v) {
-			var tb = this._toolbar
+			var tb = this._toolbar;
 			if (tb)
 				tb.setDisabled(v);
 			if (this.getShowContextMenu()) {

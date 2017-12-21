@@ -195,7 +195,7 @@ public class OpenManageBookCtrl extends DlgCtrlBase{
 			private static final long serialVersionUID = 4698610847862970542L;
 
 			@Override
-			public void onEvent(Event event) throws Exception {
+			public void onEvent(Event event) {
 				if(event.getData().equals(Messagebox.OK)) {
 					BookImpl.deleteBook(bookName, bookTable);
 					reloadBookModel();

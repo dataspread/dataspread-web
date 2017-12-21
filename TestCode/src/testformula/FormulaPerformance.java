@@ -50,7 +50,7 @@ public class FormulaPerformance {
         //TransactionManager.INSTANCE.endTransaction(book);
     }
 
-    private static void loadAndShuffleTest(String dbid) throws Exception{
+    private static void loadAndShuffleTest(String dbid) {
         SBook book= BookBindings.getBookByName(dbid);
         //TransactionManager.INSTANCE.startTransaction(book);
         book.setNameAndLoad(dbid);

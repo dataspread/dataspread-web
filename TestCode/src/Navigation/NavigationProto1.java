@@ -89,7 +89,7 @@ public class NavigationProto1 {
         }
     }
 
-    public static void main(String[] args) throws SQLException {
+    public static void main(String[] args) {
         JFrame frame = new JFrame("NavigationProto1");
         NavigationProto1 navigationProto1 = new NavigationProto1();
         frame.setContentPane(navigationProto1.Panel1);

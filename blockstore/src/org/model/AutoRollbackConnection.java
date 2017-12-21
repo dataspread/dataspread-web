@@ -63,7 +63,7 @@ public class AutoRollbackConnection  implements AutoCloseable {
         } catch (SQLException e) {
             try {
                 connection.rollback();
-            } catch (SQLException e1) {};
+            } catch (SQLException e1) {}
             e.printStackTrace();
         }
     }

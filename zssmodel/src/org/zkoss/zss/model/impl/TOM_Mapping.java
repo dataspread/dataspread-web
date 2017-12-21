@@ -152,8 +152,8 @@ public class TOM_Mapping {
         final PosMapping colIdxTable;
 
         TableOrder(DBContext dbContext, String rowIdxTable, String colIdxTable) {
-            this.rowIdxTable = new BTree(dbContext, rowIdxTable);
-            this.colIdxTable = new BTree(dbContext, colIdxTable);
+            this.rowIdxTable = new CountedBTree(dbContext, rowIdxTable);
+            this.colIdxTable = new CountedBTree(dbContext, colIdxTable);
         }
     }
 }

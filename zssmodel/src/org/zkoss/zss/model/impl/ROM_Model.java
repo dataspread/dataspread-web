@@ -24,13 +24,11 @@ public class ROM_Model extends Model {
     public PosMapping rowMapping;
     private PosMapping colMapping;
 
-    private boolean isNav = true;
-
     //Create or load RCV_model.
     ROM_Model(DBContext context, SSheet sheet, String tableName) {
         this.sheet = sheet;
-        rowMapping = new BTree(context, tableName + "_row_idx");
-        colMapping = new BTree(context, tableName + "_col_idx");
+        rowMapping = new CountedBTree(context, tableName + "_row_idx");
+        colMapping = new CountedBTree(context, tableName + "_col_idx");
         this.tableName = tableName;
         this.navSbuckets = new ArrayList<Bucket<String>>();
         this.navS = new NavigationStructure(tableName);
@@ -129,12 +127,12 @@ public class ROM_Model extends Model {
         StringBuffer insertColumn = (new StringBuffer())
                 .append("ALTER TABLE ")
                 .append(tableName);
-        Integer ids[] = colMapping.createIDs(context, col, count);
-        for (int i = 0; i < ids.length; i++) {
+        ArrayList<Integer> ids = colMapping.createIDs(context, col, count);
+        for (int i = 0; i < ids.size(); i++) {
             insertColumn.append(" ADD COLUMN col_")
-                    .append(ids[i])
+                    .append(ids.get(i))
                     .append(" BYTEA");
-            if (i < ids.length - 1)
+            if (i < ids.size() - 1)
                 insertColumn.append(",");
         }
         try (Statement stmt = context.getConnection().createStatement()) {
@@ -146,12 +144,12 @@ public class ROM_Model extends Model {
 
     @Override
     public void deleteRows(DBContext context, int row, int count) {
-        Integer[] ids = rowMapping.deleteIDs(context, row, count);
+        ArrayList<Integer> ids = rowMapping.deleteIDs(context, row, count);
 
         AutoRollbackConnection connection = context.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(
                 "DELETE FROM " + tableName + " WHERE row = ANY(?)")) {
-            Array inArray = context.getConnection().createArrayOf("integer", ids);
+            Array inArray = context.getConnection().createArrayOf("integer", ids.toArray());
             stmt.setArray(1, inArray);
             stmt.execute();
         } catch (SQLException e) {
@@ -164,13 +162,13 @@ public class ROM_Model extends Model {
         StringBuffer deleteColumn = (new StringBuffer())
                 .append("ALTER TABLE ")
                 .append(tableName);
-        Integer[] ids = colMapping.deleteIDs(context, col, count);
-        for (int i = 0; i < ids.length - 1; i++)
+        ArrayList<Integer> ids = colMapping.deleteIDs(context, col, count);
+        for (int i = 0; i < ids.size() - 1; i++)
             deleteColumn.append(" DROP COLUMN col_")
-                    .append(ids[i])
+                    .append(ids.get(i))
                     .append(",");
         deleteColumn.append(" DROP COLUMN col_")
-                .append(ids[ids.length - 1]);
+                .append(ids.get(ids.size() - 1));
 
         AutoRollbackConnection connection = context.getConnection();
         try (Statement stmt = connection.createStatement()) {
@@ -203,20 +201,20 @@ public class ROM_Model extends Model {
             insertCols(context, colMapping.size(context), columnList.last() - colMapping.size(context) + 1);
 
 
-        Integer[] idsCol = colMapping.getIDs(context, columnList.first(),
+        ArrayList<Integer> idsCol = colMapping.getIDs(context, columnList.first(),
                 columnList.last() - columnList.first() + 1);
 
         StringBuffer update = new StringBuffer("WITH upsert AS (UPDATE ")
                 .append(tableName)
                 .append(" SET ");
-        for (int i = 0; i < idsCol.length; ++i) {
+        for (int i = 0; i < idsCol.size(); ++i) {
             update.append("col_")
-                    .append(idsCol[i])
+                    .append(idsCol.get(i))
                     .append("=COALESCE(?,")
                     .append("col_")
-                    .append(idsCol[i])
+                    .append(idsCol.get(i))
                     .append(")");
-            if (i < idsCol.length - 1)
+            if (i < idsCol.size() - 1)
                 update.append(",");
         }
 
@@ -225,30 +223,30 @@ public class ROM_Model extends Model {
                 .append(tableName)
                 .append("(row,");
 
-        for (int i = 0; i < idsCol.length; ++i) {
+        for (int i = 0; i < idsCol.size(); ++i) {
             update.append("col_")
-                    .append(idsCol[i]);
-            if (i < idsCol.length - 1)
+                    .append(idsCol.get(i));
+            if (i < idsCol.size() - 1)
                 update.append(",");
         }
         update.append(") SELECT ");
-        for (int i = 0; i < idsCol.length; ++i)
+        for (int i = 0; i < idsCol.size(); ++i)
             update.append("?,");
         update.append("? WHERE NOT EXISTS (SELECT * FROM upsert)");
         AutoRollbackConnection connection = context.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(update.toString())) {
             for (Map.Entry<Integer, SortedMap<Integer, AbstractCellAdv>> _row : groupedCells.entrySet()) {
-                int rowId = rowMapping.getIDs(context, _row.getKey(), 1)[0];
-                stmt.setInt(idsCol.length + 1, rowId);
-                stmt.setInt(idsCol.length + 2, rowId);
-                for (int i = 0; i < idsCol.length; ++i) {
+                int rowId = (int) rowMapping.getIDs(context, _row.getKey(), 1).get(0);
+                stmt.setInt(idsCol.size() + 1, rowId);
+                stmt.setInt(idsCol.size() + 2, rowId);
+                for (int i = 0; i < idsCol.size(); ++i) {
                     if (_row.getValue().get(columnList.first() + i) == null) {
                         stmt.setNull(i + 1, Types.BINARY);
-                        stmt.setNull(i + idsCol.length + 3, Types.BINARY);
+                        stmt.setNull(i + idsCol.size() + 3, Types.BINARY);
                     } else {
                         stmt.setBytes(i + 1,
                                 _row.getValue().get(columnList.first() + i).toBytes());
-                        stmt.setBytes(i + idsCol.length + 3,
+                        stmt.setBytes(i + idsCol.size() + 3,
                                 _row.getValue().get(columnList.first() + i).toBytes());
                     }
                 }
@@ -264,22 +262,22 @@ public class ROM_Model extends Model {
         StringBuffer delete = new StringBuffer("UPDATE ")
                 .append(tableName)
                 .append(" SET ");
-        Integer[] colIds = colMapping.getIDs(context, range.getColumn(), range.getLastColumn() - range.getColumn() + 1);
-        for (int i = 0; i < colIds.length - 1; i++) {
+        ArrayList<Integer> colIds = colMapping.getIDs(context, range.getColumn(), range.getLastColumn() - range.getColumn() + 1);
+        for (int i = 0; i < colIds.size() - 1; i++) {
             delete.append("col_")
-                    .append(colIds[i])
+                    .append(colIds.get(i))
                     .append("=null,");
         }
         delete.append("col_")
-                .append(colIds[colIds.length - 1])
+                .append(colIds.get(colIds.size() - 1))
                 .append("=null");
         delete.append(" WHERE row = ANY (?) ");
 
-        Integer[] rowIds = rowMapping.getIDs(context, range.getRow(), range.getLastRow() - range.getRow() + 1);
+        ArrayList<Integer> rowIds = rowMapping.getIDs(context, range.getRow(), range.getLastRow() - range.getRow() + 1);
 
         AutoRollbackConnection connection = context.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(delete.toString())) {
-            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
+            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds.toArray());
             stmt.setArray(1, inArrayRow);
             stmt.executeUpdate();
         } catch (SQLException e) {
@@ -305,21 +303,21 @@ public class ROM_Model extends Model {
             insertCols(context, colMapping.size(context), columnList.last() - colMapping.size(context) + 1);
 
 
-        Integer[] idsCol = colMapping.getIDs(context, columnList.first(),
+        ArrayList<Integer> idsCol = colMapping.getIDs(context, columnList.first(),
                 columnList.last() - columnList.first() + 1);
 
         StringBuffer update = (new StringBuffer())
                 .append("UPDATE ")
                 .append(tableName)
                 .append(" SET ");
-        for (int i = 0; i < idsCol.length; ++i) {
+        for (int i = 0; i < idsCol.size(); ++i) {
             update.append("col_")
-                    .append(idsCol[i])
+                    .append(idsCol.get(i))
                     .append("= CASE WHEN ? IS NULL THEN NULL ELSE ")
                     .append("col_")
-                    .append(idsCol[i])
+                    .append(idsCol.get(i))
                     .append(" END");
-            if (i < idsCol.length - 1)
+            if (i < idsCol.size() - 1)
                 update.append(",");
         }
         update.append(" WHERE row = ?");
@@ -327,9 +325,9 @@ public class ROM_Model extends Model {
         AutoRollbackConnection connection = context.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(update.toString())) {
             for (Map.Entry<Integer, SortedMap<Integer, AbstractCellAdv>> _row : groupedCells.entrySet()) {
-                int rowId = rowMapping.getIDs(context, _row.getKey(), 1)[0];
-                stmt.setInt(idsCol.length + 1, rowId);
-                for (int i = 0; i < idsCol.length; ++i) {
+                int rowId = (int) rowMapping.getIDs(context, _row.getKey(), 1).get(0);
+                stmt.setInt(idsCol.size() + 1, rowId);
+                for (int i = 0; i < idsCol.size(); ++i) {
                     if (_row.getValue().get(i) == null)
                         stmt.setInt(i + 1, 1);
                     else
@@ -355,19 +353,19 @@ public class ROM_Model extends Model {
         if (fetchRegion == null)
             return cells;
 
-        Integer[] rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
-        Integer[] colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
-        HashMap<Integer, Integer> row_map = IntStream.range(0, rowIds.length)
-                .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(rowIds[i], fetchRegion.getRow() + i),
+        ArrayList<Integer> rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
+        ArrayList<Integer> colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
+        HashMap<Integer, Integer> row_map = IntStream.range(0, rowIds.size())
+                .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(rowIds.get(i), fetchRegion.getRow() + i),
                         (map1, map2) -> map1.putAll(map2));
-        HashMap<Integer, Integer> col_map = IntStream.range(0, colIds.length)
-                .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(colIds[i], fetchRegion.getColumn() + i),
+        HashMap<Integer, Integer> col_map = IntStream.range(0, colIds.size())
+                .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(colIds.get(i), fetchRegion.getColumn() + i),
                         (map1, map2) -> map1.putAll(map2));
 
         StringBuffer select = new StringBuffer("SELECT row");
-        for (int i = 0; i < colIds.length; i++)
+        for (int i = 0; i < colIds.size(); i++)
             select.append(",col_")
-                    .append(colIds[i]);
+                    .append(colIds.get(i));
 
         select.append(" FROM ")
                 .append(tableName)
@@ -375,7 +373,7 @@ public class ROM_Model extends Model {
 
         AutoRollbackConnection connection = context.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
-            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
+            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds.toArray());
             stmt.setArray(1, inArrayRow);
 
             ResultSet rs = stmt.executeQuery();
@@ -383,8 +381,8 @@ public class ROM_Model extends Model {
                 int row_id = rs.getInt(1);
                 int row = row_map.get(row_id);
 
-                for (int i = 0; i < colIds.length; i++) {
-                    int col = col_map.get(colIds[i]);
+                for (int i = 0; i < colIds.size(); i++) {
+                    int col = col_map.get(colIds.get(i));
                     byte[] data = rs.getBytes(i + 2);
                     if (data!=null) {
                         AbstractCellAdv cell = CellImpl.fromBytes(sheet, row, col, data);
@@ -423,8 +421,8 @@ public class ROM_Model extends Model {
     }
 
     @Override
-    public void importSheet(Reader reader, char delimiter) throws IOException {
-        if(isNav)
+    public void importSheet(Reader reader, char delimiter, boolean useNav) throws IOException {
+        if(useNav)
         {
             importNavSheet(reader,delimiter);
             return;
@@ -662,8 +660,8 @@ public class ROM_Model extends Model {
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
         PreparedStatement stmt = connection.prepareStatement(select.toString())) {
             DBContext context = new DBContext(connection);
-            Integer [] rowIds = rowMapping.getIDs(context,start,count);
-            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
+            ArrayList<Integer> rowIds = rowMapping.getIDs(context,start,count);
+            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds.toArray());
             stmt.setArray(1, inArrayRow);
 
             ResultSet rs = stmt.executeQuery();

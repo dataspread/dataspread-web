@@ -502,7 +502,7 @@ public class NavigationStructure{
         ArrayList<Bucket<String>> bucketList = new ArrayList<Bucket<String>>();
 
         PreparedStatement pstmt = null;
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();) {
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
 
             StringBuffer navSB = new StringBuffer();
             navSB.append("SELECT data from "+dataTable+"_nav ORDER BY id");
