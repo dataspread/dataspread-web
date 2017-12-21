@@ -313,17 +313,22 @@ public class AppCtrl extends CtrlBase<Component> {
     }
 
     private void createNavS(SheetImpl currentSheet) {
+        if(currentSheet.getEndRowIndex() > 100000)
+            return;
 
         try {
             if(currentSheet.getEndRowIndex()<1) {
                 treeBucket.setModel(new DefaultTreeModel<Bucket<String>>(new BucketTreeNode<Bucket<String>>(null,new BucketTreeNodeCollection<Bucket<String>>())));
                 return;
             }
-            ss.setNavSBuckets(currentSheet.getDataModel().createNavS(currentSheet,0,0));
+
+
+            ss.setNavSBuckets(currentSheet.getDataModel().createNavS(currentSheet, 0, 0));
             createNavSTree(ss.getNavSBuckets());
             updateColModel(currentSheet);
 
             currentSheet.fullRefresh();
+
 
         } catch (Exception e) {
             e.printStackTrace();
