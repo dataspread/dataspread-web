@@ -75,6 +75,8 @@ public class CountStatistic implements AbstractStatistic {
             remain -= ((CountStatistic) counts.get(lo)).count;
             lo++;
         }
+        // indicate looping to the end
+        if (lo>=hi) remain += ((CountStatistic) counts.get(lo - 1)).count;
         return remain;
     }
 

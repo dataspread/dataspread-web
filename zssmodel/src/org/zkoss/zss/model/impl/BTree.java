@@ -153,15 +153,13 @@ public class BTree <K extends AbstractStatistic> {
             i = statistic.findIndex(u.statistics, type, true, true);
             u.addLeaf(i, statistic, val, count, type);
         } else {
-            // Update the statistic of the node we found
-            AbstractStatistic current_stat = u.statistics.get(i);
-            if (current_stat.requireUpdate())
-                u.statistics.set(i, current_stat.updateStatistic(AbstractStatistic.Mode.ADD));
             // Get the new statistic we are looking for
             K new_statistic = (K) statistic.getLowerStatistic(u.statistics, i, type);
             Node rightNode = addRecursive(context, new_statistic, u.children.get(i), val, count, type);
+            // Update the node we found
             Node child = new Node().get(context, bs, u.children.get(i));
             u.childrenCount.set(i, child.childrenCount.size());
+            u.statistics.set(i, emptyStatistic.getAggregation(child.statistics, type));
             if (rightNode != null) {  // child was split, w is new child
                 rightNode.update(bs);
                 // Add w after position i
@@ -228,10 +226,6 @@ public class BTree <K extends AbstractStatistic> {
             } else
                 return null;
         } else {
-            // Update the statistic of the node we found
-            AbstractStatistic current_stat = u.statistics.get(i);
-            if (current_stat.requireUpdate())
-                u.statistics.set(i, current_stat.updateStatistic(AbstractStatistic.Mode.DELETE));
             // Get the new statistic we are looking for
             K new_statistic = (K) statistic.getLowerStatistic(u.statistics, i, type);
             Integer value = removeRecursive(context, new_statistic, u.children.get(i), type);
@@ -543,17 +537,17 @@ public class BTree <K extends AbstractStatistic> {
 
         Node u = new Node().get(context, bs, ui);
         while (true) {
-            int i = new_statistic.findIndex(u.statistics, type, u.isLeaf(), false);
-            /* Need to go to leaf to delete */
+            int i = new_statistic.findIndex(u.statistics, type, false, false);
+            /* Need to go to leaf to lookup */
             if (u.isLeaf()) {
                 if (u.childrenCount.get(i) > 1) {
-                    split = statistic.splitIndex(u.statistics, type);
+                    split = new_statistic.splitIndex(u.statistics, type);
                     if (split != 0) {
                         first_index = i;
                         break;
                     }
                 }
-                i = statistic.findIndex(u.statistics, type, true, false);
+                i = new_statistic.findIndex(u.statistics, type, true, false);
                 // Check if the statistic is exactly matched
                 if (new_statistic.match(u.statistics, i, type)) {
                     first_index = i;
@@ -562,7 +556,7 @@ public class BTree <K extends AbstractStatistic> {
                     return null;
             } else {
                 // Get the new statistic we are looking for
-                new_statistic = (K) statistic.getLowerStatistic(u.statistics, i, type);
+                new_statistic = (K) new_statistic.getLowerStatistic(u.statistics, i, type);
                 u = new Node().get(context, bs, u.children.get(i));
             }
         }
@@ -801,7 +795,7 @@ public class BTree <K extends AbstractStatistic> {
         public void splitSparseNode(int i, K statistic, AbstractStatistic.Type type, boolean splitSingle) {
             int split = statistic.splitIndex(statistics, type);
             if (split == 0) return;
-            if (split == childrenCount.get(i)) return;
+            if (split >= childrenCount.get(i)) return;
             int count = childrenCount.get(i) - split;
             this.childrenCount.set(i, split);
             this.statistics.set(i, statistic.getLeafStatistic(split, type));
