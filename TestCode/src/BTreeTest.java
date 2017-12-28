@@ -119,8 +119,8 @@ public class BTreeTest {
     public static void sparseTest(DBContext dbContext){
         CountedBTree btree = new CountedBTree(dbContext, "Test1", false);
         btree.createIDs(dbContext, 0, 10);
-        btree.createIDs(dbContext,3, 1);
-        System.out.println(btree.getIDs(dbContext, 0, 10));
+        btree.createIDs(dbContext,10, 1);
+        System.out.println(btree.getIDs(dbContext, 0, 11));
     }
 
     public static void testRootInsDelByCount(DBContext context, CountedBTree testTree) {
