@@ -801,6 +801,7 @@ public class BTree <K extends AbstractStatistic> {
         public void splitSparseNode(int i, K statistic, AbstractStatistic.Type type, boolean splitSingle) {
             int split = statistic.splitIndex(statistics, type);
             if (split == 0) return;
+            if (split == childrenCount.get(i)) return;
             int count = childrenCount.get(i) - split;
             this.childrenCount.set(i, split);
             this.statistics.set(i, statistic.getLeafStatistic(split, type));
