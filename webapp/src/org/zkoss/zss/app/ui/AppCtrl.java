@@ -11,6 +11,8 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.app.ui;
 
+import org.ngi.zhighcharts.SimpleExtXYModel;
+import org.ngi.zhighcharts.ZHighCharts;
 import org.zkoss.image.AImage;
 import org.zkoss.lang.Library;
 import org.zkoss.lang.Strings;
@@ -21,6 +23,7 @@ import org.zkoss.util.resource.Labels;
 import org.zkoss.web.servlet.http.Encodes;
 import org.zkoss.zk.ui.*;
 import org.zkoss.zk.ui.event.*;
+import org.zkoss.zk.ui.select.annotation.Listen;
 import org.zkoss.zk.ui.select.annotation.Wire;
 import org.zkoss.zk.ui.util.Clients;
 import org.zkoss.zk.ui.util.DesktopCleanup;
@@ -43,14 +46,16 @@ import org.zkoss.zss.app.repository.BookRepositoryFactory;
 import org.zkoss.zss.app.repository.impl.BookUtil;
 import org.zkoss.zss.app.repository.impl.SimpleBookInfo;
 import org.zkoss.zss.app.ui.dlg.*;
-import org.zkoss.zss.model.ModelEvent;
-import org.zkoss.zss.model.ModelEventListener;
-import org.zkoss.zss.model.ModelEvents;
-import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.impl.AbstractBookAdv;
+import org.zkoss.zss.model.impl.AbstractSheetAdv;
+import org.zkoss.zss.model.impl.Bucket;
+import org.zkoss.zss.model.impl.SheetImpl;
+import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.ui.*;
 import org.zkoss.zss.ui.Version;
 import org.zkoss.zss.ui.event.Events;
+import org.zkoss.zss.ui.event.SheetSelectEvent;
 import org.zkoss.zss.ui.event.SyncFriendFocusEvent;
 import org.zkoss.zss.ui.impl.DefaultUserActionManagerCtrl;
 import org.zkoss.zss.ui.impl.Focus;
@@ -63,9 +68,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
+import java.util.*;
 
 /**
  *
@@ -117,12 +120,35 @@ public class AppCtrl extends CtrlBase<Component> {
     Script gaScript;
     @Wire
     Html usersPopContent; //ZSS-998
+    @Wire
+    Window mainWin;
+
     BookInfo selectedBookInfo;
     Book loadedBook;
     Desktop desktop = Executions.getCurrent().getDesktop();
     private ModelEventListener dirtyChangeEventListener;
     private String username;
     private UnsavedAlertState isNeedUnsavedAlert = UnsavedAlertState.DISABLED;
+
+    // Basic column
+
+    private ZHighCharts chartComp25;
+
+    private SimpleExtXYModel dataChartModel25;
+
+    private Map<String,Bucket<String>> navSBucketMap = new HashMap<String,Bucket<String>>();
+
+    private Map<String,Integer> navSBucketLevel = new HashMap<String,Integer>();
+
+    // Stacked and grouped column
+
+    private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+
+    @Wire
+    private Tree treeBucket;
+
+    @Wire
+    private Selectbox colSelectbox;
 
     public AppCtrl() {
         super(true);
@@ -209,8 +235,10 @@ public class AppCtrl extends CtrlBase<Component> {
             private static final long serialVersionUID = -6317703235308792786L;
 
             @Override
-            public void onEvent(Event event) throws Exception {
+            public void onEvent(Event event) {
                 onSheetSelect();
+
+                createNavS((SheetImpl) ((SheetSelectEvent) event).getSheet().getInternalSheet());
             }
         });
 
@@ -218,7 +246,7 @@ public class AppCtrl extends CtrlBase<Component> {
             private static final long serialVersionUID = -2428002022759075909L;
 
             @Override
-            public void onEvent(Event event) throws Exception {
+            public void onEvent(Event event) {
                 onAfterUndoableManagerAction();
             }
         });
@@ -228,7 +256,7 @@ public class AppCtrl extends CtrlBase<Component> {
             private static final long serialVersionUID = 1870486146113521339L;
 
             @Override
-            public void onEvent(Event event) throws Exception {
+            public void onEvent(Event event) {
                 final SyncFriendFocusEvent fe = (SyncFriendFocusEvent) event;
                 onSyncFriendFocus(fe.getInBook(), fe.getInSheet());
             }
@@ -240,7 +268,7 @@ public class AppCtrl extends CtrlBase<Component> {
                         private static final long serialVersionUID = 5699364737927805458L;
 
                         @Override
-                        public void onEvent(BookmarkEvent event) throws Exception {
+                        public void onEvent(BookmarkEvent event) {
                             String bookmark = null;
                             try {
                                 bookmark = URLDecoder.decode(event.getBookmark(), UTF8);
@@ -275,7 +303,7 @@ public class AppCtrl extends CtrlBase<Component> {
 
         Executions.getCurrent().getDesktop().addListener(new DesktopCleanup() {
             @Override
-            public void cleanup(Desktop desktop) throws Exception {
+            public void cleanup(Desktop desktop) {
                 doCloseBook();
                 collaborationInfo.removeUsername(username);
             }
@@ -285,12 +313,37 @@ public class AppCtrl extends CtrlBase<Component> {
         initBook();
     }
 
+    private void createNavS(SheetImpl currentSheet) {
+        if(currentSheet.getEndRowIndex() > 100000)
+            return;
+
+        try {
+            if(currentSheet.getEndRowIndex()<1) {
+                treeBucket.setModel(new DefaultTreeModel<Bucket<String>>(new BucketTreeNode<Bucket<String>>(null,new BucketTreeNodeCollection<Bucket<String>>())));
+                return;
+            }
+
+
+            ss.setNavSBuckets(currentSheet.getDataModel().createNavS(currentSheet, 0, 0));
+            createNavSTree(ss.getNavSBuckets());
+            updateColModel(currentSheet);
+
+            currentSheet.fullRefresh();
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
     private void setBookmark(String bookmark) {
         if (!DISABLE_BOOKMARK)
             desktop.setBookmark(bookmark);
     }
 
-    private void initBook() throws UnsupportedEncodingException {
+    private void initBook() {
         String bookName = null;
         Execution exec = Executions.getCurrent();
         if (bookName == null) {
@@ -354,7 +407,7 @@ public class AppCtrl extends CtrlBase<Component> {
             SaveBookAsCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
                 private static final long serialVersionUID = 5953139810992856892L;
 
-                public void onEvent(DlgCallbackEvent event) throws Exception {
+                public void onEvent(DlgCallbackEvent event) {
                     if (SaveBookAsCtrl.ON_SAVE.equals(event.getName())) {
 
                         String name = (String) event.getData(SaveBookAsCtrl.ARG_NAME);
@@ -407,7 +460,7 @@ public class AppCtrl extends CtrlBase<Component> {
         RegisterCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
             private static final long serialVersionUID = -6819708673820196683L;
 
-            public void onEvent(DlgCallbackEvent event) throws Exception {
+            public void onEvent(DlgCallbackEvent event) {
                 if (RegisterCtrl.ON_USERNAME_CHANGE.equals(event.getName())) {
                     String name = (String) event.getData(UsernameCtrl.ARG_NAME);
                     if (name.equals(username))
@@ -435,7 +488,7 @@ public class AppCtrl extends CtrlBase<Component> {
             UsernameCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
                 private static final long serialVersionUID = -6819708673820196683L;
 
-                public void onEvent(DlgCallbackEvent event) throws Exception {
+                public void onEvent(DlgCallbackEvent event) {
                     if (UsernameCtrl.ON_USERNAME_CHANGE.equals(event.getName())) {
                         String name = (String) event.getData(UsernameCtrl.ARG_NAME);
                         if (name.equals(username))
@@ -539,10 +592,15 @@ public class AppCtrl extends CtrlBase<Component> {
                         // Create a new Sheet and import file
                         loadedBook.getInternalBook().checkDBSchema();
                         SSheet newSheet = loadedBook.getInternalBook().createSheet(sheetName);
+
                         newSheet.getDataModel().importSheet(
                                 m.isBinary() ? new BufferedReader(new InputStreamReader(m.getStreamData())) :
-                                        m.getReaderData(), delimiter);
+                                        m.getReaderData(), delimiter, (((SheetImpl) newSheet).getEndRowIndex() > 100000));
 
+                        /*ss.setNavSBuckets(newSheet.getDataModel().navSbuckets);
+                        createNavSTree(newSheet.getDataModel().navSbuckets);
+                        updateColModel(newSheet);*/
+                        createNavS((SheetImpl) newSheet);
                         Messagebox.show("File imported", "DataSpread",
                                 Messagebox.OK, Messagebox.INFORMATION, null);
 
@@ -550,6 +608,7 @@ public class AppCtrl extends CtrlBase<Component> {
                         pushAppEvent(AppEvts.ON_CHANGED_SPREADSHEET, ss);
                         updatePageInfo();
                         ss.setSelectedSheet(sheetName);
+                        updateColModel(newSheet);
                         return;
                     }
 
@@ -600,12 +659,19 @@ public class AppCtrl extends CtrlBase<Component> {
         collaborationInfo.removeRelationship(username);
         ss.setBook(loadedBook);
         initSaveNotification(loadedBook);
+
+        SSheet currentsheet = ss.getSelectedSSheet();
+
+        if(currentsheet.getEndRowIndex()<1)
+            treeBucket.setModel(new DefaultTreeModel<Bucket<String>>(new BucketTreeNode<Bucket<String>>(null,new BucketTreeNodeCollection<Bucket<String>>())));
+
         pushAppEvent(AppEvts.ON_CHANGED_FILE_STATE, BookInfo.STATE_UNSAVED);
         pushAppEvent(AppEvts.ON_LOADED_BOOK, loadedBook);
         pushAppEvent(AppEvts.ON_CHANGED_SPREADSHEET, ss);
         updatePageInfo();
-    }
 
+
+    }
 
     private void doOpenNewBook0(boolean renewState) {
         try {
@@ -613,8 +679,7 @@ public class AppCtrl extends CtrlBase<Component> {
             SimpleDateFormat ft =
                     new SimpleDateFormat("yyyyMMdd_hhmmss_S");
             Book book = new org.zkoss.zss.api.model.impl.BookImpl("New Book_".concat(ft.format(dNow)));
-            book.getInternalBook().createSheet("Sheet1");
-            book.getInternalBook().createSheet("Sheet2");
+
             book.setShareScope(EventQueues.APPLICATION);
             setBook(book, null);
         } catch (Exception e) {
@@ -680,7 +745,7 @@ public class AppCtrl extends CtrlBase<Component> {
                     private static final long serialVersionUID = -7373178956047605810L;
 
                     @Override
-                    public void onEvent(Event event) throws Exception {
+                    public void onEvent(Event event) {
                         if (event.getData().equals(Messagebox.OK)) {
                             yesCallback.invoke();
                         }
@@ -777,7 +842,7 @@ public class AppCtrl extends CtrlBase<Component> {
         SaveBookAsCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
             private static final long serialVersionUID = 3378482725465871522L;
 
-            public void onEvent(DlgCallbackEvent event) throws Exception {
+            public void onEvent(DlgCallbackEvent event) {
                 if (SaveBookAsCtrl.ON_SAVE.equals(event.getName())) {
                     updatePageInfo();
                 }
@@ -926,7 +991,7 @@ public class AppCtrl extends CtrlBase<Component> {
         OpenManageBookCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
             private static final long serialVersionUID = 7753635062865984294L;
 
-            public void onEvent(DlgCallbackEvent event) throws Exception {
+            public void onEvent(DlgCallbackEvent event) {
                 if (OpenManageBookCtrl.ON_OPEN.equals(event.getName())) {
                     Book book = (Book) event.getData(OpenManageBookCtrl.ARG_BOOK);
                     doOpenExistingBook(book);
@@ -1060,7 +1125,7 @@ public class AppCtrl extends CtrlBase<Component> {
         Fileupload.get(1, new SerializableEventListener<UploadEvent>() {
             private static final long serialVersionUID = -3555918387396107106L;
 
-            public void onEvent(UploadEvent event) throws Exception {
+            public void onEvent(UploadEvent event) {
                 Media media = event.getMedia();
                 if (media == null) {
                     return;
@@ -1129,7 +1194,7 @@ public class AppCtrl extends CtrlBase<Component> {
         HyperlinkCtrl.show(new SerializableEventListener<DlgCallbackEvent>() {
             private static final long serialVersionUID = -2571984995170497501L;
 
-            public void onEvent(DlgCallbackEvent event) throws Exception {
+            public void onEvent(DlgCallbackEvent event) {
                 if (HyperlinkCtrl.ON_OK.equals(event.getName())) {
                     final String address = (String) event.getData(HyperlinkCtrl.ARG_ADDRESS);
                     final String label = (String) event.getData(HyperlinkCtrl.ARG_DISPLAY);
@@ -1146,4 +1211,218 @@ public class AppCtrl extends CtrlBase<Component> {
     interface AsyncFunction {
         void invoke();
     }
+
+    private BucketTreeNodeCollection<Bucket<String>> childrenBuckets(ArrayList<Bucket<String>> bucketList, int level) {
+        BucketTreeNodeCollection<Bucket<String>> dtnc = new BucketTreeNodeCollection<Bucket<String>>();
+
+        for(int i=0;i<bucketList.size();i++) {
+            BucketTreeNodeCollection<Bucket<String>> btnc_ = new BucketTreeNodeCollection<Bucket<String>>();
+            if(!navSBucketMap.containsKey("ch"+bucketList.get(i).getId())) {
+                navSBucketMap.put("ch" + bucketList.get(i).getId(), bucketList.get(i));
+                navSBucketLevel.put("ch" + bucketList.get(i).getId(), level);
+            }
+            if(bucketList.get(i).getChildrenCount()>0) {
+                btnc_ = childrenBuckets(bucketList.get(i).getChildren(),level+1);
+                dtnc.add(new DefaultTreeNode<Bucket<String>>(bucketList.get(i),btnc_));
+            }
+            else
+            {
+                dtnc.add(new DefaultTreeNode<Bucket<String>>(bucketList.get(i)));
+            }
+        }
+
+        return dtnc;
+    }
+
+   private void createNavSTree(ArrayList<Bucket<String>> bucketList) {
+
+        //treeBucket.setAutopaging(true);
+        BucketTreeNodeCollection<Bucket<String>> btnc = new BucketTreeNodeCollection<Bucket<String>>();
+        navSBucketMap.clear();
+        navSBucketLevel.clear();
+        btnc = childrenBuckets(bucketList,0);
+
+        treeBucket.setModel(new DefaultTreeModel<Bucket<String>>(new BucketTreeNode<Bucket<String>>(null,btnc)));
+
+        /*for(int i=0;i<bucketList.size();i++)
+        {
+            System.out.println("Bucket "+(i+1));
+            System.out.println("Max: "+bucketList.get(i).getMaxValue());
+            System.out.println("Min: "+bucketList.get(i).getMinValue());
+            System.out.println("start: "+bucketList.get(i).getStartPos());
+            System.out.println("end: "+bucketList.get(i).getEndPos());
+            System.out.println("Size: "+bucketList.get(i).getSize());
+            System.out.println("children: "+bucketList.get(i).getChildrenCount());
+        }*/
+    }
+
+
+
+    public void onChartsCreate(ZHighCharts chartComp25) {
+
+        //================================================================================
+
+        // Basic column
+
+        //================================================================================
+
+        Bucket<String> currentBucket = navSBucketMap.get(chartComp25.getId());
+
+        String [] colors = {"#F6546A","#C998FD","#FF8247","#B9E4F1","#A99A91","#382755"};
+        chartComp25.setType("column");
+        //chartComp25.setOptions("{margin:[-30,0,50,30]}");
+        //chartComp25.setTitle(currentBucket.getName());
+        String xAxisLabels = "";
+
+        chartComp25.setHeight("200px");
+
+
+        if(currentBucket.getChildrenCount() > 0)
+            xAxisLabels = "{categories: ['"+currentBucket.getChildren().get(0).getName()+"'";
+        else
+            xAxisLabels = "{categories: ['"+currentBucket.getName()+"'";
+
+        for(int i=1;i<currentBucket.getChildrenCount();i++)
+            xAxisLabels += ",'"+currentBucket.getChildren().get(i).getName()+"'";
+
+        chartComp25.setxAxisOptions(xAxisLabels+"],"+
+                    "labels: {"+
+                    "rotation: -45,"+
+                    "align: 'right',"+
+                    "style: {"+
+                    "fontSize: '8px',"+
+                    "fontFamily: 'Verdana, sans-serif'"+
+                    "}"+
+                    "}" +
+                "}");
+
+        chartComp25.setyAxisOptions("{ " +
+                "min:0" +
+                "}");
+
+        //chartComp25.setXAxisTitle("Sub-Categories");
+        chartComp25.setYAxisTitle("#Rows");
+        chartComp25.setTooltipOptions("{followPointer:true}");
+        chartComp25.setTooltipFormatter("function formatTooltip(obj){ " +
+                "return '<b>'+obj.x +'</b> has <b>'+ obj.y+'</b> rows';" +
+                "}");
+
+        chartComp25.setLegend("{enabled:false}");
+        /*
+        * "{" +
+                "layout: 'vertical'," +
+                "backgroundColor: '#FFFFFF'," +
+                "align: 'left'," +
+                "verticalAlign: 'top'," +
+                "x: 100," +
+                "y: 70," +
+                "floating: true," +
+                "shadow: true" +
+
+                "}"
+                */
+        chartComp25.setPlotOptions(//"["+
+                "{" +
+                    "column: {" +
+                        "color: \'"+colors[navSBucketLevel.get(chartComp25.getId())]+"\',"+
+                        "pointPadding: 0.2," +
+                        "borderWidth: 0," +
+                        "point: {"+
+                            "events: {"+
+                                "click: function() {"+
+                                    "zk.Widget.$('$mainWin').fire('onFocusByChartColumn');"+
+                                    "zAu.send(new zk.Event(zk.Widget.$('$mainWin'), 'onFocusByChartColumn',this.category,{toServer:true}));"+
+                                "}"+
+                            "}"+
+                        "}"+
+                    "}"+
+                "}"
+                );
+
+        dataChartModel25 = new SimpleExtXYModel();
+        chartComp25.setModel(dataChartModel25);
+
+        for(int i = 0; i < currentBucket.getChildrenCount(); i++)
+            dataChartModel25.addValue(currentBucket.getName(), i, currentBucket.getChildren().get(i).getSize());
+
+        if(currentBucket.getChildrenCount()==0)
+            dataChartModel25.addValue(currentBucket.getName(),0,currentBucket.getSize());
+
+    }
+
+    private long getDateTime(String date) throws Exception {
+        return sdf.parse(date).getTime();
+
+    }
+
+    @Listen("onSelect = #treeBucket")
+    public void nodeSelected() {
+        DefaultTreeNode<Bucket<String>> selectedNode = treeBucket.getSelectedItem().getValue();
+
+        System.out.println("Name: "+selectedNode.getData().getName());
+
+        int start = selectedNode.getData().getStartPos();
+        int end = selectedNode.getData().getEndPos();
+        String bucketName = selectedNode.getData().getName();
+        ss.focusTo(start+1,0);
+    }
+
+    @Listen("onFocusByChartColumn = #mainWin")
+    public void onFocusByChartColumn(Event evt)
+    {
+        System.out.println("Client Screen Size:" + evt.getData());
+
+        String eventData = evt.getData().toString();
+        String bucketName = "ch";
+
+        if(eventData.contains("Rows:"))
+            bucketName += eventData.split("Rows:")[1].replaceAll("-","_");
+        else
+            bucketName += eventData.replaceAll(" ","_");
+
+        ss.focusTo(navSBucketMap.get(bucketName).getStartPos()+1,0);
+
+
+    }
+
+
+    private void updateColModel(SSheet currentSheet) {
+
+        try {
+
+            CellRegion tableRegion =  new CellRegion(0, 0,//100000,20);
+                    0,currentSheet.getEndColumnIndex());
+
+            ArrayList<SCell> result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
+
+            ArrayList<String> headers = new ArrayList<String>();
+
+            for(int i=0;i<result.size();i++){
+                headers.add(result.get(i).getStringValue());
+            }
+            ListModelList<String> colModel = new ListModelList<String>(headers);
+            colSelectbox.setModel(colModel);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Listen("onSelect = #colSelectbox")
+    public void sort() {
+        int index = colSelectbox.getSelectedIndex()+1;
+
+        SSheet currentSheet = ss.getSelectedSSheet();
+        try {
+            currentSheet.getDataModel().setIndexString("col_"+index);
+            currentSheet.clearCache();
+            ss.setNavSBuckets(currentSheet.getDataModel().createNavS(currentSheet,0,0));
+            createNavSTree(ss.getNavSBuckets());
+            ((SheetImpl) currentSheet).fullRefresh();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 }

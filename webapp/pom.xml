@@ -18,6 +18,13 @@
     <packaging>war</packaging>
     <name>Webapp</name>
     <description>Dataspread Web Application</description>
+    <repositories>
+      <repository>
+        <id>in-project</id>
+        <name>In Project Repo</name>
+        <url>file://${project.basedir}/../lib</url>
+      </repository>
+    </repositories>
     <dependencies>
         <dependency>
             <groupId>io.github.dataspread</groupId>
@@ -48,6 +55,11 @@
             <groupId>org.zkoss.zk</groupId>
             <artifactId>zul</artifactId>
             <version>${zk.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ngi</groupId>
+            <artifactId>zhighcharts</artifactId>
+            <version>0.2.0</version>
         </dependency>
     </dependencies>
     <build>

@@ -627,33 +627,33 @@ zss.Spreadsheet = zk.$extends(zul.wgt.Div, {
 		 */
 		columnHeadHidden: null,
 		/**
-		 * Sets whether show toolbar or not
-		 * 
-		 * Default: false
-		 * @param boolean show true to show toolbar
-		 */
-		/**
-		 * Returns whther show toolbar
-		 * @return boolean
-		 */
-		showToolbar: function (show) {
-			var w = this._toolbar;
-			if (!w && show) {
-				var tb = this._toolbar = new zss.Toolbar(this),
-					tbp = this.getToolbarPanel();
-				tbp.appendChild(tb);
-				tbp.setHeight(tb.getSize());
-			} else if (w) {
-				var v = w.isVisible();
-				if (v != show) {
-					w.setVisible(show);
-					this.getToolbarPanel().setVisible(show);
-					zUtl.fireSized(this, -1);
-				}
-			}
-		},
+         * Sets whether show toolbar or not
+         *
+         * Default: false
+         * @param boolean show true to show toolbar
+         */
+        /**
+         * Returns whther show toolbar
+         * @return boolean
+         */
+        showToolbar: function (show) {
+            var w = this._toolbar;
+            if (!w && show) {
+                var tb = this._toolbar = new zss.Toolbar(this),
+                    tbp = this.getToolbarPanel();
+                tbp.appendChild(tb);
+                tbp.setHeight(tb.getSize());
+            } else if (w) {
+                var v = w.isVisible();
+                if (v != show) {
+                    w.setVisible(show);
+                    this.getToolbarPanel().setVisible(show);
+                    zUtl.fireSized(this, -1);
+                }
+            }
+        },
 		actionDisabled: function (v) {
-			var tb = this._toolbar
+			var tb = this._toolbar;
 			if (tb)
 				tb.setDisabled(v);
 			if (this.getShowContextMenu()) {

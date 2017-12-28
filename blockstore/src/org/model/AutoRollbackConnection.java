@@ -15,8 +15,8 @@ public class AutoRollbackConnection  implements AutoCloseable {
     AutoRollbackConnection(Connection connection)
     {
         StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-        if (stack.length>3)
-            logger.info("Opening connection at " + stack[3]);
+        //if (stack.length>3)
+        //    logger.info("Opening connection at " + stack[3]);
         connectionOpenedAt = stack[3].toString();
         this.connection=connection;
         committed = false;
@@ -28,8 +28,8 @@ public class AutoRollbackConnection  implements AutoCloseable {
     @Override
     public void close(){
         StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-        if (stack.length>2)
-            logger.info("Closing connection at " + stack[2]);
+        //if (stack.length>2)
+        //    logger.info("Closing connection at " + stack[2]);
         if (!committed) {
             // Rollback uncomitted transactions
             try {
@@ -51,7 +51,7 @@ public class AutoRollbackConnection  implements AutoCloseable {
 
         synchronized (AutoRollbackConnection.class) {
             openConnections--;
-            logger.info("Open connections: " + openConnections);
+            //logger.info("Open connections: " + openConnections);
         }
 
     }
@@ -63,7 +63,7 @@ public class AutoRollbackConnection  implements AutoCloseable {
         } catch (SQLException e) {
             try {
                 connection.rollback();
-            } catch (SQLException e1) {};
+            } catch (SQLException e1) {}
             e.printStackTrace();
         }
     }

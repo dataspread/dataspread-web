@@ -3,8 +3,6 @@ package org.model;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
 
 import javax.naming.InitialContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
 import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -13,7 +11,7 @@ import java.util.logging.Logger;
 /**
  * Created by Mangesh Bendre on 4/22/2016.
  */
-public class DBHandler implements ServletContextListener {
+public class DBHandler {
     private static final Logger logger = Logger.getLogger(DBHandler.class.getName());
     public static DBHandler instance;
     private DataSource ds;
@@ -28,10 +26,11 @@ public class DBHandler implements ServletContextListener {
         p.setDefaultAutoCommit(false);
         p.setUsername(userName);
         p.setPassword(password);
-        org.apache.tomcat.jdbc.pool.DataSource datasource
+        org.apache.tomcat.jdbc.pool.DataSource dataSource
                 = new org.apache.tomcat.jdbc.pool.DataSource();
-        datasource.setPoolProperties(p);
-        instance.ds = datasource;
+        dataSource.setPoolProperties(p);
+        instance.ds = dataSource;
+        instance.initApplication();
     }
 
     public AutoRollbackConnection getConnection()
@@ -44,7 +43,7 @@ public class DBHandler implements ServletContextListener {
         }
     }
 
-    private void cacheDS() throws Exception
+    public void cacheDS() throws Exception
     {
         InitialContext cxt = new InitialContext();
         if ( cxt == null ) {
@@ -57,15 +56,13 @@ public class DBHandler implements ServletContextListener {
         }
     }
 
-    @Override
-    public void contextInitialized(ServletContextEvent servletContextEvent) {
-        instance = this;
-        try {
-            cacheDS();
-        } catch (Exception e) {
-            System.err.println("Unable to connect to a Database");
-            e.printStackTrace();
-        }
+    public static void initDBHandler()
+    {
+        instance = new DBHandler();
+    }
+
+    public void initApplication()
+    {
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             DBContext dbContext = new DBContext(connection);
             createBookTable(dbContext);
@@ -74,19 +71,21 @@ public class DBHandler implements ServletContextListener {
             createTableOrders(dbContext);
             createDependencyTable(dbContext);
             connection.commit();
-            dbListener = new DBListener();
-            dbListener.start();
-            graphCompressor = new GraphCompressor();
+            //dbListener = new DBListener();
+            //dbListener.start();
+            //TODO - fix issues with the graph compressor
+            //graphCompressor = new GraphCompressor();
             //graphCompressor.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    @Override
-    public void contextDestroyed(ServletContextEvent servletContextEvent) {
+    private void shutdownApplication()
+    {
         dbListener.stopListener();
     }
+
 
     private void createBookTable(DBContext dbContext)
     {

@@ -33,7 +33,6 @@ import org.zkoss.zss.app.impl.BookManagerImpl;
 import org.zkoss.zss.app.impl.CollaborationInfoImpl;
 import org.zkoss.zss.app.repository.BookRepositoryFactory;
 import org.zkoss.zss.app.repository.impl.BookUtil;
-import org.zkoss.zss.app.ui.AppEvts;
 import org.zkoss.zss.app.ui.UiUtil;
 import org.zkoss.zss.model.impl.BookImpl;
 import org.zkoss.zul.*;
@@ -42,7 +41,10 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import java.io.InputStream;
 import java.io.Serializable;
-import java.sql.*;
+import java.sql.Array;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -193,7 +195,7 @@ public class OpenManageBookCtrl extends DlgCtrlBase{
 			private static final long serialVersionUID = 4698610847862970542L;
 
 			@Override
-			public void onEvent(Event event) throws Exception {
+			public void onEvent(Event event) {
 				if(event.getData().equals(Messagebox.OK)) {
 					BookImpl.deleteBook(bookName, bookTable);
 					reloadBookModel();
@@ -266,7 +268,6 @@ public class OpenManageBookCtrl extends DlgCtrlBase{
 	
 	private Book loadBook(String bookName, String bookTable) {
 		Book book = new org.zkoss.zss.api.model.impl.BookImpl(bookName);
-		book.getInternalBook().setIdAndLoad(bookTable);
 		return book;
 	}
 

@@ -7,7 +7,7 @@ import java.util.stream.IntStream;
 
 public class FormulaTesting {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         String url = "jdbc:postgresql://127.0.0.1:5432/ibd";
         String driver = "org.postgresql.Driver";
         String userName = "mangesh";
@@ -15,7 +15,7 @@ public class FormulaTesting {
         DBHandler.connectToDB(url, driver, userName, password);
 
         AbstractBookAdv book = new BookImpl("Test Book");
-        book.setIdAndLoad("biycbh4vq");
+        book.setNameAndLoad("biycbh4vq");
         System.out.println("Sheets " + book.getNumOfSheet());
         SSheet sheet = book.getSheet(0);
         long startTime, endTime;

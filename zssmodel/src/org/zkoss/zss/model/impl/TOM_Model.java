@@ -2,6 +2,7 @@ package org.zkoss.zss.model.impl;
 
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
+import org.model.DBHandler;
 import org.zkoss.zss.model.*;
 
 import java.io.IOException;
@@ -23,8 +24,8 @@ public class TOM_Model extends Model {
 
     //Create or load TOM_model.
     TOM_Model(DBContext context, String tableName) {
-        rowMapping = new BTree(context, tableName + "_row_idx");
-        colMapping = new BTree(context, tableName + "_col_idx");
+        rowMapping = new CountedBTree(context, tableName + "_row_idx");
+        colMapping = new CountedBTree(context, tableName + "_col_idx");
         this.tableName = tableName;
         loadColumnInfo(context);
     }
@@ -42,6 +43,11 @@ public class TOM_Model extends Model {
         return new TOM_Model(dbContext,sheet,modelName, this);
     }
 
+    @Override
+    public ArrayList<Bucket<String>> createNavS(SSheet currentsheet, int start, int count) {
+        return null;
+    }
+
     public void loadColumnInfo(DBContext dbContext) {
         columnNames = new TreeMap<>();
         String tableCols = (new StringBuffer())
@@ -54,10 +60,10 @@ public class TOM_Model extends Model {
         try (Statement stmt = connection.createStatement()) {
             ResultSet rs = stmt.executeQuery(tableCols.toString());
             int colCount = rs.getMetaData().getColumnCount();
-            Integer ids[] = colMapping.getIDs(dbContext, 0, colCount);
+            ArrayList<Integer> ids = colMapping.getIDs(dbContext, 0, colCount);
 
             for (int i = 0; i < colCount; i++)
-                columnNames.put(ids[i], rs.getMetaData().getColumnName(i + 1));
+                columnNames.put(ids.get(i), rs.getMetaData().getColumnName(i + 1));
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -85,6 +91,108 @@ public class TOM_Model extends Model {
         throw new UnsupportedOperationException();
     }
 
+
+    @Override
+    public ArrayList<Bucket<String>> createNavS(String bucketName, int start, int count) {
+        //load sorted data from table
+        ArrayList<String> recordList =  new ArrayList<String>();
+
+        AutoRollbackConnection connection = DBHandler.instance.getConnection();
+        DBContext context = new DBContext(connection);
+        StringBuffer select = null;
+        if(bucketName==null)
+        {
+            select = new StringBuffer("SELECT COUNT(*)");
+            select.append(" FROM ")
+                    .append(tableName+"_2")
+                    .append(" WHERE row !=1");
+            try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    count = rs.getInt(1);
+                }
+                rs.close();
+                stmt.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        ArrayList<Integer> rowIds = rowMapping.getIDs(context,start,count);
+
+        select = null;
+        if(indexString.length()==0)
+            select = new StringBuffer("SELECT row, col_1");
+        else
+            select = new StringBuffer("SELECT row, "+indexString);
+
+        select.append(" FROM ")
+                .append(tableName+"_2")
+                .append(" WHERE row = ANY (?) AND row !=1");
+
+        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds.toArray());
+            stmt.setArray(1, inArrayRow);
+
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                recordList.add(new String(rs.getBytes(2),"UTF-8"));
+            }
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        //create nav data structure
+        this.navS.setRecordList(recordList);
+        ArrayList<Bucket<String>> newList = this.navS.getNonOverlappingBuckets(0,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
+
+        if(bucketName==null)
+        {
+            return newList;
+        }
+
+        return this.navS.recomputeNavS(bucketName,this.navSbuckets,newList);
+        //  printBuckets(navSbuckets);
+
+    }
+
+    @Override
+    public ArrayList<String> getHeaders()
+    {
+        ArrayList<String> headers = new ArrayList<String>();
+
+        AutoRollbackConnection connection = DBHandler.instance.getConnection();
+        DBContext context = new DBContext(connection);
+        StringBuffer select = null;
+        select = new StringBuffer("SELECT *");
+        select.append(" FROM ")
+                .append(tableName+"_2")
+                .append(" WHERE row =1");
+        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+
+            ResultSet rs = stmt.executeQuery();
+            int i=1;
+            while (rs.next()) {
+                headers.add(new String(rs.getBytes(i),"UTF-8"));
+                i++;
+            }
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return headers;
+
+    }
+
+    @Override
+    public void setIndexString(String str) {
+        this.indexString = str;
+    }
 
     @Override
     public void dropSchema(DBContext context) {
@@ -123,21 +231,21 @@ public class TOM_Model extends Model {
         }
     }
 
-    public void insertOIDs(DBContext context, List<Integer> oids) {
+    public void insertOIDs(DBContext context, ArrayList<Integer> oids) {
         rowMapping.insertIDs(context, rowMapping.size(context), oids);
     }
 
     public void insertColMappings(DBContext context, int count) {
-        colMapping.insertIDs(context, colMapping.size(context), IntStream.rangeClosed(colMapping.size(context) + 1,
-                colMapping.size(context) + count).boxed().collect(Collectors.toList()));
+        // colMapping.insertIDs(context, colMapping.size(context), IntStream.rangeClosed(colMapping.size(context) + 1,
+            // colMapping.size(context) + count).boxed().collect(Collectors.toList()));
     }
 
     public void deleteTuples(DBContext context, int row, int count) {
-        Integer[] oids = rowMapping.deleteIDs(context, row, count);
+        ArrayList<Integer> oids = rowMapping.deleteIDs(context, row, count);
         AutoRollbackConnection connection = context.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(
                 "DELETE FROM " + tableName + " WHERE oid = ANY(?)")) {
-            Array inArray = context.getConnection().createArrayOf("integer", oids);
+            Array inArray = context.getConnection().createArrayOf("integer", oids.toArray());
             stmt.setArray(1, inArray);
             stmt.execute();
         } catch (SQLException e) {
@@ -147,7 +255,7 @@ public class TOM_Model extends Model {
 
 
     public void deleteTableColumns(DBContext dbContext, int col, int count) {
-        Integer[] colids = colMapping.deleteIDs(dbContext, col, count);
+        ArrayList<Integer> colids = colMapping.deleteIDs(dbContext, col, count);
         try (Statement stmt = dbContext.getConnection().createStatement()) {
             for (int colid : colids) {
                 StringBuilder deleteColumnsStmt = (new StringBuilder())
@@ -210,7 +318,7 @@ public class TOM_Model extends Model {
             return cells;
 
 
-        Integer[] rowIds;
+        ArrayList<Integer> rowIds;
         boolean includeHeader = (fetchRegion.getRow() == 0);
         if (includeHeader)
             rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow());
@@ -218,26 +326,26 @@ public class TOM_Model extends Model {
             rowIds = rowMapping.getIDs(context, fetchRegion.getRow() - 1, fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
 
 
-        Integer[] colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
+        ArrayList<Integer> colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
 
         HashMap<Integer, Integer> row_map = new HashMap<>(); // Oid -> row number
-        int bound = rowIds.length;
+        int bound = rowIds.size();
         for (int i1 = 0; i1 < bound; i1++) {
-            if (rowIds[i1] != -1) {
-                row_map.put(rowIds[i1], fetchRegion.getRow() + i1 + (includeHeader ? 1 : 0));
+            if (rowIds.get(i1) != -1) {
+                row_map.put(rowIds.get(i1), fetchRegion.getRow() + i1 + (includeHeader ? 1 : 0));
             }
         }
 
         HashMap<String, Integer> col_map = new HashMap<>();
-        int bound1 = colIds.length;
+        int bound1 = colIds.size();
         for (int i1 = 0; i1 < bound1; i1++) {
-            String column = columnNames.get(colIds[i1]);
+            String column = columnNames.get(colIds.get(i1));
             col_map.put(column, fetchRegion.getColumn() + i1);
         }
 
         StringBuffer select = new StringBuffer("SELECT oid, ")
-                .append(IntStream.range(0, colIds.length)
-                        .mapToObj(i -> columnNames.get(colIds[i]))
+                .append(IntStream.range(0, colIds.size())
+                        .mapToObj(i -> columnNames.get(colIds.get(i)))
                         .collect(Collectors.joining(",")))
                 .append(" FROM ")
                 .append(tableName)
@@ -247,15 +355,15 @@ public class TOM_Model extends Model {
         try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
             // Array inArrayRow = context.getConnection().createArrayOf(pkColumnType, rowIds);
             /* Assume an int array for now */
-            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
+            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds.toArray());
             stmt.setArray(1, inArrayRow);
 
             ResultSet rs = stmt.executeQuery();
 
             if (includeHeader) {
-                for (int i = 0; i < colIds.length; i++) {
-                    int col = col_map.get(columnNames.get(colIds[i]));
-                    byte[] data = columnNames.get(colIds[i]).getBytes();
+                for (int i = 0; i < colIds.size(); i++) {
+                    int col = col_map.get(columnNames.get(colIds.get(i)));
+                    byte[] data = columnNames.get(colIds.get(i)).getBytes();
                     if (data != null) {
                         AbstractCellAdv cell = CellImpl.fromBytes(sheet, fetchRegion.getRow(), col, data);
                         cell.setSemantics(SSemantics.Semantics.TABLE_HEADER);
@@ -267,8 +375,8 @@ public class TOM_Model extends Model {
                 int oid = rs.getInt(1); /* First column is oid */
                 int row = row_map.get(oid);
 
-                for (int i = 0; i < colIds.length; i++) {
-                    int col = col_map.get(columnNames.get(colIds[i]));
+                for (int i = 0; i < colIds.size(); i++) {
+                    int col = col_map.get(columnNames.get(colIds.get(i)));
                     byte[] data = rs.getBytes(i + 2);
                     AbstractCellAdv cell = CellImpl.fromBytes(sheet, row, col, data);
                     cell.setSemantics(SSemantics.Semantics.TABLE_CONTENT);
@@ -301,24 +409,24 @@ public class TOM_Model extends Model {
             columnList.add(cell.getColumnIndex());
         }
 
-        Integer[] idsCol = colMapping.getIDs(context, columnList.first(),
+        ArrayList<Integer> idsCol = colMapping.getIDs(context, columnList.first(),
                 columnList.last() - columnList.first() + 1);
 
         if (groupedCells.size() > 0) {
 
             StringBuffer sqlColumnNames = new StringBuffer("(");
-            for (int i = 0; i < idsCol.length; ++i) {
-                sqlColumnNames.append(columnNames.get(idsCol[i]));
-                if (i < idsCol.length - 1)
+            for (int i = 0; i < idsCol.size(); ++i) {
+                sqlColumnNames.append(columnNames.get(idsCol.get(i)));
+                if (i < idsCol.size() - 1)
                     sqlColumnNames.append(",");
             }
             sqlColumnNames.append(")");
 
 
             StringBuffer sqlValuesPlaceHolders = new StringBuffer("(");
-            for (int i = 0; i < idsCol.length; ++i) {
+            for (int i = 0; i < idsCol.size(); ++i) {
                 sqlValuesPlaceHolders.append("?");
-                if (i < idsCol.length - 1)
+                if (i < idsCol.size() - 1)
                     sqlValuesPlaceHolders.append(",");
             }
             sqlValuesPlaceHolders.append(")");
@@ -337,9 +445,9 @@ public class TOM_Model extends Model {
                 for (Map.Entry<Integer, SortedMap<Integer, AbstractCellAdv>> _row : groupedCells.entrySet()) {
                     // Ignore updates to the first row
                     if (_row.getKey() > 0) {
-                        int key = rowMapping.getIDs(context, _row.getKey() - 1, 1)[0];
-                        stmt.setInt(idsCol.length + 1, key); //at insert
-                        for (int i = 0; i < idsCol.length; i++) {
+                        int key = (int) rowMapping.getIDs(context, _row.getKey() - 1, 1).get(0);
+                        stmt.setInt(idsCol.size() + 1, key); //at insert
+                        for (int i = 0; i < idsCol.size(); i++) {
                             stmt.setString(i + 1,
                                     _row.getValue().get(columnList.first() + i).getValue().toString());
                         }
@@ -386,21 +494,21 @@ public class TOM_Model extends Model {
         StringBuffer delete = new StringBuffer("UPDATE ")
                 .append(tableName)
                 .append(" SET ");
-        Integer[] colIds = colMapping.getIDs(context, range.getColumn(), range.getLastColumn() - range.getColumn() + 1);
-        for (int i = 0; i < colIds.length - 1; i++) {
+        ArrayList<Integer> colIds = colMapping.getIDs(context, range.getColumn(), range.getLastColumn() - range.getColumn() + 1);
+        for (int i = 0; i < colIds.size() - 1; i++) {
             delete.append("col_")
-                    .append(colIds[i])
+                    .append(colIds.get(i))
                     .append("=null,");
         }
         delete.append("col_")
-                .append(colIds[colIds.length - 1])
+                .append(colIds.get(colIds.size() - 1))
                 .append("=null");
         delete.append(" WHERE row = ANY (?) ");
 
-        Integer[] rowIds = rowMapping.getIDs(context, range.getRow(), range.getLastRow() - range.getRow() + 1);
+        ArrayList<Integer> rowIds = rowMapping.getIDs(context, range.getRow(), range.getLastRow() - range.getRow() + 1);
 
         try (PreparedStatement stmt = context.getConnection().prepareStatement(delete.toString())) {
-            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
+            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds.toArray());
             stmt.setArray(1, inArrayRow);
             stmt.executeUpdate();
         } catch (SQLException e) {
@@ -422,21 +530,21 @@ public class TOM_Model extends Model {
             columnList.add(cell.getColumnIndex());
         }
 
-        Integer[] idsCol = colMapping.getIDs(context, columnList.first(),
+        ArrayList<Integer> idsCol = colMapping.getIDs(context, columnList.first(),
                 columnList.last() - columnList.first() + 1);
 
         StringBuffer update = (new StringBuffer())
                 .append("UPDATE ")
                 .append(tableName)
                 .append(" SET ");
-        for (int i = 0; i < idsCol.length; ++i) {
+        for (int i = 0; i < idsCol.size(); ++i) {
             update.append("col_")
-                    .append(idsCol[i])
+                    .append(idsCol.get(i))
                     .append("= CASE WHEN ? IS NULL THEN NULL ELSE ")
                     .append("col_")
-                    .append(idsCol[i])
+                    .append(idsCol.get(i))
                     .append(" END");
-            if (i < idsCol.length - 1)
+            if (i < idsCol.size() - 1)
                 update.append(",");
         }
         update.append(" WHERE row = ?");
@@ -444,9 +552,9 @@ public class TOM_Model extends Model {
         AutoRollbackConnection connection = context.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(update.toString())) {
             for (Map.Entry<Integer, SortedMap<Integer, AbstractCellAdv>> _row : groupedCells.entrySet()) {
-                int rowId = rowMapping.getIDs(context, _row.getKey(), 1)[0];
-                stmt.setInt(idsCol.length + 1, rowId);
-                for (int i = 0; i < idsCol.length; ++i) {
+                int rowId = (int) rowMapping.getIDs(context, _row.getKey(), 1).get(0);
+                stmt.setInt(idsCol.size() + 1, rowId);
+                for (int i = 0; i < idsCol.size(); ++i) {
                     if (_row.getValue().get(i) == null)
                         stmt.setInt(i + 1, 1);
                     else
@@ -467,7 +575,7 @@ public class TOM_Model extends Model {
     }
 
     @Override
-    public void importSheet(Reader reader, char delimiter) throws IOException {
+    public void importSheet(Reader reader, char delimiter, boolean useNav) {
         throw new UnsupportedOperationException();
     }
 

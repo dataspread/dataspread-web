@@ -62,8 +62,8 @@ import org.zkoss.zss.model.SCellStyle.VerticalAlignment;
 import org.zkoss.zss.model.SSheet.SheetVisible;
 import org.zkoss.zss.model.impl.AbstractBookAdv;
 import org.zkoss.zss.model.impl.AbstractSheetAdv;
+import org.zkoss.zss.model.impl.Bucket;
 import org.zkoss.zss.model.impl.TableImpl.DummyTable;
-import org.zkoss.zss.model.sys.TransactionManager;
 import org.zkoss.zss.model.sys.format.FormatResult;
 import org.zkoss.zss.model.sys.formula.EvaluationContributorContainer;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
@@ -356,12 +356,14 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 	private boolean _showContextMenu;
 	// a local flag indicates that skip the validation and force this editing (ZSS-351)
 	private boolean forceStopEditing0 = false;
-	
+
+	private ArrayList<Bucket<String>> navSBuckets;
+
 	public Spreadsheet() {
 		FormulaAsyncScheduler.initUiController(new FormulaAsyncUIControllerImpl());
 		this.addEventListener("onStartEditingImpl", new SerializableEventListener() {
 			private static final long serialVersionUID = 2401696322103957589L;
-			public void onEvent(Event event) throws Exception {
+			public void onEvent(Event event) {
 				Object[] data = (Object[]) event.getData();
 				processStartEditing((String) data[0],
 						(StartEditingEvent) data[1], (String) data[2]);
@@ -369,20 +371,15 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 		});
 		this.addEventListener("onStopEditingImpl", new SerializableEventListener() {
 			private static final long serialVersionUID = 2412586322103952998L;
-			public void onEvent(Event event) throws Exception {
-				try{
-					TransactionManager.INSTANCE.startTransaction(_book);
+			public void onEvent(Event event) {
 					Object[] data = (Object[]) event.getData();
 					processStopEditing((String) data[0], (StopEditingEvent) data[1], (String) data[2]);
-				}finally {
-					TransactionManager.INSTANCE.endTransaction(_book);
-				}}
+				}
 		});
 		//ZSS-816
 		this.addEventListener(_ON_PROCESS_DEFER_OPERATIONS,  new SerializableEventListener() {
 			private static final long serialVersionUID = 2401758232103952998L;
-			public void onEvent(Event event) throws Exception {
-
+			public void onEvent(Event event) {
 				Map<String, DeferOperation> map = (Map<String, DeferOperation>) event.getData();
 				processDeferOperations(map);
 			}
@@ -817,7 +814,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 				this.addEventListener(Events.ON_CELL_FOUCS, _focusListener = new SerializableEventListener() {
 					private static final long serialVersionUID = 2716358947569822998L;
 					@Override
-					public void onEvent(Event event) throws Exception {
+					public void onEvent(Event event) {
 						doMoveSelfFocus((CellEvent) event);
 					}
 				});
@@ -1629,10 +1626,8 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 			ReadWriteLock lock = book.getBookSeries().getLock();
 			lock.writeLock().lock();//have to use write lock because of formula evaluation is not thread safe
 			try{
-				TransactionManager.INSTANCE.startTransaction(book);
 				renderProperties0(renderer);
 			}finally{
-				TransactionManager.INSTANCE.endTransaction(book);
 				lock.writeLock().unlock();
 			}
 		}
@@ -3032,7 +3027,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 		// remove this, beacuse invalidate will cause client side rebuild,
 		// i must reinitial size helper since there are maybe some customized is
 		// from client.
-		// System.out.println(">>>>>>>>>>>remove this");
+		// System.out.println(">>>>>>>>remove this");
 		// removeAttribute(MERGE_MATRIX_KEY);//TODO remove this, for insert
 		// column test only
 
@@ -3214,7 +3209,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 				//callback
 				new EventListener() {
 					@Override
-					public void onEvent(Event event) throws Exception {
+					public void onEvent(Event event) {
 						final String eventname = event.getName();
 						if (Messagebox.ON_CANCEL.equals(eventname)) { //cancel
 							Spreadsheet.this.processCancelEditing0(token, sheet, rowIdx, colIdx, true, editingType); //skipMove
@@ -4471,7 +4466,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 		}
 
 		@Override
-		public void cleanup(Desktop desktop) throws Exception {
+		public void cleanup(Desktop desktop) {
 			Component comp = desktop.getComponentByUuid(_ssid);
 			if (comp instanceof Spreadsheet) {
 				try {
@@ -4880,12 +4875,7 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 			//ZSS-939
 			final Integer cellAttrVal = (Integer) event.getData("cellAttr");
 			final CellAttribute cellAttr = cellAttrVal == null ? CellAttribute.ALL : CellAttribute.values()[cellAttrVal - 1];
-			try {
-				TransactionManager.INSTANCE.startTransaction(sheet.getBook());
-				updateCell(sheet, left, top, right, bottom, cellAttr);
-			}finally {
-				TransactionManager.INSTANCE.endTransaction(sheet.getBook());
-			}
+			updateCell(sheet, left, top, right, bottom, cellAttr);
 			updateUnlockInfo();
 			org.zkoss.zk.ui.event.Events.postEvent(new CellAreaEvent(
 					Events.ON_AFTER_CELL_CHANGE, Spreadsheet.this, new SheetImpl(new SimpleRef<SBook>(sheet.getBook()), new SimpleRef<SSheet>(sheet))
@@ -6117,5 +6107,15 @@ public class Spreadsheet extends XulElement implements Serializable, AfterCompos
 		public void putHelper(String sheetId, T helper) {
 			helpers.put(sheetId, helper);
 		}
+	}
+
+	public void setNavSBuckets(ArrayList<Bucket<String>> ls)
+	{
+		this.navSBuckets = ls;
+	}
+
+	public ArrayList<Bucket<String>> getNavSBuckets()
+	{
+		return  this.navSBuckets;
 	}
 }

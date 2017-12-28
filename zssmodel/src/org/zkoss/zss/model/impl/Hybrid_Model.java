@@ -26,7 +26,7 @@ public class Hybrid_Model extends RCV_Model {
     private MetaDataBlock metaDataBlock;
 
     // This list is synchronized with modelEntryList in metaDataBlock
-    private List<Pair<CellRegion, Model>> tableModels;
+    public List<Pair<CellRegion, Model>> tableModels;
 
     Hybrid_Model(DBContext context, SSheet sheet, String tableName) {
         super(context, sheet, tableName);
@@ -228,9 +228,9 @@ public class Hybrid_Model extends RCV_Model {
         }
     }
 
-    public List<Integer> appendTableRows(DBContext dbContext, CellRegion range, String tableName) {
+    public ArrayList<Integer> appendTableRows(DBContext dbContext, CellRegion range, String tableName) {
 
-        List<Integer> oidList = new ArrayList<>();
+        ArrayList<Integer> oidList = new ArrayList<>();
         // Delete Header
 
         //++range.row;
@@ -751,11 +751,11 @@ public class Hybrid_Model extends RCV_Model {
 
 
     @Override
-    public void importSheet(Reader reader, char delimiter) throws IOException
+    public void importSheet(Reader reader, char delimiter, boolean useNav) throws IOException
     {
         logger.info("Importing sheet");
         // Create a ROM model and import the file to the ROM model.
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();)
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection())
         {
             DBContext dbContext = new DBContext(connection);
             String newTableName = this.tableName + "_"
@@ -764,7 +764,12 @@ public class Hybrid_Model extends RCV_Model {
 
             connection.commit(); //TODO: pass connection to import
 
-            model.importSheet(reader, delimiter);
+            model.importSheet(reader, delimiter, useNav);
+            logger.info("Import Sheet Commited");
+
+            this.navSbuckets  = model.navSbuckets;
+            this.navS = model.navS;
+            //this.indexString = model.indexString;
 
             CellRegion range = model.getBounds(dbContext);
 
@@ -774,6 +779,8 @@ public class Hybrid_Model extends RCV_Model {
             modelEntry.modelType = ModelType.ROM_Model;
             modelEntry.tableName = model.getTableName();
             metaDataBlock.modelEntryList.add(modelEntry);
+            super.insertRows(dbContext, range.row, range.lastRow);
+            super.insertCols(dbContext, range.column, range.lastColumn);
             bs.putObject(0, metaDataBlock);
             bs.flushDirtyBlocks(dbContext);
             connection.commit();

@@ -17,7 +17,6 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 package org.zkoss.zss.model;
 
 import org.model.DBContext;
-import org.zkoss.poi.ss.usermodel.Cell;
 import org.zkoss.zss.model.impl.Model;
 
 import java.util.Collection;
@@ -193,6 +192,7 @@ public interface SSheet {
 	 * Clear the cache
 	 */
 	void clearCache(CellRegion cellRegion);
+	void clearCache();
 
 	/**
 	 * @see #insertCell(CellRegion, boolean)
@@ -491,4 +491,6 @@ public interface SSheet {
 		HIDDEN,        // This sheet is hidden (but can be unhide via UI dialog)
 		VERY_HIDDEN,    // This sheet is hidden and only can be unhhide by API
 	}
+
+	void setSyncComputation(boolean syncComputation);
 }

@@ -16,16 +16,9 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
-import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
-
-import org.zkoss.zss.model.ModelEvent;
-import org.zkoss.zss.model.SBook;
-import org.zkoss.zss.model.SBookSeries;
-import org.zkoss.zss.model.SName;
-import org.zkoss.zss.model.STable;
+import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.sys.formula.EvaluationContributorContainer;
+import java.io.Serializable;
 /**
  * 
  * @author dennis
@@ -41,7 +34,7 @@ public abstract class AbstractBookAdv implements SBook,EvaluationContributorCont
 	/*package*/ abstract void setBookSeries(SBookSeries bookSeries);
 
 	public abstract String getId();
-	public abstract void setIdAndLoad(String id);
+	public abstract boolean setNameAndLoad(String bookName);
 	
 	//ZSS-854
 	public abstract void clearDefaultCellStyles();
@@ -67,4 +60,5 @@ public abstract class AbstractBookAdv implements SBook,EvaluationContributorCont
 	//ZSS-967
 	//return null if newName is not duplicated in the Table
 	public abstract String setTableColumnName(STable table, String oldName, String newName);
+
 }

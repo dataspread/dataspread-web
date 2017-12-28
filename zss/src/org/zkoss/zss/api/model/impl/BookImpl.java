@@ -19,8 +19,8 @@ package org.zkoss.zss.api.model.impl;
 import org.zkoss.zss.api.model.Book;
 import org.zkoss.zss.api.model.Sheet;
 import org.zkoss.zss.model.SBook;
-import org.zkoss.zss.model.SBooks;
 import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.range.impl.imexp.AbstractExcelImporter;
 
 import java.util.concurrent.locks.ReadWriteLock;
@@ -46,7 +46,7 @@ public class BookImpl implements Book{
 	}
 
 	public BookImpl(String bookName){
-		_book = SBooks.createOrGetBook(bookName);
+		_book = BookBindings.getBookByName(bookName);
 	}
 
 	public SBook getNative() {
@@ -80,12 +80,9 @@ public class BookImpl implements Book{
 			return false;
 		BookImpl other = (BookImpl) obj;
 		if (_bookRef == null) {
-			if (other._bookRef != null)
-				return false;
-		} else if (!_bookRef.equals(other._bookRef))
-			return false;
-		return true;
-	}
+            return other._bookRef == null;
+		} else return _bookRef.equals(other._bookRef);
+    }
 
 	public String getBookName() {
 		return getNative().getBookName();

@@ -1399,12 +1399,9 @@ public class FormulaEngineImpl implements FormulaEngine {
 			} else if (!book.equals(other.book))
 				return false;
 			if (evaluator == null) {
-				if (other.evaluator != null)
-					return false;
-			} else if (!evaluator.equals(other.evaluator))
-				return false;
-			return true;
-		}
+                return other.evaluator == null;
+			} else return evaluator.equals(other.evaluator);
+        }
 
 	}
 

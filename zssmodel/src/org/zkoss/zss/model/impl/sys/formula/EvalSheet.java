@@ -95,25 +95,25 @@ public class EvalSheet implements EvaluationSheet {
 		}
 
 		public double getNumericCellValue() {
-			return cell.getNumberValue().doubleValue();
+			return cell.getNumberValue(true);
 		}
 
 		public String getStringCellValue() {
 			if(cell.getType() == CellType.FORMULA) {
 				return cell.getFormulaValue();
 			} else if(cell.getType() == CellType.STRING) {
-				return cell.getStringValue();
+				return cell.getStringValue(true);
 			} else {
 				return null;
 			}
 		}
 
 		public boolean getBooleanCellValue() {
-			return cell.getBooleanValue();
+			return cell.getBooleanValue(true);
 		}
 
 		public int getErrorCellValue() {
-			ErrorValue errorValue = cell.getErrorValue();
+			ErrorValue errorValue = cell.getErrorValue(true);
 			switch(errorValue.getCode()) {
 				case ErrorValue.INVALID_FORMULA:
 					return FormulaError.NA.getCode(); //TODO zss 3.5 this value is not in zpoi

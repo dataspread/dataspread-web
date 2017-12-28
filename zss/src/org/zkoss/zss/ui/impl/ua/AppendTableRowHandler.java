@@ -39,6 +39,7 @@ import org.zkoss.zul.Messagebox;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -72,7 +73,7 @@ public class AppendTableRowHandler extends AbstractHandler {
 
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
                 DBContext dbContext = new DBContext(connection);
-                List<Integer> oidList = dataModel.appendTableRows(dbContext, cellRegion,
+                ArrayList<Integer> oidList = dataModel.appendTableRows(dbContext, cellRegion,
                         cellRegionModelPair.y.getTableName());
                 ((TOM_Model) cellRegionModelPair.y).insertOIDs(dbContext, oidList);
                 dataModel.extendRange(dbContext, cellRegionModelPair.y.getTableName(),

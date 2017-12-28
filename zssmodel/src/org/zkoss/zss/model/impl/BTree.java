@@ -3,37 +3,34 @@ package org.zkoss.zss.model.impl;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import org.model.BlockStore;
 import org.model.DBContext;
-import org.zkoss.util.logging.Log;
+import org.zkoss.zss.model.impl.statistic.AbstractStatistic;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.ArrayList;
 
 /**
  * An implementation of a B+ Tree
  */
-public class BTree implements PosMapping {
+public class BTree <K extends AbstractStatistic> {
     /**
      * The maximum number of children of a node (an odd number)
      */
-    protected static final int b = 101;
-    /**
-     * Logging
-     */
-    private static final Log _logger = Log.lookup(BlockStore.class);
+    protected static final int b = 5;
+
     /**
      * b div 2
      */
-    protected final int B = b / 2;
+    private final int B = b / 2;
     /**
      * The ID of the meta data node
      */
-    protected final int METADATA_BLOCK_ID = 0;
+    private final int METADATA_BLOCK_ID = 0;
     /**
      * The block storage mechanism
      */
-    protected BlockStore bs;
+    public BlockStore bs;
     private MetaDataBlock metaDataBlock;
 
+    K emptyStatistic;
     /**
      * Set serialization function
      * True for use Kryo function
@@ -46,80 +43,32 @@ public class BTree implements PosMapping {
     /**
      * Construct an empty BTree, in-memory
      */
-    public BTree(DBContext context, String tableName) {
+    public BTree(DBContext context, String tableName, K emptyStatistic, boolean useKryo) {
+        this.emptyStatistic = emptyStatistic;
         bs = new BlockStore(context, tableName);
+        useKryo(useKryo);
         loadMetaData(context);
     }
-
 
     /**
      * Construct an BTree from an existing BTree, in-memory
      */
-    protected BTree(DBContext context, String tableName, BlockStore sourceBlockStore) {
+    protected BTree(DBContext context, String tableName, BlockStore sourceBlockStore, K emptyStatistic, boolean useKryo) {
         bs = sourceBlockStore.clone(context, tableName);
+        this.emptyStatistic = emptyStatistic;
         loadMetaData(context);
-    }
-
-    @Override
-    public BTree clone(DBContext context, String tableName){
-        return new BTree(context, tableName, bs);
-    }
-
-    /**
-     * Find the index, i, at which x should be inserted into the null-padded
-     * sorted array, a
-     *
-     * @param a the sorted array (padded with null entries)
-     * @param x the value to search for
-     * @return i
-     */
-    protected static int findIt(int[] a, int x) {
-        int lo = 0, hi = a.length;
-        while (hi != lo) {
-            int m = (hi + lo) / 2;
-            if (x < a[m] || a[m] == -1)
-                hi = m;      // look in first half
-            else if (x > a[m])
-                lo = m + 1;    // look in second half
-            else
-                return m + 1; // found it
-        }
-        return lo;
-    }
-
-    /**
-     * Find the index, i, at which x should be inserted into the null-padded
-     *
-     * @param a   the array (padded with null entries)
-     * @param row the position to search for
-     * @return i
-     */
-    protected static int findItByCount(long[] a, long row) {
-        if (a == null) return 0;
-        int lo = 0, hi = a.length;
-        long ct = row + 1;
-        while (hi != lo) {
-            if (a[lo] == 0) return lo - 1;
-            if (ct > a[lo]) {
-                ct -= a[lo];
-                lo++;
-            } else {
-                return lo;
-            }
-        }
-        return lo - 1;
+        useKryo(useKryo);
     }
 
     private void loadMetaData(DBContext context) {
         metaDataBlock = bs.getObject(context, METADATA_BLOCK_ID, MetaDataBlock.class);
         if (metaDataBlock == null) {
             metaDataBlock = new MetaDataBlock();
-            Node root = Node.create(context, bs);
+            Node root = new Node().create(context, bs);
             root.update(bs);
             metaDataBlock.ri = root.id;
             metaDataBlock.elementCount = 0;
-            metaDataBlock.maxValue = 0;
-
+            metaDataBlock.max_value = null;
             /* Create Metadata */
             bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
             bs.flushDirtyBlocks(context);
@@ -135,64 +84,43 @@ public class BTree implements PosMapping {
         bs.dropSchemaAndClear(context);
     }
 
+    public boolean add(DBContext context, K statistic, Integer val, boolean flush, AbstractStatistic.Type type) {
+        return add(context, statistic, val, 1, flush, type);
+    }
     /**
      * Find the index, i, at which key should be inserted into the null-padded
      * sorted array, a
      *
-     * @param key the key for the value
+     * @param statistic the key for the value
      * @param val the value corresponding to key
      * @return
      */
-    public boolean add(DBContext context, int key, int val) {
-        if (val > metaDataBlock.maxValue) {
-            metaDataBlock.maxValue = val;
-            bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
-        }
-
-        Node w;
-        w = addRecursive(context, key, metaDataBlock.ri, val);
-        if (w != null) {   // root was split, make new root
-            Node newRoot = Node.create(context, bs);
-            key = w.removeKey(0);
-            w.update(bs);
-            // No longer a leaf node
+    public boolean add(DBContext context, K statistic, Integer val, int count, boolean flush, AbstractStatistic.Type type) {
+        Node rightNode = addRecursive(context, statistic, metaDataBlock.ri, val, count, type);
+        if (rightNode != null) {   // root was split, make new root
+            Node leftNode = new Node().get(context, bs, metaDataBlock.ri);
+            Node newRoot = new Node().create(context, bs);
+            rightNode.update(bs);
             // First time leaf becomes a root
             newRoot.leafNode = false;
-
-            newRoot.children = new int[b + 1];
-            Arrays.fill(newRoot.children, 0, newRoot.children.length, -1);
-
-            newRoot.childrenCount = new long[b + 1];
-            Arrays.fill(newRoot.childrenCount, 0, newRoot.childrenCount.length, 0);
-
-            newRoot.children[0] = metaDataBlock.ri;
-            newRoot.keys[0] = key;
-            newRoot.children[1] = w.id;
-
-            /* Update children count */
-            Node leftNode = Node.get(context, bs, metaDataBlock.ri);
-            if (leftNode.isLeaf()) {
-                newRoot.childrenCount[0] = leftNode.size();
-            } else {
-                int i;
-                for (i = 0; i < leftNode.childrenCount.length; i++) {
-                    newRoot.childrenCount[0] += leftNode.childrenCount[i];
-                }
-            }
-            if (w.isLeaf()) {
-                newRoot.childrenCount[1] = w.size();
-            } else {
-                int i;
-                for (i = 0; i < w.childrenCount.length; i++) {
-                    newRoot.childrenCount[1] += w.childrenCount[i];
-                }
-            }
+            // Add two children and their count
+            newRoot.children.add(0, metaDataBlock.ri);
+            newRoot.children.add(1, rightNode.id);
+            newRoot.childrenCount.add(0, leftNode.size());
+            newRoot.childrenCount.add(1, rightNode.size());
+            // Update two children's statistics
+            newRoot.statistics.add(0, statistic.getAggregation(leftNode.statistics, type));
+            newRoot.statistics.add(1, statistic.getAggregation(rightNode.statistics, type));
+            // Update new root id
             metaDataBlock.ri = newRoot.id;
-            bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
+            // Update to block store
             newRoot.update(bs);
         }
-        metaDataBlock.elementCount++;
-        bs.flushDirtyBlocks(context);
+        if (val > metaDataBlock.max_value) metaDataBlock.max_value = val;
+        bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
+        // Update Database
+        if (flush)
+            bs.flushDirtyBlocks(context);
         return true;
     }
 
@@ -203,476 +131,158 @@ public class BTree implements PosMapping {
      * ui. If u is split by this operation then the return value is the Node
      * that was created when u was split
      *
-     * @param key the element to add
+     * @param statistic the element to add
      * @param ui  the index of the node, u, at which to add key
      * @param val
      * @return a new node that was created when u was split, or null if u was
      * not split
      */
-    protected Node addRecursive(DBContext context, int key, int ui, int val) {
-        Node u = Node.get(context, bs, ui);
-        int i = findIt(u.keys, key);
-        //if (i < 0) throw new DuplicateValueException();
-        if (u.isLeaf()) { // leaf node, just add it
-            u.add(context, key, null, val);
-        } else {
-            u.childrenCount[i]++;
-            Node w = addRecursive(context, key, u.children[i], val);
-            if (w != null) {  // child was split, w is new child
-                key = w.removeKey(0);
-                w.update(bs);
-                u.add(context, key, w, val);
-                if (w.isLeaf()) {
-                    u.childrenCount[i] -= w.size();
-                } else {
-                    int z;
-                    for (z = 0; z < w.childrenCount.length; z++) {
-                        u.childrenCount[i] -= w.childrenCount[z];
-                    }
+    private Node addRecursive(DBContext context, K statistic, int ui, Integer val, int count,  AbstractStatistic.Type type) {
+        // Get the current node
+        Node u = new Node().get(context, bs, ui);
+        // Find the position to insert
+        int i = statistic.findIndex(u.statistics, type, false, true);
+        // If the node is leaf node, add the value
+        if (u.isLeaf()) {
+            // If the node is a sparse node, split
+            if (i < u.childrenCount.size()) {
+                if (u.childrenCount.get(i) > 1) {
+                    u.splitSparseNode(i, statistic, type, false);
                 }
+            }
+            i = statistic.findIndex(u.statistics, type, true, true);
+            u.addLeaf(i, statistic, val, count, type);
+        } else {
+            // Update the statistic of the node we found
+            AbstractStatistic current_stat = u.statistics.get(i);
+            if (current_stat.requireUpdate())
+                u.statistics.set(i, current_stat.updateStatistic(AbstractStatistic.Mode.ADD));
+            // Get the new statistic we are looking for
+            K new_statistic = (K) statistic.getLowerStatistic(u.statistics, i, type);
+            Node rightNode = addRecursive(context, new_statistic, u.children.get(i), val, count, type);
+            Node child = new Node().get(context, bs, u.children.get(i));
+            u.childrenCount.set(i, child.childrenCount.size());
+            if (rightNode != null) {  // child was split, w is new child
+                rightNode.update(bs);
+                // Add w after position i
+                u.addInternal(rightNode, i + 1, type);
+                // Update children i statistic
+                Node leftNode = new Node().get(context, bs, u.children.get(i));
+                u.statistics.set(i, emptyStatistic.getAggregation(leftNode.statistics, type));
             }
         }
         u.update(bs);
 
         if (u.isFull()) {
-            Node splitNode = u.split(context, bs);
+            Node rightNode = u.split(context, bs);
             u.update(bs);
-            return splitNode;
+            return rightNode;
         } else
             return null;
     }
 
-    public boolean addByCount(DBContext context, long pos, int val) {
-        return addByCount(context, pos, val, true);
-    }
-
-    /**
-     * Find the index, i, at which value should be inserted into the null-padded
-     * sorted array, a
-     *
-     * @param pos the position for the value
-     * @param val the value corresponding to x
-     * @return
-     */
-    private boolean addByCount(DBContext context, long pos, int val, boolean flush) {
-        if (pos > size(context)) {
-            // Ignore inserts beyond the size of positional index.
-            return false;
-            //throw new RuntimeException("pos should be <= size");
-        }
-        Node w;
-        w = addRecursiveByCount(context, pos, metaDataBlock.ri, val);
-        if (w != null) {   // root was split, make new root
-            Node newroot = Node.create(context, bs);
-            w.update(bs);
-            // No longer a leaf node
-            // First time leaf becomes a root
-            newroot.leafNode = false;
-
-            newroot.children = new int[b + 1];
-            Arrays.fill(newroot.children, 0, newroot.children.length, -1);
-
-            newroot.childrenCount = new long[b + 1];
-            Arrays.fill(newroot.childrenCount, 0, newroot.childrenCount.length, 0);
-
-            newroot.children[0] = metaDataBlock.ri;
-            newroot.children[1] = w.id;
-            Node leftNode = Node.get(context, bs, metaDataBlock.ri);
-            if (leftNode.isLeaf()) {
-                newroot.childrenCount[0] = leftNode.valueSize();
-            } else {
-                int i;
-                for (i = 0; i < leftNode.childrenCount.length; i++) {
-                    newroot.childrenCount[0] += leftNode.childrenCount[i];
-                }
-            }
-            if (w.isLeaf()) {
-                newroot.childrenCount[1] = w.valueSize();
-            } else {
-                int i;
-                for (i = 0; i < w.childrenCount.length; i++) {
-                    newroot.childrenCount[1] += w.childrenCount[i];
-                }
-            }
-            metaDataBlock.ri = newroot.id;
-            bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
-            newroot.update(bs);
-        }
-        metaDataBlock.elementCount++;
-        if (flush)
-            bs.flushDirtyBlocks(context);
-        return true;
-    }
-
-    /**
-     * Add the value x in the subtree rooted at the node with index ui
-     * <p>
-     * This method adds x into the subtree rooted at the node u whose index is
-     * ui. If u is split by this operation then the return value is the Node
-     * that was created when u was split
-     *
-     * @param pos the element to add
-     * @param ui  the index of the node, u, at which to add x
-     * @param val
-     * @return a new node that was created when u was split, or null if u was
-     * not split
-     */
-    protected Node addRecursiveByCount(DBContext context, long pos, int ui, int val) {
-        Node u = Node.get(context, bs, ui);
-
-        int i;
-        if (u.isLeaf()) { // leaf node, just add it
-            u.addByCount(context, pos, null, val);
-            u.update(bs);
-        } else {
-            i = findItByCount(u.childrenCount, pos);
-            long newn = pos;
-            for (int z = 0; z < i; z++) {
-                newn -= u.childrenCount[z];
-            }
-            u.childrenCount[i]++;
-            Node w = addRecursiveByCount(context, newn, u.children[i], val);
-            if (w != null) {  // child was split, w is new child
-                w.update(bs);
-                u.addByCount(context, pos, w, val);
-                if (w.isLeaf()) {
-                    u.childrenCount[i] -= w.valueSize();
-                } else {
-                    int z;
-                    for (z = 0; z < w.childrenCount.length; z++) {
-                        u.childrenCount[i] -= w.childrenCount[z];
-                    }
-                }
-            }
-            u.update(bs);
-        }
-
-        if (u.isFullByCount()) {
-            Node splitNode = u.split(context, bs);
-            u.update(bs);
-            return splitNode;
-        } else
-            return null;
-
-
-    }
-
-    public int removeByCount(DBContext context, long pos) {
-        return removeByCount(context, pos, true);
-    }
-
-    private int removeByCount(DBContext context, long pos, boolean flush) {
-        if (pos >= size(context)) {
-            // Ignore this delete
-            // Do nothing
-            return -1;
-        }
-
-        int id = removeRecursiveByCount(context, pos, metaDataBlock.ri);
-        if (id > -1) {
-            metaDataBlock.elementCount--;
-            Node r = Node.get(context, bs, metaDataBlock.ri);
-            if (!r.isLeaf() && r.childrenSize() <= 1 && metaDataBlock.elementCount > 0) { // root has only one child
+    public Integer remove(DBContext context, K statistic, boolean flush, AbstractStatistic.Type type) {
+        Integer value = removeRecursive(context, statistic, metaDataBlock.ri, type);
+        if (value != null) {
+            Node r = new Node().get(context, bs, metaDataBlock.ri);
+            if ((!r.isLeaf()) && (r.size() <= 1) && (metaDataBlock.elementCount > 0)) { // root has only one child
                 r.free(bs);
-                metaDataBlock.ri = r.children[0];
+                metaDataBlock.ri = r.children.get(0);
                 bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
             }
             if (flush)
                 bs.flushDirtyBlocks(context);
-            return id;
+            return value;
         }
-        return -1;
+        return null;
     }
 
     /**
      * Remove the value x from the subtree rooted at the node with index ui
      *
-     * @param pos the value to remove
-     * @param ui  the index of the subtree to remove x from
-     * @return true if x was removed and false otherwise
-     */
-    protected int removeRecursiveByCount(DBContext context, long pos, int ui) {
-        if (ui < 0) return -1;  // didn't find it
-        Node u = Node.get(context, bs, ui);
-
-        int i;
-        /* Need to go to leaf to delete */
-        if (u.isLeaf()) {
-            metaDataBlock.elementCount--;
-            i = (int) pos;
-            // if (i > 0) {
-            int id = u.removeBoth(i);
-            u.update(bs);
-            bs.flushDirtyBlocks(context);
-            return id;
-            //}
-        } else {
-            i = findItByCount(u.childrenCount, pos);
-            u.childrenCount[i]--;
-            long newn = pos;
-            for (int z = 0; z < i; z++) {
-                newn -= u.childrenCount[z];
-            }
-            int id = removeRecursiveByCount(context, newn, u.children[i]);
-            if (id > -1) {
-                checkUnderflowByCount(context, u, i);
-                u.update(bs);
-                return id;
-            }
-            u.update(bs);
-            bs.flushDirtyBlocks(context);
-        }
-        return -1;
-    }
-
-    /**
-     * Check if an underflow has occurred in the i'th child of u and, if so, fix it
-     * by borrowing from or merging with a sibling
-     *
-     * @param u
-     * @param i
-     */
-    protected void checkUnderflowByCount(DBContext context, Node u, int i) {
-        if (u.children[i] < 0) return;
-        if (i == 0)
-            checkUnderflowZeroByCount(context, u, i); // use u's right sibling
-        else if (i == u.childrenSize() - 1)
-            checkUnderflowNonZeroByCount(context, u, i);
-        else if (u.childrenCount[i + 1] > u.childrenCount[i - 1])
-            checkUnderflowZeroByCount(context, u, i);
-        else checkUnderflowNonZeroByCount(context, u, i);
-    }
-
-    protected void mergeByCount(DBContext context, Node u, int i, Node v, Node w) {
-        // w is merged with v
-        int sv, sw;
-        if (!v.isLeaf()) {
-            sv = v.childrenSize() - 1;
-            sw = w.childrenSize() - 1;
-        } else {
-            sv = v.valueSize();
-            sw = w.valueSize();
-        }
-
-        if (v.isLeaf()) {
-            System.arraycopy(w.values, 0, v.values, sv, sw);
-            v.next_sibling = w.next_sibling;
-        } else {
-            System.arraycopy(w.children, 0, v.children, sv + 1, sw + 1);
-            System.arraycopy(w.childrenCount, 0, v.childrenCount, sv + 1, sw + 1);
-            v.values[i + 1] = u.values[i];
-        }
-        // add key to v and remove it from u
-        // U should not be a leaf node
-        u.childrenCount[i] += u.childrenCount[i + 1];
-
-        // w ids is in u.children[i+1]
-        // Free block
-        w.free(bs);
-
-        System.arraycopy(u.children, i + 2, u.children, i + 1, b - i - 1);
-        System.arraycopy(u.childrenCount, i + 2, u.childrenCount, i + 1, b - i - 1);
-        u.children[b] = -1;
-        u.childrenCount[b] = 0;
-    }
-
-    /**
-     * Check if an underflow has occured in the i'th child of u and, if so, fix
-     * it
-     *
-     * @param u a node
-     * @param i the index of a child in u
-     */
-    protected void checkUnderflowNonZeroByCount(DBContext context, Node u, int i) {
-        Node w = Node.get(context, bs, u.children[i]);  // w is child of u
-        if ((w.isLeaf() && w.valueSize() < B) || (!w.isLeaf() && w.childrenSize() < B + 1)) {  // underflow at w
-            Node v = Node.get(context, bs, u.children[i - 1]); // v left of w
-            if ((v.isLeaf() && v.valueSize() > B) || (!v.isLeaf() && v.childrenSize() > B + 1)) {  // underflow at w
-                shiftLRByCount(u, i - 1, v, w);
-                v.update(bs);
-            } else { // v will absorb w
-                mergeByCount(context, u, i - 1, v, w);
-                v.update(bs);
-            }
-            bs.flushDirtyBlocks(context);
-        }
-
-    }
-
-    /**
-     * Shift keys from v into w
-     *
-     * @param u the parent of v and w
-     * @param i the index w in u.children
-     * @param v the right sibling of w
-     * @param w the left sibling of v
-     */
-    protected void shiftLRByCount(Node u, int i, Node v, Node w) {
-        int sw, sv, shift;
-        if (!w.isLeaf()) {
-            sw = w.childrenSize() - 1;
-            sv = v.childrenSize() - 1;
-        } else {
-            sw = w.valueSize();
-            sv = v.valueSize();
-        }
-        shift = ((sw + sv) / 2) - sw;  // num. keys to shift from v to w
-
-
-        // make space for new keys in w
-
-        if (v.isLeaf()) {
-            // move keys and children out of v and into w
-
-            System.arraycopy(w.values, 0, w.values, shift, sw);
-
-            System.arraycopy(v.values, sv - shift, w.values, 0, shift);
-            Arrays.fill(v.values, sv - shift, sv, -1);
-            u.childrenCount[i] -= shift;
-            u.childrenCount[i + 1] += shift;
-
-        } else {
-            // Don't move this key for leaf
-            // move keys and children out of v and into w (and u)
-
-            System.arraycopy(w.children, 0, w.children, shift, sw + 1);
-            System.arraycopy(w.childrenCount, 0, w.childrenCount, shift, sw + 1);
-
-            System.arraycopy(v.children, sv - shift + 1, w.children, 0, shift);
-            System.arraycopy(v.childrenCount, sv - shift + 1, w.childrenCount, 0, shift);
-            Arrays.fill(v.children, sv - shift + 1, sv + 1, -1);
-            Arrays.fill(v.childrenCount, sv - shift + 1, sv + 1, 0);
-
-            for (int shifti = 0; shifti < shift; shifti++) {
-                u.childrenCount[i] -= w.childrenCount[shifti];
-                u.childrenCount[i + 1] += w.childrenCount[shifti];
-            }
-
-        }
-
-
-    }
-
-    protected void checkUnderflowZeroByCount(DBContext context, Node u, int i) {
-        Node w = Node.get(context, bs, u.children[i]); // w is child of u
-        if ((w.isLeaf() && w.valueSize() < B) || (!w.isLeaf() && w.childrenSize() < B + 1)) {  // underflow at w
-            Node v = Node.get(context, bs, u.children[i + 1]); // v right of w
-            if ((v.isLeaf() && v.valueSize() > B) || (!v.isLeaf() && v.childrenSize() > B + 1)) {  // underflow at w
-                shiftRLByCount(u, i, v, w);
-                v.update(bs);
-                w.update(bs);
-            } else { // w will absorb v
-                mergeByCount(context, u, i, w, v);
-                w.update(bs);
-            }
-        }
-    }
-
-    /**
-     * Shift keys from node v into node w
-     *
-     * @param u the parent of v and w
-     * @param i the index w in u.children
-     * @param v the left sibling of w
-     * @param w the right sibling of v
-     */
-    protected void shiftRLByCount(Node u, int i, Node v, Node w) {
-        int sw, sv, shift;
-        if (!w.isLeaf()) {
-            sw = w.childrenSize() - 1;
-            sv = v.childrenSize() - 1;
-        } else {
-            sw = w.valueSize();
-            sv = v.valueSize();
-        }
-        shift = ((sw + sv) / 2) - sw;  // num. keys to shift from v to w
-
-        // shift keys and children from v to w
-        // Intermediate keys are not important and can be eliminated
-
-        if (v.isLeaf()) // w should also be leaf
-        {
-            // Do not bring the key from u
-            System.arraycopy(v.values, 0, w.values, sw, shift);
-            System.arraycopy(v.values, shift, v.values, 0, b - shift);
-            Arrays.fill(v.values, sv - shift + 1, b, -1);
-            u.childrenCount[i + 1] -= shift;
-            u.childrenCount[i] += shift;
-        } else {
-            System.arraycopy(v.children, 0, w.children, sw + 1, shift);
-            System.arraycopy(v.childrenCount, 0, w.childrenCount, sw + 1, shift);
-
-            System.arraycopy(v.children, shift, v.children, 0, b - shift + 1);
-            Arrays.fill(v.children, sv - shift + 1, b + 1, -1);
-            System.arraycopy(v.childrenCount, shift, v.childrenCount, 0, b - shift + 1);
-            Arrays.fill(v.childrenCount, sv - shift + 1, b + 1, 0);
-
-            for (int shifti = 0; shifti < shift; shifti++) {
-                u.childrenCount[i + 1] -= w.childrenCount[shifti];
-                u.childrenCount[i] += w.childrenCount[shifti];
-            }
-        }
-
-    }
-
-    public boolean remove(DBContext context, int x) {
-        if (removeRecursive(context, x, metaDataBlock.ri).getDone() >= 0) {
-            metaDataBlock.elementCount--;
-            Node r = Node.get(context, bs, metaDataBlock.ri);
-            if (!r.isLeaf() && r.size() == 0 && metaDataBlock.elementCount > 0) { // root has only one child
-                r.free(bs);
-                metaDataBlock.ri = r.children[0];
-                bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
-            }
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Remove the value x from the subtree rooted at the node with index ui
-     *
-     * @param x  the value to remove
+     * @param statistic  the value to remove
      * @param ui the index of the subtree to remove x from
      * @return true if x was removed and false otherwise
      */
-    protected ReturnRS removeRecursive(DBContext context, int x, int ui) {
-        ReturnRS result = new ReturnRS(-1);
-        if (ui < 0) return result;  // didn't find it
-        Node u = Node.get(context, bs, ui);
-        int i = findIt(u.keys, x);
+    private Integer removeRecursive(DBContext context, K statistic, int ui, AbstractStatistic.Type type) {
+        if (ui < 0) return null;  // didn't find it
+        Node u = new Node().get(context, bs, ui);
+
+        int i = statistic.findIndex(u.statistics, type, false, false);
         /* Need to go to leaf to delete */
         if (u.isLeaf()) {
-            if (i > 0) {
-                if (u.keys[i - 1] == x) {
-                    // Found
-                    result.setDone(0);
-                    if (i == 1) {
-                        result.setDone(1);
-                        result.setKey(u.keys[i]);
-                    }
-                    u.removeBoth(i - 1);
-                    u.update(bs);
-                    return result;
-                }
+            if (u.childrenCount.get(i) > 1) {
+                u.splitSparseNode(i, statistic, type, true);
             }
-        } else {
-            u.childrenCount[i]--;
-            ReturnRS rs = removeRecursive(context, x, u.children[i]);
-            if (rs.getDone() >= 0) {
-                if (i > 0) {
-                    if (u.keys[i - 1] == x) {
-                        u.keys[i - 1] = rs.getKey();
-                        rs.setDone(0);
-                    }
-                }
-                checkUnderflow(context, u, i);
+            i = statistic.findIndex(u.statistics, type, true, false);
+            // Check if the statistic is exactly matched
+            if (statistic.match(u.statistics, i, type)) {
+                metaDataBlock.elementCount--;
+                u.statistics.remove(i);
+                u.childrenCount.remove(i);
+                Integer value = u.values.remove(i);
+                bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
                 u.update(bs);
-                return rs;
+                bs.flushDirtyBlocks(context);
+                return value;
+            } else
+                return null;
+        } else {
+            // Update the statistic of the node we found
+            AbstractStatistic current_stat = u.statistics.get(i);
+            if (current_stat.requireUpdate())
+                u.statistics.set(i, current_stat.updateStatistic(AbstractStatistic.Mode.DELETE));
+            // Get the new statistic we are looking for
+            K new_statistic = (K) statistic.getLowerStatistic(u.statistics, i, type);
+            Integer value = removeRecursive(context, new_statistic, u.children.get(i), type);
+            if (value != null) {
+                Node child = new Node().get(context, bs, u.children.get(i));
+                u.statistics.set(i, emptyStatistic.getAggregation(child.statistics, type));
+                u.childrenCount.set(i, child.size());
+                checkUnderflow(context, u, child, i, type);
+                u.update(bs);
+                bs.flushDirtyBlocks(context);
+                return value;
             }
             u.update(bs);
+            bs.flushDirtyBlocks(context);
         }
-        return result;
+        return null;
+    }
+
+
+    public Integer lookup(DBContext context, K statistic, AbstractStatistic.Type type) {
+        return lookupRecursive(context, statistic, metaDataBlock.ri, type);
+    }
+
+    /**
+     * Remove the value x from the subtree rooted at the node with index ui
+     *
+     * @param statistic  the value to remove
+     * @param ui the index of the subtree to remove x from
+     * @return true if x was removed and false otherwise
+     */
+    private Integer lookupRecursive(DBContext context, K statistic, int ui, AbstractStatistic.Type type) {
+        if (ui < 0) return null;  // didn't find it
+        Node u = new Node().get(context, bs, ui);
+        int i = statistic.findIndex(u.statistics, type, false, false);
+        /* Need to go to leaf to delete */
+        if (u.isLeaf()) {
+            if (u.childrenCount.get(i) > 1) {
+                int split = statistic.splitIndex(u.statistics, type);
+                if (split != 0) return u.values.get(i) + split;
+            }
+            i = statistic.findIndex(u.statistics, type, true, false);
+            // Check if the statistic is exactly matched
+            if (statistic.match(u.statistics, i, type)) {
+                return u.values.get(i);
+            } else
+                return null;
+        } else {
+            // Get the new statistic we are looking for
+            K new_statistic = (K) statistic.getLowerStatistic(u.statistics, i, type);
+            return lookupRecursive(context, new_statistic, u.children.get(i), type);
+        }
     }
 
     /**
@@ -682,205 +292,96 @@ public class BTree implements PosMapping {
      * @param u
      * @param i
      */
-    protected void checkUnderflow(DBContext context, Node u, int i) {
-        if (u.children[i] < 0) return;
-        if (i == 0)
-            checkUnderflowZero(context, u, i); // use u's right sibling
-        else if (i == u.childrenSize() - 1)
-            checkUnderflowNonZero(context, u, i);
-        else if (u.childrenCount[i + 1] > u.childrenCount[i - 1])
-            checkUnderflowZero(context, u, i);
-        else checkUnderflowNonZero(context, u, i);
+    private void checkUnderflow(DBContext context, Node u, Node checkNode, int i, AbstractStatistic.Type type) {
+        if (u.children.get(i) < 0) return;
+        if (checkNode.size() < B) {  // underflow at checkNode
+            int borrowIndex;
+            if (i == 0) {
+                borrowIndex = i + 1; // Use checkNode's right sibling
+            } else if (i == u.size() - 1) {
+                borrowIndex = i - 1; // Use checkNode's left sibling
+            } else if (u.childrenCount.get(i + 1) > u.childrenCount.get(i - 1)) {
+                borrowIndex = i + 1; // Use checkNode's right sibling
+            } else {
+                borrowIndex = i - 1; // Use checkNode's left sibling
+            }
+            Node borrowNode = new Node().get(context, bs, u.children.get(borrowIndex));
+            if (borrowNode.size() > B) { // checkNode can borrow from borrowNode
+                if (borrowIndex < i) { // borrowNode is the leftNode
+                    int insert = 0;
+                    int start = (borrowNode.size() + checkNode.size()) / 2;
+                    int end = borrowNode.size();
+                    shift(borrowNode, checkNode, start, end, insert);
+                } else { // borrowNode is the rightNode
+                    int insert = checkNode.size();
+                    int start = 0;
+                    int end = (borrowNode.size() - checkNode.size()) / 2;
+                    shift(borrowNode, checkNode, start, end, insert);
+                }
+                u.statistics.set(borrowIndex, emptyStatistic.getAggregation(borrowNode.statistics, type));
+                u.statistics.set(i, emptyStatistic.getAggregation(checkNode.statistics, type));
+                u.childrenCount.set(borrowIndex, borrowNode.size());
+                u.childrenCount.set(i, checkNode.size());
+                borrowNode.update(bs);
+                checkNode.update(bs);
+            } else { // checkNode will absorb borrowNode
+                if (borrowIndex < i) { // borrowNode is the leftNode
+                    merge(borrowNode, checkNode);
+                    u.updateMerge(borrowIndex, i, borrowNode, type);
+                } else { // borrowNode is the rightNode
+                    merge(checkNode, borrowNode);
+                    u.updateMerge(i, borrowIndex, checkNode, type);
+                }
+            }
+        }
     }
 
-    protected void merge(DBContext context, Node u, int i, Node v, Node w) {
-        // w is merged with v
-        int sv = v.size();
-        int sw = w.size();
-
-        if (v.isLeaf()) {
-            System.arraycopy(w.keys, 0, v.keys, sv, sw); // copy keys from w to v
-            System.arraycopy(w.values, 0, v.values, sv, sw);
+    /**
+     * rightNode is merged into leftNode, rightNode will be destroyed
+     * @param leftNode
+     * @param rightNode
+     */
+    protected void merge(Node leftNode, Node rightNode) {
+        // copy statistics from rightNode to leftNode
+        leftNode.statistics.addAll(rightNode.statistics);
+        leftNode.childrenCount.addAll(rightNode.childrenCount);
+        if (leftNode.isLeaf()) {
+            // copy values from leftNode to rightNode
+            leftNode.values.addAll(rightNode.values);
         } else {
-            System.arraycopy(w.keys, 0, v.keys, sv + 1, sw); // copy keys from w to v
-            System.arraycopy(w.children, 0, v.children, sv + 1, sw + 1);
-            System.arraycopy(w.childrenCount, 0, v.childrenCount, sv + 1, sw + 1);
-            v.keys[i + 1] = u.keys[i];
-            v.values[i + 1] = u.values[i];
+            leftNode.children.addAll(rightNode.children);
         }
-        // add key to v and remove it from u
-
-        //v.keys[sv] = u.keys[i];
-        // U should not be a leaf node
-        u.childrenCount[i] += u.childrenCount[i + 1];
-        System.arraycopy(u.keys, i + 1, u.keys, i, b - i - 1);
-        u.keys[b - 1] = -1;
-
-        // w ids is in u.children[i+1]
         // Free block
-        w.free(bs);
-
-        System.arraycopy(u.children, i + 2, u.children, i + 1, b - i - 1);
-        System.arraycopy(u.childrenCount, i + 2, u.childrenCount, i + 1, b - i - 1);
-        u.children[b] = -1;
-        u.childrenCount[b] = 0;
+        rightNode.free(bs);
+        leftNode.update(bs);
     }
 
     /**
-     * Check if an underflow has occured in the i'th child of u and, if so, fix
-     * it
-     *
-     * @param u a node
-     * @param i the index of a child in u
+     * Shift from borrowNode to checkNode
+     * @param borrowNode
+     * @param checkNode
+     * @param start the starting position of borrowNode to shift
+     * @param end the end position of borrowNode to shift
+     * @param insert the position of checkNode to insert into
      */
-    protected void checkUnderflowNonZero(DBContext context, Node u, int i) {
-        Node w = Node.get(context, bs, u.children[i]);  // w is child of u
-        if (w.size() < B) {  // underflow at w
-            Node v = Node.get(context, bs, u.children[i - 1]); // v left of w
-            if (v.size() > B) {  // w can borrow from v
-                shiftLR(u, i - 1, v, w);
-                if (v.isLeaf()) {
-                    u.childrenCount[i - 1]--;
-                } else {
-                    u.childrenCount[i - 1] -= w.childrenCount[0];
-                }
-                if (w.isLeaf()) {
-                    u.childrenCount[i]++;
-                } else {
-                    u.childrenCount[i] += w.childrenCount[0];
-                }
-                v.update(bs);
-                w.update(bs);
-            } else { // v will absorb w
-                merge(context, u, i - 1, v, w);
-                v.update(bs);
-            }
-            bs.flushDirtyBlocks(context);
-        }
-    }
-
-    /**
-     * Shift keys from v into w
-     *
-     * @param u the parent of v and w
-     * @param i the index w in u.children
-     * @param v the right sibling of w
-     * @param w the left sibling of v
-     */
-    protected void shiftLR(Node u, int i, Node v, Node w) {
-        int sw = w.size();
-        int sv = v.size();
-        int shift = ((sw + sv) / 2) - sw;  // num. keys to shift from v to w
-
-        // make space for new keys in w
-        System.arraycopy(w.keys, 0, w.keys, shift, sw);
-
-        if (v.isLeaf()) {
-            // move keys and children out of v and into w
-
-            System.arraycopy(w.values, 0, w.values, shift, sw);
-            u.keys[i] = v.keys[sv - shift];
-
-            System.arraycopy(v.keys, sv - shift, w.keys, 0, shift);
-            Arrays.fill(v.keys, sv - shift, sv, -1);
-            System.arraycopy(v.values, sv - shift, w.values, 0, shift);
-            Arrays.fill(v.values, sv - shift, sv, -1);
-
+    private void shift(Node borrowNode, Node checkNode, int start, int end, int insert) {
+        // move statistics from borrowNode to checkNode
+        checkNode.statistics.addAll(insert, borrowNode.statistics.subList(start, end));
+        borrowNode.statistics.subList(start, end).clear();
+        checkNode.childrenCount.addAll(insert, borrowNode.childrenCount.subList(start, end));
+        borrowNode.childrenCount.subList(start, end).clear();
+        if (borrowNode.isLeaf()) {
+            // move values from borrowNode to checkNode
+            checkNode.values.addAll(insert, borrowNode.values.subList(start, end));
+            borrowNode.values.subList(start, end).clear();
         } else {
-            // Don't move this key for leaf
-            // move keys and children out of v and into w (and u)
-
-            w.keys[shift - 1] = u.keys[i];
-            System.arraycopy(w.children, 0, w.children, shift, sw + 1);
-            System.arraycopy(w.childrenCount, 0, w.childrenCount, shift, sw + 1);
-            u.keys[i] = v.keys[sv - shift];
-
-            System.arraycopy(v.keys, sv - shift + 1, w.keys, 0, shift - 1);
-            Arrays.fill(v.keys, sv - shift, sv, -1);
-
-            System.arraycopy(v.children, sv - shift + 1, w.children, 0, shift);
-            System.arraycopy(v.childrenCount, sv - shift + 1, w.childrenCount, 0, shift);
-            Arrays.fill(v.children, sv - shift + 1, sv + 1, -1);
-            Arrays.fill(v.childrenCount, sv - shift + 1, sv + 1, 0);
-        }
-
-
-    }
-
-    protected void checkUnderflowZero(DBContext context, Node u, int i) {
-        Node w = Node.get(context, bs, u.children[i]); // w is child of u
-        if (w.size() < B) {  // underflow at w
-            Node v = Node.get(context, bs, u.children[i + 1]); // v right of w
-            if (v.size() > B) { // w can borrow from v
-                shiftRL(u, i, v, w);
-                if (v.isLeaf()) {
-                    u.childrenCount[i + 1]--;
-                } else {
-                    u.childrenCount[i + 1] -= w.childrenCount[w.childrenSize() - 1];
-                }
-                if (w.isLeaf()) {
-                    u.childrenCount[i]++;
-                } else {
-                    u.childrenCount[i] += w.childrenCount[w.childrenSize() - 1];
-                }
-                v.update(bs);
-                w.update(bs);
-            } else { // w will absorb v
-                merge(context, u, i, w, v);
-                w.update(bs);
-            }
+            // move children and childrenCount from borrowNode to checkNode
+            checkNode.children.addAll(insert, borrowNode.children.subList(start, end));
+            borrowNode.children.subList(start, end).clear();
         }
     }
 
-    /**
-     * Shift keys from node v into node w
-     *
-     * @param u the parent of v and w
-     * @param i the index w in u.children
-     * @param v the left sibling of w
-     * @param w the right sibling of v
-     */
-    protected void shiftRL(Node u, int i, Node v, Node w) {
-        int sw = w.size();
-        int sv = v.size();
-        int shift = ((sw + sv) / 2) - sw;  // num. keys to shift from v to w
-
-
-        // shift keys and children from v to w
-        // Intermediate keys are not important and can be eliminated
-
-        if (v.isLeaf()) // w should also be leaf
-        {
-            // Do not bring the key from u
-            System.arraycopy(v.keys, 0, w.keys, sw, shift);
-            System.arraycopy(v.values, 0, w.values, sw, shift);
-            u.keys[i] = v.keys[shift];
-        } else {
-            w.keys[sw] = u.keys[i];
-            System.arraycopy(v.keys, 0, w.keys, sw + 1, shift - 1);
-            System.arraycopy(v.children, 0, w.children, sw + 1, shift);
-            System.arraycopy(v.childrenCount, 0, w.childrenCount, sw + 1, shift);
-            u.keys[i] = v.keys[shift - 1];
-        }
-
-
-        // delete keys and children from v
-        System.arraycopy(v.keys, shift, v.keys, 0, b - shift);
-        Arrays.fill(v.keys, sv - shift, b, -1);
-
-        if (v.isLeaf()) {
-            System.arraycopy(v.values, shift, v.values, 0, b - shift);
-            Arrays.fill(v.values, sv - shift + 1, b, -1);
-        } else {
-            System.arraycopy(v.children, shift, v.children, 0, b - shift + 1);
-            Arrays.fill(v.children, sv - shift + 1, b + 1, -1);
-            System.arraycopy(v.childrenCount, shift, v.childrenCount, 0, b - shift + 1);
-            Arrays.fill(v.childrenCount, sv - shift + 1, b + 1, 0);
-
-        }
-    }
-
-    public void clear(DBContext context) throws Exception {
+    public void clear(DBContext context) {
         metaDataBlock.elementCount = 0;
         clearRecursive(context, metaDataBlock.ri);
         bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
@@ -888,98 +389,45 @@ public class BTree implements PosMapping {
     }
 
     private void clearRecursive(DBContext context, int ui) {
-        Node u = Node.get(context, bs, ui);
+        Node u = new Node().get(context, bs, ui);
         if (!u.isLeaf()) {
-            for (int i = 0; i < u.childrenSize(); i++) {
-                clearRecursive(context, u.children[i]);
+            for (int i = 0; i < u.size(); i++) {
+                clearRecursive(context, u.children.get(i));
             }
         }
         u.free(bs);
     }
 
-    public boolean exists(DBContext context, int x) {
+    public boolean exists(DBContext context, K statistic, AbstractStatistic.Type type) {
         int ui = metaDataBlock.ri;
         while (true) {
-            Node u = Node.get(context, bs, ui);
-            int i = findIt(u.keys, x);
+            Node u = new Node().get(context, bs, ui);
+            int i = statistic.findIndex(u.statistics, type, u.isLeaf(), false);
             if (u.isLeaf()) {
-                return i > 0 && u.keys[i - 1] == x;
+                return i >= 0 && statistic.match(u.statistics, i, type);
+            } else {
+                ui = u.children.get(i);
             }
-            ui = u.children[i];
         }
     }
 
-    public int get(DBContext context, int key) {
+    public Integer get(DBContext context, K statistic, AbstractStatistic.Type type) {
         int ui = metaDataBlock.ri;
         while (true) {
-            Node u = Node.get(context, bs, ui);
-            int i = findIt(u.keys, key);
+            Node u = new Node().get(context, bs, ui);
+            int i = statistic.findIndex(u.statistics, type, false, false);
             if (u.isLeaf()) {
-                if (i > 0 && u.keys[i - 1] == key)
-                    return u.values[i - 1]; // found it
+                if (u.childrenCount.get(i) > 1) {
+                    int split = statistic.splitIndex(u.statistics, type);
+                    if (split != 0) return u.values.get(i) + split;
+                }
+                i = statistic.findIndex(u.statistics, type, true, false);
+                if (i > 0 && statistic.match(u.statistics, i, type))
+                    return u.values.get(i); // found it
                 else
-                    return -1;
-            }
-            ui = u.children[i];
-        }
-    }
-
-    public Integer[] getIDsByCount(DBContext context, long pos, int count) {
-        // Add required ID at the end.
-        if ((pos + count) > size(context))
-            createIDs(context, size(context), (int) pos + count - size(context));
-
-        Integer[] ids = new Integer[count];
-        if (count == 0)
-            return ids;
-        int ui = metaDataBlock.ri;
-        long ct = pos;
-        int get_count = 0;
-        int first_index = -1;
-        Node u = Node.get(context, bs, ui);
-        while (first_index < 0) {
-            int i = findItByCount(u.childrenCount, ct);
-            if (u.isLeaf()) {
-                i = (int) ct;
-                first_index = i;
-                ids[get_count++] = u.values[i];
-                break;
-            }
-            ui = u.children[i];
-            for (int z = 0; z < i; z++) {
-                ct -= u.childrenCount[z];
-            }
-            u = Node.get(context, bs, ui);
-        }
-        int index = first_index + 1;
-        while (get_count < count && u.next_sibling != -1) {
-            while (index < u.valueSize() && get_count < count)
-                ids[get_count++] = u.values[index++];
-            ui = u.next_sibling;
-            u = Node.get(context, bs, ui);
-            index = 0;
-        }
-        while (index < u.valueSize() && get_count < count)
-            ids[get_count++] = u.values[index++];
-
-        while (get_count < count)
-            ids[get_count++] = -1;
-        return ids;
-    }
-
-    public int getByCount(DBContext context, long pos) {
-        int ui = metaDataBlock.ri;
-        long ct = pos;
-        while (true) {
-            Node u = Node.get(context, bs, ui);
-            int i = findItByCount(u.childrenCount, ct);
-            if (u.isLeaf()) {
-                i = (int) ct - 1;
-                return u.values[i];
-            }
-            ui = u.children[i];
-            for (int z = 0; z < i; z++) {
-                ct -= u.childrenCount[z];
+                    return null;
+            } else {
+                ui = u.children.get(i);
             }
         }
     }
@@ -994,10 +442,10 @@ public class BTree implements PosMapping {
         return sb.toString();
     }
 
-    @Override
     public String getTableName() {
         return bs.getDataStore();
     }
+
 
     /**
      * A recursive algorithm for converting this tree into a string
@@ -1007,76 +455,151 @@ public class BTree implements PosMapping {
      */
     public void toString(DBContext context, int ui, StringBuffer sb) {
         if (ui < 0) return;
-        Node u = Node.get(context, bs, ui);
-        sb.append("Block no:" + ui);
-        sb.append(" Leaf:" + u.isLeaf() + " ");
+        Node u = new Node().get(context, bs, ui);
+        sb.append("Block no:");
+        sb.append(ui);
+        sb.append(" Leaf:");
+        sb.append(u.isLeaf());
+        sb.append(" ");
 
         int i = 0;
         if (u.isLeaf()) {
-            while (i < b && u.keys[i] != -1) {
-                sb.append(u.keys[i] + "->");
-                sb.append(u.values[i] + ",");
+            while (i < u.statistics.size()) {
+                sb.append(u.statistics.get(i).toString());
+                sb.append("->");
+                sb.append(u.values.get(i));
+                sb.append(",");
                 i++;
             }
         } else {
-            while (i < b && u.keys[i] != -1) {
-                sb.append(u.children[i]);
-                sb.append(" < " + u.keys[i] + " > ");
+            while (i < u.statistics.size()) {
+                sb.append(u.children.get(i));
+                sb.append(" < ");
+                sb.append(u.statistics.get(i).toString());
+                sb.append(" > ");
                 i++;
             }
-            sb.append(u.children[i]);
         }
         sb.append("\n");
         i = 0;
         if (!u.isLeaf()) {
-            while (i < b && u.keys[i] != -1) {
-                toString(context, u.children[i], sb);
+            while (i < u.children.size()) {
+                toString(context, u.children.get(i), sb);
                 i++;
             }
-            toString(context, u.children[i], sb);
         }
     }
 
-    public Integer[] getIDs(DBContext context, int pos, int count) {
-        return getIDsByCount(context, pos, count);
+    public Integer getMaxValue() {
+        return metaDataBlock.max_value;
     }
 
-    public Integer[] deleteIDs(DBContext context, int pos, int count) {
-        Integer[] ids = new Integer[count];
-        for (int i = 0; i < count; i++)
-            ids[i] = removeByCount(context, pos, false);
-        bs.flushDirtyBlocks(context);
-        return ids;
-    }
-
-    public Integer[] createIDs(DBContext context, int pos, int count) {
-        Integer[] ids = new Integer[count];
-        for (int i = 0; i < count; i++) {
-            ids[i] = ++metaDataBlock.maxValue;
-            addByCount(context, pos + i, ids[i], false);
-        }
+    public void updateMaxValue(DBContext context, Integer max_value) {
+        metaDataBlock.max_value = max_value;
         bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
         bs.flushDirtyBlocks(context);
-        return ids;
     }
 
-    // TODO: Do it in batches. offline if possible.
-    public void insertIDs(DBContext context, int pos, List<Integer> ids) {
+    public void createIDs(DBContext context, K statistic, Integer val, int count, boolean flush, AbstractStatistic.Type type) {
+        add(context, statistic, val, count, flush, type);
+        bs.flushDirtyBlocks(context);
+    }
+
+    public void insertIDs(DBContext context, ArrayList<K> statistics, ArrayList<Integer> ids, AbstractStatistic.Type type) {
         int count = ids.size();
         for (int i = 0; i < count; i++) {
-            ++metaDataBlock.maxValue;
-            addByCount(context, pos + i, ids.get(i), false);
+            add(context, statistics.get(i), ids.get(i), false, type);
         }
-        bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
         bs.flushDirtyBlocks(context);
     }
 
+    public ArrayList<Integer> deleteIDs(DBContext context, ArrayList<K> statistics, AbstractStatistic.Type type) {
+        ArrayList<Integer> ids = new ArrayList<>();
+        int count = statistics.size();
+        for (int i = 0; i < count; i++)
+            ids.add(remove(context, statistics.get(i), false, type));
+        bs.flushDirtyBlocks(context);
+        return ids;
+    }
+
+    public ArrayList<Integer> getIDs(DBContext context, ArrayList<K> statistics, AbstractStatistic.Type type) {
+        ArrayList<Integer> ids = new ArrayList<>();
+        int count = statistics.size();
+        for (int i = 0; i < count; i++)
+            ids.add(lookup(context, statistics.get(i), type));
+        bs.flushDirtyBlocks(context);
+        return ids;
+    }
+
+    public ArrayList<Integer> getIDs(DBContext context, K statistic, int count, AbstractStatistic.Type type) {
+        ArrayList<Integer> ids = new ArrayList<>();
+        if (count == 0)
+            return ids;
+        int ui = metaDataBlock.ri;
+        int get_count = 0;
+        int first_index;
+        int split = 0;
+        K new_statistic = statistic;
+
+        Node u = new Node().get(context, bs, ui);
+        while (true) {
+            int i = new_statistic.findIndex(u.statistics, type, u.isLeaf(), false);
+            /* Need to go to leaf to delete */
+            if (u.isLeaf()) {
+                if (u.childrenCount.get(i) > 1) {
+                    split = statistic.splitIndex(u.statistics, type);
+                    if (split != 0) {
+                        first_index = i;
+                        break;
+                    }
+                }
+                i = statistic.findIndex(u.statistics, type, true, false);
+                // Check if the statistic is exactly matched
+                if (new_statistic.match(u.statistics, i, type)) {
+                    first_index = i;
+                    break;
+                } else
+                    return null;
+            } else {
+                // Get the new statistic we are looking for
+                new_statistic = (K) statistic.getLowerStatistic(u.statistics, i, type);
+                u = new Node().get(context, bs, u.children.get(i));
+            }
+        }
+        int index = first_index;
+        while (get_count < count) {
+            while (index < u.size() && get_count < count) {
+                if (u.childrenCount.get(index) > 1) {
+                    while (split < u.childrenCount.get(index) && get_count < count) {
+                        ids.add(u.values.get(index) + split);
+                        get_count++;
+                        split++;
+                    }
+                    split = 0;
+                    index++;
+                } else {
+                    ids.add(u.values.get(index++));
+                    get_count++;
+                }
+            }
+            if (u.next_sibling == -1) break;
+            ui = u.next_sibling;
+            u = new Node().get(context, bs, ui);
+            index = 0;
+        }
+        while (get_count < count) {
+            ids.add(null);
+            get_count++;
+        }
+        return ids;
+    }
+
+
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-    private static class MetaDataBlock {
+    private class MetaDataBlock {
         // The ID of the root node
         int ri;
-        // Maximum key value for data
-        int maxValue;
+        Integer max_value;
         // Number of elements
         int elementCount;
     }
@@ -1085,16 +608,11 @@ public class BTree implements PosMapping {
      * A node in a B-tree which has an array of up to b keys and up to b children
      */
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-    private static class Node {
+    public class Node {
         /**
          * This block's index
          */
         int id;
-
-        /**
-         * The keys stored in this block
-         */
-        int[] keys;
 
         /**
          * The ID of parent
@@ -1104,17 +622,22 @@ public class BTree implements PosMapping {
         /**
          * The IDs of the children of this block (if any)
          */
-        int[] children;
+        ArrayList<Integer> children;
 
         /**
-         * The cumulative count for children.
+         * The count of nodes of each children
          */
-        long[] childrenCount;
+        ArrayList<Integer> childrenCount;
+
+        /**
+         * The keys of the tree for traversal (insert, delete, update, etc)
+         */
+        ArrayList<AbstractStatistic> statistics;
 
         /**
          * Data stored in the leaf blocks
          */
-        int[] values;
+        ArrayList<Integer> values;
 
         /**
          * Leaf Node, no children, has values
@@ -1126,32 +649,30 @@ public class BTree implements PosMapping {
          */
         int next_sibling;
 
-        private Node() {
-            keys = new int[b];
-            Arrays.fill(keys, -1);
-            children = null;
-            childrenCount = null;
+        public Node() {
+            children = new ArrayList<>();
+            childrenCount = new ArrayList<>();
+            statistics = new ArrayList<>();
             leafNode = true;
-            values = new int[b];
-            Arrays.fill(values, -1);
-            parent = -1;    // Root node
+            values = new ArrayList<>();
+            parent = -1; // Root node
             next_sibling = -1;
         }
 
-        public static Node create(DBContext context, BlockStore bs) {
+        public Node create(DBContext context, BlockStore bs) {
             Node node = new Node();
             node.id = bs.getNewBlockID(context);
             bs.putObject(node.id, node);
             return node;
         }
 
-        public static Node get(DBContext context, BlockStore bs, int node_id) {
+        public Node get(DBContext context, BlockStore bs, int node_id) {
             Node node = bs.getObject(context, node_id, Node.class);
             node.id = node_id;
             return node;
         }
 
-        public void free(BlockStore bs) {
+        private void free(BlockStore bs) {
             bs.freeBlock(id);
         }
 
@@ -1159,7 +680,7 @@ public class BTree implements PosMapping {
             bs.putObject(id, this);
         }
 
-        public boolean isLeaf() {
+        private boolean isLeaf() {
             return leafNode;
         }
 
@@ -1169,189 +690,61 @@ public class BTree implements PosMapping {
          * @return true if the block is full
          */
         public boolean isFull() {
-            return keys[keys.length - 1] != -1;
+            return this.size() >= b;
         }
 
         /**
-         * Test if this block is full (contains b keys)
-         *
-         * @return true if the block is full
-         */
-        public boolean isFullByCount() {
-            if (leafNode)
-                return valueSize() >= b;
-            else
-                return childrenSize() >= b + 1;
-        }
-
-        /**
-         * Count the number of keys in this block, using binary search
-         *
-         * @return the number of keys in this block
+         * Count the number of elements in this block
+         * @return the number of elements in this block
          */
         public int size() {
-            int lo = 0, h = keys.length;
-            while (h != lo) {
-                int m = (h + lo) / 2;
-                if (keys[m] == -1)
-                    h = m;
-                else
-                    lo = m + 1;
-            }
-            return lo;
+            if (this.isLeaf()) return values.size();
+            else return children.size();
         }
 
         /**
-         * Count the number of keys in this block, using binary search
+         * Add the value & statistic to this leaf node
          *
-         * @return the number of keys in this block
+         * @param statistic the statistic to add
+         * @param value the value to add
+         * @return true on success or false if not added
          */
-        public int valueSize() {
-            int lo = 0, h = values.length;
-            while (h != lo) {
-                int m = (h + lo) / 2;
-                if (values[m] == -1)
-                    h = m;
-                else
-                    lo = m + 1;
-            }
-            return lo;
-        }
-
-        /**
-         * Count the number of children in this block, using binary search
-         *
-         * @return the number of children in this block
-         */
-        public int childrenSize() {
-            if (children == null) return 1;
-            int lo = 0, h = children.length;
-            while (h != lo) {
-                int m = (h + lo) / 2;
-                if (children[m] == -1)
-                    h = m;
-                else
-                    lo = m + 1;
-            }
-            return lo;
-        }
-
-
-        /**
-         * Count the number of keys in this block, using binary search
-         *
-         * @return Cumulative count.
-         */
-        long getCumulativeChildrenCount() {
-            if (leafNode)
-                return valueSize();
-            else {
-                long sum = 0;
-                for (long cnt : childrenCount)
-                    sum += cnt;
-                return sum;
-            }
-        }
-
-
-        /**
-         * Add the value key to this block
-         *
-         * @param key  the value to add
-         * @param node the node associated with key
-         * @return true on success or false if key was not added
-         */
-        public boolean add(DBContext context, int key, Node node, int value) {
-            boolean shift = false;
-            int i = findIt(keys, key);
+        public boolean addLeaf(int i, K statistic, Integer value, int count, AbstractStatistic.Type type) {
             if (i < 0) return false;
-            if (i < keys.length - 1) {
-                shift = true;
-                System.arraycopy(keys, i, keys, i + 1, b - i - 1);
-            }
-            keys[i] = key;
-            if (leafNode) {
-                if (shift) System.arraycopy(values, i, values, i + 1, b - i - 1);
-                values[i] = value;
-
-            } else {
-                if (shift) System.arraycopy(children, i + 1, children, i + 2, b - i - 1);
-                if (shift) System.arraycopy(childrenCount, i + 1, childrenCount, i + 2, b - i - 1);
-                children[i + 1] = node.id;
-                if (node.isLeaf()) {
-                    childrenCount[i + 1] = node.size();
-                } else {
-                    childrenCount[i + 1] = 0;
-                    int z;
-                    for (z = 0; z < node.childrenCount.length; z++) {
-                        childrenCount[i + 1] += node.childrenCount[z];
-                    }
-                }
-            }
+            this.childrenCount.add(i, count);
+            this.statistics.add(i, statistic.getLeafStatistic(count, type));
+            this.values.add(i, value);
+            metaDataBlock.elementCount += count;
             return true;
         }
 
         /**
-         * Add the value x to this block
+         * Add the value & statistic to this internal node
          *
-         * @param pos  the value to add
-         * @param node the node associated with x
-         * @return true on success or false if x was not added
+         * @param node the child node added
+         * @param i the index of the node associated
+         * @return true on success or false if not added
          */
-        public boolean addByCount(DBContext context, long pos, Node node, int value) {
-            boolean shift = false;
-            int i = findItByCount(childrenCount, pos);
+        public boolean addInternal(Node node, int i, AbstractStatistic.Type type) {
             if (i < 0) return false;
-            if (i < childrenSize() - 1) {
-                shift = true;
-            }
-            if (leafNode) {
-                i = (int) pos;
-                if (i < valueSize()) System.arraycopy(values, i, values, i + 1, b - i - 1);
-                values[i] = value;
-            } else {
-                if (shift) System.arraycopy(children, i + 1, children, i + 2, b - i - 1);
-                if (shift) System.arraycopy(childrenCount, i + 1, childrenCount, i + 2, b - i - 1);
-                children[i + 1] = node.id;
-                if (node.isLeaf()) {
-                    childrenCount[i + 1] = node.valueSize();
-                } else {
-                    childrenCount[i + 1] = 0;
-                    int z;
-                    for (z = 0; z < node.childrenCount.length; z++) {
-                        childrenCount[i + 1] += node.childrenCount[z];
-                    }
-                }
-            }
+            this.children.add(i, node.id);
+            this.childrenCount.add(i, node.size());
+            this.statistics.add(i, emptyStatistic.getAggregation(node.statistics, type));
             return true;
         }
 
-
         /**
-         * Remove the i'th value from this block - don't affect this block's
-         * children
          *
-         * @param i the index of the element to remove
-         * @return the value of the element removed
+         * @param leftIndex
+         * @param rightIndex
+         * @param leftNode
          */
-        public int removeKey(int i) {
-            int y = keys[i];
-            // Do not remove if it is leaf
-            if (!leafNode) {
-                System.arraycopy(keys, i + 1, keys, i, b - i - 1);
-                keys[keys.length - 1] = -1;
-            }
-            return y;
-        }
-
-        public int removeBoth(int i) {
-            int y = values[i];
-            System.arraycopy(keys, i + 1, keys, i, b - i - 1);
-            keys[keys.length - 1] = -1;
-            System.arraycopy(values, i + 1, values, i, b - i - 1);
-            values[values.length - 1] = -1;
-
-            return y;
+        public void updateMerge(int leftIndex, int rightIndex, Node leftNode, AbstractStatistic.Type type) {
+            childrenCount.set(leftIndex, leftNode.size());
+            statistics.set(leftIndex, emptyStatistic.getAggregation(leftNode.statistics, type));
+            children.remove(rightIndex);
+            childrenCount.remove(rightIndex);
+            statistics.remove(rightIndex);
         }
 
         /**
@@ -1360,84 +753,70 @@ public class BTree implements PosMapping {
          * @return the newly created block, which has the larger keys
          */
         protected Node split(DBContext context, BlockStore bs) {
-            Node w = Node.create(context, bs);
+            Node rightNode = new Node().create(context, bs);
 
-            int j = keys.length / 2;
-            System.arraycopy(keys, j, w.keys, 0, keys.length - j);
-            Arrays.fill(keys, j, keys.length, -1);
-
+            int j = statistics.size() / 2;
+            rightNode.statistics = new ArrayList<>(statistics.subList(j, statistics.size()));
+            statistics.subList(j, statistics.size()).clear();
+            rightNode.childrenCount = new ArrayList<>(childrenCount.subList(j, childrenCount.size()));
+            childrenCount.subList(j, childrenCount.size()).clear();
             if (leafNode) {
                 // Copy Values
-                System.arraycopy(values, j, w.values, 0, values.length - j);
-                Arrays.fill(values, j, values.length, -1);
-                w.next_sibling = next_sibling;
-                next_sibling = w.id;
+                rightNode.values = new ArrayList<>(values.subList(j, values.size()));
+                values.subList(j, values.size()).clear();
+                rightNode.next_sibling = next_sibling;
+                next_sibling = rightNode.id;
             } else {
-                w.children = new int[b + 1];
-                Arrays.fill(w.children, 0, w.children.length, -1);
-
-                // Copy Children
-                System.arraycopy(children, j + 1, w.children, 0, children.length - j - 1);
-                Arrays.fill(children, j + 1, children.length, -1);
-
-                //Create child counts
-                w.childrenCount = new long[b + 1];
-                Arrays.fill(w.childrenCount, 0, w.childrenCount.length, 0);
-
-                // Copy Counts
-                System.arraycopy(childrenCount, j + 1, w.childrenCount, 0, childrenCount.length - j - 1);
-                Arrays.fill(childrenCount, j + 1, childrenCount.length, 0);
+                // Copy Children and ChildrenCount
+                rightNode.children = new ArrayList<>(children.subList(j, children.size()));
+                children.subList(j, children.size()).clear();
             }
-            w.leafNode = this.leafNode;
-            return w;
+            rightNode.leafNode = this.leafNode;
+            return rightNode;
         }
 
         public String toString() {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append("[");
             if (leafNode) {
-                for (int i = 0; i < b; i++) {
-                    sb.append(keys[i] == -1 ? "_" : keys[i] + ">" + values[i] + ",");
+                for (int i = 0; i < statistics.size(); i++) {
+                    sb.append(statistics.get(i).toString());
+                    sb.append(">");
+                    sb.append(values.get(i));
+                    sb.append(",");
                 }
             } else {
-                for (int i = 0; i < b; i++) {
-                    sb.append("(" + (children[i] < 0 ? "." : children[i]) + ")");
-                    sb.append(keys[i] == -1 ? "_" : keys[i]);
+                for (int i = 0; i < children.size(); i++) {
+                    sb.append("(");
+                    sb.append((children.get(i) < 0 ? "." : children.get(i)));
+                    sb.append(")");
+                    sb.append(statistics.get(i).toString());
                 }
-                sb.append("(" + (children[b] < 0 ? "." : children[b]) + ")");
             }
             sb.append("]");
             return sb.toString();
         }
 
 
-    }
-
-    protected class ReturnRS {
-        int done;
-        int key;
-
-        public ReturnRS(int d) {
-            done = d;
-            key = -1;
+        public void splitSparseNode(int i, K statistic, AbstractStatistic.Type type, boolean splitSingle) {
+            int split = statistic.splitIndex(statistics, type);
+            if (split == 0) return;
+            int count = childrenCount.get(i) - split;
+            this.childrenCount.set(i, split);
+            this.statistics.set(i, statistic.getLeafStatistic(split, type));
+            if (splitSingle) {
+                count--;
+                split++;
+            }
+            this.childrenCount.add(i + 1, count);
+            this.statistics.add(i + 1, statistic.getLeafStatistic(count, type));
+            this.values.add(i + 1, values.get(i) + split);
+            if (splitSingle) {
+                this.childrenCount.add(i + 1, 1);
+                this.statistics.add(i + 1, statistic.getLeafStatistic(1, type));
+                this.values.add(i + 1, values.get(i) + split - 1);
+            }
         }
-
-        public int getKey() {
-            return key;
-        }
-
-        public void setKey(int k) {
-            key = k;
-        }
-
-        public int getDone() {
-            return done;
-        }
-
-        public void setDone(int d) {
-            done = d;
-        }
-
     }
 
 }

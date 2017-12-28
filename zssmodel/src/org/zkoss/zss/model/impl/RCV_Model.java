@@ -2,11 +2,16 @@ package org.zkoss.zss.model.impl;
 
 import com.opencsv.CSVReader;
 import org.apache.tomcat.dbcp.dbcp2.DelegatingConnection;
-import org.model.*;
+import org.model.AutoRollbackConnection;
+import org.model.BlockStore;
+import org.model.DBContext;
+import org.model.DBHandler;
 import org.postgresql.copy.CopyIn;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.ModelEvents;
+import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 
 import java.io.IOException;
@@ -27,9 +32,11 @@ public class RCV_Model extends Model {
     //Create or load RCV_model.
     protected RCV_Model(DBContext context, SSheet sheet, String tableName) {
         this.sheet = sheet;
-        rowMapping = new BTree(context, tableName + "_row_idx");
-        colMapping = new BTree(context, tableName + "_col_idx");
+        rowMapping = new CountedBTree(context, tableName + "_row_idx");
+        colMapping = new CountedBTree(context, tableName + "_col_idx");
         this.tableName = tableName;
+        this.navSbuckets = new ArrayList<Bucket<String>>();
+        this.navS = new NavigationStructure(tableName);
         createSchema(context);
         loadMetaData(context);
     }
@@ -100,6 +107,259 @@ public class RCV_Model extends Model {
     }
 
     @Override
+    public ArrayList<Bucket<String>> createNavS(String bucketName, int start, int count) {
+        //load sorted data from table
+        ArrayList<String> recordList =  new ArrayList<String>();
+
+        StringBuffer select = null;
+
+        select = new StringBuffer("SELECT COUNT(*)");
+        select.append(" FROM ")
+                .append(tableName+"_2")
+                .append(" WHERE row !=1");
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                count = rs.getInt(1);
+            }
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+        this.navS.setTotalRows(count+1);
+        if(this.indexString==null)
+        {
+            ArrayList<Bucket<String>> newList = this.navS.getUniformBuckets(0,count);
+            return newList;
+        }
+
+        select = new StringBuffer("SELECT row, "+indexString);
+
+        select.append(" FROM ")
+                .append(tableName+"_2")
+                .append(" WHERE row !=1 ORDER BY "+indexString);
+
+        ArrayList<Integer> ids = new ArrayList<Integer>();
+
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+        PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            DBContext context = new DBContext(connection);
+            ResultSet rs = stmt.executeQuery();
+            ids.add(1);
+            while (rs.next()) {
+                int row = rs.getInt(1);
+                ids.add(row);
+                recordList.add(new String(rs.getBytes(2),"UTF-8"));
+            }
+            rs.close();
+            stmt.close();
+
+            Hybrid_Model hybrid_model = (Hybrid_Model) this;
+            ROM_Model rom_model = (ROM_Model) hybrid_model.tableModels.get(0).y;
+
+            rom_model.rowMapping.dropSchema(context);
+            rom_model.rowMapping = new CountedBTree(context, tableName + "_row_idx");
+            rom_model.rowMapping.insertIDs(context,start,ids);
+
+            connection.commit();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+
+
+        //create nav data structure
+        this.navS.setRecordList(recordList);
+        ArrayList<Bucket<String>> newList = this.navS.getNonOverlappingBuckets(0,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
+
+        //addByCount(context, pos + i, ids[i], false);
+        return newList;
+
+    }
+
+
+    @Override
+    public ArrayList<Bucket<String>> createNavS(SSheet currentSheet, int start, int count) {
+        //load sorted data from table
+        ArrayList<String> recordList =  new ArrayList<String>();
+
+
+        StringBuffer select = null;
+
+        if(this.indexString==null)
+        {
+            trueOrder = new HashMap<Integer,Integer>();
+
+            for(int i=1;i<currentSheet.getEndRowIndex()+2;i++)
+                trueOrder.put(i,i);
+
+            ArrayList<Bucket<String>> newList = this.navS.getUniformBuckets(0,currentSheet.getEndRowIndex());
+            return newList;
+        }
+
+        int columnIndex = Integer.parseInt(indexString.split("_")[1])-1;
+        CellRegion tableRegion =  new CellRegion(1, columnIndex,//100000,20);
+                currentSheet.getEndRowIndex(),columnIndex);
+
+        ArrayList<SCell> result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
+
+        Collections.sort(result, Comparator.comparing(SCell::getStringValue));
+
+        ArrayList<Integer> ids = new ArrayList<Integer>();
+
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            DBContext context = new DBContext(connection);
+            ids.add(1);
+            for(int i=0;i<result.size();i++){
+                ids.add(trueOrder.get(result.get(i).getRowIndex()+1));
+                //trueOrder.put(result.get(i).getRowIndex()+1,ids.get(i+1));
+                recordList.add(result.get(i).getStringValue());
+
+            }
+
+            for(int i=1;i<ids.size();i++)
+                trueOrder.put(i+1,ids.get(i));
+
+            Hybrid_Model hybrid_model = (Hybrid_Model) this;
+            ROM_Model rom_model = (ROM_Model) hybrid_model.tableModels.get(0).y;
+
+            rom_model.rowMapping.dropSchema(context);
+            rom_model.rowMapping = new CountedBTree(context, tableName + "_row_idx");
+            rom_model.rowMapping.insertIDs(context,start,ids);
+
+            connection.commit();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+
+
+        //create nav data structure
+        this.navS.setRecordList(recordList);
+        ArrayList<Bucket<String>> newList = this.navS.getNonOverlappingBuckets(0,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
+
+        //addByCount(context, pos + i, ids[i], false);
+        return newList;
+
+    }
+
+    public ArrayList<Bucket<String>> createNavSOnDemand(String bucketName, int start, int count) {
+        //load sorted data from table
+        ArrayList<String> recordList =  new ArrayList<String>();
+
+        AutoRollbackConnection connection = DBHandler.instance.getConnection();
+        DBContext context = new DBContext(connection);
+        StringBuffer select = null;
+        if(bucketName==null)
+        {
+            select = new StringBuffer("SELECT COUNT(*)");
+            select.append(" FROM ")
+                    .append(tableName+"_2")
+                    .append(" WHERE row !=1");
+            try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    count = rs.getInt(1);
+                }
+                rs.close();
+                stmt.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        if(this.indexString==null)
+        {
+            return this.navS.getUniformBuckets(0,count);
+        }
+
+        ArrayList<Integer> rowIds = rowMapping.getIDs(context,start,count);
+
+        select = new StringBuffer("SELECT row, "+indexString);
+
+        select.append(" FROM ")
+                .append(tableName+"_2")
+                .append(" WHERE row = ANY (?) AND row !=1");
+
+        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds.toArray());
+            stmt.setArray(1, inArrayRow);
+
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                recordList.add(new String(rs.getBytes(2),"UTF-8"));
+            }
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        //create nav data structure
+        this.navS.setRecordList(recordList);
+        ArrayList<Bucket<String>> newList = this.navS.getNonOverlappingBuckets(0,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
+
+        if(bucketName==null)
+        {
+            return newList;
+        }
+        //addByCount(context, pos + i, ids[i], false);
+        return this.navS.recomputeNavS(bucketName,this.navSbuckets,newList);
+        //  printBuckets(navSbuckets);
+
+    }
+
+    @Override
+    public ArrayList<String> getHeaders()
+    {
+        ArrayList<String> headers = new ArrayList<String>();
+
+
+        StringBuffer select = null;
+        select = new StringBuffer("SELECT *");
+        select.append(" FROM ")
+                .append(tableName+"_2")
+                .append(" WHERE row =1");
+        try (
+                AutoRollbackConnection connection = DBHandler.instance.getConnection();
+
+                PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            DBContext context = new DBContext(connection);
+            ResultSet rs = stmt.executeQuery();
+            int i=2;
+            ResultSetMetaData meta = rs.getMetaData();
+            int columnCount = meta.getColumnCount();
+
+            while (rs.next()) {
+                for(;i<=columnCount;i++)
+                    headers.add(new String(rs.getBytes(i),"UTF-8"));
+            }
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return headers;
+
+    }
+
+    @Override
+    public void setIndexString(String str) {
+        this.indexString = str;
+    }
+
+
+    @Override
     public void dropSchema(DBContext context) {
         String dropTable = (new StringBuffer())
                 .append("DROP TABLE ")
@@ -129,12 +389,12 @@ public class RCV_Model extends Model {
 
     @Override
     public void deleteRows(DBContext dbContext, int row, int count) {
-        Integer[] ids = rowMapping.deleteIDs(dbContext, row, count);
+        ArrayList<Integer> ids = rowMapping.deleteIDs(dbContext, row, count);
 
         AutoRollbackConnection connection = dbContext.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(
                 "DELETE FROM " + tableName + " WHERE row = ANY(?)")) {
-            Array inArray = dbContext.getConnection().createArrayOf("integer", ids);
+            Array inArray = dbContext.getConnection().createArrayOf("integer", ids.toArray());
             stmt.setArray(1, inArray);
             stmt.execute();
 
@@ -145,9 +405,9 @@ public class RCV_Model extends Model {
 
     @Override
     public void deleteCols(DBContext context, int col, int count) {
-        Integer[] ids = colMapping.deleteIDs(context, col, count);
+        ArrayList<Integer> ids = colMapping.deleteIDs(context, col, count);
 
-        metaDataBlock.deletedColumns.addAll(Arrays.asList(ids));
+        metaDataBlock.deletedColumns.addAll(ids);
         // simplified conversion
         /*
         for (int id : ids)
@@ -200,10 +460,10 @@ public class RCV_Model extends Model {
         try (PreparedStatement stmt = connection.prepareStatement(update.toString())) {
             for (AbstractCellAdv cell : cells) {
                 // Extend sheet
-                Integer[] idsRow = rowMapping.getIDs(context, cell.getRowIndex(), 1);
-                int row = idsRow[0];
-                Integer[] idsCol = colMapping.getIDs(context, cell.getColumnIndex(), 1);
-                int col = idsCol[0];
+                ArrayList<Integer> idsRow = rowMapping.getIDs(context, cell.getRowIndex(), 1);
+                int row = idsRow.get(0);
+                ArrayList<Integer> idsCol = colMapping.getIDs(context, cell.getColumnIndex(), 1);
+                int col = idsCol.get(0);
                 stmt.setBytes(1, cell.toBytes());
                 stmt.setInt(2, row);
                 stmt.setInt(3, col);
@@ -221,8 +481,8 @@ public class RCV_Model extends Model {
     @Override
     public void deleteCells(DBContext dbContext, CellRegion range) {
 
-        Integer[] rowIds = rowMapping.getIDs(dbContext, range.getRow(), range.getLastRow() - range.getRow() + 1);
-        Integer[] colIds = colMapping.getIDs(dbContext, range.getColumn(), range.getLastColumn() - range.getColumn() + 1);
+        ArrayList<Integer> rowIds = rowMapping.getIDs(dbContext, range.getRow(), range.getLastRow() - range.getRow() + 1);
+        ArrayList<Integer> colIds = colMapping.getIDs(dbContext, range.getColumn(), range.getLastColumn() - range.getColumn() + 1);
 
         String delete = new StringBuffer("DELETE FROM ")
                 .append(tableName)
@@ -232,10 +492,10 @@ public class RCV_Model extends Model {
         AutoRollbackConnection connection = dbContext.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(delete)) {
 
-            Array inArrayRow = dbContext.getConnection().createArrayOf("integer", rowIds);
+            Array inArrayRow = dbContext.getConnection().createArrayOf("integer", rowIds.toArray());
             stmt.setArray(1, inArrayRow);
 
-            Array inArrayCol = dbContext.getConnection().createArrayOf("integer", colIds);
+            Array inArrayCol = dbContext.getConnection().createArrayOf("integer", colIds.toArray());
             stmt.setArray(2, inArrayCol);
 
             stmt.executeUpdate();
@@ -256,10 +516,10 @@ public class RCV_Model extends Model {
         AutoRollbackConnection connection = dbContext.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(delete)) {
             for (AbstractCellAdv cell : cells) {
-                Integer[] idsRow = rowMapping.getIDs(dbContext, cell.getRowIndex(), 1);
-                int row = idsRow[0];
-                Integer[] idsCol = colMapping.getIDs(dbContext, cell.getColumnIndex(), 1);
-                int col = idsCol[0];
+                ArrayList<Integer> idsRow = rowMapping.getIDs(dbContext, cell.getRowIndex(), 1);
+                int row = idsRow.get(0);
+                ArrayList<Integer> idsCol = colMapping.getIDs(dbContext, cell.getColumnIndex(), 1);
+                int col = idsCol.get(0);
                 stmt.setObject(1, row);
                 stmt.setObject(2, col);
                 stmt.execute();
@@ -288,13 +548,15 @@ public class RCV_Model extends Model {
         if (fetchRegion == null)
             return cells;
 
-        Integer[] rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
-        Integer[] colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
-        HashMap<Integer, Integer> row_map = IntStream.range(0, rowIds.length)
-                .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(rowIds[i], fetchRegion.getRow() + i), null);
+        ArrayList<Integer> rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
+        ArrayList<Integer> colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
+        HashMap<Integer, Integer> row_map = IntStream.range(0, rowIds.size())
+                .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(rowIds.get(i), fetchRegion.getRow() + i),
+                        (map1, map2) -> map1.putAll(map2));
 
-        HashMap<Integer, Integer> col_map = IntStream.range(0, colIds.length)
-                .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(colIds[i], fetchRegion.getColumn() + i), null);
+        HashMap<Integer, Integer> col_map = IntStream.range(0, colIds.size())
+                .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(colIds.get(i), fetchRegion.getColumn() + i),
+                        (map1, map2) -> map1.putAll(map2));
 
 
         String select = new StringBuffer("SELECT row, col, data FROM ")
@@ -305,10 +567,10 @@ public class RCV_Model extends Model {
         AutoRollbackConnection connection = context.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(select)) {
 
-            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds);
+            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds.toArray());
             stmt.setArray(1, inArrayRow);
 
-            Array inArrayCol = context.getConnection().createArrayOf("integer", colIds);
+            Array inArrayCol = context.getConnection().createArrayOf("integer", colIds.toArray());
             stmt.setArray(2, inArrayCol);
 
             ResultSet rs = stmt.executeQuery();
@@ -345,7 +607,7 @@ public class RCV_Model extends Model {
     }
 
     @Override
-    public void importSheet(Reader reader, char delimiter) throws IOException {
+    public void importSheet(Reader reader, char delimiter, boolean useNav) throws IOException {
         final int COMMIT_SIZE_BYTES = 8 * 1000 * 1000;
         CSVReader csvReader = new CSVReader(reader, delimiter);
         String[] nextLine;
@@ -380,7 +642,7 @@ public class RCV_Model extends Model {
             }
             if (sb.length() > 0)
                 cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
-            cpIN.endCopy();
+                cpIN.endCopy();
             rawConn.commit();
             DBContext dbContext = new DBContext(connection);
             insertRows(dbContext, 0, importedRows);
