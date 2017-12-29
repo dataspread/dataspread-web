@@ -42,6 +42,8 @@ public class CountedBTree implements PosMapping{
 
     @Override
     public ArrayList deleteIDs(DBContext context, int pos, int count) {
+        if ((pos + count) > size(context))
+            createIDs(context, size(context), pos + count - size(context));
         ArrayList<CountStatistic> statistics = new ArrayList<>();
         for (int i = 0; i < count; i++)
             statistics.add(new CountStatistic(pos));

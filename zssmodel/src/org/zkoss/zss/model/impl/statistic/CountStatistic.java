@@ -71,10 +71,13 @@ public class CountStatistic implements AbstractStatistic {
         int lo = 0, hi = counts.size();
         int remain = this.count;
         if (remain <= 0) return lo;
-        while ((remain > ((CountStatistic) counts.get(lo)).count) && (lo < hi)) {
+        while ((remain >= ((CountStatistic) counts.get(lo)).count) && (lo < hi)) {
             remain -= ((CountStatistic) counts.get(lo)).count;
             lo++;
+            if (lo >= hi) break;
         }
+        // indicate looping to the end
+        if (lo>=hi && remain > 0) remain += ((CountStatistic) counts.get(lo - 1)).count;
         return remain;
     }
 
