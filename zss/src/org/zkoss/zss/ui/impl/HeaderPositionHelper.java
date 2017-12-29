@@ -18,7 +18,14 @@ Copyright (C) 2007 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.ui.impl;
 
+import org.model.AutoRollbackConnection;
+import org.model.BlockStore;
+import org.model.DBContext;
+import org.model.DBHandler;
+
 import java.io.Serializable;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,9 +45,36 @@ public class HeaderPositionHelper {
 	private List<HeaderPositionInfo> _infos;
 	//int[][] _customizedSize; //[0]: column/row index, [1]: width/height, [2]: column/row id
 
-	public HeaderPositionHelper(int defaultSize, List<HeaderPositionInfo> infos) {
+	private BlockStore blockStore;
+
+	public HeaderPositionHelper(int defaultSize, List<HeaderPositionInfo> infos, String sheetName) {
 		this._defaultSize = defaultSize;
 		this._infos = infos;
+		sheetName = sheetName + "_position_helper";
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+			DBContext dbContext = new DBContext(connection);
+			blockStore = new BlockStore(dbContext, sheetName);
+
+			for (Integer i:blockStore.keySet(dbContext)){
+				HeaderPositionInfo info = blockStore.getObject(dbContext,i, HeaderPositionInfo.class);
+				if (info == null){
+					System.out.println("Error:HeaderPositionHelper");
+				}
+				setInfoValues(info.getIndex(), info.getSize(), info.getId(), info.getHidden(), info.isCustom());
+			}
+
+			for (HeaderPositionInfo info:_infos){
+				blockStore.putObject(info.getIndex(), info);
+			}
+
+			blockStore.flushDirtyBlocks(dbContext);
+			connection.commit();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
 	}
 	
 	public int getDefaultSize() {
@@ -53,7 +87,7 @@ public class HeaderPositionHelper {
 
 	public boolean isHidden(int cellIndex) {
 		final int j = Collections.binarySearch(_infos, Integer.valueOf(cellIndex), new HeaderPositionInfoComparator());
-		return j < 0 ? false : _infos.get(j).hidden;
+		return j < 0 ? false : _infos.get(j).getHidden();
 	}
 	
 	//ZSS-1000
@@ -64,16 +98,16 @@ public class HeaderPositionHelper {
 			return -1;
 		}
 		int j = Collections.binarySearch(_infos, Integer.valueOf(cellIndex), new HeaderPositionInfoComparator());
-		if (j < 0 || !_infos.get(j).hidden) {
+		if (j < 0 || !_infos.get(j).getHidden()) {
 			return cellIndex;
 		}
 		cellIndex = cellIndex - 1;
 		for (;--j >= 0;) {
 			HeaderPositionInfo info = _infos.get(j);
-			if (info.index < cellIndex) {
+			if (info.getIndex() < cellIndex) {
 				return cellIndex;
-			} else if (info.index == cellIndex) {
-				if (!info.hidden) {
+			} else if (info.getIndex() == cellIndex) {
+				if (!info.getHidden()) {
 					return cellIndex;
 				} else {
 					cellIndex = cellIndex - 1;
@@ -89,16 +123,16 @@ public class HeaderPositionHelper {
 		cellIndex = cellIndex + 1;
 		
 		int j = Collections.binarySearch(_infos, Integer.valueOf(cellIndex), new HeaderPositionInfoComparator());
-		if (j < 0 || !_infos.get(j).hidden) {
+		if (j < 0 || !_infos.get(j).getHidden()) {
 			return cellIndex;
 		}
 		cellIndex = cellIndex + 1;
 		for (int len = _infos.size(); ++j < len;) {
 			HeaderPositionInfo info = _infos.get(j);
-			if (info.index > cellIndex) {
+			if (info.getIndex() > cellIndex) {
 				return cellIndex;
-			} else if (info.index == cellIndex) {
-				if (!info.hidden) {
+			} else if (info.getIndex() == cellIndex) {
+				if (!info.getHidden()) {
 					return cellIndex;
 				} else {
 					cellIndex = cellIndex + 1;
@@ -110,7 +144,7 @@ public class HeaderPositionHelper {
 	
 	public int getSize(int cellIndex) {
 		final int j = Collections.binarySearch(_infos, Integer.valueOf(cellIndex), new HeaderPositionInfoComparator());
-		return j < 0 ? _defaultSize : _infos.get(j).size;
+		return j < 0 ? _defaultSize : _infos.get(j).getSize();
 	}
 
 	//given target cell index, return list index. 
@@ -120,23 +154,49 @@ public class HeaderPositionHelper {
 	}
 	
 	public void shiftMeta(int cellIndex, int offset) {
-		final int index = getListIndex(cellIndex);
-		for (int j = _infos.size() - 1; j >= index; --j) {
-			final HeaderPositionInfo info = _infos.get(j);
-			info.index += offset;
+
+		;
+
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+			DBContext dbContext = new DBContext(connection);
+			String createTable = "CREATE TABLE  IF NOT  EXISTS  db_events (" +
+					"action INTEGER NOT NULL," +
+					"data TEXT);";
+			final int index = getListIndex(cellIndex);
+			for (int j = _infos.size() - 1; j >= index; --j) {
+				final HeaderPositionInfo info = _infos.get(j);
+				info.setIndex(info.getIndex() + offset);
+				blockStore.putObject(info.getIndex(), info);
+			}
+
+			blockStore.flushDirtyBlocks(dbContext);
+			connection.commit();
 		}
+
+
 	}
 
 	public void unshiftMeta(int cellIndex, int offset) {
-		final int bindex = getListIndex(cellIndex);
-		final int eindex = getListIndex(cellIndex + offset);
-		for (int j = eindex - 1; j >= bindex; --j) {
-			_infos.remove(j);
-		}
-		for (int j = _infos.size() - 1; j >= bindex; --j) {
-			final HeaderPositionInfo info = _infos.get(j);
-			info.index -= offset;
-		}
+
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            DBContext dbContext = new DBContext(connection);
+
+            final int bindex = getListIndex(cellIndex);
+            final int eindex = getListIndex(cellIndex + offset);
+            for (int j = eindex - 1; j >= bindex; --j) {
+                blockStore.freeBlock(_infos.get(j).getIndex());
+                _infos.remove(j);
+            }
+
+            for (int j = _infos.size() - 1; j >= bindex; --j) {
+                final HeaderPositionInfo info = _infos.get(j);
+                info.setIndex(info.getIndex() - offset);
+                blockStore.putObject(info.getIndex(), info);
+            }
+
+            blockStore.flushDirtyBlocks(dbContext);
+            connection.commit();
+        }
 	}
 
 	public HeaderPositionInfo getInfo(int cellIndex) {
@@ -152,18 +212,35 @@ public class HeaderPositionHelper {
 			_infos.add(index, new HeaderPositionInfo(cellIndex, size, id, hidden, isCustom));
 		} else {
 			final HeaderPositionInfo info = _infos.get(index);
-			info.size = size;
-			info.id = id;
-			info.hidden = hidden;
+			info.setSize(size);
+			info.setId(id);
+			info.setHidden(hidden);
 		}
+
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            DBContext dbContext = new DBContext(connection);
+
+            blockStore.putObject(Integer.valueOf(cellIndex), _infos.get(index));
+
+            blockStore.flushDirtyBlocks(dbContext);
+            connection.commit();
+        }
+
 	}
 
 	public void removeInfo(int cellIndex) {
-		final int j = Collections.binarySearch(_infos, Integer.valueOf(cellIndex), new HeaderPositionInfoComparator());
-		final int index = j < 0 ? (-j - 1) : j;
-		if (j >= 0) {
-			_infos.remove(index);
-		}
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            DBContext dbContext = new DBContext(connection);
+
+            final int j = Collections.binarySearch(_infos, Integer.valueOf(cellIndex), new HeaderPositionInfoComparator());
+            final int index = j < 0 ? (-j - 1) : j;
+            if (j >= 0) {
+                blockStore.freeBlock(cellIndex);
+                _infos.remove(index);
+            }
+            blockStore.flushDirtyBlocks(dbContext);
+            connection.commit();
+        }
 	}
 	
 	//given size in pixels, return the related cellIndex
@@ -174,18 +251,18 @@ public class HeaderPositionHelper {
 		int begPx = 0;
 		int begIndex = 0;
 		for(HeaderPositionInfo info : _infos) {
-			final int cellIndex = info.index;
+			final int cellIndex = info.getIndex();
 			final int endPx = begPx + (cellIndex - begIndex) * _defaultSize; //big jump 
 			if (endPx > px) { //jump beyond the target pixel
 				final int step = px - begPx;
 				return begIndex + (step / _defaultSize);
 			}
 			//still behind, forward custom size of this info
-			begPx = endPx + (info.hidden ? 0 : info.size);
+			begPx = endPx + (info.getHidden() ? 0 : info.getSize());
 			if (begPx > px) { //exactly locate at this info
-				return info.index;
+				return info.getIndex();
 			}
-			begIndex = info.index + 1; //step over to new begin index
+			begIndex = info.getIndex() + 1; //step over to new begin index
 		}
 		
 		//never reach px
@@ -201,10 +278,10 @@ public class HeaderPositionHelper {
 		int px = 0;
 		int begIndex = 0;
 		for(HeaderPositionInfo info : _infos) {
-			final int infoIndex = info.index;
+			final int infoIndex = info.getIndex();
 			if (cellIndex > infoIndex) { //not reach the target
 				px += (infoIndex - begIndex) * _defaultSize;
-				px += info.hidden ? 0 : info.size;
+				px += info.getHidden() ? 0 : info.getSize();
 				begIndex = infoIndex + 1; //next begin index
 			} else if (cellIndex == infoIndex) { //extactly locate at the info
 				px += (infoIndex - begIndex) * _defaultSize;
@@ -224,10 +301,10 @@ public class HeaderPositionHelper {
 		sb.append("[");
 		for (HeaderPositionInfo info : _infos) {
 			sb.append("[");
-			sb.append(info.index).append(", ");
-			sb.append(info.size).append(", ");
-			sb.append(info.id).append(", ");
-			sb.append(info.hidden).append(", ");
+			sb.append(info.getIndex()).append(", ");
+			sb.append(info.getSize()).append(", ");
+			sb.append(info.getId()).append(", ");
+			sb.append(info.getHidden()).append(", ");
 			sb.append("],");
 
 		}
@@ -318,37 +395,15 @@ public class HeaderPositionHelper {
 		System.out.println(">>>>" + helper.getCellIndex(480));// 12
 	}
 */
-	public static class HeaderPositionInfo {
-		//[0]: column/row index, [1]: width/height, [2]: column/row id
-		public int index; //column/row idnex
-		public int size; //width/height in pixel
-		public int id; //column/row uuid
-		public boolean hidden; //whether the column/row is hidden
-		private boolean custom = true;
-		
-		public HeaderPositionInfo(int index, int size, int id, boolean hidden, boolean isCustom) {
-			this.index = index;
-			this.size = size;
-			this.id = id;
-			this.hidden = hidden;
-			this.custom = isCustom;
-		}
-
-		public boolean isCustom() {
-			return custom;
-		}
-
-		public void setCustom(boolean custom) {
-			this.custom = custom;
-		}
-	}
+	
 	
 	private static class HeaderPositionInfoComparator implements Comparator, Serializable {
 		@Override
 		public int compare(Object o1, Object o2) {
-			final int i1 = o1 instanceof HeaderPositionInfo ? ((HeaderPositionInfo)o1).index : ((Integer)o1).intValue();
-			final int i2 = o2 instanceof HeaderPositionInfo ? ((HeaderPositionInfo)o2).index : ((Integer)o2).intValue();
+			final int i1 = o1 instanceof HeaderPositionInfo ? ((HeaderPositionInfo)o1).getIndex() : ((Integer)o1).intValue();
+			final int i2 = o2 instanceof HeaderPositionInfo ? ((HeaderPositionInfo)o2).getIndex() : ((Integer)o2).intValue();
 			return i1 - i2;
 		} 
 	}
 }
+

@@ -16,6 +16,7 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
+import org.model.*;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.model.AutoRollbackConnection;
@@ -440,7 +441,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	}
 
 
-	
+
 	@Override
 	AbstractCellAdv getCell(int rowIdx, int columnIdx, boolean proxy) {
 		CellRegion cellRegion = new CellRegion(rowIdx, columnIdx);
@@ -2201,6 +2202,14 @@ public class SheetImpl extends AbstractSheetAdv {
 
     @Override
 	public void cloneModel(DBContext dbContext, String modelName, SSheet src) {
+		BlockStore srcColumnHelper = new BlockStore(dbContext,
+                src.getBook().getId() + src.getDBId() + "_col_position_helper");
+        srcColumnHelper.clone(dbContext, getBook().getId() + getDBId() + "_col_position_helper");
+
+        BlockStore srcRowHelper = new BlockStore(dbContext,
+                src.getBook().getId() + src.getDBId() + "_row_position_helper");
+        srcRowHelper.clone(dbContext, getBook().getId() + getDBId() + "_row_position_helper");
+
 		dataModel = src.getDataModel().clone(dbContext,this, modelName);
 	}
 

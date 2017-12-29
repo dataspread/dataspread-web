@@ -24,6 +24,9 @@ import org.zkoss.zss.api.Range.DeleteShift;
 import org.zkoss.zss.api.Ranges;
 import org.zkoss.zss.api.model.Book;
 import org.zkoss.zss.api.model.Sheet;
+import org.zkoss.zss.model.ModelEvents;
+import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.ui.Spreadsheet;
 import org.zkoss.zss.ui.UserActionContext;
 import org.zkoss.zss.ui.impl.undo.DeleteCellAction;
 import org.zkoss.zss.ui.sys.UndoableActionManager;
@@ -52,6 +55,9 @@ public class DeleteRowHandler extends AbstractHandler {
 		uam.doAction(new DeleteCellAction(Labels.getLabel("zss.undo.deleteRow"),sheet, range.getRow(), range.getColumn(), 
 				range.getLastRow(), range.getLastColumn(), 
 				DeleteShift.UP));
+		SSheet isheet = ctx.getSheet().getInternalSheet();
+		Spreadsheet ss = ctx.getSpreadsheet();
+		ss.manuallyTriggerEvent(ModelEvents.ON_ROW_DELETE, isheet, range);
 		ctx.clearClipboard();
 		return true;
 	}
