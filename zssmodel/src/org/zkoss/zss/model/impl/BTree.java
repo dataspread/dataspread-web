@@ -153,15 +153,13 @@ public class BTree <K extends AbstractStatistic> {
             i = statistic.findIndex(u.statistics, type, true, true);
             u.addLeaf(i, statistic, val, count, type);
         } else {
-            // Update the statistic of the node we found
-            AbstractStatistic current_stat = u.statistics.get(i);
-            if (current_stat.requireUpdate())
-                u.statistics.set(i, current_stat.updateStatistic(AbstractStatistic.Mode.ADD));
             // Get the new statistic we are looking for
             K new_statistic = (K) statistic.getLowerStatistic(u.statistics, i, type);
             Node rightNode = addRecursive(context, new_statistic, u.children.get(i), val, count, type);
+            // Update the node we found
             Node child = new Node().get(context, bs, u.children.get(i));
             u.childrenCount.set(i, child.childrenCount.size());
+            u.statistics.set(i, emptyStatistic.getAggregation(child.statistics, type));
             if (rightNode != null) {  // child was split, w is new child
                 rightNode.update(bs);
                 // Add w after position i
@@ -208,11 +206,11 @@ public class BTree <K extends AbstractStatistic> {
         if (ui < 0) return null;  // didn't find it
         Node u = new Node().get(context, bs, ui);
 
-        int i = statistic.findIndex(u.statistics, type, false, false);
+        int i = statistic.findIndex(u.statistics, type, u.isLeaf(), false);
         /* Need to go to leaf to delete */
         if (u.isLeaf()) {
             if (u.childrenCount.get(i) > 1) {
-                u.splitSparseNode(i, statistic, type, true);
+                u.splitSparseNode(i, statistic, type, true, true);
             }
             i = statistic.findIndex(u.statistics, type, true, false);
             // Check if the statistic is exactly matched
@@ -228,10 +226,6 @@ public class BTree <K extends AbstractStatistic> {
             } else
                 return null;
         } else {
-            // Update the statistic of the node we found
-            AbstractStatistic current_stat = u.statistics.get(i);
-            if (current_stat.requireUpdate())
-                u.statistics.set(i, current_stat.updateStatistic(AbstractStatistic.Mode.DELETE));
             // Get the new statistic we are looking for
             K new_statistic = (K) statistic.getLowerStatistic(u.statistics, i, type);
             Integer value = removeRecursive(context, new_statistic, u.children.get(i), type);
@@ -543,17 +537,17 @@ public class BTree <K extends AbstractStatistic> {
 
         Node u = new Node().get(context, bs, ui);
         while (true) {
-            int i = new_statistic.findIndex(u.statistics, type, u.isLeaf(), false);
-            /* Need to go to leaf to delete */
+            int i = new_statistic.findIndex(u.statistics, type, false, false);
+            /* Need to go to leaf to lookup */
             if (u.isLeaf()) {
                 if (u.childrenCount.get(i) > 1) {
-                    split = statistic.splitIndex(u.statistics, type);
+                    split = new_statistic.splitIndex(u.statistics, type);
                     if (split != 0) {
                         first_index = i;
                         break;
                     }
                 }
-                i = statistic.findIndex(u.statistics, type, true, false);
+                i = new_statistic.findIndex(u.statistics, type, true, false);
                 // Check if the statistic is exactly matched
                 if (new_statistic.match(u.statistics, i, type)) {
                     first_index = i;
@@ -562,7 +556,7 @@ public class BTree <K extends AbstractStatistic> {
                     return null;
             } else {
                 // Get the new statistic we are looking for
-                new_statistic = (K) statistic.getLowerStatistic(u.statistics, i, type);
+                new_statistic = (K) new_statistic.getLowerStatistic(u.statistics, i, type);
                 u = new Node().get(context, bs, u.children.get(i));
             }
         }
@@ -797,25 +791,42 @@ public class BTree <K extends AbstractStatistic> {
             return sb.toString();
         }
 
-
         public void splitSparseNode(int i, K statistic, AbstractStatistic.Type type, boolean splitSingle) {
+            splitSparseNode(i, statistic, type, splitSingle, false);
+        }
+
+
+        public void splitSparseNode(int i, K statistic, AbstractStatistic.Type type, boolean splitSingle, boolean forceSplit) {
             int split = statistic.splitIndex(statistics, type);
-            if (split == 0) return;
-            if (split == childrenCount.get(i)) return;
-            int count = childrenCount.get(i) - split;
-            this.childrenCount.set(i, split);
-            this.statistics.set(i, statistic.getLeafStatistic(split, type));
-            if (splitSingle) {
-                count--;
-                split++;
+            if (!forceSplit) {
+                if (split == 0) return;
+                if (split >= childrenCount.get(i)) return;
             }
-            this.childrenCount.add(i + 1, count);
-            this.statistics.add(i + 1, statistic.getLeafStatistic(count, type));
-            this.values.add(i + 1, values.get(i) + split);
+            int value = values.get(i);
+            int count = childrenCount.get(i) - split;
+
             if (splitSingle) {
-                this.childrenCount.add(i + 1, 1);
-                this.statistics.add(i + 1, statistic.getLeafStatistic(1, type));
-                this.values.add(i + 1, values.get(i) + split - 1);
+                split++;
+                count--;
+            }
+            if (split < childrenCount.get(i)) {
+                this.childrenCount.add(i + 1, count);
+                this.statistics.add(i + 1, statistic.getLeafStatistic(count, type));
+                this.values.add(i + 1, value + split);
+            }
+            this.childrenCount.remove(i);
+            this.statistics.remove(i);
+            this.values.remove(i);
+            if (splitSingle) {
+                this.childrenCount.add(i, 1);
+                this.statistics.add(i, statistic.getLeafStatistic(1, type));
+                this.values.add(i, value + split - 1);
+                split--;
+            }
+            if (split > 0) {
+                this.childrenCount.add(i, split);
+                this.statistics.add(i, statistic.getLeafStatistic(split, type));
+                this.values.add(i, value);
             }
         }
     }
