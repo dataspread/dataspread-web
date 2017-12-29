@@ -206,13 +206,9 @@ public class BTree <K extends AbstractStatistic> {
         if (ui < 0) return null;  // didn't find it
         Node u = new Node().get(context, bs, ui);
 
-        int i = statistic.findIndex(u.statistics, type, false, false);
+        int i = statistic.findIndex(u.statistics, type, u.isLeaf(), false);
         /* Need to go to leaf to delete */
         if (u.isLeaf()) {
-            if (u.childrenCount.get(i) > 1) {
-                u.splitSparseNode(i, statistic, type, true);
-            }
-            i = statistic.findIndex(u.statistics, type, true, false);
             if (u.childrenCount.get(i) > 1) {
                 u.splitSparseNode(i, statistic, type, true, true);
             }

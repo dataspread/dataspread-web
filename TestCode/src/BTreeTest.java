@@ -118,11 +118,11 @@ public class BTreeTest {
 
     public static void sparseTest(DBContext dbContext){
         CountedBTree btree = new CountedBTree(dbContext, "Test1", false);
-        btree.getIDs(dbContext, 4, 1);
+        btree.getIDs(dbContext, 2, 1);
+        btree.getIDs(dbContext,5, 1);
         btree.getIDs(dbContext,8, 1);
-        btree.getIDs(dbContext,12, 1);
         dbContext.getConnection().commit();
-        btree.deleteIDs(dbContext,0, 1);
+        btree.deleteIDs(dbContext,6, 1);
         dbContext.getConnection().commit();
         System.out.println(btree.getIDs(dbContext, 10, 1));
     }
