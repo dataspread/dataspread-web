@@ -8,6 +8,9 @@ import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.sys.BookBindings;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -21,6 +24,35 @@ public class ApiController {
                                      @PathVariable int row,
                                      @PathVariable int col) {
         return getCells(book, sheet, row, row, col, col);
+    }
+
+
+    @RequestMapping(value = "/getSheets/{book}",
+            method = RequestMethod.GET)
+    public Collection<String> getSheets(@PathVariable String book) {
+        List<String> sheetNames = new ArrayList<>();
+
+        SBook sbook = BookBindings.getBookByName(book);
+        for (int i = 0; i < sbook.getNumOfSheet(); i++)
+            sheetNames.add(sbook.getSheet(i).getSheetName());
+
+        return sheetNames;
+    }
+
+    @RequestMapping(value = "/getBooks",
+            method = RequestMethod.GET)
+    public Collection<String> getBooks() {
+        List<String> books = new ArrayList<>();
+        String query = "SELECT bookname FROM books";
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet rs = statement.executeQuery()) {
+            while (rs.next())
+                books.add(rs.getString(1));
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return books;
     }
 
 
