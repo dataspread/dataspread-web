@@ -42,8 +42,8 @@ public class KeyStatistic<T extends Comparable<T>> implements AbstractStatistic 
             if (this.compareTo(keys.get(m), type) < 0)
                 hi = m - 1;     // look in first half
             else if (this.compareTo(keys.get(m), type) > 0) {
-                lo = m;     // look in second half
-                index = lo;
+                index = m;
+                lo = m + 1;     // look in second half
             } else {
                 index = m;   // found the index
                 break;
