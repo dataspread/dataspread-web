@@ -34,10 +34,10 @@ public class KeyStatistic<T extends Comparable<T>> implements AbstractStatistic 
      */
     @Override
     public int findIndex(ArrayList<AbstractStatistic> keys, Type type, boolean isLeaf, boolean isAdd) {
-        int lo = 0, hi = keys.size();
+        int lo = 0, hi = keys.size() - 1;
         int index = lo;
-        if (hi == 0) return index;
-        while (hi > lo) {
+        if (hi < 0) return index;
+        while (hi >= lo) {
             int m = (hi + lo) / 2;
             if (this.compareTo(keys.get(m), type) < 0)
                 hi = m - 1;     // look in first half

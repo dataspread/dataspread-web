@@ -28,11 +28,7 @@ public class BTreeTest {
         DBHandler.connectToDB(url, driver, userName, password);
         DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
 
-        //testNodeMergeByCount(dbContext);
-        //testSplitNodeSplitParentByCount(dbContext);
-
-        //NodeMergeRootMerge1ByCount(dbContext);
-        testRootInsDel(dbContext);
+        NodeMergeRootMerge(dbContext);
         dbContext.getConnection().commit();
         dbContext.getConnection().close();
     }
@@ -294,7 +290,7 @@ public class BTreeTest {
         ids.set(0, 200);
         ids.add(400);
         ArrayList<KeyStatistic> new_statistics = new ArrayList<>();
-        statistics.add(new KeyStatistic(20));
+        statistics.set(0, new KeyStatistic(20));
         statistics.add(new KeyStatistic(40));
         testTree.insertIDs(context, statistics, ids);
 
