@@ -17,13 +17,20 @@ import java.util.logging.Logger;
 public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
     private static final Logger logger = Logger.getLogger(FormulaAsyncSchedulerSimple.class.getName());
     private boolean keepRunning = true;
+    private boolean emptyQueue = false;
 
     @Override
     public void run() {
         while (keepRunning) {
             DirtyManager.DirtyRecord dirtyRecord=DirtyManager.dirtyManagerInstance.getDirtyRegionFromQueue();
-            if (dirtyRecord==null)
+            if (dirtyRecord==null) {
+                emptyQueue = true;
+                synchronized (this) {
+                      notifyAll();
+                }
                 continue;
+            }
+            emptyQueue = false;
             //logger.info("Processing " + dirtyRecord.region );
             SSheet sheet=BookBindings.getSheetByRef(dirtyRecord.region);
 
@@ -47,6 +54,17 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
                     dirtyRecord.trxId);
             update(sheet,new CellRegion(dirtyRecord.region));
             //logger.info("Done computing " + dirtyRecord.region );
+        }
+    }
+
+    @Override
+    public synchronized void waitForCompletion() {
+        while(!emptyQueue) {
+            try {
+                this.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 

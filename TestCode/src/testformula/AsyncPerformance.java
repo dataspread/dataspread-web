@@ -5,6 +5,7 @@ import org.model.GraphCompressor;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.impl.SheetImpl;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerSimple;
 import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
@@ -20,6 +21,7 @@ public class AsyncPerformance {
         String password = "mangesh";
         DBHandler.connectToDB(url, driver, userName, password);
 
+        SheetImpl.simpleModel = true;
         FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerSimple();
         Thread thread = new Thread(formulaAsyncScheduler);
         thread.start();
@@ -31,7 +33,7 @@ public class AsyncPerformance {
         SSheet sheet = book.getSheet(0);
 
 
-        sheet.getCell(0,0).setValue("100");
+        sheet.getCell(0,0).setValue("500");
 
         for (int i=1;i<=100;i++)
             sheet.getCell(i,0).setFormulaValue("A" + i + "+1");
@@ -48,7 +50,7 @@ public class AsyncPerformance {
         startTime = System.currentTimeMillis();
         sheet.getCell(0,0).setValue("300");
         System.out.println("Final Value "
-                + sheet.getCell(99,0).getValue());
+                + sheet.getCell(100,0).getValue());
         endTime = System.currentTimeMillis();
         System.out.println("Sync time to update = " + (endTime-startTime));
 
@@ -61,7 +63,11 @@ public class AsyncPerformance {
                 + sheet.getCell(100,0).getValue());
        endTime = System.currentTimeMillis();
        System.out.println("Async time to update = " + (endTime-startTime));
-
+       formulaAsyncScheduler.waitForCompletion();
+        endTime = System.currentTimeMillis();
+        System.out.println("Final Value "
+                + sheet.getCell(100,0).getValue());
+        System.out.println("Async time to complete = " + (endTime-startTime));
 
         formulaAsyncScheduler.shutdown();
         thread.join();

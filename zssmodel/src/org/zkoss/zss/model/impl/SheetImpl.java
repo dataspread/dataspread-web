@@ -64,6 +64,8 @@ public class SheetImpl extends AbstractSheetAdv {
     /* Set this to true to enable syncronous computation */
     public static boolean syncComputation =
 			"true".equalsIgnoreCase(Library.getProperty("ds.model.syncComputation","false"));
+	public static boolean simpleModel =
+			"true".equalsIgnoreCase(Library.getProperty("ds.model.simple","false"));
 
     static {
         if ("true".equalsIgnoreCase(Library.getProperty("org.zkoss.zss.model.internal.CollumnArrayCheck"))) {
@@ -357,7 +359,10 @@ public class SheetImpl extends AbstractSheetAdv {
 	public void setDataModel(String model) {
 		try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
 			DBContext dbContext = new DBContext(connection);
-			dataModel = Model.CreateModel(dbContext, this, Model.ModelType.HYBRID_Model, model);
+			if (simpleModel)
+				dataModel = Model.CreateModel(dbContext, this, Model.ModelType.RCV_Model_Simplified, model);
+			else
+				dataModel = Model.CreateModel(dbContext, this, Model.ModelType.HYBRID_Model, model);
 			connection.commit();
 		}
 	}
@@ -2197,7 +2202,10 @@ public class SheetImpl extends AbstractSheetAdv {
 
     @Override
     public void createModel(DBContext dbContext, String modelName) {
-		dataModel = Model.CreateModel(dbContext, this, Model.ModelType.HYBRID_Model, modelName);
+		if (simpleModel)
+			dataModel = Model.CreateModel(dbContext, this, Model.ModelType.RCV_Model_Simplified, modelName);
+		else
+			dataModel = Model.CreateModel(dbContext, this, Model.ModelType.HYBRID_Model, modelName);
 	}
 
     @Override

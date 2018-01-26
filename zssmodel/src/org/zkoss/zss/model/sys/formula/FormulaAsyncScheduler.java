@@ -35,5 +35,7 @@ public abstract class FormulaAsyncScheduler implements Runnable {
     }
 
 
+    public abstract void waitForCompletion();
+
     public abstract void shutdown();
 }
