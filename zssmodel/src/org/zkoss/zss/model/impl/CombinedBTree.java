@@ -4,6 +4,7 @@ import org.model.BlockStore;
 import org.model.DBContext;
 import org.zkoss.zss.model.impl.statistic.AbstractStatistic;
 import org.zkoss.zss.model.impl.statistic.CombinedStatistic;
+import org.zkoss.zss.model.impl.statistic.KeyStatistic;
 
 import java.util.ArrayList;
 
@@ -11,18 +12,18 @@ public class CombinedBTree{
     BTree<CombinedStatistic> btree;
 
     public CombinedBTree(DBContext context, String tableName, BlockStore sourceBlockStore) {
-        CombinedStatistic emptyStatistic = new CombinedStatistic();
+        CombinedStatistic emptyStatistic = new CombinedStatistic(new KeyStatistic(0));
         btree = new BTree<>(context, tableName, sourceBlockStore, emptyStatistic, false);
     }
 
     public CombinedBTree(DBContext context, String tableName) {
-        CombinedStatistic emptyStatistic = new CombinedStatistic(0);
+        CombinedStatistic emptyStatistic = new CombinedStatistic(new KeyStatistic(0));
         btree = new BTree<>(context, tableName, emptyStatistic, false);
         btree.updateMaxValue(context, 0);
     }
 
     public CombinedBTree(DBContext context, String tableName, boolean useKryo) {
-        CombinedStatistic emptyStatistic = new CombinedStatistic(0);
+        CombinedStatistic emptyStatistic = new CombinedStatistic(new KeyStatistic(0));
         btree = new BTree<>(context, tableName, emptyStatistic, useKryo);
         btree.updateMaxValue(context, 0);
     }
@@ -33,28 +34,13 @@ public class CombinedBTree{
     }
 
 
-    public ArrayList getIDs(DBContext context, CombinedStatistic statistic, int count) {
-        //if ((pos + count) > size(context))
-        //    createIDs(context, size(context), pos + count - size(context));
-        return btree.getIDs(context, statistic, count, AbstractStatistic.Type.KEY);
+    public ArrayList getIDs(DBContext context, CombinedStatistic statistic, int count, AbstractStatistic.Type type) {
+        return btree.getIDs(context, statistic, count, type);
     }
 
 
-    public ArrayList deleteIDs(DBContext context, ArrayList<CombinedStatistic> statistics) {
-        return btree.deleteIDs(context, statistics, AbstractStatistic.Type.KEY);
-    }
-
-
-    public ArrayList createIDs(DBContext context, int pos, int count) {
-        Integer max_value = btree.getMaxValue();
-        CombinedStatistic statistic = new CombinedStatistic(pos);
-        ArrayList<Integer> ids = new ArrayList<>();
-        btree.createIDs(context, statistic, max_value + 1, count, false, AbstractStatistic.Type.KEY);
-        for (int i = 0; i < count; i++) {
-            ids.add(++max_value);
-        }
-        btree.updateMaxValue(context, max_value);
-        return ids;
+    public ArrayList deleteIDs(DBContext context, ArrayList<CombinedStatistic> statistics, AbstractStatistic.Type type) {
+        return btree.deleteIDs(context, statistics, type);
     }
 
 
