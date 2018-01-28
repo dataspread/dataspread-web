@@ -10,6 +10,7 @@ import java.sql.*;
 
 /* Simple in-db implementation for DirtyManager */
 public class DirtyManagerPGImpl extends DirtyManager {
+
     DirtyManagerPGImpl()
     {
         createTable();
@@ -62,6 +63,11 @@ public class DirtyManagerPGImpl extends DirtyManager {
                 e.printStackTrace();
             }
         }
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return false;
     }
 
     @Override

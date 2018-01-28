@@ -5,8 +5,8 @@ import org.zkoss.zss.model.impl.FormulaResultCellValue;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
 public abstract class DirtyManager {
-    static public DirtyManager dirtyManagerInstance = new DirtyManagerPGImpl();
-    //static public DirtyManager dirtyManagerInstance = new DirtyManagerMemImpl();
+    //static public DirtyManager dirtyManagerInstance = new DirtyManagerPGImpl();
+    static public DirtyManager dirtyManagerInstance = new DirtyManagerMemImpl();
 
     /* Check if the given region is dirty
     *  Return the trxId that made this region dirty
@@ -20,6 +20,9 @@ public abstract class DirtyManager {
        All the regions with trxId <= input trxId
        and region encapsulated with inout target are removed.
      */
+
+    abstract public boolean isEmpty();
+
     abstract public void removeDirtyRegion(Ref target, int trxId);
 
     abstract public DirtyRecord getDirtyRegionFromQueue();
@@ -51,7 +54,8 @@ public abstract class DirtyManager {
 
         @Override
         public int compareTo(Object o) {
-            return Integer.compare(trxId, ((DirtyRecord) o).trxId );
+            return this.toString().compareTo(o.toString());
+            //return Integer.compare(trxId, ((DirtyRecord) o).trxId );
         }
 
         @Override
@@ -60,8 +64,13 @@ public abstract class DirtyManager {
             if (!(o instanceof DirtyRecord))
                 return false;
             DirtyRecord dirtyRecord = (DirtyRecord) o;
-            return region == dirtyRecord.region &&
+            return region.equals(dirtyRecord.region) &&
                     trxId == dirtyRecord.trxId;
+        }
+
+        @Override
+        public String toString() {
+            return region + " " + trxId;
         }
     }
 }

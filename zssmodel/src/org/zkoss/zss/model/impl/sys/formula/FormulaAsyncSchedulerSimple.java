@@ -23,15 +23,20 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
     public void run() {
         while (keepRunning) {
             DirtyManager.DirtyRecord dirtyRecord=DirtyManager.dirtyManagerInstance.getDirtyRegionFromQueue();
-            if (dirtyRecord==null) {
-                emptyQueue = true;
+             if (DirtyManager.dirtyManagerInstance.isEmpty()) {
                 synchronized (this) {
-                      notifyAll();
+                    emptyQueue = true;
+                    notifyAll();
                 }
                 continue;
             }
-            emptyQueue = false;
-            //logger.info("Processing " + dirtyRecord.region );
+            else {
+                 emptyQueue = false;
+             }
+            if (dirtyRecord==null)
+                continue;
+
+           // logger.info("Processing " + dirtyRecord.region );
             SSheet sheet=BookBindings.getSheetByRef(dirtyRecord.region);
 
             //TODO - Change to streaming.
@@ -52,7 +57,7 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
             }
             DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,
                     dirtyRecord.trxId);
-            update(sheet,new CellRegion(dirtyRecord.region));
+            update(sheet, new CellRegion(dirtyRecord.region));
             //logger.info("Done computing " + dirtyRecord.region );
         }
     }
@@ -63,7 +68,6 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
             try {
                 this.wait();
             } catch (InterruptedException e) {
-                e.printStackTrace();
             }
         }
     }

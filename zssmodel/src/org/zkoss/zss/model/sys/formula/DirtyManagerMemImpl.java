@@ -33,11 +33,7 @@ public class DirtyManagerMemImpl extends DirtyManager {
 
     @Override
     public int getDirtyTrxId(Ref region) {
-         return dirtyRecords.stream().filter(e->
-                e.region.getBookName().equals(region.getBookName())
-                        && e.region.getSheetName().equals(region.getSheetName())
-                        && e.region.getBookName().equals(region.getBookName())
-                        && overlaps(e.region, region))
+         return dirtyRecords.stream().filter(e->overlaps(e.region, region))
                 .map(e->e.trxId)
                 .reduce(Integer::max)
                  .orElse(-1);
@@ -46,6 +42,7 @@ public class DirtyManagerMemImpl extends DirtyManager {
     @Override
     public void addDirtyRegion(Ref region, int trxId) {
         DirtyRecord dirtyRecord = new DirtyRecord();
+
         // For now only consider cell dependencies.
         // Later we need to consider sheet and book level as well.
         if (region.getType()== Ref.RefType.AREA || region.getType()== Ref.RefType.CELL) {
@@ -53,8 +50,12 @@ public class DirtyManagerMemImpl extends DirtyManager {
             dirtyRecord.trxId = trxId;
             dirtyRecords.add(dirtyRecord);
             dirtyRecordPriorityBlockingQueue.add(dirtyRecord);
-
         }
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return dirtyRecords.isEmpty();
     }
 
     @Override
@@ -62,15 +63,16 @@ public class DirtyManagerMemImpl extends DirtyManager {
         DirtyRecord dirtyRecord = new DirtyRecord();
         dirtyRecord.region = region;
         dirtyRecord.trxId = trxId;
+
         dirtyRecords.remove(dirtyRecord);
     }
 
     @Override
     public DirtyRecord getDirtyRegionFromQueue() {
         try {
-            return dirtyRecordPriorityBlockingQueue.poll(1, TimeUnit.SECONDS);
+            return dirtyRecordPriorityBlockingQueue.poll(1, TimeUnit.MILLISECONDS);
         }
-        catch (Exception e)
+        catch (InterruptedException e)
         {
             return null;
         }

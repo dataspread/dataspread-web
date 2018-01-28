@@ -5,6 +5,7 @@ import org.model.GraphCompressor;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.impl.FormulaCacheCleaner;
 import org.zkoss.zss.model.impl.SheetImpl;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerSimple;
 import org.zkoss.zss.model.sys.BookBindings;
@@ -30,17 +31,20 @@ public class AsyncPerformance {
         Thread thread2 = new Thread(formulaAsyncScheduler);
 
         SBook book= BookBindings.getBookByName("testBook");
+        /* Cleaner for sync computation */
+        FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(book.getBookSeries()));
         SSheet sheet = book.getSheet(0);
 
 
         sheet.getCell(0,0).setValue("500");
 
-        for (int i=1;i<=100;i++)
+        sheet.setSyncComputation(true);
+        int cellCount = 100;
+        for (int i=1;i<=cellCount;i++)
             sheet.getCell(i,0).setFormulaValue("A" + i + "+1");
 
 
         Thread.sleep(5000);
-        sheet.setSyncComputation(true);
        //sheet.clearCache();
         long startTime, endTime;
        /* Time to update A1 */
@@ -50,24 +54,26 @@ public class AsyncPerformance {
         startTime = System.currentTimeMillis();
         sheet.getCell(0,0).setValue("300");
         System.out.println("Final Value "
-                + sheet.getCell(100,0).getValue());
+                + sheet.getCell(cellCount,0).getValue());
         endTime = System.currentTimeMillis();
         System.out.println("Sync time to update = " + (endTime-startTime));
 
 
         sheet.setSyncComputation(false);
         sheet.clearCache();
+
+
         startTime = System.currentTimeMillis();
         sheet.getCell(0,0).setValue("200");
         System.out.println("Final Value "
-                + sheet.getCell(100,0).getValue());
+                + sheet.getCell(cellCount,0).getValue());
        endTime = System.currentTimeMillis();
        System.out.println("Async time to update = " + (endTime-startTime));
        formulaAsyncScheduler.waitForCompletion();
-        endTime = System.currentTimeMillis();
-        System.out.println("Final Value "
-                + sheet.getCell(100,0).getValue());
-        System.out.println("Async time to complete = " + (endTime-startTime));
+       endTime = System.currentTimeMillis();
+       System.out.println("Final Value "
+                + sheet.getCell(cellCount,0).getValue());
+       System.out.println("Async time to complete = " + (endTime-startTime));
 
         formulaAsyncScheduler.shutdown();
         thread.join();
