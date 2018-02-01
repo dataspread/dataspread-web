@@ -9,6 +9,8 @@ import org.zkoss.zss.model.impl.statistic.CombinedStatistic;
 import org.zkoss.zss.model.impl.statistic.CountStatistic;
 import org.zkoss.zss.model.impl.statistic.KeyStatistic;
 
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -22,10 +24,10 @@ public class BTreeTest {
     }
 
     public static void deepTest(){
-        String url = "jdbc:postgresql://127.0.0.1:5432/ibd";
+        String url = "jdbc:postgresql://127.0.0.1:5432/postgres";
         String driver = "org.postgresql.Driver";
-        String userName = "mangesh";
-        String password = "mangesh";
+        String userName = "postgres";
+        String password = "";
         DBHandler.connectToDB(url, driver, userName, password);
         DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
 
@@ -432,17 +434,27 @@ public class BTreeTest {
     }
     public static void CombinedDNETest(DBContext context){
         String tableName = "CombinedDNETest";
+        String dropTable = (new StringBuffer())
+                .append("DROP TABLE IF EXISTS ")
+                .append(tableName)
+                .toString();
+        try (Statement stmt = context.getConnection().createStatement()) {
+            stmt.execute(dropTable);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         CombinedBTree testTree = new CombinedBTree(context, tableName, false);
         int [] num = {10, 30, 40, 50, 60, 70, 80};
         ArrayList<Integer> ids = new ArrayList<>();
         ArrayList<CombinedStatistic> statistics = new ArrayList<>();
         for(int i = 0; i < 7; i++) {
             ids.add(num[i]*10);
-            statistics.add(new CombinedStatistic(new KeyStatistic(num[i])));
+            statistics.add(new CombinedStatistic(new KeyStatistic(Integer.toString(num[i]))));
         }
         testTree.insertIDs(context, statistics, ids);
-        CombinedStatistic start = new CombinedStatistic(new KeyStatistic(20), new CountStatistic(1));
-        ArrayList<Integer> results = testTree.getIDs(context, start, 4, AbstractStatistic.Type.KEY);
+        CombinedStatistic start = new CombinedStatistic(new KeyStatistic(Integer.toString(30)), new CountStatistic(1));
+        ArrayList<Integer> results = testTree.getIDs(context, start, 2, AbstractStatistic.Type.KEY);
+        System.out.println(results);
     }
     public static void CombinedNodeSplit(DBContext context){
         String tableName = "CombinedNodeSplit";
