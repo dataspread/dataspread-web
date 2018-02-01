@@ -24,10 +24,10 @@ public class BTreeTest {
     }
 
     public static void deepTest(){
-        String url = "jdbc:postgresql://127.0.0.1:5432/postgres";
+        String url = "jdbc:postgresql://127.0.0.1:5432/ibd";
         String driver = "org.postgresql.Driver";
-        String userName = "postgres";
-        String password = "";
+        String userName = "mangesh";
+        String password = "mangesh";
         DBHandler.connectToDB(url, driver, userName, password);
         DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
 
