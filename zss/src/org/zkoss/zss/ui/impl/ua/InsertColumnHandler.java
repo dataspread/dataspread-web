@@ -26,6 +26,7 @@ import org.zkoss.zss.api.Range.InsertCopyOrigin;
 import org.zkoss.zss.api.Range.InsertShift;
 import org.zkoss.zss.api.model.Book;
 import org.zkoss.zss.api.model.Sheet;
+import org.zkoss.zss.model.ModelEvents;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.ui.Spreadsheet;
 import org.zkoss.zss.ui.UserActionContext;
@@ -62,6 +63,7 @@ public class InsertColumnHandler extends AbstractHandler {
 		SSheet isheet = ctx.getSheet().getInternalSheet();
 		Spreadsheet ss = ctx.getSpreadsheet();
 		ss.setSheetMaxVisibleColumns(isheet, ss.getSheetMaxVisibleColumns(isheet) + range.getColumnCount());
+		ss.manuallyTriggerEvent(ModelEvents.ON_COLUMN_INSERT, isheet, range);
 		return true;
 	}
 

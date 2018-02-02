@@ -1,7 +1,9 @@
 import org.model.DBHandler;
+import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.AbstractBookAdv;
 import org.zkoss.zss.model.impl.BookImpl;
+import org.zkoss.zss.model.sys.BookBindings;
 
 import java.util.stream.IntStream;
 
@@ -14,15 +16,14 @@ public class FormulaTesting {
         String password = "";
         DBHandler.connectToDB(url, driver, userName, password);
 
-        AbstractBookAdv book = new BookImpl("Test Book");
-        book.setNameAndLoad("biycbh4vq");
+        SBook book = BookBindings.getBookByName("Test Book");
+
         System.out.println("Sheets " + book.getNumOfSheet());
         SSheet sheet = book.getSheet(0);
         long startTime, endTime;
 
         startTime = System.currentTimeMillis();
-        sheet.getCell("C3").setValue(60.0,
-                null, true);
+        sheet.getCell("C3").setValue(60.0);
         endTime = System.currentTimeMillis();
         System.out.println("Time taken " + (endTime - startTime));
 

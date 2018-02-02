@@ -11,6 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -209,6 +210,33 @@ public class BlockStore {
         }
         blockCache.put(block_id, obj);
         return obj;
+    }
+
+    public Collection<Integer> keySet(DBContext dbContext) {
+        Collection<Integer> result = new HashSet<>();
+        result.addAll(blockCache.keySet());
+        result.addAll(dirtyBlocks.keySet());
+
+        if (dataStore == null){
+            return result;
+        }
+
+        String read = "SELECT block_id FROM " + dataStore;
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(read)) {
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                result.add(Integer.valueOf(new String(rs.getBytes(1))));
+            }
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        result.removeAll(deletedBlocks);
+
+        return result;
     }
 
     public void flushDirtyBlocks(DBContext dbContext) {

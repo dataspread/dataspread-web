@@ -26,6 +26,7 @@ import org.zkoss.zss.api.Range.InsertCopyOrigin;
 import org.zkoss.zss.api.Range.InsertShift;
 import org.zkoss.zss.api.model.Book;
 import org.zkoss.zss.api.model.Sheet;
+import org.zkoss.zss.model.ModelEvents;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.ui.Spreadsheet;
 import org.zkoss.zss.ui.UserActionContext;
@@ -70,6 +71,7 @@ public class InsertRowHandler extends AbstractHandler {
 		SSheet isheet = ctx.getSheet().getInternalSheet();
 		Spreadsheet ss = ctx.getSpreadsheet();
 		ss.setSheetMaxVisibleRows(isheet, ss.getSheetMaxVisibleRows(isheet) + range.getRowCount());
+		ss.manuallyTriggerEvent(ModelEvents.ON_ROW_INSERT, isheet, range);
 
 		return true;
 	}
