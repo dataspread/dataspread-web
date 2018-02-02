@@ -24,10 +24,10 @@ public class BTreeTest {
     }
 
     public static void deepTest(){
-        String url = "jdbc:postgresql://127.0.0.1:5432/ibd";
+        String url = "jdbc:postgresql://127.0.0.1:5432/postgres";
         String driver = "org.postgresql.Driver";
-        String userName = "mangesh";
-        String password = "mangesh";
+        String userName = "postgres";
+        String password = "";
         DBHandler.connectToDB(url, driver, userName, password);
         DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
 
@@ -36,10 +36,10 @@ public class BTreeTest {
         dbContext.getConnection().close();
     }
     public static void simpleTest(){
-        String url = "jdbc:postgresql://127.0.0.1:5432/ibd";
+        String url = "jdbc:postgresql://127.0.0.1:5432/postgres";
         String driver = "org.postgresql.Driver";
-        String userName = "mangesh";
-        String password = "mangesh";
+        String userName = "postgres";
+        String password = "";
         DBHandler.connectToDB(url, driver, userName, password);
         DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
         CountedBTree btree = new CountedBTree(dbContext, "Test1", false);
@@ -463,7 +463,7 @@ public class BTreeTest {
         }
         CombinedBTree testTree = new CombinedBTree(context, tableName, false);
         testTree.setBlockSize(5);
-        int [] num = {10, 30, 40, 50, 60, 70, 80};
+        int [] num = {10, 10, 30, 50, 50, 80, 100};
         ArrayList<Integer> ids = new ArrayList<>();
         ArrayList<CombinedStatistic> statistics = new ArrayList<>();
         for(int i = 0; i < 7; i++) {
@@ -472,7 +472,7 @@ public class BTreeTest {
         }
         testTree.insertIDs(context, statistics, ids);
         CombinedStatistic start = new CombinedStatistic(new KeyStatistic(Integer.toString(30)), new CountStatistic(1));
-        ArrayList<Integer> results = testTree.getIDs(context, start, 2, AbstractStatistic.Type.KEY);
+        ArrayList<Integer> results = testTree.getIDs(context, start, 3, AbstractStatistic.Type.KEY);
         System.out.println(results);
     }
     public static void CombinedNodeSplit(DBContext context){
