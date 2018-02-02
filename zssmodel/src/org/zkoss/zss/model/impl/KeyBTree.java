@@ -85,5 +85,9 @@ public class KeyBTree{
     public void useKryo(boolean useKryo) {
         btree.useKryo(useKryo);
     }
+
+    public void setBlockSize(int b) {
+        btree.setB(b);
+    }
 }
 

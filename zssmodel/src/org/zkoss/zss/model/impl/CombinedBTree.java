@@ -71,5 +71,10 @@ public class CombinedBTree{
     public void useKryo(boolean useKryo) {
         btree.useKryo(useKryo);
     }
+
+    public void setBlockSize(int b) {
+        btree.setB(b);
+    }
+
 }
 

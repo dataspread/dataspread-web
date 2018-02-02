@@ -17,7 +17,7 @@ public class CountedBTree implements PosMapping{
 
     public CountedBTree(DBContext context, String tableName) {
         CountStatistic emptyStatistic = new CountStatistic();
-        btree = new BTree<>(context, tableName, emptyStatistic, false);
+        btree = new BTree<>(context, tableName, emptyStatistic, true);
         btree.updateMaxValue(context, 0);
     }
 
@@ -95,5 +95,9 @@ public class CountedBTree implements PosMapping{
 
     public void useKryo(boolean useKryo) {
         btree.useKryo(useKryo);
+    }
+
+    public void setBlockSize(int b) {
+        btree.setB(b);
     }
 }
