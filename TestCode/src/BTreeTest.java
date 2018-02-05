@@ -1,5 +1,11 @@
+import com.opencsv.CSVReader;
+import org.apache.tomcat.dbcp.dbcp2.DelegatingConnection;
+import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
+import org.postgresql.copy.CopyIn;
+import org.postgresql.copy.CopyManager;
+import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.impl.BTree;
 import org.zkoss.zss.model.impl.CountedBTree;
 import org.zkoss.zss.model.impl.KeyBTree;
@@ -9,6 +15,12 @@ import org.zkoss.zss.model.impl.statistic.CombinedStatistic;
 import org.zkoss.zss.model.impl.statistic.CountStatistic;
 import org.zkoss.zss.model.impl.statistic.KeyStatistic;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -20,7 +32,410 @@ import java.util.stream.IntStream;
 public class BTreeTest {
 
     public static void main(String[] args) {
-        deepTest();
+        //deepTest();
+
+        //generateDist();
+        reBalancingVConstructionTest();
+    }
+
+    private static void reBalancingVConstructionTest() {
+
+        String url = "jdbc:postgresql://127.0.0.1:5432/postgres";
+        String driver = "org.postgresql.Driver";
+        String userName = "postgres";
+        String password = "";
+        DBHandler.connectToDB(url, driver, userName, password);
+        DBContext context = new DBContext(DBHandler.instance.getConnection());
+
+        ArrayList<Integer> ls = new ArrayList<Integer>();
+        try {
+            BufferedReader br = new BufferedReader(new FileReader("uniform.csv"));
+
+            String line = "";
+
+            while((line = br.readLine())!=null)
+            {
+                ls.add(Integer.parseInt(line.trim()));
+            }
+
+            br.close();
+        }catch(Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        int [] sampleSize = {500};//,1000,5000,10000,20000};
+
+        for(int i=0;i<sampleSize.length;i++) {
+
+            rebalanceTest(context,ls,sampleSize[i]);
+
+            reconstructTest(context, ls,sampleSize[i]);
+        }
+
+    }
+
+    private static void reconstructTest(DBContext context, ArrayList<Integer> ls, int sampleSize) {
+
+        String tableName = "reconstruct";
+
+        createDropTable(context,tableName);
+
+        //insert values regular
+
+
+        ArrayList<Long> insertTime = new ArrayList<Long>();
+        try{
+            StringBuffer sbSS = new StringBuffer();
+            PreparedStatement pstSS = null;
+
+
+            long startTime = System.currentTimeMillis();
+            long totalTime = 0;
+            for(int i=0;i<ls.size();i++)
+            {
+                sbSS.append("INSERT into "+tableName+" (row) values(?)");
+
+                pstSS = context.getConnection().prepareStatement(sbSS.toString());
+
+                pstSS.setInt(1,ls.get(i));
+
+                pstSS.executeUpdate();
+
+                sbSS = new StringBuffer();
+                if((i+1) % sampleSize ==0) {
+                    createIndex(context,tableName);
+                    context.getConnection().commit();
+                    long elapsedTime = System.currentTimeMillis()-startTime;
+                    insertTime.add(elapsedTime);
+                }
+            }
+
+            if(ls.size()%sampleSize!=0) {
+                createIndex(context,tableName);
+                context.getConnection().commit();
+                long elapsedTime = System.currentTimeMillis()-startTime;
+                insertTime.add(elapsedTime);
+                totalTime = elapsedTime;
+            }
+
+            writeResults(sampleSize,insertTime,"reconstruct");
+
+        }catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        System.out.println(insertTime);
+
+        //insert values by copy
+/*
+        createDropTable(context,tableName);
+
+        createIndex(context,tableName);
+
+
+
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            DBContext dbContext = new DBContext(connection);
+            Connection rawConn = ((DelegatingConnection) connection.getInternalConnection()).getInnermostDelegate();
+            CopyManager cm = ((PgConnection) rawConn).getCopyAPI();
+            CopyIn cpIN = null;
+
+            StringBuffer sb = new StringBuffer();
+            ArrayList<Long> copyTime = new ArrayList<Long>();
+            int sampleSize = 10000;
+            long startTime = System.currentTimeMillis();
+            long totalTime = 0;
+            for(int i=0;i<ls.size();i++)
+            {
+                if (cpIN == null)
+                {
+                   StringBuffer copyCommand = new StringBuffer("COPY ");
+                    copyCommand.append(tableName);
+                    copyCommand.append("(row");
+                    copyCommand.append(") FROM STDIN ");
+                    cpIN = cm.copyIn(copyCommand.toString());
+
+                }
+
+                sb.append(ls.get(i));
+
+                sb.append('\n');
+
+                if ((i+1)%sampleSize==0) {
+                    cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
+                    sb = new StringBuffer();
+
+                }
+            }
+            if (sb.length() > 0)
+                cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
+            cpIN.endCopy();
+            rawConn.commit();
+
+            connection.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+*/
+    }
+
+    private static void rebalanceTest(DBContext context, ArrayList<Integer> ls, int sampleSize) {
+        String tableName = "rebalance";
+
+
+        createDropTable(context,tableName);
+
+        createIndex(context,tableName);
+
+        //insert values regular
+
+
+        ArrayList<Long> insertTime = new ArrayList<Long>();
+        try{
+            StringBuffer sbSS = new StringBuffer();
+            PreparedStatement pstSS = null;
+
+            long startTime = System.currentTimeMillis();
+            long totalTime = 0;
+            for(int i=0;i<ls.size();i++)
+            {
+                sbSS.append("INSERT into "+tableName+" (row) values(?)");
+
+                pstSS = context.getConnection().prepareStatement(sbSS.toString());
+
+                pstSS.setInt(1,ls.get(i));
+
+                pstSS.executeUpdate();
+
+                sbSS = new StringBuffer();
+                if((i+1) % sampleSize ==0) {
+
+                    context.getConnection().commit();
+                    long elapsedTime = System.currentTimeMillis()-startTime;
+                    insertTime.add(elapsedTime);
+                }
+            }
+
+            if(ls.size()%sampleSize!=0) {
+                context.getConnection().commit();
+                long elapsedTime = System.currentTimeMillis()-startTime;
+                insertTime.add(elapsedTime);
+                totalTime = elapsedTime;
+            }
+
+            writeResults(sampleSize,insertTime,"rebalance");
+
+        }catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        System.out.println(insertTime);
+
+
+
+        //insert values by copy
+/*
+        createDropTable(context,tableName);
+
+        createIndex(context,tableName);
+
+
+
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            DBContext dbContext = new DBContext(connection);
+            Connection rawConn = ((DelegatingConnection) connection.getInternalConnection()).getInnermostDelegate();
+            CopyManager cm = ((PgConnection) rawConn).getCopyAPI();
+            CopyIn cpIN = null;
+
+            StringBuffer sb = new StringBuffer();
+            ArrayList<Long> copyTime = new ArrayList<Long>();
+            int sampleSize = 10000;
+            long startTime = System.currentTimeMillis();
+            long totalTime = 0;
+            for(int i=0;i<ls.size();i++)
+            {
+                if (cpIN == null)
+                {
+                   StringBuffer copyCommand = new StringBuffer("COPY ");
+                    copyCommand.append(tableName);
+                    copyCommand.append("(row");
+                    copyCommand.append(") FROM STDIN ");
+                    cpIN = cm.copyIn(copyCommand.toString());
+
+                }
+
+                sb.append(ls.get(i));
+
+                sb.append('\n');
+
+                if ((i+1)%sampleSize==0) {
+                    cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
+                    sb = new StringBuffer();
+
+                }
+            }
+            if (sb.length() > 0)
+                cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
+            cpIN.endCopy();
+            rawConn.commit();
+
+            connection.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+*/
+    }
+
+    private static void writeResults(int sampleSize, ArrayList<Long> insertTime, String type) {
+
+        try{
+            BufferedWriter bw = new BufferedWriter(new FileWriter(type+"_"+sampleSize+".csv"));
+
+            bw.write("Iteration, Cumulative Time (s), Time (s)\n");
+
+            for(int i=0;i<insertTime.size();i++)
+            {
+                if(i==0)
+                    bw.write((i+1)+","+insertTime.get(i)+","+insertTime.get(i)+"\n");
+                else
+                    bw.write((i+1)+","+insertTime.get(i)+","+(insertTime.get(i)-insertTime.get(i-1))+"\n");
+            }
+            bw.close();
+
+        }catch(Exception e)
+        {
+            e.printStackTrace();
+        }
+
+    }
+
+    private static void createIndex(DBContext context, String tableName) {
+        StringBuffer indexTable = new StringBuffer("DROP INDEX IF EXISTS col_index_insert");
+
+        try ( Statement indexStmt = context.getConnection().createStatement()) {
+            indexStmt.executeUpdate(indexTable.toString());
+            context.getConnection().commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        indexTable = new StringBuffer("CREATE INDEX col_index_insert ON ");
+        indexTable.append(tableName+" (row)");
+        try ( Statement indexStmt = context.getConnection().createStatement()) {
+            indexStmt.executeUpdate(indexTable.toString());
+            context.getConnection().commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void dropIndex(DBContext context, String tableName) {
+        StringBuffer indexTable = new StringBuffer("DROP INDEX IF EXISTS col_index_insert");
+        indexTable.append(tableName+" (row)");
+        try ( Statement indexStmt = context.getConnection().createStatement()) {
+            indexStmt.executeUpdate(indexTable.toString());
+            context.getConnection().commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void createDropTable(DBContext context,String tableName) {
+        String dropTable = (new StringBuffer())
+                .append("DROP TABLE IF EXISTS ")
+                .append(tableName)
+                .toString();
+        try (Statement stmt = context.getConnection().createStatement()) {
+            stmt.execute(dropTable);
+            context.getConnection().commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        String createTable = (new StringBuffer())
+                .append("CREATE TABLE IF NOT EXISTS ")
+                .append(tableName)
+                .append("(row INT)")
+                .toString();
+
+        try ( Statement stmt = context.getConnection().createStatement()) {
+            stmt.execute(createTable);
+            context.getConnection().commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void generateDist() {
+
+        Random r=new Random();
+        int max = 10000000;
+        try {
+            BufferedWriter bw = new BufferedWriter(new FileWriter("uniform.csv"));
+
+            BufferedWriter bw1 = new BufferedWriter(new FileWriter("unidec.csv"));
+
+            for(int i=0;i<max;i++) {
+                int n = r.nextInt(max/10) + 1;
+
+                if(i==max-1)
+                    bw.write(Integer.toString(n));
+                else
+                    bw.write(n+"\n");
+
+                if(n>max/2)
+                {
+                    n = getYourPositiveFunctionRandomNumber(max/2,max);
+                    if(i==max-1)
+                        bw1.write(Integer.toString(n));
+                    else
+                        bw1.write(n+"\n");
+                }
+                else
+                {
+                    if(i==max-1)
+                        bw1.write(Integer.toString(n));
+                    else
+                        bw1.write(n+"\n");
+                }
+
+            }
+            bw.close();
+            bw1.close();
+        }
+        catch(Exception e)
+        {
+
+        }
+
+    }
+
+    public static int getYourPositiveFunctionRandomNumber(int startIndex, int stopIndex) {
+        //Generate a random number whose value ranges from 0.0 to the sum of the values of yourFunction for all the possible integer return values from startIndex to stopIndex.
+        double randomMultiplier = 0;
+        for (int i = startIndex; i <= stopIndex; i++) {
+            randomMultiplier += yourFunction(i);//yourFunction(startIndex) + yourFunction(startIndex + 1) + .. yourFunction(stopIndex -1) + yourFunction(stopIndex)
+        }
+        Random r = new Random();
+        double randomDouble = r.nextDouble() * randomMultiplier;
+
+        //For each possible integer return value, subtract yourFunction value for that possible return value till you get below 0.  Once you get below 0, return the current value.
+        int yourFunctionRandomNumber = startIndex;
+        randomDouble = randomDouble - yourFunction(yourFunctionRandomNumber);
+        while (randomDouble >= 0) {
+            yourFunctionRandomNumber++;
+            randomDouble = randomDouble - yourFunction(yourFunctionRandomNumber);
+        }
+
+        return yourFunctionRandomNumber;
+    }
+
+    private static double yourFunction(int i) {
+        return i;
     }
 
     public static void deepTest(){
