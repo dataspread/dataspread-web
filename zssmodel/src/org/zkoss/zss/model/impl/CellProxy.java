@@ -327,6 +327,11 @@ class CellProxy extends AbstractCellAdv {
 	}
 
 	@Override
+	public CellRegion getCellRegion() {
+		return null;
+	}
+
+	@Override
 	public FormulaExpression getFormulaExpression() {
 		if (_proxy != null) {
 			return _proxy.getFormulaExpression();

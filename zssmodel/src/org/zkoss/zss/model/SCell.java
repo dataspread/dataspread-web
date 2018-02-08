@@ -180,7 +180,9 @@ public interface SCell extends CellStyleHolder,FormulaContent{
 	 */
 	void deleteComment();
 
-	/**
+    CellRegion getCellRegion();
+
+    /**
 	 * @since 3.5.0
 	 */
 	enum CellType {

@@ -644,6 +644,11 @@ public class CellImpl extends AbstractCellAdv {
 		opts._comment = null;
 	}
 
+	@Override
+	public CellRegion getCellRegion() {
+		return new CellRegion(getRowIndex(), getColumnIndex());
+	}
+
 	// TODO: Mangesh - Implement shifting logic for formaule refrence
 	@Override
     public void shift(int rowShift, int colShift) {

@@ -6,6 +6,7 @@ import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.CellImpl;
 import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.formula.DirtyManager;
+import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
 import java.util.Collection;
@@ -53,11 +54,15 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
                 if (sCell.getType()== SCell.CellType.FORMULA) {
                     // A sync call should synchronously compute the cells value.
                     ((CellImpl) sCell).getValue(true,true);
+                    // Push individual cells to the UI
+                    update(sheet, sCell.getCellRegion());
+                    DirtyManagerLog.instance.markClean(sCell.getCellRegion());
                 }
             }
             DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,
                     dirtyRecord.trxId);
-            update(sheet, new CellRegion(dirtyRecord.region));
+            //This is to update the entire region
+            //update(sheet, new CellRegion(dirtyRecord.region));
             //logger.info("Done computing " + dirtyRecord.region );
         }
     }

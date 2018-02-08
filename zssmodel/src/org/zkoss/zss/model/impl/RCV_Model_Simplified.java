@@ -16,7 +16,8 @@ import org.zkoss.zss.model.SSheet;
 import java.io.IOException;
 import java.io.Reader;
 import java.sql.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.logging.Logger;
 
 
@@ -243,10 +244,9 @@ public class RCV_Model_Simplified extends Model {
         String select = new StringBuffer("SELECT max(row), max(col) FROM ")
                 .append(tableName).toString();
 
+        AutoRollbackConnection connection = context.getConnection();
 
-
-        try (AutoRollbackConnection connection = context.getConnection();
-                Statement stmt = connection.createStatement();
+        try (Statement stmt = connection.createStatement();
                 ResultSet rs = stmt.executeQuery(select)) {
             if (rs.next()) {
                  rows = rs.getInt(1);

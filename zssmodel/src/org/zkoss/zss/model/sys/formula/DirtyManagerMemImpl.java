@@ -3,7 +3,6 @@ package org.zkoss.zss.model.sys.formula;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
-import java.util.ArrayList;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -51,6 +50,7 @@ public class DirtyManagerMemImpl extends DirtyManager {
             dirtyRecords.add(dirtyRecord);
             dirtyRecordPriorityBlockingQueue.add(dirtyRecord);
         }
+        DirtyManagerLog.instance.markDirty(region);
     }
 
     @Override

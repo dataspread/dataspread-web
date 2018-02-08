@@ -16,10 +16,10 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
-import org.model.*;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.model.AutoRollbackConnection;
+import org.model.BlockStore;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.lang.Library;
@@ -54,8 +54,8 @@ public class SheetImpl extends AbstractSheetAdv {
 	private static final long serialVersionUID = 1L;
 	private static final Log _logger = Log.lookup(SheetImpl.class);
     //Mangesh
-    static final private int PreFetchRows = Library.getIntProperty("PreFetchRows", 200);
-    static final private int PreFetchColumns = Library.getIntProperty("PreFetchColumns", 30);
+    static private int PreFetchRows = Library.getIntProperty("PreFetchRows", 200);
+    static private int PreFetchColumns = Library.getIntProperty("PreFetchColumns", 30);
     /**
      * internal use only for developing/test state, should remove when stable
      */
@@ -113,6 +113,12 @@ public class SheetImpl extends AbstractSheetAdv {
 	private int _defaultColumnWidth = 64; //in pixel
 	private int _defaultRowHeight = 20;//in pixel
 	private AtomicInteger trxId;
+
+	static public void disablePrefetch()
+	{
+		PreFetchRows = 0;
+		PreFetchColumns = 0;
+	}
 
 	public SheetImpl(AbstractBookAdv book,String id){
 		// Start
@@ -370,6 +376,12 @@ public class SheetImpl extends AbstractSheetAdv {
 
 	private AbstractCellAdv preFetchCells(CellRegion cellRegion)
 	{
+		//System.out.println("Fetching cell:" + cellRegion);
+		try {
+			Thread.sleep(10);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		AbstractCellAdv ret=null;
 		int minRow = Math.max(0,cellRegion.getRow()- PreFetchRows);
 		int maxRow = minRow + PreFetchRows * 2;
@@ -420,6 +432,21 @@ public class SheetImpl extends AbstractSheetAdv {
 			ret = proxyCell;
 		}
         return ret;
+	}
+
+
+	@Override
+	public Collection<SCell> getCells() {
+		try(AutoRollbackConnection autoRollbackConnection=DBHandler.instance.getConnection())
+		{
+			DBContext dbContext = new DBContext(autoRollbackConnection);
+			return getCells(dataModel.getBounds(dbContext));
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 	@Override

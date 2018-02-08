@@ -109,9 +109,9 @@ public interface SSheet {
 	 */
 	SCell getCell(int rowIdx, int columnIdx);
 
-	//zekun.fan@gmail.com
 	Collection<SCell> getCells(CellRegion region);
-	
+	Collection<SCell> getCells();
+
 	/**
 	 * @return return a cell with specified cell reference, e.g. A2, B3. Area reference, A1:A2, is not acceptable.
 	 * @see #getCell(int, int) 
