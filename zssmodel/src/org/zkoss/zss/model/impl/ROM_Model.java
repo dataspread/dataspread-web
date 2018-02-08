@@ -24,6 +24,9 @@ public class ROM_Model extends Model {
     public PosMapping rowMapping;
     private PosMapping colMapping;
 
+    //public CombinedBTree rowMapping;
+    //private CombinedBTree colMapping;
+
     //Create or load RCV_model.
     ROM_Model(DBContext context, SSheet sheet, String tableName) {
         this.sheet = sheet;
@@ -37,8 +40,8 @@ public class ROM_Model extends Model {
 
     ROM_Model(DBContext context, SSheet sheet, String tableName, ROM_Model source) {
         this.sheet = sheet;
-        rowMapping = source.rowMapping.clone(context, tableName + "_row_idx");
-        colMapping = source.colMapping.clone(context, tableName + "_col_idx");
+        rowMapping =  source.rowMapping.clone(context, tableName + "_row_idx");
+        colMapping =  source.colMapping.clone(context, tableName + "_col_idx");
         this.tableName = tableName;
         copySchema(context, source.tableName);
     }
