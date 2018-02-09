@@ -21,7 +21,7 @@ import java.util.Random;
 public class BTreeTest {
 
     public static void main(String[] args) {
-        //deepTest();
+       // deepTest();
 
         //generateDist(1000000);
        // reBalancingVConstructionTest();
@@ -64,25 +64,25 @@ public class BTreeTest {
             e.printStackTrace();
         }
 
-        int [] sampleSize = {10000};//500,1000,5000,10000,20000};
+        int [] sampleSize = {500,1000,5000,10000,20000};
 
         int fillFactor = 5;
         try
         {
             BufferedWriter bw = new BufferedWriter(new FileWriter("fixed_ff_totalTimes.csv"));
             bw.write("Fill Factor, Sample Size, Batch Insert (ms), Batch Lookup (ms), All Insert(ms), All Lookup (ms)\n");
-            for(;fillFactor<=20;fillFactor+=10)
+            for(;fillFactor<=100;fillFactor+=5)
             {
                 for(int i=0;i<sampleSize.length;i++) {
 
                     long [] batchTotalIL = ff_batch_test(context,ls,unique,sampleSize[i],fillFactor);
 
-                    bw.write(fillFactor+","+sampleSize[i]+","+batchTotalIL[0]+","+batchTotalIL[1]+",,\n");
+                    bw.write(fillFactor+","+sampleSize[i]+","+batchTotalIL[0]+","+batchTotalIL[1]+",-,-\n");
 
                 }
                 long [] allTotalIL = ff_All_test(context,ls,unique,fillFactor);
 
-                bw.write(fillFactor+",,,,"+allTotalIL[0]+","+allTotalIL[1]+"\n");
+                bw.write(fillFactor+",-,-,-,"+allTotalIL[0]+","+allTotalIL[1]+"\n");
             }
 
             bw.close();
@@ -91,6 +91,8 @@ public class BTreeTest {
         {
 
         }
+
+        updatable_ff_batch_test(context,ls,fillFactor);
 
     }
 
@@ -217,7 +219,7 @@ public class BTreeTest {
     }
 
 
-    private static void updatable_ff_batch_test(DBContext context, ArrayList<Integer> ls, ArrayList<Integer> unique,  int fillFactor) {
+    private static void updatable_ff_batch_test(DBContext context, ArrayList<Integer> ls, int fillFactor) {
         String tableName = "ff_updatable_batch";
 
         int sampleSize = (int) (0.01*ls.size());
@@ -271,7 +273,7 @@ public class BTreeTest {
 
                 }
 
-                lookUpTime.add(new FillObject(totalInsertTime/100,fillFactor));
+                lookUpTime.add(new FillObject(totalLookUpTime/100,fillFactor));
 
                 if(insertedSoFar >= (int)(0.1*ls.size())) {
                     fillFactor += 5;
@@ -1179,7 +1181,53 @@ public class BTreeTest {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        CombinedBTree testTree = new CombinedBTree(context, tableName, false);
+
+
+        //load data in to an array list and get unique values
+        ArrayList<Integer> ids = new ArrayList<>();
+        ArrayList<CombinedStatistic> statistics = new ArrayList<>();
+        try {
+            BufferedReader br = new BufferedReader(new FileReader("uniform_1m.csv"));
+
+            String line = "";
+
+            int element = 0;
+            int lineCount=0;
+            while((line = br.readLine())!=null)
+            {
+                element = Integer.parseInt(line.trim());
+
+                ids.add(lineCount++);
+                statistics.add(new CombinedStatistic(new KeyStatistic(element)));
+            }
+
+            br.close();
+        }catch(Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        CombinedBTree testTree = new CombinedBTree(context, tableName,true);
+        testTree.setBlockSize(100);
+
+
+        testTree.insertIDs(context, statistics, ids);
+
+
+        //randomly look up 1 values
+
+        long totalLookUpTime = 0;
+        Random rand = new Random();
+        for(int i=0;i<1000;i++)
+        {
+            int lookUpIndex = rand.nextInt(ids.size()-2);
+            CombinedStatistic start = new CombinedStatistic(new KeyStatistic(30), new CountStatistic(lookUpIndex));
+
+            testTree.getIDs(context, start, 1, AbstractStatistic.Type.COUNT);
+
+        }
+
+        /*CombinedBTree testTree = new CombinedBTree(context, tableName, false);
         testTree.setBlockSize(5);
         int [] num = {30, 50, 10, 10, 50, 80, 100};
         ArrayList<Integer> ids = new ArrayList<>();
@@ -1191,7 +1239,7 @@ public class BTreeTest {
         testTree.insertIDs(context, statistics, ids);
         CombinedStatistic start = new CombinedStatistic(new KeyStatistic(30), new CountStatistic(5));
         ArrayList<Integer> results = testTree.getIDs(context, start, 1, AbstractStatistic.Type.COUNT);
-        System.out.println(results);
+        System.out.println(results);*/
     }
     public static void CombinedNodeSplit(DBContext context){
         String tableName = "CombinedNodeSplit";

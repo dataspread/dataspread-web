@@ -6,6 +6,11 @@ public class CombinedStatistic<T extends Comparable<T>> implements AbstractStati
     public CountStatistic count;
     public KeyStatistic<T> key;
 
+    CombinedStatistic()
+    {
+
+    }
+
     public CombinedStatistic(KeyStatistic<T> key){
         this.key = key;
         this.count = new CountStatistic();
