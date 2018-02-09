@@ -11,6 +11,8 @@ import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.impl.statistic.CombinedStatistic;
+import org.zkoss.zss.model.impl.statistic.KeyStatistic;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -24,14 +26,18 @@ public class ROM_Model extends Model {
     public PosMapping rowMapping;
     private PosMapping colMapping;
 
-    //public CombinedBTree rowMapping;
-    //private CombinedBTree colMapping;
+    public CombinedBTree rowCombinedTree;
+    private CombinedBTree colCombinedTree;
 
     //Create or load RCV_model.
     ROM_Model(DBContext context, SSheet sheet, String tableName) {
         this.sheet = sheet;
         rowMapping = new CountedBTree(context, tableName + "_row_idx");
         colMapping = new CountedBTree(context, tableName + "_col_idx");
+
+        rowCombinedTree = new CombinedBTree(context, tableName + "_row_com_idx");
+        colCombinedTree = new CombinedBTree(context, tableName + "_col_com_idx");
+
         this.tableName = tableName;
         this.navSbuckets = new ArrayList<Bucket<String>>();
         this.navS = new NavigationStructure(tableName);
@@ -42,6 +48,10 @@ public class ROM_Model extends Model {
         this.sheet = sheet;
         rowMapping =  source.rowMapping.clone(context, tableName + "_row_idx");
         colMapping =  source.colMapping.clone(context, tableName + "_col_idx");
+
+        //TODO: CombinedBTree can't be cloned
+        //rowCombinedTree = source.rowCombinedTree.clone(context, tableName + "_row_com_idx");
+        //colCombinedTree = source.colCombinedTree.clone(context, tableName + "_col_com_idx");
         this.tableName = tableName;
         copySchema(context, source.tableName);
     }
@@ -123,6 +133,16 @@ public class ROM_Model extends Model {
     @Override
     public void insertRows(DBContext context, int row, int count) {
         rowMapping.createIDs(context, row, count);
+
+        ArrayList<Integer> ids = new ArrayList<>();
+        ArrayList<CombinedStatistic> statistics = new ArrayList<>();
+
+        for(int i = row; i < count; i++) {
+            ids.add(i);
+            statistics.add(new CombinedStatistic(new KeyStatistic(i)));
+        }
+
+        rowCombinedTree.insertIDs(context,statistics,ids);
     }
 
     @Override
@@ -131,6 +151,16 @@ public class ROM_Model extends Model {
                 .append("ALTER TABLE ")
                 .append(tableName);
         ArrayList<Integer> ids = colMapping.createIDs(context, col, count);
+
+        ArrayList<Integer> idsComb = new ArrayList<>();
+        ArrayList<CombinedStatistic> statistics = new ArrayList<>();
+
+        for(int i = col; i < count; i++) {
+            idsComb.add(i);
+            statistics.add(new CombinedStatistic(new KeyStatistic(i)));
+        }
+
+        rowCombinedTree.insertIDs(context,statistics,ids);
         for (int i = 0; i < ids.size(); i++) {
             insertColumn.append(" ADD COLUMN col_")
                     .append(ids.get(i))
