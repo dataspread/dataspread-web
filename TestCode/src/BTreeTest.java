@@ -1,5 +1,6 @@
 import org.model.DBContext;
 import org.model.DBHandler;
+import org.zkoss.zss.model.impl.BTree;
 import org.zkoss.zss.model.impl.CountedBTree;
 import org.zkoss.zss.model.impl.KeyBTree;
 import org.zkoss.zss.model.impl.CombinedBTree;
@@ -16,6 +17,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Random;
 
 public class BTreeTest {
@@ -26,10 +28,10 @@ public class BTreeTest {
         //generateDist(1000000);
        // reBalancingVConstructionTest();
 
-        fixedFillFactorTest();
+        fillFactorTests();
     }
 
-    private static void fixedFillFactorTest() {
+    private static void fillFactorTests() {
 
         String url = "jdbc:postgresql://127.0.0.1:5432/postgres";
         String driver = "org.postgresql.Driver";
@@ -40,7 +42,7 @@ public class BTreeTest {
 
 
         //load data in to an array list and get unique values
-        ArrayList<Integer> ls = new ArrayList<Integer>();
+       /* ArrayList<Integer> ls = new ArrayList<Integer>();
         ArrayList<Integer> unique = new ArrayList<Integer>();
         try {
             BufferedReader br = new BufferedReader(new FileReader("uniform_1m.csv"));
@@ -67,7 +69,7 @@ public class BTreeTest {
         int [] sampleSize = {500,1000,5000,10000,20000};
 
         int fillFactor = 5;
-        try
+       try
         {
             BufferedWriter bw = new BufferedWriter(new FileWriter("fixed_ff_totalTimes.csv"));
             bw.write("Fill Factor, Sample Size, Batch Insert (ms), Batch Lookup (ms), All Insert(ms), All Lookup (ms)\n");
@@ -92,8 +94,269 @@ public class BTreeTest {
 
         }
 
-        updatable_ff_batch_test(context,ls,fillFactor);
+        updatable_ff_batch_test(context,ls,5);*/
 
+        /*int [] fillFactor = {10};//{5,10,20,30,40,50};
+
+        int [] newFillFactor = {10,20,30,40,50,60,70,80,90,100};
+
+        for(int i=0;i<fillFactor.length;i++)
+        {
+            for(int trial=0;trial<30;trial++)
+            {
+                static_ff_test(context,fillFactor[i],trial);
+
+                for(int j=0;j<newFillFactor.length;j++) {
+                    if (newFillFactor[j] != fillFactor[i]) {
+
+                        dynamic_ff_test(context, fillFactor[i], newFillFactor[j],trial);
+                    }
+                }
+            }
+
+        }*/
+        /*try{
+             int [] balance_ff={20,50,100,150,200};
+            for(int i=0;i<balance_ff.length;i++) {
+                BufferedWriter bw = new BufferedWriter(new FileWriter("balance_trial_"+balance_ff[i]+".csv"));
+
+                bw.write("Fill Factor,Trial, Insert Time Unsorted (ms), Insert Time Sorted (ms),Create-Update (unsorted), Get (unsorted), Create-Update (sorted), Get (sorted)\n");
+                for (int trial = 0; trial < 10; trial++) {
+
+                    ArrayList<CounterObject> insertTime = balancingTest(context, balance_ff[i], trial);
+
+                    bw.write(balance_ff[i]+","+(trial+1)+","+insertTime.get(0).elapsedTime+","+insertTime.get(1).elapsedTime+","+insertTime.get(0).updateCount+","+insertTime.get(0).getCount+","+insertTime.get(1).updateCount+","+insertTime.get(1).getCount+"\n");
+
+                }
+
+                bw.close();
+            }
+        }catch(Exception e)
+        {
+
+        }*/
+
+        try{
+            int [] balance_ff={20,50,100,150,200};
+            for(int i=0;i<balance_ff.length;i++) {
+                BufferedWriter bw = new BufferedWriter(new FileWriter("balance_rand_"+balance_ff[i]+".csv"));
+
+                bw.write("Fill Factor,Trial, Insert Time Unsorted (ms), Insert Time Sorted (ms),Create-Update (unsorted), Get (unsorted), Create-Update (sorted), Get (sorted)\n");
+                for (int trial = 0; trial < 10; trial++) {
+
+                    ArrayList<CounterObject> insertTime = balancingRandTest(context, balance_ff[i], trial);
+
+                    bw.write(balance_ff[i]+","+(trial+1)+","+insertTime.get(0).elapsedTime+","+insertTime.get(1).elapsedTime+","+insertTime.get(0).updateCount+","+insertTime.get(0).getCount+","+insertTime.get(1).updateCount+","+insertTime.get(1).getCount+"\n");
+
+                }
+
+                bw.close();
+            }
+        }catch(Exception e)
+        {
+
+        }
+    }
+
+    private static ArrayList<CounterObject> balancingRandTest(DBContext context, int fillFactor, int trial) {
+
+
+        String tableName = "balance_"+trial;
+
+        String dropTable = (new StringBuffer())
+                .append("DROP TABLE IF EXISTS ")
+                .append(tableName)
+                .toString();
+        try (Statement stmt = context.getConnection().createStatement()) {
+            stmt.execute(dropTable);
+            context.getConnection().commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        int initSize = 1000000;
+
+        ArrayList<Integer> ls = new ArrayList<Integer>();
+
+        try {
+            BufferedReader br = new BufferedReader(new FileReader("uniform_100m.csv"));
+
+            String line = "";
+
+            int element = 0;
+
+            while((line = br.readLine())!=null)
+            {
+                element = Integer.parseInt(line.trim());
+                ls.add(element);
+
+                if(ls.size()==(initSize))
+                    break;
+            }
+
+            br.close();
+        }catch(Exception e)
+        {
+            e.printStackTrace();
+        }
+
+
+
+        Collections.shuffle(ls);
+
+        //insert values regular
+
+        ArrayList<Integer> ids = new ArrayList<>();
+        ArrayList<CombinedStatistic> statistics = new ArrayList<>();
+
+        CombinedBTree testTree = new CombinedBTree(context, tableName,true);
+        testTree.setBlockSize(fillFactor);
+
+        ArrayList<CounterObject> insertTime = new ArrayList<CounterObject>();
+
+        for(int i=0;i<initSize;i++)
+        {
+            ids.add(i);
+            statistics.add(new CombinedStatistic(new KeyStatistic(ls.get(i))));
+        }
+
+        long startTime = System.currentTimeMillis();
+        testTree.insertIDs(context, statistics, ids);
+        long elapsedTime = System.currentTimeMillis()-startTime;
+
+        insertTime.add(new CounterObject(elapsedTime, testTree.btree.getUpdateCounter(),testTree.btree.getGetCounter()));
+
+
+
+        ids.clear();
+        statistics.clear();
+
+        try (Statement stmt = context.getConnection().createStatement()) {
+            stmt.execute(dropTable);
+            context.getConnection().commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        Collections.sort(ls);
+        CombinedBTree testTree2 = new CombinedBTree(context, tableName,true);
+        testTree2.setBlockSize(fillFactor);
+
+        for(int i=0;i<initSize;i++)
+        {
+            ids.add(i);
+            statistics.add(new CombinedStatistic(new KeyStatistic(ls.get(i))));
+        }
+
+        startTime = System.currentTimeMillis();
+        testTree2.insertIDs(context, statistics, ids);
+        elapsedTime = System.currentTimeMillis()-startTime;
+
+        insertTime.add(new CounterObject(elapsedTime, testTree2.btree.getUpdateCounter(),testTree2.btree.getGetCounter()));
+
+        ids.clear();
+        statistics.clear();
+
+
+        return insertTime;
+    }
+    private static ArrayList<CounterObject> balancingTest(DBContext context, int fillFactor, int trial) {
+
+
+        String tableName = "balance_"+trial;
+
+        String dropTable = (new StringBuffer())
+                .append("DROP TABLE IF EXISTS ")
+                .append(tableName)
+                .toString();
+        try (Statement stmt = context.getConnection().createStatement()) {
+            stmt.execute(dropTable);
+            context.getConnection().commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        int initSize = 1000000;
+
+        ArrayList<Integer> ls = new ArrayList<Integer>();
+
+        try {
+            BufferedReader br = new BufferedReader(new FileReader("uniform_100m.csv"));
+
+            String line = "";
+
+            int element = 0;
+
+            while((line = br.readLine())!=null)
+            {
+                element = Integer.parseInt(line.trim());
+                ls.add(element);
+
+                if(ls.size()==(initSize))
+                    break;
+            }
+
+            br.close();
+        }catch(Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        //insert values regular
+
+        ArrayList<Integer> ids = new ArrayList<>();
+        ArrayList<CombinedStatistic> statistics = new ArrayList<>();
+
+        CombinedBTree testTree = new CombinedBTree(context, tableName,true);
+        testTree.setBlockSize(fillFactor);
+
+        ArrayList<CounterObject> insertTime = new ArrayList<CounterObject>();
+
+        for(int i=0;i<initSize;i++)
+        {
+            ids.add(i);
+            statistics.add(new CombinedStatistic(new KeyStatistic(ls.get(i))));
+        }
+
+        long startTime = System.currentTimeMillis();
+        testTree.insertIDs(context, statistics, ids);
+        long elapsedTime = System.currentTimeMillis()-startTime;
+
+        insertTime.add(new CounterObject(elapsedTime, testTree.btree.getUpdateCounter(),testTree.btree.getGetCounter()));
+
+
+
+        ids.clear();
+        statistics.clear();
+
+        try (Statement stmt = context.getConnection().createStatement()) {
+            stmt.execute(dropTable);
+            context.getConnection().commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        Collections.sort(ls);
+        CombinedBTree testTree2 = new CombinedBTree(context, tableName,true);
+        testTree2.setBlockSize(fillFactor);
+
+        for(int i=0;i<initSize;i++)
+        {
+            ids.add(i);
+            statistics.add(new CombinedStatistic(new KeyStatistic(ls.get(i))));
+        }
+
+        startTime = System.currentTimeMillis();
+        testTree2.insertIDs(context, statistics, ids);
+        elapsedTime = System.currentTimeMillis()-startTime;
+
+        insertTime.add(new CounterObject(elapsedTime, testTree2.btree.getUpdateCounter(),testTree2.btree.getGetCounter()));
+
+        ids.clear();
+        statistics.clear();
+
+
+        return insertTime;
     }
 
     private static long[] ff_All_test(DBContext context, ArrayList<Integer> ls, ArrayList<Integer> unique,  int fillFactor) {
@@ -143,7 +406,7 @@ public class BTreeTest {
         }
 
         insertLookUpTime[0] = totalInsertTime;
-        insertLookUpTime[1] = totalLookUpTime/1000;
+        insertLookUpTime[1] = totalLookUpTime;
 
         return  insertLookUpTime;
 
@@ -213,7 +476,7 @@ public class BTreeTest {
         }
 
         insertLookUpTime[0] = totalInsertTime;
-        insertLookUpTime[1] = totalLookUpTime/1000;
+        insertLookUpTime[1] = totalLookUpTime;
 
         return  insertLookUpTime;
     }
@@ -222,7 +485,7 @@ public class BTreeTest {
     private static void updatable_ff_batch_test(DBContext context, ArrayList<Integer> ls, int fillFactor) {
         String tableName = "ff_updatable_batch";
 
-        int sampleSize = (int) (0.01*ls.size());
+        int sampleSize = (int) (0.001*ls.size());
 
         long [] insertLookUpTime = new long[2];
 
@@ -273,10 +536,10 @@ public class BTreeTest {
 
                 }
 
-                lookUpTime.add(new FillObject(totalLookUpTime/100,fillFactor));
+                lookUpTime.add(new FillObject(totalLookUpTime,fillFactor));
 
                 if(insertedSoFar >= (int)(0.1*ls.size())) {
-                    fillFactor += 5;
+                    fillFactor += 10;
 
                     if(fillFactor>100)
                         fillFactor = 100;
@@ -305,6 +568,314 @@ public class BTreeTest {
 
         try{
             BufferedWriter bw = new BufferedWriter(new FileWriter("updatable_ff.csv"));
+
+            bw.write("Iteration,Fill Factor, Insert Time (ms), Look Up Time(ms)\n");
+
+            for(int i=0;i<insertTime.size();i++)
+            {
+                bw.write((i+1)+","+insertTime.get(i).fillFactor+","+insertTime.get(i).elapsedTime+","+lookUpTime.get(i).elapsedTime+"\n");
+
+            }
+            bw.close();
+        }catch(Exception e)
+        {
+
+        }
+
+
+    }
+
+    private static void static_ff_test(DBContext context,int fillFactor,int trial) {
+        String tableName = "ff_static_"+fillFactor+"_"+trial;
+
+        String dropTable = (new StringBuffer())
+                .append("DROP TABLE IF EXISTS ")
+                .append(tableName)
+                .toString();
+        try (Statement stmt = context.getConnection().createStatement()) {
+            stmt.execute(dropTable);
+            context.getConnection().commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        int initSize = 1000000;
+        int sampleSize = 1000;
+        int insertAfterInit = 10;
+
+
+        ArrayList<Integer> ls = new ArrayList<Integer>();
+        try {
+            BufferedReader br = new BufferedReader(new FileReader("uniform_100m.csv"));
+
+            String line = "";
+
+            int element = 0;
+
+            while((line = br.readLine())!=null)
+            {
+                element = Integer.parseInt(line.trim());
+                ls.add(element);
+
+                if(ls.size()==(initSize+insertAfterInit*sampleSize))
+                    break;
+            }
+
+            br.close();
+        }catch(Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        //insert values regular
+
+        ArrayList<Integer> ids = new ArrayList<>();
+        ArrayList<CombinedStatistic> statistics = new ArrayList<>();
+
+        CombinedBTree testTree = new CombinedBTree(context, tableName,true);
+        testTree.setBlockSize(fillFactor);
+
+        ArrayList<FillObject> insertTime = new ArrayList<FillObject>();
+
+        ArrayList<FillObject> lookUpTime = new ArrayList<FillObject>();
+
+
+        int insertedSoFar = 0;
+        for(int i=0;i<initSize;i++)
+        {
+            ids.add(i);
+            statistics.add(new CombinedStatistic(new KeyStatistic(ls.get(i))));
+        }
+
+        insertedSoFar+=initSize;
+
+        long startTime = System.currentTimeMillis();
+        testTree.insertIDs(context, statistics, ids);
+        long elapsedTime = System.currentTimeMillis()-startTime;
+
+        insertTime.add(new FillObject(elapsedTime,fillFactor));
+
+        //randomly look up 1 values
+        long totalLookUpTime = 0;
+        Random rand = new Random();
+        for(int k=0;k<100;k++)
+        {
+            int lookUpIndex = rand.nextInt(insertedSoFar-2);
+            CombinedStatistic start = new CombinedStatistic(new KeyStatistic(30), new CountStatistic(lookUpIndex));
+
+            startTime = System.currentTimeMillis();
+            testTree.getIDs(context, start, 1, AbstractStatistic.Type.COUNT);
+            elapsedTime = System.currentTimeMillis()-startTime;
+
+            totalLookUpTime+=elapsedTime;
+
+        }
+
+        lookUpTime.add(new FillObject(totalLookUpTime,fillFactor));
+
+        ids.clear();
+        statistics.clear();
+
+        for(int j=0;j<insertAfterInit;j++)
+        {
+            for(int i=0;i<sampleSize;i++)
+            {
+                int index = initSize+sampleSize*j+i;
+                ids.add(index);
+                statistics.add(new CombinedStatistic(new KeyStatistic(ls.get(index))));
+                if(ids.size()==sampleSize) {
+                    startTime = System.currentTimeMillis();
+                    testTree.insertIDs(context, statistics, ids);
+                    elapsedTime = System.currentTimeMillis()-startTime;
+
+                    insertTime.add(new FillObject(elapsedTime,fillFactor));
+
+                    ids.clear();
+                    statistics.clear();
+
+                    insertedSoFar+=sampleSize;
+
+                    //randomly look up 1 values
+                    totalLookUpTime = 0;
+                    rand = new Random();
+                    for(int k=0;k<100;k++)
+                    {
+                        int lookUpIndex = rand.nextInt(insertedSoFar-2);
+                        CombinedStatistic start = new CombinedStatistic(new KeyStatistic(30), new CountStatistic(lookUpIndex));
+
+                        startTime = System.currentTimeMillis();
+                        testTree.getIDs(context, start, 1, AbstractStatistic.Type.COUNT);
+                        elapsedTime = System.currentTimeMillis()-startTime;
+
+                        totalLookUpTime+=elapsedTime;
+
+                    }
+
+                    lookUpTime.add(new FillObject(totalLookUpTime,fillFactor));
+
+                }
+            }
+
+        }
+
+
+
+        try{
+            BufferedWriter bw = new BufferedWriter(new FileWriter("static_ff_"+fillFactor+"_"+trial+".csv"));
+
+            bw.write("Iteration,Fill Factor, Insert Time (ms), Look Up Time(ms)\n");
+
+            for(int i=0;i<insertTime.size();i++)
+            {
+                bw.write((i+1)+","+insertTime.get(i).fillFactor+","+insertTime.get(i).elapsedTime+","+lookUpTime.get(i).elapsedTime+"\n");
+
+            }
+            bw.close();
+        }catch(Exception e)
+        {
+
+        }
+
+
+    }
+
+    private static void dynamic_ff_test(DBContext context,int fillFactor, int newFillFactor, int trial) {
+        String tableName = "ff_updatable_"+fillFactor+"_"+newFillFactor+"_"+trial;
+
+        String dropTable = (new StringBuffer())
+                .append("DROP TABLE IF EXISTS ")
+                .append(tableName)
+                .toString();
+        try (Statement stmt = context.getConnection().createStatement()) {
+            stmt.execute(dropTable);
+            context.getConnection().commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        int initSize = 1000000;
+        int sampleSize = 1000;
+        int insertAfterInit = 10;
+
+        ArrayList<Integer> ls = new ArrayList<Integer>();
+        try {
+            BufferedReader br = new BufferedReader(new FileReader("uniform_100m.csv"));
+
+            String line = "";
+
+            int element = 0;
+
+            while((line = br.readLine())!=null)
+            {
+                element = Integer.parseInt(line.trim());
+                ls.add(element);
+
+                if(ls.size()==(initSize+insertAfterInit*sampleSize))
+                    break;
+            }
+
+            br.close();
+        }catch(Exception e)
+        {
+            e.printStackTrace();
+        }
+        //insert values regular
+
+        ArrayList<Integer> ids = new ArrayList<>();
+        ArrayList<CombinedStatistic> statistics = new ArrayList<>();
+
+        CombinedBTree testTree = new CombinedBTree(context, tableName,true);
+        testTree.setBlockSize(fillFactor);
+
+        ArrayList<FillObject> insertTime = new ArrayList<FillObject>();
+
+        ArrayList<FillObject> lookUpTime = new ArrayList<FillObject>();
+
+
+        int insertedSoFar = 0;
+        for(int i=0;i<initSize;i++)
+        {
+            ids.add(i);
+            statistics.add(new CombinedStatistic(new KeyStatistic(ls.get(i))));
+        }
+
+        insertedSoFar+=initSize;
+
+        long startTime = System.currentTimeMillis();
+        testTree.insertIDs(context, statistics, ids);
+        long elapsedTime = System.currentTimeMillis()-startTime;
+
+        insertTime.add(new FillObject(elapsedTime,fillFactor));
+
+        //randomly look up 1 values
+        long totalLookUpTime = 0;
+        Random rand = new Random();
+        for(int k=0;k<100;k++)
+        {
+            int lookUpIndex = rand.nextInt(insertedSoFar-2);
+            CombinedStatistic start = new CombinedStatistic(new KeyStatistic(30), new CountStatistic(lookUpIndex));
+
+            startTime = System.currentTimeMillis();
+            testTree.getIDs(context, start, 1, AbstractStatistic.Type.COUNT);
+            elapsedTime = System.currentTimeMillis()-startTime;
+
+            totalLookUpTime+=elapsedTime;
+
+        }
+
+        lookUpTime.add(new FillObject(totalLookUpTime,fillFactor));
+
+        ids.clear();
+        statistics.clear();
+
+        testTree.setBlockSize(newFillFactor);
+
+        for(int j=0;j<insertAfterInit;j++)
+        {
+            for(int i=0;i<sampleSize;i++)
+            {
+                int index = initSize+sampleSize*j+i;
+                ids.add(index);
+                statistics.add(new CombinedStatistic(new KeyStatistic(ls.get(index))));
+                if(ids.size()==sampleSize) {
+                    startTime = System.currentTimeMillis();
+                    testTree.insertIDs(context, statistics, ids);
+                    elapsedTime = System.currentTimeMillis()-startTime;
+
+                    insertTime.add(new FillObject(elapsedTime,newFillFactor));
+
+                    ids.clear();
+                    statistics.clear();
+
+                    insertedSoFar+=sampleSize;
+
+                    //randomly look up 1 values
+                    totalLookUpTime = 0;
+                    rand = new Random();
+                    for(int k=0;k<100;k++)
+                    {
+                        int lookUpIndex = rand.nextInt(insertedSoFar-2);
+                        CombinedStatistic start = new CombinedStatistic(new KeyStatistic(30), new CountStatistic(lookUpIndex));
+
+                        startTime = System.currentTimeMillis();
+                        testTree.getIDs(context, start, 1, AbstractStatistic.Type.COUNT);
+                        elapsedTime = System.currentTimeMillis()-startTime;
+
+                        totalLookUpTime+=elapsedTime;
+
+                    }
+
+                    lookUpTime.add(new FillObject(totalLookUpTime,newFillFactor));
+
+                }
+            }
+
+        }
+
+
+
+        try{
+            BufferedWriter bw = new BufferedWriter(new FileWriter("dynamic_ff_"+fillFactor+"_"+newFillFactor+"_"+trial+".csv"));
 
             bw.write("Iteration,Fill Factor, Insert Time (ms), Look Up Time(ms)\n");
 
@@ -1283,6 +1854,21 @@ public class BTreeTest {
         {
             this.elapsedTime = elapsedTime;
             this.fillFactor = fillFactor;
+
+        }
+    }
+
+    static class CounterObject {
+
+        public long elapsedTime;
+        public int getCount;
+        public int updateCount;
+
+        CounterObject(long elapsedTime,int updateCount,int getCount)
+        {
+            this.elapsedTime = elapsedTime;
+            this.getCount = getCount;
+            this.updateCount = updateCount;
 
         }
     }

@@ -30,12 +30,26 @@ public class BTree <K extends AbstractStatistic> {
     public BlockStore bs;
     private MetaDataBlock metaDataBlock;
 
+
     K emptyStatistic;
+
+    public int getGetCounter()
+    {
+        return bs.getCount;
+    }
+
+    public int getUpdateCounter() {
+        return bs.getCount;
+    }
+
+
     /**
      * Set serialization function
      * True for use Kryo function
      * @param useKryo
      */
+
+
     public void useKryo(Boolean useKryo) {
         bs.setKryo(useKryo);
     }
@@ -666,6 +680,7 @@ public class BTree <K extends AbstractStatistic> {
         }
 
         public Node<K> create(DBContext context, BlockStore bs) {
+            bs.putCount++;
             Node<K> node = (new Node<K>(emptyStatistic));
             node.id = bs.getNewBlockID(context);
             bs.putObject(node.id, node);
@@ -674,6 +689,7 @@ public class BTree <K extends AbstractStatistic> {
 
         public Node<K> get(DBContext context, BlockStore bs, int node_id) {
             Node<K> node = bs.getObject(context, node_id, Node.class);
+            bs.getCount++;
             node.id = node_id;
             return node;
         }
@@ -683,6 +699,7 @@ public class BTree <K extends AbstractStatistic> {
         }
 
         public void update(BlockStore bs) {
+            bs.putCount++;
             bs.putObject(id, this);
         }
 
