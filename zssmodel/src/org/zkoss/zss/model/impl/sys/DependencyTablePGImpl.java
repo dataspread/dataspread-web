@@ -107,13 +107,14 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
             while(rs.next())
             {
                 PGbox range = (PGbox) rs.getObject(3);
+                // The order of points is based on how postgres stores them
                 result.add(
                         new RefImpl(rs.getString(1),
                                 rs.getString(2),
-                                (int) range.point[0].x,
-                                (int) range.point[0].y,
                                 (int) range.point[1].x,
-                                (int) range.point[1].y));
+                                (int) range.point[1].y,
+                                (int) range.point[0].x,
+                                (int) range.point[0].y));
             }
         } catch (SQLException e) {
             e.printStackTrace();
