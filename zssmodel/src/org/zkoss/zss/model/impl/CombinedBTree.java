@@ -9,7 +9,7 @@ import org.zkoss.zss.model.impl.statistic.KeyStatistic;
 import java.util.ArrayList;
 
 public class CombinedBTree{
-    BTree<CombinedStatistic> btree;
+    public BTree<CombinedStatistic> btree;
 
     public CombinedBTree(DBContext context, String tableName, BlockStore sourceBlockStore) {
         CombinedStatistic emptyStatistic = new CombinedStatistic(new KeyStatistic(0));

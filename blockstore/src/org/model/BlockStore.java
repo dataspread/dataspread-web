@@ -29,6 +29,8 @@ public class BlockStore {
     final int CACHE_EVICT = 100;
     /* Table that persists the block store */
     private String dataStore;
+    public int getCount=0;
+    public int putCount=0;
     /**
      * A list of blocks
      */
