@@ -4,18 +4,18 @@ import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /* Simple in-memory implementation for DirtyManager */
 public class DirtyManagerMemImpl extends DirtyManager {
-    PriorityBlockingQueue<DirtyRecord> dirtyRecordPriorityBlockingQueue;
+    LinkedBlockingQueue<DirtyRecord> dirtyRecordPriorityBlockingQueue;
     ConcurrentSkipListSet<DirtyRecord> dirtyRecords;
 
     DirtyManagerMemImpl()
     {
         dirtyRecords = new ConcurrentSkipListSet<>();
-        dirtyRecordPriorityBlockingQueue = new PriorityBlockingQueue<>();
+        dirtyRecordPriorityBlockingQueue = new LinkedBlockingQueue<>();
     }
 
     private boolean overlaps(Ref region1, Ref region2)

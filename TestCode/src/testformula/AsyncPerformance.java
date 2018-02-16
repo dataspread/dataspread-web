@@ -45,7 +45,7 @@ public class AsyncPerformance {
 
         SheetImpl.simpleModel = true;
         SheetImpl.disablePrefetch();
-        //FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerPriority();
+       // FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerPriority();
         FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerSimple();
         Thread thread = new Thread(formulaAsyncScheduler);
         thread.start();
@@ -81,8 +81,9 @@ public class AsyncPerformance {
         sheet.setSyncComputation(true);
 
         sheet.clearCache();
+        dt.getLastLookupTime(); // init lookup time
         startTime = System.currentTimeMillis();
-        //sheet.getCell(badCells.get(0).getRow(),badCells.get(0).getColumn()).setValue(startTime%100);
+        sheet.getCell(badCells.get(0).getRow(),badCells.get(0).getColumn()).setValue(startTime%100);
         //System.out.println("Final Value "
         //        + sheet.getCell(cellCount,0).getValue());
         endTime = System.currentTimeMillis();
