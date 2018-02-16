@@ -11,7 +11,7 @@ import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.AbstractBookSeriesAdv;
 import org.zkoss.zss.model.impl.FormulaCacheCleaner;
 import org.zkoss.zss.model.impl.SheetImpl;
-import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerSimple;
+import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerPriority;
 import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
@@ -45,8 +45,8 @@ public class AsyncPerformance {
 
         SheetImpl.simpleModel = true;
         SheetImpl.disablePrefetch();
-       // FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerPriority();
-        FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerSimple();
+        FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerPriority();
+        //FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerSimple();
         Thread thread = new Thread(formulaAsyncScheduler);
         thread.start();
 
@@ -91,15 +91,20 @@ public class AsyncPerformance {
         System.out.println("Sync time to update = " + (endTime - startTime) + " " + dt.getLastLookupTime());
 
         sheet.setSyncComputation(false);
-        sheet.clearCache();
-        System.out.println("Starting Asyn ");
-        startTime = System.currentTimeMillis();
-        sheet.getCell(badCells.get(0).getRow(), badCells.get(0).getColumn()).setValue(startTime % 100);
-        endTime = System.currentTimeMillis();
-        System.out.println("Async time to update = " + (endTime - startTime) + " " + dt.getLastLookupTime());
-        formulaAsyncScheduler.waitForCompletion();
-        endTime = System.currentTimeMillis();
-        System.out.println("Async time to complete = " + (endTime - startTime));
+
+        for (int i = 0; i < 10; i++) {
+            sheet.clearCache();
+            System.out.println("Starting Asyn ");
+            startTime = System.currentTimeMillis();
+            sheet.getCell(badCells.get(0).getRow(), badCells.get(0).getColumn()).setValue(startTime % 100);
+            endTime = System.currentTimeMillis();
+            System.out.println("Async time to update = " + (endTime - startTime) + " " + dt.getLastLookupTime());
+            formulaAsyncScheduler.waitForCompletion();
+            endTime = System.currentTimeMillis();
+            System.out.println("Async time to complete = " + (endTime - startTime));
+        }
+
+
     }
 
     public static void simpleTest(FormulaAsyncScheduler formulaAsyncScheduler)

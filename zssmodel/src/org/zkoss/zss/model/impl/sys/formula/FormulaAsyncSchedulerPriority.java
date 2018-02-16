@@ -9,7 +9,7 @@ import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.logging.Logger;
@@ -18,11 +18,11 @@ import java.util.logging.Logger;
  * Execute formulae in a single thread.
  */
 public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
-    private static final Logger logger = Logger.getLogger(FormulaAsyncSchedulerSimple.class.getName());
+    private static final Logger logger = Logger.getLogger(FormulaAsyncSchedulerPriority.class.getName());
     private boolean keepRunning = true;
     private boolean emptyQueue = false;
     private List<DirtyManager.DirtyRecord> dirtyQueue;
-    private int maxQueueSize = 1000;
+    private static int queueSize = 500;
     Thread thread;
     RegionToCells regionToCells;
 
@@ -37,12 +37,41 @@ public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
 
     @Override
     public void run() {
+        ArrayList<SCell> cellsToCompute = new ArrayList<>(queueSize);
+        Collections.shuffle(cellsToCompute);
         while (keepRunning) {
+            if (regionToCells.cellQueue.isEmpty() && DirtyManager.dirtyManagerInstance.isEmpty()) {
+                synchronized (this) {
+                    emptyQueue = true;
+                    notifyAll();
+                }
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                continue;
+            } else {
+                emptyQueue = false;
+            }
+
+            cellsToCompute.addAll(regionToCells.cellQueue);
+            for (SCell sCell : cellsToCompute) {
+                ((CellImpl) sCell).getValue(true, true);
+                // Push individual cells to the UI
+                update(sCell.getSheet(), sCell.getCellRegion());
+                DirtyManagerLog.instance.markClean(sCell.getCellRegion());
+
+                regionToCells.cellQueue.remove(sCell);
+                //logger.info("Done computing " + sCell.getCellRegion());
+            }
+        }
+    }
 
 
 
 
-
+/*
             while (true) {
                 DirtyManager.DirtyRecord dirtyRecord = DirtyManager
                         .dirtyManagerInstance.getDirtyRegionFromQueue(10);
@@ -71,35 +100,12 @@ public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
                 }
                 continue;
             }
-
-            // Or break a big region into smaller parts.
-            Collection<SCell> cells =null;// sheet.getCells(new CellRegion(dirtyRecord.region));
-            for (SCell sCell : cells) {
-                // Delay to demonstrate.
-                //try {
-                //    Thread.sleep(1000);
-                //} catch (InterruptedException e) {
-                //    e.printStackTrace();
-                //}
-                if (sCell.getType() == SCell.CellType.FORMULA) {
-                    // A sync call should synchronously compute the cells value.
-                    ((CellImpl) sCell).getValue(true, true);
-                    // Push individual cells to the UI
-                    // update(sheet, sCell.getCellRegion());
-                    DirtyManagerLog.instance.markClean(sCell.getCellRegion());
-                }
-            }
-            //   DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,
-            //          dirtyRecord.trxId);
-            //This is to update the entire region
-            //update(sheet, new CellRegion(dirtyRecord.region));
+*/
             //logger.info("Done computing " + dirtyRecord.region );
-        }
-    }
 
     @Override
     public synchronized void waitForCompletion() {
-        while (!emptyQueue) {
+        while (!emptyQueue || !regionToCells.cellQueue.isEmpty() || !DirtyManager.dirtyManagerInstance.isEmpty()) {
             try {
                 this.wait();
             } catch (InterruptedException e) {
@@ -127,8 +133,9 @@ public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
         RegionToCells()
         {
             keepRunning = true;
-            cellQueue = new ArrayBlockingQueue<>(10);
+            cellQueue = new ArrayBlockingQueue<>(queueSize);
         }
+
 
         @Override
         public void run() {
@@ -137,17 +144,19 @@ public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
                 if (DirtyManager.dirtyManagerInstance.isEmpty()) {
                     continue;
                 }
-                // logger.info("Processing " + dirtyRecord.region );
+                //logger.info("Expanding " + dirtyRecord.region );
                 SSheet sheet = BookBindings.getSheetByRef(dirtyRecord.region);
                 for (int row = dirtyRecord.region.getRow();
-                     row <= dirtyRecord.region.getLastRow(); row++)
+                     row <= dirtyRecord.region.getLastRow(); row++) {
                     for (int col = dirtyRecord.region.getColumn();
                          col <= dirtyRecord.region.getLastColumn(); col++) {
                         SCell sCell = sheet.getCell(row, col);
                         if (sCell.getType() == SCell.CellType.FORMULA)
                             cellQueue.add(sCell);
-
                     }
+                }
+                DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,
+                        dirtyRecord.trxId);
             }
 
         }
