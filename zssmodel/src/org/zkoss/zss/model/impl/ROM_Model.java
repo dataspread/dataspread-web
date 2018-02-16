@@ -11,7 +11,9 @@ import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.impl.statistic.AbstractStatistic;
 import org.zkoss.zss.model.impl.statistic.CombinedStatistic;
+import org.zkoss.zss.model.impl.statistic.CountStatistic;
 import org.zkoss.zss.model.impl.statistic.KeyStatistic;
 
 import java.io.IOException;
@@ -138,7 +140,7 @@ public class ROM_Model extends Model {
         ArrayList<CombinedStatistic> statistics = new ArrayList<>();
 
         for(int i = row; i < count; i++) {
-            ids.add(i);
+            ids.add(i+1);
             statistics.add(new CombinedStatistic(new KeyStatistic(i)));
         }
 
@@ -160,7 +162,7 @@ public class ROM_Model extends Model {
             statistics.add(new CombinedStatistic(new KeyStatistic(i)));
         }
 
-        rowCombinedTree.insertIDs(context,statistics,ids);
+        colCombinedTree.insertIDs(context,statistics,ids);
         for (int i = 0; i < ids.size(); i++) {
             insertColumn.append(" ADD COLUMN col_")
                     .append(ids.get(i))
@@ -386,8 +388,12 @@ public class ROM_Model extends Model {
         if (fetchRegion == null)
             return cells;
 
-        ArrayList<Integer> rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
+        CombinedStatistic startRow = new CombinedStatistic(new KeyStatistic(30), new CountStatistic(fetchRegion.getRow()));
+        CombinedStatistic startCol = new CombinedStatistic(new KeyStatistic(30), new CountStatistic(fetchRegion.getColumn()));
+
+        ArrayList<Integer> rowIds = rowCombinedTree.getIDs(context, startRow, fetchRegion.getLastRow() - fetchRegion.getRow() + 1, AbstractStatistic.Type.COUNT);
         ArrayList<Integer> colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
+        //ArrayList<Integer> colIds = rom_model.colCombinedTree.getIDs(context, startCol, fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1,AbstractStatistic.Type.COUNT);
         HashMap<Integer, Integer> row_map = IntStream.range(0, rowIds.size())
                 .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(rowIds.get(i), fetchRegion.getRow() + i),
                         (map1, map2) -> map1.putAll(map2));

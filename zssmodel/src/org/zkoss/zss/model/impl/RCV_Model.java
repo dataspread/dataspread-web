@@ -13,6 +13,10 @@ import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.ModelEvents;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.impl.statistic.AbstractStatistic;
+import org.zkoss.zss.model.impl.statistic.CombinedStatistic;
+import org.zkoss.zss.model.impl.statistic.CountStatistic;
+import org.zkoss.zss.model.impl.statistic.KeyStatistic;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -203,6 +207,9 @@ public class RCV_Model extends Model {
             return newList;
         }
 
+        Hybrid_Model hybrid_model = (Hybrid_Model) this;
+        ROM_Model rom_model = (ROM_Model) hybrid_model.tableModels.get(0).y;
+
         int columnIndex = Integer.parseInt(indexString.split("_")[1])-1;
         CellRegion tableRegion =  new CellRegion(1, columnIndex,//100000,20);
                 currentSheet.getEndRowIndex(),columnIndex);
@@ -211,29 +218,28 @@ public class RCV_Model extends Model {
 
         Collections.sort(result, Comparator.comparing(SCell::getStringValue));
 
-        ArrayList<Integer> ids = new ArrayList<Integer>();
+        ArrayList<Integer> ids = new ArrayList<>();
+        ArrayList<CombinedStatistic> statistics = new ArrayList<>();
 
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             DBContext context = new DBContext(connection);
-            ids.add(1);
-            for(int i=0;i<result.size();i++){
-                ids.add(trueOrder.get(result.get(i).getRowIndex()+1));
-                //trueOrder.put(result.get(i).getRowIndex()+1,ids.get(i+1));
-                recordList.add(result.get(i).getStringValue());
 
+            for(int i = 1; i < result.size(); i++) {
+                ids.add(trueOrder.get(result.get(i).getRowIndex()+1));
+                statistics.add(new CombinedStatistic(new KeyStatistic(result.get(i).getStringValue())));
+                recordList.add(result.get(i).getStringValue());
             }
+
+
 
             for(int i=1;i<ids.size();i++)
                 trueOrder.put(i+1,ids.get(i));
 
-            Hybrid_Model hybrid_model = (Hybrid_Model) this;
-            ROM_Model rom_model = (ROM_Model) hybrid_model.tableModels.get(0).y;
 
-            rom_model.rowMapping.dropSchema(context);
-            rom_model.rowMapping = new CountedBTree(context, tableName + "_row_idx");
-            rom_model.rowMapping.insertIDs(context,start,ids);
+            rom_model.rowCombinedTree.dropSchema(context);
+            rom_model.rowCombinedTree = new CombinedBTree(context, tableName + "_row_com_idx");
+            rom_model.rowCombinedTree.insertIDs(context,statistics,ids);
 
-            connection.commit();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -547,6 +553,17 @@ public class RCV_Model extends Model {
         CellRegion fetchRegion = bounds.getOverlap(fetchRange);
         if (fetchRegion == null)
             return cells;
+
+        /*Hybrid_Model hybrid_model = (Hybrid_Model) this;
+        ROM_Model rom_model = (ROM_Model) hybrid_model.tableModels.get(0).y;
+
+        CombinedStatistic startRow = new CombinedStatistic(new KeyStatistic(30), new CountStatistic(fetchRegion.getRow()));
+        CombinedStatistic startCol = new CombinedStatistic(new KeyStatistic(30), new CountStatistic(fetchRegion.getColumn()));
+
+        ArrayList<Integer> rowIds = rom_model.rowCombinedTree.getIDs(context, startRow, fetchRegion.getLastRow() - fetchRegion.getRow() + 1,AbstractStatistic.Type.COUNT);
+        ArrayList<Integer> colIds = rom_model.colCombinedTree.getIDs(context, startCol, fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1,AbstractStatistic.Type.COUNT);
+
+        */
 
         ArrayList<Integer> rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
         ArrayList<Integer> colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);

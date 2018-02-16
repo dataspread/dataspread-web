@@ -314,7 +314,7 @@ public class AppCtrl extends CtrlBase<Component> {
     }
 
     private void createNavS(SheetImpl currentSheet) {
-        if(currentSheet.getEndRowIndex() > 100000)
+        if(currentSheet.getEndRowIndex() > 1000000)
             return;
 
         try {

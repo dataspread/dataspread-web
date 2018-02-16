@@ -18,7 +18,7 @@ public class CombinedBTree{
 
     public CombinedBTree(DBContext context, String tableName) {
         CombinedStatistic emptyStatistic = new CombinedStatistic(new KeyStatistic(0));
-        btree = new BTree<>(context, tableName, emptyStatistic, false);
+        btree = new BTree<>(context, tableName, emptyStatistic, true);
         btree.updateMaxValue(context, 0);
     }
 
