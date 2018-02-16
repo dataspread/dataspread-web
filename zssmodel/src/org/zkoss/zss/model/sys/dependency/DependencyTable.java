@@ -29,6 +29,7 @@ import java.util.Set;
  * @since 3.5.0
  */
 public interface DependencyTable {
+    long getLastLookupTime();
 
 	//GetBackwardDependents
 	Set<Ref> getDependents(Ref precedent);

@@ -69,11 +69,14 @@ public class DirtyManagerMemImpl extends DirtyManager {
 
     @Override
     public DirtyRecord getDirtyRegionFromQueue() {
+        return getDirtyRegionFromQueue(5);
+    }
+
+    @Override
+    public DirtyRecord getDirtyRegionFromQueue(long waitTime) {
         try {
-            return dirtyRecordPriorityBlockingQueue.poll(1, TimeUnit.MILLISECONDS);
-        }
-        catch (InterruptedException e)
-        {
+            return dirtyRecordPriorityBlockingQueue.poll(waitTime, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
             return null;
         }
     }

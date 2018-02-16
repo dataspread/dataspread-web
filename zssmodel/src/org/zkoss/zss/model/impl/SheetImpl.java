@@ -377,11 +377,11 @@ public class SheetImpl extends AbstractSheetAdv {
 	private AbstractCellAdv preFetchCells(CellRegion cellRegion)
 	{
 		//System.out.println("Fetching cell:" + cellRegion);
-		//try {
-		//	Thread.sleep(10);
-		//} catch (InterruptedException e) {
-		//	e.printStackTrace();
-		//}
+		//	try {
+//			Thread.sleep(20);
+//		} catch (InterruptedException e) {
+//			e.printStackTrace();
+//		}
 		AbstractCellAdv ret=null;
 		int minRow = Math.max(0,cellRegion.getRow()- PreFetchRows);
 		int maxRow = minRow + PreFetchRows * 2;

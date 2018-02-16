@@ -138,6 +138,11 @@ public class DependencyTableRtreeImpl extends DependencyTableAdv {
     }
 
     @Override
+    public long getLastLookupTime() {
+        return 0;
+    }
+
+    @Override
     public Set<Ref> getDependents(Ref precedent) {
         return getBackwardDependents(precedent, _rtree);
     }

@@ -8,18 +8,19 @@ import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.impl.AbstractBookSeriesAdv;
 import org.zkoss.zss.model.impl.FormulaCacheCleaner;
-import org.zkoss.zss.model.impl.RefImpl;
 import org.zkoss.zss.model.impl.SheetImpl;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerSimple;
 import org.zkoss.zss.model.sys.BookBindings;
-import org.zkoss.zss.model.sys.dependency.Ref;
+import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -44,6 +45,7 @@ public class AsyncPerformance {
 
         SheetImpl.simpleModel = true;
         SheetImpl.disablePrefetch();
+        //FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerPriority();
         FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerSimple();
         Thread thread = new Thread(formulaAsyncScheduler);
         thread.start();
@@ -52,14 +54,14 @@ public class AsyncPerformance {
         Thread thread2 = new Thread(formulaAsyncScheduler);
 
         //simpleTest(formulaAsyncScheduler);
-        realTest("survey","Escalating OSA with Cost Share.xlsx", "Cost Share");
+        realTest("survey", "Escalating OSA with Cost Share.xlsx", "Cost Share", formulaAsyncScheduler);
 
         formulaAsyncScheduler.shutdown();
         thread.join();
     }
 
 
-    public static void realTest(String ds, String bookName, String sheetName) throws SQLException {
+    public static void realTest(String ds, String bookName, String sheetName, FormulaAsyncScheduler formulaAsyncScheduler) throws SQLException {
         String dbBookName = ds + "_" + bookName + "_" + sheetName;
         // Check if book exists.
         SBook book= BookBindings.getBookByNameDontLoad(dbBookName);
@@ -70,11 +72,33 @@ public class AsyncPerformance {
         }
         SSheet sheet = book.getSheet(0);
         FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(book.getBookSeries()));
+        final DependencyTable dt =
+                ((AbstractBookSeriesAdv) book.getBookSeries()).getDependencyTable();
 
-        getBadCells(dbBookName, "Sheet1");
+        List<CellRegion> badCells = getBadCells(dbBookName, "Sheet1");
+        long startTime, endTime;
 
+        sheet.setSyncComputation(true);
 
+        sheet.clearCache();
+        startTime = System.currentTimeMillis();
+        //sheet.getCell(badCells.get(0).getRow(),badCells.get(0).getColumn()).setValue(startTime%100);
+        //System.out.println("Final Value "
+        //        + sheet.getCell(cellCount,0).getValue());
+        endTime = System.currentTimeMillis();
 
+        System.out.println("Sync time to update = " + (endTime - startTime) + " " + dt.getLastLookupTime());
+
+        sheet.setSyncComputation(false);
+        sheet.clearCache();
+        System.out.println("Starting Asyn ");
+        startTime = System.currentTimeMillis();
+        sheet.getCell(badCells.get(0).getRow(), badCells.get(0).getColumn()).setValue(startTime % 100);
+        endTime = System.currentTimeMillis();
+        System.out.println("Async time to update = " + (endTime - startTime) + " " + dt.getLastLookupTime());
+        formulaAsyncScheduler.waitForCompletion();
+        endTime = System.currentTimeMillis();
+        System.out.println("Async time to complete = " + (endTime - startTime));
     }
 
     public static void simpleTest(FormulaAsyncScheduler formulaAsyncScheduler)

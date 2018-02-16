@@ -27,6 +27,8 @@ public abstract class DirtyManager {
 
     abstract public DirtyRecord getDirtyRegionFromQueue();
 
+    abstract public DirtyRecord getDirtyRegionFromQueue(long waitTime);
+
     public static FormulaResultCellValue getDirtyValue(){
         return _val;
     }

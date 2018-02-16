@@ -8,8 +8,12 @@ import org.zkoss.zss.model.SBookSeries;
 import org.zkoss.zss.model.impl.RefImpl;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
-import java.sql.*;
-import java.util.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Implementation of dependency table based on Postgres.
@@ -19,6 +23,11 @@ import java.util.*;
 public class DependencyTablePGImpl extends DependencyTableAdv {
 	private static final long serialVersionUID = 1L;
 	private static final Log _logger = Log.lookup(DependencyTablePGImpl.class.getName());
+    private long lastLookupTime;
+
+    public DependencyTablePGImpl() {
+        lastLookupTime = 0;
+    }
 
 	@Override
 	public void setBookSeries(SBookSeries series) {
@@ -74,7 +83,16 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
         }
 	}
 
-	@Override
+    @Override
+    public long getLastLookupTime() {
+        try {
+            return lastLookupTime;
+        } finally {
+            lastLookupTime = 0;
+        }
+    }
+
+    @Override
 	public Set<Ref> getDependents(Ref precedent) {
         String selectQuery = "WITH RECURSIVE deps AS (" +
                 "  SELECT dep_bookname, dep_sheetname, dep_range::text, must_expand FROM dependency" +
@@ -95,6 +113,7 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
 
     private Set<Ref> getDependentsQuery(Ref precedent, String selectQuery) {
         Set<Ref> result = new LinkedHashSet<>();
+        long startTime = System.currentTimeMillis();
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
              PreparedStatement stmt = connection.prepareStatement(selectQuery)) {
             stmt.setString(1, precedent.getBookName());
@@ -119,6 +138,7 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        lastLookupTime += System.currentTimeMillis() - startTime;
         return result;
     }
 
