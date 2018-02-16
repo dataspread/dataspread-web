@@ -150,7 +150,7 @@ public class RCV_Model extends Model {
         ArrayList<Integer> ids = new ArrayList<Integer>();
 
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-        PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+             PreparedStatement stmt = connection.prepareStatement(select.toString())) {
             DBContext context = new DBContext(connection);
             ResultSet rs = stmt.executeQuery();
             ids.add(1);
@@ -198,10 +198,10 @@ public class RCV_Model extends Model {
 
         if(this.indexString==null)
         {
-            trueOrder = new HashMap<Integer,Integer>();
+            /*trueOrder = new HashMap<Integer,Integer>();
 
             for(int i=1;i<currentSheet.getEndRowIndex()+2;i++)
-                trueOrder.put(i,i);
+                trueOrder.put(i,i);*/
 
             ArrayList<Bucket<String>> newList = this.navS.getUniformBuckets(0,currentSheet.getEndRowIndex());
             return newList;
@@ -210,36 +210,71 @@ public class RCV_Model extends Model {
         Hybrid_Model hybrid_model = (Hybrid_Model) this;
         ROM_Model rom_model = (ROM_Model) hybrid_model.tableModels.get(0).y;
 
-        int columnIndex = Integer.parseInt(indexString.split("_")[1])-1;
+        /*int columnIndex = Integer.parseInt(indexString.split("_")[1])-1;
         CellRegion tableRegion =  new CellRegion(1, columnIndex,//100000,20);
                 currentSheet.getEndRowIndex(),columnIndex);
 
         ArrayList<SCell> result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
 
-        Collections.sort(result, Comparator.comparing(SCell::getStringValue));
+        Collections.sort(result, Comparator.comparing(SCell::getStringValue));*/
 
-        ArrayList<Integer> ids = new ArrayList<>();
-        ArrayList<CombinedStatistic> statistics = new ArrayList<>();
+        int columnIndex = Integer.parseInt(indexString.split("_")[1])-1;
+
+        CellRegion tableRegion =  new CellRegion(1, columnIndex,//100000,20);
+                currentSheet.getEndRowIndex(),columnIndex);
+
+        ArrayList<SCell> result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
+
+
 
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             DBContext context = new DBContext(connection);
 
-            for(int i = 1; i < result.size(); i++) {
-                ids.add(trueOrder.get(result.get(i).getRowIndex()+1));
+            ArrayList<Integer> rowIds=null;
+
+            if(rom_model.rowOrderTable.keySet().isEmpty()) {
+                rowIds = rom_model.rowMapping.getIDs(context, tableRegion.getRow(), tableRegion.getLastRow() - tableRegion.getRow() + 1);
+            }
+            else
+            {
+                CombinedStatistic startRow = new CombinedStatistic(new KeyStatistic(30), new CountStatistic(tableRegion.getRow()-1));//-1 to acount for the header which is not inserted
+                rowIds = rom_model.rowOrderTable.get(hybrid_model.tableModels.get(0).y.indexString).getIDs(context, startRow, tableRegion.getLastRow() - tableRegion.getRow() + 1,AbstractStatistic.Type.COUNT);
+            }
+
+            ArrayList<Integer> ids = new ArrayList<>();
+            ArrayList<CombinedStatistic> statistics = new ArrayList<>();
+
+            for(int i = 0; i < rowIds.size(); i++) {
+                ids.add(rowIds.get(i));
                 statistics.add(new CombinedStatistic(new KeyStatistic(result.get(i).getStringValue())));
                 recordList.add(result.get(i).getStringValue());
             }
 
 
 
-            for(int i=1;i<ids.size();i++)
+            /*for(int i=1;i<ids.size();i++)
                 trueOrder.put(i+1,ids.get(i));
 
 
             rom_model.rowCombinedTree.dropSchema(context);
             rom_model.rowCombinedTree = new CombinedBTree(context, tableName + "_row_com_idx");
-            rom_model.rowCombinedTree.insertIDs(context,statistics,ids);
+            rom_model.rowCombinedTree.insertIDs(context,statistics,ids);*/
 
+            if(rom_model.rowOrderTable.containsKey(indexString))
+                rom_model.rowCombinedTree = rom_model.rowOrderTable.get(indexString);
+            else{
+                CombinedBTree newOrder = new CombinedBTree(context, tableName + "_row_com_"+indexString+"_idx");
+                newOrder.insertIDs(context,statistics,ids);
+
+                rom_model.rowOrderTable.put(indexString,newOrder);
+
+                rom_model.rowCombinedTree = newOrder;
+
+                hybrid_model.tableModels.get(0).y.indexString = indexString;
+
+
+            }
+            connection.commit();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -659,7 +694,7 @@ public class RCV_Model extends Model {
             }
             if (sb.length() > 0)
                 cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
-                cpIN.endCopy();
+            cpIN.endCopy();
             rawConn.commit();
             DBContext dbContext = new DBContext(connection);
             insertRows(dbContext, 0, importedRows);

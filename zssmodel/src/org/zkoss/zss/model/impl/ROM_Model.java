@@ -31,7 +31,10 @@ public class ROM_Model extends Model {
     public CombinedBTree rowCombinedTree;
     private CombinedBTree colCombinedTree;
 
-    //Create or load RCV_model.
+
+    public Hashtable<String,CombinedBTree> rowOrderTable;
+
+    //Create or load ROM_model.
     ROM_Model(DBContext context, SSheet sheet, String tableName) {
         this.sheet = sheet;
         rowMapping = new CountedBTree(context, tableName + "_row_idx");
@@ -39,6 +42,8 @@ public class ROM_Model extends Model {
 
         rowCombinedTree = new CombinedBTree(context, tableName + "_row_com_idx");
         colCombinedTree = new CombinedBTree(context, tableName + "_col_com_idx");
+
+        rowOrderTable = new Hashtable<String,CombinedBTree>();
 
         this.tableName = tableName;
         this.navSbuckets = new ArrayList<Bucket<String>>();
@@ -79,7 +84,7 @@ public class ROM_Model extends Model {
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(createTable);
             stmt.execute(copyTable);
-         } catch (SQLException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
@@ -136,7 +141,7 @@ public class ROM_Model extends Model {
     public void insertRows(DBContext context, int row, int count) {
         rowMapping.createIDs(context, row, count);
 
-        ArrayList<Integer> ids = new ArrayList<>();
+        /*ArrayList<Integer> ids = new ArrayList<>();
         ArrayList<CombinedStatistic> statistics = new ArrayList<>();
 
         for(int i = row; i < count; i++) {
@@ -144,7 +149,7 @@ public class ROM_Model extends Model {
             statistics.add(new CombinedStatistic(new KeyStatistic(i)));
         }
 
-        rowCombinedTree.insertIDs(context,statistics,ids);
+        rowCombinedTree.insertIDs(context,statistics,ids);*/
     }
 
     @Override
@@ -387,13 +392,23 @@ public class ROM_Model extends Model {
         CellRegion fetchRegion = bounds.getOverlap(fetchRange);
         if (fetchRegion == null)
             return cells;
+        ArrayList<Integer> rowIds;
+        ArrayList<Integer> colIds;
+        if(indexString==null)
+        {
+            rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
+            colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
+        }
+        else
+        {
+            CombinedStatistic startRow = new CombinedStatistic(new KeyStatistic(30), new CountStatistic(fetchRegion.getRow()));
+            CombinedStatistic startCol = new CombinedStatistic(new KeyStatistic(30), new CountStatistic(fetchRegion.getColumn()));
 
-        CombinedStatistic startRow = new CombinedStatistic(new KeyStatistic(30), new CountStatistic(fetchRegion.getRow()));
-        CombinedStatistic startCol = new CombinedStatistic(new KeyStatistic(30), new CountStatistic(fetchRegion.getColumn()));
-
-        ArrayList<Integer> rowIds = rowCombinedTree.getIDs(context, startRow, fetchRegion.getLastRow() - fetchRegion.getRow() + 1, AbstractStatistic.Type.COUNT);
-        ArrayList<Integer> colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
-        //ArrayList<Integer> colIds = rom_model.colCombinedTree.getIDs(context, startCol, fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1,AbstractStatistic.Type.COUNT);
+            rowIds = rowCombinedTree.getIDs(context, startRow, fetchRegion.getLastRow() - fetchRegion.getRow(), AbstractStatistic.Type.COUNT);//+1 removed to acount for header
+            colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
+            rowIds.add(0,1); // forcefull add index of the header row
+            //ArrayList<Integer> colIds = rom_model.colCombinedTree.getIDs(context, startCol, fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1,AbstractStatistic.Type.COUNT);
+        }
         HashMap<Integer, Integer> row_map = IntStream.range(0, rowIds.size())
                 .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(rowIds.get(i), fetchRegion.getRow() + i),
                         (map1, map2) -> map1.putAll(map2));
@@ -652,9 +667,9 @@ public class ROM_Model extends Model {
             e.printStackTrace();
         }
 
-       // this.navS.writeJavaObject(this.navSbuckets);
+        // this.navS.writeJavaObject(this.navSbuckets);
 
-       // this.navS.readJavaObject(this.tableName);
+        // this.navS.readJavaObject(this.tableName);
 
     }
 
@@ -671,7 +686,7 @@ public class ROM_Model extends Model {
                     .append(tableName)
                     .append(" WHERE row !=1");
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-            PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+                 PreparedStatement stmt = connection.prepareStatement(select.toString())) {
 
                 ResultSet rs = stmt.executeQuery();
                 while (rs.next()) {
@@ -697,7 +712,7 @@ public class ROM_Model extends Model {
                 .append(" WHERE row = ANY (?) AND row !=1");
 
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-        PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+             PreparedStatement stmt = connection.prepareStatement(select.toString())) {
             DBContext context = new DBContext(connection);
             ArrayList<Integer> rowIds = rowMapping.getIDs(context,start,count);
             Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds.toArray());

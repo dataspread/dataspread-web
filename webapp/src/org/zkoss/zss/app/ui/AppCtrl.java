@@ -238,7 +238,7 @@ public class AppCtrl extends CtrlBase<Component> {
             public void onEvent(Event event) {
                 onSheetSelect();
 
-                createNavS((SheetImpl) ((SheetSelectEvent) event).getSheet().getInternalSheet());
+                createNavS((SheetImpl) ((SheetSelectEvent) event).getSheet().getInternalSheet(),-1);
             }
         });
 
@@ -313,7 +313,7 @@ public class AppCtrl extends CtrlBase<Component> {
         initBook();
     }
 
-    private void createNavS(SheetImpl currentSheet) {
+    private void createNavS(SheetImpl currentSheet, int index) {
         if(currentSheet.getEndRowIndex() > 1000000)
             return;
 
@@ -322,11 +322,16 @@ public class AppCtrl extends CtrlBase<Component> {
                 treeBucket.setModel(new DefaultTreeModel<Bucket<String>>(new BucketTreeNode<Bucket<String>>(null,new BucketTreeNodeCollection<Bucket<String>>())));
                 return;
             }
-
+            if(index==-1)
+                updateColModel(currentSheet);
+            else
+            {
+                currentSheet.getDataModel().setIndexString("col_"+index);
+                currentSheet.clearCache();
+            }
 
             ss.setNavSBuckets(currentSheet.getDataModel().createNavS(currentSheet, 0, 0));
             createNavSTree(ss.getNavSBuckets());
-            updateColModel(currentSheet);
 
             currentSheet.fullRefresh();
 
@@ -600,7 +605,7 @@ public class AppCtrl extends CtrlBase<Component> {
                         /*ss.setNavSBuckets(newSheet.getDataModel().navSbuckets);
                         createNavSTree(newSheet.getDataModel().navSbuckets);
                         updateColModel(newSheet);*/
-                        createNavS((SheetImpl) newSheet);
+                        createNavS((SheetImpl) newSheet,-1);
                         Messagebox.show("File imported", "DataSpread",
                                 Messagebox.OK, Messagebox.INFORMATION, null);
 
@@ -1413,16 +1418,8 @@ public class AppCtrl extends CtrlBase<Component> {
         int index = colSelectbox.getSelectedIndex()+1;
 
         SSheet currentSheet = ss.getSelectedSSheet();
-        try {
-            currentSheet.getDataModel().setIndexString("col_"+index);
-            currentSheet.clearCache();
-            ss.setNavSBuckets(currentSheet.getDataModel().createNavS(currentSheet,0,0));
-            createNavSTree(ss.getNavSBuckets());
-            ((SheetImpl) currentSheet).fullRefresh();
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        createNavS(((SheetImpl) currentSheet),index);
     }
 
 }
