@@ -54,7 +54,7 @@ public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
             } else {
                 emptyQueue = false;
             }
-
+            cellsToCompute.clear();
             cellsToCompute.addAll(regionToCells.cellQueue);
             for (SCell sCell : cellsToCompute) {
                 ((CellImpl) sCell).getValue(true, true);
@@ -141,10 +141,10 @@ public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
         public void run() {
             while (keepRunning) {
                 DirtyManager.DirtyRecord dirtyRecord = DirtyManager.dirtyManagerInstance.getDirtyRegionFromQueue();
-                if (DirtyManager.dirtyManagerInstance.isEmpty()) {
+                if (dirtyRecord == null) {
                     continue;
                 }
-                //logger.info("Expanding " + dirtyRecord.region );
+
                 SSheet sheet = BookBindings.getSheetByRef(dirtyRecord.region);
                 for (int row = dirtyRecord.region.getRow();
                      row <= dirtyRecord.region.getLastRow(); row++) {
@@ -153,6 +153,8 @@ public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
                         SCell sCell = sheet.getCell(row, col);
                         if (sCell.getType() == SCell.CellType.FORMULA)
                             cellQueue.add(sCell);
+                        //else
+                        //logger.info("sCell.getType()  " + sCell.getType() + " " +  sCell.getValue()  );
                     }
                 }
                 DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,

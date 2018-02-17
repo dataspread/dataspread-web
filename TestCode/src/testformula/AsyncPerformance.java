@@ -14,14 +14,12 @@ import org.zkoss.zss.model.impl.SheetImpl;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerPriority;
 import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.dependency.DependencyTable;
+import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class AsyncPerformance {
@@ -83,7 +81,7 @@ public class AsyncPerformance {
         sheet.clearCache();
         dt.getLastLookupTime(); // init lookup time
         startTime = System.currentTimeMillis();
-        sheet.getCell(badCells.get(0).getRow(),badCells.get(0).getColumn()).setValue(startTime%100);
+        //sheet.getCell(badCells.get(0).getRow(),badCells.get(0).getColumn()).setValue(startTime%100);
         //System.out.println("Final Value "
         //        + sheet.getCell(cellCount,0).getValue());
         endTime = System.currentTimeMillis();
@@ -91,20 +89,31 @@ public class AsyncPerformance {
         System.out.println("Sync time to update = " + (endTime - startTime) + " " + dt.getLastLookupTime());
 
         sheet.setSyncComputation(false);
+        DependencyTable table = ((AbstractBookSeriesAdv) sheet.getBook().getBookSeries()).getDependencyTable();
+
+        CellRegion badCell = badCells.get(2);
 
         for (int i = 0; i < 10; i++) {
             sheet.clearCache();
+            DirtyManagerLog.instance.init();
+
             System.out.println("Starting Asyn ");
             startTime = System.currentTimeMillis();
-            sheet.getCell(badCells.get(0).getRow(), badCells.get(0).getColumn()).setValue(startTime % 100);
+            sheet.getCell(badCell).setValue(startTime % 100);
             endTime = System.currentTimeMillis();
             System.out.println("Async time to update = " + (endTime - startTime) + " " + dt.getLastLookupTime());
             formulaAsyncScheduler.waitForCompletion();
             endTime = System.currentTimeMillis();
             System.out.println("Async time to complete = " + (endTime - startTime));
+
+            // Right now considering dependents with FP
+            Set<Ref> dependents = table.getDependents(sheet.getCell(badCell).getRef());
+            long totalWaitTime = dependents.stream()
+                    .mapToLong(e -> DirtyManagerLog.instance.getDirtyTime(new CellRegion(e)))
+                    .sum();
+            System.out.println("Total Wait time " + totalWaitTime);
+            System.out.println("Avg Wait time " + totalWaitTime / dependents.size());
         }
-
-
     }
 
     public static void simpleTest(FormulaAsyncScheduler formulaAsyncScheduler)
@@ -250,6 +259,8 @@ public class AsyncPerformance {
     public static void loadSheet(SSheet sheet,
                                  String ds, String bookName, String sheetName) throws SQLException {
         //Connection connection = pgs_db.getConnection();
+        Map<CellRegion, String> sheetData = new HashMap<>();
+
         String stmt = "SELECT * FROM " + ds + "_sheetdata WHERE filename = ? and sheetname = ?";
         PreparedStatement preparedStatement = conn.prepareStatement(stmt);
         preparedStatement.setString(1, bookName);
@@ -268,12 +279,11 @@ public class AsyncPerformance {
                     value = rs.getString("value");
                 else
                     value = "=" + value;
-                System.out.println("Updating value:" + value);
+                // System.out.println("Updating value:" + value);
+                // sheetData.put(new CellRegion(row,col), value);
+
                 sheet.getCell(row, col).setStringValue(value,
                         autoRollbackConnection,true);
-                //sheet.getCell(row, col).setValueParse(value,
-                //        autoRollbackConnection,
-                //        0, true);
             }
             autoRollbackConnection.commit();
         }
@@ -288,6 +298,7 @@ public class AsyncPerformance {
                     .forEach(e -> e
                             .setValueParse(e.getStringValue(),
                                     autoRollbackConnection, 0, true));
+            autoRollbackConnection.commit();
         }
 
 

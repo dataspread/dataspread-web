@@ -70,6 +70,7 @@ public class DBHandler {
             createUserTable(dbContext);
             createTableOrders(dbContext);
             createDependencyTable(dbContext);
+            createFullDependencyTable(dbContext);
             connection.commit();
             //dbListener = new DBListener();
             //dbListener.start();
@@ -186,6 +187,37 @@ public class DBHandler {
                     "ON dependency using GIST (dep_bookname, dep_sheetname, dep_range)");
             stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx3 " +
                     "ON dependency (must_expand)");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void createFullDependencyTable(DBContext dbContext) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute("CREATE EXTENSION IF NOT EXISTS  btree_gist");
+
+            String createTable = "CREATE TABLE  IF NOT  EXISTS  full_dependency (" +
+                    "bookname      TEXT    NOT NULL," +
+                    "sheetname     TEXT    NOT NULL," +
+                    "range         BOX     NOT NULL," +
+                    "dep_bookname  TEXT    NOT NULL," +
+                    "dep_sheetname TEXT    NOT NULL," +
+                    "dep_range     BOX     NOT NULL," +
+                    "must_expand   BOOLEAN NOT NULL," +
+                    "FOREIGN KEY (bookname, sheetname) REFERENCES sheets (bookname, sheetname)" +
+                    " ON DELETE CASCADE ON UPDATE CASCADE," +
+                    "FOREIGN KEY (dep_bookname, dep_sheetname) REFERENCES sheets (bookname, sheetname)" +
+                    " ON DELETE CASCADE ON UPDATE CASCADE," +
+                    " UNIQUE (oid) ) WITH oids";
+            stmt.execute(createTable);
+
+            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx1 " +
+                    " ON full_dependency using GIST (bookname, sheetname, range)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx2 " +
+                    "ON full_dependency using GIST (dep_bookname, dep_sheetname, dep_range)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx3 " +
+                    "ON full_dependency (must_expand)");
         } catch (SQLException e) {
             e.printStackTrace();
         }

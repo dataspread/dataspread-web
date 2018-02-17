@@ -463,6 +463,14 @@ public class SheetImpl extends AbstractSheetAdv {
 	public SCell getCell(int rowIdx, int columnIdx) {
 		return getCell(rowIdx,columnIdx,true);
 	}
+
+    @Override
+    public SCell getCell(CellRegion cellRef) {
+        if (!cellRef.isSingle())
+            throw new RuntimeException("CellRegion should be single");
+        return getCell(cellRef.getRow(), cellRef.getColumn());
+    }
+
 	@Override
 	public SCell getCell(String cellRef) {
 		CellRegion region = new CellRegion(cellRef);

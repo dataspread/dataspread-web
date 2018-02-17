@@ -20,6 +20,7 @@ import org.model.AutoRollbackConnection;
 import org.zkoss.poi.ss.usermodel.CellStyle;
 import org.zkoss.zss.model.SHyperlink.HyperlinkType;
 import org.zkoss.zss.model.SSemantics.Semantics;
+import org.zkoss.zss.model.sys.dependency.Ref;
 
 import java.util.Date;
 /**
@@ -181,6 +182,8 @@ public interface SCell extends CellStyleHolder,FormulaContent{
 	void deleteComment();
 
     CellRegion getCellRegion();
+
+	Ref getRef();
 
     /**
 	 * @since 3.5.0

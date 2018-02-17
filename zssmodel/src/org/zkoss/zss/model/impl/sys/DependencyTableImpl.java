@@ -69,6 +69,12 @@ public class DependencyTableImpl extends DependencyTableAdv {
 		return getDependents(precedent,_map);
 	}
 
+	@Override
+	public Set<Ref> getActualDependents(Ref precedent) {
+		throw new RuntimeException("unsuported");
+	}
+
+
 	private Set<Ref> getDependents(Ref precedent,Map<Ref, Set<Ref>> base) {
 		// ZSS-818
 		if (_regionTypes.contains(precedent.getType())) {

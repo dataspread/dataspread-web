@@ -35,16 +35,15 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
         //TODO: remove the concept of book series.
 	}
 
-	@Override
-	public void add(Ref dependant, Ref precedent) {
-		String insertQuery = "INSERT INTO dependency VALUES (?,?,?,?,?,?,?)";
+
+	private void addQuery(String insertQuery, Ref dependant, Ref precedent) {
 		try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
 			 PreparedStatement stmt = connection.prepareStatement(insertQuery)) {
 			stmt.setString(1, precedent.getBookName());
 			stmt.setString(2, precedent.getSheetName());
-		    stmt.setObject(3, new PGbox(precedent.getRow(),
+			stmt.setObject(3, new PGbox(precedent.getRow(),
 					precedent.getColumn(), precedent.getLastRow(),
-					precedent.getLastColumn()), Types.OTHER );
+					precedent.getLastColumn()), Types.OTHER);
 			stmt.setString(4, dependant.getBookName());
 			stmt.setString(5, dependant.getSheetName());
 			stmt.setObject(6, new PGbox(dependant.getRow(),
@@ -56,6 +55,14 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+	}
+
+	@Override
+	public void add(Ref dependant, Ref precedent) {
+		String insertQuery = "INSERT INTO dependency VALUES (?,?,?,?,?,?,?)";
+		addQuery(insertQuery, dependant, precedent);
+		insertQuery = "INSERT INTO full_dependency VALUES (?,?,?,?,?,?,?)";
+		addQuery(insertQuery, dependant, precedent);
 	}
 
 	public void clear() {
@@ -91,6 +98,25 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
             lastLookupTime = 0;
         }
     }
+
+	@Override
+	public Set<Ref> getActualDependents(Ref precedent) {
+		String selectQuery = "WITH RECURSIVE deps AS (" +
+				"  SELECT dep_bookname, dep_sheetname, dep_range::text, must_expand FROM full_dependency" +
+				"  WHERE  bookname  = ?" +
+				"  AND    sheetname =  ?" +
+				"  AND    range && ?" +
+				"  UNION " +
+				"  SELECT d.dep_bookname, d.dep_sheetname, d.dep_range::text, d.must_expand FROM full_dependency d" +
+				"    INNER JOIN deps t" +
+				"    ON  d.bookname   =  t.dep_bookname" +
+				"    AND t.must_expand" +
+				"    AND d.sheetname =  t.dep_sheetname" +
+				"    AND d.range      && t.dep_range::box)" +
+				" SELECT dep_bookname, dep_sheetname, dep_range::box FROM deps";
+		return getDependentsQuery(precedent, selectQuery);
+
+	}
 
     @Override
 	public Set<Ref> getDependents(Ref precedent) {

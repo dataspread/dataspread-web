@@ -109,6 +109,8 @@ public interface SSheet {
 	 */
 	SCell getCell(int rowIdx, int columnIdx);
 
+    SCell getCell(CellRegion region);
+
 	Collection<SCell> getCells(CellRegion region);
 	Collection<SCell> getCells();
 

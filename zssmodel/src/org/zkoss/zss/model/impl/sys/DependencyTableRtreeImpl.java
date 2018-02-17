@@ -147,6 +147,11 @@ public class DependencyTableRtreeImpl extends DependencyTableAdv {
         return getBackwardDependents(precedent, _rtree);
     }
 
+    @Override
+    public Set<Ref> getActualDependents(Ref precedent) {
+        return null;
+    }
+
     private Set<Ref> getBackwardDependents(Ref precedent, RTree<Ref, Rectangle> _rtree) {
 
         if (_regionTypes.contains(precedent.getType())) {
