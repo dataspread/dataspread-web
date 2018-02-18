@@ -45,17 +45,22 @@ public class AsyncPerformance {
         SheetImpl.disablePrefetch();
         FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerPriority();
         //FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerSimple();
-        Thread thread = new Thread(formulaAsyncScheduler);
-        thread.start();
+        Thread asyncThread = new Thread(formulaAsyncScheduler);
+        asyncThread.start();
+
 
         GraphCompressor  graphCompressor = new GraphCompressor();
-        Thread thread2 = new Thread(formulaAsyncScheduler);
+        Thread graphThread = new Thread(graphCompressor);
+        // graphThread.start();
 
         //simpleTest(formulaAsyncScheduler);
         realTest("survey", "Escalating OSA with Cost Share.xlsx", "Cost Share", formulaAsyncScheduler);
 
         formulaAsyncScheduler.shutdown();
-        thread.join();
+        asyncThread.join();
+
+        graphCompressor.stopListener();
+        graphThread.join();
     }
 
 
@@ -91,15 +96,19 @@ public class AsyncPerformance {
         sheet.setSyncComputation(false);
         DependencyTable table = ((AbstractBookSeriesAdv) sheet.getBook().getBookSeries()).getDependencyTable();
 
-        CellRegion badCell = badCells.get(2);
+        CellRegion badCell = badCells.get(0);
 
+        Random random = new Random();
+
+        int total_area_under_curve = 0;
         for (int i = 0; i < 10; i++) {
             sheet.clearCache();
             DirtyManagerLog.instance.init();
 
             System.out.println("Starting Asyn ");
+            dt.getLastLookupTime(); // Reset time
             startTime = System.currentTimeMillis();
-            sheet.getCell(badCell).setValue(startTime % 100);
+            sheet.getCell(badCell).setValue(random.nextInt());
             endTime = System.currentTimeMillis();
             System.out.println("Async time to update = " + (endTime - startTime) + " " + dt.getLastLookupTime());
             formulaAsyncScheduler.waitForCompletion();
@@ -112,7 +121,147 @@ public class AsyncPerformance {
                     .mapToLong(e -> DirtyManagerLog.instance.getDirtyTime(new CellRegion(e)))
                     .sum();
             System.out.println("Total Wait time " + totalWaitTime);
+            total_area_under_curve += totalWaitTime;
             System.out.println("Avg Wait time " + totalWaitTime / dependents.size());
+        }
+        System.out.println("Avg  area under curve " + total_area_under_curve / 10);
+
+        compressGraphNode(dbBookName, "Sheet1", badCell);
+
+        total_area_under_curve = 0;
+        for (int i = 0; i < 10; i++) {
+            sheet.clearCache();
+            DirtyManagerLog.instance.init();
+
+            System.out.println("Starting Asyn ");
+            dt.getLastLookupTime(); // Reset time
+            startTime = System.currentTimeMillis();
+            sheet.getCell(badCell).setValue(random.nextInt());
+            endTime = System.currentTimeMillis();
+            System.out.println("Async time to update = " + (endTime - startTime) + " " + dt.getLastLookupTime());
+            formulaAsyncScheduler.waitForCompletion();
+            endTime = System.currentTimeMillis();
+            System.out.println("Async time to complete = " + (endTime - startTime));
+
+            // Right now considering dependents with FP
+            Set<Ref> dependents = table.getDependents(sheet.getCell(badCell).getRef());
+            long totalWaitTime = dependents.stream()
+                    .mapToLong(e -> DirtyManagerLog.instance.getDirtyTime(new CellRegion(e)))
+                    .sum();
+            System.out.println("Total Wait time " + totalWaitTime);
+            total_area_under_curve += totalWaitTime;
+            System.out.println("Avg Wait time " + totalWaitTime / dependents.size());
+        }
+        System.out.println("Compressed version Avg  area under curve " + total_area_under_curve / 10);
+    }
+
+    private static void compressGraphNode(String bookName, String sheetname, CellRegion cellRegion) {
+        String selectSql = "WITH RECURSIVE deps AS (  SELECT " +
+                "bookname::text, sheetname::text, range::text, " +
+                "dep_bookname, dep_sheetname, dep_range::text, " +
+                "must_expand FROM full_dependency " +
+                "WHERE bookname = ? " +
+                "AND sheetname = ? " +
+                "AND range && ?  " +
+                "UNION   SELECT " +
+                "t.bookname, t.sheetname, t.range, " +
+                "d.dep_bookname, d.dep_sheetname, d.dep_range::text, d.must_expand " +
+                "FROM full_dependency d    INNER JOIN deps t    ON " +
+                "d.bookname   =  t.dep_bookname    AND t.must_expand " +
+                "AND d.sheetname =  t.dep_sheetname    AND d.range " +
+                "                                          && t.dep_range::box) " +
+                "SELECT " +
+                "bookname, sheetname, range, " +
+                "dep_bookname, dep_sheetname, dep_range::box " +
+                "FROM deps";
+        String deleteSql = "DELETE FROM dependency " +
+                "WHERE bookname = ? " +
+                "AND sheetname = ? " +
+                "AND range && ? ";
+
+        String insertSql = "INSERT INTO dependency VALUES (?,?,?,?,?,?,?)";
+
+        try (AutoRollbackConnection autoRollbackConnection = DBHandler.instance.getConnection();
+             PreparedStatement stmtSelect = autoRollbackConnection.prepareStatement(selectSql);
+             PreparedStatement stmtDelete = autoRollbackConnection.prepareStatement(deleteSql);
+             PreparedStatement stmtInsert = autoRollbackConnection.prepareStatement(insertSql)) {
+            stmtSelect.setString(1, bookName);
+            stmtSelect.setString(2, sheetname);
+            stmtSelect.setObject(3, new PGbox(cellRegion.getRow(),
+                    cellRegion.getColumn(), cellRegion.getLastRow(),
+                    cellRegion.getLastColumn()), Types.OTHER);
+
+            ArrayList<CellRegion> deps = new ArrayList<>();
+            ResultSet rs = stmtSelect.executeQuery();
+            while (rs.next()) {
+                PGbox range = (PGbox) rs.getObject(6);
+                // The order of points is based on how postgres stores them
+                deps.add(new CellRegion((int) range.point[1].x,
+                        (int) range.point[1].y,
+                        (int) range.point[0].x,
+                        (int) range.point[0].y));
+            }
+            rs.close();
+
+            //System.out.println("Original Deps" + deps.size());
+            compressDeps(deps);
+            //System.out.println("compressed Deps" + deps.size());
+
+            stmtDelete.setString(1, bookName);
+            stmtDelete.setString(2, sheetname);
+            stmtDelete.setObject(3, new PGbox(cellRegion.getRow(),
+                    cellRegion.getColumn(), cellRegion.getLastRow(),
+                    cellRegion.getLastColumn()), Types.OTHER);
+            stmtDelete.execute();
+
+
+            stmtInsert.setString(1, bookName);
+            stmtInsert.setString(2, sheetname);
+            stmtInsert.setObject(3, new PGbox(cellRegion.getRow(),
+                    cellRegion.getColumn(), cellRegion.getLastRow(),
+                    cellRegion.getLastColumn()), Types.OTHER);
+            stmtInsert.setString(4, bookName);
+            stmtInsert.setString(5, sheetname);
+            stmtInsert.setBoolean(7, false);
+
+            for (CellRegion dependant : deps) {
+                stmtInsert.setObject(6, new PGbox(dependant.getRow(),
+                        dependant.getColumn(), dependant.getLastRow(),
+                        dependant.getLastColumn()), Types.OTHER);
+                stmtInsert.execute();
+            }
+            autoRollbackConnection.commit();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private static void compressDeps(ArrayList<CellRegion> deps) {
+        while (deps.size() > 30) {
+            int best_i = 0, best_j = 0, best_area = Integer.MAX_VALUE;
+            CellRegion best_bounding_box = null;
+            for (int i = 0; i < deps.size() - 1; i++) {
+                for (int j = i + 1; j < deps.size(); j++) {
+                    CellRegion bounding = deps.get(i).getBoundingBox(deps.get(j));
+                    int new_area = bounding.getCellCount() -
+                            deps.get(i).getCellCount() - deps.get(j).getCellCount();
+                    CellRegion overlap = deps.get(i).getOverlap(deps.get(j));
+                    if (overlap != null)
+                        new_area -= overlap.getCellCount();
+                    if (new_area < best_area) {
+                        best_area = new_area;
+                        best_i = i;
+                        best_j = j;
+                        best_bounding_box = bounding;
+                    }
+                }
+            }
+            // Merge i,j
+            //System.out.println(best_i + " " + best_j + " " + deps.get(best_i) + " " + deps.get(best_j) + " " + best_bounding_box);
+            deps.remove(best_j);
+            deps.remove(best_i);
+            deps.add(best_bounding_box);
         }
     }
 
@@ -201,24 +350,24 @@ public class AsyncPerformance {
     {
         ArrayList<CellRegion> badCells = new ArrayList<>();
         ArrayList<Integer> impactedCells = new ArrayList<>();
-        String sql = "WITH RECURSIVE deps AS (  SELECT \n" +
-                "bookname::text, sheetname::text, range::text,\n" +
-                "dep_bookname, dep_sheetname, dep_range::text,\n" +
-                "must_expand FROM dependency\n" +
-                "WHERE bookname = ?\n" +
-                "AND sheetname = ?\n" +
-                "UNION   SELECT\n" +
-                "t.bookname, t.sheetname, t.range,\n" +
-                "d.dep_bookname, d.dep_sheetname, d.dep_range::text, d.must_expand\n" +
-                "FROM dependency d    INNER JOIN deps t    ON\n" +
-                "d.bookname   =  t.dep_bookname    AND t.must_expand\n" +
-                "AND d.sheetname =  t.dep_sheetname    AND d.range\n" +
-                "&& t.dep_range::box)\n" +
-                "SELECT\n" +
-                "bookname, sheetname, range::box,\n" +
-                "sum(area(dep_range::box) + height(dep_range::box) + width(dep_range::box) + 1)\n" +
-                "FROM deps\n" +
-                "group by bookname, sheetname, range\n" +
+        String sql = "WITH RECURSIVE deps AS (  SELECT  " +
+                "bookname::text, sheetname::text, range::text, " +
+                "dep_bookname, dep_sheetname, dep_range::text, " +
+                "must_expand FROM dependency " +
+                "WHERE bookname = ? " +
+                "AND sheetname = ? " +
+                "UNION   SELECT " +
+                "t.bookname, t.sheetname, t.range, " +
+                "d.dep_bookname, d.dep_sheetname, d.dep_range::text, d.must_expand " +
+                "FROM dependency d    INNER JOIN deps t    ON " +
+                "d.bookname   =  t.dep_bookname    AND t.must_expand " +
+                "AND d.sheetname =  t.dep_sheetname    AND d.range " +
+                "&& t.dep_range::box) " +
+                "SELECT " +
+                "bookname, sheetname, range::box, " +
+                "sum(area(dep_range::box) + height(dep_range::box) + width(dep_range::box) + 1) " +
+                "FROM deps " +
+                "group by bookname, sheetname, range " +
                 "order by 4 desc;";
 
 
