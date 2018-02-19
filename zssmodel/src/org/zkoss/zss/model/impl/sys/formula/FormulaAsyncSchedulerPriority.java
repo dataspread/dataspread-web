@@ -40,7 +40,7 @@ public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
         ArrayList<SCell> cellsToCompute = new ArrayList<>(queueSize);
         Collections.shuffle(cellsToCompute);
         while (keepRunning) {
-            if (regionToCells.cellQueue.isEmpty() && DirtyManager.dirtyManagerInstance.isEmpty()) {
+            if (regionToCells.cellQueue.isEmpty() && DirtyManager.dirtyManagerInstance.isEmpty() && cellsToCompute.isEmpty()) {
                 synchronized (this) {
                     emptyQueue = true;
                     notifyAll();
@@ -54,7 +54,7 @@ public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
             } else {
                 emptyQueue = false;
             }
-            cellsToCompute.clear();
+            //  cellsToCompute.clear();
             cellsToCompute.addAll(regionToCells.cellQueue);
             for (SCell sCell : cellsToCompute) {
                 ((CellImpl) sCell).getValue(true, true);
