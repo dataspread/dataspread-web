@@ -223,6 +223,7 @@ public class RCV_Model extends Model {
         CellRegion tableRegion =  new CellRegion(1, columnIndex,//100000,20);
                 currentSheet.getEndRowIndex(),columnIndex);
 
+        currentSheet.clearCache();
         ArrayList<SCell> result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
 
 
@@ -284,6 +285,7 @@ public class RCV_Model extends Model {
 
 
         //create nav data structure
+        Collections.sort(recordList);//TODO: replace by BTree getKeys() function
         this.navS.setRecordList(recordList);
         ArrayList<Bucket<String>> newList = this.navS.getNonOverlappingBuckets(0,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
 

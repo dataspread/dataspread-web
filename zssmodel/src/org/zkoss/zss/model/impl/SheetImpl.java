@@ -769,6 +769,7 @@ public class SheetImpl extends AbstractSheetAdv {
     }
 
     public void fullRefresh() {
+		clearCache();
         ((AbstractBookAdv) getBook()).sendModelEvent(ModelEvents.createModelEvent(ModelEvents.ON_CELL_CONTENT_CHANGE,
                 this, new CellRegion(0, 0, getEndRowIndex(), getEndColumnIndex())));
     }
