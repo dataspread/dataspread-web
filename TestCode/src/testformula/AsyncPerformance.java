@@ -392,11 +392,11 @@ public class AsyncPerformance {
             }
             rs.close();
 
-            System.out.println("Bad cellls");
-            for (int i =0; i<badCells.size();i++)
-            {
-                System.out.println(badCells.get(i) + " " + impactedCells.get(i));
-            }
+           // System.out.println("Bad cellls");
+          //  for (int i =0; i<badCells.size();i++)
+          //  {
+          //      System.out.println(badCells.get(i) + " " + impactedCells.get(i));
+          //  }
         }
         catch (Exception e)
         {

@@ -10,6 +10,7 @@ import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.logging.Logger;
@@ -22,7 +23,7 @@ public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
     private boolean keepRunning = true;
     private boolean emptyQueue = false;
     private List<DirtyManager.DirtyRecord> dirtyQueue;
-    private static int queueSize = 500;
+    private static int queueSize = 50;
     Thread thread;
     RegionToCells regionToCells;
 
@@ -38,7 +39,6 @@ public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
     @Override
     public void run() {
         ArrayList<SCell> cellsToCompute = new ArrayList<>(queueSize);
-        Collections.shuffle(cellsToCompute);
         while (keepRunning) {
             if (regionToCells.cellQueue.isEmpty() && DirtyManager.dirtyManagerInstance.isEmpty() && cellsToCompute.isEmpty()) {
                 synchronized (this) {
@@ -54,9 +54,20 @@ public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
             } else {
                 emptyQueue = false;
             }
-            //  cellsToCompute.clear();
+           // cellsToCompute.clear();
+
+
             cellsToCompute.addAll(regionToCells.cellQueue);
-            for (SCell sCell : cellsToCompute) {
+
+            // Order cells based on priority.
+            Collections.shuffle(cellsToCompute);
+            costBasedSort(cellsToCompute);
+
+
+            // Execute only half
+            int i;
+            for (i=0;i<Math.min(cellsToCompute.size(), queueSize/2);i++) {
+                SCell sCell = cellsToCompute.get(i);
                 ((CellImpl) sCell).getValue(true, true);
                 // Push individual cells to the UI
                 update(sCell.getSheet(), sCell.getCellRegion());
@@ -65,7 +76,12 @@ public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
                 regionToCells.cellQueue.remove(sCell);
                 //logger.info("Done computing " + sCell.getCellRegion());
             }
+            cellsToCompute.subList(0,i).clear();
         }
+    }
+
+    private void costBasedSort(ArrayList<SCell> cellsToCompute) {
+        cellsToCompute.sort(Comparator.comparingInt(e->e.getComputeCost()));
     }
 
 

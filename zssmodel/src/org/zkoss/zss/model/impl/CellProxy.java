@@ -22,6 +22,7 @@ import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.formula.FormulaExpression;
 
+import java.util.Collection;
 import java.util.Locale;
 /**
  * 
@@ -297,6 +298,16 @@ class CellProxy extends AbstractCellAdv {
 
 	public Ref getRef(){
 		return new RefImpl(this);
+	}
+
+	@Override
+	public Collection<Ref> getReferredCells() {
+		return null;
+	}
+
+	@Override
+	public int getComputeCost() {
+		return 0;
 	}
 
 	//ZSS-688
