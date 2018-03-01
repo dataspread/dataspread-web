@@ -33,6 +33,7 @@
         <module>zssmodel</module>
         <module>zss</module>
         <module>webapp</module>
+        <module>dsapi</module>
     </modules>
     <build>
         <plugins>
