@@ -2,11 +2,15 @@ import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.zss.model.impl.BTree;
 import org.zkoss.zss.model.impl.CountedBTree;
+import org.zkoss.zss.model.impl.KeyBTree;
+import org.zkoss.zss.model.impl.CombinedBTree;
 import org.zkoss.zss.model.impl.statistic.AbstractStatistic;
 import org.zkoss.zss.model.impl.statistic.CombinedStatistic;
 import org.zkoss.zss.model.impl.statistic.CountStatistic;
 import org.zkoss.zss.model.impl.statistic.KeyStatistic;
 
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -27,12 +31,7 @@ public class BTreeTest {
         DBHandler.connectToDB(url, driver, userName, password);
         DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
 
-        //testNodeMergeByCount(dbContext);
-        //testSplitNodeSplitParentByCount(dbContext);
-
-        //NodeMergeRootMerge1ByCount(dbContext);
-
-        sparseTest(dbContext);
+        CombinedDNETest(dbContext);
         dbContext.getConnection().commit();
         dbContext.getConnection().close();
     }
@@ -44,6 +43,7 @@ public class BTreeTest {
         DBHandler.connectToDB(url, driver, userName, password);
         DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
         CountedBTree btree = new CountedBTree(dbContext, "Test1", false);
+        btree.setBlockSize(5);
         ArrayList<Integer> arrayList = new ArrayList<>();
 
         // Random operations
@@ -117,19 +117,21 @@ public class BTreeTest {
     }
 
     public static void sparseTest(DBContext dbContext){
-        CountedBTree btree = new CountedBTree(dbContext, "Test1", false);
-        btree.getIDs(dbContext, 2, 1);
-        btree.getIDs(dbContext,5, 1);
-        btree.getIDs(dbContext,8, 1);
+        CountedBTree testTree = new CountedBTree(dbContext, "Test1", false);
+        testTree.setBlockSize(5);
+        testTree.getIDs(dbContext, 2, 1);
+        testTree.getIDs(dbContext,5, 1);
+        testTree.getIDs(dbContext,8, 1);
         dbContext.getConnection().commit();
-        btree.deleteIDs(dbContext,6, 1);
+        testTree.deleteIDs(dbContext,6, 1);
         dbContext.getConnection().commit();
-        System.out.println(btree.getIDs(dbContext, 10, 1));
+        System.out.println(testTree.getIDs(dbContext, 10, 1));
     }
 
-    public static void testRootInsDelByCount(DBContext context, CountedBTree testTree) {
+    public static void testRootInsDelByCount(DBContext context) {
 
-
+        CountedBTree testTree = new CountedBTree(context, "testRootInsDelByCount", false);
+        testTree.setBlockSize(5);
         ArrayList<Integer> key = new ArrayList<>();
         key.add(1);
 
@@ -156,6 +158,7 @@ public class BTreeTest {
         for(int i = 0; i < 3; i++){
             String testName = "testRootSplit"+i;
             CountedBTree testTree = new CountedBTree(context, testName, false);
+            testTree.setBlockSize(5);
             ArrayList<Integer> ids = new ArrayList<>();
             ids.add(100);
             ids.add(200);
@@ -168,14 +171,16 @@ public class BTreeTest {
 
     }
 
-    public static void testSplitNodeByCount(DBContext context, CountedBTree testTree) {
+    public static void testSplitNodeByCount(DBContext context) {
+        CountedBTree testTree = new CountedBTree(context, "testSplitNodeByCount", false);
+        testTree.setBlockSize(5);
         ArrayList<Integer> ids = new ArrayList<>();
         int [] numbers = {50, 100, 200, 250, 300, 400, 500, 600, 700, 800};
-        ids.add(50);
         for(int i = 0; i < 10; i++){
-            ids.set(0, numbers[i]);
-            testTree.insertIDs(context, i, ids);
+            ids.add(numbers[i]);
+
         }
+        testTree.insertIDs(context, 0, ids);
 
         ArrayList<Integer> new_ids = new ArrayList<>();
         new_ids.add(30);
@@ -207,7 +212,8 @@ public class BTreeTest {
         int[] a = {1, 8, 16};
         int[] aa = {0, 2, 4};
         for(int i = 0; i < 3; i++){
-            CountedBTree testTree = new CountedBTree(context, "tSNSPBC"+i, false);
+            CountedBTree testTree = new CountedBTree(context, "testSplitNodeSplitParentByCount", false);
+            testTree.setBlockSize(5);
             testTree.insertIDs(context, 0, ids);
             ArrayList<Integer> new_ids = new ArrayList<>();
             new_ids.add(30);
@@ -231,8 +237,9 @@ public class BTreeTest {
     }
 
     public static void testNodeMergeByCount(DBContext context) {
-        String testName = "tNMBC";
+        String testName = "testNodeMergeByCount";
         CountedBTree testTree = new CountedBTree(context, testName, false);
+        testTree.setBlockSize(5);
         ArrayList<Integer> ids = new ArrayList<>();
         for(int i = 1; i <= 7; i++){
             ids.add(i*100);
@@ -246,15 +253,16 @@ public class BTreeTest {
     }
 
     public static void NodeMergeRootMergeByCount(DBContext context) {
-        String testName = "NMRMBC";
+        String testName = "NodeMergeRootMergeByCount";
         CountedBTree testTree = new CountedBTree(context, testName, false);
+        testTree.setBlockSize(5);
         ArrayList<Integer> ids = new ArrayList<>();
         int [] numbers = {50, 100, 200, 230, 270, 300, 330, 400, 500, 550, 700, 800, 850};
-        ids.add(50);
         for(int i = 0; i < 13; i++){
-            ids.set(0, numbers[i]);
-            testTree.insertIDs(context, i, ids);
+            ids.add(numbers[i]);
+
         }
+        testTree.insertIDs(context, 0, ids);
         testTree.deleteIDs(context, 0, 1);
         testTree.deleteIDs(context, 0, 1);
         testTree.deleteIDs(context, 0, 1);
@@ -266,13 +274,13 @@ public class BTreeTest {
     public static void NodeMergeRootMerge1ByCount(DBContext context) {
         String testName = "tNMRM1BC";
         CountedBTree testTree = new CountedBTree(context, testName, false);
+        testTree.setBlockSize(5);
         ArrayList<Integer> ids = new ArrayList<>();
         int [] numbers = {50, 100, 200, 230, 270, 300, 330, 400, 500, 550, 700, 800, 850, 900, 950, 1000, 1050, 1100, 1150};
-        ids.add(50);
         for(int i = 0; i < 19; i++){
-            ids.set(0, numbers[i]);
-            testTree.insertIDs(context, i, ids);
+            ids.add(numbers[i]);
         }
+        testTree.insertIDs(context, 0, ids);
         testTree.insertIDs(context, 0, ids);
         testTree.deleteIDs(context, 0, 1);
         testTree.deleteIDs(context, 13, 1);
@@ -280,6 +288,223 @@ public class BTreeTest {
 
 
     }
+    public static void testRootInsDel(DBContext context){
+        String tableName = "testRootInsDel";
 
+        KeyBTree testTree = new KeyBTree(context, tableName,  false);
+        testTree.setBlockSize(5);
+        ArrayList<Integer> ids = new ArrayList<>();
+        ids.add(300);
+        ArrayList<KeyStatistic> statistics = new ArrayList<>();
+        statistics.add(new KeyStatistic(30));
+        testTree.insertIDs(context, statistics, ids);
+        testTree.deleteIDs(context, statistics);
+        testTree.insertIDs(context, statistics, ids);
+        ids.set(0, 200);
+        ids.add(400);
+        ArrayList<KeyStatistic> new_statistics = new ArrayList<>();
+        statistics.set(0, new KeyStatistic(20));
+        statistics.add(new KeyStatistic(40));
+        testTree.insertIDs(context, statistics, ids);
 
+    }
+    public static void testRootSplit(DBContext context){
+        int[] numbers = {10, 20, 30, 40};
+        ArrayList<Integer> ids = new ArrayList<>();
+        ArrayList<KeyStatistic> statistics = new ArrayList<>();
+        for(int j = 0; j < 4; j++){
+            ids.add(numbers[j]*10);
+            statistics.add(new KeyStatistic(numbers[j]));
+        }
+        int[] a = {5, 25, 50};
+        for(int i = 0; i < 3; i++) {
+            String tableName = "testRootSplit"+i;
+            KeyBTree testTree = new KeyBTree(context, tableName,  false);
+            testTree.setBlockSize(5);
+            testTree.insertIDs(context, statistics, ids);
+            ArrayList<Integer> new_ids = new ArrayList<>();
+            new_ids.add(a[i]*10);
+            ArrayList<KeyStatistic> new_statistics = new ArrayList<>();
+            new_statistics.add(new KeyStatistic(a[i]));
+            testTree.insertIDs(context, new_statistics, new_ids);
+        }
+    }
+    public static void testSplitNode(DBContext context){
+        String tableName = "testSplitNode";
+        KeyBTree testTree = new KeyBTree(context, tableName,  false);
+        testTree.setBlockSize(5);
+        int [] a = {5, 10, 20, 25, 30, 40, 50, 60, 70, 3, 15, 23, 27, 35, 45, 55, 80};
+        ArrayList<Integer> ids = new ArrayList<>();
+        ArrayList<KeyStatistic> statistics = new ArrayList<>();
+        for( int i = 0; i < 17; i++){
+            ids.add(a[i]*10);
+            statistics.add(new KeyStatistic(a[i]));
+        }
+        testTree.insertIDs(context, statistics, ids);
+    }
+    public static void testSplitNodeSplitParent(DBContext context){
+        int [] a = {5, 10, 20, 25, 30, 40, 50, 60, 70, 3, 15, 23, 27, 35, 45, 55, 80};
+        ArrayList<Integer> ids = new ArrayList<>();
+        ArrayList<KeyStatistic> statistics = new ArrayList<>();
+        for( int i = 0; i < 17; i++){
+            ids.add(a[i]*10);
+            statistics.add(new KeyStatistic(a[i]));
+        }
+        int [] aa = {1, 8, 16};
+        for(int j = 0; j < 3; j++) {
+            String tableName = "testSplitNodeSplitParent"+j;
+            KeyBTree testTree = new KeyBTree(context, tableName, false);
+            testTree.setBlockSize(5);
+            testTree.insertIDs(context, statistics, ids);
+            ArrayList<Integer> new_ids = new ArrayList<>();
+            new_ids.add(aa[j]*10);
+            ArrayList<KeyStatistic> new_statistics = new ArrayList<>();
+            new_statistics.add(new KeyStatistic(aa[j]));
+            testTree.insertIDs(context, new_statistics, new_ids);
+        }
+    }
+    public static void testNodeMerge(DBContext context){
+        String tableName = "testNodeMerge";
+        KeyBTree testTree = new KeyBTree(context, tableName, false);
+        testTree.setBlockSize(5);
+        int [] a = {10, 20, 30, 40, 50, 60, 70};
+        ArrayList<Integer> ids = new ArrayList<>();
+        ArrayList<KeyStatistic> statistics = new ArrayList<>();
+        for(int i = 0; i < 7; i++){
+            ids.add(a[i]*10);
+            statistics.add(new KeyStatistic(a[i]));
+        }
+        testTree.insertIDs(context, statistics, ids);
+        ArrayList<KeyStatistic> del_statistics = new ArrayList<>();
+        del_statistics.add(new KeyStatistic(20));
+        testTree.deleteIDs(context, del_statistics);
+    }
+    public static void NodeMergeRootMerge(DBContext context){
+        String tableName = "NodeMergeRootMerge";
+        KeyBTree testTree = new KeyBTree(context, tableName, false);
+        testTree.setBlockSize(5);
+        int [] a = {5, 10, 20, 23, 27, 30, 33, 40, 50, 55, 70, 80, 85};
+        ArrayList<Integer> ids = new ArrayList<>();
+        ArrayList<KeyStatistic> statistics = new ArrayList<>();
+        for(int i = 0; i < 13; i++){
+            ids.add(a[i]*10);
+            statistics.add(new KeyStatistic(a[i]));
+        }
+        testTree.insertIDs(context, statistics, ids);
+        ArrayList<KeyStatistic> del_statistics = new ArrayList<>();
+        for(int i = 0; i < 5; i++){
+            del_statistics.add(new KeyStatistic(a[i]));
+        }
+        testTree.deleteIDs(context, del_statistics);
+    }
+    public static void NodeMergeRootMerge1(DBContext context){
+        String tableName = "NodeMergeRootMerge1";
+        KeyBTree testTree = new KeyBTree(context, tableName, false);
+        testTree.setBlockSize(5);
+        int [] a = {5, 10, 20, 23, 27, 30, 33, 40, 50, 55, 70, 80, 85, 90, 95, 100, 105, 110, 115};
+        ArrayList<Integer> ids = new ArrayList<>();
+        ArrayList<KeyStatistic> statistics = new ArrayList<>();
+        for(int i = 0; i < 19; i++){
+            ids.add(a[i]*10);
+            statistics.add(new KeyStatistic(a[i]));
+        }
+        testTree.insertIDs(context, statistics, ids);
+        ArrayList<KeyStatistic> del_statistics = new ArrayList<>();
+        int [] aa = {5, 95, 115};
+        for(int i = 0; i < 3; i++){
+            del_statistics.add(new KeyStatistic(aa[i]));
+        }
+        testTree.deleteIDs(context, del_statistics);
+    }
+    public static void CombinedOneLevel(DBContext context){
+        String tableName = "CombinedOneLevel";
+        CombinedBTree testTree = new CombinedBTree(context, tableName, false);
+        testTree.setBlockSize(5);
+        int [] num = {10, 20, 30, 40};
+        ArrayList<Integer> ids = new ArrayList<>();
+        ArrayList<CombinedStatistic> statistics = new ArrayList<>();
+        for(int i = 0; i < 4; i++) {
+            ids.add(num[i]*10);
+            statistics.add(new CombinedStatistic(new KeyStatistic(num[i])));
+        }
+        testTree.insertIDs(context, statistics, ids);
+        CombinedStatistic start = new CombinedStatistic(new KeyStatistic(20), new CountStatistic(1));
+        ArrayList<Integer> results = testTree.getIDs(context, start, 2, AbstractStatistic.Type.COUNT);
+        ArrayList<Integer> outofbounds = testTree.getIDs(context, start, 5 , AbstractStatistic.Type.COUNT);
+        System.out.println(results);
+        System.out.println(outofbounds);
+    }
+    public static void CombinedTwoLevels(DBContext context){
+        String tableName = "CombinedTwoLevels";
+        CombinedBTree testTree = new CombinedBTree(context, tableName, false);
+        testTree.setBlockSize(5);
+        int [] num = {10, 20, 30, 40, 50, 60, 70};
+        ArrayList<Integer> ids = new ArrayList<>();
+        ArrayList<CombinedStatistic> statistics = new ArrayList<>();
+        for(int i = 0; i < 7; i++) {
+            ids.add(num[i]*10);
+            statistics.add(new CombinedStatistic(new KeyStatistic(num[i])));
+        }
+        testTree.insertIDs(context, statistics, ids);
+        CombinedStatistic start = new CombinedStatistic(new KeyStatistic(20), new CountStatistic(1));
+        ArrayList<Integer> results = testTree.getIDs(context, start, 4, AbstractStatistic.Type.KEY);
+        System.out.println(results);
+    }
+    public static void CombinedDNETest(DBContext context){
+        String tableName = "CombinedDNETest";
+        String dropTable = (new StringBuffer())
+                .append("DROP TABLE IF EXISTS ")
+                .append(tableName)
+                .toString();
+        try (Statement stmt = context.getConnection().createStatement()) {
+            stmt.execute(dropTable);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        CombinedBTree testTree = new CombinedBTree(context, tableName, false);
+        testTree.setBlockSize(5);
+        int [] num = {10, 30, 40, 50, 60, 70, 80};
+        ArrayList<Integer> ids = new ArrayList<>();
+        ArrayList<CombinedStatistic> statistics = new ArrayList<>();
+        for(int i = 0; i < 7; i++) {
+            ids.add(num[i]*10);
+            statistics.add(new CombinedStatistic(new KeyStatistic(Integer.toString(num[i]))));
+        }
+        testTree.insertIDs(context, statistics, ids);
+        CombinedStatistic start = new CombinedStatistic(new KeyStatistic(Integer.toString(30)), new CountStatistic(1));
+        ArrayList<Integer> results = testTree.getIDs(context, start, 2, AbstractStatistic.Type.KEY);
+        System.out.println(results);
+    }
+    public static void CombinedNodeSplit(DBContext context){
+        String tableName = "CombinedNodeSplit";
+        CombinedBTree testTree = new CombinedBTree(context, tableName, false);
+        testTree.setBlockSize(5);
+        int [] a = {5, 10, 20, 25, 30, 40, 50, 60, 70, 3, 15, 23, 27, 35, 45, 55, 80};
+        ArrayList<Integer> ids = new ArrayList<>();
+        ArrayList<CombinedStatistic> statistics = new ArrayList<>();
+        for( int i = 0; i < 17; i++){
+            ids.add(a[i]*10);
+            statistics.add(new CombinedStatistic(new KeyStatistic(a[i])));
+        }
+        testTree.insertIDs(context, statistics, ids);
+
+    }
+    public static void CombinedNodeMerge(DBContext context){
+        String tableName = "NodeMergeRootMerge";
+        CombinedBTree testTree = new CombinedBTree(context, tableName, false);
+        testTree.setBlockSize(5);
+        int [] a = {5, 10, 20, 23, 27, 30, 33, 40, 50, 55, 70, 80, 85};
+        ArrayList<Integer> ids = new ArrayList<>();
+        ArrayList<CombinedStatistic> statistics = new ArrayList<>();
+        for(int i = 0; i < 13; i++){
+            ids.add(a[i]*10);
+            statistics.add(new CombinedStatistic(new KeyStatistic(a[i])));
+        }
+        testTree.insertIDs(context, statistics, ids);
+        ArrayList<CombinedStatistic> del_statistics = new ArrayList<>();
+        for(int i = 0; i < 5; i++){
+            del_statistics.add(new CombinedStatistic(new KeyStatistic(a[i])));
+        }
+        testTree.deleteIDs(context, del_statistics, AbstractStatistic.Type.KEY);
+    }
 }
