@@ -1,10 +1,16 @@
 package org.zkoss.zss.model.impl.statistic;
+import org.zkoss.zss.model.impl.CombinedBTree;
+
 import java.util.ArrayList;
 
 
 public class CombinedStatistic<T extends Comparable<T>> implements AbstractStatistic {
     public CountStatistic count;
     public KeyStatistic<T> key;
+
+    public CombinedStatistic(){
+
+    }
 
     public CombinedStatistic(KeyStatistic<T> key){
         this.key = key;
