@@ -14,7 +14,6 @@ import org.zkoss.zss.model.impl.SheetImpl;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerPriority;
 import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.dependency.DependencyTable;
-import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
@@ -99,9 +98,14 @@ public class AsyncPerformance {
         CellRegion badCell = badCells.get(0);
 
         Random random = new Random();
+        List<CellRegion> sheetCells = sheet.getCells().stream().map(SCell::getCellRegion)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        int cellsInSheet = sheetCells.size();
 
         int total_area_under_curve = 0;
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 1; i++) {
             sheet.clearCache();
             DirtyManagerLog.instance.init();
 
@@ -111,25 +115,45 @@ public class AsyncPerformance {
             sheet.getCell(badCell).setValue(random.nextInt());
             endTime = System.currentTimeMillis();
             System.out.println("Async time to update = " + (endTime - startTime) + " " + dt.getLastLookupTime());
+            total_area_under_curve += (endTime - startTime) * cellsInSheet;
+
+            System.out.println((endTime - startTime) + "\t" + cellsInSheet);
+
+            // System.out.println("Async time to complete = " + (endTime - startTime));
+
             formulaAsyncScheduler.waitForCompletion();
-            endTime = System.currentTimeMillis();
-            System.out.println("Async time to complete = " + (endTime - startTime));
+            // endTime = System.currentTimeMillis();
 
             // Right now considering dependents with FP
-            Set<Ref> dependents = table.getDependents(sheet.getCell(badCell).getRef());
-            long totalWaitTime = dependents.stream()
-                    .mapToLong(e -> DirtyManagerLog.instance.getDirtyTime(new CellRegion(e)))
-                    .sum();
-            System.out.println("Total Wait time " + totalWaitTime);
-            total_area_under_curve += totalWaitTime;
-            System.out.println("Avg Wait time " + totalWaitTime / dependents.size());
+            //Set<Ref> dependents = table.getDependents(sheet.getCell(badCell).getRef());
+
+
+            System.out.println("Before Compression ");
+            System.out.println(startTime + "\t" + cellsInSheet);
+            System.out.println(endTime + "\t" + cellsInSheet);
+            DirtyManagerLog.instance.groupPrint(sheetCells);
+
+            // long totalWaitTime = dependents.stream()
+            //         .mapToLong(e -> DirtyManagerLog.instance.getDirtyTime(new CellRegion(e)))
+            //         .sum();
+            // System.out.println("Total Wait time " + totalWaitTime);
+
+            //totalWaitTime = sheet.getCells().stream()
+            //        .mapToLong(e -> DirtyManagerLog.instance.getDirtyTime(e.getCellRegion()))
+            //        .sum();
+            // System.out.println("Total Wait time Cells " + totalWaitTime);
+            // DirtyManagerLog.instance.print();
+
+            //total_area_under_curve += totalWaitTime;
+            //System.out.println("Avg Wait time " + totalWaitTime / dependents.size());
         }
         System.out.println("Avg  area under curve " + total_area_under_curve / 10);
+
 
         compressGraphNode(dbBookName, "Sheet1", badCell);
 
         total_area_under_curve = 0;
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 1; i++) {
             sheet.clearCache();
             DirtyManagerLog.instance.init();
 
@@ -139,20 +163,64 @@ public class AsyncPerformance {
             sheet.getCell(badCell).setValue(random.nextInt());
             endTime = System.currentTimeMillis();
             System.out.println("Async time to update = " + (endTime - startTime) + " " + dt.getLastLookupTime());
+
+            total_area_under_curve += (endTime - startTime) * cellsInSheet;
+
             formulaAsyncScheduler.waitForCompletion();
-            endTime = System.currentTimeMillis();
-            System.out.println("Async time to complete = " + (endTime - startTime));
+            //endTime = System.currentTimeMillis();
+            //  System.out.println("Async time to complete = " + (endTime - startTime));
+
+
 
             // Right now considering dependents with FP
-            Set<Ref> dependents = table.getDependents(sheet.getCell(badCell).getRef());
-            long totalWaitTime = dependents.stream()
-                    .mapToLong(e -> DirtyManagerLog.instance.getDirtyTime(new CellRegion(e)))
-                    .sum();
-            System.out.println("Total Wait time " + totalWaitTime);
-            total_area_under_curve += totalWaitTime;
-            System.out.println("Avg Wait time " + totalWaitTime / dependents.size());
+            //Set<Ref> dependents = table.getDependents(sheet.getCell(badCell).getRef());
+            //long totalWaitTime = dependents.stream()
+            //        .mapToLong(e -> DirtyManagerLog.instance.getDirtyTime(new CellRegion(e)))
+            //        .sum();
+            //System.out.println("Total Wait time " + totalWaitTime);
+            //total_area_under_curve += totalWaitTime;
+
+
+//            totalWaitTime = sheet.getCells().stream()
+//                    .mapToLong(e -> DirtyManagerLog.instance.getDirtyTime(e.getCellRegion()))
+            //                   .sum();
+            System.out.println("After Compression ");
+            System.out.println(startTime + "\t" + cellsInSheet);
+            System.out.println(endTime + "\t" + cellsInSheet);
+            DirtyManagerLog.instance.groupPrint(sheetCells);
+
+
+            // System.out.println("Avg Wait time " + totalWaitTime / dependents.size());
         }
         System.out.println("Compressed version Avg  area under curve " + total_area_under_curve / 10);
+
+        revertGraphCompression(dbBookName);
+    }
+
+
+    private static void revertGraphCompression(String bookName) {
+        String deleteSql = "DELETE FROM dependency " +
+                "WHERE bookname = ? ";
+
+        String insertSql = "INSERT INTO dependency " +
+                "SELECT * FROM full_dependency " +
+                "WHERE bookname = ? ";
+
+        try (AutoRollbackConnection autoRollbackConnection = DBHandler.instance.getConnection();
+             PreparedStatement stmtSelect = autoRollbackConnection.prepareStatement(deleteSql);
+             PreparedStatement stmtInsert = autoRollbackConnection.prepareStatement(insertSql)) {
+
+
+            stmtSelect.setString(1, bookName);
+            stmtInsert.setString(1, bookName);
+
+            stmtSelect.execute();
+            stmtInsert.execute();
+            autoRollbackConnection.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private static void compressGraphNode(String bookName, String sheetname, CellRegion cellRegion) {
