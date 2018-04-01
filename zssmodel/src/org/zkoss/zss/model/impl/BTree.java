@@ -14,12 +14,12 @@ public class BTree <K extends AbstractStatistic> {
     /**
      * The maximum number of children of a node (an odd number)
      */
-    protected static final int b = 5;
+    private int b = 101;
 
     /**
      * b div 2
      */
-    private final int B = b / 2;
+    private int B = b / 2;
     /**
      * The ID of the meta data node
      */
@@ -40,6 +40,10 @@ public class BTree <K extends AbstractStatistic> {
         bs.setKryo(useKryo);
     }
 
+    public void setB(int b) {
+        this.b = b;
+        this.B = b / 2;
+    }
     /**
      * Construct an empty BTree, in-memory
      */
