@@ -19,7 +19,7 @@ import java.util.List;
 public class ApiController {
     @RequestMapping(value = "/getCell/{book}/{sheet}/{row}/{col}",
             method = RequestMethod.GET)
-    public Collection<Cell> getCells(@PathVariable String book,
+    public String getCells(@PathVariable String book,
                                      @PathVariable String sheet,
                                      @PathVariable int row,
                                      @PathVariable int col) {
@@ -29,19 +29,19 @@ public class ApiController {
 
     @RequestMapping(value = "/getSheets/{book}",
             method = RequestMethod.GET)
-    public Collection<String> getSheets(@PathVariable String book) {
+    public String getSheets(@PathVariable String book) {
         List<String> sheetNames = new ArrayList<>();
 
         SBook sbook = BookBindings.getBookByName(book);
         for (int i = 0; i < sbook.getNumOfSheet(); i++)
             sheetNames.add(sbook.getSheet(i).getSheetName());
 
-        return sheetNames;
+        return "{\"sheetNames\":" + sheetNames + "}";
     }
 
     @RequestMapping(value = "/getBooks",
             method = RequestMethod.GET)
-    public Collection<String> getBooks() {
+    public String getBooks() {
         List<String> books = new ArrayList<>();
         String query = "SELECT bookname FROM books";
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
@@ -52,13 +52,13 @@ public class ApiController {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return books;
+        return "{\"books\":" + books + "}";
     }
 
 
     @RequestMapping(value = "/getCells/{book}/{sheet}/{row1}-{row2}/{col1}-{col2}",
             method = RequestMethod.GET)
-    public Collection<Cell> getCells(@PathVariable String book,
+    public String getCells(@PathVariable String book,
                                      @PathVariable String sheet,
                                      @PathVariable int row1,
                                      @PathVariable int row2,
@@ -82,7 +82,7 @@ public class ApiController {
                 returnCells.add(cell);
             }
         }
-        return returnCells;
+        return "{\"getCells\":"+ returnCells + "}";
     }
 
     @RequestMapping(value = "/putCell/{book}/{sheet}/{row}/{col}/{value}",
