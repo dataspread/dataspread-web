@@ -85,9 +85,9 @@ public class AsyncPerformance {
         sheet.clearCache();
         dt.getLastLookupTime(); // init lookup time
         startTime = System.currentTimeMillis();
-        //sheet.getCell(badCells.get(0).getRow(),badCells.get(0).getColumn()).setValue(startTime%100);
-        //System.out.println("Final Value "
-        //        + sheet.getCell(cellCount,0).getValue());
+        sheet.getCell(badCells.get(0).getRow(), badCells.get(0).getColumn()).setValue(startTime % 100);
+        System.out.println("Final Value "
+                + sheet.getCell(badCells.get(0).getRow(), badCells.get(0).getColumn()).getValue());
         endTime = System.currentTimeMillis();
 
         System.out.println("Sync time to update = " + (endTime - startTime) + " " + dt.getLastLookupTime());
@@ -105,7 +105,7 @@ public class AsyncPerformance {
         int cellsInSheet = sheetCells.size();
 
         int total_area_under_curve = 0;
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 0; i++) {
             sheet.clearCache();
             DirtyManagerLog.instance.init();
 
@@ -150,7 +150,7 @@ public class AsyncPerformance {
         System.out.println("Avg  area under curve " + total_area_under_curve / 10);
 
 
-        compressGraphNode(dbBookName, "Sheet1", badCell);
+        //compressGraphNode(dbBookName, "Sheet1", badCell);
 
         total_area_under_curve = 0;
         for (int i = 0; i < 1; i++) {
