@@ -95,11 +95,7 @@ public class CombinedStatistic<T extends Comparable<T>> implements AbstractStati
 
     @Override
     public AbstractStatistic getLeafStatistic(int count, Type type) {
-        if (type == Type.KEY){
-            return this.key.getLeafStatistic(count, type);
-        } else {
-            return this.count.getLeafStatistic(count, type);
-        }
+        return new CombinedStatistic<>(this.key.getLeafStatistic(count, type), this.count.getLeafStatistic(count, type));
     }
 
     @Override
