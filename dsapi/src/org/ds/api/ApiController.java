@@ -13,13 +13,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 
 @RestController
 public class ApiController {
     @RequestMapping(value = "/getCell/{book}/{sheet}/{row}/{col}",
             method = RequestMethod.GET)
-    public String getCells(@PathVariable String book,
+    public HashMap<String, List<Cell>> getCells(@PathVariable String book,
                                      @PathVariable String sheet,
                                      @PathVariable int row,
                                      @PathVariable int col) {
@@ -29,19 +30,21 @@ public class ApiController {
 
     @RequestMapping(value = "/getSheets/{book}",
             method = RequestMethod.GET)
-    public String getSheets(@PathVariable String book) {
+    public HashMap<String, List<String>> getSheets(@PathVariable String book) {
         List<String> sheetNames = new ArrayList<>();
 
         SBook sbook = BookBindings.getBookByName(book);
         for (int i = 0; i < sbook.getNumOfSheet(); i++)
             sheetNames.add(sbook.getSheet(i).getSheetName());
-
-        return "{\"sheetNames\":" + sheetNames + "}";
+        HashMap<String, List<String>> result = new HashMap<>();
+        result.put("sheets", sheetNames);
+        return result;
     }
+
 
     @RequestMapping(value = "/getBooks",
             method = RequestMethod.GET)
-    public String getBooks() {
+    public HashMap<String, List<String>> getBooks() {
         List<String> books = new ArrayList<>();
         String query = "SELECT bookname FROM books";
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
@@ -52,13 +55,15 @@ public class ApiController {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return "{\"books\":" + books + "}";
+        HashMap<String, List<String>> result = new HashMap<>();
+        result.put("books", books);
+        return result;
     }
 
 
     @RequestMapping(value = "/getCells/{book}/{sheet}/{row1}-{row2}/{col1}-{col2}",
             method = RequestMethod.GET)
-    public String getCells(@PathVariable String book,
+    public HashMap<String, List<Cell>> getCells(@PathVariable String book,
                                      @PathVariable String sheet,
                                      @PathVariable int row1,
                                      @PathVariable int row2,
@@ -82,7 +87,9 @@ public class ApiController {
                 returnCells.add(cell);
             }
         }
-        return "{\"getCells\":"+ returnCells + "}";
+        HashMap<String, List<Cell>> result = new HashMap<>();
+        result.put("getCells", returnCells);
+        return result;
     }
 
     @RequestMapping(value = "/putCell/{book}/{sheet}/{row}/{col}/{value}",
