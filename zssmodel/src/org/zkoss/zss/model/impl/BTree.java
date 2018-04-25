@@ -108,6 +108,9 @@ public class BTree <K extends AbstractStatistic> {
         if (rightNode != null) {   // root was split, make new root
             Node<K> leftNode = (new Node<K>(emptyStatistic)).get(context, bs, metaDataBlock.ri);
             Node<K> newRoot = (new Node<K>(emptyStatistic)).create(context, bs);
+            leftNode.parent = newRoot.id;
+            rightNode.parent = newRoot.id;
+            leftNode.update(bs);
             rightNode.update(bs);
             // First time leaf becomes a root
             newRoot.leafNode = false;
@@ -169,6 +172,7 @@ public class BTree <K extends AbstractStatistic> {
             u.childrenCount.set(i, child.childrenCount.size());
             u.statistics.set(i, emptyStatistic.getAggregation(child.statistics, type));
             if (rightNode != null) {  // child was split, w is new child
+                rightNode.parent = u.id;
                 rightNode.update(bs);
                 // Add w after position i
                 u.addInternal(rightNode, i + 1, type);
@@ -328,10 +332,10 @@ public class BTree <K extends AbstractStatistic> {
                 checkNode.update(bs);
             } else { // checkNode will absorb borrowNode
                 if (borrowIndex < i) { // borrowNode is the leftNode
-                    merge(borrowNode, checkNode);
+                    merge(context, borrowNode, checkNode);
                     u.updateMerge(borrowIndex, i, borrowNode, type);
                 } else { // borrowNode is the rightNode
-                    merge(checkNode, borrowNode);
+                    merge(context, checkNode, borrowNode);
                     u.updateMerge(i, borrowIndex, checkNode, type);
                 }
             }
@@ -343,8 +347,12 @@ public class BTree <K extends AbstractStatistic> {
      * @param leftNode
      * @param rightNode
      */
-    protected void merge(Node<K> leftNode, Node<K> rightNode) {
+    protected void merge(DBContext context, Node<K> leftNode, Node<K> rightNode) {
         // copy statistics from rightNode to leftNode
+        for(int i = 0; i < rightNode.children.size(); i++){
+            Node<K> w = (new Node<K>(emptyStatistic)).get(context, bs, rightNode.children.get(i));
+            w.parent = leftNode.id;
+        }
         leftNode.statistics.addAll(rightNode.statistics);
         leftNode.childrenCount.addAll(rightNode.childrenCount);
         if (leftNode.isLeaf()) {
@@ -779,6 +787,10 @@ public class BTree <K extends AbstractStatistic> {
             } else {
                 // Copy Children and ChildrenCount
                 rightNode.children = new ArrayList<>(children.subList(j, children.size()));
+                for(int i = 0; i < rightNode.children.size(); i++){
+                    Node<K> w = (new Node<K>(emptyStatistic)).get(context, bs, rightNode.children.get(i));
+                    w.parent = rightNode.id;
+                }
                 children.subList(j, children.size()).clear();
             }
             rightNode.leafNode = this.leafNode;
