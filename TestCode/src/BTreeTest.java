@@ -31,7 +31,7 @@ public class BTreeTest {
         DBHandler.connectToDB(url, driver, userName, password);
         DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
 
-        CombinedDNETest(dbContext);
+        testRootSplitByCount(dbContext);
         dbContext.getConnection().commit();
         dbContext.getConnection().close();
     }
