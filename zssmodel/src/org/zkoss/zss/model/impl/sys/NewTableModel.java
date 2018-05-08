@@ -9,8 +9,10 @@ import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSemantics;
 import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
 import org.zkoss.zss.model.impl.CellImpl;
+import org.zkoss.zss.model.sys.BookBindings;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -19,20 +21,32 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+
 public class NewTableModel {
     BlockStore bs;
-    private String newTableName;
+    private MetaDataBlock metaDataBlock;
+    String newTableName;
 
-    public boolean createTable(DBContext context, CellRegion range, String tableName, String bookName, SSheet sheet) throws Exception {
+    public NewTableModel(String bookName, String sheetName, String tableName){
+        this.newTableName = tableName;
+        metaDataBlock = new MetaDataBlock();
+        metaDataBlock.sheetNames.add(sheetName);
+        metaDataBlock.bookNames.add(bookName);
+    }
+
+    public boolean createTable(DBContext context, CellRegion range, String tableName, String bookName, String sheetName) throws Exception {
 
         newTableName = tableName.toLowerCase();
         /* First create table then create model */
         /* extract table header row */
         CellRegion tableHeaderRow = new CellRegion(range.row, range.column, range.row, range.lastColumn);
-        List<String> columnList = getCells(context, range, sheet)
+        SBook book = BookBindings.getBookByName(bookName);
+        SSheet sheet = book.getSheetByName(sheetName);
+        List<String> columnList = sheet.getCells(tableHeaderRow)
                 .stream()
                 .sorted(Comparator.comparingInt(SCell::getRowIndex))
-                .map(AbstractCellAdv::getValue)
+                .map(SCell::getValue)
                 .map(Object::toString)
                 .map(e -> e.trim().replaceAll("[^a-zA-Z0-9.\\-;]+", "_"))
                 .collect(Collectors.toList());
@@ -45,7 +59,7 @@ public class NewTableModel {
 
 
         String createTable = (new StringBuilder())
-                .append("CREATE TABLE ")
+                .append("CREATE TABLE IF NOT EXISTS ")
                 .append(newTableName)
                 .append(" (")
                 .append(columnList.stream().map(e -> e + " TEXT").collect(Collectors.joining(",")))
@@ -55,38 +69,79 @@ public class NewTableModel {
         AutoRollbackConnection connection = context.getConnection();
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(createTable);
+        }catch (SQLException e) {
+            e.printStackTrace();
         }
 
    /* add the record to the tables table */
+        String tableRange = range.row + "-" + range.column + "-" + range.lastRow + "-" + range.lastColumn;
         String appendRecord = (new StringBuilder())
                 .append("INSERT INTO ")
                 .append("tables")
                 .append(" VALUES ")
-                .append(" (" + bookName + "，"+ sheet.getSheetName() + "，" + range + "，" + tableName + "，" + "" + "，" + "" + ") ")
+                .append(" (\'" + bookName + "\',\'"+ sheetName + "\',\'" + tableRange + "\'," + "\'gpa\'" + "," + "\'empty\'" + "," + "\'empty\'" + ") ")
            .toString();
 
 
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(appendRecord);
+        }catch (SQLException e) {
+            e.printStackTrace();
         }
 
         //deleteCells(context, tableHeaderRow);
         return true;
     }
 
-    public void sortTable(DBContext context, String tableName, String order) {
-        String appendtoTables = (new StringBuilder())
+    public void dropTable(DBContext context){
+        String dropTable = (new StringBuilder())
+                .append("DROP TABLE ")
+                .append(newTableName)
+                .toString();
+        AutoRollbackConnection connection = context.getConnection();
+        try(Statement stmt = connection.createStatement()){
+            stmt.execute(dropTable);
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+
+        String deleteRecords = (new StringBuilder())
+                .append("DELETE FROM ")
+                .append("tables")
+                .append("WHERE tableName = "+newTableName)
+                .toString();
+        try(Statement stmt = connection.createStatement()){
+            stmt.execute(deleteRecords);
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+    }
+
+    public void insertRows(DBContext context, int row, int count){
+        //Empty rows?
+    }
+
+    public void deleteRows(DBContext context, int row, int count){
+        //Need pos mapping
+    }
+
+    public void deleteTableColumns(DBContext dbContext, int col, int count) {
+        //Need pos mapping
+    }
+
+    public void sortTable(DBContext context, String tableName, String attribute, String order) {
+        String appendToTables = (new StringBuilder())
                 .append("UPDATE ")
                 .append("tables")
                 .append(" SET ")
-                .append("order = " + order)
+                .append("order = " + attribute + " " + order)
                 .append(" WHERE ")
                 .append("tableName == " + tableName)
            .toString();
 
         AutoRollbackConnection connection = context.getConnection();
-        try (Statement stmt = connection.prepareStatement(appendtoTables)) {
-
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute(appendToTables);
         }catch (SQLException e) {
             e.printStackTrace();
         }
@@ -114,15 +169,17 @@ public class NewTableModel {
 
     }
 
-    public Collection<AbstractCellAdv> getCells(DBContext context, CellRegion fetchRange, SSheet sheet) {
+    public Collection<AbstractCellAdv> getCells(DBContext context, CellRegion fetchRange, String sheetName, String bookName) {
 
+        SBook book = BookBindings.getBookByName(bookName);
+        SSheet sheet = book.getSheetByName(sheetName);
         // Reduce Range to bounds
         Collection<AbstractCellAdv> cells = new ArrayList<>();
         String select = (new StringBuilder())
-                .append("SELECT")
+                .append("SELECT *")
                 .append(" FROM ")
                 .append("tables")
-                .append(" WHERE sheetName = " + sheet.getSheetName())
+                .append(" WHERE sheetName = " + sheet.getSheetName() + " AND bookName = " + book.getBookName())
                 .toString();
 
         AutoRollbackConnection connection = context.getConnection();
@@ -173,5 +230,15 @@ public class NewTableModel {
         return cells;
     }
 
+    private static class MetaDataBlock {
+        List<String> sheetNames;
+        List<String> bookNames;
+        List<CellRegion> tableRanges;
 
+        MetaDataBlock() {
+            sheetNames = new ArrayList();
+            bookNames = new ArrayList();
+            tableRanges = new ArrayList();
+        }
+    }
 }

@@ -1,12 +1,15 @@
 package org.ds.api;
 
 import org.model.AutoRollbackConnection;
+import org.model.DBContext;
 import org.model.DBHandler;
 import org.springframework.web.bind.annotation.*;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.sys.BookBindings;
+import org.zkoss.zss.model.impl.sys.NewTableModel;
+import org.zkoss.zss.model.CellRegion;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -123,4 +126,81 @@ public class ApiController {
             }
         }
     }
+
+    @RequestMapping(value = "/createTable/{book}/{sheet}/{table}/{row1}-{row2}/{col1}-{col2}",
+            method = RequestMethod.GET)
+    public Boolean createTable(@PathVariable String book,
+                               @PathVariable String sheet,
+                               @PathVariable String table,
+                               @PathVariable int row1,
+                               @PathVariable int row2,
+                               @PathVariable int col1,
+                               @PathVariable int col2){
+        CellRegion range = new CellRegion(row1, row2, col1, col2);
+        NewTableModel tableModel = new NewTableModel( book, sheet, table);
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+            DBContext context = new DBContext(connection);
+            tableModel.createTable(context, range, table, book, sheet);
+            context.getConnection().commit();
+            context.getConnection().close();
+        }
+        catch(java.lang.Exception e){
+            e.printStackTrace();
+        }
+        return true;
+    }
+
+    @RequestMapping(value = "/sortTable/{table}/{attribute}/{order}",
+            method = RequestMethod.GET)
+    public Boolean sortTable(@PathVariable String table,
+                             @PathVariable String attribute,
+                             @PathVariable String order) {
+        String query = "SELECT tableName FROM tables LIMIT 1";
+        String book = "";
+        String sheet = "";
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet rs = statement.executeQuery()) {
+            while (rs.next()) {
+                book = rs.getString("bookname");
+                sheet = rs.getString("sheetname");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        NewTableModel tableModel = new NewTableModel(book, sheet, table);
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+            DBContext context = new DBContext(connection);
+            tableModel.sortTable(context, table, attribute, order);
+            context.getConnection().commit();
+            context.getConnection().close();
+        }
+        return true;
+    }
+
+    @RequestMapping(value = "/filterTable/{table}/{filter}/{row1}-{row2}/{col1}-{col2}",
+            method = RequestMethod.GET)
+    public Boolean filterTable(  @PathVariable String table,
+                                 @PathVariable String filter) {
+        String query = "SELECT tableName FROM tables LIMIT 1";
+        String book = "";
+        String sheet = "";
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet rs = statement.executeQuery()) {
+             while (rs.next()) {
+                 book = rs.getString("bookName");
+                sheet = rs.getString("sheetName");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        NewTableModel tableModel = new NewTableModel(book, sheet, table);
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+            DBContext context = new DBContext(connection);
+            tableModel.filterTable(context, table, filter);
+        }
+        return true;
+    }
+
 }

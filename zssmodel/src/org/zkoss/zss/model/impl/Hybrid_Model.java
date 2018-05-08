@@ -8,6 +8,7 @@ import org.zkoss.util.Pair;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.impl.sys.NewTableModel;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -632,6 +633,8 @@ public class Hybrid_Model extends RCV_Model {
                                         metaDataBlock.modelEntryList.get(e).range.getColumn()))
                                 .collect(Collectors.toList())));
 
+        //NewTableModel newTable = new NewTableModel(sheet.getBook().getBookName(), sheet.getSheetName(), tableName);
+        //cells.addAll(newTable.getCells(context, range, sheet.getSheetName(), sheet.getBook().getBookName()));
         boolean encompass = false;
         for (MetaDataBlock.ModelEntry m : metaDataBlock.modelEntryList)
             if (m.range.contains(range))

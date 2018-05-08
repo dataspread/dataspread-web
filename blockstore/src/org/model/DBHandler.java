@@ -110,10 +110,21 @@ public class DBHandler {
                     "  PRIMARY KEY (booktable, sheetid)," +
                     "  UNIQUE (bookname,sheetname))";
             stmt.execute(createSheetsTable);
+
+            String createDataTable = "CREATE TABLE  IF NOT  EXISTS  tables (" +
+                    "bookname  TEXT NOT NULL," +
+                    "sheetname  TEXT NOT NULL," +
+                    "range  TEXT NOT NULL," +
+                    "tablename  TEXT NOT NULL," +
+                    "filter  TEXT NOT NULL," +
+                    "sort TEXT NOT NULL," +
+                    "PRIMARY KEY (tablename))";
+            stmt.execute(createDataTable);
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
+
 
     private void createUserTable(DBContext dbContext) {
         AutoRollbackConnection connection = dbContext.getConnection();
