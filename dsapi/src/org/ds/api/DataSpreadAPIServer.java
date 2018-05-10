@@ -21,6 +21,7 @@ public class DataSpreadAPIServer extends SpringBootServletInitializer {
         String password = "mangesh";
         DBHandler.connectToDB(url, driver, userName, password);
 		SpringApplication.run(DataSpreadAPIServer.class, args);
+
 	}
 
 }

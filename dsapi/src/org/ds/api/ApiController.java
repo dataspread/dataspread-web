@@ -150,6 +150,29 @@ public class ApiController {
         return true;
     }
 
+    @RequestMapping(value = "/linkable/{book}/{sheet}/{table}/{row1}-{row2}/{col1}-{col2}",
+            method = RequestMethod.GET)
+    public Boolean linkTable(@PathVariable String book,
+                               @PathVariable String sheet,
+                               @PathVariable String table,
+                               @PathVariable int row1,
+                               @PathVariable int row2,
+                               @PathVariable int col1,
+                               @PathVariable int col2){
+        CellRegion range = new CellRegion(row1, row2, col1, col2);
+        NewTableModel tableModel = new NewTableModel( book, sheet, table);
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+            DBContext context = new DBContext(connection);
+            tableModel.linkTable(context, range, table, book, sheet);
+            context.getConnection().commit();
+            context.getConnection().close();
+        }
+        catch(java.lang.Exception e){
+            e.printStackTrace();
+        }
+        return true;
+    }
+
     @RequestMapping(value = "/sortTable/{table}/{attribute}/{order}",
             method = RequestMethod.GET)
     public Boolean sortTable(@PathVariable String table,

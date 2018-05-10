@@ -73,24 +73,73 @@ public class NewTableModel {
             e.printStackTrace();
         }
 
-   /* add the record to the tables table */
+
+
+        //deleteCells(context, tableHeaderRow);
+        return insertToTables(context, range, bookName, sheetName, tableName);
+    }
+
+    public boolean insertToTables(DBContext context, CellRegion range, String bookName, String sheetName, String tableName){
+        /* add the record to the tables table */
+        AutoRollbackConnection connection = context.getConnection();
         String tableRange = range.row + "-" + range.column + "-" + range.lastRow + "-" + range.lastColumn;
         String appendRecord = (new StringBuilder())
                 .append("INSERT INTO ")
                 .append("tables")
                 .append(" VALUES ")
-                .append(" (\'" + bookName + "\',\'"+ sheetName + "\',\'" + tableRange + "\'," + "\'gpa\'" + "," + "\'empty\'" + "," + "\'empty\'" + ") ")
-           .toString();
+                .append(" (\'" + bookName + "\',\'"+ sheetName + "\',\'" + tableRange + "\',\'" + tableName + "\'," + "\'empty\'" + "," + "\'empty\'" + ") ")
+                .toString();
 
 
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(appendRecord);
         }catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
-
-        //deleteCells(context, tableHeaderRow);
         return true;
+    }
+
+    public void linkTable(DBContext context, CellRegion range,
+                                                 String sheetName, String bookName, String tableName) {
+
+//        SBook book = BookBindings.getBookByName(bookName);
+//        SSheet sheet = book.getSheetByName(sheetName);
+        // Reduce Range to bounds
+//        Collection<AbstractCellAdv> cells = new ArrayList<>();
+        insertToTables(context,range, bookName,sheetName, tableName);
+
+//        int startRow = 0, endRow = range.lastRow - range.row;
+//        int startCol = 0, endCol = range.lastColumn - range.column;
+//
+//        String query = (new StringBuilder())
+//                .append("SELECT")
+//                .append(" FROM ")
+//                .append(newTableName)
+//                .append(" OFFSET "+startRow+" ROWS")
+//                .append(" FETCH NEXT "+endRow+" ROWS ONLY")
+//                .toString();
+//
+//        AutoRollbackConnection connection = context.getConnection();
+//
+//        try(Statement state = connection.createStatement()){
+//            ResultSet dataSet = state.executeQuery(query);
+//            int row = 0;
+//            while(dataSet.next()){
+//                int col = startCol;
+//                for( int i = 0; i < (endCol - startCol); i++){
+//                    byte[] data = dataSet.getBytes(i);
+//                    AbstractCellAdv cell = CellImpl.fromBytes(sheet, row, col, data);
+//                    cell.setSemantics(SSemantics.Semantics.TABLE_CONTENT);
+//                    cells.add(cell);
+//                    col++;
+//                }
+//                row++;
+//            }
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
+
     }
 
     public void dropTable(DBContext context){
