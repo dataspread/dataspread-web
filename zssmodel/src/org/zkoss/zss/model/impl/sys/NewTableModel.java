@@ -41,6 +41,7 @@ public class NewTableModel {
         /* First create table then create model */
         /* extract table header row */
         CellRegion tableHeaderRow = new CellRegion(range.row, range.column, range.row, range.lastColumn);
+
         SBook book = BookBindings.getBookByName(bookName);
         SSheet sheet = book.getSheetByName(sheetName);
         List<String> columnList = sheet.getCells(tableHeaderRow)

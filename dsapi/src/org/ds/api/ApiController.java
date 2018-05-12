@@ -1,9 +1,11 @@
 package org.ds.api;
 
+import org.zkoss.json.JSONObject;
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.springframework.web.bind.annotation.*;
+import org.zkoss.json.parser.JSONParser;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
@@ -21,6 +23,28 @@ import java.util.List;
 
 @RestController
 public class ApiController {
+
+    final String BOOK_NAME = "book_name";
+    final String SCHEMA = "schema";
+    final String FILTER = "filter";
+    final String ATTRIBUTE_ORDER_PAIR = "attribute_order_pair";
+    final String BOOK_ID = "book_id";
+    final String SHEET_NAME = "sheet_name";
+    final String ROW_1 = "row_1";
+    final String ROW_2 = "row_2";
+    final String COL_1 = "col_1";
+    final String COL_2 = "col_2";
+    final String ATTRIBUTES = "attributes";
+    final String TYPE = "type";
+    final String VALUES = "values";
+    final String DATA = "data";
+    final String USER_ID = "user_id";
+    final String TABLE_NAME = "table_name";
+    final String ROW = "row";
+    final String COL = "col";
+    final String TABLE_SHEET_ID = "table_sheet_id";
+    final String LINK = "link";
+
     @RequestMapping(value = "/getCell/{book}/{sheet}/{row}/{col}",
             method = RequestMethod.GET)
     public HashMap<String, List<Cell>> getCells(@PathVariable String book,
@@ -127,27 +151,38 @@ public class ApiController {
         }
     }
 
-    @RequestMapping(value = "/createTable/{book}/{sheet}/{table}/{row1}-{row2}/{col1}-{col2}",
-            method = RequestMethod.GET)
-    public Boolean createTable(@PathVariable String book,
-                               @PathVariable String sheet,
-                               @PathVariable String table,
-                               @PathVariable int row1,
-                               @PathVariable int row2,
-                               @PathVariable int col1,
-                               @PathVariable int col2){
-        CellRegion range = new CellRegion(row1, row2, col1, col2);
-        NewTableModel tableModel = new NewTableModel( book, sheet, table);
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
-            DBContext context = new DBContext(connection);
-            tableModel.createTable(context, range, table, book, sheet);
-            context.getConnection().commit();
-            context.getConnection().close();
+    @RequestMapping(value = "/createTable",
+            method = RequestMethod.PUT)
+    public String createTable(@RequestBody String value){
+        JSONParser paser = new JSONParser();
+        try {
+            JSONObject dict = (JSONObject)paser.parse(value);
+            String book = (String)dict.get(BOOK_NAME);
+            String sheet = (String)dict.get(SHEET_NAME);
+            String table = (String)dict.get(TABLE_NAME);
+            int row1 = (int)dict.get(ROW_1);
+            int row2 = (int)dict.get(ROW_2);
+            int col1 = (int)dict.get(COL_1);
+            int col2 = (int)dict.get(COL_2);
+            CellRegion range = new CellRegion(row1, col1, row2, col2);
+            NewTableModel tableModel = new NewTableModel( book, sheet, table);
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+                DBContext context = new DBContext(connection);
+                tableModel.createTable(context, range, table, book, sheet);
+                context.getConnection().commit();
+                context.getConnection().close();
+            }
+            catch(java.lang.Exception e){
+                e.printStackTrace();
+            }
+
         }
-        catch(java.lang.Exception e){
+        catch (java.lang.Exception e){
+            System.out.println(value);
             e.printStackTrace();
+            return value;
         }
-        return true;
+        return value;
     }
 
     @RequestMapping(value = "/linkable/{book}/{sheet}/{table}/{row1}-{row2}/{col1}-{col2}",
