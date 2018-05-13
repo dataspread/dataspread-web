@@ -103,6 +103,20 @@ public class TableController {
                 getSharedLink(context,userId,metaTableName)};
     }
 
+    public void unLinkTable(DBContext context,String tableSheetLink) throws SQLException {
+
+        String deleteRecords = (new StringBuilder())
+                .append("DELETE FROM ")
+                .append(TABLESHEETLINK)
+                .append(" WHERE linkid = ?")
+                .toString();
+        AutoRollbackConnection connection = context.getConnection();
+        try(PreparedStatement stmt = connection.prepareStatement(deleteRecords)){
+            stmt.setString(1, tableSheetLink);
+            stmt.execute();
+        }
+    }
+
     public void dropTable(DBContext context, String user_id, String metaTableName){
         String tableName = getTableName(user_id, metaTableName);
         String dropTable = (new StringBuilder())

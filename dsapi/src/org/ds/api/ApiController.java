@@ -236,6 +236,33 @@ public class ApiController {
         return ret.toJSONString();
     }
 
+    @RequestMapping(value = "/unlinkTable",
+            method = RequestMethod.PUT)
+    public String unlinkTable(@RequestBody String value){
+        JSONParser paser = new JSONParser();
+        JSONObject ret = new JSONObject();
+        try {
+            JSONObject dict = (JSONObject)paser.parse(value);
+            String tableSheetLink = (String) dict.get(TABLE_SHEET_ID);
+
+            TableController tableModel = TableController.getController();
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+                DBContext context = new DBContext(connection);
+                tableModel.unLinkTable(context, tableSheetLink);
+                context.getConnection().commit();
+            }
+            catch(java.lang.Exception e){
+                return returnFalse(ret,e);
+            }
+
+        }
+        catch (java.lang.Exception e){
+            return returnFalse(ret,e);
+        }
+
+        return ret.toJSONString();
+    }
+
     @RequestMapping(value = "/sortTable/{table}/{attribute}/{order}",
             method = RequestMethod.GET)
     public Boolean sortTable(@PathVariable String table,
