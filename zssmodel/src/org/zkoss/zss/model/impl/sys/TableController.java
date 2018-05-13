@@ -23,85 +23,17 @@ import static java.lang.Math.round;
 
 public class TableController {
 
-    private              int           block_row  = 100000;
-    private final static Random        _random    = new Random(System.currentTimeMillis());
-    private final static AtomicInteger _tableCount = new AtomicInteger();
-    final static String TABLES = "tables";
-    final static String TABLESHEETLINK = "sheet_table_link";
+    private final static Random        _random        = new Random(System.currentTimeMillis());
+    private final static AtomicInteger _tableCount    = new AtomicInteger();
+    private final static String        TABLES         = "tables";
+    private final static String        TABLESHEETLINK = "sheet_table_link";
 
-    BlockStore bs;
-
-    static TableController _tableController = new TableController();
+    private static TableController _tableController = new TableController();
 
     private TableController(){}
 
     public static TableController getController(){
         return _tableController;
-    }
-
-    List<Integer> convertToType(List<String> schema) throws Exception {
-        ArrayList<Integer> result = new ArrayList<>();
-        for (String s:schema){
-            switch (s.toUpperCase()) {
-                case "TEXT":
-                    result.add(Types.VARCHAR);
-                    break;
-                case "INTEGER":
-                    result.add(Types.INTEGER);
-                    break;
-                case "REAL":
-                case "FLOAT":
-                    result.add(Types.FLOAT);
-                    break;
-                case "DATE":
-                    result.add(Types.DATE);
-                    break;
-                case "BOOLEAN":
-                    result.add(Types.BOOLEAN);
-                    break;
-                default:
-                    throw new Exception("Unsupported type");
-
-            }
-        }
-        return result;
-    }
-
-    void setStmtValue(PreparedStatement stmt, int index, String value, List<Integer> schema) throws Exception {
-        switch (schema.get(index)) {
-            case Types.BOOLEAN:
-                stmt.setBoolean(index + 1,Boolean.parseBoolean(value));
-                break;
-            case Types.BIGINT:
-                stmt.setLong(index + 1,Long.parseLong(value));
-                break;
-            case Types.DECIMAL:
-            case Types.DOUBLE:
-            case Types.FLOAT:
-            case Types.REAL:
-            case Types.NUMERIC:
-                stmt.setDouble(index + 1,Double.parseDouble(value));
-                break;
-            case Types.INTEGER:
-            case Types.TINYINT:
-            case Types.SMALLINT:
-                stmt.setInt(index + 1, (int) round(Double.parseDouble(value)));
-                break;
-            case Types.LONGVARCHAR:
-            case Types.VARCHAR:
-            case Types.CHAR:
-                stmt.setString(index + 1,value);
-                break;
-            case Types.DATE:
-            case Types.TIME:
-            case Types.TIMESTAMP:
-            default:
-                throw new Exception("Unsupported type");
-        }
-    }
-
-    String getTableName(String userId, String metaTableName){
-        return "_" + userId + "_" + metaTableName;
     }
 
     public String[] createTable(DBContext context, CellRegion range, String userId, String metaTableName,
@@ -155,117 +87,9 @@ public class TableController {
                             insertToTables(context,userId,metaTableName)};
     }
 
-    public ArrayList<Integer> appendTableRows(DBContext dbContext, CellRegion range,
-                                              String tableName,SSheet sheet, List<Integer> schema) throws Exception {
-
-        ArrayList<Integer> oidList = new ArrayList<>();
-        int columnCount = range.getLastColumn() - range.getColumn() + 1;
-        String update = new StringBuffer("INSERT INTO ")
-                .append(tableName)
-                .append(" VALUES (")
-                .append(IntStream.range(0, columnCount).mapToObj(e -> "?").collect(Collectors.joining(",")))
-                .append(") RETURNING oid;")
-                .toString();
-
-        AutoRollbackConnection connection = dbContext.getConnection();
-        try (PreparedStatement stmt = connection.prepareStatement(update)) {
-            for (int i = range.getLastRow() / block_row + 1; i > 0; i--) {
-                int min_row = range.getRow() + (i - 1) * block_row;
-                int max_row = range.getRow() + i * block_row;
-                if (i > range.getLastRow() / block_row) max_row = range.getLastRow();
-                CellRegion work_range = new CellRegion(min_row, range.getColumn(), max_row, range.getLastColumn());
-                Collection<AbstractCellAdv> cells = sheet.getDataModel().getCells(dbContext, work_range)
-                        .stream()
-                        .peek(e -> e.translate(-range.getRow(), -range.getColumn())) // Translate
-                        .collect(Collectors.toList());
-
-                SortedMap<Integer, SortedMap<Integer, AbstractCellAdv>> groupedCells = new TreeMap<>();
-                for (AbstractCellAdv cell : cells) {
-                    SortedMap<Integer, AbstractCellAdv> _row;
-                    _row = groupedCells.get(cell.getRowIndex());
-                    if (_row == null) {
-                        _row = new TreeMap<>();
-                        groupedCells.put(cell.getRowIndex(), _row);
-                    }
-                    _row.put(cell.getColumnIndex(), cell);
-                }
-
-                for (SortedMap<Integer, AbstractCellAdv> tuple : groupedCells.values()) {
-                    for (int j = 0; j < columnCount; j++) {
-                        if (tuple.containsKey(j))
-                            setStmtValue(stmt,j,tuple.get(j).getValue().toString(),schema);
-                        else
-                            stmt.setNull(j + 1, schema.get(j));
-                    }
-
-                    ResultSet resultSet = stmt.executeQuery();
-                    while (resultSet.next())
-                        oidList.add(resultSet.getInt(1));
-                    resultSet.close();
-
-                }
-                // todo: uncomment it:
-//                sheet.getDataModel().deleteCells(dbContext, work_range);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return oidList;
-    }
-
-    String insertToTables(DBContext context, String userId, String metaTableName){
-        AutoRollbackConnection connection = context.getConnection();
-        StringBuilder sharedLinkBuilder = new StringBuilder().append((char)('a'+_random.nextInt(26)))
-            .append(Long.toString(System.currentTimeMillis()+_tableCount.getAndIncrement(), Character.MAX_RADIX));
-        for (int i = 0; i < 10; i++){
-            sharedLinkBuilder.append((char)('A'+_random.nextInt(26)));
-        }
-        String sharedLink =  sharedLinkBuilder.toString();
-        String appendRecord = (new StringBuilder())
-                .append("INSERT INTO ")
-                .append(TABLES)
-                .append(" VALUES ")
-                .append(" (\'" + sharedLink + "\',\'" + metaTableName + "\',\'"
-                        + userId + "\') ")
-                .toString();
 
 
-        try (Statement stmt = connection.createStatement()) {
-            stmt.execute(appendRecord);
-        }catch (SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
-        return sharedLink;
-    }
-
-    String insertToTableSheetLink(DBContext context, CellRegion range, String bookName,
-                                  String sheetName, String tableName){
-        /* add the record to the tables table */
-        AutoRollbackConnection connection = context.getConnection();
-        String tableRange = range.row + "-" + range.column + "-" + range.lastRow + "-" + range.lastColumn;
-        String linkid = ((char)('a'+_random.nextInt(26))) +
-                Long.toString(System.currentTimeMillis()+_tableCount.getAndIncrement(), Character.MAX_RADIX);
-        String appendRecord = (new StringBuilder())
-                .append("INSERT INTO ")
-                .append(TABLESHEETLINK)
-                .append(" VALUES ")
-                .append(" (\'" + linkid + "\',\'" + bookName + "\',\'"
-                        + sheetName + "\',\'" + tableRange + "\',\'" + tableName
-                        + "\'," + "\'empty\'" + "," + "\'empty\'" + ") ")
-                .toString();
-
-
-        try (Statement stmt = connection.createStatement()) {
-            stmt.execute(appendRecord);
-        }catch (SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
-        return linkid;
-    }
-
-    public void linkTable(DBContext context, CellRegion range,
+    public String[] linkTable(DBContext context, CellRegion range,
                                                  String sheetName, String bookName, String tableName) {
 
 //        SBook book = BookBindings.getBookByName(bookName);
@@ -304,7 +128,7 @@ public class TableController {
 //        } catch (SQLException e) {
 //            e.printStackTrace();
 //        }
-
+        return new String[] {};
     }
 
     public void dropTable(DBContext context, String user_id, String metaTableName){
@@ -423,7 +247,7 @@ public class TableController {
                             .append(" FETCH NEXT "+endRow+" ROWS ONLY")
                             .toString();
 
-                    try(PreparedStatement state = connection.prepareStatement(select.toString())){
+                    try(PreparedStatement state = connection.prepareStatement(select)){
                         ResultSet dataSet = state.executeQuery(query);
                         int row = startRow;
                         while(dataSet.next()){
@@ -446,15 +270,173 @@ public class TableController {
         return cells;
     }
 
-    private static class MetaDataBlock {
-        List<String> sheetNames;
-        List<String> bookNames;
-        List<CellRegion> tableRanges;
-
-        MetaDataBlock() {
-            sheetNames = new ArrayList();
-            bookNames = new ArrayList();
-            tableRanges = new ArrayList();
+    private String insertToTables(DBContext context, String userId, String metaTableName){
+        AutoRollbackConnection connection = context.getConnection();
+        StringBuilder sharedLinkBuilder = new StringBuilder().append((char)('a'+_random.nextInt(26)))
+                .append(Long.toString(System.currentTimeMillis()+_tableCount.getAndIncrement(), Character.MAX_RADIX));
+        for (int i = 0; i < 10; i++){
+            sharedLinkBuilder.append((char)('A'+_random.nextInt(26)));
         }
+        String sharedLink =  sharedLinkBuilder.toString();
+        String appendRecord = (new StringBuilder())
+                .append("INSERT INTO ")
+                .append(TABLES)
+                .append(" VALUES ")
+                .append(" (\'" + sharedLink + "\',\'" + metaTableName + "\',\'"
+                        + userId + "\') ")
+                .toString();
+
+
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute(appendRecord);
+        }catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+        return sharedLink;
+    }
+
+    private String insertToTableSheetLink(DBContext context, CellRegion range, String bookName,
+                                          String sheetName, String tableName){
+        /* add the record to the tables table */
+        AutoRollbackConnection connection = context.getConnection();
+        String tableRange = range.row + "-" + range.column + "-" + range.lastRow + "-" + range.lastColumn;
+        String linkid = ((char)('a'+_random.nextInt(26))) +
+                Long.toString(System.currentTimeMillis()+_tableCount.getAndIncrement(), Character.MAX_RADIX);
+        String appendRecord = (new StringBuilder())
+                .append("INSERT INTO ")
+                .append(TABLESHEETLINK)
+                .append(" VALUES ")
+                .append(" (\'" + linkid + "\',\'" + bookName + "\',\'"
+                        + sheetName + "\',\'" + tableRange + "\',\'" + tableName
+                        + "\'," + "\'empty\'" + "," + "\'empty\'" + ") ")
+                .toString();
+
+
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute(appendRecord);
+        }catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+        return linkid;
+    }
+
+    private List<Integer> convertToType(List<String> schema) throws Exception {
+        ArrayList<Integer> result = new ArrayList<>();
+        for (String s:schema){
+            switch (s.toUpperCase()) {
+                case "TEXT":
+                    result.add(Types.VARCHAR);
+                    break;
+                case "INTEGER":
+                    result.add(Types.INTEGER);
+                    break;
+                case "REAL":
+                case "FLOAT":
+                    result.add(Types.FLOAT);
+                    break;
+                case "DATE":
+                    result.add(Types.DATE);
+                    break;
+                case "BOOLEAN":
+                    result.add(Types.BOOLEAN);
+                    break;
+                default:
+                    throw new Exception("Unsupported type");
+
+            }
+        }
+        return result;
+    }
+
+    private void setStmtValue(PreparedStatement stmt, int index, String value, List<Integer> schema) throws Exception {
+        switch (schema.get(index)) {
+            case Types.BOOLEAN:
+                stmt.setBoolean(index + 1,Boolean.parseBoolean(value));
+                break;
+            case Types.BIGINT:
+                stmt.setLong(index + 1,Long.parseLong(value));
+                break;
+            case Types.DECIMAL:
+            case Types.DOUBLE:
+            case Types.FLOAT:
+            case Types.REAL:
+            case Types.NUMERIC:
+                stmt.setDouble(index + 1,Double.parseDouble(value));
+                break;
+            case Types.INTEGER:
+            case Types.TINYINT:
+            case Types.SMALLINT:
+                stmt.setInt(index + 1, (int) round(Double.parseDouble(value)));
+                break;
+            case Types.LONGVARCHAR:
+            case Types.VARCHAR:
+            case Types.CHAR:
+                stmt.setString(index + 1,value);
+                break;
+            case Types.DATE:
+            case Types.TIME:
+            case Types.TIMESTAMP:
+            default:
+                throw new Exception("Unsupported type");
+        }
+    }
+
+    private String getTableName(String userId, String metaTableName){
+        return "_" + userId + "_" + metaTableName;
+    }
+    private ArrayList<Integer> appendTableRows(DBContext dbContext, CellRegion range,
+                                               String tableName, SSheet sheet, List<Integer> schema) throws Exception {
+
+        ArrayList<Integer> oidList = new ArrayList<>();
+        int columnCount = range.getLastColumn() - range.getColumn() + 1;
+        String update = "INSERT INTO " +
+                tableName +
+                " VALUES (" +
+                IntStream.range(0, columnCount).mapToObj(e -> "?").collect(Collectors.joining(",")) +
+                ") RETURNING oid;";
+
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(update)) {
+            int block_row = 100000;
+            for (int i = range.getLastRow() / block_row + 1; i > 0; i--) {
+                int min_row = range.getRow() + (i - 1) * block_row;
+                int max_row = range.getRow() + i * block_row;
+                if (i > range.getLastRow() / block_row) max_row = range.getLastRow();
+                CellRegion work_range = new CellRegion(min_row, range.getColumn(), max_row, range.getLastColumn());
+                Collection<AbstractCellAdv> cells = sheet.getDataModel().getCells(dbContext, work_range)
+                        .stream()
+                        .peek(e -> e.translate(-range.getRow(), -range.getColumn())) // Translate
+                        .collect(Collectors.toList());
+
+                SortedMap<Integer, SortedMap<Integer, AbstractCellAdv>> groupedCells = new TreeMap<>();
+                for (AbstractCellAdv cell : cells) {
+                    SortedMap<Integer, AbstractCellAdv> _row;
+                    _row = groupedCells.computeIfAbsent(cell.getRowIndex(), k -> new TreeMap<>());
+                    _row.put(cell.getColumnIndex(), cell);
+                }
+
+                for (SortedMap<Integer, AbstractCellAdv> tuple : groupedCells.values()) {
+                    for (int j = 0; j < columnCount; j++) {
+                        if (tuple.containsKey(j))
+                            setStmtValue(stmt,j,tuple.get(j).getValue().toString(),schema);
+                        else
+                            stmt.setNull(j + 1, schema.get(j));
+                    }
+
+                    ResultSet resultSet = stmt.executeQuery();
+                    while (resultSet.next())
+                        oidList.add(resultSet.getInt(1));
+                    resultSet.close();
+
+                }
+                // todo: uncomment it:
+//                sheet.getDataModel().deleteCells(dbContext, work_range);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return oidList;
     }
 }
