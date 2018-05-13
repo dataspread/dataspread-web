@@ -100,7 +100,7 @@ public class TableController {
 
         //deleteCells(context, range);
         return new String[]{insertToTableSheetLink(context, range, bookName, sheetName, tableName),
-                insertToTables(context,userId,metaTableName)};
+                getSharedLink(context,userId,metaTableName)};
     }
 
     public void dropTable(DBContext context, String user_id, String metaTableName){
@@ -242,7 +242,7 @@ public class TableController {
         return cells;
     }
 
-    private String insertToTables(DBContext context, String userId, String metaTableName){
+    private String insertToTables(DBContext context, String userId, String metaTableName) throws SQLException {
         AutoRollbackConnection connection = context.getConnection();
         StringBuilder sharedLinkBuilder = new StringBuilder().append((char)('a'+_random.nextInt(26)))
                 .append(Long.toString(System.currentTimeMillis()+_tableCount.getAndIncrement(), Character.MAX_RADIX));
@@ -261,15 +261,30 @@ public class TableController {
 
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(appendRecord);
-        }catch (SQLException e) {
-            e.printStackTrace();
-            return null;
+        }
+        return sharedLink;
+    }
+
+    private String getSharedLink(DBContext context, String userId, String metaTableName) throws SQLException {
+        AutoRollbackConnection connection = context.getConnection();
+        String select = (new StringBuilder())
+                .append("SELECT sharelink")
+                .append(" FROM ")
+                .append(TABLES)
+                .append(" WHERE userid = \'" + userId + "\' AND tablename = \'" + metaTableName + "\'")
+                .toString();
+        String sharedLink = "";
+        try (Statement stmt = connection.createStatement()) {
+            ResultSet rs = stmt.executeQuery(select);
+            if (rs.next()) {
+               sharedLink = rs.getString("sharelink");
+            }
         }
         return sharedLink;
     }
 
     private String insertToTableSheetLink(DBContext context, CellRegion range, String bookName,
-                                          String sheetName, String tableName){
+                                          String sheetName, String tableName) throws SQLException {
         /* add the record to the tables table */
         AutoRollbackConnection connection = context.getConnection();
         String tableRange = range.row + "-" + range.column + "-" + range.lastRow + "-" + range.lastColumn;
@@ -287,9 +302,6 @@ public class TableController {
 
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(appendRecord);
-        }catch (SQLException e) {
-            e.printStackTrace();
-            return null;
         }
         return linkid;
     }

@@ -200,8 +200,8 @@ public class ApiController {
         return ret.toJSONString();
     }
 
-    @RequestMapping(value = "/linkable",
-            method = RequestMethod.GET)
+    @RequestMapping(value = "/linkTable",
+            method = RequestMethod.PUT)
     public String linkTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
         JSONObject ret = new JSONObject();
