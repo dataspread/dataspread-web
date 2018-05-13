@@ -178,7 +178,6 @@ public class ApiController {
                 DBContext context = new DBContext(connection);
                 tableModel.createTable(context, range, "_" + user_id + "_" + table, book, sheet,schema);
                 context.getConnection().commit();
-                context.getConnection().close();
             }
             catch(java.lang.Exception e){
                 e.printStackTrace();
