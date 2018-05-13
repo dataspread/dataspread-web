@@ -3,9 +3,6 @@ package org.zkoss.zss.model.impl.sys;
 import org.model.AutoRollbackConnection;
 import org.model.BlockStore;
 import org.model.DBContext;
-import org.model.DBHandler;
-import org.zkoss.poi.ss.formula.atp.DateParser;
-import org.zkoss.util.Pair;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSemantics;
@@ -14,33 +11,32 @@ import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
 import org.zkoss.zss.model.impl.CellImpl;
 import org.zkoss.zss.model.sys.BookBindings;
-import org.zkoss.zss.model.impl.*;
 
-import java.io.IOException;
-import java.io.Reader;
 import java.sql.*;
 import java.util.*;
-import java.util.logging.Logger;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static java.lang.Math.round;
-import static java.sql.JDBCType.NCLOB;
 
 
-public class NewTableModel {
+public class TableController {
 
-    private int block_row = 100000;
+    private              int           block_row  = 100000;
+    private final static Random        _random    = new Random(System.currentTimeMillis());
+    private final static AtomicInteger _tableCount = new AtomicInteger();
+    final static String TABLES = "tables";
+    final static String TABLESHEETLINK = "sheet_table_link";
 
     BlockStore bs;
-    private MetaDataBlock metaDataBlock;
-    String newTableName;
 
-    public NewTableModel(String bookName, String sheetName, String tableName){
-        this.newTableName = tableName;
-        metaDataBlock = new MetaDataBlock();
-        metaDataBlock.sheetNames.add(sheetName);
-        metaDataBlock.bookNames.add(bookName);
+    static TableController _tableController = new TableController();
+
+    private TableController(){}
+
+    public static TableController getController(){
+        return _tableController;
     }
 
     List<Integer> convertToType(List<String> schema) throws Exception {
@@ -104,11 +100,16 @@ public class NewTableModel {
         }
     }
 
-    public boolean createTable(DBContext context, CellRegion range, String tableName,
+    String getTableName(String userId, String metaTableName){
+        return "_" + userId + "_" + metaTableName;
+    }
+
+    public String[] createTable(DBContext context, CellRegion range, String userId, String metaTableName,
                                String bookName, String sheetName,List<String> schema) throws Exception {
         // todo : sync relationship to mem
 
-        newTableName = tableName.toLowerCase();
+        String tableName = getTableName(userId, metaTableName);
+
         /* First create table then create model */
         /* extract table header row */
         CellRegion tableHeaderRow = new CellRegion(range.row, range.column, range.row, range.lastColumn);
@@ -132,7 +133,7 @@ public class NewTableModel {
         final int[] i = {0};
         String createTable = (new StringBuilder())
                 .append("CREATE TABLE IF NOT EXISTS ")
-                .append(newTableName)
+                .append(tableName)
                 .append(" (")
                 .append(columnList.stream().map(e -> e + " " + schema.get(i[0]++)).collect(Collectors.joining(",")))
                 .append(") WITH OIDS")
@@ -150,7 +151,8 @@ public class NewTableModel {
                 tableName,sheet, convertToType(schema));
 
         //deleteCells(context, tableHeaderRow);
-        return insertToTables(context, range, bookName, sheetName, tableName);
+        return new String[]{insertToTableSheetLink(context, range, bookName, sheetName, tableName),
+                            insertToTables(context,userId,metaTableName)};
     }
 
     public ArrayList<Integer> appendTableRows(DBContext dbContext, CellRegion range,
@@ -211,16 +213,20 @@ public class NewTableModel {
         return oidList;
     }
 
-    boolean insertToTables(DBContext context, CellRegion range, String bookName,
-                                  String sheetName, String tableName){
-        /* add the record to the tables table */
+    String insertToTables(DBContext context, String userId, String metaTableName){
         AutoRollbackConnection connection = context.getConnection();
-        String tableRange = range.row + "-" + range.column + "-" + range.lastRow + "-" + range.lastColumn;
+        StringBuilder sharedLinkBuilder = new StringBuilder().append((char)('a'+_random.nextInt(26)))
+            .append(Long.toString(System.currentTimeMillis()+_tableCount.getAndIncrement(), Character.MAX_RADIX));
+        for (int i = 0; i < 10; i++){
+            sharedLinkBuilder.append((char)('A'+_random.nextInt(26)));
+        }
+        String sharedLink =  sharedLinkBuilder.toString();
         String appendRecord = (new StringBuilder())
                 .append("INSERT INTO ")
-                .append("tables")
+                .append(TABLES)
                 .append(" VALUES ")
-                .append(" (\'" + bookName + "\',\'"+ sheetName + "\',\'" + tableRange + "\',\'" + tableName + "\'," + "\'empty\'" + "," + "\'empty\'" + ") ")
+                .append(" (\'" + sharedLink + "\',\'" + metaTableName + "\',\'"
+                        + userId + "\') ")
                 .toString();
 
 
@@ -228,9 +234,35 @@ public class NewTableModel {
             stmt.execute(appendRecord);
         }catch (SQLException e) {
             e.printStackTrace();
-            return false;
+            return null;
         }
-        return true;
+        return sharedLink;
+    }
+
+    String insertToTableSheetLink(DBContext context, CellRegion range, String bookName,
+                                  String sheetName, String tableName){
+        /* add the record to the tables table */
+        AutoRollbackConnection connection = context.getConnection();
+        String tableRange = range.row + "-" + range.column + "-" + range.lastRow + "-" + range.lastColumn;
+        String linkid = ((char)('a'+_random.nextInt(26))) +
+                Long.toString(System.currentTimeMillis()+_tableCount.getAndIncrement(), Character.MAX_RADIX);
+        String appendRecord = (new StringBuilder())
+                .append("INSERT INTO ")
+                .append(TABLESHEETLINK)
+                .append(" VALUES ")
+                .append(" (\'" + linkid + "\',\'" + bookName + "\',\'"
+                        + sheetName + "\',\'" + tableRange + "\',\'" + tableName
+                        + "\'," + "\'empty\'" + "," + "\'empty\'" + ") ")
+                .toString();
+
+
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute(appendRecord);
+        }catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+        return linkid;
     }
 
     public void linkTable(DBContext context, CellRegion range,
@@ -240,7 +272,7 @@ public class NewTableModel {
 //        SSheet sheet = book.getSheetByName(sheetName);
         // Reduce Range to bounds
 //        Collection<AbstractCellAdv> cells = new ArrayList<>();
-        insertToTables(context,range, bookName,sheetName, tableName);
+        insertToTableSheetLink(context,range, bookName,sheetName, tableName);
 
 //        int startRow = 0, endRow = range.lastRow - range.row;
 //        int startCol = 0, endCol = range.lastColumn - range.column;
@@ -275,10 +307,11 @@ public class NewTableModel {
 
     }
 
-    public void dropTable(DBContext context){
+    public void dropTable(DBContext context, String user_id, String metaTableName){
+        String tableName = getTableName(user_id, metaTableName);
         String dropTable = (new StringBuilder())
                 .append("DROP TABLE ")
-                .append(newTableName)
+                .append(tableName)
                 .toString();
         AutoRollbackConnection connection = context.getConnection();
         try(Statement stmt = connection.createStatement()){
@@ -289,8 +322,8 @@ public class NewTableModel {
 
         String deleteRecords = (new StringBuilder())
                 .append("DELETE FROM ")
-                .append("tables")
-                .append("WHERE tableName = "+newTableName)
+                .append(TABLESHEETLINK)
+                .append("WHERE tableName = " + tableName)
                 .toString();
         try(Statement stmt = connection.createStatement()){
             stmt.execute(deleteRecords);
@@ -314,7 +347,7 @@ public class NewTableModel {
     public void sortTable(DBContext context, String tableName, String attribute, String order) {
         String appendToTables = (new StringBuilder())
                 .append("UPDATE ")
-                .append("tables")
+                .append(TABLESHEETLINK)
                 .append(" SET ")
                 .append("order = " + attribute + " " + order)
                 .append(" WHERE ")
@@ -334,7 +367,7 @@ public class NewTableModel {
     public void filterTable(DBContext context, String tableName, String filter) {
         String appendToTables = (new StringBuilder())
                 .append("UPDATE ")
-                .append("tables")
+                .append(TABLESHEETLINK)
                 .append(" SET ")
                 .append("filter = " + filter)
                 .append(" WHERE ")
@@ -351,7 +384,8 @@ public class NewTableModel {
 
     }
 
-    public Collection<AbstractCellAdv> getCells(DBContext context, CellRegion fetchRange, String sheetName, String bookName) {
+    public Collection<AbstractCellAdv> getCells(DBContext context, CellRegion fetchRange, String sheetName,
+                                                String bookName, String userId, String metaTableName) {
 
         SBook book = BookBindings.getBookByName(bookName);
         SSheet sheet = book.getSheetByName(sheetName);
@@ -360,7 +394,7 @@ public class NewTableModel {
         String select = (new StringBuilder())
                 .append("SELECT *")
                 .append(" FROM ")
-                .append("tables")
+                .append(TABLESHEETLINK)
                 .append(" WHERE sheetName = " + sheet.getSheetName() + " AND bookName = " + book.getBookName())
                 .toString();
 
@@ -382,7 +416,7 @@ public class NewTableModel {
                     String query = (new StringBuilder())
                             .append("SELECT")
                             .append(" FROM ")
-                            .append(newTableName)
+                            .append(getTableName(userId, metaTableName))
                             .append(" WHERE " + filter)
                             .append(" ORDER BY " + order)
                             .append(" OFFSET "+startRow+" ROWS")

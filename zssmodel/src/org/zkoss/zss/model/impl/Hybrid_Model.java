@@ -8,7 +8,6 @@ import org.zkoss.util.Pair;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.model.impl.sys.NewTableModel;
 
 import java.io.IOException;
 import java.io.Reader;

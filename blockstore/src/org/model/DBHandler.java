@@ -111,14 +111,22 @@ public class DBHandler {
                     "  UNIQUE (bookname,sheetname))";
             stmt.execute(createSheetsTable);
 
-            String createDataTable = "CREATE TABLE  IF NOT  EXISTS  tables (" +
+            String createDataTableSheetLink = "CREATE TABLE  IF NOT  EXISTS  sheet_table_link (" +
+                    "linkid  TEXT NOT NULL," +
                     "bookname  TEXT NOT NULL," +
                     "sheetname  TEXT NOT NULL," +
                     "range  TEXT NOT NULL," +
                     "tablename  TEXT NOT NULL," +
                     "filter  TEXT NOT NULL," +
                     "sort TEXT NOT NULL," +
-                    "PRIMARY KEY (tablename))";
+                    "PRIMARY KEY (linkid))";
+            stmt.execute(createDataTableSheetLink);
+
+            String createDataTable = "CREATE TABLE  IF NOT  EXISTS  tables (" +
+                    "sharelink  TEXT NOT NULL," +
+                    "tablename  TEXT NOT NULL," +
+                    "userid  TEXT NOT NULL," +
+                    "PRIMARY KEY (sharelink))";
             stmt.execute(createDataTable);
         } catch (SQLException e) {
             e.printStackTrace();

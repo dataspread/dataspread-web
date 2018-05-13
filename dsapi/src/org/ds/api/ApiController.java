@@ -1,6 +1,5 @@
 package org.ds.api;
 
-import org.omg.Messaging.SYNC_WITH_TRANSPORT;
 import org.zkoss.json.JSONArray;
 import org.zkoss.json.JSONObject;
 import org.model.AutoRollbackConnection;
@@ -12,14 +11,13 @@ import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.sys.BookBindings;
-import org.zkoss.zss.model.impl.sys.NewTableModel;
+import org.zkoss.zss.model.impl.sys.TableController;
 import org.zkoss.zss.model.CellRegion;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
@@ -46,6 +44,8 @@ public class ApiController {
     final String COL = "col";
     final String TABLE_SHEET_ID = "table_sheet_id";
     final String LINK = "link";
+    final String SUCCESS = "success";
+    final String MSG = "msg";
 
     @RequestMapping(value = "/getCell/{book}/{sheet}/{row}/{col}",
             method = RequestMethod.GET)
@@ -153,10 +153,19 @@ public class ApiController {
         }
     }
 
+    String returnFalse(JSONObject ret, Exception e){
+        e.printStackTrace();
+        ret.clear();
+        ret.put(SUCCESS, false);
+        ret.put(MSG, e.getMessage());
+        return ret.toJSONString();
+    }
+
     @RequestMapping(value = "/createTable",
             method = RequestMethod.PUT)
     public String createTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
+        JSONObject ret = new JSONObject();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
             String book = (String)dict.get(BOOK_NAME);
@@ -173,47 +182,67 @@ public class ApiController {
             }
             String user_id = (String)dict.get(USER_ID);
             CellRegion range = new CellRegion(row1, col1, row2, col2);
-            NewTableModel tableModel = new NewTableModel( book, sheet, table);
+            TableController tableModel = TableController.getController();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
-                tableModel.createTable(context, range, "_" + user_id + "_" + table, book, sheet,schema);
+                String[] links = tableModel.createTable(context, range, user_id, table, book, sheet,schema);
                 context.getConnection().commit();
+                ret.put(SUCCESS, true);
+                ret.put(TABLE_SHEET_ID, links[0]);
+                ret.put(LINK, links[1]);
             }
             catch(java.lang.Exception e){
-                e.printStackTrace();
+                return returnFalse(ret,e);
             }
 
         }
         catch (java.lang.Exception e){
-            System.out.println(value);
-            System.out.println(((JSONObject)paser.parse(value)).get(SCHEMA).getClass().getName());
-            e.printStackTrace();
-            return value;
+            return returnFalse(ret,e);
         }
-        return value;
+
+        return ret.toJSONString();
     }
 
-    @RequestMapping(value = "/linkable/{book}/{sheet}/{table}/{row1}-{row2}/{col1}-{col2}",
+    @RequestMapping(value = "/linkable/",
             method = RequestMethod.GET)
-    public Boolean linkTable(@PathVariable String book,
-                               @PathVariable String sheet,
-                               @PathVariable String table,
-                               @PathVariable int row1,
-                               @PathVariable int row2,
-                               @PathVariable int col1,
-                               @PathVariable int col2){
-        CellRegion range = new CellRegion(row1, row2, col1, col2);
-        NewTableModel tableModel = new NewTableModel( book, sheet, table);
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
-            DBContext context = new DBContext(connection);
-            tableModel.linkTable(context, range, table, book, sheet);
-            context.getConnection().commit();
-            context.getConnection().close();
+    public String linkTable(@RequestBody String value){
+        JSONParser paser = new JSONParser();
+        JSONObject ret = new JSONObject();
+        try {
+            JSONObject dict = (JSONObject)paser.parse(value);
+            String book = (String)dict.get(BOOK_NAME);
+            String sheet = (String)dict.get(SHEET_NAME);
+            String table = (String)dict.get(TABLE_NAME);
+            int row1 = (int)dict.get(ROW_1);
+            int row2 = (int)dict.get(ROW_2);
+            int col1 = (int)dict.get(COL_1);
+            int col2 = (int)dict.get(COL_2);
+            JSONArray json_schema = (JSONArray) dict.get(SCHEMA);
+            List<String> schema = new ArrayList<>();
+            for (int i = 0; i <= col2 - col1; i++){
+                schema.add((String)json_schema.get(i));
+            }
+            String user_id = (String)dict.get(USER_ID);
+            CellRegion range = new CellRegion(row1, col1, row2, col2);
+            TableController tableModel = TableController.getController();
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+                DBContext context = new DBContext(connection);
+                String[] links = tableModel.createTable(context, range, user_id, table, book, sheet,schema);
+                context.getConnection().commit();
+                ret.put(SUCCESS, true);
+                ret.put(TABLE_SHEET_ID, links[0]);
+                ret.put(LINK, links[1]);
+            }
+            catch(java.lang.Exception e){
+                return returnFalse(ret,e);
+            }
+
         }
-        catch(java.lang.Exception e){
-            e.printStackTrace();
+        catch (java.lang.Exception e){
+            return returnFalse(ret,e);
         }
-        return true;
+
+        return ret.toJSONString();
     }
 
     @RequestMapping(value = "/sortTable/{table}/{attribute}/{order}",
@@ -221,7 +250,7 @@ public class ApiController {
     public Boolean sortTable(@PathVariable String table,
                              @PathVariable String attribute,
                              @PathVariable String order) {
-        String query = "SELECT tableName FROM tables LIMIT 1";
+        String query = "SELECT tableName FROM sheet_table_link LIMIT 1";
         String book = "";
         String sheet = "";
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
@@ -234,7 +263,7 @@ public class ApiController {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        NewTableModel tableModel = new NewTableModel(book, sheet, table);
+        TableController tableModel = TableController.getController();
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
             DBContext context = new DBContext(connection);
             tableModel.sortTable(context, table, attribute, order);
@@ -248,7 +277,7 @@ public class ApiController {
             method = RequestMethod.GET)
     public Boolean filterTable(  @PathVariable String table,
                                  @PathVariable String filter) {
-        String query = "SELECT tableName FROM tables LIMIT 1";
+        String query = "SELECT tableName FROM sheet_table_link LIMIT 1";
         String book = "";
         String sheet = "";
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
@@ -261,7 +290,7 @@ public class ApiController {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        NewTableModel tableModel = new NewTableModel(book, sheet, table);
+        TableController tableModel = TableController.getController();
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
             DBContext context = new DBContext(connection);
             tableModel.filterTable(context, table, filter);
