@@ -35,7 +35,8 @@ public class NewTableModel {
         metaDataBlock.bookNames.add(bookName);
     }
 
-    public boolean createTable(DBContext context, CellRegion range, String tableName, String bookName, String sheetName) throws Exception {
+    public boolean createTable(DBContext context, CellRegion range, String tableName,
+                               String bookName, String sheetName,List<String> schema) throws Exception {
 
         newTableName = tableName.toLowerCase();
         /* First create table then create model */
@@ -58,12 +59,12 @@ public class NewTableModel {
         if (columnList.stream().filter(e->!Character.isLetter(e.charAt(0))).findFirst().isPresent())
             throw new Exception("Column names should start with a letter.");
 
-
+        final int[] i = {0};
         String createTable = (new StringBuilder())
                 .append("CREATE TABLE IF NOT EXISTS ")
                 .append(newTableName)
                 .append(" (")
-                .append(columnList.stream().map(e -> e + " TEXT").collect(Collectors.joining(",")))
+                .append(columnList.stream().map(e -> e + " " + schema.get(i[0]++)).collect(Collectors.joining(",")))
                 .append(") WITH OIDS")
                 .toString();
 
@@ -71,6 +72,7 @@ public class NewTableModel {
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(createTable);
         }catch (SQLException e) {
+            System.out.println(createTable);
             e.printStackTrace();
         }
 
@@ -80,7 +82,8 @@ public class NewTableModel {
         return insertToTables(context, range, bookName, sheetName, tableName);
     }
 
-    public boolean insertToTables(DBContext context, CellRegion range, String bookName, String sheetName, String tableName){
+    public boolean insertToTables(DBContext context, CellRegion range, String bookName,
+                                  String sheetName, String tableName){
         /* add the record to the tables table */
         AutoRollbackConnection connection = context.getConnection();
         String tableRange = range.row + "-" + range.column + "-" + range.lastRow + "-" + range.lastColumn;

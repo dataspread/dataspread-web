@@ -1,5 +1,7 @@
 package org.ds.api;
 
+import org.omg.Messaging.SYNC_WITH_TRANSPORT;
+import org.zkoss.json.JSONArray;
 import org.zkoss.json.JSONObject;
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
@@ -164,11 +166,17 @@ public class ApiController {
             int row2 = (int)dict.get(ROW_2);
             int col1 = (int)dict.get(COL_1);
             int col2 = (int)dict.get(COL_2);
+            JSONArray json_schema = (JSONArray) dict.get(SCHEMA);
+            List<String> schema = new ArrayList<>();
+            for (int i = 0; i <= col2 - col1; i++){
+                schema.add((String)json_schema.get(i));
+            }
+            String user_id = (String)dict.get(USER_ID);
             CellRegion range = new CellRegion(row1, col1, row2, col2);
             NewTableModel tableModel = new NewTableModel( book, sheet, table);
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
-                tableModel.createTable(context, range, table, book, sheet);
+                tableModel.createTable(context, range, "_" + user_id + "_" + table, book, sheet,schema);
                 context.getConnection().commit();
                 context.getConnection().close();
             }
@@ -179,6 +187,7 @@ public class ApiController {
         }
         catch (java.lang.Exception e){
             System.out.println(value);
+            System.out.println(((JSONObject)paser.parse(value)).get(SCHEMA).getClass().getName());
             e.printStackTrace();
             return value;
         }
