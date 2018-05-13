@@ -44,8 +44,7 @@ public class ApiController {
     final String COL = "col";
     final String TABLE_SHEET_ID = "table_sheet_id";
     final String LINK = "link";
-    final String SUCCESS = "success";
-    final String MSG = "msg";
+    final String MSG = "error_message";
 
     @RequestMapping(value = "/getCell/{book}/{sheet}/{row}/{col}",
             method = RequestMethod.GET)
@@ -156,7 +155,6 @@ public class ApiController {
     String returnFalse(JSONObject ret, Exception e){
         e.printStackTrace();
         ret.clear();
-        ret.put(SUCCESS, false);
         ret.put(MSG, e.getMessage());
         return ret.toJSONString();
     }
@@ -187,7 +185,6 @@ public class ApiController {
                 DBContext context = new DBContext(connection);
                 String[] links = tableModel.createTable(context, range, user_id, table, book, sheet,schema);
                 context.getConnection().commit();
-                ret.put(SUCCESS, true);
                 ret.put(TABLE_SHEET_ID, links[0]);
                 ret.put(LINK, links[1]);
             }
@@ -203,7 +200,7 @@ public class ApiController {
         return ret.toJSONString();
     }
 
-    @RequestMapping(value = "/linkable/",
+    @RequestMapping(value = "/linkable",
             method = RequestMethod.GET)
     public String linkTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
@@ -217,19 +214,13 @@ public class ApiController {
             int row2 = (int)dict.get(ROW_2);
             int col1 = (int)dict.get(COL_1);
             int col2 = (int)dict.get(COL_2);
-            JSONArray json_schema = (JSONArray) dict.get(SCHEMA);
-            List<String> schema = new ArrayList<>();
-            for (int i = 0; i <= col2 - col1; i++){
-                schema.add((String)json_schema.get(i));
-            }
             String user_id = (String)dict.get(USER_ID);
             CellRegion range = new CellRegion(row1, col1, row2, col2);
             TableController tableModel = TableController.getController();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
-                String[] links = tableModel.createTable(context, range, user_id, table, book, sheet,schema);
+                String[] links = tableModel.linkTable(context, range, user_id, table, book, sheet);
                 context.getConnection().commit();
-                ret.put(SUCCESS, true);
                 ret.put(TABLE_SHEET_ID, links[0]);
                 ret.put(LINK, links[1]);
             }

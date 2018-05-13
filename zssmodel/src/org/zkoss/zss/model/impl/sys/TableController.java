@@ -82,6 +82,8 @@ public class TableController {
         appendTableRows(context,new CellRegion(range.row + 1, range.column, range.lastRow, range.lastColumn),
                 tableName,sheet, convertToType(schema));
 
+        // todo: uncomment it
+
         //deleteCells(context, tableHeaderRow);
         return new String[]{insertToTableSheetLink(context, range, bookName, sheetName, tableName),
                             insertToTables(context,userId,metaTableName)};
@@ -89,46 +91,16 @@ public class TableController {
 
 
 
-    public String[] linkTable(DBContext context, CellRegion range,
-                                                 String sheetName, String bookName, String tableName) {
+    public String[] linkTable(DBContext context, CellRegion range, String userId, String metaTableName,
+                              String bookName, String sheetName) throws Exception {
+        // todo : sync relationship to mem
+        String tableName = getTableName(userId, metaTableName);
 
-//        SBook book = BookBindings.getBookByName(bookName);
-//        SSheet sheet = book.getSheetByName(sheetName);
-        // Reduce Range to bounds
-//        Collection<AbstractCellAdv> cells = new ArrayList<>();
-        insertToTableSheetLink(context,range, bookName,sheetName, tableName);
+        // todo: uncomment it
 
-//        int startRow = 0, endRow = range.lastRow - range.row;
-//        int startCol = 0, endCol = range.lastColumn - range.column;
-//
-//        String query = (new StringBuilder())
-//                .append("SELECT")
-//                .append(" FROM ")
-//                .append(newTableName)
-//                .append(" OFFSET "+startRow+" ROWS")
-//                .append(" FETCH NEXT "+endRow+" ROWS ONLY")
-//                .toString();
-//
-//        AutoRollbackConnection connection = context.getConnection();
-//
-//        try(Statement state = connection.createStatement()){
-//            ResultSet dataSet = state.executeQuery(query);
-//            int row = 0;
-//            while(dataSet.next()){
-//                int col = startCol;
-//                for( int i = 0; i < (endCol - startCol); i++){
-//                    byte[] data = dataSet.getBytes(i);
-//                    AbstractCellAdv cell = CellImpl.fromBytes(sheet, row, col, data);
-//                    cell.setSemantics(SSemantics.Semantics.TABLE_CONTENT);
-//                    cells.add(cell);
-//                    col++;
-//                }
-//                row++;
-//            }
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
-        return new String[] {};
+        //deleteCells(context, range);
+        return new String[]{insertToTableSheetLink(context, range, bookName, sheetName, tableName),
+                insertToTables(context,userId,metaTableName)};
     }
 
     public void dropTable(DBContext context, String user_id, String metaTableName){
