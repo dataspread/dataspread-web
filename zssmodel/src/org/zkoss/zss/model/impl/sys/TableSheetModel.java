@@ -84,9 +84,6 @@ public class TableSheetModel {
             /* Assume an int array for now */
             Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds.toArray());
             stmt.setArray(1, inArrayRow);
-
-            System.out.println(stmt.toString());
-
             ResultSet rs = stmt.executeQuery();
 
             if (includeHeader) {

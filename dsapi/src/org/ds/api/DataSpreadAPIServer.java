@@ -41,8 +41,8 @@ public class DataSpreadAPIServer extends SpringBootServletInitializer {
 //            e.printStackTrace();
 //        }
 
-//		SpringApplication.run(DataSpreadAPIServer.class, args);
-        DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
+		SpringApplication.run(DataSpreadAPIServer.class, args);
+//        DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
 //        PosMapping mapping = new CountedBTree(dbContext, "test_btree");
 //        ArrayList<Integer> ids = new ArrayList<>();
 //        ids.add(666);
