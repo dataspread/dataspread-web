@@ -26,6 +26,9 @@ import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.poi.ss.formula.eval.EvaluationException;
 import org.zkoss.poi.ss.formula.eval.ValueEval;
+import org.zkoss.poi.ss.formula.ptg.AreaPtg;
+import org.zkoss.poi.ss.formula.ptg.Ptg;
+import org.zkoss.poi.ss.formula.ptg.RefPtg;
 import org.zkoss.poi.ss.usermodel.ZssContext;
 import org.zkoss.poi.util.Internal;
 import org.zkoss.zss.model.*;
@@ -42,10 +45,7 @@ import org.zkoss.zss.model.util.Validations;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.Locale;
+import java.util.*;
 import java.util.logging.Logger;
 //import org.zkoss.zss.ngmodel.InvalidateModelValueException;
 
@@ -130,6 +130,40 @@ public class CellImpl extends AbstractCellAdv {
 
 	private static boolean valueEquals(Object val1, Object val2) {
 		return val1 == val2 || (val1 != null && val1.equals(val2));
+	}
+
+	// Get a list of cells
+	public Collection<Ref> getReferredCells()
+	{
+		Collection<Ref> ret = new ArrayList<>();
+		FormulaExpression formulaExpression = getFormulaExpression();
+		if (formulaExpression==null)
+			return null;
+
+		Ptg[] ptgs = formulaExpression.getPtgs();
+		for (int i=0;i<ptgs.length;i++)
+		{
+			Ptg ptg = ptgs[i];
+			if (ptg instanceof RefPtg) {
+				RefPtg refPtg = (RefPtg) ptg;
+				ret.add(new RefImpl(getSheet().getBook().getBookName(), getSheet().getSheetName(),
+						refPtg.getRow(), refPtg.getColumn()));
+			}
+			else if (ptg instanceof AreaPtg) {
+				AreaPtg areaPtg = (AreaPtg) ptg;
+				ret.add(new RefImpl(getSheet().getBook().getBookName(), getSheet().getSheetName(),
+						areaPtg.getFirstRow(), areaPtg.getFirstColumn(),
+						areaPtg.getLastRow(), areaPtg.getLastColumn()));
+			}
+		}
+		return ret;
+	}
+
+	public int getComputeCost()
+	{
+		return getReferredCells().stream().map(e->new CellRegion(e))
+				.mapToInt(e->e.getColumnCount())
+				.sum();
 	}
 
 	@Override
@@ -271,7 +305,7 @@ public class CellImpl extends AbstractCellAdv {
 
 		// Check if it is dirty.
 		int dirtyTrxId = DirtyManager.dirtyManagerInstance.getDirtyTrxId(getRef());
-		if (trxId>=dirtyTrxId && _formulaResultValue!=null)
+		if (trxId>dirtyTrxId && _formulaResultValue!=null)
 		{
 			// Formula already computed.
 			return;
@@ -642,6 +676,11 @@ public class CellImpl extends AbstractCellAdv {
 		OptFields opts = getOpts(false);
 		if (opts == null) return;
 		opts._comment = null;
+	}
+
+	@Override
+	public CellRegion getCellRegion() {
+		return new CellRegion(getRowIndex(), getColumnIndex());
 	}
 
 	// TODO: Mangesh - Implement shifting logic for formaule refrence

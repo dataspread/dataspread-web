@@ -34,6 +34,9 @@ public abstract class Model {
             case HYBRID_Model:
                 model = new Hybrid_Model(context, sheet, tableName);
                 break;
+            case RCV_Model_Simplified:
+                model = new RCV_Model_Simplified(context, sheet, tableName);
+                break;
             case TOM_Model:
                 /* One tom instance for a table */
                 model = TOM_Mapping.instance.createTOMModel(context, tableName);
@@ -109,6 +112,6 @@ public abstract class Model {
 
     //
     public enum ModelType {
-        ROM_Model, COM_Model, RCV_Model, HYBRID_Model, TOM_Model
+        ROM_Model, COM_Model, RCV_Model, HYBRID_Model, TOM_Model, RCV_Model_Simplified
     }
 }
