@@ -31,7 +31,7 @@ public class TableSheetModel {
     final static String FILTER = "order";
     final static String ORDER = "filter";
 
-    PosMapping rowMapping;
+    PosMapping rowMapping, colMapping;
     String linkId;
 //    String sheetName, String tableName,
     TableSheetModel(DBContext context, String linkId){
@@ -39,11 +39,23 @@ public class TableSheetModel {
 //        this.tableName = tableName;
         this.linkId = linkId;
         rowMapping = new CountedBTree(context, "LINK_" + linkId + "_row_idx");
-//        colMapping = new CountedBTree(context, "LINK_" + linkId + "_col_idx");
+        colMapping = new CountedBTree(context, "LINK_" + linkId + "_col_idx");
+    }
+
+    TableSheetModel(DBContext context, String linkId, CellRegion range){
+        this.linkId = linkId;
+        rowMapping = new CountedBTree(context, "LINK_" + linkId + "_row_idx");
+        colMapping = new CountedBTree(context, "LINK_" + linkId + "_col_idx");
+        ArrayList<Integer> columnids = new ArrayList<>();
+        for (int i = 0; i < range.getLastColumn() - range.getColumn() + 1; i++){
+            columnids.add(i);
+        }
+        colMapping.insertIDs(context, 0, columnids);
     }
 
     public void initualizeMapping(DBContext context, ArrayList<Integer> oidList){
-        rowMapping.deleteIDs(context, 0, rowMapping.size(context));
+        rowMapping.dropSchema(context);
+        rowMapping = new CountedBTree(context, "LINK_" + linkId + "_row_idx");
         rowMapping.insertIDs(context, 0,oidList);
     }
 
@@ -92,7 +104,8 @@ public class TableSheetModel {
             if (includeHeader) {
                 for (int i = fetchRegion.column; i <= fetchRegion.lastColumn; i++){
                     JSONArray cell = new JSONArray();
-                    cell.add(rs.getMetaData().getColumnLabel(i + 2));
+                    int index = (int) colMapping.getIDs(context,i,1).get(0);
+                    cell.add(rs.getMetaData().getColumnLabel(index + 2));
                     cell.add(rowOffset);
                     cell.add(colOffset + i);
                     labels.add(cell);
@@ -109,8 +122,10 @@ public class TableSheetModel {
                 attributeCells.add(attributeCell);
                 JSONObject column = new JSONObject();
                 attributes.add(column);
-                column.put(TYPE, typeIdToString(rs.getMetaData().getColumnType(i + 2)));
-                schema.add(rs.getMetaData().getColumnType(i + 2));
+                int index = (int) colMapping.getIDs(context,i,1).get(0);
+                int type = rs.getMetaData().getColumnType(index + 2);
+                column.put(TYPE, typeIdToString(type));
+                schema.add(type);
                 column.put(VALUES, attributeCell);
             }
             while (rs.next()) {
@@ -119,7 +134,8 @@ public class TableSheetModel {
 
                 for (int i = fetchRegion.column; i <= fetchRegion.lastColumn; i++) {
                     JSONArray cell = new JSONArray();
-                    cell.add(getValue(rs,i, fetchRegion.column, schema));
+                    int index = (int) colMapping.getIDs(context,i,1).get(0);
+                    cell.add(getValue(rs,index, schema.get(i - fetchRegion.column)));
                     cell.add(rowOffset + row);
                     cell.add(colOffset + i);
                     attributeCells.get(i - fetchRegion.column).add(cell);
@@ -133,8 +149,16 @@ public class TableSheetModel {
         return ret;
     }
 
-    private Object getValue(ResultSet rs, int index, int offset, List<Integer> schema) throws Exception {
-        switch (schema.get(index - offset)) {
+    void deleteRows(DBContext context, int row, int count){
+        rowMapping.deleteIDs(context, row, count);
+    }
+
+    void deleteCols(DBContext context, int col, int count){
+        colMapping.deleteIDs(context, col, count);
+    }
+
+    private Object getValue(ResultSet rs, int index, int type) throws Exception {
+        switch (type) {
             case Types.BOOLEAN:
                 return rs.getBoolean(index + 2);
             case Types.BIGINT:
@@ -200,5 +224,6 @@ public class TableSheetModel {
     }
     public void drop(DBContext context){
         rowMapping.dropSchema(context);
+        colMapping.dropSchema(context);
     }
 }

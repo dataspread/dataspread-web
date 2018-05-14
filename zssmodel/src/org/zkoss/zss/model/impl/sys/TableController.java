@@ -194,12 +194,62 @@ public class TableController {
         //Empty rows?
     }
 
-    public void deleteRows(DBContext context, int row, int count){
-        //Need pos mapping
+    public void deleteRows(DBContext context, int row, int count, String bookName, String sheetName
+                           ) throws SQLException {
+        String select = selectAllFromSheet(sheetName, bookName);
+        CellRegion deleteregion = new CellRegion(row,0,row + count - 1,Integer.MAX_VALUE);
+        AutoRollbackConnection connection = context.getConnection();
+        try (Statement stmt = connection.createStatement()) {
+            ResultSet rs = stmt.executeQuery(select);
+            while (rs.next()) {
+                String tableRange = rs.getString("range");
+                String[] stringRowCol = tableRange.split("-");
+                Integer[] rowcol = {Integer.parseInt(stringRowCol[0]),
+                        Integer.parseInt(stringRowCol[1]),
+                        Integer.parseInt(stringRowCol[2]),
+                        Integer.parseInt(stringRowCol[3])};
+
+                CellRegion range = new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
+                if (range.overlaps(deleteregion)){
+                    CellRegion overlap = range.getOverlap(deleteregion);
+                    String linkId = rs.getString("linkid");
+                    if (overlap.getRow() == range.getRow()){
+                        unLinkTable(context,linkId);
+                    }
+                    else {
+                        overlap = overlap.shiftedRange(-rowcol[0] - 1, -rowcol[1]);
+                        _models.get(linkId).deleteRows(context, overlap.getRow(), overlap.getRowCount());
+                    }
+                }
+            }
+        }
     }
 
-    public void deleteTableColumns(DBContext dbContext, int col, int count) {
-        //Need pos mapping
+    public void deleteCols(DBContext context, int col, int count, String sheetName,
+                           String bookName) throws SQLException {
+        String select = selectAllFromSheet(sheetName, bookName);
+
+        CellRegion deleteregion = new CellRegion(0,col,Integer.MAX_VALUE,col + count - 1);
+        AutoRollbackConnection connection = context.getConnection();
+        try (Statement stmt = connection.createStatement()) {
+            ResultSet rs = stmt.executeQuery(select);
+            while (rs.next()) {
+                String tableRange = rs.getString("range");
+                String[] stringRowCol = tableRange.split("-");
+                Integer[] rowcol = {Integer.parseInt(stringRowCol[0]),
+                        Integer.parseInt(stringRowCol[1]),
+                        Integer.parseInt(stringRowCol[2]),
+                        Integer.parseInt(stringRowCol[3])};
+
+                CellRegion range = new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
+                if (range.overlaps(deleteregion)){
+                    CellRegion overlap = range.getOverlap(deleteregion);
+                    overlap = overlap.shiftedRange(-rowcol[0], -rowcol[1]);
+                    String linkId = rs.getString("linkid");
+                    _models.get(linkId).deleteCols(context, overlap.getColumn(), overlap.getColumnCount());
+                }
+            }
+        }
     }
 
     public void reorderTable(DBContext context, String tableSheetId, String order) throws SQLException {
@@ -250,13 +300,7 @@ public class TableController {
         SBook book = BookBindings.getBookByName(bookName);
         SSheet sheet = book.getSheetByName(sheetName);
         // Reduce Range to bounds
-        Collection<AbstractCellAdv> cells = new ArrayList<>();
-        String select = (new StringBuilder())
-                .append("SELECT *")
-                .append(" FROM ")
-                .append(TABLESHEETLINK)
-                .append(" WHERE sheetName = \'" + sheet.getSheetName() + "\' AND bookName = \'" + book.getBookName() + "\'")
-                .toString();
+        String select = selectAllFromSheet(sheetName, bookName);
 
         JSONArray ret = new JSONArray();
 
@@ -285,40 +329,6 @@ public class TableController {
 
                 }
 
-//                if(fetchRange.overlaps(range)){
-//                    String order = rs.getString("order");
-//                    String filter = rs.getString("filter");
-//                    CellRegion overlap = fetchRange.getOverlap(range);
-//                    int startRow = overlap.row - range.row;
-//                    int endRow = overlap.lastRow - range.lastRow;
-//                    int startCol = Math.max(overlap.column, range.column);
-//                    int endCol = Math.min(overlap.lastColumn, range.lastColumn);
-//                    String query = (new StringBuilder())
-//                            .append("SELECT")
-//                            .append(" FROM ")
-//                            .append("todo") // todo
-//                            .append(" WHERE " + filter)
-//                            .append(" ORDER BY " + order)
-//                            .append(" OFFSET "+startRow+" ROWS")
-//                            .append(" FETCH NEXT "+endRow+" ROWS ONLY")
-//                            .toString();
-//
-//                    try(PreparedStatement state = connection.prepareStatement(select)){
-//                        ResultSet dataSet = state.executeQuery(query);
-//                        int row = startRow;
-//                        while(dataSet.next()){
-//                            int col = startCol;
-//                            for( int i = 0; i < (endCol - startCol); i++){
-//                                byte[] data = dataSet.getBytes(i);
-//                                AbstractCellAdv cell = CellImpl.fromBytes(sheet, row, col, data);
-//                                cell.setSemantics(SSemantics.Semantics.TABLE_CONTENT);
-//                                cells.add(cell);
-//                                col++;
-//                            }
-//                            row++;
-//                        }
-//                    }
-//                }
             }
         }catch (SQLException e) {
             e.printStackTrace();
@@ -387,7 +397,7 @@ public class TableController {
 
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(appendRecord);
-            _models.put(linkid, new TableSheetModel(context, linkid));
+            _models.put(linkid, new TableSheetModel(context, linkid, range));
         }
         return linkid;
     }
@@ -565,8 +575,22 @@ public class TableController {
                         oid_list.add(oids.getInt(1));
                     }
                 }
+
             }
         }
         _models.get(linkId).initualizeMapping(context, oid_list);
+    }
+
+    private String selectAllFromSheet(String sheetName, String bookName){
+        StringBuilder select = new StringBuilder()
+                .append("SELECT *")
+                .append(" FROM ")
+                .append(TABLESHEETLINK)
+                .append(" WHERE sheetName = \'")
+                .append(sheetName)
+                .append("\' AND bookName = \'")
+                .append(bookName)
+                .append("\'");
+        return select.toString();
     }
 }

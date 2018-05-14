@@ -28,14 +28,12 @@ public class ApiController {
     final String SCHEMA = "schema";
     final String FILTER = "filter";
     final String ATTRIBUTE_ORDER_PAIR = "attribute_order_pair";
-    final String BOOK_ID = "book_id";
     final String SHEET_NAME = "sheet_name";
     final String ROW_1 = "row_1";
     final String ROW_2 = "row_2";
     final String COL_1 = "col_1";
     final String COL_2 = "col_2";
 
-    final String DATA = "data";
     final String USER_ID = "user_id";
     final String TABLE_NAME = "table_name";
     final String ROW = "row";
@@ -44,6 +42,7 @@ public class ApiController {
     final String LINK = "link";
     final String MSG = "error_message";
     final String TABLE_CELLS = "table_cells";
+    final String COUNT = "count";
 
     @RequestMapping(value = "/getCell/{book}/{sheet}/{row}/{col}",
             method = RequestMethod.GET)
@@ -390,5 +389,64 @@ public class ApiController {
 
         return ret.toJSONString();
     }
+
+    @RequestMapping(value = "/deleteRows",
+            method = RequestMethod.PUT)
+    public String deleteRows(@RequestBody String value){
+        JSONParser paser = new JSONParser();
+        JSONObject ret = new JSONObject();
+        try {
+            JSONObject dict = (JSONObject)paser.parse(value);
+            String book = (String)dict.get(BOOK_NAME);
+            String sheet = (String)dict.get(SHEET_NAME);
+            int row = (int)dict.get(ROW);
+            int count = (int)dict.get(COUNT);
+            TableController tableModel = TableController.getController();
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+                DBContext context = new DBContext(connection);
+                tableModel.deleteRows(context,row, count, book,sheet);
+                context.getConnection().commit();
+            }
+            catch(java.lang.Exception e){
+                return returnFalse(ret,e);
+            }
+
+        }
+        catch (java.lang.Exception e){
+            return returnFalse(ret,e);
+        }
+
+        return ret.toJSONString();
+    }
+
+    @RequestMapping(value = "/deleteCols",
+            method = RequestMethod.PUT)
+    public String deleteCols(@RequestBody String value){
+        JSONParser paser = new JSONParser();
+        JSONObject ret = new JSONObject();
+        try {
+            JSONObject dict = (JSONObject)paser.parse(value);
+            String book = (String)dict.get(BOOK_NAME);
+            String sheet = (String)dict.get(SHEET_NAME);
+            int col = (int)dict.get(COL);
+            int count = (int)dict.get(COUNT);
+            TableController tableModel = TableController.getController();
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+                DBContext context = new DBContext(connection);
+                tableModel.deleteCols(context,col, count, book,sheet);
+                context.getConnection().commit();
+            }
+            catch(java.lang.Exception e){
+                return returnFalse(ret,e);
+            }
+
+        }
+        catch (java.lang.Exception e){
+            return returnFalse(ret,e);
+        }
+
+        return ret.toJSONString();
+    }
+
 
 }
