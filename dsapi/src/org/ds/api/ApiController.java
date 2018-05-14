@@ -235,8 +235,7 @@ public class ApiController {
         return ret.toJSONString();
     }
 
-    @RequestMapping(value = "/unlinkTable",
-            method = RequestMethod.PUT)
+    @RequestMapping(value = "/unlinkTable",method = RequestMethod.PUT)
     public String unlinkTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
         JSONObject ret = new JSONObject();
@@ -263,8 +262,7 @@ public class ApiController {
     }
 
 
-    @RequestMapping(value = "/getTableCells",
-            method = RequestMethod.PUT)
+    @RequestMapping(value = "/getTableCells",method = RequestMethod.PUT)
     public String getTableCells(@RequestBody String value){
         JSONParser paser = new JSONParser();
         JSONObject ret = new JSONObject();
@@ -295,8 +293,7 @@ public class ApiController {
         return ret.toJSONString();
     }
 
-    @RequestMapping(value = "/dropTable",
-            method = RequestMethod.PUT)
+    @RequestMapping(value = "/dropTable",method = RequestMethod.PUT)
     public String dropTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
         JSONObject ret = new JSONObject();
@@ -323,57 +320,75 @@ public class ApiController {
         return ret.toJSONString();
     }
 
-    @RequestMapping(value = "/sortTable/{table}/{attribute}/{order}",
-            method = RequestMethod.GET)
-    public Boolean reorderTable(@PathVariable String table,
-                                @PathVariable String attribute,
-                                @PathVariable String order) {
-        String query = "SELECT tableName FROM sheet_table_link LIMIT 1";
-        String book = "";
-        String sheet = "";
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query);
-             ResultSet rs = statement.executeQuery()) {
-            while (rs.next()) {
-                book = rs.getString("bookname");
-                sheet = rs.getString("sheetname");
+    @RequestMapping(value = "/reorderTable",
+            method = RequestMethod.PUT)
+    public String reorderTable(@RequestBody String value){
+        JSONParser paser = new JSONParser();
+        JSONObject ret = new JSONObject();
+        try {
+            JSONObject dict = (JSONObject)paser.parse(value);
+            String tableSheetId= (String) dict.get(TABLE_SHEET_ID);
+            JSONArray attributeOrder= (JSONArray) dict.get(ATTRIBUTE_ORDER_PAIR);
+            StringBuilder reorderbuilder = new StringBuilder();
+            for (Object object:attributeOrder){
+                if (reorderbuilder.length() > 0){
+                    reorderbuilder.append(',');
+                }
+                reorderbuilder.append(((JSONArray)object).get(0)).append(" ").append(((JSONArray)object).get(1));
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
+
+            TableController tableModel = TableController.getController();
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+                DBContext context = new DBContext(connection);
+                tableModel.reorderTable(context, tableSheetId, reorderbuilder.toString());
+                context.getConnection().commit();
+            }
+            catch(java.lang.Exception e){
+                return returnFalse(ret,e);
+            }
+
         }
-        TableController tableModel = TableController.getController();
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
-            DBContext context = new DBContext(connection);
-            tableModel.reorderTable(context, table, attribute, order);
-            context.getConnection().commit();
-            context.getConnection().close();
+        catch (java.lang.Exception e){
+            return returnFalse(ret,e);
         }
-        return true;
+
+        return ret.toJSONString();
     }
 
-    @RequestMapping(value = "/filterTable/{table}/{filter}/{row1}-{row2}/{col1}-{col2}",
-            method = RequestMethod.GET)
-    public Boolean filterTable(  @PathVariable String table,
-                                 @PathVariable String filter) {
-        String query = "SELECT tableName FROM sheet_table_link LIMIT 1";
-        String book = "";
-        String sheet = "";
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query);
-             ResultSet rs = statement.executeQuery()) {
-             while (rs.next()) {
-                 book = rs.getString("bookName");
-                sheet = rs.getString("sheetName");
+    @RequestMapping(value = "/filterTable",
+            method = RequestMethod.PUT)
+    public String filterTable(@RequestBody String value){
+        JSONParser paser = new JSONParser();
+        JSONObject ret = new JSONObject();
+        try {
+            JSONObject dict = (JSONObject)paser.parse(value);
+            String tableSheetId= (String) dict.get(TABLE_SHEET_ID);
+            JSONArray filter= (JSONArray) dict.get(FILTER);
+            StringBuilder filterbuilder = new StringBuilder();
+            for (Object object:filter){
+                if (filterbuilder.length() > 0){
+                    filterbuilder.append(" AND ");
+                }
+                filterbuilder.append(object);
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
+
+
+            TableController tableModel = TableController.getController();
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+                DBContext context = new DBContext(connection);
+                tableModel.filterTable(context, tableSheetId, filterbuilder.toString());
+                context.getConnection().commit();
+            }
+            catch(java.lang.Exception e){
+                return returnFalse(ret,e);
+            }
+
         }
-        TableController tableModel = TableController.getController();
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
-            DBContext context = new DBContext(connection);
-            tableModel.filterTable(context, table, filter);
+        catch (java.lang.Exception e){
+            return returnFalse(ret,e);
         }
-        return true;
+
+        return ret.toJSONString();
     }
 
 }

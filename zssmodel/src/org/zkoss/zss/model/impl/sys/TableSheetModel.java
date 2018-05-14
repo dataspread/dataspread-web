@@ -28,6 +28,8 @@ public class TableSheetModel {
     final static String VALUES = "values";
     final static String TABLE_SHEET_ID = "table_sheet_id";
     final static String LABEL_CELLS = "label_cells";
+    final static String FILTER = "order";
+    final static String ORDER = "filter";
 
     PosMapping rowMapping;
     String linkId;
@@ -45,7 +47,8 @@ public class TableSheetModel {
         rowMapping.insertIDs(context, 0,oidList);
     }
 
-    public JSONObject getCells(DBContext context, CellRegion fetchRegion, int rowOffset, int colOffset, String tableName){
+    public JSONObject getCells(DBContext context, CellRegion fetchRegion, int rowOffset,
+                               int colOffset, String tableName, String order, String filter){
 
         JSONObject ret = new JSONObject();
         ret.put(TABLE_SHEET_ID, linkId);

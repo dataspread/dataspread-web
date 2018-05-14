@@ -127,7 +127,7 @@ public class TableController {
         String[] ret = new String[]{insertToTableSheetLink(context, range, bookName, sheetName, tableName),
                 getSharedLink(context,userId,metaTableName)};
 
-        _models.get(ret[0]).initualizeMapping(context, getOidsOfLinkedTable(context, ret[0]));
+        initializePosmappingForLinkedTable(context, ret[0]);
 
         // todo: uncomment it
 
@@ -160,7 +160,7 @@ public class TableController {
                 .append("SELECT linkid")
                 .append(" FROM ")
                 .append(TABLESHEETLINK)
-                .append("WHERE tableName = " + tableName)
+                .append(" WHERE tableName = \'" + tableName + "\'")
                 .toString();
 
         try (Statement stmt = connection.createStatement()) {
@@ -202,44 +202,46 @@ public class TableController {
         //Need pos mapping
     }
 
-    public void reorderTable(DBContext context, String tableName, String attribute, String order) {
+    public void reorderTable(DBContext context, String tableSheetId, String order) throws SQLException {
+
         String appendToTables = (new StringBuilder())
                 .append("UPDATE ")
                 .append(TABLESHEETLINK)
                 .append(" SET ")
-                .append("order = " + attribute + " " + order)
+                .append("sort = ?")
                 .append(" WHERE ")
-                .append("tableName == " + tableName)
-           .toString();
+                .append("linkid = ?")
+                .toString();
 
         AutoRollbackConnection connection = context.getConnection();
-        try (Statement stmt = connection.createStatement()) {
-            stmt.execute(appendToTables);
-        }catch (SQLException e) {
-            e.printStackTrace();
+        try (PreparedStatement stmt = connection.prepareStatement(appendToTables)) {
+            stmt.setString(1, order);
+            stmt.setString(2, tableSheetId);
+            stmt.execute();
         }
+
+        initializePosmappingForLinkedTable(context, tableSheetId);
 
 
     }
 
-    public void filterTable(DBContext context, String tableName, String filter) {
+    public void filterTable(DBContext context, String tableSheetId, String filter) throws SQLException {
         String appendToTables = (new StringBuilder())
                 .append("UPDATE ")
                 .append(TABLESHEETLINK)
                 .append(" SET ")
-                .append("filter = " + filter)
+                .append("filter = ?")
                 .append(" WHERE ")
-                .append("tableName = " + tableName)
+                .append("linkid = ?")
            .toString();
 
         AutoRollbackConnection connection = context.getConnection();
-        try (Statement stmt = connection.createStatement()) {
-            stmt.execute(appendToTables);
-        }catch (SQLException e) {
-            e.printStackTrace();
+        try (PreparedStatement stmt = connection.prepareStatement(appendToTables)) {
+            stmt.setString(1, filter);
+            stmt.setString(2, tableSheetId);
+            stmt.execute();
         }
-  /*change the pos mapping*/
-
+        initializePosmappingForLinkedTable(context, tableSheetId);
     }
 
     public JSONArray getCells(DBContext context, CellRegion fetchRange, String sheetName,
@@ -250,7 +252,7 @@ public class TableController {
         // Reduce Range to bounds
         Collection<AbstractCellAdv> cells = new ArrayList<>();
         String select = (new StringBuilder())
-                .append("SELECT linkid, range, tablename")
+                .append("SELECT *")
                 .append(" FROM ")
                 .append(TABLESHEETLINK)
                 .append(" WHERE sheetName = \'" + sheet.getSheetName() + "\' AND bookName = \'" + book.getBookName() + "\'")
@@ -265,6 +267,8 @@ public class TableController {
                 String tableRange = rs.getString("range");
                 String linkId = rs.getString("linkid");
                 String tableName = rs.getString("tablename");
+                String filter = rs.getString("filter");
+                String order = rs.getString("sort");
                 String [] stringRowCol = tableRange.split("-");
                 Integer [] rowcol = {Integer.parseInt(stringRowCol[0]),
                                     Integer.parseInt(stringRowCol[1]),
@@ -276,7 +280,8 @@ public class TableController {
                 if (fetchRange.overlaps(range)) {
                     CellRegion overlap = fetchRange.getOverlap(range);
                     overlap.shiftedRange(-rowcol[0], -rowcol[1]);
-                    ret.add(_models.get(linkId).getCells(context, overlap, rowcol[0], rowcol[1], tableName));
+                    ret.add(_models.get(linkId).getCells(context, overlap, rowcol[0], rowcol[1],
+                            tableName, order, filter));
 
                 }
 
@@ -525,7 +530,7 @@ public class TableController {
         }
         return ret;
     }
-    private ArrayList<Integer> getOidsOfLinkedTable(DBContext context, String linkId) throws SQLException {
+    private void initializePosmappingForLinkedTable(DBContext context, String linkId) throws SQLException {
         String select = (new StringBuilder())
                 .append("SELECT *")
                 .append(" FROM ")
@@ -533,7 +538,7 @@ public class TableController {
                 .append(" WHERE linkid = \'" + linkId + "\'")
                 .toString();
 
-        ArrayList<Integer> ret = new ArrayList<>();
+        ArrayList<Integer> oid_list = new ArrayList<>();
 
         AutoRollbackConnection connection = context.getConnection();
         try (Statement stmt = connection.createStatement()) {
@@ -543,7 +548,7 @@ public class TableController {
                 String tableName = rs.getString("tablename");
                 String [] stringRowCol = tableRange.split("-");
                 Integer count = Integer.parseInt(stringRowCol[2]) - Integer.parseInt(stringRowCol[0]);
-                String order = rs.getString("order");
+                String order = rs.getString("sort");
                 String filter = rs.getString("filter");
                 String query = (new StringBuilder())
                         .append("SELECT oid")
@@ -554,15 +559,14 @@ public class TableController {
                         .append(" LIMIT " + count.toString())
                         .toString();
 
-                try(PreparedStatement state = connection.prepareStatement(select)){
-                    ResultSet oids = state.executeQuery(query);
+                try(PreparedStatement state = connection.prepareStatement(query)){
+                    ResultSet oids = state.executeQuery();
                     while(oids.next()){
-                        ret.add(oids.getInt(1));
+                        oid_list.add(oids.getInt(1));
                     }
                 }
             }
         }
-        return ret;
-
+        _models.get(linkId).initualizeMapping(context, oid_list);
     }
 }
