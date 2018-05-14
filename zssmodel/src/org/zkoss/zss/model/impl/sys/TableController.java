@@ -1,8 +1,10 @@
 package org.zkoss.zss.model.impl.sys;
 
+import org.junit.Test;
 import org.model.AutoRollbackConnection;
 import org.model.BlockStore;
 import org.model.DBContext;
+import org.model.DBHandler;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSemantics;
@@ -10,6 +12,8 @@ import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
 import org.zkoss.zss.model.impl.CellImpl;
+import org.zkoss.zss.model.impl.CountedBTree;
+import org.zkoss.zss.model.impl.PosMapping;
 import org.zkoss.zss.model.sys.BookBindings;
 
 import java.sql.*;
@@ -27,12 +31,29 @@ public class TableController {
     private final static AtomicInteger _tableCount    = new AtomicInteger();
     private final static String        TABLES         = "tables";
     private final static String        TABLESHEETLINK = "sheet_table_link";
+    HashMap<String, TableSheetModel> _models;
 
-    private static TableController _tableController = new TableController();
+    private static TableController _tableController = null;
 
-    private TableController(){}
+    private TableController(){
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+            DBContext context = new DBContext(connection);
+            ArrayList<String> tableSheetLinks = getAllTableSheetLinks(context);
+            _models= new HashMap<>();
+            for (String links : tableSheetLinks){
+                _models.put(links, new TableSheetModel(context, links));
+            }
+            context.getConnection().commit();
+        }
+        catch(java.lang.Exception e){
+            e.printStackTrace();
+        }
+    }
 
     public static TableController getController(){
+        if (_tableController == null){
+            _tableController = new TableController();
+        }
         return _tableController;
     }
 
@@ -154,7 +175,7 @@ public class TableController {
         //Need pos mapping
     }
 
-    public void sortTable(DBContext context, String tableName, String attribute, String order) {
+    public void reorderTable(DBContext context, String tableName, String attribute, String order) {
         String appendToTables = (new StringBuilder())
                 .append("UPDATE ")
                 .append(TABLESHEETLINK)
@@ -195,7 +216,7 @@ public class TableController {
     }
 
     public Collection<AbstractCellAdv> getCells(DBContext context, CellRegion fetchRange, String sheetName,
-                                                String bookName, String userId, String metaTableName) {
+                                                String bookName) {
 
         SBook book = BookBindings.getBookByName(bookName);
         SSheet sheet = book.getSheetByName(sheetName);
@@ -226,7 +247,7 @@ public class TableController {
                     String query = (new StringBuilder())
                             .append("SELECT")
                             .append(" FROM ")
-                            .append(getTableName(userId, metaTableName))
+                            .append("todo") // todo
                             .append(" WHERE " + filter)
                             .append(" ORDER BY " + order)
                             .append(" OFFSET "+startRow+" ROWS")
@@ -316,6 +337,7 @@ public class TableController {
 
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(appendRecord);
+            _models.put(linkid, new TableSheetModel(context, linkid));
         }
         return linkid;
     }
@@ -436,5 +458,26 @@ public class TableController {
             e.printStackTrace();
         }
         return oidList;
+    }
+
+    private ArrayList<String> getAllTableSheetLinks(DBContext context){
+        ArrayList<String> ret = new ArrayList<>();
+        String select = (new StringBuilder())
+                .append("SELECT linkid")
+                .append(" FROM ")
+                .append(TABLESHEETLINK)
+                .toString();
+
+        AutoRollbackConnection connection = context.getConnection();
+        try (Statement stmt = connection.createStatement()) {
+            ResultSet rs = stmt.executeQuery(select);
+            while (rs.next()) {
+                String linkId = rs.getString("linkid");
+                ret.add(linkId);
+            }
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+        return ret;
     }
 }

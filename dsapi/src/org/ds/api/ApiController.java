@@ -34,9 +34,7 @@ public class ApiController {
     final String ROW_2 = "row_2";
     final String COL_1 = "col_1";
     final String COL_2 = "col_2";
-    final String ATTRIBUTES = "attributes";
-    final String TYPE = "type";
-    final String VALUES = "values";
+
     final String DATA = "data";
     final String USER_ID = "user_id";
     final String TABLE_NAME = "table_name";
@@ -263,11 +261,43 @@ public class ApiController {
         return ret.toJSONString();
     }
 
+    @RequestMapping(value = "/getTableCells",
+            method = RequestMethod.PUT)
+    public String getTableCells(@RequestBody String value){
+        JSONParser paser = new JSONParser();
+        JSONObject ret = new JSONObject();
+        try {
+            JSONObject dict = (JSONObject)paser.parse(value);
+            String book = (String)dict.get(BOOK_NAME);
+            String sheet = (String)dict.get(SHEET_NAME);
+            int row1 = (int)dict.get(ROW_1);
+            int row2 = (int)dict.get(ROW_2);
+            int col1 = (int)dict.get(COL_1);
+            int col2 = (int)dict.get(COL_2);
+            CellRegion range = new CellRegion(row1, col1, row2, col2);
+            TableController tableModel = TableController.getController();
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+                DBContext context = new DBContext(connection);
+                tableModel.getCells(context, range, sheet, book);
+                context.getConnection().commit();
+            }
+            catch(java.lang.Exception e){
+                return returnFalse(ret,e);
+            }
+
+        }
+        catch (java.lang.Exception e){
+            return returnFalse(ret,e);
+        }
+
+        return ret.toJSONString();
+    }
+
     @RequestMapping(value = "/sortTable/{table}/{attribute}/{order}",
             method = RequestMethod.GET)
-    public Boolean sortTable(@PathVariable String table,
-                             @PathVariable String attribute,
-                             @PathVariable String order) {
+    public Boolean reorderTable(@PathVariable String table,
+                                @PathVariable String attribute,
+                                @PathVariable String order) {
         String query = "SELECT tableName FROM sheet_table_link LIMIT 1";
         String book = "";
         String sheet = "";
@@ -284,7 +314,7 @@ public class ApiController {
         TableController tableModel = TableController.getController();
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
             DBContext context = new DBContext(connection);
-            tableModel.sortTable(context, table, attribute, order);
+            tableModel.reorderTable(context, table, attribute, order);
             context.getConnection().commit();
             context.getConnection().close();
         }
