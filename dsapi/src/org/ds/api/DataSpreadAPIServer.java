@@ -42,13 +42,14 @@ public class DataSpreadAPIServer extends SpringBootServletInitializer {
 //        }
 
 //		SpringApplication.run(DataSpreadAPIServer.class, args);
-//        DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
+        DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
 //        PosMapping mapping = new CountedBTree(dbContext, "test_btree");
 //        ArrayList<Integer> ids = new ArrayList<>();
 //        ids.add(666);
 //        ids.add(889);
 //        ids.add(110);
 //        mapping.insertIDs(dbContext, 0, ids);
+//        mapping.getIDs(dbContext,0,100);
 //        for (Object i: mapping.getIDs(dbContext,0,3)){
 //            System.out.println(i);
 //        }

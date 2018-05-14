@@ -30,7 +30,7 @@ public class TableSheetModel {
     final static String LABEL_CELLS = "label_cells";
 
     PosMapping rowMapping;
-    String sheetName, tableName, linkId;
+    String linkId;
 //    String sheetName, String tableName,
     TableSheetModel(DBContext context, String linkId){
 //        this.sheetName = sheetName;
@@ -40,14 +40,19 @@ public class TableSheetModel {
 //        colMapping = new CountedBTree(context, "LINK_" + linkId + "_col_idx");
     }
 
-    JSONObject getCells(DBContext context, CellRegion fetchRegion, int rowOffset, int colOffset){
+    public void initualizeMapping(DBContext context, ArrayList<Integer> oidList){
+        rowMapping.deleteIDs(context, 0, rowMapping.size(context));
+        rowMapping.insertIDs(context, 0,oidList);
+    }
+
+    public JSONObject getCells(DBContext context, CellRegion fetchRegion, int rowOffset, int colOffset, String tableName){
 
         JSONObject ret = new JSONObject();
         ret.put(TABLE_SHEET_ID, linkId);
         JSONArray attributes = new JSONArray();
         ret.put(ATTRIBUTES, attributes);
         JSONArray labels = new JSONArray();
-        ret.put(LABEL_CELLS, attributes);
+        ret.put(LABEL_CELLS, labels);
 
         ArrayList<Integer> rowIds;
         boolean includeHeader = (fetchRegion.getRow() == 0);
@@ -79,6 +84,8 @@ public class TableSheetModel {
             /* Assume an int array for now */
             Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds.toArray());
             stmt.setArray(1, inArrayRow);
+
+            System.out.println(stmt.toString());
 
             ResultSet rs = stmt.executeQuery();
 

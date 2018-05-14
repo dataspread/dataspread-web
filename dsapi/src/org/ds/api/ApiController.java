@@ -43,6 +43,7 @@ public class ApiController {
     final String TABLE_SHEET_ID = "table_sheet_id";
     final String LINK = "link";
     final String MSG = "error_message";
+    final String TABLE_CELLS = "table_cells";
 
     @RequestMapping(value = "/getCell/{book}/{sheet}/{row}/{col}",
             method = RequestMethod.GET)
@@ -278,7 +279,7 @@ public class ApiController {
             TableController tableModel = TableController.getController();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
-                tableModel.getCells(context, range, sheet, book);
+                ret.put(TABLE_CELLS,tableModel.getCells(context, range, sheet, book));
                 context.getConnection().commit();
             }
             catch(java.lang.Exception e){

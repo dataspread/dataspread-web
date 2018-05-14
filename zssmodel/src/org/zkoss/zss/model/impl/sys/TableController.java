@@ -5,6 +5,8 @@ import org.model.AutoRollbackConnection;
 import org.model.BlockStore;
 import org.model.DBContext;
 import org.model.DBHandler;
+import org.zkoss.json.JSONArray;
+import org.zkoss.json.JSONObject;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSemantics;
@@ -100,14 +102,19 @@ public class TableController {
             e.printStackTrace();
         }
 
-        appendTableRows(context,new CellRegion(range.row + 1, range.column, range.lastRow, range.lastColumn),
-                tableName,sheet, convertToType(schema));
+        ArrayList<Integer> oidList = appendTableRows(context,new CellRegion(range.row + 1, range.column,
+                range.lastRow, range.lastColumn),tableName,sheet, convertToType(schema));
 
         // todo: uncomment it
 
+        String[] ret = new String[]{insertToTableSheetLink(context, range, bookName, sheetName, tableName),
+                insertToTables(context,userId,metaTableName)};
+
+        _models.get(ret[0]).initualizeMapping(context, oidList);
+
+
         //deleteCells(context, tableHeaderRow);
-        return new String[]{insertToTableSheetLink(context, range, bookName, sheetName, tableName),
-                            insertToTables(context,userId,metaTableName)};
+        return ret;
     }
 
 
@@ -116,6 +123,9 @@ public class TableController {
                               String bookName, String sheetName) throws Exception {
         // todo : sync relationship to mem
         String tableName = getTableName(userId, metaTableName);
+
+        String[] ret = new String[]{insertToTableSheetLink(context, range, bookName, sheetName, tableName),
+                getSharedLink(context,userId,metaTableName)};
 
         // todo: uncomment it
 
@@ -215,69 +225,87 @@ public class TableController {
 
     }
 
-    public Collection<AbstractCellAdv> getCells(DBContext context, CellRegion fetchRange, String sheetName,
-                                                String bookName) {
+    public JSONArray getCells(DBContext context, CellRegion fetchRange, String sheetName,
+                              String bookName) {
 
         SBook book = BookBindings.getBookByName(bookName);
         SSheet sheet = book.getSheetByName(sheetName);
         // Reduce Range to bounds
         Collection<AbstractCellAdv> cells = new ArrayList<>();
         String select = (new StringBuilder())
-                .append("SELECT *")
+                .append("SELECT linkid, range, tablename")
                 .append(" FROM ")
                 .append(TABLESHEETLINK)
-                .append(" WHERE sheetName = " + sheet.getSheetName() + " AND bookName = " + book.getBookName())
+                .append(" WHERE sheetName = \'" + sheet.getSheetName() + "\' AND bookName = \'" + book.getBookName() + "\'")
                 .toString();
+
+        JSONArray ret = new JSONArray();
 
         AutoRollbackConnection connection = context.getConnection();
         try (Statement stmt = connection.createStatement()){
             ResultSet rs = stmt.executeQuery(select);
             while(rs.next()){
-                Array tableRange = rs.getArray("range");
-                int [] rowcol = (int[])tableRange.getArray();
-                CellRegion range = new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
-                if(fetchRange.overlaps(range)){
-                    String order = rs.getString("order");
-                    String filter = rs.getString("filter");
-                    CellRegion overlap = fetchRange.getOverlap(range);
-                    int startRow = overlap.row - range.row;
-                    int endRow = overlap.lastRow - range.lastRow;
-                    int startCol = Math.max(overlap.column, range.column);
-                    int endCol = Math.min(overlap.lastColumn, range.lastColumn);
-                    String query = (new StringBuilder())
-                            .append("SELECT")
-                            .append(" FROM ")
-                            .append("todo") // todo
-                            .append(" WHERE " + filter)
-                            .append(" ORDER BY " + order)
-                            .append(" OFFSET "+startRow+" ROWS")
-                            .append(" FETCH NEXT "+endRow+" ROWS ONLY")
-                            .toString();
+                String tableRange = rs.getString("range");
+                String linkId = rs.getString("linkid");
+                String tableName = rs.getString("tablename");
+                String [] stringRowCol = tableRange.split("-");
+                Integer [] rowcol = {Integer.parseInt(stringRowCol[0]),
+                                    Integer.parseInt(stringRowCol[1]),
+                                    Integer.parseInt(stringRowCol[2]),
+                                    Integer.parseInt(stringRowCol[3])};
 
-                    try(PreparedStatement state = connection.prepareStatement(select)){
-                        ResultSet dataSet = state.executeQuery(query);
-                        int row = startRow;
-                        while(dataSet.next()){
-                            int col = startCol;
-                            for( int i = 0; i < (endCol - startCol); i++){
-                                byte[] data = dataSet.getBytes(i);
-                                AbstractCellAdv cell = CellImpl.fromBytes(sheet, row, col, data);
-                                cell.setSemantics(SSemantics.Semantics.TABLE_CONTENT);
-                                cells.add(cell);
-                                col++;
-                            }
-                            row++;
-                        }
-                    }
+                CellRegion range = new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
+
+                if (fetchRange.overlaps(range)) {
+                    CellRegion overlap = fetchRange.getOverlap(range);
+                    overlap.shiftedRange(-rowcol[0], -rowcol[1]);
+                    ret.add(_models.get(linkId).getCells(context, overlap, rowcol[0], rowcol[1], tableName));
+
                 }
+
+//                if(fetchRange.overlaps(range)){
+//                    String order = rs.getString("order");
+//                    String filter = rs.getString("filter");
+//                    CellRegion overlap = fetchRange.getOverlap(range);
+//                    int startRow = overlap.row - range.row;
+//                    int endRow = overlap.lastRow - range.lastRow;
+//                    int startCol = Math.max(overlap.column, range.column);
+//                    int endCol = Math.min(overlap.lastColumn, range.lastColumn);
+//                    String query = (new StringBuilder())
+//                            .append("SELECT")
+//                            .append(" FROM ")
+//                            .append("todo") // todo
+//                            .append(" WHERE " + filter)
+//                            .append(" ORDER BY " + order)
+//                            .append(" OFFSET "+startRow+" ROWS")
+//                            .append(" FETCH NEXT "+endRow+" ROWS ONLY")
+//                            .toString();
+//
+//                    try(PreparedStatement state = connection.prepareStatement(select)){
+//                        ResultSet dataSet = state.executeQuery(query);
+//                        int row = startRow;
+//                        while(dataSet.next()){
+//                            int col = startCol;
+//                            for( int i = 0; i < (endCol - startCol); i++){
+//                                byte[] data = dataSet.getBytes(i);
+//                                AbstractCellAdv cell = CellImpl.fromBytes(sheet, row, col, data);
+//                                cell.setSemantics(SSemantics.Semantics.TABLE_CONTENT);
+//                                cells.add(cell);
+//                                col++;
+//                            }
+//                            row++;
+//                        }
+//                    }
+//                }
             }
         }catch (SQLException e) {
             e.printStackTrace();
         }
-        return cells;
+        return ret;
     }
 
     private String insertToTables(DBContext context, String userId, String metaTableName) throws SQLException {
+        // todo: check overlaping point
         AutoRollbackConnection connection = context.getConnection();
         StringBuilder sharedLinkBuilder = new StringBuilder().append((char)('a'+_random.nextInt(26)))
                 .append(Long.toString(System.currentTimeMillis()+_tableCount.getAndIncrement(), Character.MAX_RADIX));
@@ -331,7 +359,7 @@ public class TableController {
                 .append(" VALUES ")
                 .append(" (\'" + linkid + "\',\'" + bookName + "\',\'"
                         + sheetName + "\',\'" + tableRange + "\',\'" + tableName
-                        + "\'," + "\'empty\'" + "," + "\'empty\'" + ") ")
+                        + "\'," + "\'\'" + "," + "\'\'" + ") ")
                 .toString();
 
 
@@ -479,5 +507,34 @@ public class TableController {
             e.printStackTrace();
         }
         return ret;
+    }
+    private ArrayList<Integer> getOidsOfLinkedTable(DBContext context, String linkId, ) throws SQLException {
+        String select = (new StringBuilder())
+                .append("SELECT oid, *")
+                .append(" FROM ")
+                .append(TABLESHEETLINK)
+                .append(" WHERE linkid = \'" + linkId + "\'")
+                .toString();
+
+        JSONArray ret = new JSONArray();
+
+        AutoRollbackConnection connection = context.getConnection();
+        try (Statement stmt = connection.createStatement()) {
+            ResultSet rs = stmt.executeQuery(select);
+            if (rs.next()) {
+                String tableRange = rs.getString("range");
+                String tableName = rs.getString("tablename");
+                String [] stringRowCol = tableRange.split("-");
+                Integer [] rowcol = {Integer.parseInt(stringRowCol[0]),
+                        Integer.parseInt(stringRowCol[1]),
+                        Integer.parseInt(stringRowCol[2]),
+                        Integer.parseInt(stringRowCol[3])};
+                int count = Integer.parseInt(stringRowCol[2]) - Integer.parseInt(stringRowCol[0]);
+                String order = rs.getString("order");
+                String filter = rs.getString("filter");
+            }
+        }
+        return null;
+
     }
 }
