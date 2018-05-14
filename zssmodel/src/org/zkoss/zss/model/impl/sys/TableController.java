@@ -127,6 +127,8 @@ public class TableController {
         String[] ret = new String[]{insertToTableSheetLink(context, range, bookName, sheetName, tableName),
                 getSharedLink(context,userId,metaTableName)};
 
+        _models.get(ret[0]).initualizeMapping(context, getOidsOfLinkedTable(context, ret[0]));
+
         // todo: uncomment it
 
         //deleteCells(context, range);
@@ -146,30 +148,45 @@ public class TableController {
             stmt.setString(1, tableSheetLink);
             stmt.execute();
         }
+        _models.get(tableSheetLink).drop(context);
+        _models.remove(tableSheetLink);
     }
 
-    public void dropTable(DBContext context, String user_id, String metaTableName){
-        String tableName = getTableName(user_id, metaTableName);
+    public void dropTable(DBContext context, String userId, String metaTableName) throws SQLException {
+        String tableName = getTableName(userId, metaTableName);
+        AutoRollbackConnection connection = context.getConnection();
+
+        String selectLinkid = (new StringBuilder())
+                .append("SELECT linkid")
+                .append(" FROM ")
+                .append(TABLESHEETLINK)
+                .append("WHERE tableName = " + tableName)
+                .toString();
+
+        try (Statement stmt = connection.createStatement()) {
+            ResultSet rs = stmt.executeQuery(selectLinkid);
+            while (rs.next()) {
+                unLinkTable(context, rs.getString("linkid"));
+            }
+        }
+
+        String deleteFromTables = (new StringBuilder())
+                .append("DELETE FROM ")
+                .append(TABLES)
+                .append(" WHERE tablename = ? and userid = ?")
+                .toString();
+        try(PreparedStatement stmt = connection.prepareStatement(deleteFromTables)){
+            stmt.setString(1, metaTableName);
+            stmt.setString(2, userId);
+            stmt.execute();
+        }
+
         String dropTable = (new StringBuilder())
                 .append("DROP TABLE ")
                 .append(tableName)
                 .toString();
-        AutoRollbackConnection connection = context.getConnection();
         try(Statement stmt = connection.createStatement()){
             stmt.execute(dropTable);
-        }catch (SQLException e){
-            e.printStackTrace();
-        }
-
-        String deleteRecords = (new StringBuilder())
-                .append("DELETE FROM ")
-                .append(TABLESHEETLINK)
-                .append("WHERE tableName = " + tableName)
-                .toString();
-        try(Statement stmt = connection.createStatement()){
-            stmt.execute(deleteRecords);
-        }catch (SQLException e){
-            e.printStackTrace();
         }
     }
 
@@ -508,15 +525,15 @@ public class TableController {
         }
         return ret;
     }
-    private ArrayList<Integer> getOidsOfLinkedTable(DBContext context, String linkId, ) throws SQLException {
+    private ArrayList<Integer> getOidsOfLinkedTable(DBContext context, String linkId) throws SQLException {
         String select = (new StringBuilder())
-                .append("SELECT oid, *")
+                .append("SELECT *")
                 .append(" FROM ")
                 .append(TABLESHEETLINK)
                 .append(" WHERE linkid = \'" + linkId + "\'")
                 .toString();
 
-        JSONArray ret = new JSONArray();
+        ArrayList<Integer> ret = new ArrayList<>();
 
         AutoRollbackConnection connection = context.getConnection();
         try (Statement stmt = connection.createStatement()) {
@@ -525,16 +542,27 @@ public class TableController {
                 String tableRange = rs.getString("range");
                 String tableName = rs.getString("tablename");
                 String [] stringRowCol = tableRange.split("-");
-                Integer [] rowcol = {Integer.parseInt(stringRowCol[0]),
-                        Integer.parseInt(stringRowCol[1]),
-                        Integer.parseInt(stringRowCol[2]),
-                        Integer.parseInt(stringRowCol[3])};
-                int count = Integer.parseInt(stringRowCol[2]) - Integer.parseInt(stringRowCol[0]);
+                Integer count = Integer.parseInt(stringRowCol[2]) - Integer.parseInt(stringRowCol[0]);
                 String order = rs.getString("order");
                 String filter = rs.getString("filter");
+                String query = (new StringBuilder())
+                        .append("SELECT oid")
+                        .append(" FROM ")
+                        .append(tableName) // todo
+                        .append(filter.length() > 0?" WHERE " + filter:"")
+                        .append(order.length() > 0?" ORDER BY " + order:"")
+                        .append(" LIMIT " + count.toString())
+                        .toString();
+
+                try(PreparedStatement state = connection.prepareStatement(select)){
+                    ResultSet oids = state.executeQuery(query);
+                    while(oids.next()){
+                        ret.add(oids.getInt(1));
+                    }
+                }
             }
         }
-        return null;
+        return ret;
 
     }
 }

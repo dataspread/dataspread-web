@@ -198,4 +198,7 @@ public class TableSheetModel {
                 throw new Exception("typeIdToString:Unsupported type");
         }
     }
+    public void drop(DBContext context){
+        rowMapping.dropSchema(context);
+    }
 }

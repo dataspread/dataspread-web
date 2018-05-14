@@ -262,6 +262,7 @@ public class ApiController {
         return ret.toJSONString();
     }
 
+
     @RequestMapping(value = "/getTableCells",
             method = RequestMethod.PUT)
     public String getTableCells(@RequestBody String value){
@@ -280,6 +281,34 @@ public class ApiController {
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 ret.put(TABLE_CELLS,tableModel.getCells(context, range, sheet, book));
+                context.getConnection().commit();
+            }
+            catch(java.lang.Exception e){
+                return returnFalse(ret,e);
+            }
+
+        }
+        catch (java.lang.Exception e){
+            return returnFalse(ret,e);
+        }
+
+        return ret.toJSONString();
+    }
+
+    @RequestMapping(value = "/dropTable",
+            method = RequestMethod.PUT)
+    public String dropTable(@RequestBody String value){
+        JSONParser paser = new JSONParser();
+        JSONObject ret = new JSONObject();
+        try {
+            JSONObject dict = (JSONObject)paser.parse(value);
+            String userId= (String) dict.get(USER_ID);
+            String tableName= (String) dict.get(TABLE_NAME);
+
+            TableController tableModel = TableController.getController();
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+                DBContext context = new DBContext(connection);
+                tableModel.dropTable(context, userId, tableName);
                 context.getConnection().commit();
             }
             catch(java.lang.Exception e){
