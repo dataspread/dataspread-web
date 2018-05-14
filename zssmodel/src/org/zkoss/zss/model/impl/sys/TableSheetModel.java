@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static java.lang.Math.min;
 import static java.lang.Math.round;
 
 public class TableSheetModel {
@@ -54,8 +55,7 @@ public class TableSheetModel {
     }
 
     public void initualizeMapping(DBContext context, ArrayList<Integer> oidList){
-        rowMapping.dropSchema(context);
-        rowMapping = new CountedBTree(context, "LINK_" + linkId + "_row_idx");
+        rowMapping.deleteIDs(context, 0, rowMapping.size(context));
         rowMapping.insertIDs(context, 0,oidList);
     }
 
@@ -73,10 +73,12 @@ public class TableSheetModel {
         boolean includeHeader = (fetchRegion.getRow() == 0);
         if (includeHeader)
             rowIds = rowMapping.getIDs(context, fetchRegion.getRow(),
-                    fetchRegion.getLastRow() - fetchRegion.getRow());
+                    min(fetchRegion.getLastRow() - fetchRegion.getRow(),
+                            rowMapping.size(context) - fetchRegion.getRow()));
         else
             rowIds = rowMapping.getIDs(context, fetchRegion.getRow() - 1,
-                    fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
+                    min(fetchRegion.getLastRow() - fetchRegion.getRow() + 1,
+                    rowMapping.size(context) - fetchRegion.getRow()));
 
 
         HashMap<Integer, Integer> row_map = new HashMap<>(); // Oid -> row number
