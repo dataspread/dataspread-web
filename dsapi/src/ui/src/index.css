@@ -1,0 +1,13 @@
+.vl {
+    border-left: 6px solid green;
+    height: 500px;
+}
+
+
+
+#sheets {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    z-index: 5
+}
