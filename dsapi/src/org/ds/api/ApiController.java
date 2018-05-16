@@ -1,4 +1,4 @@
-package java.org.ds.api;
+package org.ds.api;
 
 import org.zkoss.json.JSONArray;
 import org.zkoss.json.JSONObject;
