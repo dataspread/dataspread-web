@@ -78,7 +78,18 @@
             <artifactId>tomcat-juli</artifactId>
             <version>8.5.11</version>
         </dependency>
-	</dependencies>
+		<!-- https://mvnrepository.com/artifact/org.json/json -->
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20180130</version>
+		</dependency>
+        <dependency>
+            <groupId>io.github.dataspread</groupId>
+            <artifactId>zss</artifactId>
+            <version>3.8.1</version>
+        </dependency>
+    </dependencies>
 
 	<build>
         <sourceDirectory>${project.basedir}/src</sourceDirectory>
