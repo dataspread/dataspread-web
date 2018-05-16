@@ -1,5 +1,6 @@
-package org.ds.api;
+package org.ds.api.controller;
 
+import org.ds.api.Cell;
 import org.zkoss.json.JSONArray;
 import org.zkoss.json.JSONObject;
 import org.model.AutoRollbackConnection;
@@ -47,9 +48,9 @@ public class ApiController {
     @RequestMapping(value = "/getCell/{book}/{sheet}/{row}/{col}",
             method = RequestMethod.GET)
     public HashMap<String, List<Cell>> getCells(@PathVariable String book,
-                                     @PathVariable String sheet,
-                                     @PathVariable int row,
-                                     @PathVariable int col) {
+                                                @PathVariable String sheet,
+                                                @PathVariable int row,
+                                                @PathVariable int col) {
         return getCells(book, sheet, row, row, col, col);
     }
 
