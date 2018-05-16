@@ -1,6 +1,5 @@
 package org.ds.api;
 
-import org.omg.Messaging.SYNC_WITH_TRANSPORT;
 import org.zkoss.json.JSONArray;
 import org.zkoss.json.JSONObject;
 import org.model.AutoRollbackConnection;
@@ -19,7 +18,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
