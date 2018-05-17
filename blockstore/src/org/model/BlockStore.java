@@ -62,9 +62,9 @@ public class BlockStore {
         this.dataStore = dataStore;
         if (dataStore == null) {
             // Infinite cache size for in memory
-            blockCache = new LruCache<>(-1,0);
+            blockCache = new LruCache<>(-1);
         } else {
-            blockCache = new LruCache<>(CACHE_SIZE, CACHE_EVICT);
+            blockCache = new LruCache<>(CACHE_SIZE);
             createSchema(context, dataStore);
         }
         //logger.info("BlockStore created - " + dataStore);

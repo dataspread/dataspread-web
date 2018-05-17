@@ -264,7 +264,7 @@ public class RCV_Model extends Model {
             if(rom_model.rowOrderTable.containsKey(indexString))
                 rom_model.rowCombinedTree = rom_model.rowOrderTable.get(indexString);
             else{
-                CombinedBTree newOrder = new CombinedBTree(context, tableName + "_row_com_"+indexString+"_idx");
+                CombinedBTree newOrder = new CombinedBTree(context, null);
                 newOrder.insertIDs(context,statistics,ids);
 
                 rom_model.rowOrderTable.put(indexString,newOrder);

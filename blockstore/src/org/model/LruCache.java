@@ -13,10 +13,14 @@ public class LruCache<K, V> {
     Cache<K, V> cache;
 
     // Get the size = maxEntrs, when size >  maxEntries + evictSize
-    public LruCache(int maxEntries, int evictSize) {
-        cache = CacheBuilder.newBuilder()
-                .maximumSize(maxEntries)
-                .build();
+    public LruCache(int maxEntries) {
+        if (maxEntries>0)
+            cache = CacheBuilder.newBuilder()
+                    .maximumSize(maxEntries)
+                    .build();
+        else
+            cache = CacheBuilder.newBuilder()
+                    .build();
     }
 
     public boolean containsKey(K key) {
