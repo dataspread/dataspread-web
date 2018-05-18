@@ -162,7 +162,7 @@ public class CellImpl extends AbstractCellAdv {
 	public int getComputeCost()
 	{
 		return getReferredCells().stream().map(e->new CellRegion(e))
-				.mapToInt(e->e.getColumnCount())
+				.mapToInt(CellRegion::getCellCount)
 				.sum();
 	}
 
