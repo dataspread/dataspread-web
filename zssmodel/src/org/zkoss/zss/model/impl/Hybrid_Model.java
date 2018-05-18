@@ -616,7 +616,7 @@ public class Hybrid_Model extends RCV_Model {
                                         metaDataBlock.modelEntryList.get(e).range.getColumn()))
                                 .collect(Collectors.toList())));
 
-        /* For a TOM model call a sepecial function */
+        /* For a TOM model call a special function */
         IntStream.range(0, metaDataBlock.modelEntryList.size())
                 .filter(e -> metaDataBlock.modelEntryList.get(e).range.overlaps(range))
                 .filter(e -> metaDataBlock.modelEntryList.get(e).modelType == ModelType.TOM_Model)
