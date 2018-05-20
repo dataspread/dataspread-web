@@ -9,10 +9,7 @@ import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.logging.Logger;
 
 /**
@@ -21,62 +18,73 @@ import java.util.logging.Logger;
 public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
     private static final Logger logger = Logger.getLogger(FormulaAsyncSchedulerPriority.class.getName());
     private boolean keepRunning = true;
-    private boolean emptyQueue = false;
-    private List<DirtyManager.DirtyRecord> dirtyQueue;
-    private static int queueSize = 50;
-    Thread thread;
-    RegionToCells regionToCells;
+    ArrayList<SCell> cellsToCompute;
+    final private static int QUEUE_SIZE = 50;
 
     public FormulaAsyncSchedulerPriority() {
-
-        dirtyQueue = new ArrayList<>();
-        regionToCells = new RegionToCells();
-        thread = new Thread(regionToCells);
-        thread.start();
-
+        cellsToCompute = new ArrayList<>(QUEUE_SIZE);
     }
 
     @Override
     public void run() {
-        ArrayList<SCell> cellsToCompute = new ArrayList<>(queueSize);
+        ArrayList<SCell> cellsToCompute = new ArrayList<>(QUEUE_SIZE);
         while (keepRunning) {
-            if (regionToCells.cellQueue.isEmpty() && DirtyManager.dirtyManagerInstance.isEmpty() && cellsToCompute.isEmpty()) {
-                synchronized (this) {
-                    emptyQueue = true;
-                    notifyAll();
+            DirtyManager.DirtyRecord dirtyRecord = null;
+            SSheet sheet = null;
+            int currentRow = 0;
+            int currentColumn = 0;
+
+            // Keep pulling regions till cellsToCompute is full
+            while (cellsToCompute.size() < QUEUE_SIZE || dirtyRecord == null) {
+                if (dirtyRecord == null) {
+                    if (cellsToCompute.size() == 0)
+                        dirtyRecord = DirtyManager.dirtyManagerInstance.getDirtyRegionFromQueue(20);
+                    else
+                        dirtyRecord = DirtyManager.dirtyManagerInstance.getDirtyRegionFromQueue();
+                    if (dirtyRecord != null) {
+                        sheet = BookBindings.getSheetByRef(dirtyRecord.region);
+                        currentRow = dirtyRecord.region.getRow();
+                        currentColumn = dirtyRecord.region.getColumn();
+                    }
+                } else {
+                    while (cellsToCompute.size() < QUEUE_SIZE) {
+                        SCell sCell = sheet.getCell(currentRow, currentColumn);
+                        if (sCell.getType() == SCell.CellType.FORMULA)
+                            cellsToCompute.add(sCell);
+
+                        // Next cell
+                        currentColumn++;
+                        if (currentColumn > dirtyRecord.region.getLastColumn()) {
+                            currentRow++;
+                            if (currentRow > dirtyRecord.region.getLastRow()) {
+                                DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,
+                                        dirtyRecord.trxId);
+                                dirtyRecord = null;
+                                break;
+                            }
+                            currentColumn = dirtyRecord.region.getColumn();
+                        }
+                    }
+                    if (cellsToCompute.size() == QUEUE_SIZE)
+                        break;
                 }
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                continue;
-            } else {
-                emptyQueue = false;
             }
-           // cellsToCompute.clear();
 
-
-            cellsToCompute.addAll(regionToCells.cellQueue);
-
-            // Order cells based on priority.
-            Collections.shuffle(cellsToCompute);
             costBasedSort(cellsToCompute);
-
 
             // Execute only half
             int i;
-            for (i=0;i<Math.min(cellsToCompute.size(), queueSize/2);i++) {
+            for (i = 0; i < Math.min(cellsToCompute.size(), QUEUE_SIZE / 2); i++) {
                 SCell sCell = cellsToCompute.get(i);
                 ((CellImpl) sCell).getValue(true, true);
                 // Push individual cells to the UI
                 update(sCell.getSheet(), sCell.getCellRegion());
                 DirtyManagerLog.instance.markClean(sCell.getCellRegion());
-
-                regionToCells.cellQueue.remove(sCell);
-                //logger.info("Done computing " + sCell.getCellRegion());
             }
             cellsToCompute.subList(0,i).clear();
+            synchronized (this) {
+                this.notify();
+            }
         }
     }
 
@@ -84,47 +92,13 @@ public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
         cellsToCompute.sort(Comparator.comparingInt(e->e.getComputeCost()));
     }
 
-
-
-
-/*
-            while (true) {
-                DirtyManager.DirtyRecord dirtyRecord = DirtyManager
-                        .dirtyManagerInstance.getDirtyRegionFromQueue(10);
-                if (dirtyRecord == null)
-                    break;
-                dirtyQueue.add(dirtyRecord);
-                if (dirtyQueue.size() == maxQueueSize)
-                    break;
-            }
-
-            if (DirtyManager.dirtyManagerInstance.isEmpty()) {
-                synchronized (this) {
-                    emptyQueue = true;
-                    notifyAll();
-                }
-                continue;
-            } else {
-                emptyQueue = false;
-            }
-
-            if (emptyQueue && dirtyQueue.size() == 0) {
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                continue;
-            }
-*/
-            //logger.info("Done computing " + dirtyRecord.region );
-
     @Override
     public synchronized void waitForCompletion() {
-        while (!emptyQueue || !regionToCells.cellQueue.isEmpty() || !DirtyManager.dirtyManagerInstance.isEmpty()) {
+        while (!cellsToCompute.isEmpty() || !DirtyManager.dirtyManagerInstance.isEmpty()) {
             try {
                 this.wait();
             } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -132,56 +106,5 @@ public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
     @Override
     public void shutdown() {
         keepRunning = false;
-        regionToCells.shutdown();
-        try {
-            thread.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
-
-
-    static class RegionToCells implements Runnable
-    {
-        private boolean keepRunning;
-        public ArrayBlockingQueue<SCell> cellQueue;
-
-        RegionToCells()
-        {
-            keepRunning = true;
-            cellQueue = new ArrayBlockingQueue<>(queueSize);
-        }
-
-
-        @Override
-        public void run() {
-            while (keepRunning) {
-                DirtyManager.DirtyRecord dirtyRecord = DirtyManager.dirtyManagerInstance.getDirtyRegionFromQueue();
-                if (dirtyRecord == null) {
-                    continue;
-                }
-
-                SSheet sheet = BookBindings.getSheetByRef(dirtyRecord.region);
-                for (int row = dirtyRecord.region.getRow();
-                     row <= dirtyRecord.region.getLastRow(); row++) {
-                    for (int col = dirtyRecord.region.getColumn();
-                         col <= dirtyRecord.region.getLastColumn(); col++) {
-                        SCell sCell = sheet.getCell(row, col);
-                        if (sCell.getType() == SCell.CellType.FORMULA)
-                            cellQueue.add(sCell);
-                        //else
-                        //logger.info("sCell.getType()  " + sCell.getType() + " " +  sCell.getValue()  );
-                    }
-                }
-                DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,
-                        dirtyRecord.trxId);
-            }
-
-        }
-
-        public void shutdown() {
-            keepRunning = false;
-        }
-    }
-
 }

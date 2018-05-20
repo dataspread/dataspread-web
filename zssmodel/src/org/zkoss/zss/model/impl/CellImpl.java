@@ -324,7 +324,7 @@ public class CellImpl extends AbstractCellAdv {
                 FormulaEngine fe = EngineFactory.getInstance().createFormulaEngine();
                 fe.clearCache(new FormulaClearContext(_sheet));
                 EvaluationResult result = fe.evaluate(expr, evalContext);
-                updateFormulaResultValue(result, dirtyTrxId);
+				updateFormulaResultValue(result, _sheet.getTrxId());
             }
 		}
 		else
