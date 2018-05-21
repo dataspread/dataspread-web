@@ -23,14 +23,14 @@ import org.json.JSONObject;
 @RestController
 public class SheetController {
     // Sheets API
-    @RequestMapping(value = "/getSheets/{bookId}",
+    @RequestMapping(value = "/api/getSheets/{bookId}",
             method = RequestMethod.GET)
     public HashMap<String, Object> getSheets(@PathVariable String bookId) {
         SBook book = BookBindings.getBookById(bookId);
         return sheetWrapper(book);
     }
 
-    @RequestMapping(value = "/deleteSheet",
+    @RequestMapping(value = "/api/deleteSheet",
             method = RequestMethod.DELETE)
     public HashMap<String, Object> deleteSheet(@RequestBody String json) {
         JSONObject obj = new JSONObject(json);
@@ -42,7 +42,7 @@ public class SheetController {
         return sheetWrapper(book);
     }
 
-    @RequestMapping(value = "/addSheet",
+    @RequestMapping(value = "/api/addSheet",
             method = RequestMethod.POST)
     public HashMap<String, Object> addSheet(@RequestBody String json) {
         JSONObject obj = new JSONObject(json);
@@ -53,7 +53,7 @@ public class SheetController {
         return sheetWrapper(book);
     }
 
-    @RequestMapping(value = "/changeSheetName",
+    @RequestMapping(value = "/api/changeSheetName",
             method = RequestMethod.PUT)
     public HashMap<String, Object> changeSheetName(@RequestBody String json) {
         JSONObject obj = new JSONObject(json);
@@ -66,7 +66,7 @@ public class SheetController {
         return sheetWrapper(book);
     }
 
-    @RequestMapping(value = "/copySheet",
+    @RequestMapping(value = "/api/copySheet",
             method = RequestMethod.POST)
     public HashMap<String, Object> copySheet(@RequestBody String json) {
         JSONObject obj = new JSONObject(json);
@@ -87,7 +87,7 @@ public class SheetController {
         return sheetWrapper(book);
     }
 
-    @RequestMapping(value = "/moveSheet",
+    @RequestMapping(value = "/api/moveSheet",
             method = RequestMethod.PUT)
     public HashMap<String, Object> shiftSheets(@RequestBody String json) {
         JSONObject obj = new JSONObject(json);
@@ -99,7 +99,7 @@ public class SheetController {
         return sheetWrapper(book);
     }
 
-    @RequestMapping(value = "/clearSheet",
+    @RequestMapping(value = "/api/clearSheet",
             method = RequestMethod.PUT)
     public HashMap<String, Object> clearSheet(@RequestBody String json) {
         JSONObject obj = new JSONObject(json);

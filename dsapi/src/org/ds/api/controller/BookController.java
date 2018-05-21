@@ -17,7 +17,7 @@ import org.json.JSONObject;
 @RestController
 public class BookController {
     // Books API
-    @RequestMapping(value = "/getBooks",
+    @RequestMapping(value = "/api/getBooks",
             method = RequestMethod.GET)
     public HashMap<String, Object> getBooks() {
         List<HashMap<String, Object>> books = new ArrayList<>();
@@ -51,7 +51,7 @@ public class BookController {
     }
 
 
-    @RequestMapping(value = "/deleteBook",
+    @RequestMapping(value = "/api/deleteBook",
             method = RequestMethod.DELETE)
     public HashMap<String, Object> deleteBook(@RequestBody String json) {
         JSONObject obj = new JSONObject(json);
@@ -60,7 +60,7 @@ public class BookController {
         return JsonWrapper.generateJson(null);
     }
 
-    @RequestMapping(value = "/addBook",
+    @RequestMapping(value = "/api/addBook",
             method = RequestMethod.POST)
     public HashMap<String, Object> addBook(@RequestBody String json) {
         JSONObject obj = new JSONObject(json);
@@ -82,7 +82,7 @@ public class BookController {
         return bookWrapper(book.getId(), bookName);
     }
 
-    @RequestMapping(value = "/changeBookName",
+    @RequestMapping(value = "/api/changeBookName",
             method = RequestMethod.PUT)
     public HashMap<String, Object> changeBookName(@RequestBody String json) {
         JSONObject obj = new JSONObject(json);
