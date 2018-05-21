@@ -47,38 +47,6 @@ public class TableController {
     final String TABLE_CELLS = "table_cells";
     final String COUNT = "count";
 
-   @RequestMapping(value = "/putCell/{book}/{sheet}/{row}/{col}/{value}",
-            method = RequestMethod.PUT)
-    public void putCells(@PathVariable String book,
-                         @PathVariable String sheet,
-                         @PathVariable int row,
-                         @PathVariable int col,
-                         @PathVariable String value) {
-        putCells(book, sheet, row, row, col, col, value);
-    }
-
-    @RequestMapping(value = "/putCells/{book}/{sheet}/{row1}-{row2}/{col1}-{col2}",
-            method = RequestMethod.PUT)
-    public void putCells(@PathVariable String book,
-                         @PathVariable String sheet,
-                         @PathVariable int row1,
-                         @PathVariable int row2,
-                         @PathVariable int col1,
-                         @PathVariable int col2,
-                         @RequestBody String value) {
-
-        SBook sbook = BookBindings.getBookByName(book);
-        SSheet sSheet = sbook.getSheetByName(sheet);
-
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
-            for (int row = row1; row <= row2; row++) {
-                for (int col = col1; col <= col2; col++) {
-                    sSheet.getCell(row, col).setStringValue(value, connection, true);
-                }
-            }
-        }
-    }
-
     String returnFalse(org.zkoss.json.JSONObject ret, Exception e){
         e.printStackTrace();
         ret.clear();
