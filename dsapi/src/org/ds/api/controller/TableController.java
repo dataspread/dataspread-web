@@ -1,29 +1,31 @@
 package org.ds.api.controller;
 
 import org.ds.api.Cell;
-import org.zkoss.json.JSONArray;
-import org.zkoss.json.JSONObject;
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.springframework.web.bind.annotation.*;
 import org.zkoss.json.parser.JSONParser;
+import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.impl.BookImpl;
+import org.zkoss.zss.model.impl.sys.TableMonitor;
 import org.zkoss.zss.model.sys.BookBindings;
-import org.zkoss.zss.model.impl.sys.TableController;
-import org.zkoss.zss.model.CellRegion;
-
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 @RestController
-public class ApiController {
+public class TableController {
 
     final String BOOK_NAME = "book_name";
     final String SCHEMA = "schema";
@@ -45,81 +47,7 @@ public class ApiController {
     final String TABLE_CELLS = "table_cells";
     final String COUNT = "count";
 
-    @RequestMapping(value = "/getCell/{book}/{sheet}/{row}/{col}",
-            method = RequestMethod.GET)
-    public HashMap<String, List<Cell>> getCells(@PathVariable String book,
-                                                @PathVariable String sheet,
-                                                @PathVariable int row,
-                                                @PathVariable int col) {
-        return getCells(book, sheet, row, row, col, col);
-    }
-
-
-    @RequestMapping(value = "/getSheets/{book}",
-            method = RequestMethod.GET)
-    public HashMap<String, List<String>> getSheets(@PathVariable String book) {
-        List<String> sheetNames = new ArrayList<>();
-
-        SBook sbook = BookBindings.getBookByName(book);
-        for (int i = 0; i < sbook.getNumOfSheet(); i++)
-            sheetNames.add(sbook.getSheet(i).getSheetName());
-        HashMap<String, List<String>> result = new HashMap<>();
-        result.put("sheets", sheetNames);
-        return result;
-    }
-
-
-    @RequestMapping(value = "/getBooks",
-            method = RequestMethod.GET)
-    public HashMap<String, List<String>> getBooks() {
-        List<String> books = new ArrayList<>();
-        String query = "SELECT bookname FROM books";
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query);
-             ResultSet rs = statement.executeQuery()) {
-            while (rs.next())
-                books.add(rs.getString(1));
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        HashMap<String, List<String>> result = new HashMap<>();
-        result.put("books", books);
-        return result;
-    }
-
-
-    @RequestMapping(value = "/getCells/{book}/{sheet}/{row1}-{row2}/{col1}-{col2}",
-            method = RequestMethod.GET)
-    public HashMap<String, List<Cell>> getCells(@PathVariable String book,
-                                     @PathVariable String sheet,
-                                     @PathVariable int row1,
-                                     @PathVariable int row2,
-                                     @PathVariable int col1,
-                                     @PathVariable int col2) {
-        List<Cell> returnCells = new ArrayList<>();
-
-        SBook sbook = BookBindings.getBookByName(book);
-        SSheet sSheet = sbook.getSheetByName(sheet);
-
-        for (int row = row1; row <= row2; row++) {
-            for (int col = col1; col <= col2; col++) {
-                SCell sCell = sSheet.getCell(row, col);
-
-                Cell cell = new Cell();
-                cell.row = row;
-                cell.col = col;
-                cell.value = sCell.getStringValue();
-                if (sCell.getType() == SCell.CellType.FORMULA)
-                    cell.formula = sCell.getFormulaValue();
-                returnCells.add(cell);
-            }
-        }
-        HashMap<String, List<Cell>> result = new HashMap<>();
-        result.put("getCells", returnCells);
-        return result;
-    }
-
-    @RequestMapping(value = "/putCell/{book}/{sheet}/{row}/{col}/{value}",
+   @RequestMapping(value = "/putCell/{book}/{sheet}/{row}/{col}/{value}",
             method = RequestMethod.PUT)
     public void putCells(@PathVariable String book,
                          @PathVariable String sheet,
@@ -151,7 +79,7 @@ public class ApiController {
         }
     }
 
-    String returnFalse(JSONObject ret, Exception e){
+    String returnFalse(org.zkoss.json.JSONObject ret, Exception e){
         e.printStackTrace();
         ret.clear();
         ret.put(MSG, e.getMessage());
@@ -162,9 +90,9 @@ public class ApiController {
             method = RequestMethod.PUT)
     public String createTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
-        JSONObject ret = new JSONObject();
+        org.zkoss.json.JSONObject ret = new org.zkoss.json.JSONObject();
         try {
-            JSONObject dict = (JSONObject)paser.parse(value);
+            org.zkoss.json.JSONObject dict = (org.zkoss.json.JSONObject)paser.parse(value);
             String book = (String)dict.get(BOOK_NAME);
             String sheet = (String)dict.get(SHEET_NAME);
             String table = (String)dict.get(TABLE_NAME);
@@ -172,14 +100,14 @@ public class ApiController {
             int row2 = (int)dict.get(ROW_2);
             int col1 = (int)dict.get(COL_1);
             int col2 = (int)dict.get(COL_2);
-            JSONArray json_schema = (JSONArray) dict.get(SCHEMA);
+            org.zkoss.json.JSONArray json_schema = (org.zkoss.json.JSONArray) dict.get(SCHEMA);
             List<String> schema = new ArrayList<>();
             for (int i = 0; i <= col2 - col1; i++){
                 schema.add((String)json_schema.get(i));
             }
             String user_id = (String)dict.get(USER_ID);
             CellRegion range = new CellRegion(row1, col1, row2, col2);
-            TableController tableModel = TableController.getController();
+            TableMonitor tableModel = TableMonitor.getController();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 String[] links = tableModel.createTable(context, range, user_id, table, book, sheet,schema);
@@ -203,9 +131,9 @@ public class ApiController {
             method = RequestMethod.PUT)
     public String linkTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
-        JSONObject ret = new JSONObject();
+        org.zkoss.json.JSONObject ret = new org.zkoss.json.JSONObject();
         try {
-            JSONObject dict = (JSONObject)paser.parse(value);
+            org.zkoss.json.JSONObject dict = (org.zkoss.json.JSONObject)paser.parse(value);
             String book = (String)dict.get(BOOK_NAME);
             String sheet = (String)dict.get(SHEET_NAME);
             String table = (String)dict.get(TABLE_NAME);
@@ -215,7 +143,7 @@ public class ApiController {
             int col2 = (int)dict.get(COL_2);
             String user_id = (String)dict.get(USER_ID);
             CellRegion range = new CellRegion(row1, col1, row2, col2);
-            TableController tableModel = TableController.getController();
+            TableMonitor tableModel = TableMonitor.getController();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 String[] links = tableModel.linkTable(context, range, user_id, table, book, sheet);
@@ -238,12 +166,12 @@ public class ApiController {
     @RequestMapping(value = "/unlinkTable",method = RequestMethod.PUT)
     public String unlinkTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
-        JSONObject ret = new JSONObject();
+        org.zkoss.json.JSONObject ret = new org.zkoss.json.JSONObject();
         try {
-            JSONObject dict = (JSONObject)paser.parse(value);
+            org.zkoss.json.JSONObject dict = (org.zkoss.json.JSONObject)paser.parse(value);
             String tableSheetLink = (String) dict.get(TABLE_SHEET_ID);
 
-            TableController tableModel = TableController.getController();
+            TableMonitor tableModel = TableMonitor.getController();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 tableModel.unLinkTable(context, tableSheetLink);
@@ -265,9 +193,9 @@ public class ApiController {
     @RequestMapping(value = "/getTableCells",method = RequestMethod.PUT)
     public String getTableCells(@RequestBody String value){
         JSONParser paser = new JSONParser();
-        JSONObject ret = new JSONObject();
+        org.zkoss.json.JSONObject ret = new org.zkoss.json.JSONObject();
         try {
-            JSONObject dict = (JSONObject)paser.parse(value);
+            org.zkoss.json.JSONObject dict = (org.zkoss.json.JSONObject)paser.parse(value);
             String book = (String)dict.get(BOOK_NAME);
             String sheet = (String)dict.get(SHEET_NAME);
             int row1 = (int)dict.get(ROW_1);
@@ -275,7 +203,7 @@ public class ApiController {
             int col1 = (int)dict.get(COL_1);
             int col2 = (int)dict.get(COL_2);
             CellRegion range = new CellRegion(row1, col1, row2, col2);
-            TableController tableModel = TableController.getController();
+            TableMonitor tableModel = TableMonitor.getController();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 ret.put(TABLE_CELLS,tableModel.getCells(context, range, sheet, book));
@@ -296,13 +224,13 @@ public class ApiController {
     @RequestMapping(value = "/dropTable",method = RequestMethod.PUT)
     public String dropTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
-        JSONObject ret = new JSONObject();
+        org.zkoss.json.JSONObject ret = new org.zkoss.json.JSONObject();
         try {
-            JSONObject dict = (JSONObject)paser.parse(value);
+            org.zkoss.json.JSONObject dict = (org.zkoss.json.JSONObject)paser.parse(value);
             String userId= (String) dict.get(USER_ID);
             String tableName= (String) dict.get(TABLE_NAME);
 
-            TableController tableModel = TableController.getController();
+            TableMonitor tableModel = TableMonitor.getController();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 tableModel.dropTable(context, userId, tableName);
@@ -324,20 +252,20 @@ public class ApiController {
             method = RequestMethod.PUT)
     public String reorderTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
-        JSONObject ret = new JSONObject();
+        org.zkoss.json.JSONObject ret = new org.zkoss.json.JSONObject();
         try {
-            JSONObject dict = (JSONObject)paser.parse(value);
+            org.zkoss.json.JSONObject dict = (org.zkoss.json.JSONObject)paser.parse(value);
             String tableSheetId= (String) dict.get(TABLE_SHEET_ID);
-            JSONArray attributeOrder= (JSONArray) dict.get(ATTRIBUTE_ORDER_PAIR);
+            org.zkoss.json.JSONArray attributeOrder= (org.zkoss.json.JSONArray) dict.get(ATTRIBUTE_ORDER_PAIR);
             StringBuilder reorderbuilder = new StringBuilder();
             for (Object object:attributeOrder){
                 if (reorderbuilder.length() > 0){
                     reorderbuilder.append(',');
                 }
-                reorderbuilder.append(((JSONArray)object).get(0)).append(" ").append(((JSONArray)object).get(1));
+                reorderbuilder.append(((org.zkoss.json.JSONArray)object).get(0)).append(" ").append(((org.zkoss.json.JSONArray)object).get(1));
             }
 
-            TableController tableModel = TableController.getController();
+            TableMonitor tableModel = TableMonitor.getController();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 tableModel.reorderTable(context, tableSheetId, reorderbuilder.toString());
@@ -359,11 +287,11 @@ public class ApiController {
             method = RequestMethod.PUT)
     public String filterTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
-        JSONObject ret = new JSONObject();
+        org.zkoss.json.JSONObject ret = new org.zkoss.json.JSONObject();
         try {
-            JSONObject dict = (JSONObject)paser.parse(value);
+            org.zkoss.json.JSONObject dict = (org.zkoss.json.JSONObject)paser.parse(value);
             String tableSheetId= (String) dict.get(TABLE_SHEET_ID);
-            JSONArray filter= (JSONArray) dict.get(FILTER);
+            org.zkoss.json.JSONArray filter= (org.zkoss.json.JSONArray) dict.get(FILTER);
             StringBuilder filterbuilder = new StringBuilder();
             for (Object object:filter){
                 if (filterbuilder.length() > 0){
@@ -373,7 +301,7 @@ public class ApiController {
             }
 
 
-            TableController tableModel = TableController.getController();
+            TableMonitor tableModel = TableMonitor.getController();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 tableModel.filterTable(context, tableSheetId, filterbuilder.toString());
@@ -395,14 +323,14 @@ public class ApiController {
             method = RequestMethod.PUT)
     public String deleteRows(@RequestBody String value){
         JSONParser paser = new JSONParser();
-        JSONObject ret = new JSONObject();
+        org.zkoss.json.JSONObject ret = new org.zkoss.json.JSONObject();
         try {
-            JSONObject dict = (JSONObject)paser.parse(value);
+            org.zkoss.json.JSONObject dict = (org.zkoss.json.JSONObject)paser.parse(value);
             String book = (String)dict.get(BOOK_NAME);
             String sheet = (String)dict.get(SHEET_NAME);
             int row = (int)dict.get(ROW);
             int count = (int)dict.get(COUNT);
-            TableController tableModel = TableController.getController();
+            TableMonitor tableModel = TableMonitor.getController();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 tableModel.deleteRows(context,row, count, book,sheet);
@@ -424,14 +352,14 @@ public class ApiController {
             method = RequestMethod.PUT)
     public String deleteCols(@RequestBody String value){
         JSONParser paser = new JSONParser();
-        JSONObject ret = new JSONObject();
+        org.zkoss.json.JSONObject ret = new org.zkoss.json.JSONObject();
         try {
-            JSONObject dict = (JSONObject)paser.parse(value);
+            org.zkoss.json.JSONObject dict = (org.zkoss.json.JSONObject)paser.parse(value);
             String book = (String)dict.get(BOOK_NAME);
             String sheet = (String)dict.get(SHEET_NAME);
             int col = (int)dict.get(COL);
             int count = (int)dict.get(COUNT);
-            TableController tableModel = TableController.getController();
+            TableMonitor tableModel = TableMonitor.getController();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 tableModel.deleteCols(context,col, count, book,sheet);
@@ -450,4 +378,16 @@ public class ApiController {
     }
 
 
+
+
+
+
+    public static String encode(final String clearText) {
+        try {
+            return new String(
+                    Base64.getEncoder().encode(MessageDigest.getInstance("SHA-256").digest(clearText.getBytes())));
+        } catch (NoSuchAlgorithmException e) {
+            return clearText;
+        }
+    }
 }

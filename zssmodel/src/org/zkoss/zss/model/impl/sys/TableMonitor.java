@@ -1,21 +1,14 @@
 package org.zkoss.zss.model.impl.sys;
 
-import org.junit.Test;
 import org.model.AutoRollbackConnection;
-import org.model.BlockStore;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.json.JSONArray;
-import org.zkoss.json.JSONObject;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
-import org.zkoss.zss.model.SSemantics;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
-import org.zkoss.zss.model.impl.CellImpl;
-import org.zkoss.zss.model.impl.CountedBTree;
-import org.zkoss.zss.model.impl.PosMapping;
 import org.zkoss.zss.model.sys.BookBindings;
 
 import java.sql.*;
@@ -27,7 +20,7 @@ import java.util.stream.IntStream;
 import static java.lang.Math.round;
 
 
-public class TableController {
+public class TableMonitor {
 
     private final static Random        _random        = new Random(System.currentTimeMillis());
     private final static AtomicInteger _tableCount    = new AtomicInteger();
@@ -35,9 +28,9 @@ public class TableController {
     private final static String        TABLESHEETLINK = "sheet_table_link";
     HashMap<String, TableSheetModel> _models;
 
-    private static TableController _tableController = null;
+    private static TableMonitor _tableMonitor = null;
 
-    private TableController(){
+    private TableMonitor(){
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
             DBContext context = new DBContext(connection);
             ArrayList<String> tableSheetLinks = getAllTableSheetLinks(context);
@@ -52,11 +45,11 @@ public class TableController {
         }
     }
 
-    public static TableController getController(){
-        if (_tableController == null){
-            _tableController = new TableController();
+    public static TableMonitor getController(){
+        if (_tableMonitor == null){
+            _tableMonitor = new TableMonitor();
         }
-        return _tableController;
+        return _tableMonitor;
     }
 
     public String[] createTable(DBContext context, CellRegion range, String userId, String metaTableName,
