@@ -31,10 +31,19 @@ public class BookBindings {
         return _bindings.computeIfAbsent(bookName, e->
                 {
                     SBook book = new BookImpl(e);
-                    if (!book.setNameAndLoad(e)) {
+                    if (!book.setNameAndLoad(e, book.getId())) {
                         book.createSheet("Sheet1");
                         book.createSheet("Sheet2");
                     }
+                    return book;
+                }
+        );
+    }
+
+    static public SBook getBookById(String bookId) {
+        return _bindings.computeIfAbsent(bookId, e->
+                {
+                    SBook book = BookImpl.getBookById(e);
                     return book;
                 }
         );

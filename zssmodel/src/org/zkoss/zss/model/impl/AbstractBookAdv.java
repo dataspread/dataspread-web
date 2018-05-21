@@ -34,7 +34,7 @@ public abstract class AbstractBookAdv implements SBook,EvaluationContributorCont
 	/*package*/ abstract void setBookSeries(SBookSeries bookSeries);
 
 	public abstract String getId();
-	public abstract boolean setNameAndLoad(String bookName);
+	public abstract boolean setNameAndLoad(String bookName, String bookId);
 	
 	//ZSS-854
 	public abstract void clearDefaultCellStyles();

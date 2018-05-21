@@ -1,0 +1,128 @@
+package org.ds.api.controller;
+
+import org.ds.api.Cell;
+import org.model.AutoRollbackConnection;
+import org.model.DBHandler;
+import org.springframework.web.bind.annotation.*;
+import org.zkoss.zss.model.SBook;
+import org.zkoss.zss.model.SCell;
+import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.impl.BookImpl;
+import org.zkoss.zss.model.sys.BookBindings;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+@RestController
+public class SheetController {
+    // Sheets API
+    @RequestMapping(value = "/getSheets/{bookId}",
+            method = RequestMethod.GET)
+    public HashMap<String, Object> getSheets(@PathVariable String bookId) {
+        SBook book = BookBindings.getBookById(bookId);
+        return sheetWrapper(book);
+    }
+
+    @RequestMapping(value = "/deleteSheet",
+            method = RequestMethod.DELETE)
+    public HashMap<String, Object> deleteSheet(@RequestBody String json) {
+        JSONObject obj = new JSONObject(json);
+        String bookId = (String) obj.get("bookId");
+        String sheetName = (String) obj.get("sheetName");
+        SBook book = BookBindings.getBookById(bookId);
+        SSheet ssheet = book.getSheetByName(sheetName);
+        book.deleteSheet(ssheet);
+        return sheetWrapper(book);
+    }
+
+    @RequestMapping(value = "/addSheet",
+            method = RequestMethod.POST)
+    public HashMap<String, Object> addSheet(@RequestBody String json) {
+        JSONObject obj = new JSONObject(json);
+        String sheetName = (String) obj.get("sheetName");
+        String bookId = (String) obj.get("bookId");
+        SBook book = BookBindings.getBookById(bookId);
+        book.createSheet(sheetName);
+        return sheetWrapper(book);
+    }
+
+    @RequestMapping(value = "/changeSheetName",
+            method = RequestMethod.PUT)
+    public HashMap<String, Object> changeSheetName(@RequestBody String json) {
+        JSONObject obj = new JSONObject(json);
+        String oldSheetName = (String) obj.get("oldSheetName");
+        String newSheetName = (String) obj.get("newSheetName");
+        String bookId = (String) obj.get("bookId");
+        SBook book = BookBindings.getBookById(bookId);
+        SSheet ssheet = book.getSheetByName(oldSheetName);
+        book.setSheetName(ssheet, newSheetName);
+        return sheetWrapper(book);
+    }
+
+    @RequestMapping(value = "/copySheet",
+            method = RequestMethod.POST)
+    public HashMap<String, Object> copySheet(@RequestBody String json) {
+        JSONObject obj = new JSONObject(json);
+        String sheetName = (String) obj.get("sheetName");
+        String bookId = (String) obj.get("bookId");
+        SBook book = BookBindings.getBookById(bookId);
+        SSheet sheet = book.getSheetByName(sheetName);
+        int num = 1;
+        String newSheetName = null;
+        for(int i = 0, length = book.getNumOfSheet(); i <= length; i++) {
+            String n = sheetName + " (" + ++num + ")";
+            if(book.getSheetByName(n) == null) {
+                newSheetName = n;
+                break;
+            }
+        }
+        book.createSheet(newSheetName, sheet);
+        return sheetWrapper(book);
+    }
+
+    @RequestMapping(value = "/moveSheet",
+            method = RequestMethod.PUT)
+    public HashMap<String, Object> shiftSheets(@RequestBody String json) {
+        JSONObject obj = new JSONObject(json);
+        String sheetName = (String) obj.get("sheetName");
+        String bookId = (String) obj.get("bookId");
+        int newPos = (int) obj.get("newPos");
+        SBook book = BookBindings.getBookById(bookId);
+        book.moveSheetTo(book.getSheetByName(sheetName), newPos);
+        return sheetWrapper(book);
+    }
+
+    @RequestMapping(value = "/clearSheet",
+            method = RequestMethod.PUT)
+    public HashMap<String, Object> clearSheet(@RequestBody String json) {
+        JSONObject obj = new JSONObject(json);
+        String sheetName = (String) obj.get("sheetName");
+        String bookId = (String) obj.get("bookId");
+        SBook book = BookBindings.getBookById(bookId);
+        SSheet sheet = book.getSheetByName(sheetName);
+        sheet.clearCell(sheet.getStartRowIndex(), sheet.getStartColumnIndex(), sheet.getEndRowIndex(), sheet.getEndColumnIndex());
+        return sheetWrapper(book);
+    }
+
+    private HashMap<String, Object> sheetWrapper(SBook sbook) {
+        List<Object> sheets = new ArrayList<>();
+        for (int i = 0; i < sbook.getNumOfSheet(); i++) {
+            SSheet sheet = sbook.getSheet(i);
+            HashMap<String, Object> sheetJson = new HashMap<>();
+            sheetJson.put("name", sheet.getSheetName());
+            sheetJson.put("numRow", sheet.getEndRowIndex());
+            sheetJson.put("numCol", sheet.getEndColumnIndex());
+            sheets.add(sheetJson);
+        }
+        HashMap<String, Object> data = new HashMap<>();
+        data.put("sheets", sheets);
+        return JsonWrapper.generateJson(data);
+    }
+}
