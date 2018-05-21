@@ -305,14 +305,8 @@ public class CellImpl extends AbstractCellAdv {
 
 		// Check if it is dirty.
 		int dirtyTrxId = DirtyManager.dirtyManagerInstance.getDirtyTrxId(getRef());
-		if (trxId>dirtyTrxId && _formulaResultValue!=null)
-		{
-			// Formula already computed.
-			return;
-		}
-
 		/* if the value is not dirty then update trxId */
-		if (dirtyTrxId<0 && _formulaResultValue!=null) {
+        if ((trxId > dirtyTrxId || dirtyTrxId < 0) && _formulaResultValue != null) {
 			trxId = _sheet.getTrxId();
 		}
 		else if (sync)

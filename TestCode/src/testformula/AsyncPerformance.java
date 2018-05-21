@@ -58,8 +58,8 @@ public class AsyncPerformance {
         formulaAsyncScheduler.shutdown();
         asyncThread.join();
 
-        graphCompressor.stopListener();
-        graphThread.join();
+        //   graphCompressor.stopListener();
+        //   graphThread.join();
     }
 
 
@@ -340,7 +340,7 @@ public class AsyncPerformance {
         FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(book.getBookSeries()));
         SSheet sheet = book.getSheet(0);
 
-        int cellCount = 50;
+        int cellCount = 200;
         for (int i=1;i<=cellCount;i++)
             sheet.getCell(i,0).setFormulaValue("A" + i + "+1");
 
@@ -349,27 +349,19 @@ public class AsyncPerformance {
         /* Time to update A1 */
 
         sheet.clearCache();
-        startTime = System.currentTimeMillis();
-
-        sheet.getCell(0,0).setValue("300");
-        System.out.println("Final Value "
-                + sheet.getCell(cellCount,0).getValue());
-        endTime = System.currentTimeMillis();
-        System.out.println("Sync time to update = " + (endTime-startTime));
-
 
         sheet.setSyncComputation(false);
-        sheet.clearCache();
 
         System.out.println("Starting Asyn ");
         startTime = System.currentTimeMillis();
 
         sheet.getCell(0,0).setValue("200");
-        //System.out.println("Final Value "
-        //        + sheet.getCell(cellCount,0).getValue());
+        System.out.println("Before Waiting "
+                + sheet.getCell(cellCount, 0).getValue());
+
         endTime = System.currentTimeMillis();
         System.out.println("Async time to update = " + (endTime-startTime));
-        formulaAsyncScheduler.waitForCompletion();
+        // formulaAsyncScheduler.waitForCompletion();
         endTime = System.currentTimeMillis();
         System.out.println("Final Value "
                 + sheet.getCell(cellCount,0).getValue());
