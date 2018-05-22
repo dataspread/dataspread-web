@@ -283,14 +283,14 @@ public class RCV_Model_Simplified extends Model {
 
             StringBuffer sb = new StringBuffer();
             while ((nextLine = csvReader.readNext()) != null) {
-                ++importedRows;
                 if (importedColumns < nextLine.length)
                     importedColumns = nextLine.length;
                 for (int col = 0; col < nextLine.length; col++) {
                     sb.append(importedRows).append('|');
-                    sb.append(col+1).append('|');
+                    sb.append(col).append('|');
                     sb.append(nextLine[col]).append('\n');
                 }
+                ++importedRows;
 
                 if (sb.length() >= COMMIT_SIZE_BYTES) {
                     cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
@@ -302,7 +302,6 @@ public class RCV_Model_Simplified extends Model {
                 cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
                 cpIN.endCopy();
             rawConn.commit();
-            DBContext dbContext = new DBContext(connection);
             logger.info("Import done: " + importedRows + " rows and "
                     + importedColumns + " columns imported");
             connection.commit();
