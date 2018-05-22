@@ -227,6 +227,32 @@ public class TableMonitor {
         }
     }
 
+    public void changeTableColumnType(DBContext context, String linkTableId, int column, String columnType) throws Exception {
+        TableSheetModel model = _models.get(linkTableId);
+        ArrayList<Pair<String,Integer>> schema = model.getSchema(context);
+        String oldColumnName = schema.get(column).getKey();
+        String tableName = model.getTableName(context);
+        String update = "ALTER TABLE "+ tableName +" ALTER COLUMN " + oldColumnName +" " + columnType;
+        AutoRollbackConnection connection = context.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(update)) {
+            if (!stmt.execute())
+                throw new Exception("Change failed");
+        }
+    }
+
+    public void changeTableColumnName(DBContext context, String linkTableId, int column, String columnName) throws Exception {
+        TableSheetModel model = _models.get(linkTableId);
+        ArrayList<Pair<String,Integer>> schema = model.getSchema(context);
+        String oldColumnName = schema.get(column).getKey();
+        String tableName = model.getTableName(context);
+        String update = "ALTER TABLE "+ tableName + " RENAME COLUMN " + oldColumnName + " TO " + columnName;
+        AutoRollbackConnection connection = context.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(update)) {
+            if (!stmt.execute())
+                throw new Exception("Change failed");
+        }
+    }
+
     public void deleteRows(DBContext context, int row, int count, String linkId) {
         _models.get(linkId).deleteRows(context, row, count);
 //        String select = selectAllFromSheet(sheetName, bookId);

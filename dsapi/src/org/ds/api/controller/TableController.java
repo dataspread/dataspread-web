@@ -400,6 +400,60 @@ public class TableController {
         return returnTrue(null);
     }
 
+    @RequestMapping(value = "/api/changeTableColumnType",
+            method = RequestMethod.PUT)
+    public String changeTableColumnType(@RequestBody String value){
+        JSONParser paser = new JSONParser();
+        try {
+            JSONObject dict = (JSONObject)paser.parse(value);
+            String linkTableId = (String)dict.get(LINK_TABLE_ID);
+            int column = (int)dict.get(COLUMN);
+            String columnType = (String)dict.get(COLUMN_TYPE);
+            TableMonitor tableModel = TableMonitor.getController();
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+                DBContext context = new DBContext(connection);
+                tableModel.changeTableColumnType(context, linkTableId, column, columnType);
+                context.getConnection().commit();
+            }
+            catch(java.lang.Exception e){
+                return returnFalse(e);
+            }
+
+        }
+        catch (java.lang.Exception e){
+            return returnFalse(e);
+        }
+
+        return returnTrue(null);
+    }
+
+    @RequestMapping(value = "/api/changeTableColumnName",
+            method = RequestMethod.PUT)
+    public String changeTableColumnName(@RequestBody String value){
+        JSONParser paser = new JSONParser();
+        try {
+            JSONObject dict = (JSONObject)paser.parse(value);
+            String linkTableId = (String)dict.get(LINK_TABLE_ID);
+            int column = (int)dict.get(COLUMN);
+            String columnName = (String)dict.get(COLUMN_NAME);
+            TableMonitor tableModel = TableMonitor.getController();
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+                DBContext context = new DBContext(connection);
+                tableModel.changeTableColumnName(context, linkTableId, column, columnName);
+                context.getConnection().commit();
+            }
+            catch(java.lang.Exception e){
+                return returnFalse(e);
+            }
+
+        }
+        catch (java.lang.Exception e){
+            return returnFalse(e);
+        }
+
+        return returnTrue(null);
+    }
+
 
 
 
