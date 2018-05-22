@@ -467,13 +467,16 @@ public class ROM_Model extends Model {
                 sb.append('\n');
 
                 if (sb.length() >= COMMIT_SIZE_BYTES) {
-                    cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
+                    byte[] sbInBytes = sb.toString().getBytes();
+                    cpIN.writeToCopy(sbInBytes, 0, sbInBytes.length);
                     sb = new StringBuffer();
                     logger.info(importedRows + " rows imported ");
                 }
             }
-            if (sb.length() > 0)
-                cpIN.writeToCopy(sb.toString().getBytes(), 0, sb.length());
+            if (sb.length() > 0){
+                byte[] sbInBytes = sb.toString().getBytes();
+                cpIN.writeToCopy(sbInBytes, 0, sbInBytes.length);
+            }
             cpIN.endCopy();
             rawConn.commit();
             insertRows(dbContext, 0, importedRows);
