@@ -362,7 +362,7 @@ public interface SBook {
     SCellStyle getOrCreateDefaultHyperlinkStyle();
 
 	String getId();
-	boolean setNameAndLoad(String bookName);
+	boolean setNameAndLoad(String bookName, String bookId);
 
 	boolean hasSchema();
 }

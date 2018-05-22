@@ -61,7 +61,7 @@ public class TableController {
         return result.toJSONString();
     }
 
-    @RequestMapping(value = "/createTable",
+    @RequestMapping(value = "/api/createTable",
             method = RequestMethod.PUT)
     public String createTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
@@ -102,7 +102,7 @@ public class TableController {
         return returnTrue(ret);
     }
 
-    @RequestMapping(value = "/linkTable",
+    @RequestMapping(value = "/api/linkTable",
             method = RequestMethod.PUT)
     public String linkTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
@@ -138,7 +138,7 @@ public class TableController {
         return returnTrue(ret);
     }
 
-    @RequestMapping(value = "/unlinkTable",method = RequestMethod.PUT)
+    @RequestMapping(value = "/api/unlinkTable",method = RequestMethod.PUT)
     public String unlinkTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
         JSONObject ret = new JSONObject();
@@ -165,7 +165,7 @@ public class TableController {
     }
 
 
-    @RequestMapping(value = "/getTableCells",method = RequestMethod.PUT)
+    @RequestMapping(value = "/api/getTableCells",method = RequestMethod.PUT)
     public String getTableCells(@RequestBody String value){
         JSONParser paser = new JSONParser();
         JSONObject ret = new JSONObject();
@@ -196,7 +196,7 @@ public class TableController {
         return returnTrue(ret);
     }
 
-    @RequestMapping(value = "/dropTable",method = RequestMethod.PUT)
+    @RequestMapping(value = "/api/dropTable",method = RequestMethod.PUT)
     public String dropTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
         JSONObject ret = new JSONObject();
@@ -223,7 +223,7 @@ public class TableController {
         return returnTrue(ret);
     }
 
-    @RequestMapping(value = "/reorderTable",
+    @RequestMapping(value = "/api/reorderTable",
             method = RequestMethod.PUT)
     public String reorderTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
@@ -258,7 +258,7 @@ public class TableController {
         return returnTrue(ret);
     }
 
-    @RequestMapping(value = "/filterTable",
+    @RequestMapping(value = "/api/filterTable",
             method = RequestMethod.PUT)
     public String filterTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
@@ -294,7 +294,7 @@ public class TableController {
         return returnTrue(ret);
     }
 
-    @RequestMapping(value = "/deleteRows",
+    @RequestMapping(value = "/api/deleteRows",
             method = RequestMethod.PUT)
     public String deleteRows(@RequestBody String value){
         JSONParser paser = new JSONParser();
@@ -323,7 +323,7 @@ public class TableController {
         return returnTrue(ret);
     }
 
-    @RequestMapping(value = "/deleteCols",
+    @RequestMapping(value = "/api/deleteCols",
             method = RequestMethod.PUT)
     public String deleteCols(@RequestBody String value){
         JSONParser paser = new JSONParser();

@@ -21,7 +21,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 @RestController
-public class generalController {
+public class GeneralController {
     // General API
 
     @RequestMapping(value = "/getCells/{book}/{sheet}/{row1}/{row2}/{col1}/{col2}",

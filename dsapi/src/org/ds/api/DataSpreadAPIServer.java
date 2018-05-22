@@ -5,6 +5,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerSimple;
+import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
 @SpringBootApplication
 public class DataSpreadAPIServer extends SpringBootServletInitializer {
@@ -20,6 +22,10 @@ public class DataSpreadAPIServer extends SpringBootServletInitializer {
         String userName = "dbuser";
         String password = "dbadmin";
         DBHandler.connectToDB(url, driver, userName, password);
+        DBHandler.instance.initApplication();
+        FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerSimple();
+        Thread thread = new Thread(formulaAsyncScheduler);
+        thread.start();
 		SpringApplication.run(DataSpreadAPIServer.class, args);
 	}
 
