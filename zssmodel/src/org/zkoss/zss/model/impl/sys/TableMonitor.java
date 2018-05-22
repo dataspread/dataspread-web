@@ -53,7 +53,7 @@ public class TableMonitor {
     }
 
     public String[] createTable(DBContext context, CellRegion range, String userId, String metaTableName,
-                               String bookName, String sheetName,List<String> schema) throws Exception {
+                               String bookId, String sheetName,List<String> schema) throws Exception {
         // todo : sync relationship to mem
 
         String tableName = getTableName(userId, metaTableName);
@@ -62,7 +62,7 @@ public class TableMonitor {
         /* extract table header row */
         CellRegion tableHeaderRow = new CellRegion(range.row, range.column, range.row, range.lastColumn);
 
-        SBook book = BookBindings.getBookByName(bookName);
+        SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
         List<String> columnList = sheet.getCells(tableHeaderRow)
                 .stream()
@@ -100,7 +100,7 @@ public class TableMonitor {
 
         // todo: uncomment it
 
-        String[] ret = new String[]{insertToTableSheetLink(context, range, bookName, sheetName, tableName),
+        String[] ret = new String[]{insertToTableSheetLink(context, range, bookId, sheetName, tableName),
                 insertToTables(context,userId,metaTableName)};
 
         _models.get(ret[0]).initualizeMapping(context, oidList);
@@ -113,11 +113,11 @@ public class TableMonitor {
 
 
     public String[] linkTable(DBContext context, CellRegion range, String userId, String metaTableName,
-                              String bookName, String sheetName) throws Exception {
+                              String bookId, String sheetName) throws Exception {
         // todo : sync relationship to mem
         String tableName = getTableName(userId, metaTableName);
 
-        String[] ret = new String[]{insertToTableSheetLink(context, range, bookName, sheetName, tableName),
+        String[] ret = new String[]{insertToTableSheetLink(context, range, bookId, sheetName, tableName),
                 getSharedLink(context,userId,metaTableName)};
 
         initializePosmappingForLinkedTable(context, ret[0]);
@@ -125,7 +125,7 @@ public class TableMonitor {
         // todo: uncomment it
 
         //deleteCells(context, range);
-        return new String[]{insertToTableSheetLink(context, range, bookName, sheetName, tableName),
+        return new String[]{insertToTableSheetLink(context, range, bookId, sheetName, tableName),
                 getSharedLink(context,userId,metaTableName)};
     }
 
@@ -187,9 +187,9 @@ public class TableMonitor {
         //Empty rows?
     }
 
-    public void deleteRows(DBContext context, int row, int count, String bookName, String sheetName
+    public void deleteRows(DBContext context, int row, int count, String bookId, String sheetName
                            ) throws SQLException {
-        String select = selectAllFromSheet(sheetName, bookName);
+        String select = selectAllFromSheet(sheetName, bookId);
         CellRegion deleteregion = new CellRegion(row,0,row + count - 1,Integer.MAX_VALUE);
         AutoRollbackConnection connection = context.getConnection();
         try (Statement stmt = connection.createStatement()) {
@@ -219,8 +219,8 @@ public class TableMonitor {
     }
 
     public void deleteCols(DBContext context, int col, int count, String sheetName,
-                           String bookName) throws SQLException {
-        String select = selectAllFromSheet(sheetName, bookName);
+                           String bookId) throws SQLException {
+        String select = selectAllFromSheet(sheetName, bookId);
 
         CellRegion deleteregion = new CellRegion(0,col,Integer.MAX_VALUE,col + count - 1);
         AutoRollbackConnection connection = context.getConnection();
@@ -288,12 +288,12 @@ public class TableMonitor {
     }
 
     public JSONArray getCells(DBContext context, CellRegion fetchRange, String sheetName,
-                              String bookName) {
+                              String bookId) {
 
-        SBook book = BookBindings.getBookByName(bookName);
+        SBook book = BookBindings.getBookByName(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
         // Reduce Range to bounds
-        String select = selectAllFromSheet(sheetName, bookName);
+        String select = selectAllFromSheet(sheetName, bookId);
 
         JSONArray ret = new JSONArray();
 
@@ -371,7 +371,7 @@ public class TableMonitor {
         return sharedLink;
     }
 
-    private String insertToTableSheetLink(DBContext context, CellRegion range, String bookName,
+    private String insertToTableSheetLink(DBContext context, CellRegion range, String bookId,
                                           String sheetName, String tableName) throws SQLException {
         /* add the record to the tables table */
         AutoRollbackConnection connection = context.getConnection();
@@ -382,7 +382,7 @@ public class TableMonitor {
                 .append("INSERT INTO ")
                 .append(TABLESHEETLINK)
                 .append(" VALUES ")
-                .append(" (\'" + linkid + "\',\'" + bookName + "\',\'"
+                .append(" (\'" + linkid + "\',\'" + bookId + "\',\'"
                         + sheetName + "\',\'" + tableRange + "\',\'" + tableName
                         + "\'," + "\'\'" + "," + "\'\'" + ") ")
                 .toString();
@@ -574,15 +574,15 @@ public class TableMonitor {
         _models.get(linkId).initualizeMapping(context, oid_list);
     }
 
-    private String selectAllFromSheet(String sheetName, String bookName){
+    private String selectAllFromSheet(String sheetName, String bookId){
         StringBuilder select = new StringBuilder()
                 .append("SELECT *")
                 .append(" FROM ")
                 .append(TABLESHEETLINK)
                 .append(" WHERE sheetName = \'")
                 .append(sheetName)
-                .append("\' AND bookName = \'")
-                .append(bookName)
+                .append("\' AND bookId = \'")
+                .append(bookId)
                 .append("\'");
         return select.toString();
     }

@@ -16,7 +16,7 @@ import org.zkoss.json.*;
 @RestController
 public class TableController {
 
-    static final String BOOK_NAME = "bookName";
+    static final String BOOK_ID = "bookId";
     static final String SCHEMA = "schema";
     static final String FILTER = "filter";
     static final String ATTRIBUTE_ORDER_PAIR = "attributeOrderPair";
@@ -47,7 +47,10 @@ public class TableController {
     String returnFalse(JSONObject result, Exception e){
         e.printStackTrace();
         result.clear();
-        result.put(MSG, e.getMessage());
+        if (e.getMessage() == null)
+            result.put(MSG, e.toString());
+        else
+            result.put(MSG, e.getMessage());
         result.put(STATUS,FAILED);
         result.put(DATA,null);
         return result.toJSONString();
@@ -68,7 +71,7 @@ public class TableController {
         JSONObject ret = new JSONObject();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
-            String book = (String)dict.get(BOOK_NAME);
+            String book = (String)dict.get(BOOK_ID);
             String sheet = (String)dict.get(SHEET_NAME);
             String table = (String)dict.get(TABLE_NAME);
             int row1 = (int)dict.get(ROW_1);
@@ -109,7 +112,7 @@ public class TableController {
         JSONObject ret = new JSONObject();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
-            String book = (String)dict.get(BOOK_NAME);
+            String book = (String)dict.get(BOOK_ID);
             String sheet = (String)dict.get(SHEET_NAME);
             String table = (String)dict.get(TABLE_NAME);
             int row1 = (int)dict.get(ROW_1);
@@ -171,7 +174,7 @@ public class TableController {
         JSONObject ret = new JSONObject();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
-            String book = (String)dict.get(BOOK_NAME);
+            String book = (String)dict.get(BOOK_ID);
             String sheet = (String)dict.get(SHEET_NAME);
             int row1 = (int)dict.get(ROW_1);
             int row2 = (int)dict.get(ROW_2);
@@ -301,7 +304,7 @@ public class TableController {
         JSONObject ret = new JSONObject();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
-            String book = (String)dict.get(BOOK_NAME);
+            String book = (String)dict.get(BOOK_ID);
             String sheet = (String)dict.get(SHEET_NAME);
             int row = (int)dict.get(ROW);
             int count = (int)dict.get(COUNT);
@@ -330,7 +333,7 @@ public class TableController {
         JSONObject ret = new JSONObject();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
-            String book = (String)dict.get(BOOK_NAME);
+            String book = (String)dict.get(BOOK_ID);
             String sheet = (String)dict.get(SHEET_NAME);
             int col = (int)dict.get(COL);
             int count = (int)dict.get(COUNT);

@@ -114,7 +114,7 @@ public class DBHandler {
 
             String createDataTableSheetLink = "CREATE TABLE  IF NOT  EXISTS  sheet_table_link (" +
                     "linkid  TEXT NOT NULL," +
-                    "bookname  TEXT NOT NULL," +
+                    "bookid  TEXT NOT NULL," +
                     "sheetname  TEXT NOT NULL," +
                     "range  TEXT NOT NULL," +
                     "tablename  TEXT NOT NULL," +
