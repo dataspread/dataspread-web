@@ -71,7 +71,8 @@ public class BookController {
             statement.setString(1, bookName);
             ResultSet rs = statement.executeQuery();
             if (rs.next()) {
-                return JsonWrapper.generateError("Duplicated Book Name");
+                if (rs.getInt(1) > 0)
+                    return JsonWrapper.generateError("Duplicated Book Name");
             }
         } catch (SQLException e) {
             e.printStackTrace();

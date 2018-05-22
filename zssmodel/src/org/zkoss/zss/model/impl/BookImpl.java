@@ -1155,7 +1155,7 @@ public class BookImpl extends AbstractBookAdv{
 		//String bookTable = getId();
 		logger.info("Loading " + getBookName());
 
-		String bookQuery = "UPDATE books SET lastmodified = now() WHERE booktable = ?";
+		String bookQuery = "UPDATE books SET lastmodified = now() WHERE booktable = ? RETURNING booktable";
 		String sheetsQuery = "SELECT * FROM sheets WHERE booktable = ? ORDER BY sheetindex";
 
 		try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
@@ -1164,7 +1164,13 @@ public class BookImpl extends AbstractBookAdv{
 
 
 			bookStmt.setString(1, getBookName());
-			bookStmt.execute();
+			ResultSet rs = bookStmt.executeQuery();
+			if (!rs.next()) {
+			    logger.info(getBookName() + "does not exist");
+			    rs.close();
+			    return false;
+            }
+            rs.close();
 
 			sheetsStmt.setString(1, getId());
 			ResultSet rsSheets = sheetsStmt.executeQuery();
