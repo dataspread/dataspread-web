@@ -198,11 +198,12 @@ public class TableMonitor {
                 ") VALUES (" +
                 IntStream.range(0, columnCount).mapToObj(e -> "?").collect(Collectors.joining(",")) +
                 ") RETURNING oid;";
+
         AutoRollbackConnection connection = context.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(update)) {
             for (int j = 0; j < columnCount; j++)
                 setStmtValue(stmt,j,values.get(j).toString(),schema.get(j).getValue());
-
+            System.out.println(stmt);
             ResultSet resultSet = stmt.executeQuery();
             if (resultSet.next()) {
                 int oid = resultSet.getInt(1);

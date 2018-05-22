@@ -258,12 +258,11 @@ public class TableSheetModel {
 
         columnNum = max(columnNum, rowMapping.size(context));
 
-        select = "SELECT * FROM ? limit 0";
+        select = "SELECT * FROM " + tableName + " limit 0";
 
         ArrayList<Pair<String,Integer>> ret = new ArrayList<Pair<String,Integer>>();
 
         try (PreparedStatement stmt = connection.prepareStatement(select)) {
-            stmt.setString(1, tableName);
             ResultSet rs = stmt.executeQuery();
             ResultSetMetaData schema = rs.getMetaData();
             ArrayList<Integer> columns = colMapping.getIDs(context,0,columnNum);
