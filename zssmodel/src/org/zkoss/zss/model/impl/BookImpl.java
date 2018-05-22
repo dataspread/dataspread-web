@@ -119,15 +119,25 @@ public class BookImpl extends AbstractBookAdv{
         //BookBindings.put(bookName, this);
     }
 
-	public static BookImpl getBookById(String bookID){
+	public static SBook getBookById(String bookId){
         String getBookEntry = "SELECT bookname FROM books WHERE booktable = ?";
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
              PreparedStatement getBookStmt = connection.prepareStatement(getBookEntry)) {
-            getBookStmt.setString(1, bookID);
+            getBookStmt.setString(1, bookId);
             ResultSet rs = getBookStmt.executeQuery();
             if(rs.next()) {
-                String bookName = rs.getString(1) + "_";
-                return new BookImpl(bookName, bookID);
+                String bookName = rs.getString(1);
+                if (BookBindings.contains(bookName))
+                    return BookBindings.get(bookName);
+                else {
+                    SBook book = new BookImpl(bookName, bookId);
+                    if (!book.setNameAndLoad(bookName, bookId)){
+                        return null;
+                    }
+                    BookBindings.put(bookName, book);
+                    return book;
+                }
+
             }
             connection.commit();
         } catch (SQLException e) {
@@ -1154,8 +1164,7 @@ public class BookImpl extends AbstractBookAdv{
 
 
 			bookStmt.setString(1, getBookName());
-			ResultSet rs = bookStmt.executeQuery();
-			rs.close();
+			bookStmt.execute();
 
 			sheetsStmt.setString(1, getId());
 			ResultSet rsSheets = sheetsStmt.executeQuery();

@@ -27,6 +27,8 @@ public class BookBindings {
         return _bindings.remove(key);
     }
 
+    static public boolean contains(String key){ return _bindings.containsKey(key); }
+
     static public SBook getBookByName(String bookName) {
         return _bindings.computeIfAbsent(bookName, e->
                 {

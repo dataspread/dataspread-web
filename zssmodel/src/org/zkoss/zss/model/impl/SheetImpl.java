@@ -363,7 +363,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	}
 
 
-	private AbstractCellAdv preFetchCells(CellRegion cellRegion)
+	private AbstractCellAdv  preFetchCells(CellRegion cellRegion)
 	{
 		AbstractCellAdv ret=null;
 		int minRow = Math.max(0,cellRegion.getRow()- PreFetchRows);

@@ -17,10 +17,10 @@ public class DataSpreadAPIServer extends SpringBootServletInitializer {
     }
 
 	public static void main(String[] args){
-        String url = "jdbc:postgresql://127.0.0.1:5432/yangpingjing";
+        String url = "jdbc:postgresql://127.0.0.1:5432/ibd";
         String driver = "org.postgresql.Driver";
-        String userName = "postgres";
-        String password = "";
+        String userName = "mangesh";
+        String password = "mangesh";
         DBHandler.connectToDB(url, driver, userName, password);
         DBHandler.instance.initApplication();
         FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerSimple();
