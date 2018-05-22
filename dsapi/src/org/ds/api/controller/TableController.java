@@ -42,6 +42,9 @@ public class TableController {
     static final String COUNT                = "count";
     static final String DEFAULT_USER_ID      = "DataspreadUser";
     static final String VALUE                = "value";
+    static final String COLUMN_TYPE = "columnType";
+    static final String COLUMN_NAME = "columnName";
+    static final String COLUMN = "column";
 
 
 
@@ -355,6 +358,34 @@ public class TableController {
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 tableModel.insertRows(context,linkTableId,row,values);
+                context.getConnection().commit();
+            }
+            catch(java.lang.Exception e){
+                return returnFalse(e);
+            }
+
+        }
+        catch (java.lang.Exception e){
+            return returnFalse(e);
+        }
+
+        return returnTrue(null);
+    }
+
+    @RequestMapping(value = "/api/insertTableColumn",
+            method = RequestMethod.POST)
+    public String insertTableColumn(@RequestBody String value){
+        JSONParser paser = new JSONParser();
+        try {
+            JSONObject dict = (JSONObject)paser.parse(value);
+            String linkTableId = (String)dict.get(LINK_TABLE_ID);
+            int column = (int)dict.get(COLUMN);
+            String columnType = (String)dict.get(COLUMN_TYPE);
+            String columnName = (String)dict.get(COLUMN_NAME);
+            TableMonitor tableModel = TableMonitor.getController();
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+                DBContext context = new DBContext(connection);
+                tableModel.insertColumn(context,linkTableId,column,columnName,columnType);
                 context.getConnection().commit();
             }
             catch(java.lang.Exception e){

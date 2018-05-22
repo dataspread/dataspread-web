@@ -213,9 +213,18 @@ public class TableMonitor {
                 throw new Exception("Insert failed");
             resultSet.close();
         }
+    }
 
-
-
+    public void insertColumn(DBContext context, String linkTableId, int column, String columnName, String columnType) throws Exception {
+        TableSheetModel model = _models.get(linkTableId);
+        String tableName = model.getTableName(context);
+        String update = "ALTER TABLE " + tableName + " ADD " + columnName +" " + columnType;
+        AutoRollbackConnection connection = context.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(update)) {
+            if (!stmt.execute())
+                throw new Exception("Insert failed");
+            model.insertColumn(context, column, model.getTotalColumnCount(context) - 1);
+        }
     }
 
     public void deleteRows(DBContext context, int row, int count, String linkId) {

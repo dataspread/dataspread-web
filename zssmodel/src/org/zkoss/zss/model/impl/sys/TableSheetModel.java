@@ -194,33 +194,17 @@ public class TableSheetModel {
         }
     }
 
-    int getColumnCount(DBContext context) throws Exception {
-        String select = new StringBuilder()
-                .append("SELECT *")
-                .append(" FROM ")
-                .append(TABLESHEETLINK)
-                .append(" WHERE linkid = \'")
-                .append(linkId)
-                .append("\'").toString();
+    int getTotalColumnCount(DBContext context) throws Exception {
+        String tableName = getTableName(context);
+        String select = "SELECT * FROM " + tableName + " limit 0";
 
         AutoRollbackConnection connection = context.getConnection();
-
-        try (Statement stmt = connection.createStatement()) {
-            ResultSet rs = stmt.executeQuery(select);
-            if (rs.next()) {
-                String tableRange = rs.getString("range");
-                String [] stringRowCol = tableRange.split("-");
-                Integer [] rowcol = {Integer.parseInt(stringRowCol[0]),
-                        Integer.parseInt(stringRowCol[1]),
-                        Integer.parseInt(stringRowCol[2]),
-                        Integer.parseInt(stringRowCol[3])};
-
-                CellRegion range = new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
-                return range.getColumnCount();
-            }
-            else
-                throw new Exception("Wrong tableLinkId.");
+        int totalColumnCount = 0;
+        try (PreparedStatement stmt = connection.prepareStatement(select)) {
+            ResultSet rs = stmt.executeQuery();
+            totalColumnCount = rs.getMetaData().getColumnCount();
         }
+        return totalColumnCount;
     }
 
     ArrayList<Pair<String,Integer>> getSchema(DBContext context) throws Exception {
