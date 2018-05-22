@@ -1163,7 +1163,7 @@ public class BookImpl extends AbstractBookAdv{
 			 PreparedStatement sheetsStmt = connection.prepareStatement(sheetsQuery)) {
 
 
-			bookStmt.setString(1, getBookName());
+			bookStmt.setString(1, _bookId);
 			ResultSet rs = bookStmt.executeQuery();
 			if (!rs.next()) {
 			    logger.info(getBookName() + "does not exist");
