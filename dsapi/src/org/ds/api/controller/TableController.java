@@ -16,35 +16,36 @@ import org.zkoss.json.*;
 @RestController
 public class TableController {
 
-    static final String BOOK_ID = "bookId";
-    static final String SCHEMA = "schema";
-    static final String FILTER = "filter";
+    static final String BOOK_ID              = "bookId";
+    static final String SCHEMA               = "schema";
+    static final String FILTER               = "filter";
     static final String ATTRIBUTE_ORDER_PAIR = "attributeOrderPair";
-    static final String SHEET_NAME = "sheetName";
-    static final String ROW_1 = "row1";
-    static final String ROW_2 = "row2";
-    static final String COL_1 = "col1";
-    static final String COL_2 = "col2";
+    static final String ATTRIBUTE_NAME       = "attributeName";
+    static final String ORDER                = "order";
+    static final String SHEET_NAME           = "sheetName";
+    static final String ROW_1                = "row1";
+    static final String ROW_2                = "row2";
+    static final String COL_1                = "col1";
+    static final String COL_2                = "col2";
+    static final String USER_ID              = "userId";
+    static final String TABLE_NAME           = "tableName";
+    static final String ROW                  = "row";
+    static final String COL                  = "col";
+    static final String LINK_TABLE_ID        = "linkTableId";
+    static final String LINK                 = "link";
+    static final String MSG                  = "message";
+    static final String DATA                 = "data";
+    static final String STATUS               = "status";
+    static final String SUCCESS              = "success";
+    static final String FAILED               = "failed";
+    static final String TABLE_CELLS          = "tableCells";
+    static final String COUNT                = "count";
+    static final String DEFAULT_USER_ID      = "DataspreadUser";
 
-    static final String USER_ID = "userId";
-    static final String TABLE_NAME = "tableName";
-    static final String ROW = "row";
-    static final String COL = "col";
-    static final String TABLE_SHEET_ID = "tableSheetId";
-    static final String LINK = "link";
-    static final String MSG = "message";
-    static final String DATA = "data";
-    static final String STATUS = "status";
-    static final String SUCCESS = "success";
-    static final String FAILED = "failed";
-    static final String TABLE_CELLS = "tableCells";
-    static final String COUNT = "count";
-
-    static final String DEFAULT_USER_ID = "DataspreadUser";
 
 
-
-    String returnFalse(JSONObject result, Exception e){
+    String returnFalse(Exception e){
+        JSONObject result = new JSONObject();
         e.printStackTrace();
         result.clear();
         if (e.getMessage() == null)
@@ -90,16 +91,16 @@ public class TableController {
                 DBContext context = new DBContext(connection);
                 String[] links = tableModel.createTable(context, range, user_id, table, book, sheet,schema);
                 context.getConnection().commit();
-                ret.put(TABLE_SHEET_ID, links[0]);
+                ret.put(LINK_TABLE_ID, links[0]);
                 ret.put(LINK, links[1]);
             }
             catch(java.lang.Exception e){
-                return returnFalse(ret,e);
+                return returnFalse(e);
             }
 
         }
         catch (java.lang.Exception e){
-            return returnFalse(ret,e);
+            return returnFalse(e);
         }
 
         return returnTrue(ret);
@@ -126,16 +127,16 @@ public class TableController {
                 DBContext context = new DBContext(connection);
                 String[] links = tableModel.linkTable(context, range, user_id, table, book, sheet);
                 context.getConnection().commit();
-                ret.put(TABLE_SHEET_ID, links[0]);
+                ret.put(LINK_TABLE_ID, links[0]);
                 ret.put(LINK, links[1]);
             }
             catch(java.lang.Exception e){
-                return returnFalse(ret,e);
+                return returnFalse(e);
             }
 
         }
         catch (java.lang.Exception e){
-            return returnFalse(ret,e);
+            return returnFalse(e);
         }
 
         return returnTrue(ret);
@@ -144,10 +145,9 @@ public class TableController {
     @RequestMapping(value = "/api/unlinkTable",method = RequestMethod.PUT)
     public String unlinkTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
-        JSONObject ret = new JSONObject();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
-            String tableSheetLink = (String) dict.get(TABLE_SHEET_ID);
+            String tableSheetLink = (String) dict.get(LINK_TABLE_ID);
 
             TableMonitor tableModel = TableMonitor.getController();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
@@ -156,15 +156,15 @@ public class TableController {
                 context.getConnection().commit();
             }
             catch(java.lang.Exception e){
-                return returnFalse(ret,e);
+                return returnFalse(e);
             }
 
         }
         catch (java.lang.Exception e){
-            return returnFalse(ret,e);
+            return returnFalse(e);
         }
 
-        return returnTrue(ret);
+        return returnTrue(null);
     }
 
 
@@ -188,12 +188,12 @@ public class TableController {
                 context.getConnection().commit();
             }
             catch(java.lang.Exception e){
-                return returnFalse(ret,e);
+                return returnFalse(e);
             }
 
         }
         catch (java.lang.Exception e){
-            return returnFalse(ret,e);
+            return returnFalse(e);
         }
 
         return returnTrue(ret);
@@ -202,10 +202,9 @@ public class TableController {
     @RequestMapping(value = "/api/dropTable",method = RequestMethod.PUT)
     public String dropTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
-        JSONObject ret = new JSONObject();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
-            String userId= (String) dict.get(USER_ID);
+            String userId= DEFAULT_USER_ID;
             String tableName= (String) dict.get(TABLE_NAME);
 
             TableMonitor tableModel = TableMonitor.getController();
@@ -215,32 +214,33 @@ public class TableController {
                 context.getConnection().commit();
             }
             catch(java.lang.Exception e){
-                return returnFalse(ret,e);
+                return returnFalse(e);
             }
 
         }
         catch (java.lang.Exception e){
-            return returnFalse(ret,e);
+            return returnFalse(e);
         }
 
-        return returnTrue(ret);
+        return returnTrue(null);
     }
 
     @RequestMapping(value = "/api/reorderTable",
             method = RequestMethod.PUT)
     public String reorderTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
-        JSONObject ret = new JSONObject();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
-            String tableSheetId= (String) dict.get(TABLE_SHEET_ID);
+            String tableSheetId= (String) dict.get(LINK_TABLE_ID);
             JSONArray attributeOrder= (JSONArray) dict.get(ATTRIBUTE_ORDER_PAIR);
             StringBuilder reorderbuilder = new StringBuilder();
             for (Object object:attributeOrder){
                 if (reorderbuilder.length() > 0){
                     reorderbuilder.append(',');
                 }
-                reorderbuilder.append(((JSONArray)object).get(0)).append(" ").append(((JSONArray)object).get(1));
+                reorderbuilder.append(((JSONObject)object).get(ATTRIBUTE_NAME))
+                        .append(" ")
+                        .append(((JSONObject)object).get(ORDER));
             }
 
             TableMonitor tableModel = TableMonitor.getController();
@@ -250,51 +250,41 @@ public class TableController {
                 context.getConnection().commit();
             }
             catch(java.lang.Exception e){
-                return returnFalse(ret,e);
+                return returnFalse(e);
             }
 
         }
         catch (java.lang.Exception e){
-            return returnFalse(ret,e);
+            return returnFalse(e);
         }
 
-        return returnTrue(ret);
+        return returnTrue(null);
     }
 
     @RequestMapping(value = "/api/filterTable",
             method = RequestMethod.PUT)
     public String filterTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
-        JSONObject ret = new JSONObject();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
-            String tableSheetId= (String) dict.get(TABLE_SHEET_ID);
-            JSONArray filter= (JSONArray) dict.get(FILTER);
-            StringBuilder filterbuilder = new StringBuilder();
-            for (Object object:filter){
-                if (filterbuilder.length() > 0){
-                    filterbuilder.append(" AND ");
-                }
-                filterbuilder.append(object);
-            }
-
-
+            String tableSheetId= (String) dict.get(LINK_TABLE_ID);
+            String filter= (String) dict.get(FILTER);
             TableMonitor tableModel = TableMonitor.getController();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
-                tableModel.filterTable(context, tableSheetId, filterbuilder.toString());
+                tableModel.filterTable(context, tableSheetId, filter);
                 context.getConnection().commit();
             }
             catch(java.lang.Exception e){
-                return returnFalse(ret,e);
+                return returnFalse(e);
             }
 
         }
         catch (java.lang.Exception e){
-            return returnFalse(ret,e);
+            return returnFalse(e);
         }
 
-        return returnTrue(ret);
+        return returnTrue(null);
     }
 
     @RequestMapping(value = "/api/deleteRows",
@@ -315,12 +305,12 @@ public class TableController {
                 context.getConnection().commit();
             }
             catch(java.lang.Exception e){
-                return returnFalse(ret,e);
+                return returnFalse(e);
             }
 
         }
         catch (java.lang.Exception e){
-            return returnFalse(ret,e);
+            return returnFalse(e);
         }
 
         return returnTrue(ret);
@@ -344,12 +334,12 @@ public class TableController {
                 context.getConnection().commit();
             }
             catch(java.lang.Exception e){
-                return returnFalse(ret,e);
+                return returnFalse(e);
             }
 
         }
         catch (java.lang.Exception e){
-            return returnFalse(ret,e);
+            return returnFalse(e);
         }
 
         return returnTrue(ret);

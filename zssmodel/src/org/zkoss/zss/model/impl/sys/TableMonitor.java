@@ -123,6 +123,7 @@ public class TableMonitor {
         initializePosmappingForLinkedTable(context, ret[0]);
 
         // todo: uncomment it
+        // todo: check if it is overlaped with current linked table
 
         //deleteCells(context, range);
         return new String[]{insertToTableSheetLink(context, range, bookId, sheetName, tableName),
