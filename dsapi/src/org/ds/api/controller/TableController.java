@@ -41,6 +41,7 @@ public class TableController {
     static final String TABLE_CELLS          = "tableCells";
     static final String COUNT                = "count";
     static final String DEFAULT_USER_ID      = "DataspreadUser";
+    static final String VALUE                = "value";
 
 
 
@@ -66,7 +67,7 @@ public class TableController {
     }
 
     @RequestMapping(value = "/api/createTable",
-            method = RequestMethod.PUT)
+            method = RequestMethod.POST)
     public String createTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
         JSONObject ret = new JSONObject();
@@ -107,7 +108,7 @@ public class TableController {
     }
 
     @RequestMapping(value = "/api/linkTable",
-            method = RequestMethod.PUT)
+            method = RequestMethod.POST)
     public String linkTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
         JSONObject ret = new JSONObject();
@@ -142,7 +143,7 @@ public class TableController {
         return returnTrue(ret);
     }
 
-    @RequestMapping(value = "/api/unlinkTable",method = RequestMethod.PUT)
+    @RequestMapping(value = "/api/unlinkTable",method = RequestMethod.POST)
     public String unlinkTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
         try {
@@ -199,7 +200,7 @@ public class TableController {
         return returnTrue(ret);
     }
 
-    @RequestMapping(value = "/api/dropTable",method = RequestMethod.PUT)
+    @RequestMapping(value = "/api/dropTable",method = RequestMethod.DELETE)
     public String dropTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
         try {
@@ -287,21 +288,19 @@ public class TableController {
         return returnTrue(null);
     }
 
-    @RequestMapping(value = "/api/deleteRows",
-            method = RequestMethod.PUT)
-    public String deleteRows(@RequestBody String value){
+    @RequestMapping(value = "/api/deleteTableRow",
+            method = RequestMethod.DELETE)
+    public String deleteTableRow(@RequestBody String value){
         JSONParser paser = new JSONParser();
-        JSONObject ret = new JSONObject();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
-            String book = (String)dict.get(BOOK_ID);
-            String sheet = (String)dict.get(SHEET_NAME);
+            String linkId = (String)dict.get(LINK_TABLE_ID);
             int row = (int)dict.get(ROW);
-            int count = (int)dict.get(COUNT);
+            int count = 1;//(int)dict.get(COUNT);
             TableMonitor tableModel = TableMonitor.getController();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
-                tableModel.deleteRows(context,row, count, book,sheet);
+                tableModel.deleteRows(context,row, count, linkId);
                 context.getConnection().commit();
             }
             catch(java.lang.Exception e){
@@ -313,24 +312,22 @@ public class TableController {
             return returnFalse(e);
         }
 
-        return returnTrue(ret);
+        return returnTrue(null);
     }
 
-    @RequestMapping(value = "/api/deleteCols",
-            method = RequestMethod.PUT)
-    public String deleteCols(@RequestBody String value){
+    @RequestMapping(value = "/api/deleteTableColumn",
+            method = RequestMethod.DELETE)
+    public String deleteTableColumn(@RequestBody String value){
         JSONParser paser = new JSONParser();
-        JSONObject ret = new JSONObject();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
-            String book = (String)dict.get(BOOK_ID);
-            String sheet = (String)dict.get(SHEET_NAME);
+            String linkId = (String)dict.get(LINK_TABLE_ID);
             int col = (int)dict.get(COL);
-            int count = (int)dict.get(COUNT);
+            int count = 1;//(int)dict.get(COUNT);
             TableMonitor tableModel = TableMonitor.getController();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
-                tableModel.deleteCols(context,col, count, book,sheet);
+                tableModel.deleteCols(context,col, count, linkId);
                 context.getConnection().commit();
             }
             catch(java.lang.Exception e){
@@ -342,7 +339,34 @@ public class TableController {
             return returnFalse(e);
         }
 
-        return returnTrue(ret);
+        return returnTrue(null);
+    }
+
+    @RequestMapping(value = "/api/insertTableRow",
+            method = RequestMethod.POST)
+    public String insertTableRow(@RequestBody String value){
+        JSONParser paser = new JSONParser();
+        try {
+            JSONObject dict = (JSONObject)paser.parse(value);
+            String linkTableId = (String)dict.get(LINK_TABLE_ID);
+            int row = (int)dict.get(ROW);
+            JSONArray values = (JSONArray)dict.get(VALUE);
+            TableMonitor tableModel = TableMonitor.getController();
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+                DBContext context = new DBContext(connection);
+                tableModel.insertRows(context,linkTableId,row,values);
+                context.getConnection().commit();
+            }
+            catch(java.lang.Exception e){
+                return returnFalse(e);
+            }
+
+        }
+        catch (java.lang.Exception e){
+            return returnFalse(e);
+        }
+
+        return returnTrue(null);
     }
 
 

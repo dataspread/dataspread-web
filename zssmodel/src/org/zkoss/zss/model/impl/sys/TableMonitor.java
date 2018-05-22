@@ -1,5 +1,6 @@
 package org.zkoss.zss.model.impl.sys;
 
+import javafx.util.Pair;
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
@@ -24,8 +25,8 @@ public class TableMonitor {
 
     private final static Random        _random        = new Random(System.currentTimeMillis());
     private final static AtomicInteger _tableCount    = new AtomicInteger();
-    private final static String        TABLES         = "tables";
-    private final static String        TABLESHEETLINK = "sheet_table_link";
+    final static String        TABLES         = "tables";
+    final static String        TABLESHEETLINK = "sheet_table_link";
     HashMap<String, TableSheetModel> _models;
 
     private static TableMonitor _tableMonitor = null;
@@ -184,66 +185,94 @@ public class TableMonitor {
         }
     }
 
-    public void insertRows(DBContext context, int row, int count){
-        //Empty rows?
+    public void insertRows(DBContext context, String linkTableId, int row, JSONArray values) throws Exception {
+        TableSheetModel model = _models.get(linkTableId);
+        ArrayList<Pair<String,Integer>> schema = model.getSchema(context);
+        String tableName = model.getTableName(context);
+        int columnCount = schema.size();
+
+        String update = "INSERT INTO " +
+                tableName +
+                " (" +
+                IntStream.range(0, columnCount).mapToObj(e -> schema.get(e).getKey()).collect(Collectors.joining(",")) +
+                ") VALUES (" +
+                IntStream.range(0, columnCount).mapToObj(e -> "?").collect(Collectors.joining(",")) +
+                ") RETURNING oid;";
+        AutoRollbackConnection connection = context.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(update)) {
+            for (int j = 0; j < columnCount; j++)
+                setStmtValue(stmt,j,values.get(j).toString(),schema.get(j).getValue());
+
+            ResultSet resultSet = stmt.executeQuery();
+            if (resultSet.next()) {
+                int oid = resultSet.getInt(1);
+                model.insertRow(context, row, oid);
+
+            } else
+                throw new Exception("Insert failed");
+            resultSet.close();
+        }
+
+
+
     }
 
-    public void deleteRows(DBContext context, int row, int count, String bookId, String sheetName
-                           ) throws SQLException {
-        String select = selectAllFromSheet(sheetName, bookId);
-        CellRegion deleteregion = new CellRegion(row,0,row + count - 1,Integer.MAX_VALUE);
-        AutoRollbackConnection connection = context.getConnection();
-        try (Statement stmt = connection.createStatement()) {
-            ResultSet rs = stmt.executeQuery(select);
-            while (rs.next()) {
-                String tableRange = rs.getString("range");
-                String[] stringRowCol = tableRange.split("-");
-                Integer[] rowcol = {Integer.parseInt(stringRowCol[0]),
-                        Integer.parseInt(stringRowCol[1]),
-                        Integer.parseInt(stringRowCol[2]),
-                        Integer.parseInt(stringRowCol[3])};
-
-                CellRegion range = new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
-                if (range.overlaps(deleteregion)){
-                    CellRegion overlap = range.getOverlap(deleteregion);
-                    String linkId = rs.getString("linkid");
-                    if (overlap.getRow() == range.getRow()){
-                        unLinkTable(context,linkId);
-                    }
-                    else {
-                        overlap = overlap.shiftedRange(-rowcol[0] - 1, -rowcol[1]);
-                        _models.get(linkId).deleteRows(context, overlap.getRow(), overlap.getRowCount());
-                    }
-                }
-            }
-        }
+    public void deleteRows(DBContext context, int row, int count, String linkId) {
+        _models.get(linkId).deleteRows(context, row, count);
+//        String select = selectAllFromSheet(sheetName, bookId);
+//        CellRegion deleteregion = new CellRegion(row,0,row + count - 1,Integer.MAX_VALUE);
+//        AutoRollbackConnection connection = context.getConnection();
+//        try (Statement stmt = connection.createStatement()) {
+//            ResultSet rs = stmt.executeQuery(select);
+//            while (rs.next()) {
+//                String tableRange = rs.getString("range");
+//                String[] stringRowCol = tableRange.split("-");
+//                Integer[] rowcol = {Integer.parseInt(stringRowCol[0]),
+//                        Integer.parseInt(stringRowCol[1]),
+//                        Integer.parseInt(stringRowCol[2]),
+//                        Integer.parseInt(stringRowCol[3])};
+//
+//                CellRegion range = new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
+//                if (range.overlaps(deleteregion)){
+//                    CellRegion overlap = range.getOverlap(deleteregion);
+//                    String linkId = rs.getString("linkid");
+//                    if (overlap.getRow() == range.getRow()){
+//                        unLinkTable(context,linkId);
+//                    }
+//                    else {
+//                        overlap = overlap.shiftedRange(-rowcol[0] - 1, -rowcol[1]);
+//                        _models.get(linkId).deleteRows(context, overlap.getRow(), overlap.getRowCount());
+//                    }
+//                }
+//            }
+//        }
     }
 
-    public void deleteCols(DBContext context, int col, int count, String sheetName,
-                           String bookId) throws SQLException {
-        String select = selectAllFromSheet(sheetName, bookId);
-
-        CellRegion deleteregion = new CellRegion(0,col,Integer.MAX_VALUE,col + count - 1);
-        AutoRollbackConnection connection = context.getConnection();
-        try (Statement stmt = connection.createStatement()) {
-            ResultSet rs = stmt.executeQuery(select);
-            while (rs.next()) {
-                String tableRange = rs.getString("range");
-                String[] stringRowCol = tableRange.split("-");
-                Integer[] rowcol = {Integer.parseInt(stringRowCol[0]),
-                        Integer.parseInt(stringRowCol[1]),
-                        Integer.parseInt(stringRowCol[2]),
-                        Integer.parseInt(stringRowCol[3])};
-
-                CellRegion range = new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
-                if (range.overlaps(deleteregion)){
-                    CellRegion overlap = range.getOverlap(deleteregion);
-                    overlap = overlap.shiftedRange(-rowcol[0], -rowcol[1]);
-                    String linkId = rs.getString("linkid");
-                    _models.get(linkId).deleteCols(context, overlap.getColumn(), overlap.getColumnCount());
-                }
-            }
-        }
+    public void deleteCols(DBContext context, int col, int count, String linkId) {
+        _models.get(linkId).deleteCols(context,col,count);
+//        String select = selectAllFromSheet(sheetName, bookId);
+//
+//        CellRegion deleteregion = new CellRegion(0,col,Integer.MAX_VALUE,col + count - 1);
+//        AutoRollbackConnection connection = context.getConnection();
+//        try (Statement stmt = connection.createStatement()) {
+//            ResultSet rs = stmt.executeQuery(select);
+//            while (rs.next()) {
+//                String tableRange = rs.getString("range");
+//                String[] stringRowCol = tableRange.split("-");
+//                Integer[] rowcol = {Integer.parseInt(stringRowCol[0]),
+//                        Integer.parseInt(stringRowCol[1]),
+//                        Integer.parseInt(stringRowCol[2]),
+//                        Integer.parseInt(stringRowCol[3])};
+//
+//                CellRegion range = new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
+//                if (range.overlaps(deleteregion)){
+//                    CellRegion overlap = range.getOverlap(deleteregion);
+//                    overlap = overlap.shiftedRange(-rowcol[0], -rowcol[1]);
+//                    String linkId = rs.getString("linkid");
+//                    _models.get(linkId).deleteCols(context, overlap.getColumn(), overlap.getColumnCount());
+//                }
+//            }
+//        }
     }
 
     public void reorderTable(DBContext context, String tableSheetId, String order) throws SQLException {
@@ -396,7 +425,7 @@ public class TableMonitor {
         return linkid;
     }
 
-    private List<Integer> convertToType(List<String> schema) throws Exception {
+    private static List<Integer> convertToType(List<String> schema) throws Exception {
         ArrayList<Integer> result = new ArrayList<>();
         for (String s:schema){
             switch (s.toUpperCase()) {
@@ -424,8 +453,8 @@ public class TableMonitor {
         return result;
     }
 
-    private void setStmtValue(PreparedStatement stmt, int index, String value, List<Integer> schema) throws Exception {
-        switch (schema.get(index)) {
+    private static void setStmtValue(PreparedStatement stmt, int index, String value, int type) throws Exception {
+        switch (type) {
             case Types.BOOLEAN:
                 stmt.setBoolean(index + 1,Boolean.parseBoolean(value));
                 break;
@@ -494,7 +523,7 @@ public class TableMonitor {
                 for (SortedMap<Integer, AbstractCellAdv> tuple : groupedCells.values()) {
                     for (int j = 0; j < columnCount; j++) {
                         if (tuple.containsKey(j))
-                            setStmtValue(stmt,j,tuple.get(j).getValue().toString(),schema);
+                            setStmtValue(stmt,j,tuple.get(j).getValue().toString(),schema.get(j));
                         else
                             stmt.setNull(j + 1, schema.get(j));
                     }

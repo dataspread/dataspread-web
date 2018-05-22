@@ -1,5 +1,6 @@
 package org.zkoss.zss.model.impl.sys;
 
+import javafx.util.Pair;
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.zkoss.json.JSONArray;
@@ -19,8 +20,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.Math.round;
+import static org.zkoss.zss.model.impl.sys.TableMonitor.TABLESHEETLINK;
 
 public class TableSheetModel {
 
@@ -48,7 +51,7 @@ public class TableSheetModel {
         rowMapping = new CountedBTree(context, "LINK_" + linkId + "_row_idx");
         colMapping = new CountedBTree(context, "LINK_" + linkId + "_col_idx");
         ArrayList<Integer> columnids = new ArrayList<>();
-        for (int i = 0; i < range.getLastColumn() - range.getColumn() + 1; i++){
+        for (int i = 0; i < range.getColumnCount(); i++){
             columnids.add(i);
         }
         colMapping.insertIDs(context, 0, columnids);
@@ -144,7 +147,6 @@ public class TableSheetModel {
                 }
             }
             rs.close();
-            stmt.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -155,11 +157,129 @@ public class TableSheetModel {
         rowMapping.deleteIDs(context, row, count);
     }
 
+    void insertRow(DBContext context, int row, int id){
+        ArrayList<Integer> ids = new ArrayList<>();
+        ids.add(id);
+        rowMapping.insertIDs(context,row,ids);
+    }
+
+    void insertColumn(DBContext context, int col, int id){
+        ArrayList<Integer> ids = new ArrayList<>();
+        ids.add(id);
+        colMapping.insertIDs(context,col,ids);
+    }
+
     void deleteCols(DBContext context, int col, int count){
         colMapping.deleteIDs(context, col, count);
     }
 
-    private Object getValue(ResultSet rs, int index, int type) throws Exception {
+    String getTableName(DBContext context) throws Exception {
+        String select = new StringBuilder()
+                .append("SELECT *")
+                .append(" FROM ")
+                .append(TABLESHEETLINK)
+                .append(" WHERE linkid = \'")
+                .append(linkId)
+                .append("\'").toString();
+
+        AutoRollbackConnection connection = context.getConnection();
+
+        try (Statement stmt = connection.createStatement()) {
+            ResultSet rs = stmt.executeQuery(select);
+            if (rs.next()) {
+                return rs.getString("tablename");
+            }
+            else
+                throw new Exception("Wrong tableLinkId.");
+        }
+    }
+
+    int getColumnCount(DBContext context) throws Exception {
+        String select = new StringBuilder()
+                .append("SELECT *")
+                .append(" FROM ")
+                .append(TABLESHEETLINK)
+                .append(" WHERE linkid = \'")
+                .append(linkId)
+                .append("\'").toString();
+
+        AutoRollbackConnection connection = context.getConnection();
+
+        try (Statement stmt = connection.createStatement()) {
+            ResultSet rs = stmt.executeQuery(select);
+            if (rs.next()) {
+                String tableRange = rs.getString("range");
+                String [] stringRowCol = tableRange.split("-");
+                Integer [] rowcol = {Integer.parseInt(stringRowCol[0]),
+                        Integer.parseInt(stringRowCol[1]),
+                        Integer.parseInt(stringRowCol[2]),
+                        Integer.parseInt(stringRowCol[3])};
+
+                CellRegion range = new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
+                return range.getColumnCount();
+            }
+            else
+                throw new Exception("Wrong tableLinkId.");
+        }
+    }
+
+    ArrayList<Pair<String,Integer>> getSchema(DBContext context) throws Exception {
+        String select = new StringBuilder()
+                .append("SELECT *")
+                .append(" FROM ")
+                .append(TABLESHEETLINK)
+                .append(" WHERE linkid = \'")
+                .append(linkId)
+                .append("\'").toString();
+
+        String tableName;
+
+        AutoRollbackConnection connection = context.getConnection();
+
+        int columnNum = 0;
+
+        try (Statement stmt = connection.createStatement()) {
+            ResultSet rs = stmt.executeQuery(select);
+            if (rs.next()) {
+                String tableRange = rs.getString("range");
+                tableName = rs.getString("tablename");
+                String [] stringRowCol = tableRange.split("-");
+                Integer [] rowcol = {Integer.parseInt(stringRowCol[0]),
+                        Integer.parseInt(stringRowCol[1]),
+                        Integer.parseInt(stringRowCol[2]),
+                        Integer.parseInt(stringRowCol[3])};
+
+                CellRegion range = new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
+                columnNum = range.getColumnCount();
+            }
+            else
+                throw new Exception("Wrong tableLinkId.");
+        }
+
+        columnNum = max(columnNum, rowMapping.size(context));
+
+        select = "SELECT * FROM ? limit 0";
+
+        ArrayList<Pair<String,Integer>> ret = new ArrayList<Pair<String,Integer>>();
+
+        try (PreparedStatement stmt = connection.prepareStatement(select)) {
+            stmt.setString(1, tableName);
+            ResultSet rs = stmt.executeQuery();
+            ResultSetMetaData schema = rs.getMetaData();
+            ArrayList<Integer> columns = colMapping.getIDs(context,0,columnNum);
+
+            for (int index:columns){
+                ret.add(new Pair<>(schema.getColumnName(index + 1), schema.getColumnType(index + 1)));
+            }
+
+            rs.close();
+        }
+
+        return ret;
+
+    }
+
+    private static Object getValue(ResultSet rs, int index, int type) throws Exception {
         switch (type) {
             case Types.BOOLEAN:
                 return rs.getBoolean(index + 2);
@@ -186,7 +306,7 @@ public class TableSheetModel {
                 throw new Exception("getValue: Unsupported type");
         }
     }
-    private String typeIdToString(Integer type) throws Exception {
+    private static String typeIdToString(Integer type) throws Exception {
         switch (type) {
             case Types.BOOLEAN:
                 return "BOOLEAN";
