@@ -27,6 +27,6 @@
 
 	<library-property>
 		<name>ds.model.simple</name>
-		<value>true</value>
+		<value>false</value>
 	</library-property>
 </zk>
