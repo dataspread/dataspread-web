@@ -361,7 +361,7 @@ public class AsyncPerformance {
 
         endTime = System.currentTimeMillis();
         System.out.println("Async time to update = " + (endTime-startTime));
-        // formulaAsyncScheduler.waitForCompletion();
+        formulaAsyncScheduler.waitForCompletion();
         endTime = System.currentTimeMillis();
         System.out.println("Final Value "
                 + sheet.getCell(cellCount,0).getValue());
