@@ -22,10 +22,10 @@
       <module name="DataSpread" target="1.8" />
       <module name="dsapi" target="1.8" />
       <module name="rtree" target="1.8" />
-      <module name="webapp" target="1.5" />
-      <module name="zpoi" target="1.5" />
-      <module name="zss" target="1.5" />
-      <module name="zssmodel" target="1.5" />
+      <module name="webapp" target="1.8" />
+      <module name="zpoi" target="1.8" />
+      <module name="zss" target="1.8" />
+      <module name="zssmodel" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>
