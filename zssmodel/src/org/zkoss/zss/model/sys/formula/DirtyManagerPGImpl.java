@@ -10,6 +10,7 @@ import java.sql.*;
 
 /* Simple in-db implementation for DirtyManager */
 public class DirtyManagerPGImpl extends DirtyManager {
+
     DirtyManagerPGImpl()
     {
         createTable();
@@ -65,6 +66,11 @@ public class DirtyManagerPGImpl extends DirtyManager {
     }
 
     @Override
+    public boolean isEmpty() {
+        return false;
+    }
+
+    @Override
     public void removeDirtyRegion(Ref region, int trxId) {
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
              PreparedStatement removeRegion = connection.prepareStatement(
@@ -91,6 +97,11 @@ public class DirtyManagerPGImpl extends DirtyManager {
 
     @Override
     public DirtyRecord getDirtyRegionFromQueue() {
+        return getDirtyRegionFromQueue(1000);
+    }
+
+    @Override
+    public DirtyRecord getDirtyRegionFromQueue(long waitTime) {
         //TODO - We can modify the query to select based on priority.
         DirtyRecord dirtyRecord = null;
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
@@ -103,8 +114,7 @@ public class DirtyManagerPGImpl extends DirtyManager {
                              "   SKIP LOCKED)" +
                              " RETURNING bookname, sheetname, range, trxid");
              ResultSet rs = getRegion.executeQuery()) {
-            if (rs.next())
-            {
+            if (rs.next()) {
                 dirtyRecord = new DirtyRecord();
                 PGbox range = (PGbox) rs.getObject(3);
                 dirtyRecord.region = new RefImpl(rs.getString(1),
@@ -121,10 +131,9 @@ public class DirtyManagerPGImpl extends DirtyManager {
             e.printStackTrace();
         }
 
-        //Delay to demonstrate.
         if (dirtyRecord==null) {
             try {
-                Thread.sleep(1000);
+                Thread.sleep(waitTime);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

@@ -8,10 +8,10 @@ import java.util.ArrayList;
 public class KeyStatistic<T extends Comparable<T>> implements AbstractStatistic {
     public T key;
 
-
-    KeyStatistic() {
+    public KeyStatistic(){
 
     }
+
 
     /**
      * Constructor

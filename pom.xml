@@ -31,6 +31,7 @@
         <module>blockstore</module>
         <module>zpoi</module>
         <module>zssmodel</module>
+        <module>dsapi</module>
         <module>zss</module>
         <module>webapp</module>
     </modules>
