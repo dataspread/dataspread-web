@@ -7,7 +7,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="blockstore" />
-        <module name="dataspread" />
+        <module name="DataSpreadApi" />
         <module name="dsapi" />
         <module name="rtree" />
         <module name="webapp" />
@@ -20,6 +20,7 @@
       <module name="blockstore" target="1.8" />
       <module name="dataspread" target="1.8" />
       <module name="DataSpread" target="1.8" />
+      <module name="DataSpreadApi" target="1.8" />
       <module name="dsapi" target="1.8" />
       <module name="rtree" target="1.8" />
       <module name="webapp" target="1.8" />

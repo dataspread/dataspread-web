@@ -107,7 +107,7 @@ public class TableMonitor {
 
         _models.get(ret[0]).initualizeMapping(context, oidList);
 
-        sheet.clearCell(range);
+        sheet.getDataModel().deleteCells(context,range);
 
         clearCache(sheet);
 
@@ -130,7 +130,8 @@ public class TableMonitor {
 
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
-        sheet.clearCell(range);
+//        sheet.clearCell(range);
+        sheet.getDataModel().deleteCells(context,range);
         clearCache(sheet);
         return ret;
     }
