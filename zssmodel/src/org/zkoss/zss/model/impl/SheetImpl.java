@@ -44,6 +44,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * 
@@ -447,12 +448,18 @@ public class SheetImpl extends AbstractSheetAdv {
 
 	@Override
 	public Collection<SCell> getCells(CellRegion region) {
-		int lc=region.getLastColumn(),lr=region.getLastRow();
-		ArrayList<SCell> result=new ArrayList<>(region.getCellCount());
-		for (int i=region.getRow();i<=lr;++i)
-			for (int j=region.getColumn();j<=lc;++j)
-				result.add(getCell(i,j));
-		return result;
+        Collection<AbstractCellAdv> cells = new ArrayList<>();
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            DBContext dbContext = new DBContext(connection);
+            cells = dataModel.getCells(dbContext, region);
+            //Update book reference for the cells.
+            cells.stream().forEach(e -> e.setSheet(this));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        //TODO: Check if proxy cells are needed.
+        //TODO: Check if we need to cache the cells.
+        return cells.stream().map(SCell.class::cast).collect(Collectors.toList());
 	}
 
 	@Override

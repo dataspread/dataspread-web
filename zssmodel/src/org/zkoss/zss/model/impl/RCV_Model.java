@@ -10,7 +10,6 @@ import org.postgresql.copy.CopyIn;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.ModelEvents;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 
@@ -582,8 +581,6 @@ public class RCV_Model extends Model {
                 cells.add(cell);
             }
             rs.close();
-            stmt.close();
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
