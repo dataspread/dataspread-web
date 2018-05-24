@@ -635,8 +635,6 @@ public class RCV_Model extends Model {
                 cells.add(cell);
             }
             rs.close();
-            stmt.close();
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
