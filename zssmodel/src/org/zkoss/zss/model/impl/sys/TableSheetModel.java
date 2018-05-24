@@ -338,9 +338,7 @@ public class TableSheetModel {
                     setStmtValue(stmt,j,currentRow.get(j).toString(),schema.get(j).getValue());
                 }
                 stmt.setInt(updateRegion.getColumnCount() + 1, oid);
-                if (!stmt.execute()){
-                    throw  new Exception("Update failed");
-                }
+                stmt.execute();
             }
         }
 

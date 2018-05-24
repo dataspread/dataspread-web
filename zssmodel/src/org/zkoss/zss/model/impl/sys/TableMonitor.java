@@ -228,8 +228,7 @@ public class TableMonitor {
         String update = "ALTER TABLE " + tableName + " ADD " + columnName +" " + columnType;
         AutoRollbackConnection connection = context.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(update)) {
-            if (!stmt.execute())
-                throw new Exception("Insert failed");
+            stmt.execute();
             model.insertColumn(context, column, model.getTotalColumnCount(context) - 1);
         }
     }
@@ -242,8 +241,7 @@ public class TableMonitor {
         String update = "ALTER TABLE "+ tableName +" ALTER COLUMN " + oldColumnName +" " + columnType;
         AutoRollbackConnection connection = context.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(update)) {
-            if (!stmt.execute())
-                throw new Exception("Change failed");
+            stmt.execute();
         }
     }
 
@@ -255,8 +253,7 @@ public class TableMonitor {
         String update = "ALTER TABLE "+ tableName + " RENAME COLUMN " + oldColumnName + " TO " + columnName;
         AutoRollbackConnection connection = context.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(update)) {
-            if (!stmt.execute())
-                throw new Exception("Change failed");
+            stmt.execute();
         }
     }
 
