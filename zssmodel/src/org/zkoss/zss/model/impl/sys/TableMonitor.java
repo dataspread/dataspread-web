@@ -12,6 +12,8 @@ import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
 import org.zkoss.zss.model.impl.Model;
 import org.zkoss.zss.model.sys.BookBindings;
+import org.zkoss.zss.model.sys.EngineFactory;
+import org.zkoss.zss.model.sys.formula.FormulaClearContext;
 
 import java.sql.*;
 import java.util.*;
@@ -107,6 +109,8 @@ public class TableMonitor {
 
         sheet.clearCell(range);
 
+        clearCache(sheet);
+
         return ret;
     }
 
@@ -127,6 +131,7 @@ public class TableMonitor {
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
         sheet.clearCell(range);
+        clearCache(sheet);
         return ret;
     }
 
@@ -152,6 +157,7 @@ public class TableMonitor {
         }
         tableSheetModel.drop(context);
         _models.remove(tableSheetLink);
+        clearCache(sheet);
     }
 
     public void dropTable(DBContext context, String userId, String metaTableName) throws Exception {
@@ -220,6 +226,7 @@ public class TableMonitor {
                 throw new Exception("Insert failed");
             resultSet.close();
         }
+        clearCache(model.getSheet(context));
     }
 
     public void insertColumn(DBContext context, String linkTableId, int column, String columnName, String columnType) throws Exception {
@@ -230,6 +237,7 @@ public class TableMonitor {
         try (PreparedStatement stmt = connection.prepareStatement(update)) {
             stmt.execute();
             model.insertColumn(context, column, model.getTotalColumnCount(context) - 1);
+            clearCache(model.getSheet(context));
         }
     }
 
@@ -242,6 +250,7 @@ public class TableMonitor {
         AutoRollbackConnection connection = context.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(update)) {
             stmt.execute();
+            clearCache(model.getSheet(context));
         }
     }
 
@@ -254,12 +263,15 @@ public class TableMonitor {
         AutoRollbackConnection connection = context.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(update)) {
             stmt.execute();
+            clearCache(model.getSheet(context));
         }
     }
 
-    public void deleteRows(DBContext context, int row, int count, String linkId) {
+    public void deleteRows(DBContext context, int row, int count, String linkId) throws Exception {
         // todo: delete actual row
-        _models.get(linkId).deleteRows(context, row, count);
+        TableSheetModel model = _models.get(linkId);
+        model.deleteRows(context, row, count);
+        clearCache(model.getSheet(context));
 //        String select = selectAllFromSheet(sheetName, bookId);
 //        CellRegion deleteregion = new CellRegion(row,0,row + count - 1,Integer.MAX_VALUE);
 //        AutoRollbackConnection connection = context.getConnection();
@@ -289,9 +301,11 @@ public class TableMonitor {
 //        }
     }
 
-    public void deleteCols(DBContext context, int col, int count, String linkId) {
+    public void deleteCols(DBContext context, int col, int count, String linkId) throws Exception {
         // todo: delete actual column
-        _models.get(linkId).deleteCols(context,col,count);
+        TableSheetModel model = _models.get(linkId);
+        model.deleteCols(context,col,count);
+        clearCache(model.getSheet(context));
 //        String select = selectAllFromSheet(sheetName, bookId);
 //
 //        CellRegion deleteregion = new CellRegion(0,col,Integer.MAX_VALUE,col + count - 1);
@@ -317,7 +331,7 @@ public class TableMonitor {
 //        }
     }
 
-    public void reorderTable(DBContext context, String tableSheetId, String order) throws SQLException {
+    public void reorderTable(DBContext context, String tableSheetId, String order) throws Exception {
 
         String appendToTables = (new StringBuilder())
                 .append("UPDATE ")
@@ -337,10 +351,11 @@ public class TableMonitor {
 
         initializePosmappingForLinkedTable(context, tableSheetId);
 
+        clearCache(_models.get(tableSheetId).getSheet(context));
 
     }
 
-    public void filterTable(DBContext context, String tableSheetId, String filter) throws SQLException {
+    public void filterTable(DBContext context, String tableSheetId, String filter) throws Exception {
         String appendToTables = (new StringBuilder())
                 .append("UPDATE ")
                 .append(TABLESHEETLINK)
@@ -357,6 +372,8 @@ public class TableMonitor {
             stmt.execute();
         }
         initializePosmappingForLinkedTable(context, tableSheetId);
+
+        clearCache(_models.get(tableSheetId).getSheet(context));
     }
 
     public JSONArray getCells(DBContext context, CellRegion fetchRange, String sheetName,
@@ -477,8 +494,11 @@ public class TableMonitor {
     public void updateTableCells(DBContext context, String linkTableId, int row1, int row2, int col1, int col2,
                                  JSONArray values) throws Exception {
         CellRegion updateRegion = new CellRegion(row1, col1, row2, col2);
-        _models.get(linkTableId).updateTableCells(context, updateRegion, values);
+        TableSheetModel model = _models.get(linkTableId);
+        model.updateTableCells(context, updateRegion, values);
+        clearCache(model.getSheet(context));
     }
+
     private String insertToTables(DBContext context, String userId, String metaTableName) throws SQLException {
         // todo: check overlaping point
         AutoRollbackConnection connection = context.getConnection();
@@ -735,7 +755,8 @@ public class TableMonitor {
         return select.toString();
     }
 
-    private void updateRegion(DBContext context, String linkId, CellRegion region){
-
+    private void clearCache(SSheet sheet){
+        sheet.clearCache();
+        EngineFactory.getInstance().createFormulaEngine().clearCache(new FormulaClearContext(sheet));
     }
 }
