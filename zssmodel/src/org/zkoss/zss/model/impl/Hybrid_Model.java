@@ -8,6 +8,7 @@ import org.zkoss.util.Pair;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.impl.sys.TableMonitor;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -642,6 +643,7 @@ public class Hybrid_Model extends RCV_Model {
         if (encompass == false) {
             cells.addAll(super.getCells(context, range));
         }
+        cells.addAll(TableMonitor.getController().getTableCells(context,range,this.sheet.getSheetName(),this.sheet.getBook().getBookName()));
         return Collections.unmodifiableCollection(cells);
     }
 

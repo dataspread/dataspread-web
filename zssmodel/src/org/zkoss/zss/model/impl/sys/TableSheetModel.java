@@ -7,7 +7,9 @@ import org.zkoss.json.JSONArray;
 import org.zkoss.json.JSONObject;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SSemantics;
+import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.*;
+import org.zkoss.zss.model.sys.BookBindings;
 
 import java.sql.*;
 import java.util.*;
@@ -359,6 +361,58 @@ public class TableSheetModel {
             ResultSet rs = stmt.executeQuery(select);
             if (rs.next()) {
                 return rs.getString("tablename");
+            }
+            else
+                throw new Exception("Wrong tableLinkId.");
+        }
+    }
+
+    CellRegion getRange(DBContext context) throws Exception {
+        String select = new StringBuilder()
+                .append("SELECT *")
+                .append(" FROM ")
+                .append(TABLESHEETLINK)
+                .append(" WHERE linkid = \'")
+                .append(linkId)
+                .append("\'").toString();
+
+        AutoRollbackConnection connection = context.getConnection();
+
+        try (Statement stmt = connection.createStatement()) {
+            ResultSet rs = stmt.executeQuery(select);
+            if (rs.next()) {
+                String tableRange = rs.getString("range");
+                String [] stringRowCol = tableRange.split("-");
+                Integer [] rowcol = {Integer.parseInt(stringRowCol[0]),
+                        Integer.parseInt(stringRowCol[1]),
+                        Integer.parseInt(stringRowCol[2]),
+                        Integer.parseInt(stringRowCol[3])};
+
+                CellRegion range = new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
+                return range;
+            }
+            else
+                throw new Exception("Wrong tableLinkId.");
+        }
+    }
+
+    SSheet getSheet(DBContext context) throws Exception {
+        String select = new StringBuilder()
+                .append("SELECT *")
+                .append(" FROM ")
+                .append(TABLESHEETLINK)
+                .append(" WHERE linkid = \'")
+                .append(linkId)
+                .append("\'").toString();
+
+        AutoRollbackConnection connection = context.getConnection();
+
+        try (Statement stmt = connection.createStatement()) {
+            ResultSet rs = stmt.executeQuery(select);
+            if (rs.next()) {
+                String bookId = rs.getString("bookid");
+                String sheetName = rs.getString("sheetname");
+                return BookBindings.getBookById(bookId).getSheetByName(sheetName);
             }
             else
                 throw new Exception("Wrong tableLinkId.");

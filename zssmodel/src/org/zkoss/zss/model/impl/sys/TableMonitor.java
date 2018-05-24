@@ -10,6 +10,7 @@ import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
+import org.zkoss.zss.model.impl.Model;
 import org.zkoss.zss.model.sys.BookBindings;
 
 import java.sql.*;
@@ -99,15 +100,13 @@ public class TableMonitor {
         ArrayList<Integer> oidList = appendTableRows(context,new CellRegion(range.row + 1, range.column,
                 range.lastRow, range.lastColumn),tableName,sheet, convertToType(schema));
 
-        // todo: uncomment it
-
         String[] ret = new String[]{insertToTableSheetLink(context, range, bookId, sheetName, tableName),
                 insertToTables(context,userId,metaTableName)};
 
         _models.get(ret[0]).initualizeMapping(context, oidList);
 
+        sheet.clearCell(range);
 
-        //deleteCells(context, tableHeaderRow);
         return ret;
     }
 
@@ -123,15 +122,24 @@ public class TableMonitor {
 
         initializePosmappingForLinkedTable(context, ret[0]);
 
-        // todo: uncomment it
         // todo: check if it is overlaped with current linked table
 
-        //deleteCells(context, range);
+        SBook book = BookBindings.getBookById(bookId);
+        SSheet sheet = book.getSheetByName(sheetName);
+        sheet.clearCell(range);
         return ret;
     }
 
-    public void unLinkTable(DBContext context,String tableSheetLink) throws SQLException {
-
+    public void unLinkTable(DBContext context,String tableSheetLink) throws Exception {
+        TableSheetModel tableSheetModel = _models.get(tableSheetLink);
+        SSheet sheet = tableSheetModel.getSheet(context);
+        Model model = sheet.getDataModel();
+        String tableName = tableSheetModel.getTableName(context);
+        CellRegion range = tableSheetModel.getRange(context);
+        model.updateCells(context,tableSheetModel.getCells(context,range.shiftedRange(-range.row,-range.column),range, tableName));
+        if (model == null){
+            throw new Exception("Data model doesn't exist in this sheet.");
+        }
         String deleteRecords = (new StringBuilder())
                 .append("DELETE FROM ")
                 .append(TABLESHEETLINK)
@@ -142,11 +150,11 @@ public class TableMonitor {
             stmt.setString(1, tableSheetLink);
             stmt.execute();
         }
-        _models.get(tableSheetLink).drop(context);
+        tableSheetModel.drop(context);
         _models.remove(tableSheetLink);
     }
 
-    public void dropTable(DBContext context, String userId, String metaTableName) throws SQLException {
+    public void dropTable(DBContext context, String userId, String metaTableName) throws Exception {
         String tableName = getTableName(userId, metaTableName);
         AutoRollbackConnection connection = context.getConnection();
 
@@ -651,8 +659,6 @@ public class TableMonitor {
                     resultSet.close();
 
                 }
-                // todo: uncomment it:
-//                sheet.getDataModel().deleteCells(dbContext, work_range);
             }
         }
         return oidList;
