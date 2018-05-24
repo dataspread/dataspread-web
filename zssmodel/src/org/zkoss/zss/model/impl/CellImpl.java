@@ -318,7 +318,7 @@ public class CellImpl extends AbstractCellAdv {
                 FormulaEngine fe = EngineFactory.getInstance().createFormulaEngine();
                 fe.clearCache(new FormulaClearContext(_sheet));
                 EvaluationResult result = fe.evaluate(expr, evalContext);
-				updateFormulaResultValue(result, _sheet.getTrxId());
+                updateFormulaResultValue(result);
             }
 		}
 		else
@@ -748,6 +748,10 @@ public class CellImpl extends AbstractCellAdv {
 		return _formulaResultValue;
 	}
 
+    public void setTrxId(int trxId) {
+        this.trxId = trxId;
+    }
+
 	private static class OptFields implements Serializable {
 		private AbstractHyperlinkAdv _hyperlink;
 		private AbstractCommentAdv _comment;
@@ -766,11 +770,8 @@ public class CellImpl extends AbstractCellAdv {
 		}
 	}
 
-	public synchronized void updateFormulaResultValue(EvaluationResult result, int trxId){
-		if (trxId>=this.trxId) {
-			this.trxId =trxId;
+    public synchronized void updateFormulaResultValue(EvaluationResult result) {
 			_formulaResultValue=new FormulaResultCellValue(result);
 			updateCelltoDB();
-		}
 	}
 }

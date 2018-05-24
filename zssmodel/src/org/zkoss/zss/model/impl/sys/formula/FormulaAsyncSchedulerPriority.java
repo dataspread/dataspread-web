@@ -44,7 +44,6 @@ public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
 
                 if (dirtyRecord != null) {
                     sheet = BookBindings.getSheetByRef(dirtyRecord.region);
-                    ;
                     currentRow = dirtyRecord.region.getRow();
                     currentColumn = dirtyRecord.region.getColumn();
                 }
@@ -59,6 +58,7 @@ public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
                 for (i = 0; i < Math.min(cellsToCompute.size(), QUEUE_SIZE / 2); i++) {
                     SCell sCell = cellsToCompute.get(i);
                     ((CellImpl) sCell).getValue(true, true);
+                    //System.out.println("Computing " + sCell);
                     // Push individual cells to the UI
                     update(sCell.getSheet(), sCell.getCellRegion());
                     DirtyManagerLog.instance.markClean(sCell.getCellRegion());
@@ -70,6 +70,7 @@ public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
                 SCell sCell = sheet.getCell(currentRow, currentColumn);
                 if (sCell.getType() == SCell.CellType.FORMULA) {
                     sCell.clearFormulaResultCache();
+                    ((CellImpl) sCell).setTrxId(dirtyRecord.trxId);
                     cellsToCompute.add(sCell);
                 }
 

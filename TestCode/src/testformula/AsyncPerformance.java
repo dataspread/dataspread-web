@@ -355,7 +355,8 @@ public class AsyncPerformance {
         System.out.println("Starting Asyn ");
         startTime = System.currentTimeMillis();
 
-        sheet.getCell(0,0).setValue("200");
+
+        sheet.getCell(0, 0).setValue(200);
         System.out.println("Before Waiting "
                 + sheet.getCell(cellCount, 0).getValue());
 
