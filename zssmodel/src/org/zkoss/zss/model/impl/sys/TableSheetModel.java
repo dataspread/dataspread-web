@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -236,6 +237,8 @@ public class TableSheetModel {
         int colOffset = tableRegion.getColumn();
         Collection<AbstractCellAdv> cells = new ArrayList<>();
 
+        int fixedLastColumn = min(fetchRegion.lastColumn + 1, colMapping.size(context));
+
         ArrayList<Integer> rowIds;
         boolean includeHeader = (fetchRegion.getRow() == 0);
         if (includeHeader)
@@ -273,14 +276,14 @@ public class TableSheetModel {
             ResultSet rs = stmt.executeQuery();
 
             if (includeHeader) {
-                for (int i = fetchRegion.column; i <= fetchRegion.lastColumn; i++){
+                for (int i = fetchRegion.column; i < fixedLastColumn ; i++){
                     int index = (int) colMapping.getIDs(context,i,1).get(0);
                     cells.add(newCell(rowOffset,colOffset + i,
                             rs.getMetaData().getColumnLabel(index + 2),connection));
                 }
             }
 
-            for (int i = fetchRegion.column; i <= fetchRegion.lastColumn; i++){
+            for (int i = fetchRegion.column; i < fixedLastColumn ; i++){
                 int index = (int) colMapping.getIDs(context,i,1).get(0);
                 int type = rs.getMetaData().getColumnType(index + 2);
                 schema.add(type);
@@ -289,7 +292,7 @@ public class TableSheetModel {
                 int oid = rs.getInt(1); /* First column is oid */
                 int row = row_map.get(oid);
 
-                for (int i = fetchRegion.column; i <= fetchRegion.lastColumn; i++) {
+                for (int i = fetchRegion.column; i < fixedLastColumn ; i++) {
                     JSONArray cell = new JSONArray();
                     int index = (int) colMapping.getIDs(context,i,1).get(0);
                     cells.add(newCell(rowOffset + row,colOffset + i,
@@ -322,6 +325,11 @@ public class TableSheetModel {
 
     void deleteCols(DBContext context, int col, int count){
         colMapping.deleteIDs(context, col, count);
+    }
+
+    void updateTableCells(DBContext context, CellRegion updateRegion, JSONArray values){
+        ArrayList<String> a = new ArrayList<>();
+        String columns = a.stream().collect(Collectors.joining(","));
     }
 
     String getTableName(DBContext context) throws Exception {
