@@ -48,7 +48,7 @@ public class TableController {
 
 
 
-    String returnFalse(Exception e){
+    JSONObject returnFalse(Exception e){
         JSONObject result = new JSONObject();
         e.printStackTrace();
         result.clear();
@@ -58,20 +58,20 @@ public class TableController {
             result.put(MSG, e.getMessage());
         result.put(STATUS,FAILED);
         result.put(DATA,null);
-        return result.toJSONString();
+        return result;
     }
 
-    String returnTrue(Object data){
+    JSONObject returnTrue(Object data){
         JSONObject result = new JSONObject();
         result.put(MSG,null);
         result.put(STATUS,SUCCESS);
         result.put(DATA,data);
-        return result.toJSONString();
+        return result;
     }
 
     @RequestMapping(value = "/api/createTable",
             method = RequestMethod.POST)
-    public String createTable(@RequestBody String value){
+    public JSONObject createTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
         JSONObject ret = new JSONObject();
         try {
@@ -112,7 +112,7 @@ public class TableController {
 
     @RequestMapping(value = "/api/linkTable",
             method = RequestMethod.POST)
-    public String linkTable(@RequestBody String value){
+    public JSONObject linkTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
         JSONObject ret = new JSONObject();
         try {
@@ -147,7 +147,7 @@ public class TableController {
     }
 
     @RequestMapping(value = "/api/unlinkTable",method = RequestMethod.POST)
-    public String unlinkTable(@RequestBody String value){
+    public JSONObject unlinkTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
@@ -173,7 +173,7 @@ public class TableController {
 
 
     @RequestMapping(value = "/api/getTableCells",method = RequestMethod.PUT)
-    public String getTableCells(@RequestBody String value){
+    public JSONObject getTableCells(@RequestBody String value){
         JSONParser paser = new JSONParser();
         JSONObject ret = new JSONObject();
         try {
@@ -188,7 +188,7 @@ public class TableController {
             TableMonitor tableModel = TableMonitor.getController();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
-                ret.put(TABLE_CELLS,tableModel.getCells(context, range, sheet, book));
+                ret.put(TABLE_CELLS,tableModel.getTableInformation(context, range, sheet, book));
                 context.getConnection().commit();
             }
             catch(java.lang.Exception e){
@@ -204,7 +204,7 @@ public class TableController {
     }
 
     @RequestMapping(value = "/api/dropTable",method = RequestMethod.DELETE)
-    public String dropTable(@RequestBody String value){
+    public JSONObject dropTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
@@ -231,7 +231,7 @@ public class TableController {
 
     @RequestMapping(value = "/api/reorderTable",
             method = RequestMethod.PUT)
-    public String reorderTable(@RequestBody String value){
+    public JSONObject reorderTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
@@ -267,7 +267,7 @@ public class TableController {
 
     @RequestMapping(value = "/api/filterTable",
             method = RequestMethod.PUT)
-    public String filterTable(@RequestBody String value){
+    public JSONObject filterTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
@@ -293,7 +293,7 @@ public class TableController {
 
     @RequestMapping(value = "/api/deleteTableRow",
             method = RequestMethod.DELETE)
-    public String deleteTableRow(@RequestBody String value){
+    public JSONObject deleteTableRow(@RequestBody String value){
         JSONParser paser = new JSONParser();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
@@ -320,7 +320,7 @@ public class TableController {
 
     @RequestMapping(value = "/api/deleteTableColumn",
             method = RequestMethod.DELETE)
-    public String deleteTableColumn(@RequestBody String value){
+    public JSONObject deleteTableColumn(@RequestBody String value){
         JSONParser paser = new JSONParser();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
@@ -347,7 +347,7 @@ public class TableController {
 
     @RequestMapping(value = "/api/insertTableRow",
             method = RequestMethod.POST)
-    public String insertTableRow(@RequestBody String value){
+    public JSONObject insertTableRow(@RequestBody String value){
         JSONParser paser = new JSONParser();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
@@ -374,7 +374,7 @@ public class TableController {
 
     @RequestMapping(value = "/api/insertTableColumn",
             method = RequestMethod.POST)
-    public String insertTableColumn(@RequestBody String value){
+    public JSONObject insertTableColumn(@RequestBody String value){
         JSONParser paser = new JSONParser();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
@@ -402,7 +402,7 @@ public class TableController {
 
     @RequestMapping(value = "/api/changeTableColumnType",
             method = RequestMethod.PUT)
-    public String changeTableColumnType(@RequestBody String value){
+    public JSONObject changeTableColumnType(@RequestBody String value){
         JSONParser paser = new JSONParser();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
@@ -429,7 +429,7 @@ public class TableController {
 
     @RequestMapping(value = "/api/changeTableColumnName",
             method = RequestMethod.PUT)
-    public String changeTableColumnName(@RequestBody String value){
+    public JSONObject changeTableColumnName(@RequestBody String value){
         JSONParser paser = new JSONParser();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);

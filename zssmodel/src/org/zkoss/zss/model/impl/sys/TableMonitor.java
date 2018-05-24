@@ -127,8 +127,7 @@ public class TableMonitor {
         // todo: check if it is overlaped with current linked table
 
         //deleteCells(context, range);
-        return new String[]{insertToTableSheetLink(context, range, bookId, sheetName, tableName),
-                getSharedLink(context,userId,metaTableName)};
+        return ret;
     }
 
     public void unLinkTable(DBContext context,String tableSheetLink) throws SQLException {
@@ -254,6 +253,7 @@ public class TableMonitor {
     }
 
     public void deleteRows(DBContext context, int row, int count, String linkId) {
+        // todo: delete actual row
         _models.get(linkId).deleteRows(context, row, count);
 //        String select = selectAllFromSheet(sheetName, bookId);
 //        CellRegion deleteregion = new CellRegion(row,0,row + count - 1,Integer.MAX_VALUE);
@@ -285,6 +285,7 @@ public class TableMonitor {
     }
 
     public void deleteCols(DBContext context, int col, int count, String linkId) {
+        // todo: delete actual column
         _models.get(linkId).deleteCols(context,col,count);
 //        String select = selectAllFromSheet(sheetName, bookId);
 //
@@ -356,13 +357,8 @@ public class TableMonitor {
     public JSONArray getCells(DBContext context, CellRegion fetchRange, String sheetName,
                               String bookId) {
 
-        SBook book = BookBindings.getBookByName(bookId);
-        SSheet sheet = book.getSheetByName(sheetName);
-        // Reduce Range to bounds
         String select = selectAllFromSheet(sheetName, bookId);
-
         JSONArray ret = new JSONArray();
-
         AutoRollbackConnection connection = context.getConnection();
         try (Statement stmt = connection.createStatement()){
             ResultSet rs = stmt.executeQuery(select);
@@ -370,6 +366,8 @@ public class TableMonitor {
                 String tableRange = rs.getString("range");
                 String linkId = rs.getString("linkid");
                 String tableName = rs.getString("tablename");
+                String[] tmp = tableName.split("_",3);
+                String sharedLink = getSharedLink(context,tmp[1],tmp[2]);
                 String filter = rs.getString("filter");
                 String order = rs.getString("sort");
                 String [] stringRowCol = tableRange.split("-");
@@ -382,9 +380,9 @@ public class TableMonitor {
 
                 if (fetchRange.overlaps(range)) {
                     CellRegion overlap = fetchRange.getOverlap(range);
-                    overlap.shiftedRange(-rowcol[0], -rowcol[1]);
-                    ret.add(_models.get(linkId).getCells(context, overlap, rowcol[0], rowcol[1],
-                            tableName, order, filter));
+                    overlap = overlap.shiftedRange(-rowcol[0], -rowcol[1]);
+                    ret.add(_models.get(linkId).getCellsJSON(context, overlap, range,
+                            tableName, order, filter, sharedLink));
 
                 }
 
@@ -394,6 +392,82 @@ public class TableMonitor {
         }
         return ret;
     }
+
+    public JSONArray getTableInformation(DBContext context, CellRegion fetchRange, String sheetName,
+                              String bookId) throws Exception {
+
+        String select = selectAllFromSheet(sheetName, bookId);
+        JSONArray ret = new JSONArray();
+        AutoRollbackConnection connection = context.getConnection();
+        try (Statement stmt = connection.createStatement()){
+            ResultSet rs = stmt.executeQuery(select);
+            while(rs.next()){
+                String tableRange = rs.getString("range");
+                String linkId = rs.getString("linkid");
+                String tableName = rs.getString("tablename");
+                String[] tmp = tableName.split("_",3);
+                String sharedLink = getSharedLink(context,tmp[1],tmp[2]);
+                String filter = rs.getString("filter");
+                String order = rs.getString("sort");
+                String [] stringRowCol = tableRange.split("-");
+                Integer [] rowcol = {Integer.parseInt(stringRowCol[0]),
+                        Integer.parseInt(stringRowCol[1]),
+                        Integer.parseInt(stringRowCol[2]),
+                        Integer.parseInt(stringRowCol[3])};
+
+                CellRegion range = new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
+
+                if (fetchRange.overlaps(range)) {
+                    CellRegion overlap = fetchRange.getOverlap(range);
+                    overlap = overlap.shiftedRange(-rowcol[0], -rowcol[1]);
+                    ret.add(_models.get(linkId).getTableInfomation(context, tableName,
+                            order,filter,sharedLink, overlap, rowcol[0], rowcol[1]));
+
+                }
+
+            }
+        }catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return ret;
+    }
+
+    public Collection<AbstractCellAdv> getTableCells(DBContext context, CellRegion fetchRange, String sheetName,
+                              String bookId) {
+
+        Collection<AbstractCellAdv> cells = new ArrayList<>();
+
+        String select = selectAllFromSheet(sheetName, bookId);
+        AutoRollbackConnection connection = context.getConnection();
+        try (Statement stmt = connection.createStatement()){
+            ResultSet rs = stmt.executeQuery(select);
+            while(rs.next()){
+                String tableRange = rs.getString("range");
+                String linkId = rs.getString("linkid");
+                String tableName = rs.getString("tablename");
+                String [] stringRowCol = tableRange.split("-");
+                Integer [] rowcol = {Integer.parseInt(stringRowCol[0]),
+                        Integer.parseInt(stringRowCol[1]),
+                        Integer.parseInt(stringRowCol[2]),
+                        Integer.parseInt(stringRowCol[3])};
+
+                CellRegion range = new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
+
+                if (fetchRange.overlaps(range)) {
+                    CellRegion overlap = fetchRange.getOverlap(range);
+                    overlap = overlap.shiftedRange(-rowcol[0], -rowcol[1]);
+                    cells.addAll(_models.get(linkId).getCells(context, overlap, range,
+                            tableName));
+
+                }
+
+            }
+        }catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return cells;
+    }
+
 
     private String insertToTables(DBContext context, String userId, String metaTableName) throws SQLException {
         // todo: check overlaping point
@@ -439,6 +513,8 @@ public class TableMonitor {
 
     private String insertToTableSheetLink(DBContext context, CellRegion range, String bookId,
                                           String sheetName, String tableName) throws SQLException {
+
+        // todo:check overlap
         /* add the record to the tables table */
         AutoRollbackConnection connection = context.getConnection();
         String tableRange = range.row + "-" + range.column + "-" + range.lastRow + "-" + range.lastColumn;

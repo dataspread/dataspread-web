@@ -7,18 +7,13 @@ import org.zkoss.json.JSONArray;
 import org.zkoss.json.JSONObject;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SSemantics;
-import org.zkoss.zss.model.impl.AbstractCellAdv;
-import org.zkoss.zss.model.impl.CellImpl;
-import org.zkoss.zss.model.impl.CountedBTree;
-import org.zkoss.zss.model.impl.PosMapping;
+import org.zkoss.zss.model.impl.*;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -32,8 +27,16 @@ public class TableSheetModel {
     final static String VALUES = "values";
     final static String TABLE_SHEET_ID = "table_sheet_id";
     final static String LABEL_CELLS = "label_cells";
-    final static String FILTER = "order";
-    final static String ORDER = "filter";
+    final static String FILTER = "filter";
+    final static String ORDER = "order";
+    final static String NAME = "name";
+    final static String RANGE = "range";
+    final static String ROW1 = "row1";
+    final static String ROW2 = "row2";
+    final static String COL1 = "col1";
+    final static String COL2 = "col2";
+    final static String LINKTABLEID = "linktableid";
+    final static String LINK = "link";
 
     PosMapping rowMapping, colMapping;
     String linkId;
@@ -62,8 +65,10 @@ public class TableSheetModel {
         rowMapping.insertIDs(context, 0,oidList);
     }
 
-    public JSONObject getCells(DBContext context, CellRegion fetchRegion, int rowOffset,
-                               int colOffset, String tableName, String order, String filter){
+    public JSONObject getCellsJSON(DBContext context, CellRegion fetchRegion, CellRegion tableRegion,
+                                   String tableName, String order, String filter, String sharedLink){
+        int rowOffset = tableRegion.getRow();
+        int colOffset = tableRegion.getColumn();
 
         JSONObject ret = new JSONObject();
         ret.put(TABLE_SHEET_ID, linkId);
@@ -151,6 +156,152 @@ public class TableSheetModel {
             e.printStackTrace();
         }
         return ret;
+    }
+
+
+    JSONObject getTableInfomation(DBContext context, String tableName, String order, String filter,
+                                  String sharedLink, CellRegion fetchRegion, int rowOffset,int colOffset) throws Exception {
+
+        StringBuffer select = new StringBuffer("SELECT oid,* ")
+                .append(" FROM ")
+                .append(tableName)
+                .append(" LIMIT 0 ");
+
+        List<Pair<String, Integer>> tableColumns = new ArrayList<>();
+
+        AutoRollbackConnection connection = context.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            ResultSet rs = stmt.executeQuery();
+            for (int i = fetchRegion.column; i < min(fetchRegion.lastColumn + 1, colMapping.size(context)); i++) {
+                int index = (int) colMapping.getIDs(context, i, 1).get(0);
+
+                int type = rs.getMetaData().getColumnType(index + 2);
+
+                String name = rs.getMetaData().getColumnLabel(index + 2);
+                tableColumns.add(new Pair<>(name, type));
+            }
+        }
+        HashMap<String, String> orderMap = new HashMap<>();
+
+        if (order.length() > 0){
+            String [] orders = order.split(",");
+
+            for (String o :orders){
+                String[] attributeOrder = o.split(" ");
+                if (attributeOrder.length != 2) {
+                    for (int i = 0; i < attributeOrder.length;i++){
+                        System.out.println(i + " " + attributeOrder[i]);
+                    }
+                    throw new Exception("Error format for order");
+                }
+                if (!orderMap.containsKey(attributeOrder[0])){
+                    orderMap.put(attributeOrder[0],attributeOrder[1]);
+                }
+            }
+        }
+
+        JSONObject ret = new JSONObject();
+        JSONArray attributes = new JSONArray();
+        JSONObject range = new JSONObject();
+
+        ret.put(ATTRIBUTES,attributes);
+        ret.put(RANGE, range);
+        ret.put(FILTER,filter);
+        ret.put(LINKTABLEID, linkId);
+        ret.put(LINK, sharedLink);
+
+        range.put(ROW1, fetchRegion.getRow() + rowOffset);
+        range.put(ROW2, fetchRegion.getLastRow() + rowOffset);
+        range.put(COL1, fetchRegion.getColumn() + colOffset);
+        range.put(COL2, fetchRegion.getLastColumn() + colOffset);
+
+        for (Pair<String, Integer> col:tableColumns){
+            JSONObject attribute = new JSONObject();
+            attributes.add(attribute);
+            attribute.put(NAME, col.getKey());
+            attribute.put(TYPE, typeIdToString(col.getValue()));
+            if (orderMap.containsKey(col.getKey())){
+                attribute.put(ORDER, orderMap.get(col.getKey()));
+            }
+            else {
+                attribute.put(ORDER,null);
+            }
+        }
+        return ret;
+    }
+
+    public Collection<AbstractCellAdv> getCells(DBContext context, CellRegion fetchRegion, CellRegion tableRegion,
+                                                String tableName) {
+        int rowOffset = tableRegion.getRow();
+        int colOffset = tableRegion.getColumn();
+        Collection<AbstractCellAdv> cells = new ArrayList<>();
+
+        ArrayList<Integer> rowIds;
+        boolean includeHeader = (fetchRegion.getRow() == 0);
+        if (includeHeader)
+            rowIds = rowMapping.getIDs(context, fetchRegion.getRow(),
+                    min(fetchRegion.getLastRow() - fetchRegion.getRow(),
+                            rowMapping.size(context) - fetchRegion.getRow()));
+        else
+            rowIds = rowMapping.getIDs(context, fetchRegion.getRow() - 1,
+                    min(fetchRegion.getLastRow() - fetchRegion.getRow() + 1,
+                            rowMapping.size(context) - fetchRegion.getRow() + 1));
+
+
+        HashMap<Integer, Integer> row_map = new HashMap<>(); // Oid -> row number
+        int bound = rowIds.size();
+        for (int i1 = 0; i1 < bound; i1++) {
+            if (rowIds.get(i1) != -1) {
+                row_map.put(rowIds.get(i1), fetchRegion.getRow() + i1 + (includeHeader ? 1 : 0));
+            }
+        }
+
+
+        StringBuffer select = new StringBuffer("SELECT oid,* ")
+                .append(" FROM ")
+                .append(tableName)
+                .append(" WHERE oid = ANY (?) ");
+
+        List<Integer> schema = new ArrayList<>();
+
+        AutoRollbackConnection connection = context.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            // Array inArrayRow = context.getConnection().createArrayOf(pkColumnType, rowIds);
+            /* Assume an int array for now */
+            Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds.toArray());
+            stmt.setArray(1, inArrayRow);
+            ResultSet rs = stmt.executeQuery();
+
+            if (includeHeader) {
+                for (int i = fetchRegion.column; i <= fetchRegion.lastColumn; i++){
+                    int index = (int) colMapping.getIDs(context,i,1).get(0);
+                    cells.add(newCell(rowOffset,colOffset + i,
+                            rs.getMetaData().getColumnLabel(index + 2),connection));
+                }
+            }
+
+            for (int i = fetchRegion.column; i <= fetchRegion.lastColumn; i++){
+                int index = (int) colMapping.getIDs(context,i,1).get(0);
+                int type = rs.getMetaData().getColumnType(index + 2);
+                schema.add(type);
+            }
+            while (rs.next()) {
+                int oid = rs.getInt(1); /* First column is oid */
+                int row = row_map.get(oid);
+
+                for (int i = fetchRegion.column; i <= fetchRegion.lastColumn; i++) {
+                    JSONArray cell = new JSONArray();
+                    int index = (int) colMapping.getIDs(context,i,1).get(0);
+                    cells.add(newCell(rowOffset + row,colOffset + i,
+                            getValue(rs,index, schema.get(i - fetchRegion.column)),connection));
+                }
+            }
+            rs.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return cells;
+
     }
 
     void deleteRows(DBContext context, int row, int count){
@@ -288,6 +439,12 @@ public class TableSheetModel {
             default:
                 throw new Exception("getValue: Unsupported type");
         }
+    }
+    private static AbstractCellAdv newCell(int row, int column, Object value, AutoRollbackConnection connection){
+        AbstractCellAdv cell = new CellImpl(row, column);
+        cell.setValue(value, connection, false);
+        cell.setSemantics(SSemantics.Semantics.TABLE_CONTENT);
+        return cell;
     }
     private static String typeIdToString(Integer type) throws Exception {
         switch (type) {

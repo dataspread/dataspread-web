@@ -51,7 +51,7 @@ public class GeneralController {
             }
         }
         HashMap<String, List<Cell>> result = new HashMap<>();
-        result.put("getCells", returnCells);
+        result.put("getCellsJSON", returnCells);
         return result;
     }
 

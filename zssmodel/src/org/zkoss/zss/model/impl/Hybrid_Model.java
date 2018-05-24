@@ -97,7 +97,7 @@ public class Hybrid_Model extends RCV_Model {
             int max_row = range.getRow() + i * block_row;
             if (i > range.getLastRow() / block_row) max_row = range.getLastRow();
             CellRegion work_range = new CellRegion(min_row, range.getColumn(), max_row, range.getLastColumn());
-            Collection<AbstractCellAdv> cells = getCells(context, work_range)
+            Collection<AbstractCellAdv> cells = getCellsJSON(context, work_range)
                     .stream()
                     //.map(e -> e.shiftedCell(-range.getRow(), -range.getColumn())) // Translate
                     .collect(Collectors.toList());
@@ -633,7 +633,7 @@ public class Hybrid_Model extends RCV_Model {
                                 .collect(Collectors.toList())));
 
         //NewTableModel newTable = new NewTableModel(sheet.getBook().getBookName(), sheet.getSheetName(), tableName);
-        //cells.addAll(newTable.getCells(context, range, sheet.getSheetName(), sheet.getBook().getBookName()));
+        //cells.addAll(newTable.getCellsJSON(context, range, sheet.getSheetName(), sheet.getBook().getBookName()));
         boolean encompass = false;
         for (MetaDataBlock.ModelEntry m : metaDataBlock.modelEntryList)
             if (m.range.contains(range))
