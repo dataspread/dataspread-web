@@ -10,7 +10,6 @@ import org.postgresql.copy.CopyIn;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.ModelEvents;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.statistic.AbstractStatistic;
@@ -225,7 +224,7 @@ public class RCV_Model extends Model {
 
         currentSheet.clearCache();
         ArrayList<SCell> result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
-
+        result.sort(Comparator.comparing(SCell::getRowIndex));
 
 
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
