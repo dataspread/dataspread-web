@@ -45,6 +45,7 @@ public class TableController {
     static final String COLUMN_TYPE = "columnType";
     static final String COLUMN_NAME = "columnName";
     static final String COLUMN = "column";
+    static final String VALUES = "values";
 
 
 
@@ -188,7 +189,7 @@ public class TableController {
             TableMonitor tableModel = TableMonitor.getController();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
-                ret.put(TABLE_CELLS,tableModel.getTableInformation(context, range, sheet, book));
+                ret.put(TABLE_CELLS,tableModel.getCells(context, range, sheet, book));
                 context.getConnection().commit();
             }
             catch(java.lang.Exception e){
@@ -440,6 +441,36 @@ public class TableController {
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 tableModel.changeTableColumnName(context, linkTableId, column, columnName);
+                context.getConnection().commit();
+            }
+            catch(java.lang.Exception e){
+                return returnFalse(e);
+            }
+
+        }
+        catch (java.lang.Exception e){
+            return returnFalse(e);
+        }
+
+        return returnTrue(null);
+    }
+
+    @RequestMapping(value = "/api/updateTableCells",
+            method = RequestMethod.PUT)
+    public JSONObject updateTableCells(@RequestBody String value){
+        JSONParser paser = new JSONParser();
+        try {
+            JSONObject dict = (JSONObject)paser.parse(value);
+            String linkTableId = (String)dict.get(LINK_TABLE_ID);
+            int row1 = (int)dict.get(ROW_1);
+            int row2 = (int)dict.get(ROW_2);
+            int col1 = (int)dict.get(COL_1);
+            int col2 = (int)dict.get(COL_2);
+            JSONArray values = (JSONArray)dict.get(VALUES);
+            TableMonitor tableModel = TableMonitor.getController();
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+                DBContext context = new DBContext(connection);
+                tableModel.updateTableCells(context,linkTableId,row1,row2,col1,col2,values);
                 context.getConnection().commit();
             }
             catch(java.lang.Exception e){

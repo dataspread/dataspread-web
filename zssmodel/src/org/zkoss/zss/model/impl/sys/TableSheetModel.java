@@ -10,16 +10,15 @@ import org.zkoss.zss.model.SSemantics;
 import org.zkoss.zss.model.impl.*;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.Math.round;
 import static org.zkoss.zss.model.impl.sys.TableMonitor.TABLESHEETLINK;
+import static org.zkoss.zss.model.impl.sys.TableMonitor.setStmtValue;
 
 public class TableSheetModel {
 
@@ -163,25 +162,9 @@ public class TableSheetModel {
     JSONObject getTableInfomation(DBContext context, String tableName, String order, String filter,
                                   String sharedLink, CellRegion fetchRegion, int rowOffset,int colOffset) throws Exception {
 
-        StringBuffer select = new StringBuffer("SELECT oid,* ")
-                .append(" FROM ")
-                .append(tableName)
-                .append(" LIMIT 0 ");
+        List<Pair<String, Integer>> tableColumns = getSchema(context, tableName, fetchRegion.column,
+                min(fetchRegion.lastColumn + 1, colMapping.size(context)) - fetchRegion.column);
 
-        List<Pair<String, Integer>> tableColumns = new ArrayList<>();
-
-        AutoRollbackConnection connection = context.getConnection();
-        try (PreparedStatement stmt = connection.prepareStatement(select.toString())) {
-            ResultSet rs = stmt.executeQuery();
-            for (int i = fetchRegion.column; i < min(fetchRegion.lastColumn + 1, colMapping.size(context)); i++) {
-                int index = (int) colMapping.getIDs(context, i, 1).get(0);
-
-                int type = rs.getMetaData().getColumnType(index + 2);
-
-                String name = rs.getMetaData().getColumnLabel(index + 2);
-                tableColumns.add(new Pair<>(name, type));
-            }
-        }
         HashMap<String, String> orderMap = new HashMap<>();
 
         if (order.length() > 0){
@@ -327,9 +310,38 @@ public class TableSheetModel {
         colMapping.deleteIDs(context, col, count);
     }
 
-    void updateTableCells(DBContext context, CellRegion updateRegion, JSONArray values){
+    void updateTableCells(DBContext context, CellRegion updateRegion, JSONArray values) throws Exception {
         ArrayList<String> a = new ArrayList<>();
-        String columns = a.stream().collect(Collectors.joining(","));
+
+        if (updateRegion.getLastColumn() >= colMapping.size(context) ||
+                updateRegion.getLastRow() >= rowMapping.size(context))
+            throw new Exception("Update region exceeds table region");
+        ArrayList<Integer> rowIds = rowMapping.getIDs(context, updateRegion.getRow(), updateRegion.getRowCount());
+        String tableName = getTableName(context);
+        ArrayList<Pair<String, Integer>> schema = getSchema(context, tableName, updateRegion.getColumn(),
+                updateRegion.getColumnCount());
+        String update = "UPDATE " +
+                tableName +
+                " SET " +
+                IntStream.range(0, schema.size()).mapToObj(e -> schema.get(e).getKey() + " = ?")
+                        .collect(Collectors.joining(",")) +
+                " WHERE oid = ?";
+
+        AutoRollbackConnection connection = context.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(update)) {
+            for (int i = 0; i < rowIds.size(); i ++) {
+                int oid = rowIds.get(i);
+                JSONArray currentRow  = (JSONArray)(values.get(i));
+                for (int j = 0; j < updateRegion.getColumnCount(); j++) {
+                    setStmtValue(stmt,j,currentRow.get(j).toString(),schema.get(j).getValue());
+                }
+                stmt.setInt(updateRegion.getColumnCount() + 1, oid);
+                if (!stmt.execute()){
+                    throw  new Exception("Update failed");
+                }
+            }
+        }
+
     }
 
     String getTableName(DBContext context) throws Exception {
@@ -379,7 +391,7 @@ public class TableSheetModel {
 
         AutoRollbackConnection connection = context.getConnection();
 
-        int columnNum = 0;
+        int columnCount = 0;
 
         try (Statement stmt = connection.createStatement()) {
             ResultSet rs = stmt.executeQuery(select);
@@ -393,22 +405,30 @@ public class TableSheetModel {
                         Integer.parseInt(stringRowCol[3])};
 
                 CellRegion range = new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
-                columnNum = range.getColumnCount();
+                columnCount = range.getColumnCount();
             }
             else
                 throw new Exception("Wrong tableLinkId.");
+            columnCount = max(columnCount, colMapping.size(context));
         }
 
-        columnNum = max(columnNum, rowMapping.size(context));
+        return getSchema(context, tableName, 0, columnCount);
 
-        select = "SELECT * FROM " + tableName + " limit 0";
+
+
+    }
+
+    ArrayList<Pair<String,Integer>> getSchema(DBContext context, String tableName,
+                                              int column, int columnCount) throws Exception {
+        String select = "SELECT * FROM " + tableName + " limit 0";
 
         ArrayList<Pair<String,Integer>> ret = new ArrayList<Pair<String,Integer>>();
 
+        AutoRollbackConnection connection = context.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(select)) {
             ResultSet rs = stmt.executeQuery();
             ResultSetMetaData schema = rs.getMetaData();
-            ArrayList<Integer> columns = colMapping.getIDs(context,0,columnNum);
+            ArrayList<Integer> columns = colMapping.getIDs(context,column,columnCount);
 
             for (int index:columns){
                 ret.add(new Pair<>(schema.getColumnName(index + 1), schema.getColumnType(index + 1)));
@@ -416,11 +436,8 @@ public class TableSheetModel {
 
             rs.close();
         }
-
         return ret;
-
     }
-
     private static Object getValue(ResultSet rs, int index, int type) throws Exception {
         switch (type) {
             case Types.BOOLEAN:

@@ -469,6 +469,11 @@ public class TableMonitor {
     }
 
 
+    public void updateTableCells(DBContext context, String linkTableId, int row1, int row2, int col1, int col2,
+                                 JSONArray values) throws Exception {
+        CellRegion updateRegion = new CellRegion(row1, col1, row2, col2);
+        _models.get(linkTableId).updateTableCells(context, updateRegion, values);
+    }
     private String insertToTables(DBContext context, String userId, String metaTableName) throws SQLException {
         // todo: check overlaping point
         AutoRollbackConnection connection = context.getConnection();
@@ -565,7 +570,7 @@ public class TableMonitor {
         return result;
     }
 
-    private static void setStmtValue(PreparedStatement stmt, int index, String value, int type) throws Exception {
+    static void setStmtValue(PreparedStatement stmt, int index, String value, int type) throws Exception {
         switch (type) {
             case Types.BOOLEAN:
                 stmt.setBoolean(index + 1,Boolean.parseBoolean(value));
@@ -649,8 +654,6 @@ public class TableMonitor {
                 // todo: uncomment it:
 //                sheet.getDataModel().deleteCells(dbContext, work_range);
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
         return oidList;
     }
