@@ -132,7 +132,7 @@ public class OpenManageBookCtrl extends DlgCtrlBase{
 				data.put("booktable", rs.getString("booktable"));
 				data.put("lastopened",
 						new SimpleDateFormat("MM/dd/yy HH:mm")
-								.format(rs.getTimestamp("lastopened")));
+								.format(rs.getTimestamp("lastmodified")));
 				bookListModel.add(data);
 			}
 			getstmt.close();

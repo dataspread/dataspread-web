@@ -2,78 +2,142 @@ package org.ds.api.controller;
 
 import org.ds.api.Cell;
 import org.model.AutoRollbackConnection;
+import org.model.DBContext;
 import org.model.DBHandler;
 import org.springframework.web.bind.annotation.*;
+import org.zkoss.json.parser.JSONParser;
+import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.model.impl.BookImpl;
+import org.zkoss.zss.model.impl.sys.TableMonitor;
 import org.zkoss.zss.model.sys.BookBindings;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import org.zkoss.json.*;
+import javafx.util.Pair;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 @RestController
 public class GeneralController {
     // General API
 
-    @RequestMapping(value = "/getCells/{book}/{sheet}/{row1}/{row2}/{col1}/{col2}",
+    @RequestMapping(value = "/api/getCells/{bookId}/{sheetName}/{row1}/{row2}/{col1}/{col2}",
             method = RequestMethod.GET)
-    public HashMap<String, List<Cell>> getCells(@PathVariable String book,
-                                                @PathVariable String sheet,
+    public HashMap<String, Object> getCells(@PathVariable String bookId,
+                                                @PathVariable String sheetName,
                                                 @PathVariable int row1,
                                                 @PathVariable int row2,
                                                 @PathVariable int col1,
                                                 @PathVariable int col2) {
         List<Cell> returnCells = new ArrayList<>();
 
-        SBook sbook = BookBindings.getBookByName(book);
-        SSheet sSheet = sbook.getSheetByName(sheet);
-
-        for (int row = row1; row <= row2; row++) {
-            for (int col = col1; col <= col2; col++) {
-                SCell sCell = sSheet.getCell(row, col);
-
-                Cell cell = new Cell();
-                cell.row = row;
-                cell.col = col;
-                cell.value = sCell.getStringValue();
-                if (sCell.getType() == SCell.CellType.FORMULA)
-                    cell.formula = sCell.getFormulaValue();
-                returnCells.add(cell);
+        SBook book = BookBindings.getBookById(bookId);
+        SSheet sheet = book.getSheetByName(sheetName);
+        CellRegion range = new CellRegion(row1, row1, row2, col2);
+        HashMap<String, Object> data = new HashMap<>();
+        DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
+        JSONArray tableInfo = null;
+        try {
+            tableInfo = TableMonitor.getController().getTableInformation(dbContext,range,sheetName,bookId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return JsonWrapper.generateError(e.getMessage());
+        }
+        HashSet<Pair<Integer, Integer>> checked = new HashSet<Pair<Integer, Integer>>();
+        if (tableInfo!= null){
+            for (int i = 0; i < tableInfo.size(); i++){
+                JSONObject table = (JSONObject) tableInfo.get(i);
+                JSONObject tableRange = (JSONObject) table.get("range");
+                int tableRow1 = Integer.parseInt(String.valueOf(tableRange.get("row1")));
+                int tableRow2 = Integer.parseInt(String.valueOf(tableRange.get("row2")));
+                int tableCol1 = Integer.parseInt(String.valueOf(tableRange.get("col1")));
+                int tableCol2 = Integer.parseInt(String.valueOf(tableRange.get("col2")));
+                ArrayList<Object> rows = new ArrayList<>();
+                for (int row = tableRow1; row <= tableRow2; row++) {
+                    ArrayList<Object> cols = new ArrayList<>();
+                    for (int col = tableCol1; col <= tableCol2; col++) {
+                        SCell sCell = sheet.getCell(row, col);
+                        cols.add(sCell.getValue());
+                        checked.add(new Pair<>(row, col));
+                    }
+                    rows.add(cols);
+                }
+                table.put("cells", rows);
             }
         }
-        HashMap<String, List<Cell>> result = new HashMap<>();
-        result.put("getCellsJSON", returnCells);
-        return result;
-    }
+        for (int row = row1; row <= row2; row++) {
+            for (int col = col1; col <= col2; col++) {
+                Pair<Integer, Integer> pair = new Pair<>(row, col);
+                if (!checked.contains(pair)){
+                    SCell sCell = sheet.getCell(row, col);
 
-    @RequestMapping(value = "/putCells/{book}/{sheet}/{row1}-{row2}/{col1}-{col2}",
-            method = RequestMethod.PUT)
-    public void putCells(@PathVariable String book,
-                         @PathVariable String sheet,
-                         @PathVariable int row1,
-                         @PathVariable int row2,
-                         @PathVariable int col1,
-                         @PathVariable int col2,
-                         @RequestBody String value) {
-
-        SBook sbook = BookBindings.getBookByName(book);
-        SSheet sSheet = sbook.getSheetByName(sheet);
-
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
-            for (int row = row1; row <= row2; row++) {
-                for (int col = col1; col <= col2; col++) {
-                    sSheet.getCell(row, col).setStringValue(value, connection, true);
+                    Cell cell = new Cell();
+                    cell.row = row;
+                    cell.col = col;
+                    cell.value = String.valueOf(sCell.getValue());
+                    if (sCell.getType() == SCell.CellType.FORMULA)
+                        cell.formula = sCell.getFormulaValue();
+                    returnCells.add(cell);
                 }
             }
+        }
+        data.put("cells", returnCells);
+        data.put("tables", tableInfo);
+        return JsonWrapper.generateJson(data);
+    }
+
+    @RequestMapping(value = "/api/putCells",
+            method = RequestMethod.PUT)
+    public HashMap<String, Object> putCells(@RequestBody String json) {
+        org.json.JSONObject obj = new org.json.JSONObject(json);
+        String bookId = obj.getString("bookId");
+        String sheetName = obj.getString("sheetName");
+        SBook book = BookBindings.getBookById(bookId);
+        SSheet sheet = book.getSheetByName(sheetName);
+        org.json.JSONArray cells = obj.getJSONArray("cells");
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            for (Object cell : cells) {
+                int row = ((org.json.JSONObject)cell).getInt("row");
+                int col = ((org.json.JSONObject)cell).getInt("col");
+                String type = ((org.json.JSONObject)cell).getString("type");
+                String formula = ((org.json.JSONObject)cell).getString("formula");
+                Object value = getValue((org.json.JSONObject) cell, type);
+                if (!formula.equals("")) {
+                    sheet.getCell(row,col).setFormulaValue(formula, connection, true);
+                } else {
+                    sheet.getCell(row, col).setValue(value, connection, true);
+                }
+                String format = ((org.json.JSONObject)cell).getString("format");
+            }
+            return JsonWrapper.generateJson(null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return JsonWrapper.generateError(e.getMessage());
+        }
+    }
+
+    private Object getValue(org.json.JSONObject cell, String type){
+        switch (type.toUpperCase()) {
+            case "INTEGER":
+                return cell.getInt("value");
+            case "REAL":
+            case "FLOAT":
+                return cell.getDouble("value");
+            case "DATE":
+                try{
+                    return new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").parse(cell.getString("value"));
+                } catch  (Exception ex ){
+                    return cell.getString("value");
+                }
+            case "BOOLEAN":
+                return cell.getBoolean("value");
+            case "TEXT":
+            default:
+                return cell.getString("value");
         }
     }
 

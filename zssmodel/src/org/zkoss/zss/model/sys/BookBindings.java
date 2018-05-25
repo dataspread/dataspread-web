@@ -43,12 +43,8 @@ public class BookBindings {
     }
 
     static public SBook getBookById(String bookId) {
-        return _bindings.computeIfAbsent(bookId, e->
-                {
-                    SBook book = BookImpl.getBookById(e);
-                    return book;
-                }
-        );
+        SBook book = BookImpl.getBookById(bookId);
+        return book;
     }
 
     static public SSheet getSheetByRef(Ref ref) {

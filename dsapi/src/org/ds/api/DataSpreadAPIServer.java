@@ -15,10 +15,10 @@ public class DataSpreadAPIServer extends SpringBootServletInitializer {
     }
 
 	public static void main(String[] args){
-        String url = "jdbc:postgresql://127.0.0.1:5432/dataspread";
+        String url = "jdbc:postgresql://127.0.0.1:5432/ibd";
         String driver = "org.postgresql.Driver";
-        String userName = "dbuser";
-        String password = "dbadmin";
+        String userName = "mangesh";
+        String password = "mangesh";
         DBHandler.connectToDB(url, driver, userName, password);
 		SpringApplication.run(DataSpreadAPIServer.class, args);
 	}
