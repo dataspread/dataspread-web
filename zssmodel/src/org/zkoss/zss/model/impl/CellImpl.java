@@ -298,7 +298,8 @@ public class CellImpl extends AbstractCellAdv {
 		//if (sync)
 		//	logger.info("Sync eval - " + this.getReferenceString());
 
-		if (trxId == _sheet.getTrxId() && _formulaResultValue!=null) {
+        if (trxId == _sheet.getTrxId() && _formulaResultValue != null
+                && _formulaResultValue != DirtyManager.getDirtyValue()) {
 			// Computation not required. _formulaResultValue should have correct value.
 			return;
 		}
@@ -306,7 +307,8 @@ public class CellImpl extends AbstractCellAdv {
 		// Check if it is dirty.
 		int dirtyTrxId = DirtyManager.dirtyManagerInstance.getDirtyTrxId(getRef());
 		/* if the value is not dirty then update trxId */
-        if ((trxId > dirtyTrxId || dirtyTrxId < 0) && _formulaResultValue != null) {
+        if ((trxId > dirtyTrxId || dirtyTrxId < 0) && _formulaResultValue != null
+                && _formulaResultValue != DirtyManager.getDirtyValue()) {
 			trxId = _sheet.getTrxId();
 		}
 		else if (sync)

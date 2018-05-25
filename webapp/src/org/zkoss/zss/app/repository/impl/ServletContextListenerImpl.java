@@ -6,7 +6,7 @@ import org.zkoss.zk.ui.WebApps;
 import org.zkoss.zss.app.BookManager;
 import org.zkoss.zss.app.impl.BookManagerImpl;
 import org.zkoss.zss.app.repository.BookRepositoryFactory;
-import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerSimple;
+import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerPriority;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
 import javax.servlet.ServletContextEvent;
@@ -30,7 +30,7 @@ public class ServletContextListenerImpl implements ServletContextListener, Seria
 		}
 		DBHandler.instance.initApplication();
 
-		FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerSimple();
+        FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerPriority();
 		Thread thread = new Thread(formulaAsyncScheduler);
 		thread.start();
 	}
