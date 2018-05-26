@@ -298,21 +298,17 @@ public class CellImpl extends AbstractCellAdv {
 		//if (sync)
 		//	logger.info("Sync eval - " + this.getReferenceString());
 
-		if (trxId == _sheet.getTrxId() && _formulaResultValue!=null) {
+        if (trxId == _sheet.getTrxId() && _formulaResultValue != null
+                && _formulaResultValue != DirtyManager.getDirtyValue()) {
 			// Computation not required. _formulaResultValue should have correct value.
 			return;
 		}
 
 		// Check if it is dirty.
 		int dirtyTrxId = DirtyManager.dirtyManagerInstance.getDirtyTrxId(getRef());
-		if (trxId>dirtyTrxId && _formulaResultValue!=null)
-		{
-			// Formula already computed.
-			return;
-		}
-
 		/* if the value is not dirty then update trxId */
-		if (dirtyTrxId<0 && _formulaResultValue!=null) {
+        if ((trxId > dirtyTrxId || dirtyTrxId < 0) && _formulaResultValue != null
+                && _formulaResultValue != DirtyManager.getDirtyValue()) {
 			trxId = _sheet.getTrxId();
 		}
 		else if (sync)
@@ -324,7 +320,7 @@ public class CellImpl extends AbstractCellAdv {
                 FormulaEngine fe = EngineFactory.getInstance().createFormulaEngine();
                 fe.clearCache(new FormulaClearContext(_sheet));
                 EvaluationResult result = fe.evaluate(expr, evalContext);
-                updateFormulaResultValue(result, dirtyTrxId);
+                updateFormulaResultValue(result);
             }
 		}
 		else
@@ -754,6 +750,10 @@ public class CellImpl extends AbstractCellAdv {
 		return _formulaResultValue;
 	}
 
+    public void setTrxId(int trxId) {
+        this.trxId = trxId;
+    }
+
 	private static class OptFields implements Serializable {
 		private AbstractHyperlinkAdv _hyperlink;
 		private AbstractCommentAdv _comment;
@@ -772,11 +772,8 @@ public class CellImpl extends AbstractCellAdv {
 		}
 	}
 
-	public synchronized void updateFormulaResultValue(EvaluationResult result, int trxId){
-		if (trxId>=this.trxId) {
-			this.trxId =trxId;
+    public synchronized void updateFormulaResultValue(EvaluationResult result) {
 			_formulaResultValue=new FormulaResultCellValue(result);
 			updateCelltoDB();
-		}
 	}
 }

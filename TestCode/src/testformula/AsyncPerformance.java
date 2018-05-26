@@ -52,14 +52,14 @@ public class AsyncPerformance {
         Thread graphThread = new Thread(graphCompressor);
         // graphThread.start();
 
-        //simpleTest(formulaAsyncScheduler);
-        realTest("survey", "Escalating OSA with Cost Share.xlsx", "Cost Share", formulaAsyncScheduler);
+        simpleTest(formulaAsyncScheduler);
+        //realTest("survey", "Escalating OSA with Cost Share.xlsx", "Cost Share", formulaAsyncScheduler);
 
         formulaAsyncScheduler.shutdown();
         asyncThread.join();
 
-        graphCompressor.stopListener();
-        graphThread.join();
+        //   graphCompressor.stopListener();
+        //   graphThread.join();
     }
 
 
@@ -335,65 +335,31 @@ public class AsyncPerformance {
 
     public static void simpleTest(FormulaAsyncScheduler formulaAsyncScheduler)
     {
-        SBook book= BookBindings.getBookByName("testBook");
+        SBook book = BookBindings.getBookByName("testBook" + System.currentTimeMillis());
         /* Cleaner for sync computation */
         FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(book.getBookSeries()));
         SSheet sheet = book.getSheet(0);
 
-        sheet.setSyncComputation(true);
-
-        ////////////////////////////
-        //loadSheet(sheet, "survey","weather.xlsx", "weather");
-        // loadSheet(sheet, "survey","CS 465 User Evaulations.xlsx",
-        //         "Sheet1");
-
-        //loadSheet(sheet, "survey","Escalating OSA with Cost Share.xlsx", "Cost Share");
-
-
-
-        // Collection<SCell> formula_cells = sheet.getCells().stream()
-        //         .filter(e->e.getType()== SCell.CellType.FORMULA)
-        //         .collect(Collectors.toList());
-        //////////////////////////
-
-        //sheet.getCell(0,0).setValue("500");
-
-
-        sheet.setSyncComputation(true);
-        int cellCount = 50;
+        int cellCount = 200;
         for (int i=1;i<=cellCount;i++)
             sheet.getCell(i,0).setFormulaValue("A" + i + "+1");
 
 
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        //sheet.clearCache();
         long startTime, endTime;
         /* Time to update A1 */
 
-
         sheet.clearCache();
-        startTime = System.currentTimeMillis();
-
-        sheet.getCell(0,0).setValue("300");
-        System.out.println("Final Value "
-                + sheet.getCell(cellCount,0).getValue());
-        endTime = System.currentTimeMillis();
-        System.out.println("Sync time to update = " + (endTime-startTime));
-
 
         sheet.setSyncComputation(false);
-        sheet.clearCache();
 
         System.out.println("Starting Asyn ");
         startTime = System.currentTimeMillis();
 
-        sheet.getCell(0,0).setValue("200");
-        //System.out.println("Final Value "
-        //        + sheet.getCell(cellCount,0).getValue());
+
+        sheet.getCell(0, 0).setValue(200);
+        System.out.println("Before Waiting "
+                + sheet.getCell(cellCount, 0).getValue());
+
         endTime = System.currentTimeMillis();
         System.out.println("Async time to update = " + (endTime-startTime));
         formulaAsyncScheduler.waitForCompletion();
