@@ -20,6 +20,7 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.Math.round;
 import static org.zkoss.zss.model.impl.sys.TableMonitor.TABLESHEETLINK;
+import static org.zkoss.zss.model.impl.sys.TableMonitor.getRangeFromQueryResult;
 import static org.zkoss.zss.model.impl.sys.TableMonitor.setStmtValue;
 
 public class TableSheetModel {
@@ -379,14 +380,7 @@ public class TableSheetModel {
         try (Statement stmt = connection.createStatement()) {
             ResultSet rs = stmt.executeQuery(select);
             if (rs.next()) {
-                String tableRange = rs.getString("range");
-                String [] stringRowCol = tableRange.split("-");
-                Integer [] rowcol = {Integer.parseInt(stringRowCol[0]),
-                        Integer.parseInt(stringRowCol[1]),
-                        Integer.parseInt(stringRowCol[2]),
-                        Integer.parseInt(stringRowCol[3])};
-
-                CellRegion range = new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
+                CellRegion range = getRangeFromQueryResult(rs);
                 return range;
             }
             else
@@ -448,15 +442,8 @@ public class TableSheetModel {
         try (Statement stmt = connection.createStatement()) {
             ResultSet rs = stmt.executeQuery(select);
             if (rs.next()) {
-                String tableRange = rs.getString("range");
                 tableName = rs.getString("tablename");
-                String [] stringRowCol = tableRange.split("-");
-                Integer [] rowcol = {Integer.parseInt(stringRowCol[0]),
-                        Integer.parseInt(stringRowCol[1]),
-                        Integer.parseInt(stringRowCol[2]),
-                        Integer.parseInt(stringRowCol[3])};
-
-                CellRegion range = new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
+                CellRegion range = getRangeFromQueryResult(rs);
                 columnCount = range.getColumnCount();
             }
             else

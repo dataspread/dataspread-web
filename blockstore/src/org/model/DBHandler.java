@@ -116,7 +116,10 @@ public class DBHandler {
                     "linkid  TEXT NOT NULL," +
                     "bookid  TEXT NOT NULL," +
                     "sheetname  TEXT NOT NULL," +
-                    "range  TEXT NOT NULL," +
+                    "row1  INTEGER NOT NULL," +
+                    "row2  INTEGER NOT NULL," +
+                    "col1  INTEGER NOT NULL," +
+                    "col2  INTEGER NOT NULL," +
                     "tablename  TEXT NOT NULL," +
                     "filter  TEXT NOT NULL," +
                     "sort TEXT NOT NULL," +

@@ -386,24 +386,18 @@ public class TableMonitor {
         try (Statement stmt = connection.createStatement()){
             ResultSet rs = stmt.executeQuery(select);
             while(rs.next()){
-                String tableRange = rs.getString("range");
                 String linkId = rs.getString("linkid");
                 String tableName = rs.getString("tablename");
                 String[] tmp = tableName.split("_",3);
                 String sharedLink = getSharedLink(context,tmp[1],tmp[2]);
                 String filter = rs.getString("filter");
                 String order = rs.getString("sort");
-                String [] stringRowCol = tableRange.split("-");
-                Integer [] rowcol = {Integer.parseInt(stringRowCol[0]),
-                                    Integer.parseInt(stringRowCol[1]),
-                                    Integer.parseInt(stringRowCol[2]),
-                                    Integer.parseInt(stringRowCol[3])};
 
-                CellRegion range = new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
+                CellRegion range = getRangeFromQueryResult(rs);
 
                 if (fetchRange.overlaps(range)) {
                     CellRegion overlap = fetchRange.getOverlap(range);
-                    overlap = overlap.shiftedRange(-rowcol[0], -rowcol[1]);
+                    overlap = overlap.shiftedRange(-range.getRow(), -range.getColumn());
                     ret.add(_models.get(linkId).getCellsJSON(context, overlap, range,
                             tableName, order, filter, sharedLink));
 
@@ -425,26 +419,20 @@ public class TableMonitor {
         try (Statement stmt = connection.createStatement()){
             ResultSet rs = stmt.executeQuery(select);
             while(rs.next()){
-                String tableRange = rs.getString("range");
                 String linkId = rs.getString("linkid");
                 String tableName = rs.getString("tablename");
                 String[] tmp = tableName.split("_",3);
                 String sharedLink = getSharedLink(context,tmp[1],tmp[2]);
                 String filter = rs.getString("filter");
                 String order = rs.getString("sort");
-                String [] stringRowCol = tableRange.split("-");
-                Integer [] rowcol = {Integer.parseInt(stringRowCol[0]),
-                        Integer.parseInt(stringRowCol[1]),
-                        Integer.parseInt(stringRowCol[2]),
-                        Integer.parseInt(stringRowCol[3])};
 
-                CellRegion range = new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
+                CellRegion range = getRangeFromQueryResult(rs);
 
                 if (fetchRange.overlaps(range)) {
                     CellRegion overlap = fetchRange.getOverlap(range);
-                    overlap = overlap.shiftedRange(-rowcol[0], -rowcol[1]);
+                    overlap = overlap.shiftedRange(-range.getRow(), -range.getColumn());
                     ret.add(_models.get(linkId).getTableInfomation(context, tableName,
-                            order,filter,sharedLink, overlap, rowcol[0], rowcol[1]));
+                            order,filter,sharedLink, overlap, range.getRow(), range.getColumn()));
 
                 }
 
@@ -465,20 +453,13 @@ public class TableMonitor {
         try (Statement stmt = connection.createStatement()){
             ResultSet rs = stmt.executeQuery(select);
             while(rs.next()){
-                String tableRange = rs.getString("range");
                 String linkId = rs.getString("linkid");
                 String tableName = rs.getString("tablename");
-                String [] stringRowCol = tableRange.split("-");
-                Integer [] rowcol = {Integer.parseInt(stringRowCol[0]),
-                        Integer.parseInt(stringRowCol[1]),
-                        Integer.parseInt(stringRowCol[2]),
-                        Integer.parseInt(stringRowCol[3])};
-
-                CellRegion range = new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
+                CellRegion range = getRangeFromQueryResult(rs);
 
                 if (fetchRange.overlaps(range)) {
                     CellRegion overlap = fetchRange.getOverlap(range);
-                    overlap = overlap.shiftedRange(-rowcol[0], -rowcol[1]);
+                    overlap = overlap.shiftedRange(-range.getRow(), -range.getColumn());
                     cells.addAll(_models.get(linkId).getCells(context, overlap, range,
                             tableName));
 
@@ -498,6 +479,16 @@ public class TableMonitor {
         TableSheetModel model = _models.get(linkTableId);
         model.updateTableCells(context, updateRegion, values);
         clearCache(model.getSheet(context));
+    }
+
+    public static CellRegion getRangeFromQueryResult(ResultSet rs) throws SQLException {
+        Integer [] rowcol = {
+                rs.getInt("row1"),
+                rs.getInt("col1"),
+                rs.getInt("row2"),
+                rs.getInt("col2")
+        };
+        return new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
     }
 
     private String insertToTables(DBContext context, String userId, String metaTableName) throws SQLException {
@@ -548,7 +539,7 @@ public class TableMonitor {
         // todo:check overlap
         /* add the record to the tables table */
         AutoRollbackConnection connection = context.getConnection();
-        String tableRange = range.row + "-" + range.column + "-" + range.lastRow + "-" + range.lastColumn;
+        String tableRange = range.row + "," + range.column + "," + range.lastRow + "," + range.lastColumn;
         String linkid = ((char)('a'+_random.nextInt(26))) +
                 Long.toString(System.currentTimeMillis()+_tableCount.getAndIncrement(), Character.MAX_RADIX);
         String appendRecord = (new StringBuilder())
@@ -556,7 +547,7 @@ public class TableMonitor {
                 .append(TABLESHEETLINK)
                 .append(" VALUES ")
                 .append(" (\'" + linkid + "\',\'" + bookId + "\',\'"
-                        + sheetName + "\',\'" + tableRange + "\',\'" + tableName
+                        + sheetName + "\'," + tableRange + ",\'" + tableName
                         + "\'," + "\'\'" + "," + "\'\'" + ") ")
                 .toString();
 
@@ -716,10 +707,9 @@ public class TableMonitor {
         try (Statement stmt = connection.createStatement()) {
             ResultSet rs = stmt.executeQuery(select);
             if (rs.next()) {
-                String tableRange = rs.getString("range");
                 String tableName = rs.getString("tablename");
-                String [] stringRowCol = tableRange.split("-");
-                Integer count = Integer.parseInt(stringRowCol[2]) - Integer.parseInt(stringRowCol[0]);
+                CellRegion range = getRangeFromQueryResult(rs);
+                Integer count = range.getRowCount();
                 String order = rs.getString("sort");
                 String filter = rs.getString("filter");
                 String query = (new StringBuilder())
