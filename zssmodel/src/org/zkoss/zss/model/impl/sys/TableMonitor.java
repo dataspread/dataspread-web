@@ -413,6 +413,8 @@ public class TableMonitor {
     public JSONArray getTableInformation(DBContext context, CellRegion fetchRange, String sheetName,
                               String bookId) throws Exception {
 
+        System.out.println(fetchRange);
+
         String select = selectAllFromSheet(sheetName, bookId);
         JSONArray ret = new JSONArray();
         AutoRollbackConnection connection = context.getConnection();

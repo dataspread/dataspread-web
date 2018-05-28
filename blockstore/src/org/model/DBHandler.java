@@ -117,8 +117,8 @@ public class DBHandler {
                     "bookid  TEXT NOT NULL," +
                     "sheetname  TEXT NOT NULL," +
                     "row1  INTEGER NOT NULL," +
-                    "row2  INTEGER NOT NULL," +
                     "col1  INTEGER NOT NULL," +
+                    "row2  INTEGER NOT NULL," +
                     "col2  INTEGER NOT NULL," +
                     "tablename  TEXT NOT NULL," +
                     "filter  TEXT NOT NULL," +

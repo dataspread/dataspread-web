@@ -25,19 +25,19 @@ import javafx.util.Pair;
 public class GeneralController {
     // General API
 
-    @RequestMapping(value = "/api/getCells/{bookId}/{sheetName}/{row1}/{row2}/{col1}/{col2}",
+    @RequestMapping(value = "/api/getCells/{bookId}/{sheetName}/{row1}/{col1}/{row2}/{col2}",
             method = RequestMethod.GET)
     public HashMap<String, Object> getCells(@PathVariable String bookId,
                                                 @PathVariable String sheetName,
                                                 @PathVariable int row1,
-                                                @PathVariable int row2,
                                                 @PathVariable int col1,
+                                                @PathVariable int row2,
                                                 @PathVariable int col2) {
         List<Cell> returnCells = new ArrayList<>();
 
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
-        CellRegion range = new CellRegion(row1, row1, row2, col2);
+        CellRegion range = new CellRegion(row1, col1, row2, col2);
         HashMap<String, Object> data = new HashMap<>();
         DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
         JSONArray tableInfo = null;
