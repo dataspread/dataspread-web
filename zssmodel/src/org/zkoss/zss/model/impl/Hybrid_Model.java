@@ -349,6 +349,12 @@ public class Hybrid_Model extends RCV_Model {
         bs.putObject(0, metaDataBlock);
         bs.flushDirtyBlocks(context);
 
+        TableMonitor.getController().shiftRow(
+                context,this.sheet.getSheetName(),
+                this.sheet.getBook().getBookName(),
+                row,
+                count);
+
         super.insertRows(context, row, count);
     }
 
@@ -371,6 +377,11 @@ public class Hybrid_Model extends RCV_Model {
         }
         bs.putObject(0, metaDataBlock);
         bs.flushDirtyBlocks(context);
+        TableMonitor.getController().shiftColumn(
+                context,this.sheet.getSheetName(),
+                this.sheet.getBook().getBookName(),
+                col,
+                count);
         super.insertCols(context, col, count);
     }
 
@@ -444,6 +455,12 @@ public class Hybrid_Model extends RCV_Model {
         }
         bs.putObject(0, metaDataBlock);
         bs.flushDirtyBlocks(context);
+
+        TableMonitor.getController().shiftRow(
+                context,this.sheet.getSheetName(),
+                this.sheet.getBook().getBookName(),
+                row,
+                -count);
 
         super.deleteRows(context, row, count);
     }
@@ -540,6 +557,12 @@ public class Hybrid_Model extends RCV_Model {
         }
         bs.putObject(0, metaDataBlock);
         bs.flushDirtyBlocks(context);
+
+        TableMonitor.getController().shiftColumn(
+                context,this.sheet.getSheetName(),
+                this.sheet.getBook().getBookName(),
+                col,
+                -count);
 
         super.deleteCols(context, col, count);
     }

@@ -273,33 +273,6 @@ public class TableMonitor {
         TableSheetModel model = _models.get(linkId);
         model.deleteRows(context, row, count);
         clearCache(model.getSheet(context));
-//        String select = selectAllFromSheet(sheetName, bookId);
-//        CellRegion deleteregion = new CellRegion(row,0,row + count - 1,Integer.MAX_VALUE);
-//        AutoRollbackConnection connection = context.getConnection();
-//        try (Statement stmt = connection.createStatement()) {
-//            ResultSet rs = stmt.executeQuery(select);
-//            while (rs.next()) {
-//                String tableRange = rs.getString("range");
-//                String[] stringRowCol = tableRange.split("-");
-//                Integer[] rowcol = {Integer.parseInt(stringRowCol[0]),
-//                        Integer.parseInt(stringRowCol[1]),
-//                        Integer.parseInt(stringRowCol[2]),
-//                        Integer.parseInt(stringRowCol[3])};
-//
-//                CellRegion range = new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
-//                if (range.overlaps(deleteregion)){
-//                    CellRegion overlap = range.getOverlap(deleteregion);
-//                    String linkId = rs.getString("linkid");
-//                    if (overlap.getRow() == range.getRow()){
-//                        unLinkTable(context,linkId);
-//                    }
-//                    else {
-//                        overlap = overlap.shiftedRange(-rowcol[0] - 1, -rowcol[1]);
-//                        _models.get(linkId).deleteRows(context, overlap.getRow(), overlap.getRowCount());
-//                    }
-//                }
-//            }
-//        }
     }
 
     public void deleteCols(DBContext context, int col, int count, String linkId) throws Exception {
@@ -307,29 +280,46 @@ public class TableMonitor {
         TableSheetModel model = _models.get(linkId);
         model.deleteCols(context,col,count);
         clearCache(model.getSheet(context));
-//        String select = selectAllFromSheet(sheetName, bookId);
-//
-//        CellRegion deleteregion = new CellRegion(0,col,Integer.MAX_VALUE,col + count - 1);
-//        AutoRollbackConnection connection = context.getConnection();
-//        try (Statement stmt = connection.createStatement()) {
-//            ResultSet rs = stmt.executeQuery(select);
-//            while (rs.next()) {
-//                String tableRange = rs.getString("range");
-//                String[] stringRowCol = tableRange.split("-");
-//                Integer[] rowcol = {Integer.parseInt(stringRowCol[0]),
-//                        Integer.parseInt(stringRowCol[1]),
-//                        Integer.parseInt(stringRowCol[2]),
-//                        Integer.parseInt(stringRowCol[3])};
-//
-//                CellRegion range = new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
-//                if (range.overlaps(deleteregion)){
-//                    CellRegion overlap = range.getOverlap(deleteregion);
-//                    overlap = overlap.shiftedRange(-rowcol[0], -rowcol[1]);
-//                    String linkId = rs.getString("linkid");
-//                    _models.get(linkId).deleteCols(context, overlap.getColumn(), overlap.getColumnCount());
-//                }
-//            }
-//        }
+    }
+
+    public void shiftRow(DBContext context, String sheetName, String bookId, int row, int rowShift) {
+        String appendToTables = (new StringBuilder())
+                .append("UPDATE ")
+                .append(TABLESHEETLINK)
+                .append(" SET row1 = row1 + ?, row2 = row2 + ?")
+                .append(" WHERE bookid = ? and sheetname = ? and row1 >= ?")
+                .toString();
+        AutoRollbackConnection connection = context.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(appendToTables)) {
+            stmt.setInt(1, rowShift);
+            stmt.setInt(2, rowShift);
+            stmt.setString(3, bookId);
+            stmt.setString(4, sheetName);
+            stmt.setInt(5, row);
+            stmt.execute();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void shiftColumn(DBContext context, String sheetName, String bookId, int col, int colShift){
+        String appendToTables = (new StringBuilder())
+                .append("UPDATE ")
+                .append(TABLESHEETLINK)
+                .append(" SET col1 = col1 + ?, col2 = col2 + ?")
+                .append(" WHERE bookid = ? and sheetname = ? and col1 >= ?")
+                .toString();
+        AutoRollbackConnection connection = context.getConnection();
+        try (PreparedStatement stmt = connection.prepareStatement(appendToTables)) {
+            stmt.setInt(1, colShift);
+            stmt.setInt(2, colShift);
+            stmt.setString(3, bookId);
+            stmt.setString(4, sheetName);
+            stmt.setInt(5, col);
+            stmt.execute();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public void reorderTable(DBContext context, String tableSheetId, String order) throws Exception {
@@ -412,8 +402,6 @@ public class TableMonitor {
 
     public JSONArray getTableInformation(DBContext context, CellRegion fetchRange, String sheetName,
                               String bookId) throws Exception {
-
-        System.out.println(fetchRange);
 
         String select = selectAllFromSheet(sheetName, bookId);
         JSONArray ret = new JSONArray();
@@ -747,6 +735,8 @@ public class TableMonitor {
                 .append("\'");
         return select.toString();
     }
+
+
 
     private void clearCache(SSheet sheet){
         sheet.clearCache();
