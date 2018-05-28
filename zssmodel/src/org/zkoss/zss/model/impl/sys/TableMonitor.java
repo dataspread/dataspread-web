@@ -422,7 +422,7 @@ public class TableMonitor {
                     CellRegion overlap = fetchRange.getOverlap(range);
                     overlap = overlap.shiftedRange(-range.getRow(), -range.getColumn());
                     ret.add(_models.get(linkId).getTableInfomation(context, tableName,
-                            order,filter,sharedLink, overlap, range.getRow(), range.getColumn()));
+                            order,filter,sharedLink, overlap, range));
 
                 }
 

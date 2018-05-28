@@ -163,7 +163,7 @@ public class TableSheetModel {
 
 
     JSONObject getTableInfomation(DBContext context, String tableName, String order, String filter,
-                                  String sharedLink, CellRegion fetchRegion, int rowOffset,int colOffset) throws Exception {
+                                  String sharedLink, CellRegion fetchRegion, CellRegion tableRange) throws Exception {
 
         List<Pair<String, Integer>> tableColumns = getSchema(context, tableName, fetchRegion.column,
                 min(fetchRegion.lastColumn + 1, colMapping.size(context)) - fetchRegion.column);
@@ -197,10 +197,10 @@ public class TableSheetModel {
         ret.put(LINKTABLEID, linkId);
         ret.put(LINK, sharedLink);
 
-        range.put(ROW1, fetchRegion.getRow() + rowOffset);
-        range.put(ROW2, fetchRegion.getLastRow() + rowOffset);
-        range.put(COL1, fetchRegion.getColumn() + colOffset);
-        range.put(COL2, fetchRegion.getLastColumn() + colOffset);
+        range.put(ROW1, tableRange.getRow());
+        range.put(ROW2, tableRange.getLastRow());
+        range.put(COL1, tableRange.getColumn());
+        range.put(COL2, tableRange.getLastColumn());
 
         for (Pair<String, Integer> col:tableColumns){
             JSONObject attribute = new JSONObject();
