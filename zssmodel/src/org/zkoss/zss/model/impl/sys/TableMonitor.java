@@ -49,7 +49,7 @@ public class TableMonitor {
         }
     }
 
-    public static TableMonitor getController(){
+    public static TableMonitor getMonitor(){
         if (_tableMonitor == null){
             _tableMonitor = new TableMonitor();
         }
@@ -437,21 +437,24 @@ public class TableMonitor {
                               String bookId) {
 
         Collection<AbstractCellAdv> cells = new ArrayList<>();
+        System.out.println(fetchRange);
 
         String select = selectAllFromSheet(sheetName, bookId);
         AutoRollbackConnection connection = context.getConnection();
         try (Statement stmt = connection.createStatement()){
+            System.out.println(stmt);
             ResultSet rs = stmt.executeQuery(select);
             while(rs.next()){
                 String linkId = rs.getString("linkid");
                 String tableName = rs.getString("tablename");
                 CellRegion range = getRangeFromQueryResult(rs);
-
                 if (fetchRange.overlaps(range)) {
                     CellRegion overlap = fetchRange.getOverlap(range);
                     overlap = overlap.shiftedRange(-range.getRow(), -range.getColumn());
-                    cells.addAll(_models.get(linkId).getCells(context, overlap, range,
-                            tableName));
+                    Collection<AbstractCellAdv> tableCells = _models.get(linkId).getCells(context, overlap, range,
+                            tableName);
+                    System.out.println(tableCells.size());
+                    cells.addAll(tableCells);
 
                 }
 
@@ -459,6 +462,7 @@ public class TableMonitor {
         }catch (SQLException e) {
             e.printStackTrace();
         }
+
         return cells;
     }
 

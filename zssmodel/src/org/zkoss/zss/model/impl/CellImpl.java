@@ -553,6 +553,10 @@ public class CellImpl extends AbstractCellAdv {
 		setValue(newVal, false, connection, updateToDB); //ZSS-853
 	}
 
+    public void setOutterCellValue(Object newVal, AutoRollbackConnection connection, boolean updateToDB) {
+        setOutterCellValue(newVal, false, connection, updateToDB); //ZSS-853
+    }
+
 	//ZSS-853
 	@Override
 	protected void setValue(Object newVal, boolean aString, AutoRollbackConnection connection, boolean updateToDB) {
@@ -608,6 +612,61 @@ public class CellImpl extends AbstractCellAdv {
 		}
 
 		setCellValue(newCellVal, false, connection, updateToDB); //ZSS-985
+	}
+
+	protected void setOutterCellValue(Object newVal, boolean aString, AutoRollbackConnection connection, boolean updateToDB) {
+		CellValue oldVal = getCellValue();
+		if( (oldVal==null && newVal==null) ||
+				(oldVal != null && valueEquals(oldVal.getValue(), newVal))) {
+			return;
+		}
+
+		CellType newType;
+
+		if (newVal == null) {
+			newType = CellType.BLANK;
+		} else if (newVal instanceof String) {
+			if (!aString && isFormula((String) newVal)) { //ZSS-853
+				// recursive back with newVal an instance of FromulaExpression
+				setFormulaValue(((String) newVal).substring(1), connection, updateToDB);
+				return;// break;
+			} else {
+				newType = CellType.STRING;
+			}
+		} else if (newVal instanceof SRichText) {
+			newType = CellType.STRING;
+		} else if (newVal instanceof FormulaExpression) {
+			newType = CellType.FORMULA;
+		} else if (newVal instanceof Date) {
+			newType = CellType.NUMBER;
+			newVal = EngineFactory.getInstance().getCalendarUtil().dateToDoubleValue((Date)newVal);
+		} else if (newVal instanceof Boolean) {
+			newType = CellType.BOOLEAN;
+		} else if (newVal instanceof Double) {
+			newType = CellType.NUMBER;
+		} else if (newVal instanceof Number) {
+			newType = CellType.NUMBER;
+			newVal = ((Number)newVal).doubleValue();
+		} else if (newVal instanceof ErrorValue) {
+			newType = CellType.ERROR;
+		} else {
+			throw new IllegalArgumentException(
+					"unsupported type "
+							+ newVal
+							+ ", supports NULL, String, Date, Number and Byte(as Error Code)");
+		}
+
+
+		CellValue value = new InnerCellValue(newType,newVal);
+		//ZSS-747.
+		//20140828, henrichen: clear if previous is a formula; update dependency table if a formula
+		clearValueForSet(oldVal!=null && oldVal.getType()==CellType.FORMULA);
+		if (newType == CellType.FORMULA) {
+			FormulaParseContext context = new FormulaParseContext(this, getRef());
+			EngineFactory.getInstance().createFormulaEngine().updateDependencyTable((FormulaExpression)newVal, context);
+		}
+
+        this._localValue = value!=null&&value.getType()== CellType.BLANK?null:value;
 	}
 
 	@Override

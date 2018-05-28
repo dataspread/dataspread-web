@@ -91,7 +91,7 @@ public class TableController {
             }
             String user_id = DEFAULT_USER_ID;
             CellRegion range = new CellRegion(row1, col1, row2, col2);
-            TableMonitor tableModel = TableMonitor.getController();
+            TableMonitor tableModel = TableMonitor.getMonitor();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 String[] links = tableModel.createTable(context, range, user_id, table, book, sheet,schema);
@@ -127,7 +127,7 @@ public class TableController {
             int col2 = (int)dict.get(COL_2);
             String user_id = DEFAULT_USER_ID;
             CellRegion range = new CellRegion(row1, col1, row2, col2);
-            TableMonitor tableModel = TableMonitor.getController();
+            TableMonitor tableModel = TableMonitor.getMonitor();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 String[] links = tableModel.linkTable(context, range, user_id, table, book, sheet);
@@ -154,7 +154,7 @@ public class TableController {
             JSONObject dict = (JSONObject)paser.parse(value);
             String tableSheetLink = (String) dict.get(LINK_TABLE_ID);
 
-            TableMonitor tableModel = TableMonitor.getController();
+            TableMonitor tableModel = TableMonitor.getMonitor();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 tableModel.unLinkTable(context, tableSheetLink);
@@ -186,7 +186,7 @@ public class TableController {
             int col1 = (int)dict.get(COL_1);
             int col2 = (int)dict.get(COL_2);
             CellRegion range = new CellRegion(row1, col1, row2, col2);
-            TableMonitor tableModel = TableMonitor.getController();
+            TableMonitor tableModel = TableMonitor.getMonitor();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 ret.put(TABLE_CELLS,tableModel.getCells(context, range, sheet, book));
@@ -212,7 +212,7 @@ public class TableController {
             String userId= DEFAULT_USER_ID;
             String tableName= (String) dict.get(TABLE_NAME);
 
-            TableMonitor tableModel = TableMonitor.getController();
+            TableMonitor tableModel = TableMonitor.getMonitor();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 tableModel.dropTable(context, userId, tableName);
@@ -248,7 +248,7 @@ public class TableController {
                         .append(((JSONObject)object).get(ORDER));
             }
 
-            TableMonitor tableModel = TableMonitor.getController();
+            TableMonitor tableModel = TableMonitor.getMonitor();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 tableModel.reorderTable(context, tableSheetId, reorderbuilder.toString());
@@ -274,7 +274,7 @@ public class TableController {
             JSONObject dict = (JSONObject)paser.parse(value);
             String tableSheetId= (String) dict.get(LINK_TABLE_ID);
             String filter= (String) dict.get(FILTER);
-            TableMonitor tableModel = TableMonitor.getController();
+            TableMonitor tableModel = TableMonitor.getMonitor();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 tableModel.filterTable(context, tableSheetId, filter);
@@ -301,7 +301,7 @@ public class TableController {
             String linkId = (String)dict.get(LINK_TABLE_ID);
             int row = (int)dict.get(ROW);
             int count = 1;//(int)dict.get(COUNT);
-            TableMonitor tableModel = TableMonitor.getController();
+            TableMonitor tableModel = TableMonitor.getMonitor();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 tableModel.deleteRows(context,row, count, linkId);
@@ -328,7 +328,7 @@ public class TableController {
             String linkId = (String)dict.get(LINK_TABLE_ID);
             int col = (int)dict.get(COL);
             int count = 1;//(int)dict.get(COUNT);
-            TableMonitor tableModel = TableMonitor.getController();
+            TableMonitor tableModel = TableMonitor.getMonitor();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 tableModel.deleteCols(context,col, count, linkId);
@@ -355,7 +355,7 @@ public class TableController {
             String linkTableId = (String)dict.get(LINK_TABLE_ID);
             int row = (int)dict.get(ROW);
             JSONArray values = (JSONArray)dict.get(VALUE);
-            TableMonitor tableModel = TableMonitor.getController();
+            TableMonitor tableModel = TableMonitor.getMonitor();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 tableModel.insertRows(context,linkTableId,row,values);
@@ -383,7 +383,7 @@ public class TableController {
             int column = (int)dict.get(COLUMN);
             String columnType = (String)dict.get(COLUMN_TYPE);
             String columnName = (String)dict.get(COLUMN_NAME);
-            TableMonitor tableModel = TableMonitor.getController();
+            TableMonitor tableModel = TableMonitor.getMonitor();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 tableModel.insertColumn(context,linkTableId,column,columnName,columnType);
@@ -410,7 +410,7 @@ public class TableController {
             String linkTableId = (String)dict.get(LINK_TABLE_ID);
             int column = (int)dict.get(COLUMN);
             String columnType = (String)dict.get(COLUMN_TYPE);
-            TableMonitor tableModel = TableMonitor.getController();
+            TableMonitor tableModel = TableMonitor.getMonitor();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 tableModel.changeTableColumnType(context, linkTableId, column, columnType);
@@ -437,7 +437,7 @@ public class TableController {
             String linkTableId = (String)dict.get(LINK_TABLE_ID);
             int column = (int)dict.get(COLUMN);
             String columnName = (String)dict.get(COLUMN_NAME);
-            TableMonitor tableModel = TableMonitor.getController();
+            TableMonitor tableModel = TableMonitor.getMonitor();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 tableModel.changeTableColumnName(context, linkTableId, column, columnName);
@@ -467,7 +467,7 @@ public class TableController {
             int col1 = (int)dict.get(COL_1);
             int col2 = (int)dict.get(COL_2);
             JSONArray values = (JSONArray)dict.get(VALUES);
-            TableMonitor tableModel = TableMonitor.getController();
+            TableMonitor tableModel = TableMonitor.getMonitor();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
                 tableModel.updateTableCells(context,linkTableId,row1,row2,col1,col2,values);

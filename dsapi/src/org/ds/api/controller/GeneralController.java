@@ -5,7 +5,6 @@ import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.springframework.web.bind.annotation.*;
-import org.zkoss.json.parser.JSONParser;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
@@ -14,7 +13,6 @@ import org.zkoss.zss.model.impl.sys.TableMonitor;
 import org.zkoss.zss.model.sys.BookBindings;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import org.zkoss.json.*;
@@ -42,7 +40,7 @@ public class GeneralController {
         DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
         JSONArray tableInfo = null;
         try {
-            tableInfo = TableMonitor.getController().getTableInformation(dbContext,range,sheetName,bookId);
+            tableInfo = TableMonitor.getMonitor().getTableInformation(dbContext,range,sheetName,bookId);
         } catch (Exception e) {
             e.printStackTrace();
             return JsonWrapper.generateError(e.getMessage());

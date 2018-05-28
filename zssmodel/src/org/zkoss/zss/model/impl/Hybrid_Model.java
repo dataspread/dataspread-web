@@ -349,9 +349,9 @@ public class Hybrid_Model extends RCV_Model {
         bs.putObject(0, metaDataBlock);
         bs.flushDirtyBlocks(context);
 
-        TableMonitor.getController().shiftRow(
+        TableMonitor.getMonitor().shiftRow(
                 context,this.sheet.getSheetName(),
-                this.sheet.getBook().getBookName(),
+                this.sheet.getBook().getId(),
                 row,
                 count);
 
@@ -377,9 +377,9 @@ public class Hybrid_Model extends RCV_Model {
         }
         bs.putObject(0, metaDataBlock);
         bs.flushDirtyBlocks(context);
-        TableMonitor.getController().shiftColumn(
+        TableMonitor.getMonitor().shiftColumn(
                 context,this.sheet.getSheetName(),
-                this.sheet.getBook().getBookName(),
+                this.sheet.getBook().getId(),
                 col,
                 count);
         super.insertCols(context, col, count);
@@ -456,9 +456,9 @@ public class Hybrid_Model extends RCV_Model {
         bs.putObject(0, metaDataBlock);
         bs.flushDirtyBlocks(context);
 
-        TableMonitor.getController().shiftRow(
+        TableMonitor.getMonitor().shiftRow(
                 context,this.sheet.getSheetName(),
-                this.sheet.getBook().getBookName(),
+                this.sheet.getBook().getId(),
                 row,
                 -count);
 
@@ -558,9 +558,9 @@ public class Hybrid_Model extends RCV_Model {
         bs.putObject(0, metaDataBlock);
         bs.flushDirtyBlocks(context);
 
-        TableMonitor.getController().shiftColumn(
+        TableMonitor.getMonitor().shiftColumn(
                 context,this.sheet.getSheetName(),
-                this.sheet.getBook().getBookName(),
+                this.sheet.getBook().getId(),
                 col,
                 -count);
 
@@ -666,7 +666,7 @@ public class Hybrid_Model extends RCV_Model {
         if (encompass == false) {
             cells.addAll(super.getCells(context, range));
         }
-        cells.addAll(TableMonitor.getController().getTableCells(context,range,this.sheet.getSheetName(),this.sheet.getBook().getBookName()));
+        cells.addAll(TableMonitor.getMonitor().getTableCells(context,range,this.sheet.getSheetName(),this.sheet.getBook().getId()));
         return Collections.unmodifiableCollection(cells);
     }
 

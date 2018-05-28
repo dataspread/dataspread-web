@@ -504,9 +504,9 @@ public class TableSheetModel {
                 throw new Exception("getValue: Unsupported type");
         }
     }
-    private static AbstractCellAdv newCell(int row, int column, Object value, AutoRollbackConnection connection){
-        AbstractCellAdv cell = new CellImpl(row, column);
-        cell.setValue(value, connection, false);
+    private static CellImpl newCell(int row, int column, Object value, AutoRollbackConnection connection){
+        CellImpl cell = new CellImpl(row, column);
+        cell.setOutterCellValue(value, connection, false);
         cell.setSemantics(SSemantics.Semantics.TABLE_CONTENT);
         return cell;
     }
