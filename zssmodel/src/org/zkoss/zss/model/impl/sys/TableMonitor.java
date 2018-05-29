@@ -130,6 +130,7 @@ public class TableMonitor {
 
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
+        // todo: check empty
 //        sheet.clearCell(range);
         sheet.getDataModel().deleteCells(context,range);
         clearCache(sheet);
@@ -217,7 +218,6 @@ public class TableMonitor {
         try (PreparedStatement stmt = connection.prepareStatement(update)) {
             for (int j = 0; j < columnCount; j++)
                 setStmtValue(stmt,j,values.get(j).toString(),schema.get(j).getValue());
-            System.out.println(stmt);
             ResultSet resultSet = stmt.executeQuery();
             if (resultSet.next()) {
                 int oid = resultSet.getInt(1);
@@ -247,7 +247,7 @@ public class TableMonitor {
         ArrayList<Pair<String,Integer>> schema = model.getSchema(context);
         String oldColumnName = schema.get(column).getKey();
         String tableName = model.getTableName(context);
-        String update = "ALTER TABLE "+ tableName +" ALTER COLUMN " + oldColumnName +" " + columnType;
+        String update = "ALTER TABLE "+ tableName +" ALTER COLUMN " + oldColumnName +" TYPE " + columnType;
         AutoRollbackConnection connection = context.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(update)) {
             stmt.execute();
@@ -437,12 +437,10 @@ public class TableMonitor {
                               String bookId) {
 
         Collection<AbstractCellAdv> cells = new ArrayList<>();
-        System.out.println(fetchRange);
 
         String select = selectAllFromSheet(sheetName, bookId);
         AutoRollbackConnection connection = context.getConnection();
         try (Statement stmt = connection.createStatement()){
-            System.out.println(stmt);
             ResultSet rs = stmt.executeQuery(select);
             while(rs.next()){
                 String linkId = rs.getString("linkid");
@@ -453,7 +451,6 @@ public class TableMonitor {
                     overlap = overlap.shiftedRange(-range.getRow(), -range.getColumn());
                     Collection<AbstractCellAdv> tableCells = _models.get(linkId).getCells(context, overlap, range,
                             tableName);
-                    System.out.println(tableCells.size());
                     cells.addAll(tableCells);
 
                 }

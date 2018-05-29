@@ -549,6 +549,7 @@ public class RCV_Model extends Model {
             return cells;
 
         ArrayList<Integer> rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
+        int rseize  = rowMapping.size(context);
         ArrayList<Integer> colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
         HashMap<Integer, Integer> row_map = IntStream.range(0, rowIds.size())
                 .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(rowIds.get(i), fetchRegion.getRow() + i),
