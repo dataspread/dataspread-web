@@ -18,13 +18,11 @@ public class CountedBTree implements PosMapping{
     public CountedBTree(DBContext context, String tableName) {
         CountStatistic emptyStatistic = new CountStatistic();
         btree = new BTree<>(context, tableName, emptyStatistic, true);
-        btree.updateMaxValue(context, 0);
     }
 
     public CountedBTree(DBContext context, String tableName, boolean useKryo) {
         CountStatistic emptyStatistic = new CountStatistic();
         btree = new BTree<>(context, tableName, emptyStatistic, useKryo);
-        btree.updateMaxValue(context, 0);
     }
 
     @Override

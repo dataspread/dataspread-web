@@ -76,7 +76,7 @@ public class BTree <K extends AbstractStatistic> {
             root.update(bs);
             metaDataBlock.ri = root.id;
             metaDataBlock.elementCount = 0;
-            metaDataBlock.max_value = null;
+            metaDataBlock.max_value = 0;
             /* Create Metadata */
             bs.putObject(METADATA_BLOCK_ID, metaDataBlock);
             bs.flushDirtyBlocks(context);
