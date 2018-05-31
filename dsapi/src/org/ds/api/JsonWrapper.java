@@ -1,4 +1,4 @@
-package org.ds.api.controller;
+package org.ds.api;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

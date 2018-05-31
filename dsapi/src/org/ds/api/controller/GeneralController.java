@@ -1,10 +1,13 @@
 package org.ds.api.controller;
 
 import org.ds.api.Cell;
+import org.ds.api.JsonWrapper;
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
@@ -22,6 +25,7 @@ import javafx.util.Pair;
 @RestController
 public class GeneralController {
     // General API
+    @Autowired private SimpMessagingTemplate template;
 
     @RequestMapping(value = "/api/getCells/{bookId}/{sheetName}/{row1}/{col1}/{row2}/{col2}",
             method = RequestMethod.GET)
@@ -116,6 +120,62 @@ public class GeneralController {
             e.printStackTrace();
             return JsonWrapper.generateError(e.getMessage());
         }
+    }
+
+    @RequestMapping(value = "/api/insertRows",
+            method = RequestMethod.PUT)
+    public HashMap<String, Object> insertRows(@RequestBody String json) {
+        org.json.JSONObject obj = new org.json.JSONObject(json);
+        String sheetName = obj.getString("SheetName");
+        String bookId = obj.getString("bookId");
+        int rowIdx = obj.getInt("startRow");
+        int lastRowIdx = obj.getInt("endRow");
+        SBook book = BookBindings.getBookById(bookId);
+        SSheet sheet = book.getSheetByName(sheetName);
+        sheet.insertRow(rowIdx, lastRowIdx);
+        return JsonWrapper.generateJson(null);
+    }
+
+    @RequestMapping(value = "/api/deleteRows",
+            method = RequestMethod.DELETE)
+    public HashMap<String, Object> deleteRows(@RequestBody String json) {
+        org.json.JSONObject obj = new org.json.JSONObject(json);
+        String sheetName = obj.getString("SheetName");
+        String bookId = obj.getString("bookId");
+        int rowIdx = obj.getInt("startRow");
+        int lastRowIdx = obj.getInt("endRow");
+        SBook book = BookBindings.getBookById(bookId);
+        SSheet sheet = book.getSheetByName(sheetName);
+        sheet.deleteColumn(rowIdx, lastRowIdx);
+        return JsonWrapper.generateJson(null);
+    }
+
+    @RequestMapping(value = "/api/insertCols",
+            method = RequestMethod.PUT)
+    public HashMap<String, Object> insertCols(@RequestBody String json) {
+        org.json.JSONObject obj = new org.json.JSONObject(json);
+        String sheetName = obj.getString("SheetName");
+        String bookId = obj.getString("bookId");
+        int colIdx = obj.getInt("startCol");
+        int lastColIdx = obj.getInt("endCol");
+        SBook book = BookBindings.getBookById(bookId);
+        SSheet sheet = book.getSheetByName(sheetName);
+        sheet.insertColumn(colIdx, lastColIdx);
+        return JsonWrapper.generateJson(null);
+    }
+
+    @RequestMapping(value = "/api/deleteCols",
+            method = RequestMethod.DELETE)
+    public HashMap<String, Object> deleteCols(@RequestBody String json) {
+        org.json.JSONObject obj = new org.json.JSONObject(json);
+        String sheetName = obj.getString("SheetName");
+        String bookId = obj.getString("bookId");
+        int colIdx = obj.getInt("startCol");
+        int lastColIdx = obj.getInt("endCol");
+        SBook book = BookBindings.getBookById(bookId);
+        SSheet sheet = book.getSheetByName(sheetName);
+        sheet.deleteColumn(colIdx, lastColIdx);
+        return JsonWrapper.generateJson(null);
     }
 
     private Object getValue(org.json.JSONObject cell, String type){

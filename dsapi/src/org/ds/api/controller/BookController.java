@@ -1,21 +1,41 @@
 package org.ds.api.controller;
 
+import org.ds.api.JsonWrapper;
 import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.impl.BookImpl;
 import org.zkoss.zss.model.sys.BookBindings;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import org.json.JSONObject;
 
+import static org.ds.api.WebSocketConfig.MESSAGE_PREFIX;
+
 @RestController
 public class BookController {
+    @Autowired
+    private SimpMessagingTemplate template;
+
+    // Test Sync API
+    @RequestMapping(value = "/")
+    public String index() {
+        return "index";
+    }
+
+    @RequestMapping(value = "/api/getSyncBooks",
+            method = RequestMethod.GET)
+    public HashMap<String, Object> getSyncBooks(){
+        template.convertAndSend(MESSAGE_PREFIX+"/greetings");
+        return null;
+    }
+
     // Books API
     @RequestMapping(value = "/api/getBooks",
             method = RequestMethod.GET)
@@ -57,6 +77,7 @@ public class BookController {
         JSONObject obj = new JSONObject(json);
         String bookId = (String) obj.get("bookId");
         BookImpl.deleteBook(null, bookId);
+        template.convertAndSend(MESSAGE_PREFIX+"/greetings");
         return JsonWrapper.generateJson(null);
     }
 
@@ -80,6 +101,7 @@ public class BookController {
         }
         SBook book = BookBindings.getBookByName(bookName);
         book.checkDBSchema();
+        template.convertAndSend(MESSAGE_PREFIX+"/greetings");
         return bookWrapper(book.getId(), bookName);
     }
 
