@@ -1,5 +1,6 @@
 package org.ds.api.controller;
 
+import org.ds.api.Authorization;
 import org.ds.api.JsonWrapper;
 import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
@@ -39,12 +40,13 @@ public class BookController {
     // Books API
     @RequestMapping(value = "/api/getBooks",
             method = RequestMethod.GET)
-    public HashMap<String, Object> getBooks() {
+    public HashMap<String, Object> getBooks(@RequestHeader("auth-token") String authToken) {
         List<HashMap<String, Object>> books = new ArrayList<>();
-        String query = "SELECT * FROM books";
+        String query = "SELECT * FROM books Where booktable in (SELECT booktable FROM users WHERE username = ?)";
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query);
-             ResultSet rs = statement.executeQuery()) {
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, authToken);
+            ResultSet rs = statement.executeQuery();
             while (rs.next()) {
                 String bookName = rs.getString("bookname");
                 String bookId = rs.getString("booktable");
@@ -73,9 +75,13 @@ public class BookController {
 
     @RequestMapping(value = "/api/deleteBook",
             method = RequestMethod.DELETE)
-    public HashMap<String, Object> deleteBook(@RequestBody String json) {
+    public HashMap<String, Object> deleteBook(@RequestHeader("auth-token") String authToken,
+                                              @RequestBody String json) {
         JSONObject obj = new JSONObject(json);
         String bookId = (String) obj.get("bookId");
+        if (!Authorization.authorizeBook(bookId, authToken)){
+            JsonWrapper.generateError("Permission denied for accessing this book");
+        }
         BookImpl.deleteBook(null, bookId);
         template.convertAndSend(MESSAGE_PREFIX+"/greetings");
         return JsonWrapper.generateJson(null);
@@ -83,7 +89,8 @@ public class BookController {
 
     @RequestMapping(value = "/api/addBook",
             method = RequestMethod.POST)
-    public HashMap<String, Object> addBook(@RequestBody String json) {
+    public HashMap<String, Object> addBook(@RequestHeader("auth-token") String authToken,
+                                           @RequestBody String json) {
         JSONObject obj = new JSONObject(json);
         String bookName = (String) obj.get("name");
         String query = "SELECT COUNT(*) FROM books WHERE bookname = ?";
@@ -107,9 +114,13 @@ public class BookController {
 
     @RequestMapping(value = "/api/changeBookName",
             method = RequestMethod.PUT)
-    public HashMap<String, Object> changeBookName(@RequestBody String json) {
+    public HashMap<String, Object> changeBookName(@RequestHeader("auth-token") String authToken,
+                                                  @RequestBody String json) {
         JSONObject obj = new JSONObject(json);
         String bookId = (String) obj.get("bookId");
+        if (!Authorization.authorizeBook(bookId, authToken)){
+            JsonWrapper.generateError("Permission denied for accessing this book");
+        }
         String newBookName = (String) obj.get("newBookName");
         SBook book = BookBindings.getBookById(bookId);
         book.setBookName(newBookName);

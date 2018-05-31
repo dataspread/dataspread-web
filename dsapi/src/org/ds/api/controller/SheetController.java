@@ -1,5 +1,6 @@
 package org.ds.api.controller;
 
+import org.ds.api.Authorization;
 import org.ds.api.JsonWrapper;
 import org.springframework.web.bind.annotation.*;
 import org.zkoss.zss.model.SBook;
@@ -15,17 +16,25 @@ public class SheetController {
     // Sheets API
     @RequestMapping(value = "/api/getSheets/{bookId}",
             method = RequestMethod.GET)
-    public HashMap<String, Object> getSheets(@PathVariable String bookId) {
+    public HashMap<String, Object> getSheets(@RequestHeader("auth-token") String authToken,
+                                             @PathVariable String bookId) {
+        if (!Authorization.authorizeBook(bookId, authToken)){
+            JsonWrapper.generateError("Permission denied for accessing this book");
+        }
         SBook book = BookBindings.getBookById(bookId);
         return sheetWrapper(book);
     }
 
     @RequestMapping(value = "/api/deleteSheet",
             method = RequestMethod.DELETE)
-    public HashMap<String, Object> deleteSheet(@RequestBody String json) {
+    public HashMap<String, Object> deleteSheet(@RequestHeader("auth-token") String authToken,
+                                               @RequestBody String json) {
         JSONObject obj = new JSONObject(json);
         String bookId = (String) obj.get("bookId");
         String sheetName = (String) obj.get("sheetName");
+        if (!Authorization.authorizeBook(bookId, authToken)){
+            JsonWrapper.generateError("Permission denied for accessing this book");
+        }
         SBook book = BookBindings.getBookById(bookId);
         SSheet ssheet = book.getSheetByName(sheetName);
         book.deleteSheet(ssheet);
@@ -34,10 +43,14 @@ public class SheetController {
 
     @RequestMapping(value = "/api/addSheet",
             method = RequestMethod.POST)
-    public HashMap<String, Object> addSheet(@RequestBody String json) {
+    public HashMap<String, Object> addSheet(@RequestHeader("auth-token") String authToken,
+                                            @RequestBody String json) {
         JSONObject obj = new JSONObject(json);
         String sheetName = (String) obj.get("sheetName");
         String bookId = (String) obj.get("bookId");
+        if (!Authorization.authorizeBook(bookId, authToken)){
+            JsonWrapper.generateError("Permission denied for accessing this book");
+        }
         SBook book = BookBindings.getBookById(bookId);
         book.createSheet(sheetName);
         return sheetWrapper(book);
@@ -45,11 +58,15 @@ public class SheetController {
 
     @RequestMapping(value = "/api/changeSheetName",
             method = RequestMethod.PUT)
-    public HashMap<String, Object> changeSheetName(@RequestBody String json) {
+    public HashMap<String, Object> changeSheetName(@RequestHeader("auth-token") String authToken,
+                                                   @RequestBody String json) {
         JSONObject obj = new JSONObject(json);
         String oldSheetName = (String) obj.get("oldSheetName");
         String newSheetName = (String) obj.get("newSheetName");
         String bookId = (String) obj.get("bookId");
+        if (!Authorization.authorizeBook(bookId, authToken)){
+            JsonWrapper.generateError("Permission denied for accessing this book");
+        }
         SBook book = BookBindings.getBookById(bookId);
         SSheet ssheet = book.getSheetByName(oldSheetName);
         book.setSheetName(ssheet, newSheetName);
@@ -58,10 +75,14 @@ public class SheetController {
 
     @RequestMapping(value = "/api/copySheet",
             method = RequestMethod.POST)
-    public HashMap<String, Object> copySheet(@RequestBody String json) {
+    public HashMap<String, Object> copySheet(@RequestHeader("auth-token") String authToken,
+                                             @RequestBody String json) {
         JSONObject obj = new JSONObject(json);
         String sheetName = (String) obj.get("sheetName");
         String bookId = (String) obj.get("bookId");
+        if (!Authorization.authorizeBook(bookId, authToken)){
+            JsonWrapper.generateError("Permission denied for accessing this book");
+        }
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
         int num = 1;
@@ -79,11 +100,15 @@ public class SheetController {
 
     @RequestMapping(value = "/api/moveSheet",
             method = RequestMethod.PUT)
-    public HashMap<String, Object> shiftSheets(@RequestBody String json) {
+    public HashMap<String, Object> shiftSheets(@RequestHeader("auth-token") String authToken,
+                                               @RequestBody String json) {
         JSONObject obj = new JSONObject(json);
         String sheetName = (String) obj.get("sheetName");
         String bookId = (String) obj.get("bookId");
         int newPos = (int) obj.get("newPos");
+        if (!Authorization.authorizeBook(bookId, authToken)){
+            JsonWrapper.generateError("Permission denied for accessing this book");
+        }
         SBook book = BookBindings.getBookById(bookId);
         book.moveSheetTo(book.getSheetByName(sheetName), newPos);
         return sheetWrapper(book);
@@ -91,10 +116,14 @@ public class SheetController {
 
     @RequestMapping(value = "/api/clearSheet",
             method = RequestMethod.PUT)
-    public HashMap<String, Object> clearSheet(@RequestBody String json) {
+    public HashMap<String, Object> clearSheet(@RequestHeader("auth-token") String authToken,
+                                              @RequestBody String json) {
         JSONObject obj = new JSONObject(json);
         String sheetName = (String) obj.get("sheetName");
         String bookId = (String) obj.get("bookId");
+        if (!Authorization.authorizeBook(bookId, authToken)){
+            JsonWrapper.generateError("Permission denied for accessing this book");
+        }
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
         sheet.clearCell(sheet.getStartRowIndex(), sheet.getStartColumnIndex(), sheet.getEndRowIndex(), sheet.getEndColumnIndex());

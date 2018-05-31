@@ -142,8 +142,8 @@ public class DBHandler {
         AutoRollbackConnection connection = dbContext.getConnection();
         try (Statement stmt = connection.createStatement()) {
             String createTable = "CREATE TABLE IF NOT EXISTS users (" +
-                    "username  TEXT NOT NULL," +
-                    "booktable   TEXT NOT NULL" +
+                    "authtoken  TEXT NOT NULL," +
+                    "booktable  TEXT NOT NULL" +
                     ");";
             stmt.execute(createTable);
         }
@@ -157,9 +157,9 @@ public class DBHandler {
         AutoRollbackConnection connection = dbContext.getConnection();
         try (Statement stmt = connection.createStatement()) {
             String createTable = "CREATE TABLE IF NOT EXISTS user_account (" +
-                    "username  TEXT NOT NULL," +
-                    "password   TEXT NOT NULL" +
-                    ");";
+                    "authtoken  TEXT NOT NULL UNIQUE," +
+                    "username   TEXT NOT NULL" +
+                    "PRIMARY KEY (authtoken));";
             stmt.execute(createTable);
         } catch (SQLException e) {
             e.printStackTrace();

@@ -1,5 +1,6 @@
 package org.ds.api.controller;
 
+import org.ds.api.Authorization;
 import org.ds.api.Cell;
 import org.ds.api.JsonWrapper;
 import org.model.AutoRollbackConnection;
@@ -29,14 +30,17 @@ public class GeneralController {
 
     @RequestMapping(value = "/api/getCells/{bookId}/{sheetName}/{row1}/{col1}/{row2}/{col2}",
             method = RequestMethod.GET)
-    public HashMap<String, Object> getCells(@PathVariable String bookId,
-                                                @PathVariable String sheetName,
-                                                @PathVariable int row1,
-                                                @PathVariable int col1,
-                                                @PathVariable int row2,
-                                                @PathVariable int col2) {
+    public HashMap<String, Object> getCells(@RequestHeader("auth-token") String authToken,
+                                            @PathVariable String bookId,
+                                            @PathVariable String sheetName,
+                                            @PathVariable int row1,
+                                            @PathVariable int col1,
+                                            @PathVariable int row2,
+                                            @PathVariable int col2) {
         List<Cell> returnCells = new ArrayList<>();
-
+        if (!Authorization.authorizeBook(bookId, authToken)){
+            JsonWrapper.generateError("Permission denied for accessing this book");
+        }
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
         CellRegion range = new CellRegion(row1, col1, row2, col2);
@@ -94,10 +98,14 @@ public class GeneralController {
 
     @RequestMapping(value = "/api/putCells",
             method = RequestMethod.PUT)
-    public HashMap<String, Object> putCells(@RequestBody String json) {
+    public HashMap<String, Object> putCells(@RequestHeader("auth-token") String authToken,
+                                            @RequestBody String json) {
         org.json.JSONObject obj = new org.json.JSONObject(json);
         String bookId = obj.getString("bookId");
         String sheetName = obj.getString("sheetName");
+        if (!Authorization.authorizeBook(bookId, authToken)){
+            JsonWrapper.generateError("Permission denied for accessing this book");
+        }
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
         org.json.JSONArray cells = obj.getJSONArray("cells");
@@ -124,12 +132,16 @@ public class GeneralController {
 
     @RequestMapping(value = "/api/insertRows",
             method = RequestMethod.PUT)
-    public HashMap<String, Object> insertRows(@RequestBody String json) {
+    public HashMap<String, Object> insertRows(@RequestHeader("auth-token") String authToken,
+                                              @RequestBody String json) {
         org.json.JSONObject obj = new org.json.JSONObject(json);
         String sheetName = obj.getString("SheetName");
         String bookId = obj.getString("bookId");
         int rowIdx = obj.getInt("startRow");
         int lastRowIdx = obj.getInt("endRow");
+        if (!Authorization.authorizeBook(bookId, authToken)){
+            JsonWrapper.generateError("Permission denied for accessing this book");
+        }
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
         sheet.insertRow(rowIdx, lastRowIdx);
@@ -138,12 +150,16 @@ public class GeneralController {
 
     @RequestMapping(value = "/api/deleteRows",
             method = RequestMethod.DELETE)
-    public HashMap<String, Object> deleteRows(@RequestBody String json) {
+    public HashMap<String, Object> deleteRows(@RequestHeader("auth-token") String authToken,
+                                              @RequestBody String json) {
         org.json.JSONObject obj = new org.json.JSONObject(json);
         String sheetName = obj.getString("SheetName");
         String bookId = obj.getString("bookId");
         int rowIdx = obj.getInt("startRow");
         int lastRowIdx = obj.getInt("endRow");
+        if (!Authorization.authorizeBook(bookId, authToken)){
+            JsonWrapper.generateError("Permission denied for accessing this book");
+        }
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
         sheet.deleteColumn(rowIdx, lastRowIdx);
@@ -152,12 +168,16 @@ public class GeneralController {
 
     @RequestMapping(value = "/api/insertCols",
             method = RequestMethod.PUT)
-    public HashMap<String, Object> insertCols(@RequestBody String json) {
+    public HashMap<String, Object> insertCols(@RequestHeader("auth-token") String authToken,
+                                              @RequestBody String json) {
         org.json.JSONObject obj = new org.json.JSONObject(json);
         String sheetName = obj.getString("SheetName");
         String bookId = obj.getString("bookId");
         int colIdx = obj.getInt("startCol");
         int lastColIdx = obj.getInt("endCol");
+        if (!Authorization.authorizeBook(bookId, authToken)){
+            JsonWrapper.generateError("Permission denied for accessing this book");
+        }
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
         sheet.insertColumn(colIdx, lastColIdx);
@@ -166,12 +186,16 @@ public class GeneralController {
 
     @RequestMapping(value = "/api/deleteCols",
             method = RequestMethod.DELETE)
-    public HashMap<String, Object> deleteCols(@RequestBody String json) {
+    public HashMap<String, Object> deleteCols(@RequestHeader("auth-token") String authToken,
+                                              @RequestBody String json) {
         org.json.JSONObject obj = new org.json.JSONObject(json);
         String sheetName = obj.getString("SheetName");
         String bookId = obj.getString("bookId");
         int colIdx = obj.getInt("startCol");
         int lastColIdx = obj.getInt("endCol");
+        if (!Authorization.authorizeBook(bookId, authToken)){
+            JsonWrapper.generateError("Permission denied for accessing this book");
+        }
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
         sheet.deleteColumn(colIdx, lastColIdx);
