@@ -22,6 +22,7 @@ public class Authorization {
         } catch (SQLException e) {
             return false;
         }
+
     }
 
     public static boolean authorizeTable(String bookId, String authToken){

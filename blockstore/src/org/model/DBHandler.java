@@ -144,7 +144,7 @@ public class DBHandler {
             String createTable = "CREATE TABLE IF NOT EXISTS user_books (" +
                     "authtoken  TEXT NOT NULL," +
                     "booktable  TEXT NOT NULL," +
-                    "role   TEXT NOT NULL," +
+                    "role   TEXT NOT NULL" +
                     ");";
             stmt.execute(createTable);
         }
@@ -159,7 +159,7 @@ public class DBHandler {
         try (Statement stmt = connection.createStatement()) {
             String createTable = "CREATE TABLE IF NOT EXISTS user_account (" +
                     "authtoken  TEXT NOT NULL UNIQUE," +
-                    "username   TEXT NOT NULL" +
+                    "username   TEXT NOT NULL," +
                     "PRIMARY KEY (authtoken));";
             stmt.execute(createTable);
             String initializeUser = "INSERT INTO user_account VALUES ('guest', 'guest')" +
