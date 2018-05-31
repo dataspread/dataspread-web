@@ -47,7 +47,7 @@ public class UserController {
             ResultSet rs = statement.executeQuery();
             if (rs.next()){
                 String bookId = rs.getString(1);
-                template.convertAndSend(BookController.getCallbackPath(bookId), "");
+                template.convertAndSend(BookController.getCallbackPath(), "");
             } else {
                 JsonWrapper.generateError("Shared book can not found!");
             }
