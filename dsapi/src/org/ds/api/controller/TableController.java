@@ -3,9 +3,12 @@ package org.ds.api.controller;
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.zkoss.json.parser.JSONParser;
 import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.sys.TableMonitor;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -13,8 +16,13 @@ import java.util.*;
 
 import org.zkoss.json.*;
 
+import static org.ds.api.WebSocketConfig.MESSAGE_PREFIX;
+
 @RestController
 public class TableController {
+
+    @Autowired
+    private SimpMessagingTemplate template;
 
     static final String BOOK_ID              = "bookId";
     static final String SCHEMA               = "schema";
@@ -46,29 +54,6 @@ public class TableController {
     static final String COLUMN_NAME = "columnName";
     static final String COLUMN = "column";
     static final String VALUES = "values";
-
-
-
-    JSONObject returnFalse(Exception e){
-        JSONObject result = new JSONObject();
-        e.printStackTrace();
-        result.clear();
-        if (e.getMessage() == null)
-            result.put(MSG, e.toString());
-        else
-            result.put(MSG, e.getMessage());
-        result.put(STATUS,FAILED);
-        result.put(DATA,null);
-        return result;
-    }
-
-    JSONObject returnTrue(Object data){
-        JSONObject result = new JSONObject();
-        result.put(MSG,null);
-        result.put(STATUS,SUCCESS);
-        result.put(DATA,data);
-        return result;
-    }
 
     @RequestMapping(value = "/api/createTable",
             method = RequestMethod.POST)
@@ -102,11 +87,12 @@ public class TableController {
             catch(java.lang.Exception e){
                 return returnFalse(e);
             }
-
+            notifyUpdate(book,sheet);
         }
         catch (java.lang.Exception e){
             return returnFalse(e);
         }
+
 
         return returnTrue(ret);
     }
@@ -138,6 +124,7 @@ public class TableController {
             catch(java.lang.Exception e){
                 return returnFalse(e);
             }
+            notifyUpdate(book,sheet);
 
         }
         catch (java.lang.Exception e){
@@ -159,10 +146,12 @@ public class TableController {
                 DBContext context = new DBContext(connection);
                 tableModel.unLinkTable(context, tableSheetLink);
                 context.getConnection().commit();
+                notifyUpdate(context,tableSheetLink);
             }
             catch(java.lang.Exception e){
                 return returnFalse(e);
             }
+
 
         }
         catch (java.lang.Exception e){
@@ -222,10 +211,12 @@ public class TableController {
                 return returnFalse(e);
             }
 
+
         }
         catch (java.lang.Exception e){
             return returnFalse(e);
         }
+
 
         return returnTrue(null);
     }
@@ -484,6 +475,75 @@ public class TableController {
 
         return returnTrue(null);
     }
+
+    JSONObject returnFalse(Exception e){
+        JSONObject result = new JSONObject();
+        e.printStackTrace();
+        result.clear();
+        if (e.getMessage() == null)
+            result.put(MSG, e.toString());
+        else
+            result.put(MSG, e.getMessage());
+        result.put(STATUS,FAILED);
+        result.put(DATA,null);
+        return result;
+    }
+
+    JSONObject returnTrue(Object data){
+        JSONObject result = new JSONObject();
+        result.put(MSG,null);
+        result.put(STATUS,SUCCESS);
+        result.put(DATA,data);
+        return result;
+    }
+
+    String getCallbackPath(String bookId, String sheetName) {
+        return new StringBuilder()
+                .append(MESSAGE_PREFIX)
+                .append("updateCells/")
+                .append(bookId)
+                .append("/")
+                .append(sheetName)
+                .toString();
+    }
+
+    void notifyUpdate(DBContext context, String linkedTableId){
+        try {
+            notifyUpdate(
+                TableMonitor.getMonitor().getSheet(context, linkedTableId)
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    void notifyUpdates(DBContext context, String tableName){
+        try {
+            notifyUpdates(
+                    TableMonitor.getMonitor().getSheets(context, tableName)
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    void notifyUpdate(String bookId, String sheetName){
+        template.convertAndSend(getCallbackPath(bookId,sheetName), "");
+    }
+
+
+
+    void notifyUpdate(SSheet sheet){
+        template.convertAndSend(getCallbackPath(sheet.getBook().getId(), sheet.getSheetName()), "");
+    }
+
+    void notifyUpdates(ArrayList<SSheet> sheets){
+        for (SSheet sheet:sheets){
+            notifyUpdate(sheet);
+        }
+    }
+
+
 
 
 

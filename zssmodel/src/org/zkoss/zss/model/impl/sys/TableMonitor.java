@@ -482,6 +482,16 @@ public class TableMonitor {
         return new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
     }
 
+
+    public SSheet getSheet(DBContext context, String linkeTableId) throws Exception {
+        return _models.get(linkeTableId).getSheet(context);
+    }
+
+    public ArrayList<SSheet> getSheets(DBContext context, String tableName) throws Exception {
+        ArrayList<SSheet> ret = new ArrayList<>();
+        return ret;
+    }
+
     private String insertToTables(DBContext context, String userId, String metaTableName) throws SQLException {
         // todo: check overlaping point
         AutoRollbackConnection connection = context.getConnection();
