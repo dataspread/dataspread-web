@@ -26,12 +26,6 @@ public class BookController {
 
     //TODO importBook
 
-    // Test Sync API
-    @RequestMapping(value = "/")
-    public String index() {
-        return "index";
-    }
-
     @RequestMapping(value = "/api/getSyncBooks",
             method = RequestMethod.GET)
     public HashMap<String, Object> getSyncBooks(){
