@@ -33,7 +33,7 @@ public class BookController {
     @RequestMapping(value = "/api/getSyncBooks",
             method = RequestMethod.GET)
     public HashMap<String, Object> getSyncBooks(){
-        template.convertAndSend(MESSAGE_PREFIX+"/greetings");
+        template.convertAndSend(MESSAGE_PREFIX+"/greetings", "");
         return null;
     }
 
@@ -83,7 +83,7 @@ public class BookController {
             JsonWrapper.generateError("Permission denied for accessing this book");
         }
         BookImpl.deleteBook(null, bookId);
-        template.convertAndSend(MESSAGE_PREFIX+"/greetings");
+        template.convertAndSend(MESSAGE_PREFIX+"/greetings", "");
         return JsonWrapper.generateJson(null);
     }
 
@@ -108,7 +108,7 @@ public class BookController {
         }
         SBook book = BookBindings.getBookByName(bookName);
         book.checkDBSchema();
-        template.convertAndSend(MESSAGE_PREFIX+"/greetings");
+        template.convertAndSend(MESSAGE_PREFIX+"/greetings", "");
         return bookWrapper(book.getId(), bookName);
     }
 
