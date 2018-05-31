@@ -16,7 +16,7 @@ public class UserController {
             method = RequestMethod.POST)
     public HashMap<String, Object> addUser(@RequestHeader("auth-token") String authToken,
                                            @RequestBody String userName){
-        String query = "INSERT INTO user_account(token, username) VALUES (?, ?);";
+        String query = "INSERT INTO user_account(authtoken, username) VALUES (?, ?);";
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setString(1, authToken);

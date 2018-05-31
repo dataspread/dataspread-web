@@ -67,7 +67,7 @@ public class DBHandler {
             DBContext dbContext = new DBContext(connection);
             createBookTable(dbContext);
             createUserAccountTable(dbContext);
-            createUserTable(dbContext);
+            createUserBooksTable(dbContext);
             createTableOrders(dbContext);
             createDependencyTable(dbContext);
             connection.commit();
@@ -138,12 +138,13 @@ public class DBHandler {
     }
 
 
-    private void createUserTable(DBContext dbContext) {
+    private void createUserBooksTable(DBContext dbContext) {
         AutoRollbackConnection connection = dbContext.getConnection();
         try (Statement stmt = connection.createStatement()) {
-            String createTable = "CREATE TABLE IF NOT EXISTS users (" +
+            String createTable = "CREATE TABLE IF NOT EXISTS user_books (" +
                     "authtoken  TEXT NOT NULL," +
-                    "booktable  TEXT NOT NULL" +
+                    "booktable  TEXT NOT NULL," +
+                    "role   TEXT NOT NULL," +
                     ");";
             stmt.execute(createTable);
         }
@@ -161,6 +162,9 @@ public class DBHandler {
                     "username   TEXT NOT NULL" +
                     "PRIMARY KEY (authtoken));";
             stmt.execute(createTable);
+            String initializeUser = "INSERT INTO user_account VALUES ('guest', 'guest')" +
+                    "ON CONFLICT (authtoken) DO NOTHING;";
+            stmt.execute(initializeUser);
         } catch (SQLException e) {
             e.printStackTrace();
         }
