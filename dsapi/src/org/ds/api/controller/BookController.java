@@ -24,6 +24,8 @@ public class BookController {
     @Autowired
     private SimpMessagingTemplate template;
 
+    //TODO importBook
+
     // Test Sync API
     @RequestMapping(value = "/")
     public String index() {
@@ -35,6 +37,14 @@ public class BookController {
     public HashMap<String, Object> getSyncBooks(){
         template.convertAndSend(MESSAGE_PREFIX+"/greetings", "");
         return null;
+    }
+
+    public static String getCallbackPath(String bookId) {
+        return new StringBuilder()
+                .append(MESSAGE_PREFIX)
+                .append("updateBooks/")
+                .append(bookId)
+                .toString();
     }
 
     // Books API
@@ -93,9 +103,11 @@ public class BookController {
             e.printStackTrace();
             return JsonWrapper.generateError(e.getMessage());
         }
-        template.convertAndSend(MESSAGE_PREFIX+"/greetings", "");
+        template.convertAndSend(getCallbackPath(bookId), "");
         return JsonWrapper.generateJson(null);
     }
+
+
 
     @RequestMapping(value = "/api/addBook",
             method = RequestMethod.POST)
@@ -129,7 +141,7 @@ public class BookController {
             e.printStackTrace();
             return JsonWrapper.generateError(e.getMessage());
         }
-        template.convertAndSend(MESSAGE_PREFIX+"/greetings", "");
+        template.convertAndSend(getCallbackPath(book.getId()), "");
         return bookWrapper(book.getId(), bookName);
     }
 
@@ -146,6 +158,7 @@ public class BookController {
         String newBookName = (String) obj.get("newBookName");
         SBook book = BookBindings.getBookById(bookId);
         book.setBookName(newBookName);
+        template.convertAndSend(getCallbackPath(bookId), "");
         return bookWrapper(bookId, newBookName);
     }
 

@@ -2,6 +2,8 @@ package org.ds.api.controller;
 
 import org.ds.api.Authorization;
 import org.ds.api.JsonWrapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SSheet;
@@ -10,9 +12,24 @@ import org.zkoss.zss.model.sys.BookBindings;
 import java.util.*;
 
 import org.json.JSONObject;
+import org.zkoss.zss.range.impl.ClearCellHelper;
+import org.zkoss.zss.range.impl.RangeImpl;
+
+import static org.ds.api.WebSocketConfig.MESSAGE_PREFIX;
 
 @RestController
 public class SheetController {
+    @Autowired
+    private SimpMessagingTemplate template;
+
+    private String getCallbackPath(String bookId) {
+        return new StringBuilder()
+                .append(MESSAGE_PREFIX)
+                .append("updateSheets/")
+                .append(bookId)
+                .toString();
+    }
+
     // Sheets API
     @RequestMapping(value = "/api/getSheets/{bookId}",
             method = RequestMethod.GET)
@@ -38,6 +55,7 @@ public class SheetController {
         SBook book = BookBindings.getBookById(bookId);
         SSheet ssheet = book.getSheetByName(sheetName);
         book.deleteSheet(ssheet);
+        template.convertAndSend(getCallbackPath(bookId), "");
         return sheetWrapper(book);
     }
 
@@ -53,6 +71,7 @@ public class SheetController {
         }
         SBook book = BookBindings.getBookById(bookId);
         book.createSheet(sheetName);
+        template.convertAndSend(getCallbackPath(bookId), "");
         return sheetWrapper(book);
     }
 
@@ -70,6 +89,7 @@ public class SheetController {
         SBook book = BookBindings.getBookById(bookId);
         SSheet ssheet = book.getSheetByName(oldSheetName);
         book.setSheetName(ssheet, newSheetName);
+        template.convertAndSend(getCallbackPath(bookId), "");
         return sheetWrapper(book);
     }
 
@@ -95,6 +115,7 @@ public class SheetController {
             }
         }
         book.createSheet(newSheetName, sheet);
+        template.convertAndSend(getCallbackPath(bookId), "");
         return sheetWrapper(book);
     }
 
@@ -111,6 +132,7 @@ public class SheetController {
         }
         SBook book = BookBindings.getBookById(bookId);
         book.moveSheetTo(book.getSheetByName(sheetName), newPos);
+        template.convertAndSend(getCallbackPath(bookId), "");
         return sheetWrapper(book);
     }
 
@@ -126,7 +148,9 @@ public class SheetController {
         }
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
-        sheet.clearCell(sheet.getStartRowIndex(), sheet.getStartColumnIndex(), sheet.getEndRowIndex(), sheet.getEndColumnIndex());
+        book.deleteSheet(sheet);
+        book.createSheet(sheetName);
+        template.convertAndSend(GeneralController.getCallbackPath(bookId, sheetName), "");
         return sheetWrapper(book);
     }
 

@@ -22,11 +22,25 @@ import java.util.*;
 import org.zkoss.json.*;
 import javafx.util.Pair;
 
+import static org.ds.api.WebSocketConfig.MESSAGE_PREFIX;
+
 
 @RestController
 public class GeneralController {
     // General API
     @Autowired private SimpMessagingTemplate template;
+
+    public static String getCallbackPath(String bookId, String sheetName) {
+        return new StringBuilder()
+                .append(MESSAGE_PREFIX)
+                .append("updateCells/")
+                .append(bookId)
+                .append("/")
+                .append(sheetName)
+                .toString();
+    }
+
+    //TODO formatAPIs
 
     @RequestMapping(value = "/api/getCells/{bookId}/{sheetName}/{row1}/{col1}/{row2}/{col2}",
             method = RequestMethod.GET)
@@ -123,6 +137,7 @@ public class GeneralController {
                 }
                 String format = ((org.json.JSONObject)cell).getString("format");
             }
+            template.convertAndSend(getCallbackPath(bookId, sheetName), "");
             return JsonWrapper.generateJson(null);
         } catch (Exception e) {
             e.printStackTrace();
@@ -145,6 +160,7 @@ public class GeneralController {
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
         sheet.insertRow(rowIdx, lastRowIdx);
+        template.convertAndSend(GeneralController.getCallbackPath(bookId, sheetName), "");
         return JsonWrapper.generateJson(null);
     }
 
@@ -162,7 +178,9 @@ public class GeneralController {
         }
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
-        sheet.deleteColumn(rowIdx, lastRowIdx);
+        sheet.deleteRow(rowIdx, lastRowIdx);
+        template.convertAndSend(GeneralController.getCallbackPath(bookId, sheetName), "");
+
         return JsonWrapper.generateJson(null);
     }
 
@@ -181,6 +199,7 @@ public class GeneralController {
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
         sheet.insertColumn(colIdx, lastColIdx);
+        template.convertAndSend(getCallbackPath(bookId, sheetName), "");
         return JsonWrapper.generateJson(null);
     }
 
@@ -199,6 +218,7 @@ public class GeneralController {
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
         sheet.deleteColumn(colIdx, lastColIdx);
+        template.convertAndSend(getCallbackPath(bookId, sheetName), "");
         return JsonWrapper.generateJson(null);
     }
 
