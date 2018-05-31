@@ -88,6 +88,7 @@ public class BookController {
              PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setString(1, bookId);
             statement.execute();
+            connection.commit();
         } catch (SQLException e) {
             e.printStackTrace();
             return JsonWrapper.generateError(e.getMessage());
@@ -123,6 +124,7 @@ public class BookController {
             statement.setString(1, authToken);
             statement.setString(2, book.getId());
             statement.execute();
+            connection.commit();
         } catch (SQLException e) {
             e.printStackTrace();
             return JsonWrapper.generateError(e.getMessage());
