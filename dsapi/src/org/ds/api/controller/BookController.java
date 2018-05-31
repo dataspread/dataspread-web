@@ -33,11 +33,10 @@ public class BookController {
         return null;
     }
 
-    public static String getCallbackPath(String bookId) {
+    public static String getCallbackPath() {
         return new StringBuilder()
                 .append(MESSAGE_PREFIX)
-                .append("updateBooks/")
-                .append(bookId)
+                .append("/updateBooks")
                 .toString();
     }
 
@@ -97,7 +96,7 @@ public class BookController {
             e.printStackTrace();
             return JsonWrapper.generateError(e.getMessage());
         }
-        template.convertAndSend(getCallbackPath(bookId), "");
+        template.convertAndSend(getCallbackPath(), "");
         return JsonWrapper.generateJson(null);
     }
 
@@ -135,7 +134,7 @@ public class BookController {
             e.printStackTrace();
             return JsonWrapper.generateError(e.getMessage());
         }
-        template.convertAndSend(getCallbackPath(book.getId()), "");
+        template.convertAndSend(getCallbackPath(), bookName);
         return bookWrapper(book.getId(), bookName);
     }
 
@@ -152,7 +151,7 @@ public class BookController {
         String newBookName = (String) obj.get("newBookName");
         SBook book = BookBindings.getBookById(bookId);
         book.setBookName(newBookName);
-        template.convertAndSend(getCallbackPath(bookId), "");
+        template.convertAndSend(getCallbackPath(), "");
         return bookWrapper(bookId, newBookName);
     }
 
