@@ -79,10 +79,19 @@ public class BookController {
                                               @RequestBody String json) {
         JSONObject obj = new JSONObject(json);
         String bookId = (String) obj.get("bookId");
-        if (!Authorization.authorizeBook(bookId, authToken)){
-            JsonWrapper.generateError("Permission denied for accessing this book");
+        if (!Authorization.ownerBook(bookId, authToken)){
+            JsonWrapper.generateError("Permission denied for deleting this book");
         }
         BookImpl.deleteBook(null, bookId);
+        String query = "DELETE FROM user_books WHERE booktable = ?";
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, bookId);
+            statement.execute();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return JsonWrapper.generateError(e.getMessage());
+        }
         template.convertAndSend(MESSAGE_PREFIX+"/greetings", "");
         return JsonWrapper.generateJson(null);
     }
@@ -108,25 +117,20 @@ public class BookController {
         }
         SBook book = BookBindings.getBookByName(bookName);
         book.checkDBSchema();
-
+        query = "INSERT INTO user_books VALUES (?, ?, 'owner')";
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, authToken);
+            statement.setString(2, book.getId());
+            statement.execute();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return JsonWrapper.generateError(e.getMessage());
+        }
         template.convertAndSend(MESSAGE_PREFIX+"/greetings", "");
         return bookWrapper(book.getId(), bookName);
     }
-    /*
-    String query = "SELECT COUNT(*) FROM books WHERE bookname = ?";
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-    PreparedStatement statement = connection.prepareStatement(query)) {
-        statement.setString(1, bookName);
-        ResultSet rs = statement.executeQuery();
-        if (rs.next()) {
-            if (rs.getInt(1) > 0)
-                return JsonWrapper.generateError("Duplicated Book Name");
-        }
-    } catch (SQLException e) {
-        e.printStackTrace();
-        return JsonWrapper.generateError(e.getMessage());
-    }
-    */
+
 
     @RequestMapping(value = "/api/changeBookName",
             method = RequestMethod.PUT)
