@@ -60,7 +60,7 @@ public class TableMonitor {
                                String bookId, String sheetName,List<String> schema) throws Exception {
         // todo : sync relationship to mem
 
-        String tableName = getTableName(userId, metaTableName);
+        String tableName = formatTableName(userId, metaTableName);
 
         /* First create table then create model */
         /* extract table header row */
@@ -119,7 +119,7 @@ public class TableMonitor {
     public String[] linkTable(DBContext context, CellRegion range, String userId, String metaTableName,
                               String bookId, String sheetName) throws Exception {
         // todo : sync relationship to mem
-        String tableName = getTableName(userId, metaTableName);
+        String tableName = formatTableName(userId, metaTableName);
 
         String[] ret = new String[]{insertToTableSheetLink(context, range, bookId, sheetName, tableName),
                 getSharedLink(context,userId,metaTableName)};
@@ -163,7 +163,7 @@ public class TableMonitor {
     }
 
     public void dropTable(DBContext context, String userId, String metaTableName) throws Exception {
-        String tableName = getTableName(userId, metaTableName);
+        String tableName = formatTableName(userId, metaTableName);
         AutoRollbackConnection connection = context.getConnection();
 
         String selectLinkid = (new StringBuilder())
@@ -482,6 +482,10 @@ public class TableMonitor {
         return new CellRegion(rowcol[0], rowcol[1], rowcol[2], rowcol[3]);
     }
 
+    public String getTableName(DBContext context, String linkeTableId) throws Exception {
+        return _models.get(linkeTableId).getTableName(context);
+    }
+
 
     public SSheet getSheet(DBContext context, String linkeTableId) throws Exception {
         return _models.get(linkeTableId).getSheet(context);
@@ -621,7 +625,7 @@ public class TableMonitor {
         }
     }
 
-    private String getTableName(String userId, String metaTableName){
+    public static String formatTableName(String userId, String metaTableName){
         return "_" + userId + "_" + metaTableName;
     }
     private ArrayList<Integer> appendTableRows(DBContext dbContext, CellRegion range,

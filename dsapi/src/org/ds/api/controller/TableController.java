@@ -17,6 +17,7 @@ import java.util.*;
 import org.zkoss.json.*;
 
 import static org.ds.api.WebSocketConfig.MESSAGE_PREFIX;
+import static org.zkoss.zss.model.impl.sys.TableMonitor.formatTableName;
 
 @RestController
 public class TableController {
@@ -139,14 +140,15 @@ public class TableController {
         JSONParser paser = new JSONParser();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
-            String tableSheetLink = (String) dict.get(LINK_TABLE_ID);
+            String tableLinkedId = (String) dict.get(LINK_TABLE_ID);
 
             TableMonitor tableModel = TableMonitor.getMonitor();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
-                tableModel.unLinkTable(context, tableSheetLink);
+                SSheet sheet = tableModel.getSheet(context, tableLinkedId);
+                tableModel.unLinkTable(context, tableLinkedId);
                 context.getConnection().commit();
-                notifyUpdate(context,tableSheetLink);
+                notifyUpdate(sheet);
             }
             catch(java.lang.Exception e){
                 return returnFalse(e);
@@ -204,8 +206,10 @@ public class TableController {
             TableMonitor tableModel = TableMonitor.getMonitor();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
+                List<SSheet> sheets = tableModel.getSheets(context, formatTableName(userId,tableName));
                 tableModel.dropTable(context, userId, tableName);
                 context.getConnection().commit();
+                notifyUpdates(sheets);
             }
             catch(java.lang.Exception e){
                 return returnFalse(e);
@@ -227,7 +231,7 @@ public class TableController {
         JSONParser paser = new JSONParser();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
-            String tableSheetId= (String) dict.get(LINK_TABLE_ID);
+            String linkedTableId= (String) dict.get(LINK_TABLE_ID);
             JSONArray attributeOrder= (JSONArray) dict.get(ATTRIBUTE_ORDER_PAIR);
             StringBuilder reorderbuilder = new StringBuilder();
             for (Object object:attributeOrder){
@@ -242,8 +246,9 @@ public class TableController {
             TableMonitor tableModel = TableMonitor.getMonitor();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
-                tableModel.reorderTable(context, tableSheetId, reorderbuilder.toString());
+                tableModel.reorderTable(context, linkedTableId, reorderbuilder.toString());
                 context.getConnection().commit();
+                notifyUpdate(context,linkedTableId);
             }
             catch(java.lang.Exception e){
                 return returnFalse(e);
@@ -263,13 +268,14 @@ public class TableController {
         JSONParser paser = new JSONParser();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
-            String tableSheetId= (String) dict.get(LINK_TABLE_ID);
+            String linkedTableId= (String) dict.get(LINK_TABLE_ID);
             String filter= (String) dict.get(FILTER);
             TableMonitor tableModel = TableMonitor.getMonitor();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
-                tableModel.filterTable(context, tableSheetId, filter);
+                tableModel.filterTable(context, linkedTableId, filter);
                 context.getConnection().commit();
+                notifyUpdate(context,linkedTableId);
             }
             catch(java.lang.Exception e){
                 return returnFalse(e);
@@ -297,6 +303,7 @@ public class TableController {
                 DBContext context = new DBContext(connection);
                 tableModel.deleteRows(context,row, count, linkId);
                 context.getConnection().commit();
+                notifyUpdates(context,tableModel.getTableName(context,linkId));
             }
             catch(java.lang.Exception e){
                 return returnFalse(e);
@@ -324,6 +331,7 @@ public class TableController {
                 DBContext context = new DBContext(connection);
                 tableModel.deleteCols(context,col, count, linkId);
                 context.getConnection().commit();
+                notifyUpdates(context,tableModel.getTableName(context,linkId));
             }
             catch(java.lang.Exception e){
                 return returnFalse(e);
@@ -351,6 +359,7 @@ public class TableController {
                 DBContext context = new DBContext(connection);
                 tableModel.insertRows(context,linkTableId,row,values);
                 context.getConnection().commit();
+                notifyUpdates(context,tableModel.getTableName(context,linkTableId));
             }
             catch(java.lang.Exception e){
                 return returnFalse(e);
@@ -379,6 +388,7 @@ public class TableController {
                 DBContext context = new DBContext(connection);
                 tableModel.insertColumn(context,linkTableId,column,columnName,columnType);
                 context.getConnection().commit();
+                notifyUpdates(context,tableModel.getTableName(context,linkTableId));
             }
             catch(java.lang.Exception e){
                 return returnFalse(e);
@@ -406,6 +416,7 @@ public class TableController {
                 DBContext context = new DBContext(connection);
                 tableModel.changeTableColumnType(context, linkTableId, column, columnType);
                 context.getConnection().commit();
+                notifyUpdates(context,tableModel.getTableName(context,linkTableId));
             }
             catch(java.lang.Exception e){
                 return returnFalse(e);
@@ -433,6 +444,7 @@ public class TableController {
                 DBContext context = new DBContext(connection);
                 tableModel.changeTableColumnName(context, linkTableId, column, columnName);
                 context.getConnection().commit();
+                notifyUpdates(context,tableModel.getTableName(context,linkTableId));
             }
             catch(java.lang.Exception e){
                 return returnFalse(e);
@@ -463,6 +475,7 @@ public class TableController {
                 DBContext context = new DBContext(connection);
                 tableModel.updateTableCells(context,linkTableId,row1,row2,col1,col2,values);
                 context.getConnection().commit();
+                notifyUpdates(context,tableModel.getTableName(context,linkTableId));
             }
             catch(java.lang.Exception e){
                 return returnFalse(e);
@@ -537,7 +550,7 @@ public class TableController {
         template.convertAndSend(getCallbackPath(sheet.getBook().getId(), sheet.getSheetName()), "");
     }
 
-    void notifyUpdates(ArrayList<SSheet> sheets){
+    void notifyUpdates(List<SSheet> sheets){
         for (SSheet sheet:sheets){
             notifyUpdate(sheet);
         }
