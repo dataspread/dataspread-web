@@ -698,6 +698,28 @@ public class TableMonitor {
         }
         return ret;
     }
+
+//    private ArrayList<String> getAllTableSheetLinks(DBContext context){
+//        ArrayList<String> ret = new ArrayList<>();
+//        String select = (new StringBuilder())
+//                .append("SELECT linkid")
+//                .append(" FROM ")
+//                .append(TABLESHEETLINK)
+//                .toString();
+//
+//        AutoRollbackConnection connection = context.getConnection();
+//        try (Statement stmt = connection.createStatement()) {
+//            ResultSet rs = stmt.executeQuery(select);
+//            while (rs.next()) {
+//                String linkId = rs.getString("linkid");
+//                ret.add(linkId);
+//            }
+//        }catch (SQLException e){
+//            e.printStackTrace();
+//        }
+//        return ret;
+//    }
+
     private void initializePosmappingForLinkedTable(DBContext context, String linkId) throws SQLException {
         String select = (new StringBuilder())
                 .append("SELECT *")
