@@ -650,19 +650,19 @@ public class TableMonitor {
                 int max_row = range.getRow() + i * block_row;
                 if (i > range.getLastRow() / block_row) max_row = range.getLastRow();
                 CellRegion work_range = new CellRegion(min_row, range.getColumn(), max_row, range.getLastColumn());
-                Collection<AbstractCellAdv> cells = sheet.getDataModel().getCells(dbContext, work_range)
+                Collection<SCell> cells = sheet.getCells(work_range)
                         .stream()
-                        .peek(e -> e.translate(-range.getRow(), -range.getColumn())) // Translate
+                        .peek(e -> (e).translate(-range.getRow(), -range.getColumn())) // Translate
                         .collect(Collectors.toList());
 
-                SortedMap<Integer, SortedMap<Integer, AbstractCellAdv>> groupedCells = new TreeMap<>();
-                for (AbstractCellAdv cell : cells) {
-                    SortedMap<Integer, AbstractCellAdv> _row;
+                SortedMap<Integer, SortedMap<Integer, SCell>> groupedCells = new TreeMap<>();
+                for (SCell cell : cells) {
+                    SortedMap<Integer, SCell> _row;
                     _row = groupedCells.computeIfAbsent(cell.getRowIndex(), k -> new TreeMap<>());
                     _row.put(cell.getColumnIndex(), cell);
                 }
 
-                for (SortedMap<Integer, AbstractCellAdv> tuple : groupedCells.values()) {
+                for (SortedMap<Integer, SCell> tuple : groupedCells.values()) {
                     for (int j = 0; j < columnCount; j++) {
                         if (tuple.containsKey(j))
                             setStmtValue(stmt,j,tuple.get(j).getValue().toString(),schema.get(j));
