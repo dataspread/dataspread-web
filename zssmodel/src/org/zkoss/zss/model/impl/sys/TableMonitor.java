@@ -493,6 +493,9 @@ public class TableMonitor {
 
     public ArrayList<SSheet> getSheets(DBContext context, String tableName) throws Exception {
         ArrayList<SSheet> ret = new ArrayList<>();
+        for (String linkedTableId:getAllTableSheetLinksFromTable(context, tableName)){
+            ret.add(getSheet(context,linkedTableId));
+        }
         return ret;
     }
 
@@ -679,13 +682,27 @@ public class TableMonitor {
     }
 
     private ArrayList<String> getAllTableSheetLinks(DBContext context){
-        ArrayList<String> ret = new ArrayList<>();
         String select = (new StringBuilder())
                 .append("SELECT linkid")
                 .append(" FROM ")
                 .append(TABLESHEETLINK)
                 .toString();
+        return getTableSheetLinks(context,select);
+    }
 
+    private ArrayList<String> getAllTableSheetLinksFromTable(DBContext context, String tableName){
+        String select = (new StringBuilder())
+                .append("SELECT linkid")
+                .append(" FROM ")
+                .append(TABLESHEETLINK)
+                .append(" where tablename = ")
+                .append(tableName)
+                .toString();
+        return getTableSheetLinks(context,select);
+    }
+
+    private ArrayList<String> getTableSheetLinks(DBContext context, String select){
+        ArrayList<String> ret = new ArrayList<>();
         AutoRollbackConnection connection = context.getConnection();
         try (Statement stmt = connection.createStatement()) {
             ResultSet rs = stmt.executeQuery(select);
@@ -698,27 +715,6 @@ public class TableMonitor {
         }
         return ret;
     }
-
-//    private ArrayList<String> getAllTableSheetLinks(DBContext context){
-//        ArrayList<String> ret = new ArrayList<>();
-//        String select = (new StringBuilder())
-//                .append("SELECT linkid")
-//                .append(" FROM ")
-//                .append(TABLESHEETLINK)
-//                .toString();
-//
-//        AutoRollbackConnection connection = context.getConnection();
-//        try (Statement stmt = connection.createStatement()) {
-//            ResultSet rs = stmt.executeQuery(select);
-//            while (rs.next()) {
-//                String linkId = rs.getString("linkid");
-//                ret.add(linkId);
-//            }
-//        }catch (SQLException e){
-//            e.printStackTrace();
-//        }
-//        return ret;
-//    }
 
     private void initializePosmappingForLinkedTable(DBContext context, String linkId) throws SQLException {
         String select = (new StringBuilder())
