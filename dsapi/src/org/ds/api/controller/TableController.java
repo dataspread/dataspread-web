@@ -36,8 +36,8 @@ public class TableController {
     static final String ROW_2                = "row2";
     static final String COL_1                = "col1";
     static final String COL_2                = "col2";
-    static final String USER_ID              = "userId";
     static final String TABLE_NAME           = "tableName";
+    static final String DISPLAY_NAME         = "displayName";
     static final String ROW                  = "row";
     static final String COL                  = "col";
     static final String LINK_TABLE_ID        = "linkTableId";
@@ -48,17 +48,17 @@ public class TableController {
     static final String SUCCESS              = "success";
     static final String FAILED               = "failed";
     static final String TABLE_CELLS          = "tableCells";
-    static final String COUNT                = "count";
     static final String DEFAULT_USER_ID      = "DataspreadUser";
     static final String VALUE                = "value";
-    static final String COLUMN_TYPE = "columnType";
-    static final String COLUMN_NAME = "columnName";
-    static final String COLUMN = "column";
-    static final String VALUES = "values";
+    static final String COLUMN_TYPE          = "columnType";
+    static final String COLUMN_NAME          = "columnName";
+    static final String COLUMN               = "column";
+    static final String VALUES               = "values";
+
 
     @RequestMapping(value = "/api/createTable",
             method = RequestMethod.POST)
-    public JSONObject createTable(@RequestBody String value){
+    public JSONObject createTable(@RequestHeader("auth-token") String userId, @RequestBody String value){
         JSONParser paser = new JSONParser();
         JSONObject ret = new JSONObject();
         try {
@@ -75,12 +75,11 @@ public class TableController {
             for (int i = 0; i <= col2 - col1; i++){
                 schema.add((String)json_schema.get(i));
             }
-            String user_id = DEFAULT_USER_ID;
             CellRegion range = new CellRegion(row1, col1, row2, col2);
             TableMonitor tableModel = TableMonitor.getMonitor();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
-                String[] links = tableModel.createTable(context, range, user_id, table, book, sheet,schema);
+                String[] links = tableModel.createTable(context, range, userId, table, book, sheet,schema);
                 context.getConnection().commit();
                 ret.put(LINK_TABLE_ID, links[0]);
                 ret.put(LINK, links[1]);
@@ -100,7 +99,7 @@ public class TableController {
 
     @RequestMapping(value = "/api/linkTable",
             method = RequestMethod.POST)
-    public JSONObject linkTable(@RequestBody String value){
+    public JSONObject linkTable(@RequestHeader("auth-token") String userId,@RequestBody String value){
         JSONParser paser = new JSONParser();
         JSONObject ret = new JSONObject();
         try {
@@ -112,12 +111,11 @@ public class TableController {
             int row2 = (int)dict.get(ROW_2);
             int col1 = (int)dict.get(COL_1);
             int col2 = (int)dict.get(COL_2);
-            String user_id = DEFAULT_USER_ID;
             CellRegion range = new CellRegion(row1, col1, row2, col2);
             TableMonitor tableModel = TableMonitor.getMonitor();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
-                String[] links = tableModel.linkTable(context, range, user_id, table, book, sheet);
+                String[] links = tableModel.linkTable(context, range, userId, table, book, sheet);
                 context.getConnection().commit();
                 ret.put(LINK_TABLE_ID, links[0]);
                 ret.put(LINK, links[1]);
@@ -133,6 +131,31 @@ public class TableController {
         }
 
         return returnTrue(ret);
+    }
+
+    @RequestMapping(value = "/api/referenceTable",
+            method = RequestMethod.POST)
+    public JSONObject referenceTable(@RequestHeader("auth-token") String userId,@RequestBody String value){
+        JSONParser paser = new JSONParser();
+        try {
+            JSONObject dict = (JSONObject)paser.parse(value);
+            String tableName = (String)dict.get(TABLE_NAME);
+            String linkedTableId = (String)dict.get(LINK_TABLE_ID);
+            TableMonitor tableModel = TableMonitor.getMonitor();
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+                DBContext context = new DBContext(connection);
+                tableModel.referenceTable(context, tableName, linkedTableId);
+                context.getConnection().commit();
+            }
+            catch(java.lang.Exception e){
+                return returnFalse(e);
+            }
+        }
+        catch (java.lang.Exception e){
+            return returnFalse(e);
+        }
+
+        return returnTrue(null);
     }
 
     @RequestMapping(value = "/api/unlinkTable",method = RequestMethod.POST)

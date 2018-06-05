@@ -122,6 +122,7 @@ public class TableMonitor {
         String tableName = formatTableName(userId, metaTableName);
 
         String[] ret = new String[]{insertToTableSheetLink(context, range, bookId, sheetName, tableName),
+
                 getSharedLink(context,userId,metaTableName)};
 
         initializePosmappingForLinkedTable(context, ret[0]);
@@ -135,6 +136,33 @@ public class TableMonitor {
         sheet.getDataModel().deleteCells(context,range);
         clearCache(sheet);
         return ret;
+    }
+
+    public void referenceTable(DBContext context, String tableName, String linkedTableId) {
+//        AutoRollbackConnection connection = context.getConnection();
+//        StringBuilder sharedLinkBuilder = new StringBuilder().append((char)('a'+_random.nextInt(26)))
+//                .append(Long.toString(System.currentTimeMillis()+_tableCount.getAndIncrement(), Character.MAX_RADIX));
+//        for (int i = 0; i < 10; i++){
+//            sharedLinkBuilder.append((char)('A'+_random.nextInt(26)));
+//        }
+//        String sharedLink =  sharedLinkBuilder.toString();
+//        String appendRecord = (new StringBuilder())
+//                .append("INSERT INTO ")
+//                .append(TABLES)
+//                .append(" (sharelink, tablename, userid, displayName, role) ")
+//                .append(" VALUES (?, ?, ?, ?, ?)")
+//                .toString();
+//
+//
+//        try (PreparedStatement stmt = connection.prepareStatement(appendRecord)) {
+//            stmt.setString(1,sharedLink);
+//            stmt.setString(2,formatTableName(userId,metaTableName));
+//            stmt.setString(3, userId);
+//            stmt.setString(4, metaTableName);
+//            stmt.setString(5, "creater");
+//
+//        }
+//        return sharedLink;
     }
 
     public void unLinkTable(DBContext context,String tableSheetLink) throws Exception {
@@ -511,19 +539,40 @@ public class TableMonitor {
         String appendRecord = (new StringBuilder())
                 .append("INSERT INTO ")
                 .append(TABLES)
-                .append(" VALUES ")
-                .append(" (\'" + sharedLink + "\',\'" + metaTableName + "\',\'"
-                        + userId + "\') ")
+                .append(" (sharelink, tablename, userid, displayName, role) ")
+                .append(" VALUES (?, ?, ?, ?, ?)")
                 .toString();
 
 
-        try (Statement stmt = connection.createStatement()) {
-            stmt.execute(appendRecord);
+        try (PreparedStatement stmt = connection.prepareStatement(appendRecord)) {
+            stmt.setString(1,sharedLink);
+            stmt.setString(2,formatTableName(userId,metaTableName));
+            stmt.setString(3, userId);
+            stmt.setString(4, metaTableName);
+            stmt.setString(5, "creater");
+
         }
         return sharedLink;
     }
 
     private String getSharedLink(DBContext context, String userId, String metaTableName) throws SQLException {
+        AutoRollbackConnection connection = context.getConnection();
+        String select = (new StringBuilder())
+                .append("SELECT sharelink")
+                .append(" FROM ")
+                .append(TABLES)
+                .append(" WHERE tablename = \'" + formatTableName(userId,metaTableName) + "\'")
+                .toString();
+        String sharedLink = "";
+        try (Statement stmt = connection.createStatement()) {
+            ResultSet rs = stmt.executeQuery(select);
+            if (rs.next()) {
+               sharedLink = rs.getString("sharelink");
+            }
+        }
+        return sharedLink;
+    }
+    private String getTable(DBContext context, String sharedLink) throws SQLException {
         AutoRollbackConnection connection = context.getConnection();
         String select = (new StringBuilder())
                 .append("SELECT sharelink")
@@ -535,7 +584,7 @@ public class TableMonitor {
         try (Statement stmt = connection.createStatement()) {
             ResultSet rs = stmt.executeQuery(select);
             if (rs.next()) {
-               sharedLink = rs.getString("sharelink");
+                sharedLink = rs.getString("sharelink");
             }
         }
         return sharedLink;
