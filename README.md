@@ -89,7 +89,7 @@ License
 ----
 MIT
 
-[install_loc]: http://localhost:8080/DataSpread_war/
+[install_loc]: http://localhost:8080/DataSpread/
 [tomcat_install]: https://www.ntu.edu.sg/home/ehchua/programming/howto/Tomcat_HowTo.html
 [postgre_install]: https://wiki.postgresql.org/wiki/Detailed_installation_guides
 [Postgres.app]: http://postgresapp.com
