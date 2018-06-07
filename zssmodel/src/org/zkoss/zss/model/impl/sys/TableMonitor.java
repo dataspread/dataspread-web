@@ -156,7 +156,7 @@ public class TableMonitor {
             stmt.setString(3, userId);
             stmt.setString(4, displayTableName);
             stmt.setString(5, "collaborator");
-
+            stmt.execute();
         }
     }
 
@@ -568,7 +568,7 @@ public class TableMonitor {
             stmt.setString(3, userId);
             stmt.setString(4, displayTableName);
             stmt.setString(5, "creater");
-
+            stmt.execute();
         }
         return sharedLink;
     }
