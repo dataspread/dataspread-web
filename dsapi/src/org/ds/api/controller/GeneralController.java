@@ -9,6 +9,16 @@ import org.model.DBHandler;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zkoss.util.resource.Labels;
+import org.zkoss.zss.api.AreaRef;
+import org.zkoss.zss.api.CellOperationUtil;
+import org.zkoss.zss.api.Range;
+import org.zkoss.zss.api.Ranges;
+import org.zkoss.zss.api.model.Color;
+import org.zkoss.zss.api.model.Font;
+import org.zkoss.zss.api.model.Sheet;
+import org.zkoss.zss.api.model.impl.SheetImpl;
+import org.zkoss.zss.api.model.impl.SimpleRef;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
@@ -21,12 +31,50 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import org.zkoss.json.*;
 import javafx.util.Pair;
+import org.zkoss.zss.ui.impl.ActionHelper;
+import org.zkoss.zss.ui.impl.undo.AggregatedAction;
+import org.zkoss.zss.ui.impl.undo.FontStyleAction;
+import org.zkoss.zss.ui.sys.UndoableAction;
 
 import static org.ds.api.WebSocketConfig.MESSAGE_PREFIX;
 
 @CrossOrigin(origins = {"http://localhost:3000", "*"})
 @RestController
 public class GeneralController {
+
+    public enum FormatAction {
+        FONT_FAMILY,
+        FONT_SIZE,
+        FONT_BOLD,
+        FONT_ITALIC,
+        FONT_UNDERLINE,
+        FONT_TYPEOFFSET,
+        FONT_STRIKE,
+        BORDER,
+        BORDER_BOTTOM,
+        BORDER_TOP,
+        BORDER_LEFT,
+        BORDER_RIGHT,
+        BORDER_NO,
+        BORDER_ALL,
+        BORDER_OUTSIDE,
+        BORDER_INSIDE,
+        BORDER_INSIDE_HORIZONTAL,
+        BORDER_INSIDE_VERTICAL,
+        FILL_COLOR,
+        BACK_COLOR,
+        FONT_COLOR,
+        VERTICAL_ALIGN_TOP,
+        VERTICAL_ALIGN_MIDDLE,
+        VERTICAL_ALIGN_BOTTOM,
+        HORIZONTAL_ALIGN_LEFT,
+        HORIZONTAL_ALIGN_CENTER,
+        HORIZONTAL_ALIGN_RIGHT,
+        WRAP_TEXT,
+        TEXT_INDENT_INCREASE,
+        TEXT_INDENT_DECREASE
+    }
+
     // General API
     @Autowired private SimpMessagingTemplate template;
 
@@ -222,6 +270,142 @@ public class GeneralController {
         return JsonWrapper.generateJson(null);
     }
 
+    @RequestMapping(value = "/api/changeFormat",
+            method = RequestMethod.PUT)
+    public HashMap<String, Object> changeFormat(@RequestHeader("auth-token") String authToken,
+                                                @RequestBody String json){
+        org.json.JSONObject obj = new org.json.JSONObject(json);
+        String sheetName = obj.getString("SheetName");
+        String bookId = obj.getString("bookId");
+
+        if (!Authorization.authorizeBook(bookId, authToken)){
+            JsonWrapper.generateError("Permission denied for accessing this book");
+        }
+        SBook book = BookBindings.getBookById(bookId);
+        SSheet ssheet = book.getSheetByName(sheetName);
+        FormatAction event = FormatAction.valueOf(obj.getString("event"));
+        org.json.JSONObject data = obj.getJSONObject("data");
+        Sheet sheet = new SheetImpl(new SimpleRef<SBook>(ssheet.getBook()), new SimpleRef<SSheet>(ssheet));
+        int row1 = obj.getInt("row1");
+        int col1 = obj.getInt("col1");
+        int row2 = obj.getInt("row2");
+        int col2 = obj.getInt("col2");
+        Range range = Ranges.range(sheet, row1, col1, row2, col2);
+        AreaRef selection = new AreaRef(range.getRow(),range.getColumn(),range.getLastRow(),range.getLastColumn());
+
+        doFormatChange(event, data, sheet, range, selection);
+        return JsonWrapper.generateJson(null);
+    }
+
+    private void doFormatChange(FormatAction event, org.json.JSONObject data, Sheet sheet, Range range, AreaRef selection) {
+        CellOperationUtil.CellStyleApplier applier = null;
+        CellOperationUtil.CellStyleApplier richApplier = null;
+        switch (event){
+            case FONT_FAMILY:
+                applier = CellOperationUtil.getFontNameApplier(data.getString("name"));
+                richApplier = CellOperationUtil.getRichTextFontNameApplier(data.getString("name"));
+                break;
+            case FONT_SIZE:
+                applier = CellOperationUtil.getFontHeightPointsApplier(data.getInt("size"));
+                richApplier = CellOperationUtil.getRichTextFontHeightPointsApplier(data.getInt("size"));
+                break;
+            case FONT_BOLD:
+                Font.Boldweight bw = range.getCellStyle().getFont().getBoldweight();
+                if (Font.Boldweight.BOLD.equals(bw)){
+                    bw = Font.Boldweight.NORMAL;
+                } else {
+                    bw = Font.Boldweight.BOLD;
+                }
+                applier = CellOperationUtil.getFontBoldweightApplier(bw);
+                richApplier = CellOperationUtil.getRichTextFontBoldweightApplier(bw);
+                break;
+            case FONT_ITALIC:
+                boolean italic = !range.getCellStyle().getFont().isItalic();
+                applier = CellOperationUtil.getFontItalicApplier(italic);
+                richApplier = CellOperationUtil.getRichTextFontItalicApplier(italic);
+                break;
+            case FONT_UNDERLINE:
+                Font.Underline underline = range.getCellStyle().getFont().getUnderline();
+                if (Font.Underline.NONE.equals(underline)){
+                    underline = Font.Underline.SINGLE;
+                } else {
+                    underline = Font.Underline.NONE;
+                }
+                applier = CellOperationUtil.getFontUnderlineApplier(underline);
+                richApplier = CellOperationUtil.getRichTextFontUnderlineApplier(underline);
+                break;
+            case FONT_TYPEOFFSET:
+                String offstr = data.getString("typeOffset");
+                Font.TypeOffset offset =
+                        "SUPER".equals(offstr) ? Font.TypeOffset.SUPER :
+                                "SUB".equals(offstr) ? Font.TypeOffset.SUB : Font.TypeOffset.NONE;
+                applier = CellOperationUtil.getFontTypeOffsetApplier(offset);
+                richApplier = CellOperationUtil.getRichTextFontTypeOffsetApplier(offset);
+                break;
+            case FONT_STRIKE:
+                boolean strikeout = !range.getCellStyle().getFont().isStrikeout();
+                applier = CellOperationUtil.getFontStrikeoutApplier(strikeout);
+                richApplier = CellOperationUtil.getRichTextFontStrikeoutApplier(strikeout);
+                break;
+            case BORDER:
+                break;
+            case BORDER_BOTTOM:
+                break;
+            case BORDER_TOP:
+                break;
+            case BORDER_LEFT:
+                break;
+            case BORDER_RIGHT:
+                break;
+            case BORDER_NO:
+                break;
+            case BORDER_ALL:
+                break;
+            case BORDER_OUTSIDE:
+                break;
+            case BORDER_INSIDE:
+                break;
+            case BORDER_INSIDE_HORIZONTAL:
+                break;
+            case BORDER_INSIDE_VERTICAL:
+                break;
+            case FILL_COLOR:
+                break;
+            case BACK_COLOR:
+                break;
+            case FONT_COLOR:
+                Color color = range.getCellStyleHelper().createColorFromHtmlColor(data.getString("color"));
+                applier = CellOperationUtil.getFontColorApplier(color);
+                richApplier = CellOperationUtil.getRichTextFontColorApplier(color);
+                break;
+            case VERTICAL_ALIGN_TOP:
+                break;
+            case VERTICAL_ALIGN_MIDDLE:
+                break;
+            case VERTICAL_ALIGN_BOTTOM:
+                break;
+            case HORIZONTAL_ALIGN_LEFT:
+                break;
+            case HORIZONTAL_ALIGN_CENTER:
+                break;
+            case HORIZONTAL_ALIGN_RIGHT:
+                break;
+            case WRAP_TEXT:
+                break;
+            case TEXT_INDENT_INCREASE:
+                break;
+            case TEXT_INDENT_DECREASE:
+                break;
+        }
+
+        List<UndoableAction> actions = new ArrayList<UndoableAction>();
+        actions.add(new FontStyleAction("", sheet, selection.getRow(), selection.getColumn(),
+                selection.getLastRow(), selection.getLastColumn(), applier));
+        ActionHelper.collectRichTextStyleActions(range, richApplier, actions);
+        AggregatedAction action = new AggregatedAction(Labels.getLabel("zss.undo.fontStyle"), actions.toArray(new UndoableAction[actions.size()]));
+        action.doAction();
+    }
+
     private Object getValue(org.json.JSONObject cell, String type){
         switch (type.toUpperCase()) {
             case "INTEGER":
@@ -251,4 +435,5 @@ public class GeneralController {
             return clearText;
         }
     }
+
 }

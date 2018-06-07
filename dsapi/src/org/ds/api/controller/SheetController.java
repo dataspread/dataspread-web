@@ -17,6 +17,7 @@ import org.zkoss.zss.range.impl.RangeImpl;
 
 import static org.ds.api.WebSocketConfig.MESSAGE_PREFIX;
 
+@CrossOrigin(origins = {"http://localhost:3000", "*"})
 @RestController
 public class SheetController {
     @Autowired

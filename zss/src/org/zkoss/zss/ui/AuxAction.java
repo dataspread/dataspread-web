@@ -193,7 +193,6 @@ public enum AuxAction {
 	public String toString() {
 		return action;
 	}
-	
 
 //	public static Collection<String> getLabelKeys() {
 //		UserAction[] enums = UserAction.class.getEnumConstants();
