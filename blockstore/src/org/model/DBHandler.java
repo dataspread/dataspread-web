@@ -126,11 +126,13 @@ public class DBHandler {
                     "PRIMARY KEY (linkid))";
             stmt.execute(createDataTableSheetLink);
 
+
             String createDataTable = "CREATE TABLE  IF NOT  EXISTS  tables (" +
                     "sharelink  TEXT NOT NULL," +
                     "tablename  TEXT NOT NULL," +
                     "userid  TEXT NOT NULL," +
-                    "PRIMARY KEY (sharelink))";
+                    "displayName  TEXT NOT NULL," +
+                    "role TEXT NOT NULL)";
             stmt.execute(createDataTable);
         } catch (SQLException e) {
             e.printStackTrace();

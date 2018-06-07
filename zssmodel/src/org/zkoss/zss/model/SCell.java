@@ -180,6 +180,8 @@ public interface SCell extends CellStyleHolder,FormulaContent{
 	 */
 	void deleteComment();
 
+	void translate(int rowShift, int colShift);
+
 	/**
 	 * @since 3.5.0
 	 */

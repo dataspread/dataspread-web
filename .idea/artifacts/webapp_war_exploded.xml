@@ -12,6 +12,7 @@
           </element>
           <element id="library" level="project" name="Maven: com.github.davidmoten:guava-mini:0.1" />
           <element id="library" level="project" name="Maven: io.reactivex:rxjava:1.1.4" />
+          <element id="library" level="project" name="Maven: com.vividsolutions:jts-core:1.14.0" />
           <element id="library" level="project" name="Maven: com.github.davidmoten:rxjava-extras:0.7" />
           <element id="library" level="project" name="Maven: com.github.davidmoten:flatbuffers-java:1.3.0.1" />
           <element id="library" level="project" name="Maven: com.esotericsoftware:kryo:4.0.0" />
