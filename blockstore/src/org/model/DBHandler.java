@@ -126,19 +126,6 @@ public class DBHandler {
                     "PRIMARY KEY (linkid))";
             stmt.execute(createDataTableSheetLink);
 
-            String createUserTables = "CREATE TABLE  IF NOT  EXISTS  user_tables (" +
-                    "userId  TEXT NOT NULL," +
-
-                    "tableName  TEXT NOT NULL," +
-                    "row1  INTEGER NOT NULL," +
-                    "col1  INTEGER NOT NULL," +
-                    "row2  INTEGER NOT NULL," +
-                    "col2  INTEGER NOT NULL," +
-                    "tablename  TEXT NOT NULL," +
-                    "filter  TEXT NOT NULL," +
-                    "sort TEXT NOT NULL," +
-                    "PRIMARY KEY (linkid))";
-            stmt.execute(createDataTableSheetLink);
 
             String createDataTable = "CREATE TABLE  IF NOT  EXISTS  tables (" +
                     "sharelink  TEXT NOT NULL," +

@@ -54,6 +54,7 @@ public class TableController {
     static final String COLUMN_NAME          = "columnName";
     static final String COLUMN               = "column";
     static final String VALUES               = "values";
+    final static String        TABLES         = "tables";
 
 
     @RequestMapping(value = "/api/createTable",
@@ -99,7 +100,7 @@ public class TableController {
 
     @RequestMapping(value = "/api/linkTable",
             method = RequestMethod.POST)
-    public JSONObject linkTable(@RequestHeader("auth-token") String userId,@RequestBody String value){
+    public JSONObject linkTable(@RequestBody String value){
         JSONParser paser = new JSONParser();
         JSONObject ret = new JSONObject();
         try {
@@ -115,7 +116,7 @@ public class TableController {
             TableMonitor tableModel = TableMonitor.getMonitor();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
-                String[] links = tableModel.linkTable(context, range, userId, table, book, sheet);
+                String[] links = tableModel.linkTable(context, range, table, book, sheet);
                 context.getConnection().commit();
                 ret.put(LINK_TABLE_ID, links[0]);
                 ret.put(LINK, links[1]);
@@ -139,12 +140,12 @@ public class TableController {
         JSONParser paser = new JSONParser();
         try {
             JSONObject dict = (JSONObject)paser.parse(value);
-            String tableName = (String)dict.get(TABLE_NAME);
+            String displayName = (String)dict.get(DISPLAY_NAME);
             String linkedTableId = (String)dict.get(LINK_TABLE_ID);
             TableMonitor tableModel = TableMonitor.getMonitor();
             try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
                 DBContext context = new DBContext(connection);
-                tableModel.referenceTable(context, tableName, linkedTableId);
+                tableModel.referenceTable(context, userId, displayName, linkedTableId);
                 context.getConnection().commit();
             }
             catch(java.lang.Exception e){
@@ -156,6 +157,28 @@ public class TableController {
         }
 
         return returnTrue(null);
+    }
+
+    @RequestMapping(value = "/api/getTables",
+            method = RequestMethod.POST)
+    public JSONObject getTables(@RequestHeader("auth-token") String userId){
+        JSONObject ret = new JSONObject();
+        try {
+            TableMonitor tableModel = TableMonitor.getMonitor();
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()){
+                DBContext context = new DBContext(connection);
+                ret.put(TABLES,tableModel.getTables(context, userId));
+                context.getConnection().commit();
+            }
+            catch(java.lang.Exception e){
+                return returnFalse(e);
+            }
+        }
+        catch (java.lang.Exception e){
+            return returnFalse(e);
+        }
+
+        return returnTrue(ret);
     }
 
     @RequestMapping(value = "/api/unlinkTable",method = RequestMethod.POST)

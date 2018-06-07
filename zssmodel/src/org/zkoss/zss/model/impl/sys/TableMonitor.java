@@ -5,6 +5,7 @@ import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.json.JSONArray;
+import org.zkoss.json.JSONObject;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
@@ -30,6 +31,9 @@ public class TableMonitor {
     private final static AtomicInteger _tableCount    = new AtomicInteger();
     final static String        TABLES         = "tables";
     final static String        TABLESHEETLINK = "sheet_table_link";
+    final static String        DISPLAY_NAME = "displayName";
+    static final String TABLE_NAME           = "tableName";
+    static final String LINK                 = "link";
     HashMap<String, TableSheetModel> _models;
 
     private static TableMonitor _tableMonitor = null;
@@ -116,14 +120,13 @@ public class TableMonitor {
 
 
 
-    public String[] linkTable(DBContext context, CellRegion range, String userId, String metaTableName,
+    public String[] linkTable(DBContext context, CellRegion range, String tableName,
                               String bookId, String sheetName) throws Exception {
         // todo : sync relationship to mem
-        String tableName = formatTableName(userId, metaTableName);
 
         String[] ret = new String[]{insertToTableSheetLink(context, range, bookId, sheetName, tableName),
 
-                getSharedLink(context,userId,metaTableName)};
+                getSharedLink(context,tableName)};
 
         initializePosmappingForLinkedTable(context, ret[0]);
 
@@ -138,31 +141,23 @@ public class TableMonitor {
         return ret;
     }
 
-    public void referenceTable(DBContext context, String tableName, String linkedTableId) {
-//        AutoRollbackConnection connection = context.getConnection();
-//        StringBuilder sharedLinkBuilder = new StringBuilder().append((char)('a'+_random.nextInt(26)))
-//                .append(Long.toString(System.currentTimeMillis()+_tableCount.getAndIncrement(), Character.MAX_RADIX));
-//        for (int i = 0; i < 10; i++){
-//            sharedLinkBuilder.append((char)('A'+_random.nextInt(26)));
-//        }
-//        String sharedLink =  sharedLinkBuilder.toString();
-//        String appendRecord = (new StringBuilder())
-//                .append("INSERT INTO ")
-//                .append(TABLES)
-//                .append(" (sharelink, tablename, userid, displayName, role) ")
-//                .append(" VALUES (?, ?, ?, ?, ?)")
-//                .toString();
-//
-//
-//        try (PreparedStatement stmt = connection.prepareStatement(appendRecord)) {
-//            stmt.setString(1,sharedLink);
-//            stmt.setString(2,formatTableName(userId,metaTableName));
-//            stmt.setString(3, userId);
-//            stmt.setString(4, metaTableName);
-//            stmt.setString(5, "creater");
-//
-//        }
-//        return sharedLink;
+    public void referenceTable(DBContext context, String userId, String displayTableName, String sharedLink) throws Exception {
+        AutoRollbackConnection connection = context.getConnection();
+        String appendRecord = (new StringBuilder())
+                .append("INSERT INTO ")
+                .append(TABLES)
+                .append(" (sharelink, tablename, userid, displayName, role) ")
+                .append(" VALUES (?, ?, ?, ?, ?)")
+                .toString();
+
+        try (PreparedStatement stmt = connection.prepareStatement(appendRecord)) {
+            stmt.setString(1,sharedLink);
+            stmt.setString(2, getTableNameFromSharedLink(context,sharedLink));
+            stmt.setString(3, userId);
+            stmt.setString(4, displayTableName);
+            stmt.setString(5, "collaborator");
+
+        }
     }
 
     public void unLinkTable(DBContext context,String tableSheetLink) throws Exception {
@@ -190,9 +185,12 @@ public class TableMonitor {
         clearCache(sheet);
     }
 
-    public void dropTable(DBContext context, String userId, String metaTableName) throws Exception {
-        String tableName = formatTableName(userId, metaTableName);
+    public void dropTable(DBContext context, String userId, String tableName) throws Exception {
         AutoRollbackConnection connection = context.getConnection();
+        String[] tmp = tableName.split("_",3);
+        if (!userId.equals(tmp[1])){
+            throw new Exception("Only creater can drop the table.");
+        }
 
         String selectLinkid = (new StringBuilder())
                 .append("SELECT linkid")
@@ -211,11 +209,10 @@ public class TableMonitor {
         String deleteFromTables = (new StringBuilder())
                 .append("DELETE FROM ")
                 .append(TABLES)
-                .append(" WHERE tablename = ? and userid = ?")
+                .append(" WHERE tablename = ?")
                 .toString();
         try(PreparedStatement stmt = connection.prepareStatement(deleteFromTables)){
-            stmt.setString(1, metaTableName);
-            stmt.setString(2, userId);
+            stmt.setString(1, tableName);
             stmt.execute();
         }
 
@@ -406,8 +403,7 @@ public class TableMonitor {
             while(rs.next()){
                 String linkId = rs.getString("linkid");
                 String tableName = rs.getString("tablename");
-                String[] tmp = tableName.split("_",3);
-                String sharedLink = getSharedLink(context,tmp[1],tmp[2]);
+                String sharedLink = getSharedLink(context, tableName);
                 String filter = rs.getString("filter");
                 String order = rs.getString("sort");
 
@@ -439,8 +435,7 @@ public class TableMonitor {
             while(rs.next()){
                 String linkId = rs.getString("linkid");
                 String tableName = rs.getString("tablename");
-                String[] tmp = tableName.split("_",3);
-                String sharedLink = getSharedLink(context,tmp[1],tmp[2]);
+                String sharedLink = getSharedLink(context,tableName);
                 String filter = rs.getString("filter");
                 String order = rs.getString("sort");
 
@@ -500,6 +495,29 @@ public class TableMonitor {
         clearCache(model.getSheet(context));
     }
 
+    public JSONArray getTables(DBContext context, String userId) throws Exception {
+        AutoRollbackConnection connection = context.getConnection();
+        JSONArray ret = new JSONArray();
+        String select = (new StringBuilder())
+                .append("SELECT *")
+                .append(" FROM ")
+                .append(TABLES)
+                .append(" WHERE userid = ?")
+                .toString();
+        try (PreparedStatement stmt = connection.prepareStatement(select)) {
+            stmt.setString(1, userId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                JSONObject table = new JSONObject();
+                ret.add(table);
+                table.put(DISPLAY_NAME, rs.getString("displayname"));
+                table.put(TABLE_NAME, rs.getString("tablename"));
+                table.put(LINK, rs.getString("sharelink"));
+            }
+        }
+        return ret;
+    }
+
     public static CellRegion getRangeFromQueryResult(ResultSet rs) throws SQLException {
         Integer [] rowcol = {
                 rs.getInt("row1"),
@@ -527,7 +545,7 @@ public class TableMonitor {
         return ret;
     }
 
-    private String insertToTables(DBContext context, String userId, String metaTableName) throws SQLException {
+    private String insertToTables(DBContext context, String userId, String displayTableName) throws SQLException {
         // todo: check overlaping point
         AutoRollbackConnection connection = context.getConnection();
         StringBuilder sharedLinkBuilder = new StringBuilder().append((char)('a'+_random.nextInt(26)))
@@ -546,22 +564,23 @@ public class TableMonitor {
 
         try (PreparedStatement stmt = connection.prepareStatement(appendRecord)) {
             stmt.setString(1,sharedLink);
-            stmt.setString(2,formatTableName(userId,metaTableName));
+            stmt.setString(2,formatTableName(userId,displayTableName));
             stmt.setString(3, userId);
-            stmt.setString(4, metaTableName);
+            stmt.setString(4, displayTableName);
             stmt.setString(5, "creater");
 
         }
         return sharedLink;
     }
 
-    private String getSharedLink(DBContext context, String userId, String metaTableName) throws SQLException {
+    private String getSharedLink(DBContext context, String tableName) throws SQLException {
         AutoRollbackConnection connection = context.getConnection();
         String select = (new StringBuilder())
                 .append("SELECT sharelink")
                 .append(" FROM ")
                 .append(TABLES)
-                .append(" WHERE tablename = \'" + formatTableName(userId,metaTableName) + "\'")
+                .append(" WHERE tablename = \'" + tableName + "\'")
+                .append(" LIMIT 1")
                 .toString();
         String sharedLink = "";
         try (Statement stmt = connection.createStatement()) {
@@ -572,22 +591,24 @@ public class TableMonitor {
         }
         return sharedLink;
     }
-    private String getTable(DBContext context, String sharedLink) throws SQLException {
+    private String getTableNameFromSharedLink(DBContext context, String sharedLink) throws Exception {
         AutoRollbackConnection connection = context.getConnection();
         String select = (new StringBuilder())
-                .append("SELECT sharelink")
+                .append("SELECT tablename")
                 .append(" FROM ")
                 .append(TABLES)
-                .append(" WHERE userid = \'" + userId + "\' AND tablename = \'" + metaTableName + "\'")
+                .append(" WHERE sharelink = ?")
                 .toString();
-        String sharedLink = "";
-        try (Statement stmt = connection.createStatement()) {
-            ResultSet rs = stmt.executeQuery(select);
+        try (PreparedStatement stmt = connection.prepareStatement(select)) {
+            stmt.setString(1, sharedLink);
+            ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                sharedLink = rs.getString("sharelink");
+                return rs.getString("tablename");
             }
+            else
+                throw new Exception("Invalid shared link.");
+
         }
-        return sharedLink;
     }
 
     private String insertToTableSheetLink(DBContext context, CellRegion range, String bookId,
