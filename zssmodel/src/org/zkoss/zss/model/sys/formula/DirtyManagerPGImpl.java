@@ -97,7 +97,7 @@ public class DirtyManagerPGImpl extends DirtyManager {
 
     @Override
     public DirtyRecord getDirtyRegionFromQueue() {
-        return getDirtyRegionFromQueue(1000);
+        return getDirtyRegionFromQueue();
     }
 
     @Override

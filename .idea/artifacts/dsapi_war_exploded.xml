@@ -1,25 +1,34 @@
 <component name="ArtifactManager">
   <artifact type="exploded-war" name="dsapi:war exploded">
-    <output-path>$PROJECT_DIR$/dsapi/target/DataSpreadApi-0.1</output-path>
+    <output-path>$PROJECT_DIR$/dsapi/target/dsapi-0.1</output-path>
     <root id="root">
       <element id="directory" name="WEB-INF">
         <element id="directory" name="classes">
           <element id="module-output" name="dsapi" />
         </element>
         <element id="directory" name="lib">
+          <element id="library" level="project" name="Maven: org.springframework.boot:spring-boot-starter-websocket:2.0.0.RELEASE" />
+          <element id="library" level="project" name="Maven: org.springframework.boot:spring-boot-starter:2.0.0.RELEASE" />
+          <element id="library" level="project" name="Maven: org.springframework.boot:spring-boot:2.0.0.RELEASE" />
+          <element id="library" level="project" name="Maven: org.springframework.boot:spring-boot-autoconfigure:2.0.0.RELEASE" />
+          <element id="library" level="project" name="Maven: org.springframework.boot:spring-boot-starter-logging:2.0.0.RELEASE" />
+          <element id="library" level="project" name="Maven: ch.qos.logback:logback-classic:1.2.3" />
+          <element id="library" level="project" name="Maven: ch.qos.logback:logback-core:1.2.3" />
+          <element id="library" level="project" name="Maven: org.apache.logging.log4j:log4j-to-slf4j:2.10.0" />
+          <element id="library" level="project" name="Maven: org.apache.logging.log4j:log4j-api:2.10.0" />
+          <element id="library" level="project" name="Maven: org.slf4j:jul-to-slf4j:1.7.25" />
+          <element id="library" level="project" name="Maven: org.yaml:snakeyaml:1.19" />
+          <element id="library" level="project" name="Maven: org.springframework:spring-messaging:5.0.4.RELEASE" />
+          <element id="library" level="project" name="Maven: org.springframework:spring-websocket:5.0.4.RELEASE" />
+          <element id="library" level="project" name="Maven: org.springframework:spring-context:5.0.4.RELEASE" />
           <element id="library" level="project" name="Maven: org.springframework:spring-core:5.0.4.RELEASE" />
           <element id="library" level="project" name="Maven: org.springframework:spring-jcl:5.0.4.RELEASE" />
           <element id="library" level="project" name="Maven: org.springframework:spring-web:5.0.4.RELEASE" />
           <element id="library" level="project" name="Maven: org.springframework:spring-beans:5.0.4.RELEASE" />
           <element id="library" level="project" name="Maven: org.springframework.boot:spring-boot-starter-web:2.0.0.RELEASE" />
-          <element id="library" level="project" name="Maven: org.springframework.boot:spring-boot-starter:2.0.0.RELEASE" />
-          <element id="library" level="project" name="Maven: org.springframework.boot:spring-boot:2.0.0.RELEASE" />
-          <element id="library" level="project" name="Maven: org.springframework.boot:spring-boot-autoconfigure:2.0.0.RELEASE" />
-          <element id="library" level="project" name="Maven: org.yaml:snakeyaml:1.19" />
           <element id="library" level="project" name="Maven: org.springframework.boot:spring-boot-starter-json:2.0.0.RELEASE" />
           <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.9.4" />
           <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.9.0" />
-          <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-core:2.9.4" />
           <element id="library" level="project" name="Maven: com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.4" />
           <element id="library" level="project" name="Maven: com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.4" />
           <element id="library" level="project" name="Maven: com.fasterxml.jackson.module:jackson-module-parameter-names:2.9.4" />
@@ -29,7 +38,6 @@
           <element id="library" level="project" name="Maven: com.fasterxml:classmate:1.3.4" />
           <element id="library" level="project" name="Maven: org.springframework:spring-webmvc:5.0.4.RELEASE" />
           <element id="library" level="project" name="Maven: org.springframework:spring-aop:5.0.4.RELEASE" />
-          <element id="library" level="project" name="Maven: org.springframework:spring-context:5.0.4.RELEASE" />
           <element id="library" level="project" name="Maven: org.springframework:spring-expression:5.0.4.RELEASE" />
           <element id="library" level="project" name="Maven: org.springframework.boot:spring-boot-starter-tomcat:2.0.0.RELEASE" />
           <element id="library" level="project" name="Maven: javax.annotation:javax.annotation-api:1.3.2" />
@@ -45,6 +53,7 @@
           </element>
           <element id="library" level="project" name="Maven: com.github.davidmoten:guava-mini:0.1" />
           <element id="library" level="project" name="Maven: io.reactivex:rxjava:1.3.6" />
+          <element id="library" level="project" name="Maven: com.vividsolutions:jts-core:1.14.0" />
           <element id="library" level="project" name="Maven: com.github.davidmoten:rxjava-extras:0.7" />
           <element id="library" level="project" name="Maven: com.github.davidmoten:flatbuffers-java:1.3.0.1" />
           <element id="archive" name="blockstore-1.0.0.jar">
@@ -62,7 +71,6 @@
           <element id="library" level="project" name="Maven: commons-fileupload:commons-fileupload:1.2.2" />
           <element id="library" level="project" name="Maven: org.zkoss.common:zel:7.0.3" />
           <element id="library" level="project" name="Maven: org.beanshell:bsh:2.0b4" />
-          <element id="library" level="project" name="Maven: org.slf4j:slf4j-api:1.7.25" />
           <element id="library" level="project" name="Maven: org.slf4j:slf4j-jdk14:1.7.25" />
           <element id="library" level="project" name="Maven: commons-logging:commons-logging:1.1.1" />
           <element id="library" level="project" name="Maven: log4j:log4j:1.2.13" />
@@ -71,8 +79,6 @@
           <element id="library" level="project" name="Maven: org.apache.xmlbeans:xmlbeans:2.3.0" />
           <element id="library" level="project" name="Maven: org.apache.poi:ooxml-schemas:1.1" />
           <element id="library" level="project" name="Maven: commons-codec:commons-codec:1.11" />
-          <element id="library" level="project" name="Maven: junit:junit:4.12" />
-          <element id="library" level="project" name="Maven: org.hamcrest:hamcrest-core:1.3" />
           <element id="library" level="project" name="Maven: org.zkoss.zk:zk:7.0.3" />
           <element id="library" level="project" name="Maven: org.zkoss.common:zweb:7.0.3" />
           <element id="library" level="project" name="Maven: org.jsoup:jsoup:1.7.3" />
@@ -85,10 +91,28 @@
           <element id="library" level="project" name="Maven: org.apache.tomcat:tomcat-dbcp:8.0.33" />
           <element id="library" level="project" name="Maven: org.apache.tomcat:tomcat-jdbc:8.5.11" />
           <element id="library" level="project" name="Maven: org.apache.tomcat:tomcat-juli:8.5.11" />
+          <element id="library" level="project" name="Maven: org.json:json:20180130" />
+          <element id="archive" name="zss-3.8.1.jar">
+            <element id="module-output" name="zss" />
+          </element>
+          <element id="library" level="project" name="Maven: junit:junit:4.12" />
+          <element id="library" level="project" name="Maven: org.zkoss.zk:zul:7.0.3" />
+          <element id="library" level="project" name="Maven: org.apache.commons:commons-math:2.2" />
+          <element id="library" level="project" name="Maven: commons-io:commons-io:1.3.2" />
+          <element id="library" level="project" name="Maven: org.webjars:webjars-locator-core:0.35" />
+          <element id="library" level="project" name="Maven: org.slf4j:slf4j-api:1.7.25" />
+          <element id="library" level="project" name="Maven: org.apache.commons:commons-lang3:3.7" />
+          <element id="library" level="project" name="Maven: org.apache.commons:commons-compress:1.9" />
+          <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-core:2.9.4" />
+          <element id="library" level="project" name="Maven: org.webjars:sockjs-client:1.0.2" />
+          <element id="library" level="project" name="Maven: org.webjars:stomp-websocket:2.3.3" />
+          <element id="library" level="project" name="Maven: org.webjars:bootstrap:3.3.7" />
+          <element id="library" level="project" name="Maven: org.webjars:jquery:3.1.0" />
+          <element id="library" level="project" name="Maven: org.hamcrest:hamcrest-core:1.3" />
         </element>
       </element>
       <element id="directory" name="META-INF">
-        <element id="file-copy" path="$PROJECT_DIR$/dsapi/target/DataSpreadApi-0.1/META-INF/MANIFEST.MF" />
+        <element id="file-copy" path="$PROJECT_DIR$/dsapi/target/dsapi-0.1/META-INF/MANIFEST.MF" />
       </element>
       <element id="javaee-facet-resources" facet="dsapi/web/Web" />
     </root>

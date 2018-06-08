@@ -74,11 +74,6 @@
             <version>4.0.0</version>
         </dependency>
         <dependency>
-            <groupId>io.github.dataspread</groupId>
-            <artifactId>blockstore</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
             <groupId>com.vividsolutions</groupId>
             <artifactId>jts-core</artifactId>
             <version>1.14.0</version>
