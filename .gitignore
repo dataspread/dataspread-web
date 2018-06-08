@@ -65,8 +65,8 @@ dsapi/src/ui/node_modules/
 # The rest is auto generated according to
 # https://stackoverflow.com/a/15862643/5426033 with
 # git status -s | grep -e "^\?\?" | cut -c 4- >> .gitignore
-# .idea/compiler.xml
-# .idea/encodings.xml
-# .idea/misc.xml
-# .idea/modules.xml
-# .idea/vcs.xml
+.idea/compiler.xml
+.idea/encodings.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/vcs.xml
