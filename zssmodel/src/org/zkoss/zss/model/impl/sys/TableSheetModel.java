@@ -1,10 +1,10 @@
 package org.zkoss.zss.model.impl.sys;
 
-import javafx.util.Pair;
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.zkoss.json.JSONArray;
 import org.zkoss.json.JSONObject;
+import org.zkoss.util.Pair;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SSemantics;
 import org.zkoss.zss.model.SSheet;
@@ -18,7 +18,6 @@ import java.util.stream.IntStream;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
-import static java.lang.Math.round;
 import static org.zkoss.zss.model.impl.sys.TableMonitor.TABLESHEETLINK;
 import static org.zkoss.zss.model.impl.sys.TableMonitor.getRangeFromQueryResult;
 import static org.zkoss.zss.model.impl.sys.TableMonitor.setStmtValue;
@@ -205,10 +204,10 @@ public class TableSheetModel {
         for (Pair<String, Integer> col:tableColumns){
             JSONObject attribute = new JSONObject();
             attributes.add(attribute);
-            attribute.put(NAME, col.getKey());
-            attribute.put(TYPE, typeIdToString(col.getValue()));
-            if (orderMap.containsKey(col.getKey())){
-                attribute.put(ORDER, orderMap.get(col.getKey()));
+            attribute.put(NAME, col.getX());
+            attribute.put(TYPE, typeIdToString(col.getY()));
+            if (orderMap.containsKey(col.getX())){
+                attribute.put(ORDER, orderMap.get(col.getX()));
             }
             else {
                 attribute.put(ORDER,null);
@@ -326,7 +325,7 @@ public class TableSheetModel {
         String update = "UPDATE " +
                 tableName +
                 " SET " +
-                IntStream.range(0, schema.size()).mapToObj(e -> schema.get(e).getKey() + " = ?")
+                IntStream.range(0, schema.size()).mapToObj(e -> schema.get(e).getX() + " = ?")
                         .collect(Collectors.joining(",")) +
                 " WHERE oid = ?";
 
@@ -336,7 +335,7 @@ public class TableSheetModel {
                 int oid = rowIds.get(i);
                 JSONArray currentRow  = (JSONArray)(values.get(i));
                 for (int j = 0; j < updateRegion.getColumnCount(); j++) {
-                    setStmtValue(stmt,j,currentRow.get(j).toString(),schema.get(j).getValue());
+                    setStmtValue(stmt,j,currentRow.get(j).toString(),schema.get(j).getY());
                 }
                 stmt.setInt(updateRegion.getColumnCount() + 1, oid);
                 stmt.execute();

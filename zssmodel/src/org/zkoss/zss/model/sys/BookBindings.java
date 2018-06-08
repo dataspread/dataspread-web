@@ -47,7 +47,7 @@ public class BookBindings {
         return _bindings.computeIfAbsent(bookName, e->
                 {
                     SBook book = new BookImpl(e);
-                    if (!book.setNameAndLoad(e))
+                    if (!book.setNameAndLoad(e, book.getId()))
                         return null;
                     else
                         return book;

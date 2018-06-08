@@ -1,11 +1,12 @@
 package org.zkoss.zss.model.impl.sys;
 
-import javafx.util.Pair;
+
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.json.JSONArray;
 import org.zkoss.json.JSONObject;
+import org.zkoss.util.Pair;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
@@ -234,7 +235,7 @@ public class TableMonitor {
         String update = "INSERT INTO " +
                 tableName +
                 " (" +
-                IntStream.range(0, columnCount).mapToObj(e -> schema.get(e).getKey()).collect(Collectors.joining(",")) +
+                IntStream.range(0, columnCount).mapToObj(e -> schema.get(e).getX()).collect(Collectors.joining(",")) +
                 ") VALUES (" +
                 IntStream.range(0, columnCount).mapToObj(e -> "?").collect(Collectors.joining(",")) +
                 ") RETURNING oid;";
@@ -242,7 +243,7 @@ public class TableMonitor {
         AutoRollbackConnection connection = context.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(update)) {
             for (int j = 0; j < columnCount; j++)
-                setStmtValue(stmt,j,values.get(j).toString(),schema.get(j).getValue());
+                setStmtValue(stmt,j,values.get(j).toString(),schema.get(j).getY());
             ResultSet resultSet = stmt.executeQuery();
             if (resultSet.next()) {
                 int oid = resultSet.getInt(1);
@@ -269,8 +270,8 @@ public class TableMonitor {
 
     public void changeTableColumnType(DBContext context, String linkTableId, int column, String columnType) throws Exception {
         TableSheetModel model = _models.get(linkTableId);
-        ArrayList<Pair<String,Integer>> schema = model.getSchema(context);
-        String oldColumnName = schema.get(column).getKey();
+        ArrayList<Pair<String, Integer>> schema = model.getSchema(context);
+        String oldColumnName = schema.get(column).getX();
         String tableName = model.getTableName(context);
         String update = "ALTER TABLE "+ tableName +" ALTER COLUMN " + oldColumnName +" TYPE " + columnType;
         AutoRollbackConnection connection = context.getConnection();
@@ -283,7 +284,7 @@ public class TableMonitor {
     public void changeTableColumnName(DBContext context, String linkTableId, int column, String columnName) throws Exception {
         TableSheetModel model = _models.get(linkTableId);
         ArrayList<Pair<String,Integer>> schema = model.getSchema(context);
-        String oldColumnName = schema.get(column).getKey();
+        String oldColumnName = schema.get(column).getX();
         String tableName = model.getTableName(context);
         String update = "ALTER TABLE "+ tableName + " RENAME COLUMN " + oldColumnName + " TO " + columnName;
         AutoRollbackConnection connection = context.getConnection();
