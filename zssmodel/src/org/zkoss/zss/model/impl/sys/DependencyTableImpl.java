@@ -1,20 +1,13 @@
 package org.zkoss.zss.model.impl.sys;
 
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Queue;
-import java.util.Set;
-
 import org.zkoss.util.logging.Log;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SBookSeries;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.dependency.Ref.RefType;
+
+import java.util.*;
+import java.util.Map.Entry;
 
 /* DependencyTableImpl.java
  Purpose:
@@ -66,10 +59,21 @@ public class DependencyTableImpl extends DependencyTableAdv {
 		_map.remove(dependant);
 	}
 
+    @Override
+    public long getLastLookupTime() {
+        return 0;
+    }
+
 	@Override
 	public Set<Ref> getDependents(Ref precedent) {
 		return getDependents(precedent,_map);
 	}
+
+	@Override
+	public Set<Ref> getActualDependents(Ref precedent) {
+		throw new RuntimeException("unsuported");
+	}
+
 
 	private Set<Ref> getDependents(Ref precedent,Map<Ref, Set<Ref>> base) {
 		// ZSS-818

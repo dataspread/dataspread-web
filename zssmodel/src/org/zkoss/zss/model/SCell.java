@@ -20,7 +20,9 @@ import org.model.AutoRollbackConnection;
 import org.zkoss.poi.ss.usermodel.CellStyle;
 import org.zkoss.zss.model.SHyperlink.HyperlinkType;
 import org.zkoss.zss.model.SSemantics.Semantics;
+import org.zkoss.zss.model.sys.dependency.Ref;
 
+import java.util.Collection;
 import java.util.Date;
 /**
  * Represent a cell of a sheet in a Spreadsheet. A cell contains value and style ({@link CellStyle}), and its type is one of {@link CellType}.
@@ -180,9 +182,17 @@ public interface SCell extends CellStyleHolder,FormulaContent{
 	 */
 	void deleteComment();
 
-	void translate(int rowShift, int colShift);
+    CellRegion getCellRegion();
 
-	/**
+	Ref getRef();
+
+	Collection<Ref> getReferredCells();
+
+    int getComputeCost();
+
+    void translate(int rowShift, int colShift);
+
+    /**
 	 * @since 3.5.0
 	 */
 	enum CellType {

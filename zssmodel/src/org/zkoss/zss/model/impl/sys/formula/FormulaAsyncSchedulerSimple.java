@@ -6,6 +6,7 @@ import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.CellImpl;
 import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.formula.DirtyManager;
+import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
 import java.util.Collection;
@@ -17,14 +18,26 @@ import java.util.logging.Logger;
 public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
     private static final Logger logger = Logger.getLogger(FormulaAsyncSchedulerSimple.class.getName());
     private boolean keepRunning = true;
+    private boolean emptyQueue = false;
 
     @Override
     public void run() {
         while (keepRunning) {
             DirtyManager.DirtyRecord dirtyRecord=DirtyManager.dirtyManagerInstance.getDirtyRegionFromQueue();
+             if (DirtyManager.dirtyManagerInstance.isEmpty()) {
+                synchronized (this) {
+                    emptyQueue = true;
+                    notifyAll();
+                }
+                continue;
+            }
+            else {
+                 emptyQueue = false;
+             }
             if (dirtyRecord==null)
                 continue;
-            //logger.info("Processing " + dirtyRecord.region );
+
+           // logger.info("Processing " + dirtyRecord.region );
             SSheet sheet=BookBindings.getSheetByRef(dirtyRecord.region);
 
             //TODO - Change to streaming.
@@ -41,12 +54,26 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
                 if (sCell.getType()== SCell.CellType.FORMULA) {
                     // A sync call should synchronously compute the cells value.
                     ((CellImpl) sCell).getValue(true,true);
+                    // Push individual cells to the UI
+                    update(sheet, sCell.getCellRegion());
+                    DirtyManagerLog.instance.markClean(sCell.getCellRegion());
                 }
             }
             DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,
                     dirtyRecord.trxId);
-            update(sheet,new CellRegion(dirtyRecord.region));
+            //This is to update the entire region
+            //update(sheet, new CellRegion(dirtyRecord.region));
             //logger.info("Done computing " + dirtyRecord.region );
+        }
+    }
+
+    @Override
+    public synchronized void waitForCompletion() {
+        while(!emptyQueue) {
+            try {
+                this.wait();
+            } catch (InterruptedException e) {
+            }
         }
     }
 

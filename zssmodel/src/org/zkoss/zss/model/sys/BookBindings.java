@@ -36,8 +36,21 @@ public class BookBindings {
                     if (!book.setNameAndLoad(e, book.getId())) {
                         book.createSheet("Sheet1");
                         book.createSheet("Sheet2");
+                        book.checkDBSchema();
                     }
                     return book;
+                }
+        );
+    }
+
+    static public SBook getBookByNameDontLoad(String bookName) {
+        return _bindings.computeIfAbsent(bookName, e->
+                {
+                    SBook book = new BookImpl(e);
+                    if (!book.setNameAndLoad(e))
+                        return null;
+                    else
+                        return book;
                 }
         );
     }

@@ -25,4 +25,8 @@
 		<value>false</value>
 	</library-property>
 
+	<library-property>
+		<name>ds.model.simple</name>
+        <value>false</value>
+	</library-property>
 </zk>

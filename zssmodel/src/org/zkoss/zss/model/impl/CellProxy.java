@@ -22,6 +22,7 @@ import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.formula.FormulaExpression;
 
+import java.util.Collection;
 import java.util.Locale;
 /**
  * 
@@ -299,6 +300,16 @@ class CellProxy extends AbstractCellAdv {
 		return new RefImpl(this);
 	}
 
+	@Override
+	public Collection<Ref> getReferredCells() {
+		return null;
+	}
+
+	@Override
+	public int getComputeCost() {
+		return 0;
+	}
+
 	//ZSS-688
 	//@since 3.6.0
     /* TODO: Remove the idea of clone cell. For sheet cloning use data modle cloning */
@@ -324,6 +335,11 @@ class CellProxy extends AbstractCellAdv {
 		if (_proxy != null) {
 			_proxy.deleteComment();
 		}
+	}
+
+	@Override
+	public CellRegion getCellRegion() {
+		return null;
 	}
 
 	@Override

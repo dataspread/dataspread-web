@@ -16,10 +16,10 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.impl;
 
-import org.model.*;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.model.AutoRollbackConnection;
+import org.model.BlockStore;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.lang.Library;
@@ -54,8 +54,8 @@ public class SheetImpl extends AbstractSheetAdv {
 	private static final long serialVersionUID = 1L;
 	private static final Log _logger = Log.lookup(SheetImpl.class);
     //Mangesh
-    static final private int PreFetchRows = Library.getIntProperty("PreFetchRows", 200);
-    static final private int PreFetchColumns = Library.getIntProperty("PreFetchColumns", 30);
+    static private int PreFetchRows = Library.getIntProperty("PreFetchRows", 200);
+    static private int PreFetchColumns = Library.getIntProperty("PreFetchColumns", 30);
     /**
      * internal use only for developing/test state, should remove when stable
      */
@@ -64,6 +64,8 @@ public class SheetImpl extends AbstractSheetAdv {
     /* Set this to true to enable syncronous computation */
     public static boolean syncComputation =
 			"true".equalsIgnoreCase(Library.getProperty("ds.model.syncComputation","false"));
+	public static boolean simpleModel =
+			"true".equalsIgnoreCase(Library.getProperty("ds.model.simple","false"));
 
     static {
         if ("true".equalsIgnoreCase(Library.getProperty("org.zkoss.zss.model.internal.CollumnArrayCheck"))) {
@@ -111,6 +113,12 @@ public class SheetImpl extends AbstractSheetAdv {
 	private int _defaultColumnWidth = 64; //in pixel
 	private int _defaultRowHeight = 20;//in pixel
 	private AtomicInteger trxId;
+
+	static public void disablePrefetch()
+	{
+		PreFetchRows = 0;
+		PreFetchColumns = 0;
+	}
 
 	public SheetImpl(AbstractBookAdv book,String id){
 		// Start
@@ -357,7 +365,10 @@ public class SheetImpl extends AbstractSheetAdv {
 	public void setDataModel(String model) {
 		try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
 			DBContext dbContext = new DBContext(connection);
-			dataModel = Model.CreateModel(dbContext, this, Model.ModelType.HYBRID_Model, model);
+			if (simpleModel)
+				dataModel = Model.CreateModel(dbContext, this, Model.ModelType.RCV_Model_Simplified, model);
+			else
+				dataModel = Model.CreateModel(dbContext, this, Model.ModelType.HYBRID_Model, model);
 			connection.commit();
 		}
 	}
@@ -365,6 +376,8 @@ public class SheetImpl extends AbstractSheetAdv {
 
 	private AbstractCellAdv  preFetchCells(CellRegion cellRegion)
 	{
+		//System.out.println("Fetching cell:" + cellRegion);
+
 		AbstractCellAdv ret=null;
 		int minRow = Math.max(0,cellRegion.getRow()- PreFetchRows);
 		int maxRow = minRow + PreFetchRows * 2;
@@ -417,6 +430,21 @@ public class SheetImpl extends AbstractSheetAdv {
         return ret;
 	}
 
+
+	@Override
+	public Collection<SCell> getCells() {
+		try(AutoRollbackConnection autoRollbackConnection=DBHandler.instance.getConnection())
+		{
+			DBContext dbContext = new DBContext(autoRollbackConnection);
+			return getCells(dataModel.getBounds(dbContext));
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+			return null;
+		}
+	}
+
 	@Override
 	public Collection<SCell> getCells(CellRegion region) {
 		int lc=region.getLastColumn(),lr=region.getLastRow();
@@ -431,6 +459,14 @@ public class SheetImpl extends AbstractSheetAdv {
 	public SCell getCell(int rowIdx, int columnIdx) {
 		return getCell(rowIdx,columnIdx,true);
 	}
+
+    @Override
+    public SCell getCell(CellRegion cellRef) {
+        if (!cellRef.isSingle())
+            throw new RuntimeException("CellRegion should be single");
+        return getCell(cellRef.getRow(), cellRef.getColumn());
+    }
+
 	@Override
 	public SCell getCell(String cellRef) {
 		CellRegion region = new CellRegion(cellRef);
@@ -2197,7 +2233,10 @@ public class SheetImpl extends AbstractSheetAdv {
 
     @Override
     public void createModel(DBContext dbContext, String modelName) {
-		dataModel = Model.CreateModel(dbContext, this, Model.ModelType.HYBRID_Model, modelName);
+		if (simpleModel)
+			dataModel = Model.CreateModel(dbContext, this, Model.ModelType.RCV_Model_Simplified, modelName);
+		else
+			dataModel = Model.CreateModel(dbContext, this, Model.ModelType.HYBRID_Model, modelName);
 	}
 
     @Override
