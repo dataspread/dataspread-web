@@ -76,7 +76,7 @@
         <dependency>
             <groupId>io.github.dataspread</groupId>
             <artifactId>blockstore</artifactId>
-            <version>1.0.0</version>
+            <version>${blockstore.version}</version>
         </dependency>
     </dependencies>
 
