@@ -27,13 +27,6 @@ public class BookController {
 
     //TODO importBook
 
-    @RequestMapping(value = "/api/getSyncBooks",
-            method = RequestMethod.GET)
-    public HashMap<String, Object> getSyncBooks(){
-        template.convertAndSend(MESSAGE_PREFIX+"/greetings", "");
-        return null;
-    }
-
     public static String getCallbackPath() {
         return new StringBuilder()
                 .append(MESSAGE_PREFIX)

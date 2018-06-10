@@ -20,15 +20,18 @@ public class UserController {
     @RequestMapping(value = "/api/addUser",
             method = RequestMethod.POST)
     public HashMap<String, Object> addUser(@RequestHeader("auth-token") String authToken,
-                                           @RequestBody String userName){
+                                           @RequestBody String json){
+        org.json.JSONObject obj = new org.json.JSONObject(json);
+        String userName = obj.getString("username");
         String query = "INSERT INTO user_account(authtoken, username) VALUES (?, ?);";
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setString(1, authToken);
             statement.setString(2, userName);
             statement.execute();
+            connection.commit();
         } catch (SQLException e) {
-            JsonWrapper.generateError(e.getMessage());
+            return JsonWrapper.generateError(e.getMessage());
         }
         return JsonWrapper.generateJson(null);
     }
@@ -36,7 +39,9 @@ public class UserController {
     @RequestMapping(value = "/api/getShareBook",
             method = RequestMethod.POST)
     public HashMap<String, Object> getShareBook(@RequestHeader("auth-token") String authToken,
-                                           @RequestBody String link){
+                                           @RequestBody String json){
+        org.json.JSONObject obj = new org.json.JSONObject(json);
+        String link = obj.getString("link");
         String query = "INSERT INTO user_books VALUES " +
                 "(?, (SELECT booktable FROM books WHERE link = ? LIMIT 1), 'share') " +
                 "RETURNING booktable";
@@ -46,13 +51,12 @@ public class UserController {
             statement.setString(2, link);
             ResultSet rs = statement.executeQuery();
             if (rs.next()){
-                String bookId = rs.getString(1);
-                template.convertAndSend(BookController.getCallbackPath(), "");
+                connection.commit();
             } else {
-                JsonWrapper.generateError("Shared book can not found!");
+                return JsonWrapper.generateError("Shared book can not found!");
             }
         } catch (SQLException e) {
-            JsonWrapper.generateError(e.getMessage());
+            return JsonWrapper.generateError(e.getMessage());
         }
         return JsonWrapper.generateJson(null);
     }

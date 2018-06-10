@@ -1,5 +1,6 @@
 package org.ds.api.controller;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.ds.api.Authorization;
 import org.ds.api.Cell;
 import org.ds.api.JsonWrapper;
@@ -9,21 +10,18 @@ import org.model.DBHandler;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zkoss.util.Pair;
 import org.zkoss.util.resource.Labels;
 import org.zkoss.zss.api.AreaRef;
 import org.zkoss.zss.api.CellOperationUtil;
 import org.zkoss.zss.api.Range;
 import org.zkoss.zss.api.Ranges;
+import org.zkoss.zss.api.model.CellStyle;
 import org.zkoss.zss.api.model.Color;
 import org.zkoss.zss.api.model.Font;
 import org.zkoss.zss.api.model.Sheet;
 import org.zkoss.zss.api.model.impl.SheetImpl;
 import org.zkoss.zss.api.model.impl.SimpleRef;
-import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.SBook;
-import org.zkoss.zss.model.SCell;
-import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.impl.sys.TableMonitor;
 import org.zkoss.zss.model.sys.BookBindings;
 import java.security.MessageDigest;
@@ -31,8 +29,11 @@ import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import org.zkoss.json.*;
+import javafx.util.Pair;
 import org.zkoss.zss.ui.impl.ActionHelper;
 import org.zkoss.zss.ui.impl.undo.AggregatedAction;
+import org.zkoss.zss.ui.impl.undo.CellBorderAction;
+import org.zkoss.zss.ui.impl.undo.CellStyleAction;
 import org.zkoss.zss.ui.impl.undo.FontStyleAction;
 import org.zkoss.zss.ui.sys.UndoableAction;
 
@@ -283,6 +284,7 @@ public class GeneralController {
         }
         SBook book = BookBindings.getBookById(bookId);
         SSheet ssheet = book.getSheetByName(sheetName);
+        String type = obj.getString("type");
         FormatAction event = FormatAction.valueOf(obj.getString("event"));
         org.json.JSONObject data = obj.getJSONObject("data");
         Sheet sheet = new SheetImpl(new SimpleRef<SBook>(ssheet.getBook()), new SimpleRef<SSheet>(ssheet));
@@ -293,11 +295,30 @@ public class GeneralController {
         Range range = Ranges.range(sheet, row1, col1, row2, col2);
         AreaRef selection = new AreaRef(range.getRow(),range.getColumn(),range.getLastRow(),range.getLastColumn());
 
-        doFormatChange(event, data, sheet, range, selection);
+        switch (type){
+            case "font":
+                doFontChange(event, data, sheet, range, selection);
+                break;
+            case "border":
+                doBorderChange(event, data, sheet, range, selection);
+                break;
+            case "color":
+                doColorChange(event, data, sheet, range, selection);
+                break;
+            case "align":
+                doAlignChange(event, data, sheet, range, selection);
+                break;
+            case "text":
+                doTextChange(event, data, sheet, range, selection);
+                break;
+            default:
+                break;
+        }
+
         return JsonWrapper.generateJson(null);
     }
 
-    private void doFormatChange(FormatAction event, org.json.JSONObject data, Sheet sheet, Range range, AreaRef selection) {
+    private void doFontChange(FormatAction event, org.json.JSONObject data, Sheet sheet, Range range, AreaRef selection) {
         CellOperationUtil.CellStyleApplier applier = null;
         CellOperationUtil.CellStyleApplier richApplier = null;
         switch (event){
@@ -347,54 +368,10 @@ public class GeneralController {
                 applier = CellOperationUtil.getFontStrikeoutApplier(strikeout);
                 richApplier = CellOperationUtil.getRichTextFontStrikeoutApplier(strikeout);
                 break;
-            case BORDER:
-                break;
-            case BORDER_BOTTOM:
-                break;
-            case BORDER_TOP:
-                break;
-            case BORDER_LEFT:
-                break;
-            case BORDER_RIGHT:
-                break;
-            case BORDER_NO:
-                break;
-            case BORDER_ALL:
-                break;
-            case BORDER_OUTSIDE:
-                break;
-            case BORDER_INSIDE:
-                break;
-            case BORDER_INSIDE_HORIZONTAL:
-                break;
-            case BORDER_INSIDE_VERTICAL:
-                break;
-            case FILL_COLOR:
-                break;
-            case BACK_COLOR:
-                break;
             case FONT_COLOR:
                 Color color = range.getCellStyleHelper().createColorFromHtmlColor(data.getString("color"));
                 applier = CellOperationUtil.getFontColorApplier(color);
                 richApplier = CellOperationUtil.getRichTextFontColorApplier(color);
-                break;
-            case VERTICAL_ALIGN_TOP:
-                break;
-            case VERTICAL_ALIGN_MIDDLE:
-                break;
-            case VERTICAL_ALIGN_BOTTOM:
-                break;
-            case HORIZONTAL_ALIGN_LEFT:
-                break;
-            case HORIZONTAL_ALIGN_CENTER:
-                break;
-            case HORIZONTAL_ALIGN_RIGHT:
-                break;
-            case WRAP_TEXT:
-                break;
-            case TEXT_INDENT_INCREASE:
-                break;
-            case TEXT_INDENT_DECREASE:
                 break;
         }
 
@@ -403,6 +380,119 @@ public class GeneralController {
                 selection.getLastRow(), selection.getLastColumn(), applier));
         ActionHelper.collectRichTextStyleActions(range, richApplier, actions);
         AggregatedAction action = new AggregatedAction(Labels.getLabel("zss.undo.fontStyle"), actions.toArray(new UndoableAction[actions.size()]));
+        action.doAction();
+    }
+
+    private void doBorderChange(FormatAction event, org.json.JSONObject data, Sheet sheet, Range range, AreaRef selection) {
+        Range.ApplyBorderType applyType = Range.ApplyBorderType.FULL;
+        CellStyle.BorderType borderType = CellStyle.BorderType.THIN;
+
+        switch (event){
+            case BORDER:
+                applyType = Range.ApplyBorderType.EDGE_BOTTOM;
+                break;
+            case BORDER_BOTTOM:
+                applyType = Range.ApplyBorderType.EDGE_BOTTOM;
+                break;
+            case BORDER_TOP:
+                applyType = Range.ApplyBorderType.EDGE_TOP;
+                break;
+            case BORDER_LEFT:
+                applyType = Range.ApplyBorderType.EDGE_LEFT;
+                break;
+            case BORDER_RIGHT:
+                applyType = Range.ApplyBorderType.EDGE_RIGHT;
+                break;
+            case BORDER_NO:
+                applyType = Range.ApplyBorderType.FULL;
+                borderType = CellStyle.BorderType.NONE;
+                break;
+            case BORDER_ALL:
+                applyType = Range.ApplyBorderType.FULL;
+                break;
+            case BORDER_OUTSIDE:
+                applyType = Range.ApplyBorderType.OUTLINE;
+                break;
+            case BORDER_INSIDE:
+                applyType = Range.ApplyBorderType.INSIDE;
+                break;
+            case BORDER_INSIDE_HORIZONTAL:
+                applyType = Range.ApplyBorderType.INSIDE_HORIZONTAL;
+                break;
+            case BORDER_INSIDE_VERTICAL:
+                applyType = Range.ApplyBorderType.INSIDE_VERTICAL;
+                break;
+        }
+        String color = data.getString("color");
+        UndoableAction action = new CellBorderAction(Labels.getLabel("zss.undo.cellBorder"),sheet, selection.getRow(), selection.getColumn(),
+                selection.getLastRow(), selection.getLastColumn(),
+                applyType, borderType, color);
+        action.doAction();
+    }
+
+    private void doColorChange(FormatAction event, org.json.JSONObject data, Sheet sheet, Range range, AreaRef selection) {
+        Color color = range.getCellStyleHelper().createColorFromHtmlColor(data.getString("color"));
+        CellOperationUtil.CellStyleApplier applier = null;
+
+        switch (event){
+            case FILL_COLOR:
+                applier = CellOperationUtil.getFillColorApplier(color);
+                break;
+            case BACK_COLOR:
+                applier = CellOperationUtil.getBackColorApplier(color);
+                break;
+        }
+
+        UndoableAction action = new CellStyleAction(Labels.getLabel("zss.undo.cellStyle"),sheet, selection.getRow(), selection.getColumn(),
+                selection.getLastRow(), selection.getLastColumn(), applier);
+        action.doAction();
+    }
+
+    private void doAlignChange(FormatAction event, org.json.JSONObject data, Sheet sheet, Range range, AreaRef selection) {
+        CellOperationUtil.CellStyleApplier applier = null;
+        switch (event){
+            case VERTICAL_ALIGN_TOP:
+                applier = CellOperationUtil.getVerticalAligmentApplier(CellStyle.VerticalAlignment.TOP.TOP);
+                break;
+            case VERTICAL_ALIGN_MIDDLE:
+                applier = CellOperationUtil.getVerticalAligmentApplier(CellStyle.VerticalAlignment.CENTER);
+                break;
+            case VERTICAL_ALIGN_BOTTOM:
+                applier = CellOperationUtil.getVerticalAligmentApplier(CellStyle.VerticalAlignment.BOTTOM);
+                break;
+            case HORIZONTAL_ALIGN_LEFT:
+                applier = CellOperationUtil.getAligmentApplier(CellStyle.Alignment.LEFT);
+                break;
+            case HORIZONTAL_ALIGN_CENTER:
+                applier = CellOperationUtil.getAligmentApplier(CellStyle.Alignment.CENTER);
+                break;
+            case HORIZONTAL_ALIGN_RIGHT:
+                applier = CellOperationUtil.getAligmentApplier(CellStyle.Alignment.RIGHT);
+                break;
+        }
+
+        UndoableAction action = new CellStyleAction(Labels.getLabel("zss.undo.cellStyle"),sheet, selection.getRow(), selection.getColumn(),
+                selection.getLastRow(), selection.getLastColumn(), applier);
+        action.doAction();
+    }
+
+    private void doTextChange(FormatAction event, org.json.JSONObject data, Sheet sheet, Range range, AreaRef selection) {
+        CellOperationUtil.CellStyleApplier applier = null;
+        switch (event){
+            case WRAP_TEXT:
+                boolean wrapped = !range.getCellStyle().isWrapText();
+                applier = CellOperationUtil.getWrapTextApplier(wrapped);
+                break;
+            case TEXT_INDENT_INCREASE:
+                applier = CellOperationUtil.getIndentionApplier(1);
+                break;
+            case TEXT_INDENT_DECREASE:
+                applier = CellOperationUtil.getIndentionApplier(-1);
+                break;
+        }
+
+        UndoableAction action = new CellStyleAction(Labels.getLabel("zss.undo.cellStyle"),sheet, selection.getRow(), selection.getColumn(),
+                selection.getLastRow(), selection.getLastColumn(), applier);
         action.doAction();
     }
 
