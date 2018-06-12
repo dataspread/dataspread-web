@@ -186,6 +186,7 @@ public class GeneralController {
                 }
                 String format = ((org.json.JSONObject)cell).getString("format");
             }
+            connection.commit();
             template.convertAndSend(getCallbackPath(bookId, sheetName), "");
             return JsonWrapper.generateJson(null);
         } catch (Exception e) {
@@ -514,15 +515,6 @@ public class GeneralController {
             case "TEXT":
             default:
                 return cell.getString("value");
-        }
-    }
-
-    public static String encode(final String clearText) {
-        try {
-            return new String(
-                    Base64.getEncoder().encode(MessageDigest.getInstance("SHA-256").digest(clearText.getBytes())));
-        } catch (NoSuchAlgorithmException e) {
-            return clearText;
         }
     }
 

@@ -36,9 +36,9 @@ public class UserController {
         return JsonWrapper.generateJson(null);
     }
 
-    @RequestMapping(value = "/api/getShareBook",
+    @RequestMapping(value = "/api/addShareBook",
             method = RequestMethod.POST)
-    public HashMap<String, Object> getShareBook(@RequestHeader("auth-token") String authToken,
+    public HashMap<String, Object> addShareBook(@RequestHeader("auth-token") String authToken,
                                            @RequestBody String json){
         org.json.JSONObject obj = new org.json.JSONObject(json);
         String link = obj.getString("link");
