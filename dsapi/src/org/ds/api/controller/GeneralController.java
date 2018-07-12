@@ -1,6 +1,5 @@
 package org.ds.api.controller;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.ds.api.Authorization;
 import org.ds.api.Cell;
 import org.ds.api.JsonWrapper;
@@ -10,9 +9,9 @@ import org.model.DBHandler;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zkoss.util.Pair;
 import org.zkoss.util.resource.Labels;
 import org.zkoss.zss.api.AreaRef;
-import org.zkoss.zss.api.CellOperationUtil;
 import org.zkoss.zss.api.Range;
 import org.zkoss.zss.api.Ranges;
 import org.zkoss.zss.api.model.CellStyle;
@@ -24,18 +23,19 @@ import org.zkoss.zss.api.model.impl.SimpleRef;
 import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.impl.sys.TableMonitor;
 import org.zkoss.zss.model.sys.BookBindings;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+
 import java.text.SimpleDateFormat;
 import java.util.*;
 import org.zkoss.json.*;
-import javafx.util.Pair;
+
+/*
 import org.zkoss.zss.ui.impl.ActionHelper;
 import org.zkoss.zss.ui.impl.undo.AggregatedAction;
 import org.zkoss.zss.ui.impl.undo.CellBorderAction;
 import org.zkoss.zss.ui.impl.undo.CellStyleAction;
 import org.zkoss.zss.ui.impl.undo.FontStyleAction;
 import org.zkoss.zss.ui.sys.UndoableAction;
+*/
 
 import static org.ds.api.WebSocketConfig.MESSAGE_PREFIX;
 
@@ -320,6 +320,7 @@ public class GeneralController {
     }
 
     private void doFontChange(FormatAction event, org.json.JSONObject data, Sheet sheet, Range range, AreaRef selection) {
+        /*
         CellOperationUtil.CellStyleApplier applier = null;
         CellOperationUtil.CellStyleApplier richApplier = null;
         switch (event){
@@ -382,6 +383,7 @@ public class GeneralController {
         ActionHelper.collectRichTextStyleActions(range, richApplier, actions);
         AggregatedAction action = new AggregatedAction(Labels.getLabel("zss.undo.fontStyle"), actions.toArray(new UndoableAction[actions.size()]));
         action.doAction();
+        */
     }
 
     private void doBorderChange(FormatAction event, org.json.JSONObject data, Sheet sheet, Range range, AreaRef selection) {
@@ -424,14 +426,17 @@ public class GeneralController {
                 applyType = Range.ApplyBorderType.INSIDE_VERTICAL;
                 break;
         }
+        /*
         String color = data.getString("color");
         UndoableAction action = new CellBorderAction(Labels.getLabel("zss.undo.cellBorder"),sheet, selection.getRow(), selection.getColumn(),
                 selection.getLastRow(), selection.getLastColumn(),
                 applyType, borderType, color);
         action.doAction();
+        */
     }
 
     private void doColorChange(FormatAction event, org.json.JSONObject data, Sheet sheet, Range range, AreaRef selection) {
+        /*
         Color color = range.getCellStyleHelper().createColorFromHtmlColor(data.getString("color"));
         CellOperationUtil.CellStyleApplier applier = null;
 
@@ -447,9 +452,11 @@ public class GeneralController {
         UndoableAction action = new CellStyleAction(Labels.getLabel("zss.undo.cellStyle"),sheet, selection.getRow(), selection.getColumn(),
                 selection.getLastRow(), selection.getLastColumn(), applier);
         action.doAction();
+        */
     }
 
     private void doAlignChange(FormatAction event, org.json.JSONObject data, Sheet sheet, Range range, AreaRef selection) {
+        /*
         CellOperationUtil.CellStyleApplier applier = null;
         switch (event){
             case VERTICAL_ALIGN_TOP:
@@ -475,9 +482,11 @@ public class GeneralController {
         UndoableAction action = new CellStyleAction(Labels.getLabel("zss.undo.cellStyle"),sheet, selection.getRow(), selection.getColumn(),
                 selection.getLastRow(), selection.getLastColumn(), applier);
         action.doAction();
+        */
     }
 
     private void doTextChange(FormatAction event, org.json.JSONObject data, Sheet sheet, Range range, AreaRef selection) {
+       /*
         CellOperationUtil.CellStyleApplier applier = null;
         switch (event){
             case WRAP_TEXT:
@@ -495,6 +504,7 @@ public class GeneralController {
         UndoableAction action = new CellStyleAction(Labels.getLabel("zss.undo.cellStyle"),sheet, selection.getRow(), selection.getColumn(),
                 selection.getLastRow(), selection.getLastColumn(), applier);
         action.doAction();
+        */
     }
 
     private Object getValue(org.json.JSONObject cell, String type){

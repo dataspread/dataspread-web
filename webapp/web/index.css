@@ -1,0 +1,48 @@
+.vl {
+    border-left: 6px solid green;
+    height: 500px;
+}
+
+
+#sheet-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    z-index: 5
+}
+
+#sheets {
+  display:inline;
+}
+
+#createSheet {
+  display: inline;
+}
+
+.alignRight {
+  position: absolute;
+  right: 0px;
+}
+
+.sheet {
+  padding-right: 3px;
+}
+
+.dsTableHead {
+  background-color: #003F13;
+}
+
+.dsTableBody {
+  background-color: #2A7E43;
+}
+
+/* .handsontable td.area {
+  background-color: #F00;
+} */
+
+/*
+#toolbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+} */

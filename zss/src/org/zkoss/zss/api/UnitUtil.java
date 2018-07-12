@@ -16,8 +16,6 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.api;
 
-import org.zkoss.zss.ui.impl.XUtils;
-
 /**
  * Utility for transferring unit
  * @author dennis
@@ -26,11 +24,11 @@ import org.zkoss.zss.ui.impl.XUtils;
 public class UnitUtil {
 
 	public static int pxToPoint(int px){
-		return XUtils.pxToPoint(px);
+		return 0;
 	}
 	
 	public static int pointToPx(int point){
-		return XUtils.pointToPx(point);
+		return 0;
 	}
 	
 	
@@ -52,7 +50,7 @@ public class UnitUtil {
 	 * @return the width in pixel
 	 */
 	public static int char256ToPx(int width256, int charWidthPx) {
-		return XUtils.fileChar256ToPx(width256,charWidthPx);
+		return 0;
 	}
 	
 	/**
@@ -60,11 +58,11 @@ public class UnitUtil {
 	 * @return the height in pixel
 	 */
 	public static int twipToPx(int twip) {
-		return XUtils.twipToPx(twip);
+		return 0;
 	}
 	
 	public static int pxToTwip(int px) {
-		return XUtils.pxToTwip(px);
+		return 0;
 	}
 	
 	/**
@@ -72,10 +70,10 @@ public class UnitUtil {
 	 * @return the height in pixel
 	 */
 	public static int twipToPoint(int twip) {
-		return XUtils.twipToPoint(twip);
+		return 0;
 	}
 	
 	public static int pointToTwip(int point) {
-		return XUtils.pointToTwip(point);
+		return 0;
 	}
 }
