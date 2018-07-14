@@ -1,8 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="war" name="dsapi:war">
-    <output-path>$PROJECT_DIR$/dsapi/target</output-path>
-    <root id="archive" name="dsapi-0.1.war">
-      <element id="artifact" artifact-name="dsapi:war exploded" />
-    </root>
-  </artifact>
-</component>
