@@ -7,9 +7,9 @@
     <artifactId>webapp</artifactId>
     <version>0.1.1</version>
     <properties>
-        <zpoi.version>3.9.8</zpoi.version>
         <zss.version>3.8.1</zss.version>
         <blockstore.version>1.0.0</blockstore.version>
+        <dsapi.version>0.1</dsapi.version>
         <rtree.version>1.0.0</rtree.version>
         <commons-math.version>2.2</commons-math.version>
         <servlet.version>2.4</servlet.version>
@@ -18,7 +18,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>RELEASE</version>
+        <version>2.0.3.RELEASE</version>
     </parent>
 
     <packaging>war</packaging>
@@ -31,6 +31,7 @@
         <url>file://${project.basedir}/../lib</url>
       </repository>
     </repositories>
+
     <dependencies>
         <dependency>
             <groupId>io.github.dataspread</groupId>
@@ -45,20 +46,29 @@
         <dependency>
             <groupId>io.github.dataspread</groupId>
             <artifactId>zss</artifactId>
+            <version>${zss.version}</version>
         </dependency>
         <dependency>
             <groupId>io.github.dataspread</groupId>
             <artifactId>zssmodel</artifactId>
+            <version>${zss.version}</version>
         </dependency>
 
         <dependency>
             <groupId>io.github.dataspread</groupId>
             <artifactId>dsapi</artifactId>
+            <version>${dsapi.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -66,10 +76,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>webjars-locator-core</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>org.webjars.bowergithub.handsontable</groupId>
@@ -103,8 +109,6 @@
             <artifactId>jquery</artifactId>
             <version>3.1.0</version>
         </dependency>
-
-
     </dependencies>
     <build>
         <finalName>DataSpread</finalName>
