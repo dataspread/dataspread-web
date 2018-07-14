@@ -7,7 +7,6 @@
 	<artifactId>zss</artifactId>
 	<properties>
 		<zk.version>7.0.3</zk.version>
-		<zpoi.version>3.9.8</zpoi.version>
 		<commons-math.version>2.2</commons-math.version>
 		<servlet.version>2.4</servlet.version>
 	</properties>
@@ -26,11 +25,6 @@
 			<artifactId>zssmodel</artifactId>
 			<version>${project.version}</version>
 		</dependency>	
-		<dependency>
-			<groupId>io.github.dataspread</groupId>
-			<artifactId>zpoi</artifactId>
-			<version>${zpoi.version}</version>
-		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-math</artifactId>
