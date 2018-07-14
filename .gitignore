@@ -71,3 +71,4 @@ dsapi/src/ui/node_modules/
 .idea/modules.xml
 .idea/vcs.xml
 .idea/dataSources.xml
+.idea/artifacts/
