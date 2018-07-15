@@ -1,4 +1,4 @@
-package org.ds.api.controller;
+package api.controller;
 
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
@@ -16,7 +16,7 @@ import java.util.*;
 
 import org.zkoss.json.*;
 
-import static org.ds.api.WebSocketConfig.MESSAGE_PREFIX;
+import static api.WebSocketConfig.MESSAGE_PREFIX;
 import static org.zkoss.zss.model.impl.sys.TableMonitor.formatTableName;
 
 @RestController

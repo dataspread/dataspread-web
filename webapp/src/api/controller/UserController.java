@@ -1,6 +1,6 @@
-package org.ds.api.controller;
+package api.controller;
 
-import org.ds.api.JsonWrapper;
+import api.JsonWrapper;
 import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
 import org.springframework.beans.factory.annotation.Autowired;

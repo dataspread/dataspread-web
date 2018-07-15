@@ -9,7 +9,6 @@
     <properties>
         <zss.version>3.8.1</zss.version>
         <blockstore.version>1.0.0</blockstore.version>
-        <dsapi.version>0.1</dsapi.version>
         <rtree.version>1.0.0</rtree.version>
         <commons-math.version>2.2</commons-math.version>
         <servlet.version>2.4</servlet.version>
@@ -47,12 +46,6 @@
         </dependency>
 
         <dependency>
-            <groupId>io.github.dataspread</groupId>
-            <artifactId>dsapi</artifactId>
-            <version>${dsapi.version}</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
             <exclusions>
@@ -66,6 +59,21 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-tomcat</artifactId>
             <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20180130</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-messaging</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-websocket</artifactId>
         </dependency>
 
 

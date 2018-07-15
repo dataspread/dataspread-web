@@ -1,8 +1,8 @@
-package org.ds.api.controller;
+package api.controller;
 
-import org.ds.api.Authorization;
-import org.ds.api.Cell;
-import org.ds.api.JsonWrapper;
+import api.Authorization;
+import api.Cell;
+import api.JsonWrapper;
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
@@ -10,13 +10,10 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zkoss.util.Pair;
-import org.zkoss.util.resource.Labels;
 import org.zkoss.zss.api.AreaRef;
 import org.zkoss.zss.api.Range;
 import org.zkoss.zss.api.Ranges;
 import org.zkoss.zss.api.model.CellStyle;
-import org.zkoss.zss.api.model.Color;
-import org.zkoss.zss.api.model.Font;
 import org.zkoss.zss.api.model.Sheet;
 import org.zkoss.zss.api.model.impl.SheetImpl;
 import org.zkoss.zss.api.model.impl.SimpleRef;
@@ -37,7 +34,7 @@ import org.zkoss.zss.ui.impl.undo.FontStyleAction;
 import org.zkoss.zss.ui.sys.UndoableAction;
 */
 
-import static org.ds.api.WebSocketConfig.MESSAGE_PREFIX;
+import static api.WebSocketConfig.MESSAGE_PREFIX;
 
 @CrossOrigin(origins = {"http://localhost:3000", "*"})
 @RestController

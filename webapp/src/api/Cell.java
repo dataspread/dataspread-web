@@ -1,4 +1,4 @@
-package org.ds.api;
+package api;
 
 public class Cell {
     public int row;

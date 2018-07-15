@@ -1,4 +1,4 @@
-package org.ds.api;
+package api;
 
 import org.model.AutoRollbackConnection;
 import org.model.DBHandler;

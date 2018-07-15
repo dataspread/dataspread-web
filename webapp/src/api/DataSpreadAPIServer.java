@@ -1,4 +1,4 @@
-package org.ds.api;
+package api;
 
 import org.model.DBHandler;
 import org.springframework.boot.SpringApplication;
