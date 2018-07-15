@@ -676,8 +676,6 @@ var getBooks = function () {
 
 $('#open-book').click(function () {
 
-    $(function () {
-
         $("#book-dialog").empty();
         $('<label></label>').text("Open a book:").appendTo($("#book-dialog"));
         $('<select></select>').attr("id", 'book-selector').appendTo($("#book-dialog"));
@@ -733,9 +731,6 @@ $('#open-book').click(function () {
                 }
             }
         });
-    });
-
-
 });
 
 
