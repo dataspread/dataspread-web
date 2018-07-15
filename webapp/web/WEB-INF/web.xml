@@ -9,12 +9,12 @@
 
 
 	<!-- ZK Spreadsheet App -->
-	<!--
-<listener>
-    <description>Startup background processes</description>
-    <listener-class>org.zkoss.zss.app.repository.impl.ServletContextListenerImpl</listener-class>
-</listener>
--->
+
+	<listener>
+		<description>Startup background processes</description>
+		<listener-class>org.zkoss.zss.app.repository.impl.ServletContextListenerImpl</listener-class>
+	</listener>
+
 
 	<!-- //// -->
 	<!-- ZK -->

@@ -7,15 +7,15 @@
 //import $ from 'jquery';
 //import "./index.css";
 
-var baseUrl = 'http://localhost:8080/api/';
+var baseUrl = 'api/';
 
 window.$ = window.jQuery = $;
 
-//$.ajaxSetup({
-//    headers: {
-//        'auth-token': "guest"
-//    }
-//});
+$.ajaxSetup({
+    headers: {
+        'auth-token': "guest"
+    }
+});
 
 // import handlebars;
 var container = document.getElementById('test-hot');
