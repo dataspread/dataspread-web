@@ -475,7 +475,7 @@ public class CellImpl extends AbstractCellAdv {
 	private CellValue getCellValue(){
 		return _localValue;
 	}
-	
+
 	private void setCellValue(CellValue value, boolean destroy, AutoRollbackConnection connection, boolean updateToDB){ //ZSS-985
 		this._localValue = value!=null&&value.getType()== CellType.BLANK?null:value;
 		if (updateToDB)
@@ -522,6 +522,13 @@ public class CellImpl extends AbstractCellAdv {
 		}
 	}
 
+	public void updateCellTypeFromString(AutoRollbackConnection connection, boolean updateToDB) {
+		Object val = this.getValue(false);
+		if (val instanceof String) {
+			this.setValueParse((String) val, connection, -1, updateToDB);
+		}
+	}
+
 
 	private void updateCelltoDB(AutoRollbackConnection connection) {
 		//TODO: Connection handling
@@ -529,6 +536,7 @@ public class CellImpl extends AbstractCellAdv {
 		Collection<AbstractCellAdv> cells = new LinkedList<>();
 		cells.add(this);
 		getSheet().getDataModel().updateCells(new DBContext(connection), cells);
+		connection.commit();
 	}
 
 	private void updateCelltoDB() {

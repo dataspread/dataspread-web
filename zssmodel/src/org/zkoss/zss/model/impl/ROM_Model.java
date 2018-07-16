@@ -11,6 +11,10 @@ import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.impl.statistic.AbstractStatistic;
+import org.zkoss.zss.model.impl.statistic.CombinedStatistic;
+import org.zkoss.zss.model.impl.statistic.CountStatistic;
+import org.zkoss.zss.model.impl.statistic.KeyStatistic;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -24,11 +28,23 @@ public class ROM_Model extends Model {
     public PosMapping rowMapping;
     private PosMapping colMapping;
 
-    //Create or load RCV_model.
+    public CombinedBTree rowCombinedTree;
+    private CombinedBTree colCombinedTree;
+
+
+    public Hashtable<String,CountedBTree> rowOrderTable;
+
+    //Create or load ROM_model.
     ROM_Model(DBContext context, SSheet sheet, String tableName) {
         this.sheet = sheet;
         rowMapping = new CountedBTree(context, tableName + "_row_idx");
         colMapping = new CountedBTree(context, tableName + "_col_idx");
+
+        rowCombinedTree = new CombinedBTree(context, tableName + "_row_com_idx");
+        colCombinedTree = new CombinedBTree(context, tableName + "_col_com_idx");
+
+        rowOrderTable = new Hashtable<String,CountedBTree>();
+
         this.tableName = tableName;
         this.navSbuckets = new ArrayList<Bucket<String>>();
         this.navS = new NavigationStructure(tableName);
@@ -37,8 +53,12 @@ public class ROM_Model extends Model {
 
     ROM_Model(DBContext context, SSheet sheet, String tableName, ROM_Model source) {
         this.sheet = sheet;
-        rowMapping = source.rowMapping.clone(context, tableName + "_row_idx");
-        colMapping = source.colMapping.clone(context, tableName + "_col_idx");
+        rowMapping =  source.rowMapping.clone(context, tableName + "_row_idx");
+        colMapping =  source.colMapping.clone(context, tableName + "_col_idx");
+
+        //TODO: CombinedBTree can't be cloned
+        //rowCombinedTree = source.rowCombinedTree.clone(context, tableName + "_row_com_idx");
+        //colCombinedTree = source.colCombinedTree.clone(context, tableName + "_col_com_idx");
         this.tableName = tableName;
         copySchema(context, source.tableName);
     }
@@ -46,6 +66,12 @@ public class ROM_Model extends Model {
     @Override
     public ROM_Model clone(DBContext dbContext, SSheet sheet, String modelName) {
         return new ROM_Model(dbContext, sheet, tableName, this);
+    }
+
+    @Override
+    public String createNavS(SSheet currentsheet) {
+        ArrayList<Bucket<String>> newList = this.navS.getUniformBuckets(0,currentsheet.getEndRowIndex());
+        return "";
     }
 
     private void copySchema(DBContext context, String sourceTable){
@@ -64,7 +90,7 @@ public class ROM_Model extends Model {
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(createTable);
             stmt.execute(copyTable);
-         } catch (SQLException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
@@ -120,6 +146,16 @@ public class ROM_Model extends Model {
     @Override
     public void insertRows(DBContext context, int row, int count) {
         rowMapping.createIDs(context, row, count);
+
+        /*ArrayList<Integer> ids = new ArrayList<>();
+        ArrayList<CombinedStatistic> statistics = new ArrayList<>();
+
+        for(int i = row; i < count; i++) {
+            ids.add(i+1);
+            statistics.add(new CombinedStatistic(new KeyStatistic(i)));
+        }
+
+        rowCombinedTree.insertIDs(context,statistics,ids);*/
     }
 
     @Override
@@ -128,6 +164,16 @@ public class ROM_Model extends Model {
                 .append("ALTER TABLE ")
                 .append(tableName);
         ArrayList<Integer> ids = colMapping.createIDs(context, col, count);
+
+        ArrayList<Integer> idsComb = new ArrayList<>();
+        ArrayList<CombinedStatistic> statistics = new ArrayList<>();
+
+        for(int i = col; i < count; i++) {
+            idsComb.add(i);
+            statistics.add(new CombinedStatistic(new KeyStatistic(i)));
+        }
+
+        colCombinedTree.insertIDs(context,statistics,ids);
         for (int i = 0; i < ids.size(); i++) {
             insertColumn.append(" ADD COLUMN col_")
                     .append(ids.get(i))
@@ -352,9 +398,10 @@ public class ROM_Model extends Model {
         CellRegion fetchRegion = bounds.getOverlap(fetchRange);
         if (fetchRegion == null)
             return cells;
-
-        ArrayList<Integer> rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
-        ArrayList<Integer> colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
+        ArrayList<Integer> rowIds;
+        ArrayList<Integer> colIds;
+        rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
+        colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
         HashMap<Integer, Integer> row_map = IntStream.range(0, rowIds.size())
                 .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(rowIds.get(i), fetchRegion.getRow() + i),
                         (map1, map2) -> map1.putAll(map2));
@@ -491,10 +538,10 @@ public class ROM_Model extends Model {
         String headerStringSS = "";
 
         String valuesString = "";
-        int selectedCol = 0;//rember to make it -1 for initial load
+        /*int selectedCol = 0;//rember to make it -1 for initial load
         int sampleSize = navS.getSampleSize();
 
-        navS.setSelectedColumn(selectedCol);
+        navS.setSelectedColumn(selectedCol);*/
 
         CSVReader csvReader = new CSVReader(reader, delimiter);
         String[] nextLine;
@@ -536,7 +583,7 @@ public class ROM_Model extends Model {
 
                     headerStringSS = headerSS.toString();
                     valuesString = values.toString();
-                    indexString = "col_"+(selectedCol+1);//nextLine[selectedCol];
+                   // indexString = "col_"+(selectedCol+1);//nextLine[selectedCol];
 
                     sbSS.append("INSERT into "+tableName+" ("+headerStringSS+") values(?,"+valuesString+")");
 
@@ -552,8 +599,8 @@ public class ROM_Model extends Model {
 
                     connection.commit();
                     pstSS = null;
-                    createIndexOnSortAttr(selectedCol);
-                    navS.setHeaderString(headerStringSS);
+                   // createIndexOnSortAttr(selectedCol);
+                 //   navS.setHeaderString(headerStringSS);
                     navS.setIndexString(indexString);
 
                     continue;
@@ -621,7 +668,7 @@ public class ROM_Model extends Model {
     @Override
     public ArrayList<Bucket<String>> createNavS(String bucketName, int start, int count) {
         //load sorted data from table
-        ArrayList<String> recordList =  new ArrayList<String>();
+        ArrayList<Object> recordList =  new ArrayList<>();
 
         StringBuffer select = null;
         if(bucketName==null)
@@ -657,7 +704,7 @@ public class ROM_Model extends Model {
                 .append(" WHERE row = ANY (?) AND row !=1");
 
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-        PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+             PreparedStatement stmt = connection.prepareStatement(select.toString())) {
             DBContext context = new DBContext(connection);
             ArrayList<Integer> rowIds = rowMapping.getIDs(context,start,count);
             Array inArrayRow = context.getConnection().createArrayOf("integer", rowIds.toArray());
@@ -687,11 +734,6 @@ public class ROM_Model extends Model {
 
     }
 
-    @Override
-    public ArrayList<Bucket<String>> createNavS(SSheet currentSheet, int start, int count) {
-        ArrayList<Bucket<String>> newList = this.navS.getUniformBuckets(0,currentSheet.getEndRowIndex());
-        return newList;
-    }
 
     @Override
     public ArrayList<String> getHeaders()
@@ -731,6 +773,11 @@ public class ROM_Model extends Model {
     @Override
     public void setIndexString(String str) {
         this.indexString = str;
+    }
+
+    @Override
+    public String getNavChildren(int[] indices) {
+        return null;
     }
 
     @Override

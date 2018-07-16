@@ -1,19 +1,29 @@
 package org.zkoss.zss.model.impl;
 
+import org.model.AutoRollbackConnection;
 import org.model.DBContext;
+import org.model.DBHandler;
+import org.zkoss.zk.ui.UiException;
 import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.sys.EngineFactory;
+import org.zkoss.zss.model.sys.formula.FormulaEngine;
+import org.zkoss.zss.model.sys.formula.FormulaEvaluationContext;
+import org.zkoss.zss.model.sys.formula.FormulaExpression;
+import org.zkoss.zss.model.sys.formula.FormulaParseContext;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
 
 public abstract class Model {
     protected String tableName;
     protected SSheet sheet;
+    /**
+     * Todo: get rid of navSbuckets since navS already contains it.
+     */
     public ArrayList<Bucket<String>> navSbuckets;
     public NavigationStructure navS;
     public String indexString;
@@ -105,10 +115,234 @@ public abstract class Model {
     // Clone only the corresponding tables in postgres
     public abstract Model clone(DBContext dbContext, SSheet sheet, String modelName);
 
-    public abstract ArrayList<Bucket<String>> createNavS(SSheet currentsheet, int start, int count);
+    public abstract String createNavS(SSheet currentsheet);
 
     public abstract ArrayList<String> getHeaders();
     public abstract void setIndexString(String str);
+
+    public abstract String getNavChildren(int[] indices);
+
+    /**
+     * Perform aggregation operation on groups of navigation. Currently implemented only in RCV_Model due to 'cannot convert from hybrid_model to ROM_Model'. Ideally will be implemented in the ROM_Model.
+     * @param currentSheet
+     * @param paths
+     * @param agg_ind
+     * @param agg_fun_id
+     * @return
+     */
+    public List<List<Double>> navigationGroupAggregateValue(SSheet currentSheet, int[] paths, int[] attr_indices, String[] agg_ids)  {
+        return null;
+    }
+
+    /**
+     * Sort a bucket based on a given attribute. Calls the navigation structure to get starting / ending row number and then call the {@link #navigationSortRangeByAttribute(SSheet, int, int, int[], int)}
+     * @param currentSheet
+     * @param paths
+     * @param attr_indices
+     * @param order 0: ascending, 1: descending
+     */
+    public void navigationSortBucketByAttribute(SSheet currentSheet, int[] paths, int[] attr_indices, int order)  {
+        return;
+    }
+
+    /**
+     * Sort a block based on input starting and ending row number.
+     * @param currentSheet
+     * @param startRow
+     * @param endRow
+     * @param attr_indices
+     * @param order
+     */
+    public void navigationSortRangeByAttribute(SSheet currentSheet, int startRow, int endRow, int[] attr_indices, int order)  {
+        return;
+    }
+
+    //TODO: move this code to TableSheetModel to support multiple column agrregates
+    public double getColumnAggregate(SSheet currentSheet, int startRow, int endRow, int columnIndex, String agg_id) {
+        Function<Integer, String> colToAlph = number -> {
+            StringBuilder sb = new StringBuilder();
+            /*
+             * {@see org.ds.api.controller.NavigationController:113}
+             */
+            number++; // Since 0 corresponds to the 'A' column
+            while (number-- > 0) {
+                sb.append((char) ('A' + (number % 26)));
+                number /= 26;
+            }
+            return sb.reverse().toString();
+        };
+
+        String aggregateType;
+        boolean useGeneralFormula = false;
+        switch (agg_id) {
+            case "0":
+                aggregateType = "AVERAGE";
+                break;
+            case "1":
+                aggregateType = "SUM";
+                break;
+            case "2":
+                aggregateType = "COUNT";
+                break;
+            default:
+                aggregateType = agg_id;
+                useGeneralFormula = true;
+        }
+
+        double agg = 0;
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            this.navS.typeConvertColumnIfHavent(connection, columnIndex);
+
+            String colStr = colToAlph.apply(columnIndex);
+            String formula;
+            if (useGeneralFormula) {
+                formula = aggregateType.replaceAll("\\$1", String.valueOf(startRow)).replaceAll("\\$2", String.valueOf(endRow)).replaceAll("\\$C", colStr);
+            } else {
+                formula = aggregateType + "(" + colStr + startRow + ":" + colStr + endRow + ")";
+            }
+            System.out.println(formula);
+
+            String aggStr;
+            if (true) {
+                FormulaEngine engine = EngineFactory.getInstance().createFormulaEngine();
+                FormulaExpression expr = engine.parse(formula, new FormulaParseContext(currentSheet, null));
+                if (expr.hasError()) {
+                    return 0;
+                }
+                FormulaResultCellValue result = new FormulaResultCellValue(engine.evaluate(expr, new FormulaEvaluationContext(currentSheet, null)));
+                aggStr = String.valueOf(result.getValue());
+            } else {// TODO: future feature, make aggregation results actual cells.
+                SCell naviCell = currentSheet.getCell(columnIndex, 20); // TODO: Change this cell to another sheet designated to navigation.
+                naviCell.setFormulaValue(formula, connection, true);
+                aggStr = String.valueOf(naviCell.getValueSync());
+            }
+            try {
+                agg = Double.parseDouble(aggStr);
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return agg;
+    }
+
+
+    public static class CombinedEntry {
+        static int keyCount;
+
+        public static void setKeyCount(int count) {
+            keyCount = count;
+        }
+
+        final private int _index; //original row/column index
+        final private Object[] _values; //cell value
+        private int keyIndex;
+
+        public CombinedEntry(int rowId) {
+            _values = new Object[keyCount];
+            this._index = rowId;
+            this.keyIndex = 0;
+        }
+
+        public int getIndex() {
+            return _index;
+        }
+
+        public Object[] getValues() {
+            return _values;
+        }
+
+        public void appendEntry(Object extra) {
+            this._values[keyIndex++] = extra;
+        }
+
+    }
+
+    public static class KeyComparator implements Comparator<CombinedEntry> {
+        final private boolean[] _descs;
+        final private boolean _matchCase;
+//		final private int _sortMethod; //TODO byNumberOfStroks, byPinyYin
+//		final private int _type; //TODO PivotTable only: byLabel, byValue
+
+        public KeyComparator(boolean[] descs, boolean matchCase) {
+            _descs = descs;
+            _matchCase = matchCase;
+        }
+
+        @Override
+        public int compare(CombinedEntry o1, CombinedEntry o2) {
+            final Object[] values1 = o1.getValues();
+            final Object[] values2 = o2.getValues();
+            return compare(values1, values2);
+        }
+
+        private int compare(Object[] values1, Object[] values2) {
+            final int len = values1.length;
+            for (int j = 0; j < len; ++j) {
+                int result = compareValue(values1[j], values2[j], _descs[j]);
+                if (result != 0) {
+                    return result;
+                }
+            }
+            return 0;
+        }
+
+        //1. null is always sorted at the end
+        //2. Error(Byte) > Boolean > String > Double
+        private int compareValue(Object val1, Object val2, boolean desc) {
+            if (val1 == val2) {
+                return 0;
+            }
+            final int order1 = val1 instanceof Byte ? 4 : val1 instanceof Boolean ? 3 : val1 instanceof String ? 2 : val1 instanceof Number ? 1 : desc ? 0 : 5;
+            final int order2 = val2 instanceof Byte ? 4 : val2 instanceof Boolean ? 3 : val2 instanceof String ? 2 : val2 instanceof Number ? 1 : desc ? 0 : 5;
+            int ret = 0;
+            if (order1 != order2) {
+                ret = order1 - order2;
+            } else { //order1 == order2
+                switch (order1) {
+                    case 4: //error, no order among different errors
+                        ret = 0;
+                        break;
+                    case 3: //Boolean
+                        ret = ((Boolean) val1).compareTo((Boolean) val2);
+                        break;
+                    case 2: //RichTextString
+                        ret = compareString(val1.toString(), val2.toString());
+                        break;
+                    case 1: //Double
+                        ret = ((Double) val1).compareTo((Double) val2);
+                        break;
+                    default:
+                        throw new UiException("Unknown value type: " + val1.getClass());
+                }
+            }
+            return desc ? -ret : ret;
+        }
+
+        private int compareString(String s1, String s2) {
+            return _matchCase ? compareString0(s1, s2) : s1.compareToIgnoreCase(s2);
+        }
+
+        //bug 59 Sort with case sensitive should be in special spreadsheet order
+        private int compareString0(String s1, String s2) {
+            final int len1 = s1.length();
+            final int len2 = s2.length();
+            final int len = len1 > len2 ? len2 : len1;
+            for (int j = 0; j < len; ++j) {
+                final int ret = compareChar(s1.charAt(j), s2.charAt(j));
+                if (ret != 0) {
+                    return ret;
+                }
+            }
+            return len1 - len2;
+        }
+
+        private int compareChar(char ch1, char ch2) {
+            final char uch1 = Character.toUpperCase(ch1);
+            final char uch2 = Character.toUpperCase(ch2);
+            return uch1 == uch2 ?
+                    (ch2 - ch1) : //yes, a < A
+                    (uch1 - uch2); //yes, a < b, a < B, A < b, and A < B
+        }
+    }
 
     //
     public enum ModelType {
