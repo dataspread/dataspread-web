@@ -109,6 +109,16 @@
             <artifactId>jquery</artifactId>
             <version>3.1.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>jquery-ui</artifactId>
+            <version>1.12.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>popper.js</artifactId>
+            <version>1.14.1</version>
+        </dependency>
     </dependencies>
     <build>
         <finalName>DataSpread</finalName>
