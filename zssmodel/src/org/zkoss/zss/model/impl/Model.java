@@ -3,11 +3,14 @@ package org.zkoss.zss.model.impl;
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
+import org.zkoss.poi.ss.formula.FormulaParseException;
 import org.zkoss.zk.ui.UiException;
 import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.ErrorValue;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.sys.EngineFactory;
+import org.zkoss.zss.model.sys.dependency.ObjectRef;
 import org.zkoss.zss.model.sys.formula.FormulaEngine;
 import org.zkoss.zss.model.sys.formula.FormulaEvaluationContext;
 import org.zkoss.zss.model.sys.formula.FormulaExpression;
@@ -123,18 +126,6 @@ public abstract class Model {
     public abstract String getNavChildren(int[] indices);
 
     /**
-     * Perform aggregation operation on groups of navigation. Currently implemented only in RCV_Model due to 'cannot convert from hybrid_model to ROM_Model'. Ideally will be implemented in the ROM_Model.
-     * @param currentSheet
-     * @param paths
-     * @param agg_ind
-     * @param agg_fun_id
-     * @return
-     */
-    public List<List<Double>> navigationGroupAggregateValue(SSheet currentSheet, int[] paths, int[] attr_indices, String[] agg_ids)  {
-        return null;
-    }
-
-    /**
      * Sort a bucket based on a given attribute. Calls the navigation structure to get starting / ending row number and then call the {@link #navigationSortRangeByAttribute(SSheet, int, int, int[], int)}
      * @param currentSheet
      * @param paths
@@ -157,14 +148,14 @@ public abstract class Model {
         return;
     }
 
-    //TODO: move this code to TableSheetModel to support multiple column agrregates
-    public double getColumnAggregate(SSheet currentSheet, int startRow, int endRow, int columnIndex, String agg_id) {
-        Function<Integer, String> colToAlph = number -> {
+    //TODO: move this code to TableSheetModel to support multiple column aggregates
+    public Map<String, Object> getColumnAggregate(SSheet currentSheet, int startRow, int endRow, int columnIndex, String agg_id, List<String> paras, boolean translateOnly) {
+        Function<Integer, String> colToAlphabet = number -> {
             StringBuilder sb = new StringBuilder();
             /*
              * {@see org.ds.api.controller.NavigationController:113}
              */
-            number++; // Since 0 corresponds to the 'A' column
+            number++; // Since 0 corresponds to the 'A' column in BE
             while (number-- > 0) {
                 sb.append((char) ('A' + (number % 26)));
                 number /= 26;
@@ -172,53 +163,65 @@ public abstract class Model {
             return sb.reverse().toString();
         };
 
-        String aggregateType;
-        boolean useGeneralFormula = false;
-        switch (agg_id) {
-            case "0":
-                aggregateType = "AVERAGE";
-                break;
-            case "1":
-                aggregateType = "SUM";
-                break;
-            case "2":
-                aggregateType = "COUNT";
-                break;
-            default:
-                aggregateType = agg_id;
-                useGeneralFormula = true;
-        }
-
-        double agg = 0;
+        Map<String, Object> agg = new HashMap<>();
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             this.navS.typeConvertColumnIfHavent(connection, columnIndex);
 
-            String colStr = colToAlph.apply(columnIndex);
+            String colStr = colToAlphabet.apply(columnIndex);
+            String regionStr = colStr + String.valueOf(startRow) + ":" + colStr + String.valueOf(endRow);
             String formula;
-            if (useGeneralFormula) {
-                formula = aggregateType.replaceAll("\\$1", String.valueOf(startRow)).replaceAll("\\$2", String.valueOf(endRow)).replaceAll("\\$C", colStr);
-            } else {
-                formula = aggregateType + "(" + colStr + startRow + ":" + colStr + endRow + ")";
+            {
+                StringBuilder fBuilder = new StringBuilder();
+                fBuilder.append(agg_id).append("(");
+                boolean notFirst = false;
+                for (String token : paras) {
+                    if (notFirst) {
+                        fBuilder.append(",");
+                    } else {
+                        notFirst = true;
+                    }
+                    if (token.isEmpty()) {
+                        fBuilder.append(regionStr);
+                    } else {
+                        fBuilder.append(token);
+                    }
+                }
+                fBuilder.append(")");
+                formula = fBuilder.toString();
             }
-            System.out.println(formula);
+            agg.put("formula", formula);
+            if (translateOnly)
+                return agg;
 
             String aggStr;
             if (true) {
                 FormulaEngine engine = EngineFactory.getInstance().createFormulaEngine();
-                FormulaExpression expr = engine.parse(formula, new FormulaParseContext(currentSheet, null));
+                FormulaExpression expr = null;
+                expr = engine.parse(formula, new FormulaParseContext(currentSheet, null));
                 if (expr.hasError()) {
-                    return 0;
+                    throw new RuntimeException(expr.getErrorMessage());
                 }
                 FormulaResultCellValue result = new FormulaResultCellValue(engine.evaluate(expr, new FormulaEvaluationContext(currentSheet, null)));
-                aggStr = String.valueOf(result.getValue());
+                System.out.println("Computing" + formula);
+                Object evalResult = result.getValue();
+                if (evalResult instanceof ErrorValue) {
+                    aggStr = ((ErrorValue) evalResult).getMessage();
+                    agg.put("value", aggStr);
+                } else {
+                    aggStr = String.valueOf(evalResult);
+                    agg.put("value", Double.parseDouble(aggStr));
+                }
             } else {// TODO: future feature, make aggregation results actual cells.
                 SCell naviCell = currentSheet.getCell(columnIndex, 20); // TODO: Change this cell to another sheet designated to navigation.
                 naviCell.setFormulaValue(formula, connection, true);
-                aggStr = String.valueOf(naviCell.getValueSync());
-            }
-            try {
-                agg = Double.parseDouble(aggStr);
-            } catch (NumberFormatException ignored) {
+                Object evalResult = naviCell.getValueSync();
+                if (evalResult instanceof ErrorValue) {
+                    aggStr = ((ErrorValue) evalResult).getMessage();
+                    agg.put("value", aggStr);
+                } else {
+                    aggStr = String.valueOf(evalResult);
+                    agg.put("value", Double.parseDouble(aggStr));
+                }
             }
         }
         return agg;

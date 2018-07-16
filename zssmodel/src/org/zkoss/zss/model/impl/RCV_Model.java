@@ -215,6 +215,12 @@ public class RCV_Model extends Model {
         }
 
         //create nav data structure
+        if (this.navS.getIndexString()!=null && indexString.equals(this.navS.getIndexString())){
+            this.navS.resetToRoot();
+            return this.navS.getSerializedBuckets();
+        } else{
+            this.navS.clearAll();
+        }
         this.navS.setIndexString(indexString);
         this.navS.setCurrentSheet(currentSheet);
         ArrayList<Object> recordList = new ArrayList<>();
@@ -229,27 +235,6 @@ public class RCV_Model extends Model {
     public String getNavChildren(int[] indices) {
         this.navS.computeOnDemandBucket ( indices );
         return navS.getSerializedBuckets();
-    }
-
-    @Override
-    public List<List<Double>> navigationGroupAggregateValue(SSheet currentSheet, int[] paths, int[] attr_indices, String[] agg_ids) {
-        List<List<Double>> attrAggList = new ArrayList<>();
-        List<Double> aggList = new ArrayList<>();
-        List<Integer> startEndInd = this.navS.getGroupStartEndIndex(paths);
-
-        for(int attr_i=0;attr_i<attr_indices.length;attr_i++)
-        {
-            for (int i = 0; i < startEndInd.size() / 2; i++) {
-                int startRow = startEndInd.get(2 * i);
-                int endRow = startEndInd.get(2 * i + 1);
-                Double tmp = getColumnAggregate(currentSheet, startRow, endRow, attr_indices[attr_i], agg_ids[attr_i]);
-                aggList.add(tmp);
-            }
-            attrAggList.add(aggList);
-            aggList = new ArrayList<>();
-        }
-
-        return attrAggList;
     }
 
     @Override

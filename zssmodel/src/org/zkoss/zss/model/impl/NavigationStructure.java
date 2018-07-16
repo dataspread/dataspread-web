@@ -32,16 +32,17 @@ public class NavigationStructure {
 
     class ReturnBuffer {
         public ArrayList<Bucket<String>> buckets;
-        /**
-         * Indicating whether the returned subgroups are clickable/expandable or not.
-         */
-        public boolean clickable;
     }
 
     /**
      * Total number of data rows. Does not include the header line.
      */
     private int totalRows;
+
+    public String getIndexString() {
+        return indexString;
+    }
+
     private String indexString;
     private Set<Integer> typeCheckedColumns;
 
@@ -90,6 +91,16 @@ public class NavigationStructure {
         return true;
     }
 
+    public void resetToRoot(){
+        returnBuffer.buckets = navBucketTree;
+    }
+
+    public void clearAll(){
+        if (navBucketTree != null)
+            navBucketTree.clear();
+        recordList = null;
+    }
+
     /**
      * Serialize the newly created buckets to JSON format.
      *
@@ -105,6 +116,7 @@ public class NavigationStructure {
                 public int[] rowRange;
                 public int value;
                 public int rate;
+                public boolean clickable;
 
                 /**
                  * Needed for serialization
@@ -116,6 +128,7 @@ public class NavigationStructure {
                     name = item.name;
                     rowRange = new int[]{item.startPos, item.endPos};
                     value = item.size;
+                    clickable = !item.isSingleton();
                     rate = 10;
                 }
             }
@@ -128,7 +141,6 @@ public class NavigationStructure {
 
             public ScrollingProtocol(ReturnBuffer ret) {
                 data = new ArrayList<>();
-                clickable = ret.clickable;
                 for (int i = 0; i < ret.buckets.size(); i++) {
                     data.add(new BucketGroup(ret.buckets.get(i)));
                 }
@@ -157,7 +169,7 @@ public class NavigationStructure {
     }
 
     /**
-     * Called when user select an index to start navigation. This function must be called after {@link #sortSetRecordList}.
+     * Called when user select an index to start navigation. This function must be called after {@link #setRecordList}.
      */
     public void initIndexedBucket(int totalRows) {
         this.totalRows = totalRows;
@@ -169,10 +181,17 @@ public class NavigationStructure {
      */
     public void computeOnDemandBucket(int[] paths) {
         if (paths.length == 0) {
-            navBucketTree = getNonOverlappingBuckets(1, this.totalRows - 1);
+            if (navBucketTree.size()==0)
+                navBucketTree = getNonOverlappingBuckets(1, this.totalRows - 1);
+            else
+                resetToRoot();
             return;
         }
         Bucket<String> subRoot = getSubRootBucket(paths);
+        if (subRoot.getChildren() != null) {
+            returnBuffer.buckets = subRoot.getChildren();
+            return;
+        }
         if (indexString == null)
             subRoot.setChildren(getUniformBuckets(subRoot.startPos, subRoot.endPos));
         else
@@ -243,7 +262,6 @@ public class NavigationStructure {
         ArrayList<Bucket<String>> bucketList = new ArrayList<>();
         int bucketSize = (endPos - startPos + 1) / kHist;
 
-        boolean subgroupClickable = false;
         if (bucketSize == 0) {
             bucketSize = 1;
         }
@@ -263,7 +281,7 @@ public class NavigationStructure {
 
             }
             int[] start_end;
-            start_end = getStartEnd(bucket.maxValue, bucket.startPos, bucket.endPos);
+            start_end = getStartEnd(bucket.endPos);
             int boundary_inc = 0;//count maxValue in next bucket
             int boundary_dec = 0;//count maxValue in current bucket
             boundary_dec = bucket.endPos - start_end[0] + 1;
@@ -292,8 +310,6 @@ public class NavigationStructure {
                 bucket.setId();
                 bucketList.add(bucket);
             }
-            if (!subgroupClickable && !(bucket.maxValue.equals(bucket.minValue)))
-                subgroupClickable = true;
         }
 
         if (startIndex < endPos + 1) {
@@ -306,10 +322,7 @@ public class NavigationStructure {
             bucket.setName(false);
             bucket.setId();
             bucketList.add(bucket);
-            if (!subgroupClickable && !(bucket.maxValue.equals(bucket.minValue)))
-                subgroupClickable = true;
         }
-        returnBuffer.clickable = subgroupClickable;
         returnBuffer.buckets = bucketList;
         return bucketList;
     }
@@ -326,7 +339,6 @@ public class NavigationStructure {
         int bucketSize = (endPos - startPos + 1) / kHist;
 
         //System.out.println("(start,end): ("+startPos+","+endPos+"), BUCKET Size: "+bucketSize);
-        boolean subgroupClickable = false;
 
         if (bucketSize > 0) {
             int startIndex = startPos;
@@ -349,7 +361,6 @@ public class NavigationStructure {
                 bucket.setName(true);
                 bucket.setId();
                 bucketList.add(bucket);
-                if (!subgroupClickable && (bucket.endPos - bucket.startPos + 1) / kHist > 0) subgroupClickable = true;
             }
 
             if (startIndex < endPos + 1) {
@@ -363,40 +374,175 @@ public class NavigationStructure {
                 bucket.setId();
 
                 bucketList.add(bucket);
-                if (!subgroupClickable && (bucket.endPos - bucket.startPos + 1) / kHist > 0) subgroupClickable = true;
             }
         }
-        returnBuffer.clickable = subgroupClickable;
         returnBuffer.buckets = bucketList;
         return bucketList;
     }
 
-    private int[] getStartEnd(Object maxValue, int startPos, int currentPos) {
+
+    /**
+     * Return a list of keys that correspond to the flattened view of the bucket indicated by the input paths.
+     *
+     * @param paths Input paths determine the sub-root group to flatten over.
+     * @return ArrayList of flattened key view.
+     */
+    public Map<String, Object> getFlattenView(int[] paths) {
+        int cur, bound;
+        {
+            Bucket<String> bucket = getSubRootBucket(paths);
+            if (bucket != null) {
+                cur = bucket.startPos;
+                bound = bucket.endPos;
+            } else {
+                cur = 1;
+                bound = recordList.size() - 1;
+            }
+        }
+
+        List<Integer> startRows = new ArrayList<>();
+        List<Object> flattenView = new ArrayList<>();
+        HashMap<String, Object> returnDict = new HashMap<>();
+        returnDict.put("startRows", startRows);
+        returnDict.put("flattenView", flattenView);
+        while (cur < bound) {
+            flattenView.add(recordList.get(cur));
+            startRows.add(cur);
+            cur = binarySearchNextUniqueKey(cur, false);
+        }
+        return returnDict;
+    }
+
+    /**
+     * Perform aggregation operation on groups of navigation.
+     *
+     * @param model
+     * @param paths
+     * @param attr_indices
+     * @param agg_ids
+     * @param paraList
+     * @return
+     */
+    public List<List<Object>> navigationGroupAggregateValue(Model model, int[] paths, int[] attr_indices, String[] agg_ids, List<List<String>> paraList) {
+        List<List<Object>> attrAggList = new ArrayList<>();
+        List<Object> aggList = new ArrayList<>();
+
+        Bucket<String> subroot = getSubRootBucket(paths);
+        List<Bucket<String>> subgroups = subroot == null ? navBucketTree : subroot.getChildren();
+        for (int attr_i = 0; attr_i < attr_indices.length; attr_i++) {
+            for (Bucket<String> subgroup : subgroups) {
+                int startRow = subgroup.getStartPos();
+                int endRow = subgroup.getEndPos();
+                Map<String, Object> tmp = model.getColumnAggregate(currentSheet, startRow, endRow, attr_indices[attr_i], agg_ids[attr_i], paraList.get(attr_i), true);
+                String formula = (String) tmp.get("formula");
+                Map<String, Object> aggMemMap = subgroup.aggMem;
+                if (aggMemMap.containsKey(formula)) {
+                    tmp.put("value", aggMemMap.get(formula));
+                } else {
+                    tmp = model.getColumnAggregate(currentSheet, startRow, endRow, attr_indices[attr_i], agg_ids[attr_i], paraList.get(attr_i), false);
+                    aggMemMap.put(formula, tmp.get("value"));
+                }
+                aggList.add(tmp);
+            }
+            attrAggList.add(aggList);
+            aggList = new ArrayList<>();
+        }
+        return attrAggList;
+    }
+
+    /**
+     * Binary search the starting index of the next unique key. start stride from 1, exponentially increase the stride until seeing diff value, then exponentially decrease stride to locate the desired index.
+     *
+     * @param cur current location in {@link #recordList}
+     * @param dec boolean flag, true if search towards left, false if searching towards right.
+     * @return Index of the next key. 0 (dec) or len (not dec) if the current key is the last one.
+     */
+    private int binarySearchNextUniqueKey(int cur, boolean dec) {
+        if (dec) {
+            return binarySearchNextUniqueKey(cur, 1);
+        } else {
+            return binarySearchNextUniqueKey(cur, recordList.size() - 1);
+        }
+    }
+
+    /**
+     * Search from cur position towards bound for next different key.
+     * @param cur current position of key
+     * @param bound The boundary of search inclusively.
+     * @return The positional index of next different key.
+     */
+    private int binarySearchNextUniqueKey(int cur, int bound) {
+        Object val = recordList.get(cur);
+        int left, right;
+
+        if (bound < cur) { // Looking for the left boundary
+            { // Locate a range in log(n) time.
+                right = cur;
+                int stride = -1;
+                left = right + stride;
+                while (left >= bound && recordList.get(left).equals(val)) {
+                    int tmp = left;
+                    left = right + stride;
+                    right = tmp;
+                    stride *= 2;
+                }
+                if (left < bound) {
+                    if (recordList.get(bound).equals(val))
+                        return bound - 1;
+                    else
+                        left = bound;
+                }
+            }
+
+            { // Binary search to find the first unequal value. At this stage, the next key must exist.
+                while (left < right) {
+                    int mid = (left + right) / 2;
+                    if (recordList.get(mid).equals(val)) {
+                        right = mid; // right guaranteed to decrease even right-left==1
+                    } else {
+                        left = mid + 1;
+                    }
+                }
+                return left - 1;
+            }
+
+        } else { // Looking for the right boundary
+            { // Locate a range in log(n) time.
+                left = cur;
+                int stride = 1;
+                right = left + stride;
+                while (right <= bound && recordList.get(right).equals(val)) {
+                    int tmp = right;
+                    right = left + stride;
+                    left = tmp;
+                    stride *= 2;
+                }
+                if (right > bound) {
+                    if (recordList.get(bound).equals(val))
+                        return bound + 1;
+                    else
+                        right = bound;
+                }
+            }
+
+            { // Binary search to find the first unequal value. At this stage, the next key must exist.
+                while (left < right) {
+                    int mid = (left + right) / 2;
+                    if (recordList.get(mid).equals(val)) {
+                        left = mid + 1;
+                    } else {
+                        right = mid; // right guaranteed to decrease even right-left==1
+                    }
+                }
+                return left;
+            }
+        }
+    }
+
+    private int[] getStartEnd(int currentPos) {
         int[] indexes = new int[2];
-
-        if (currentPos == 0)
-            indexes[0] = currentPos;
-        else if (recordList.get(currentPos - 1).equals(maxValue)) {
-            int i = currentPos - 1;
-            while (i > startPos && recordList.get(i - 1).equals(maxValue)) {
-                i--;
-            }
-            indexes[0] = i;
-        } else
-            indexes[0] = currentPos;
-
-        if (currentPos == recordList.size() - 1)
-            indexes[1] = currentPos;
-        else if (recordList.get(currentPos + 1).equals(maxValue)) {
-            int i = currentPos + 1;
-            while (i < recordList.size() - 1 && recordList.get(i + 1).equals(maxValue)) {
-                i++;
-            }
-            indexes[1] = i;
-        } else
-            indexes[1] = currentPos;
-
-
+        indexes[0] = binarySearchNextUniqueKey(currentPos, true) + 1;
+        indexes[1] = binarySearchNextUniqueKey(currentPos, false) - 1;
         return indexes;
     }
 
