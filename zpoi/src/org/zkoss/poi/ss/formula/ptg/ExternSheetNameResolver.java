@@ -26,7 +26,7 @@ import org.zkoss.poi.ss.formula.SheetNameFormatter;
  */
 final class ExternSheetNameResolver {
 
-	private ExternSheetNameResolver() {
+	public ExternSheetNameResolver() {
 		// no instances of this class
 	}
 

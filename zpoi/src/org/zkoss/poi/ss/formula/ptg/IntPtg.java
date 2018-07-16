@@ -46,10 +46,9 @@ public final class IntPtg extends ScalarConstantPtg {
 	public final static byte sid = 0x1e;
 	private int field_1_value;
 
-	IntPtg()
-	{
-
-	}
+	IntPtg(){
+        /* For seralization */
+    }
 
 	public IntPtg(LittleEndianInput in)  {
 		this(in.readUShort());

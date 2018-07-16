@@ -49,7 +49,7 @@ public abstract class RefPtgBase extends OperandPtg {
      */
     private static final BitField column = BitFieldFactory.getInstance(0x3FFF);
 
-	protected RefPtgBase() {
+	public RefPtgBase() {
 		// Required for clone methods
 	}
 

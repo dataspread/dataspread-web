@@ -30,7 +30,7 @@ public final class LessThanPtg extends ComparisonPtg {
     /** identifier for LESS THAN char */
     private final static String LESSTHAN = "<";
 
-    private LessThanPtg() {
+    public LessThanPtg() {
     	// enforce singleton
     }
 

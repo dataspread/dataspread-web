@@ -27,7 +27,7 @@ public final class PowerPtg extends ValueOperatorPtg {
 
     public static final ValueOperatorPtg instance = new PowerPtg();
 
-    private PowerPtg() {
+    public PowerPtg() {
     	// enforce singleton
     }
 
