@@ -27,11 +27,13 @@ public class BookBindings {
         return _bindings.remove(key);
     }
 
+    static public boolean contains(String key){ return _bindings.containsKey(key); }
+
     static public SBook getBookByName(String bookName) {
         return _bindings.computeIfAbsent(bookName, e->
                 {
                     SBook book = new BookImpl(e);
-                    if (!book.setNameAndLoad(e)) {
+                    if (!book.setNameAndLoad(e, book.getId())) {
                         book.createSheet("Sheet1");
                         book.createSheet("Sheet2");
                         book.checkDBSchema();
@@ -45,12 +47,17 @@ public class BookBindings {
         return _bindings.computeIfAbsent(bookName, e->
                 {
                     SBook book = new BookImpl(e);
-                    if (!book.setNameAndLoad(e))
+                    if (!book.setNameAndLoad(e, book.getId()))
                         return null;
                     else
                         return book;
                 }
         );
+    }
+
+    static public SBook getBookById(String bookId) {
+        SBook book = BookImpl.getBookById(bookId);
+        return book;
     }
 
     static public SSheet getSheetByRef(Ref ref) {

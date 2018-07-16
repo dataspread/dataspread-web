@@ -101,11 +101,56 @@ public class BookImpl extends AbstractBookAdv{
 		//BookBindings.put(bookName, this);
 	}
 
+    public BookImpl(String bookName, String bookId){
+        Validations.argNotNull(bookName);
+        this._bookName = bookName;
+        _bookSeries = new SimpleBookSeriesImpl(this);
+        _fonts.add(_defaultFont = new FontImpl());
+        initDefaultCellStyles();
+        _colors.put(ColorImpl.WHITE,ColorImpl.WHITE);
+        _colors.put(ColorImpl.BLACK,ColorImpl.BLACK);
+        _colors.put(ColorImpl.RED,ColorImpl.RED);
+        _colors.put(ColorImpl.GREEN,ColorImpl.GREEN);
+        _colors.put(ColorImpl.BLUE,ColorImpl.BLUE);
+
+        _bookId = bookId;
+        _tables = new HashMap<String, STable>(0);
+        //zekun.fan@gmail.com added bindings
+        //BookBindings.put(bookName, this);
+    }
+
+	public static SBook getBookById(String bookId){
+        String getBookEntry = "SELECT bookname FROM books WHERE booktable = ?";
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+             PreparedStatement getBookStmt = connection.prepareStatement(getBookEntry)) {
+            getBookStmt.setString(1, bookId);
+            ResultSet rs = getBookStmt.executeQuery();
+            if(rs.next()) {
+                String bookName = rs.getString(1);
+                if (BookBindings.contains(bookName))
+                    return BookBindings.get(bookName);
+                else {
+                    SBook book = new BookImpl(bookName, bookId);
+                    if (!book.setNameAndLoad(bookName, bookId)){
+                        return null;
+                    }
+                    BookBindings.put(bookName, book);
+                    return book;
+                }
+
+            }
+            connection.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 	public static void deleteBook(String bookName, String bookTable) {
-		String deleteBookEntry = "DELETE FROM books WHERE bookname = ?";
+		String deleteBookEntry = "DELETE FROM books WHERE booktable = ?";
 		try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
 			 PreparedStatement deleteBookStmt = connection.prepareStatement(deleteBookEntry)) {
-			deleteBookStmt.setString(1, bookName);
+			deleteBookStmt.setString(1, bookTable);
 			deleteBookStmt.execute();
 			connection.commit();
 		} catch (SQLException e) {
@@ -137,15 +182,15 @@ public class BookImpl extends AbstractBookAdv{
 	@Override
 	public boolean setBookName(String bookName) {
 		BookBindings.remove(this._bookName);
-		BookBindings.put(bookName,this);
+		BookBindings.put(bookName, this);
 		if (schemaPresent)
 		{
-			String updateBookName = "UPDATE books SET bookname = ? WHERE bookname = ?";
+			String updateBookName = "UPDATE books SET bookname = ? WHERE booktable = ?";
 			try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
 				 PreparedStatement updateBookNameStmt = connection.prepareStatement(updateBookName))
 			{
 				updateBookNameStmt.setString(1, bookName);
-				updateBookNameStmt.setString(2, _bookName);
+				updateBookNameStmt.setString(2, _bookId);
 				updateBookNameStmt.execute();
 				connection.commit();
 			}
@@ -166,7 +211,7 @@ public class BookImpl extends AbstractBookAdv{
 	public void checkDBSchema() {
 		if (schemaPresent)
 			return;
-		String bookTable=getId();
+		String bookTable = getId();
 
 		try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
 			 Statement stmt = connection.createStatement()) {
@@ -182,11 +227,11 @@ public class BookImpl extends AbstractBookAdv{
 			ResultSet rs = checkBookStmt.executeQuery();
 			if(rs.next()) {
 				_bookName = rs.getString(1) + "_";
-				BookBindings.put(_bookName,this);
+				BookBindings.put(_bookName, this);
 			}
 			checkBookStmt.close();
 
-			String insertBook = "INSERT INTO books(bookname, booktable, lastopened) VALUES (?, ?, now())";
+			String insertBook = "INSERT INTO books(bookname, booktable, lastmodified, createdtime) VALUES (?, ?, now(), now())";
 			PreparedStatement insertBookStmt = connection.prepareStatement(insertBook);
 			insertBookStmt.setString(1, getBookName());
 			insertBookStmt.setString(2, getId());
@@ -1101,16 +1146,16 @@ public class BookImpl extends AbstractBookAdv{
 	}
 
 	@Override
-	public boolean setNameAndLoad(String _bookName){
+	public boolean setNameAndLoad(String _bookName, String _bookId){
 		this._bookName = _bookName;
-
+        this._bookId = _bookId;
 		this._sheets.clear();
 
 		// Load Schema
 		//String bookTable = getId();
 		logger.info("Loading " + getBookName());
 
-		String bookQuery = "UPDATE books SET lastopened = now() WHERE bookname = ? RETURNING booktable";
+		String bookQuery = "UPDATE books SET lastmodified = now() WHERE booktable = ? RETURNING booktable";
 		String sheetsQuery = "SELECT * FROM sheets WHERE booktable = ? ORDER BY sheetindex";
 
 		try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
@@ -1118,17 +1163,14 @@ public class BookImpl extends AbstractBookAdv{
 			 PreparedStatement sheetsStmt = connection.prepareStatement(sheetsQuery)) {
 
 
-			bookStmt.setString(1, getBookName());
+			bookStmt.setString(1, _bookId);
 			ResultSet rs = bookStmt.executeQuery();
-			if (rs.next())
-				_bookId = rs.getString(1);
-			else {
-				logger.info(getBookName() + " does not exist");
-				rs.close();
-
-				return false;
-			}
-			rs.close();
+			if (!rs.next()) {
+			    logger.info(getBookName() + "does not exist");
+			    rs.close();
+			    return false;
+            }
+            rs.close();
 
 			sheetsStmt.setString(1, getId());
 			ResultSet rsSheets = sheetsStmt.executeQuery();

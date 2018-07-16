@@ -8,6 +8,7 @@ import org.zkoss.util.Pair;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.impl.sys.TableMonitor;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -97,7 +98,7 @@ public class Hybrid_Model extends RCV_Model {
             int max_row = range.getRow() + i * block_row;
             if (i > range.getLastRow() / block_row) max_row = range.getLastRow();
             CellRegion work_range = new CellRegion(min_row, range.getColumn(), max_row, range.getLastColumn());
-            Collection<AbstractCellAdv> cells = getCells(context, work_range)
+            Collection<AbstractCellAdv> cells = getCellsJSON(context, work_range)
                     .stream()
                     //.map(e -> e.shiftedCell(-range.getRow(), -range.getColumn())) // Translate
                     .collect(Collectors.toList());
@@ -348,6 +349,12 @@ public class Hybrid_Model extends RCV_Model {
         bs.putObject(0, metaDataBlock);
         bs.flushDirtyBlocks(context);
 
+        TableMonitor.getMonitor().shiftRow(
+                context,this.sheet.getSheetName(),
+                this.sheet.getBook().getId(),
+                row,
+                count);
+
         super.insertRows(context, row, count);
     }
 
@@ -370,6 +377,11 @@ public class Hybrid_Model extends RCV_Model {
         }
         bs.putObject(0, metaDataBlock);
         bs.flushDirtyBlocks(context);
+        TableMonitor.getMonitor().shiftColumn(
+                context,this.sheet.getSheetName(),
+                this.sheet.getBook().getId(),
+                col,
+                count);
         super.insertCols(context, col, count);
     }
 
@@ -443,6 +455,12 @@ public class Hybrid_Model extends RCV_Model {
         }
         bs.putObject(0, metaDataBlock);
         bs.flushDirtyBlocks(context);
+
+        TableMonitor.getMonitor().shiftRow(
+                context,this.sheet.getSheetName(),
+                this.sheet.getBook().getId(),
+                row,
+                -count);
 
         super.deleteRows(context, row, count);
     }
@@ -540,6 +558,12 @@ public class Hybrid_Model extends RCV_Model {
         bs.putObject(0, metaDataBlock);
         bs.flushDirtyBlocks(context);
 
+        TableMonitor.getMonitor().shiftColumn(
+                context,this.sheet.getSheetName(),
+                this.sheet.getBook().getId(),
+                col,
+                -count);
+
         super.deleteCols(context, col, count);
     }
 
@@ -632,6 +656,8 @@ public class Hybrid_Model extends RCV_Model {
                                         metaDataBlock.modelEntryList.get(e).range.getColumn()))
                                 .collect(Collectors.toList())));
 
+        //NewTableModel newTable = new NewTableModel(sheet.getBook().getBookName(), sheet.getSheetName(), tableName);
+        //cells.addAll(newTable.getCellsJSON(context, range, sheet.getSheetName(), sheet.getBook().getBookName()));
         boolean encompass = false;
         for (MetaDataBlock.ModelEntry m : metaDataBlock.modelEntryList)
             if (m.range.contains(range))
@@ -640,6 +666,7 @@ public class Hybrid_Model extends RCV_Model {
         if (encompass == false) {
             cells.addAll(super.getCells(context, range));
         }
+        cells.addAll(TableMonitor.getMonitor().getTableCells(context,range,this.sheet.getSheetName(),this.sheet.getBook().getId()));
         return Collections.unmodifiableCollection(cells);
     }
 

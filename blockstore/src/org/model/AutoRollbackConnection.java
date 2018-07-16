@@ -76,8 +76,8 @@ public class AutoRollbackConnection  implements AutoCloseable {
         return connection.prepareStatement(sql);
     }
 
-    public Array createArrayOf(String tableName, Object[] elements) throws SQLException {
-        return connection.createArrayOf(tableName, elements);
+    public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
+        return connection.createArrayOf(typeName, elements);
     }
 
     public Connection getInternalConnection() {

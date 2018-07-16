@@ -45,8 +45,6 @@ import org.zkoss.zss.model.impl.AbstractRichTextAdv;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
 import org.zkoss.zss.range.impl.StyleUtil;
 import org.zkoss.zss.range.impl.WholeStyleUtil;
-import org.zkoss.zss.ui.impl.undo.CellRichTextAction;
-import org.zkoss.zss.ui.sys.UndoableAction;
 
 /**
  * The utility to help UI to deal with user's cell operation of a {@link Range}.

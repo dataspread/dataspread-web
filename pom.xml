@@ -29,9 +29,8 @@
     <modules>
         <module>rtree</module>
         <module>blockstore</module>
-        <module>zpoi</module>
         <module>zssmodel</module>
-        <module>dsapi</module>
+        <module>zpoi</module>
         <module>zss</module>
         <module>webapp</module>
     </modules>

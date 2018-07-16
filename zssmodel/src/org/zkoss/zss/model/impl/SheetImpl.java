@@ -374,7 +374,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	}
 
 
-	private AbstractCellAdv preFetchCells(CellRegion cellRegion)
+	private AbstractCellAdv  preFetchCells(CellRegion cellRegion)
 	{
 		//System.out.println("Fetching cell:" + cellRegion);
 

@@ -67,7 +67,7 @@ public class DBHandler {
             DBContext dbContext = new DBContext(connection);
             createBookTable(dbContext);
             createUserAccountTable(dbContext);
-            createUserTable(dbContext);
+            createUserBooksTable(dbContext);
             createTableOrders(dbContext);
             createDependencyTable(dbContext);
             createFullDependencyTable(dbContext);
@@ -96,7 +96,8 @@ public class DBHandler {
             String createBooksTable = "CREATE TABLE  IF NOT  EXISTS  books (" +
                     "bookname  TEXT NOT NULL," +
                     "booktable TEXT NOT NULL UNIQUE," +
-                    "lastopened timestamp," +
+                    "lastmodified timestamp," +
+                    "createdtime timestamp," +
                     "PRIMARY KEY (bookname))";
             stmt.execute(createBooksTable);
 
@@ -111,17 +112,42 @@ public class DBHandler {
                     "  PRIMARY KEY (booktable, sheetid)," +
                     "  UNIQUE (bookname,sheetname))";
             stmt.execute(createSheetsTable);
+
+            String createDataTableSheetLink = "CREATE TABLE  IF NOT  EXISTS  sheet_table_link (" +
+                    "linkid  TEXT NOT NULL," +
+                    "bookid  TEXT NOT NULL," +
+                    "sheetname  TEXT NOT NULL," +
+                    "row1  INTEGER NOT NULL," +
+                    "col1  INTEGER NOT NULL," +
+                    "row2  INTEGER NOT NULL," +
+                    "col2  INTEGER NOT NULL," +
+                    "tablename  TEXT NOT NULL," +
+                    "filter  TEXT NOT NULL," +
+                    "sort TEXT NOT NULL," +
+                    "PRIMARY KEY (linkid))";
+            stmt.execute(createDataTableSheetLink);
+
+
+            String createDataTable = "CREATE TABLE  IF NOT  EXISTS  tables (" +
+                    "sharelink  TEXT NOT NULL," +
+                    "tablename  TEXT NOT NULL," +
+                    "userid  TEXT NOT NULL," +
+                    "displayName  TEXT NOT NULL," +
+                    "role TEXT NOT NULL)";
+            stmt.execute(createDataTable);
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    private void createUserTable(DBContext dbContext) {
+
+    private void createUserBooksTable(DBContext dbContext) {
         AutoRollbackConnection connection = dbContext.getConnection();
         try (Statement stmt = connection.createStatement()) {
-            String createTable = "CREATE TABLE IF NOT EXISTS users (" +
-                    "username  TEXT NOT NULL," +
-                    "booktable   TEXT NOT NULL" +
+            String createTable = "CREATE TABLE IF NOT EXISTS user_books (" +
+                    "authtoken  TEXT NOT NULL," +
+                    "booktable  TEXT NOT NULL," +
+                    "role   TEXT NOT NULL" +
                     ");";
             stmt.execute(createTable);
         }
@@ -135,10 +161,13 @@ public class DBHandler {
         AutoRollbackConnection connection = dbContext.getConnection();
         try (Statement stmt = connection.createStatement()) {
             String createTable = "CREATE TABLE IF NOT EXISTS user_account (" +
-                    "username  TEXT NOT NULL," +
-                    "password   TEXT NOT NULL" +
-                    ");";
+                    "authtoken  TEXT NOT NULL UNIQUE," +
+                    "username   TEXT NOT NULL," +
+                    "PRIMARY KEY (authtoken));";
             stmt.execute(createTable);
+            String initializeUser = "INSERT INTO user_account VALUES ('guest', 'guest')" +
+                    "ON CONFLICT (authtoken) DO NOTHING;";
+            stmt.execute(initializeUser);
         } catch (SQLException e) {
             e.printStackTrace();
         }

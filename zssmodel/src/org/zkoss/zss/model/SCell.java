@@ -190,6 +190,8 @@ public interface SCell extends CellStyleHolder,FormulaContent{
 
     int getComputeCost();
 
+    void translate(int rowShift, int colShift);
+
     /**
 	 * @since 3.5.0
 	 */

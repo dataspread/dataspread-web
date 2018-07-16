@@ -329,7 +329,7 @@ public interface SRange {
 //	 * @param col column index relative to this Range(note that it is 0-based)
 //	 * @return the range that contains the cell specified in row, col (relative to this Range).
 //	 */
-//	public SRange getCells(int row, int col);
+//	public SRange getCellsJSON(int row, int col);
 	
 	/**
 	 * Sets a Style object to this Range.

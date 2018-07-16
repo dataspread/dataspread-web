@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css"
+          integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <link rel="stylesheet" href="webjars/jquery-ui/1.12.1/jquery-ui.css">
+    <link rel="stylesheet" href="webjars/handsontable/dist/handsontable.min.css">
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+
+<div class="container-fluid">
+    <div class="row-fluid">
+        <div class="span12">
+
+            <div id="toolbox">
+                <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                    <a class="navbar-brand" href="#">DataSpread</a>
+                    <button class="navbar-toggler" type="button" data-toggle="collapse"
+                            data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                            aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+
+                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                        <ul class="navbar-nav mr-auto">
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="fileDropdown" role="button"
+                                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">File</a>
+                                <div class="dropdown-menu" aria-labelledby="fileDropdown">
+
+                                    <a id="create-book" class="dropdown-item" href="#">New</a>
+                                    <a id="open-book" class="dropdown-item" href="#">Open</a>
+                                    <a id="rename-book" class="dropdown-item" href="#">Rename</a>
+                                    <a id="delete-book" class="dropdown-item" href="#">Delete</a>
+                                    <a id="close-book" class="dropdown-item" href="#">Close</a>
+
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item" href="#" id="importTable">Import</a>
+                                    <a class="dropdown-item" href="" id="linkTable">Link</a>
+                                </div>
+                            </li>
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="editDropdown" role="button"
+                                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Edit</a>
+                                <div class="dropdown-menu" aria-labelledby="fileDropdown">
+                                    <a class="dropdown-item" href="#">Undo</a>
+                                    <a class="dropdown-item" href="#">Redo</a>
+                                </div>
+                            </li>
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="viewDropdown" role="button"
+                                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">View</a>
+                                <div class="dropdown-menu" aria-labelledby="viewDropdown">
+                                    <a class="dropdown-item" href="#">Formula Bar</a>
+                                    <a class="dropdown-item" href="#">Navigation Panel</a>
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item" href="#">Freeze Row</a>
+                                    <a class="dropdown-item" href="#">UnFreeze Row</a>
+                                </div>
+                            </li>
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="insertDropdown" role="button"
+                                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    Insert
+                                </a>
+                                <div class="dropdown-menu" aria-labelledby="insertDropdown">
+                                    <a class="dropdown-item" href="#">Picture</a>
+                                    <div class="dropdown-divider"></div>
+                                    <h6 class="dropdown-header">Charts</h6>
+                                    <a class="dropdown-item" href="#">Pie Chart</a>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link disabled" href="#">Help</a>
+                            </li>
+                        </ul>
+
+                        <ul class="nav justify-content-end">
+
+                            <li class="nav-link">
+                                <a id="tableName"></a>
+                            </li>
+
+                            <li class="nav-link">
+                                <a href="#" class="nav-link">Register</a>
+                            </li>
+                            <li class="nav-link">
+                                <a href="#" class="nav-link">Sign In</a>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+
+                <nav class="navbar navbar-expand-lg navbar-light bg-light">
+
+                    <ul class="navbar-nav mr-auto">
+
+                        <li class="nav-item">
+                            <button class="btn">
+                                <i class="fa fa-file"></i>
+                            </button>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a href="#" class="nav-link dropdown-toggle" id="pasteDropdown" role="button"
+                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fa fa-paste"></i>
+
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="pasteDropdown">
+                                <a href="#" class="dropdown-item">
+                                    <a class="dropdown-item" href="#">Paste</a>
+                                </a>
+                            </div>
+                        </li>
+
+                        <li class="nav-item">
+                            <button class="btn">
+                                <i class="fa fa-cut"></i>
+                            </button>
+                        </li>
+
+                        <li class="nav-item">
+                            <button class="btn">
+                                <i class="fa fa-copy"></i>
+                            </button>
+                        </li>
+
+                        <li class="nav-item">
+                            <div class="input-group">
+                                <select class="custom-select" id="fontSlector">
+                                    <option selected>Arial</option>
+                                    <option value="">Microsoft Yahei</option>
+                                    <option value="">Times Roman</option>
+                                </select>
+                            </div>
+                        </li>
+
+                        <li class="nav-item">
+                            <div class="input-group">
+                                <div class="input-group-append">
+                                    <select class="custom-select" id="fontSizeSlector">
+                                        <option selected>8</option>
+                                        <option value="">10</option>
+                                        <option value="">30</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li class="nav-item">
+                            <button class="btn">
+                                <i class="fa fa-bold"></i>
+                            </button>
+                        </li>
+
+                        <li class="nav-item">
+                            <button class="btn">
+                                <i class="fa fa-italic"></i>
+                            </button>
+                        </li>
+
+                        <li class="nav-item">
+                            <button class="btn">
+                                <i class="fa fa-underline"></i>
+                            </button>
+                        </li>
+
+                        <li class="nav-item">
+                            <button class="btn">
+                                <i class="fa fa-strikethrough"></i>
+                            </button>
+                        </li>
+
+                        <li class="nav-item">
+                            <button class="btn">
+                                <i class="fa fa-font"></i>
+                            </button>
+                        </li>
+
+                        <input class="jscolor">
+
+                        <li class="nav-item">
+                            <button class="btn">
+                                <i class="fa fa-paint-brush jscolor"></i>
+                            </button>
+                        </li>
+
+                        <li class="nav-item">
+                            <button class="btn">
+                                <i class="fa fa-table"></i>
+                            </button>
+                        </li>
+
+                        <li class="nav-item">
+                            <button class="btn">
+                                <i class="fa fa-filter"></i>
+                            </button>
+                        </li>
+
+                        <li class="nav-item">
+                            <button class="btn">
+                                <i class="fa fa-sort"></i>
+                            </button>
+                        </li>
+
+                        <li class="nav-item">
+                            <button class="btn">
+                                <i class="fa fa-arrow-right"></i>
+                            </button>
+                        </li>
+
+                        <li class="nav-item">
+                            <button class="btn">
+                                <i class="fa fa-align-justify"></i>
+                            </button>
+                        </li>
+
+                        <li class="nav-item">
+                            <button class="btn">
+                                Merge
+                            </button>
+                        </li>
+
+                        <li class="nav-item">
+                            <button class="btn">
+                                <i class="fa fa-ellipsis-h"></i>
+                            </button>
+                        </li>
+
+                    </ul>
+                </nav>
+
+                <nav class="navbar navbar-expand-lg navbar-light bg-light">
+
+                    <ul class="navbar-nav mr-auto">
+
+                        <li class="nav-item">
+                            <button class="btn" id="createTable">
+                                Create Table
+                            </button>
+                        </li>
+
+                        <li class="nav-item">
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">Select area</span>
+                                </div>
+                                <input type="text" class="form-control">
+                            </div>
+                        </li>
+
+                        <li class="nav-item">
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <button type="button" class="btn btn-outline-secondary">Apply function</button>
+                                    <button type="button"
+                                            class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split"
+                                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <span class="sr-only">Toggle Dropdown</span>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item" href="#">Mean</a>
+                                        <a class="dropdown-item" href="#">Maximum</a>
+                                        <a class="dropdown-item" href="#">Minimum</a>
+                                        <div role="separator" class="dropdown-divider"></div>
+                                        <a class="dropdown-item" href="#">More</a>
+                                    </div>
+                                </div>
+                                <input type="text" class="form-control" id="formulaBar"
+                                       aria-label="Text input with segmented dropdown button">
+                            </div>
+
+                        </li>
+                    </ul>
+                </nav>
+
+            </div>
+
+            <div class="wrapper">
+                <div id="navChart"></div>
+                <div id="test-hot"></div>
+            </div>
+
+            <div id="sheet-panel">
+
+                <div id="sheets">
+                    <!-- Split dropup button -->
+                </div>
+
+                <button type="button" class="btn btn-secondary" id="addSheetButton">
+                    Add a new sheet
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div id="book-dialog"></div>
+<div id="sheet-dialog"></div>
+<div id="table-dialog"></div>
+
+<script src="webjars/jquery/3.1.1/jquery.min.js"></script>
+<script src="webjars/jquery-ui/1.12.1/jquery-ui.min.js"></script>
+<script src="webjars/handsontable/dist/handsontable.min.js"></script>
+<script src="webjars/popper.js/1.14.1/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"
+        integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jscolor/2.0.4/jscolor.min.js"></script>
+<script src="index.js"></script>
+
+</body>
+
+</html>
