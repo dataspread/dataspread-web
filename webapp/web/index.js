@@ -100,11 +100,11 @@ var ssDefaultSettings = {
     sortIndicator: true,
     customBorders: true,
     // contextMenu:[],
-    //afterScrollVertically: function(e){
-    //    compute_window(e);
-    //    console.log("scroll down");
-    //}
-   // ,
+    afterScrollVertically: function(e){
+       compute_window(e);
+       console.log("scroll down");
+    }
+    ,
     afterChange: function (change, source) {
         var updatedData = [];
         console.log(change)
@@ -185,6 +185,11 @@ var ssDynamicSettings = {
     sortIndicator: true,
     customBorders: true,
     // contextMenu:[],
+    afterScrollVertically: function(e){
+        compute_window(e);
+        console.log("scroll down");
+    }
+    ,
     afterSelection:function(row, column, row2, column2, preventScrolling, selectionLayerLevel){
         console.log("afterSelection")
         console.log(row,column)
@@ -1205,7 +1210,7 @@ var updateData = function(r1,c1,r2,c2,scrollTo){
   let temp1 = ((r1-30) < 0)? r1:r1-30;
 
 
-  $.get(baseUrl+"getCells/"+bookId+"/"+sheetName+"/"+temp1+"/"+c1+"/"+r2+"/"+c2, function(data){
+  $.get(baseUrl+"getCells/"+bId+"/"+sName+"/"+temp1+"/"+c1+"/"+r2+"/"+c2, function(data){
 
       // data['data']['cells'].forEach(function(e){
       //   if(e.value!=='null'){
@@ -1261,9 +1266,7 @@ var colHeader = [];
 var cumulativeDataSize = 0;
 var nav;
 var clickable = true;
-var CONFIG = require("./config.json");
-var bookId = CONFIG.bookID;
-var sheetName = CONFIG.sheetName;
+
 var options = [];
 var hieraOpen = false;
 var exploreOpen = false;
@@ -1301,7 +1304,7 @@ $("#navigationPanel").click(function(){
   upperRange = 1000;
   $("#explorationtool-bar").css("display","inline");
 
-  $.get('http://127.0.0.1:8080/api/getSortAttrs/' + bookId +'/' + sheetName, function(data){
+  $.get(baseUrl + 'getSortAttrs/' + bId +'/' + sName, function(data){
           var $dropdown = $("#exploreOpt");
           options = data.data
           console.log(options)
@@ -1493,7 +1496,7 @@ function Explore(e){
   //     }
   // });
 
-  $.get('http://127.0.0.1:8080/api/startNav/' + bookId +'/' + sheetName +'/'+ e, function(data){
+  $.get(baseUrl + 'startNav/' + bId +'/' + sName +'/'+ e, function(data){
                    clickable = true;
                    currLevel = 0;
                    levelList = [];
@@ -1547,7 +1550,7 @@ function Explore(e){
 
 
                      //default setting
-                     var ssDefaultSettings = {
+                     var navSettings = {
                        //  minRows: testData.length,
 
                          minRows:currData.length,
@@ -1731,7 +1734,7 @@ function Explore(e){
                      }
                      // //initializing interface
                      navContainer.innerHTML = ""
-                     nav = new Handsontable(navContainer, ssDefaultSettings);
+                     nav = new Handsontable(navContainer, navSettings);
                      nav.selectCell(0,0);
 
 
@@ -1863,8 +1866,8 @@ $("#hierarchi-form").submit(function(e){
 function getAggregateValue(){
   let childlist = computePath();
 
-    $.get('http://127.0.0.1:8080/api/getHierarchicalAggregate/' + bookId +'/'
-    + sheetName + '/ ' + childlist + '/'+ attr_index + '/' + funcId.join(".,."), function(data){
+    $.get(baseUrl + 'getHierarchicalAggregate/' + bId +'/'
+    + sName + '/ ' + childlist + '/'+ attr_index + '/' + funcId.join(".,."), function(data){
 
                  addHierarchiCol(data.data);
    });
@@ -1954,7 +1957,7 @@ function zoomIn(child,nav){
   let childlist = computePath();
 
 
-  $.get('http://127.0.0.1:8080/api/getChildren/'+ bookId +'/' + sheetName +'/' + childlist , function(data){
+  $.get(baseUrl + 'getChildren/'+ bId +'/' + sName +'/' + childlist , function(data){
 
            console.log(data);
            var result = JSON.parse(data.data);
@@ -2320,8 +2323,8 @@ $("#sort-form").submit(function(e){
     path = child
   }
 
-  $.get('http://127.0.0.1:8080/api/sortBlock/' + bookId +'/'
-    + sheetName + '/ ' + path + '/'+ sortAttrIndices + '/' + 0, function(data){
+  $.get(baseUrl + 'sortBlock/' + bId +'/'
+    + sName + '/ ' + path + '/'+ sortAttrIndices + '/' + 0, function(data){
         console.log(data);
         updateData(cumulativeData[currLevel][child].rowRange[0],0,cumulativeData[currLevel][child].rowRange[1]+10,15,true)
 
