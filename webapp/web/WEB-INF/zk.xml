@@ -22,7 +22,7 @@
 
 	<library-property>
 		<name>ds.model.syncComputation</name>
-		<value>false</value>
+		<value>true</value>
 	</library-property>
 
 	<library-property>
