@@ -26,7 +26,7 @@ public final class EqualPtg extends ComparisonPtg {
 
     public static final ValueOperatorPtg instance = new EqualPtg();
 
-    public EqualPtg() {
+    private EqualPtg() {
     	// enforce singleton
     }
 

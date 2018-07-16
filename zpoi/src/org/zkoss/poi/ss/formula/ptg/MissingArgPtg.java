@@ -33,7 +33,7 @@ public final class MissingArgPtg extends ScalarConstantPtg {
 
 	public static final Ptg instance = new MissingArgPtg();
 
-	public MissingArgPtg() {
+	private MissingArgPtg() {
 		// enforce singleton
 	}
 

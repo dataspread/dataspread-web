@@ -27,7 +27,7 @@ public final class IntersectionPtg extends OperationPtg {
 
 	public static final OperationPtg instance = new IntersectionPtg();
 
-	public IntersectionPtg() {
+	private IntersectionPtg() {
 		// enforce singleton
 	}
 

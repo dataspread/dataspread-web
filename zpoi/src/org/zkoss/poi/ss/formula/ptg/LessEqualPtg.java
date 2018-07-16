@@ -31,7 +31,7 @@ public final class LessEqualPtg extends ComparisonPtg {
 
     public static final ValueOperatorPtg instance = new LessEqualPtg();
 
-    public LessEqualPtg() {
+    private LessEqualPtg() {
     	// enforce singleton
     }
 

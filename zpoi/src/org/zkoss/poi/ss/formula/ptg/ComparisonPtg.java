@@ -6,7 +6,5 @@ package org.zkoss.poi.ss.formula.ptg;
  * Created by Danny on 11/6/2016.
  */
 public abstract class ComparisonPtg extends ValueOperatorPtg {
-    public ComparisonPtg(){
-        /* For seralization */
-    }
+
 }

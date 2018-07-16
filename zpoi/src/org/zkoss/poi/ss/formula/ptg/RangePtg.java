@@ -29,7 +29,7 @@ public final class RangePtg  extends OperationPtg {
 
     public static final OperationPtg instance = new RangePtg();
 
-    public RangePtg() {
+    private RangePtg() {
     	// enforce singleton
     }
 
