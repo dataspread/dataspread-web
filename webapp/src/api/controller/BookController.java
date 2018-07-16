@@ -7,10 +7,13 @@ import org.model.DBHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
+import org.zkoss.json.JSONArray;
+import org.zkoss.poi.util.IOUtils;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.impl.BookImpl;
 import org.zkoss.zss.model.sys.BookBindings;
 
+import java.io.*;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -19,13 +22,19 @@ import org.json.JSONObject;
 
 import static api.WebSocketConfig.MESSAGE_PREFIX;
 
-@CrossOrigin(origins = {"http://localhost:3000", "*"})
 @RestController
 public class BookController {
     @Autowired
     private SimpMessagingTemplate template;
 
     //TODO importBook
+
+    @RequestMapping(value = "/api/getSyncBooks",
+            method = RequestMethod.GET)
+    public HashMap<String, Object> getSyncBooks(){
+        template.convertAndSend(MESSAGE_PREFIX+"/greetings", "");
+        return null;
+    }
 
     public static String getCallbackPath() {
         return new StringBuilder()
@@ -147,6 +156,77 @@ public class BookController {
         book.setBookName(newBookName);
         template.convertAndSend(getCallbackPath(), "");
         return bookWrapper(bookId, newBookName);
+    }
+
+    @RequestMapping(value = "/api/importBook",
+            method = RequestMethod.POST)
+    public HashMap<String, Object> importBook(InputStream dataStream){
+        //JSONParser parser = new JSONParser();
+        //JSONObject dict = (JSONObject)parser.parse(value);
+
+        //get Byte Data
+        byte[] processedText = new byte[0];
+        try {
+            processedText = IOUtils.toByteArray(dataStream);
+            //System.out.println(new String(processedText,"UTF-8"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return JsonWrapper.generateError(e.getMessage());
+        }
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(processedText);
+
+
+        //createBook and sheet
+
+        String bookName = null;
+        String query = null;
+        do {
+            Random rand = new Random();
+            bookName = "book"+rand.nextInt(10000);
+            query = "SELECT COUNT(*) FROM books WHERE bookname = ?";
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(query)) {
+                statement.setString(1, bookName);
+                ResultSet rs = statement.executeQuery();
+                if (rs.next()) {
+                    if (rs.getInt(1) > 0)
+                        bookName=null;
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return JsonWrapper.generateError(e.getMessage());
+            }
+        }
+        while (bookName==null);
+
+        SBook book = BookBindings.getBookByName(bookName);
+        book.checkDBSchema();
+        query = "INSERT INTO user_books VALUES (?, ?, 'owner')";
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, "guest");
+            statement.setString(2, book.getId());
+            statement.execute();
+            connection.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return JsonWrapper.generateError(e.getMessage());
+        }
+
+        //import into sheet
+        char delimiter = ',';
+        try {
+            book.getSheetByName("Sheet1").getDataModel().importSheet(new BufferedReader(new InputStreamReader(bais)),delimiter,true);
+        } catch (IOException e) {
+            return JsonWrapper.generateError(e.getMessage());
+        }
+        //send message
+
+        //template.convertAndSend(getCallbackPath(), bookName);
+        return bookWrapper(book.getId(), bookName);
+
+
     }
 
     private HashMap<String, Object> bookWrapper(String bookId, String bookName) {

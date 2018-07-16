@@ -422,11 +422,7 @@ public class ROM_Model extends Model {
 
     @Override
     public void importSheet(Reader reader, char delimiter, boolean useNav) throws IOException {
-        if(useNav)
-        {
-            importNavSheet(reader,delimiter);
-            return;
-        }
+
         final int COMMIT_SIZE_BYTES = 8 * 1000 * 1000;
         CSVReader csvReader = new CSVReader(reader, delimiter);
         String[] nextLine;

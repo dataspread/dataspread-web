@@ -1,12 +1,3 @@
-// import React from 'react';
-// import ReactDOM from 'react-dom';
-// import HotTable from 'react-handsontable';
-//import Handsontable from 'handsontable';
-//import 'jquery-ui/ui/widgets/dialog.js';
-//import 'jquery-ui/ui/widgets/selectmenu.js';
-//import $ from 'jquery';
-//import "./index.css";
-
 var baseUrl = 'api/';
 
 window.$ = window.jQuery = $;

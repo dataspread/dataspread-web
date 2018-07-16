@@ -11,9 +11,12 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zkoss.util.Pair;
 import org.zkoss.zss.api.AreaRef;
+import org.zkoss.zss.api.CellOperationUtil;
 import org.zkoss.zss.api.Range;
 import org.zkoss.zss.api.Ranges;
 import org.zkoss.zss.api.model.CellStyle;
+import org.zkoss.zss.api.model.Color;
+import org.zkoss.zss.api.model.Font;
 import org.zkoss.zss.api.model.Sheet;
 import org.zkoss.zss.api.model.impl.SheetImpl;
 import org.zkoss.zss.api.model.impl.SimpleRef;
@@ -21,22 +24,16 @@ import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.impl.sys.TableMonitor;
 import org.zkoss.zss.model.sys.BookBindings;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import org.zkoss.json.*;
 
-/*
-import org.zkoss.zss.ui.impl.ActionHelper;
-import org.zkoss.zss.ui.impl.undo.AggregatedAction;
-import org.zkoss.zss.ui.impl.undo.CellBorderAction;
-import org.zkoss.zss.ui.impl.undo.CellStyleAction;
-import org.zkoss.zss.ui.impl.undo.FontStyleAction;
-import org.zkoss.zss.ui.sys.UndoableAction;
-*/
+
 
 import static api.WebSocketConfig.MESSAGE_PREFIX;
 
-@CrossOrigin(origins = {"http://localhost:3000", "*"})
 @RestController
 public class GeneralController {
 
@@ -525,4 +522,12 @@ public class GeneralController {
         }
     }
 
+    public static String encode(final String clearText) {
+        try {
+            return new String(
+                    Base64.getEncoder().encode(MessageDigest.getInstance("SHA-256").digest(clearText.getBytes())));
+        } catch (NoSuchAlgorithmException e) {
+            return clearText;
+        }
+    }
 }
