@@ -30,7 +30,7 @@ public final class AddPtg extends ValueOperatorPtg {
 
     public static final ValueOperatorPtg instance = new AddPtg();
 
-    public AddPtg() {
+    private AddPtg() {
     	// enforce singleton
     }
 

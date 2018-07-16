@@ -28,6 +28,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.logging.Logger;
+
 import org.zkoss.json.*;
 
 
@@ -36,7 +38,7 @@ import static api.WebSocketConfig.MESSAGE_PREFIX;
 
 @RestController
 public class GeneralController {
-
+    private static final Logger logger = Logger.getLogger(GeneralController.class.getName());
     public enum FormatAction {
         FONT_FAMILY,
         FONT_SIZE,
