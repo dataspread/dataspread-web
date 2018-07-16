@@ -46,3 +46,68 @@
   top: 0;
   left: 0;
 } */
+
+.navbar1{
+    height: 6vh;
+}
+.navbar2{
+    height: 6vh;
+}
+.navbar3{
+    height: 6vh;
+}
+
+.wrapper{
+    height:82vh;
+}
+
+.breadcrumb{
+    padding: 0.25rem 0.5rem 0.25rem 0.5rem;
+    margin-bottom: 0;
+}
+
+.custom-select{
+    width:50%;
+}
+
+.wrap {
+    word-wrap: normal;
+}
+
+.formClose {
+    padding-left: 10px;
+    float: right;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#colClose {
+    padding-left: 10px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* #navChart .ht_master tr > td.current {
+  background-color: #D3D3D3 !important;
+  color:white;
+} */
+.progress {
+    position:fixed;
+    left: 0;
+    width: 30px;
+    height: 76vh;
+    background-color: #333;
+}
+
+.progress-bar {
+    position: fixed;
+    left: 0;
+    height: 0px;
+    width: 30px;
+    background-color: #aaa;
+}
+.exploration{
+    color: white;
+}
