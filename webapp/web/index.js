@@ -55,7 +55,7 @@ var compute_window = function (e) {
      if(rowOffset < lowerRange - threshold) {
         updateData(rowOffset-200, 0, rowOffset, 15, false)
         lowerRange = lowerRange - 200;
-      console.log("in compute window");
+        console.log("in compute window");
      }
     // if (lastVisibleRow > (rowCount - threshold)) {
      //   loadMoreData(rowCount);
@@ -212,7 +212,10 @@ var ssDynamicSettings = {
     afterChange: function (change, source) {
         var updatedData = [];
         console.log(change)
-        console.log(source)
+        alert(source);
+        if(source == "populateFromArray"){
+            return;
+        }
         let formulaCellList = [];
         if(!SFU){
             if (change !== null) {
@@ -607,7 +610,7 @@ var openSheet = function (bookId, sheetName, sheetIndex) {
 
     var r1 = 0;
     var c1 = 0;
-    var r2 = 100;
+    var r2 = 1000;
     var c2 = 50;
     sName = sheetName;
 
@@ -1168,7 +1171,7 @@ var importSheet = function (bookId, sheetName, sheetIndex) {
 
     var r1 = 0;
     var c1 = 0;
-    var r2 = 100;
+    var r2 = 1000;
     var c2 = 50;
     sName = sheetName;
 
@@ -1189,7 +1192,7 @@ var importSheet = function (bookId, sheetName, sheetIndex) {
             testingarray.push(temp);
         }
         clearCanvas(testingarray);
-        hot.setDataAtCell(10, 10, "10");
+        //hot.setDataAtCell(10, 10, "10");
         // data['data']['cells'].forEach(function (e) {
         //     if (e.value !== 'null') {
         //         hot.setDataAtCell(e.row, e.col, e.value);
@@ -1328,7 +1331,7 @@ var currRange;
 // first step start showing navigation options
 $("#navigationPanel").click(function(){
   console.log("2")
-  updateData(0,0,1000,15);
+  // updateData(0,0,1000,15);
   lowerRange = 0;
   upperRange = 1000;
   $("#explorationtool-bar").css("display","inline");
