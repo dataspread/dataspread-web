@@ -1902,8 +1902,8 @@ function removeHierarchiCol(colIdx) {
 }
 
 $("#hierarchi-form").submit(function (e) {
-    aggregateData.bookId = bookId;
-    aggregateData.sheetName = sheetName;
+    aggregateData.bookId = bId;
+    aggregateData.sheetName = sName;
     e.preventDefault();
     aggregateData.formula_ls = [];
     // attr_index = []
@@ -2043,8 +2043,8 @@ function getAggregateValue() {
     aggregateData.path = " " + childlist;
 
     $.ajax({
-        url: "http://localhost:8080/api/getHierarchicalAggregateFormula/",
-        method: "post",
+        url: baseUrl + "getHierarchicalAggregateFormula",
+        method: "POST",
         //dataType: 'json',
         contentType: 'text/plain',
         data: JSON.stringify(aggregateData),
