@@ -30,7 +30,7 @@ public final class PercentPtg extends ValueOperatorPtg {
 
     public static final ValueOperatorPtg instance = new PercentPtg();
 
-    public PercentPtg() {
+    private PercentPtg() {
     	// enforce singleton
     }
     

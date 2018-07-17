@@ -27,7 +27,7 @@ public final class GreaterThanPtg extends ComparisonPtg {
     public static final ValueOperatorPtg instance = new GreaterThanPtg();
     private final static String GREATERTHAN = ">";
 
-    public GreaterThanPtg() {
+    private GreaterThanPtg() {
     	// enforce singleton
     }
 

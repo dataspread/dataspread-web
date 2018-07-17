@@ -29,7 +29,7 @@ public final class GreaterEqualPtg extends ComparisonPtg {
 
     public static final ValueOperatorPtg instance = new GreaterEqualPtg();
 
-    public GreaterEqualPtg() {
+    private GreaterEqualPtg() {
     	// enforce singleton
     }
 

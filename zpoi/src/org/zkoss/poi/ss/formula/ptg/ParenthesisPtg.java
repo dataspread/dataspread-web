@@ -42,7 +42,7 @@ public final class ParenthesisPtg extends ControlPtg {
 	//@since 3.9.5
 	private final int _numOperands;
 
-	public ParenthesisPtg() {
+	private ParenthesisPtg() {
 		// enforce singleton
 		//ZSS-747
 		_numOperands = 1;

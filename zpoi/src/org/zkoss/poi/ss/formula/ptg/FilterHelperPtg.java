@@ -28,7 +28,7 @@ public final class FilterHelperPtg extends ValueOperatorPtg {
 
 	public static final FilterHelperPtg instance = new FilterHelperPtg();
 
-	public FilterHelperPtg() {
+	private FilterHelperPtg() {
 		// enforce singleton
 	}
 

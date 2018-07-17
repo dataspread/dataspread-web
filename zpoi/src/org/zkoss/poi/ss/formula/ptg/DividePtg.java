@@ -27,7 +27,7 @@ public final class DividePtg extends ValueOperatorPtg {
 
     public static final ValueOperatorPtg instance = new DividePtg();
 
-    public DividePtg() {
+    private DividePtg() {
     	// enforce singleton
     }
 

@@ -29,7 +29,7 @@ public final class UnaryMinusPtg extends ValueOperatorPtg {
 
     public static final ValueOperatorPtg instance = new UnaryMinusPtg();
 
-    public UnaryMinusPtg() {
+    private UnaryMinusPtg() {
     	// enforce singleton
     }
 
