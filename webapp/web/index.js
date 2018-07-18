@@ -1381,62 +1381,71 @@ var currRange;
 //         $sortDropdown.append(createSortString());
 //
 //     });
-var firstTime = true;
+
 
 $("#Explore").click(function () {
     lowerRange = 0;
     upperRange = 1000;
 
-    if (firstTime) {
-        $.get(baseUrl + 'getSortAttrs/' + bId + '/' + sName, function (data) {
-            var $dropdown = $("#exploreOpt");
-            options = data.data
-            console.log(options)
-            for (let i = 0; i < options.length; i++) {
-                let tempString = "<div class='form-check'>" +
-                    "<input class='form-check-input' " +
-                    "type='radio' name='exploreValue' id='Radios" + i + "' value='" + (i + 1) + "'>" +
-                    "<label class='form-check-label' for='Radios" + i + "'> " +
-                    options[i] + "</label></div>"
-                $dropdown.append(tempString);
+    $.get(baseUrl + 'getSortAttrs/' + bId + '/' + sName, function (data) {
+        var $dropdown = $("#exploreOpt");
+        $dropdown.empty();
+        $dropdown.append("<legend class=\"form-label\" style=\"font-size:1rem\">Attribute Name</legend>\n");
+        options = data.data
+        console.log(options)
+        for (let i = 0; i < options.length; i++) {
+            let tempString = "<div class='form-check'>" +
+                "<input class='form-check-input' " +
+                "type='radio' name='exploreValue' id='Radios" + i + "' value='" + (i + 1) + "'>" +
+                "<label class='form-check-label' for='Radios" + i + "'> " +
+                options[i] + "</label></div>"
+            $dropdown.append(tempString);
+        }
+
+        // clear cumulative string for aggregate attribute, function and sortattribute
+        aggregateColStr = "";
+        aggregateOptStr = "";
+        sortOptionString = "";
+
+        var $aggregateCol = $("#aggregateCol");
+        $aggregateCol.empty();
+        aggregateTotalNum = 0
+        $aggregateCol.append(createAggreString());
+
+        $("#aggregateOpt0").change(function () {
+            // Do something with the previous value after the change
+            $(this).nextAll().remove();
+            switch (this.value) {
+                case "COUNTIF":
+                case "SUMIF":
+                    $(this).after("<span>Predicate:&nbsp</span><input class='' type='text' name='' id='aggrePara0'>");
+                    break;
+                case "LARGE":
+                case "SMALL":
+                    $(this).after("<span>Int:&nbsp</span><input class='' type='text' name='' id='aggrePara0'>");
+                    break;
+                case "SUBTOTAL":
+                    let tempString = "<select class='' id='aggrePara0'><option value='' disabled selected hidden>Function_num</option>";
+                    for (let i = 0; i < subtotalFunc.length; i++) {
+                        tempString += "<option value='" + (i + 1) + "''>" + subtotalFunc[i] + "</option>";
+                    }
+                    tempString += "</select>";
+                    $(this).after(tempString);
+                    break;
+                case "RANK":
+                    tempString = "<span>Value:&nbsp</span><input class='' type='text' name='' id='aggrePara0'>";
+                    tempString += "<select class='' id='aggrePara00'><option value='0' selected >ascending</option><option value='1'>descending</option></select>"
+                    $(this).after(tempString);
+                    break;
             }
-            var $aggregateCol = $("#aggregateCol");
-            $aggregateCol.append(createAggreString());
-
-            $("#aggregateOpt0").change(function () {
-                // Do something with the previous value after the change
-                $(this).nextAll().remove();
-                switch (this.value) {
-                    case "COUNTIF":
-                    case "SUMIF":
-                        $(this).after("<span>Predicate:&nbsp</span><input class='' type='text' name='' id='aggrePara0'>");
-                        break;
-                    case "LARGE":
-                    case "SMALL":
-                        $(this).after("<span>Int:&nbsp</span><input class='' type='text' name='' id='aggrePara0'>");
-                        break;
-                    case "SUBTOTAL":
-                        let tempString = "<select class='' id='aggrePara0'><option value='' disabled selected hidden>Function_num</option>";
-                        for (let i = 0; i < subtotalFunc.length; i++) {
-                            tempString += "<option value='" + (i + 1) + "''>" + subtotalFunc[i] + "</option>";
-                        }
-                        tempString += "</select>";
-                        $(this).after(tempString);
-                        break;
-                    case "RANK":
-                        tempString = "<span>Value:&nbsp</span><input class='' type='text' name='' id='aggrePara0'>";
-                        tempString += "<select class='' id='aggrePara00'><option value='0' selected >ascending</option><option value='1'>descending</option></select>"
-                        $(this).after(tempString);
-                        break;
-                }
-            });
-
-            var $sortDropdown = $("#inlineOpt");
-            $sortDropdown.append(createSortString());
-
         });
-        firstTime = false;
-    }
+
+        var $sortDropdown = $("#inlineOpt");
+        $sortDropdown.empty();
+        sortTotalNum = 0;
+        $sortDropdown.append(createSortString());
+
+    });
 
 
     hieraOpen = false;
