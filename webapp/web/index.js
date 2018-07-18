@@ -38,7 +38,7 @@ var compute_window = function (e) {
     console.log(rowOffset);
     console.log(visibleRows);
     console.log(hot.countRenderedRows())
-  //  console.log(hot.getLastVisibleRow())
+    //  console.log(hot.getLastVisibleRow())
     var lastRow = rowOffset + (visibleRows * 1);
     var lastVisibleRow = rowOffset + visibleRows + (visibleRows / 2);
     var threshold = 15;
@@ -46,20 +46,20 @@ var compute_window = function (e) {
         height: ((lastRow / currRange) * 80) + "%"
     });
 
-    if(lastVisibleRow > upperRange - threshold) {
-        updateData(upperRange, 0, upperRange + 1000, 15,false)
+    if (lastVisibleRow > upperRange - threshold) {
+        updateData(upperRange, 0, upperRange + 1000, 15, false)
         upperRange = upperRange + 1000;
         console.log("in compute window");
     }
     console.log(lowerRange)
-     if(rowOffset < lowerRange - threshold) {
-        updateData(rowOffset-200, 0, rowOffset, 15, false)
+    if (rowOffset < lowerRange - threshold) {
+        updateData(rowOffset - 200, 0, rowOffset, 15, false)
         lowerRange = lowerRange - 200;
         console.log("in compute window");
-     }
+    }
     // if (lastVisibleRow > (rowCount - threshold)) {
-     //   loadMoreData(rowCount);
-  //  }
+    //   loadMoreData(rowCount);
+    //  }
 };
 
 // load data and render
@@ -86,7 +86,7 @@ var ssDefaultSettings = {
     height: 800,
     //width: $(".wrapper").width(),
     //height: wrapperHeight,
-    
+
     rowHeaders: true,
     colHeaders: true,
     //currentRowClassName: 'currentRow',
@@ -100,9 +100,9 @@ var ssDefaultSettings = {
     sortIndicator: true,
     customBorders: true,
     // contextMenu:[],
-    afterScrollVertically: function(e){
-       compute_window(e);
-       console.log("scroll down");
+    afterScrollVertically: function (e) {
+        compute_window(e);
+        console.log("scroll down");
     }
     ,
     afterChange: function (change, source) {
@@ -185,26 +185,24 @@ var ssDynamicSettings = {
     sortIndicator: true,
     customBorders: true,
     // contextMenu:[],
-    afterScrollVertically: function(e){
+    afterScrollVertically: function (e) {
         compute_window(e);
         console.log("scroll down");
     }
     ,
-    afterSelection:function(row, column, row2, column2, preventScrolling, selectionLayerLevel){
+    afterSelection: function (row, column, row2, column2, preventScrolling, selectionLayerLevel) {
         console.log("afterSelection")
-        console.log(row,column)
+        console.log(row, column)
         $.get(baseUrl + "getCells/" + bId + "/" + sName + "/" + row + "/" + column + "/" + row + "/" + column, function (data) {
 
             console.log(data)
             console.log(data.data.cells[0].formula)
-            if(data.data.cells[0].formula != "")
-            {
+            if (data.data.cells[0].formula != "") {
 
-                $("#formulaBar").val("="+data.data.cells[0].formula);
+                $("#formulaBar").val("=" + data.data.cells[0].formula);
             }
-            else
-            {
-                $("#formulaBar").text="";
+            else {
+                $("#formulaBar").text = "";
             }
         })
 
@@ -213,11 +211,11 @@ var ssDynamicSettings = {
         var updatedData = [];
         console.log(change)
         //alert(source);
-        if(source == "populateFromArray"){
+        if (source == "populateFromArray") {
             return;
         }
         let formulaCellList = [];
-        if(!SFU){
+        if (!SFU) {
             if (change !== null) {
                 change.forEach(function (e) {
                     console.log(e);
@@ -269,8 +267,8 @@ var ssDynamicSettings = {
                     dataType: "json",
                     contentType: "application/json",
                     data: JSON.stringify(update)
-                }).done(function(result){
-                    if(formulaCellList.length != 0){
+                }).done(function (result) {
+                    if (formulaCellList.length != 0) {
                         let r1 = formulaCellList[0].row;
                         let c1 = formulaCellList[0].col;
                         $.get(baseUrl + "getCells/" + bId + "/" + sName + "/" + r1 + "/" + c1 + "/" + r1 + "/" + c1, function (data) {
@@ -280,7 +278,7 @@ var ssDynamicSettings = {
                     }
                 })
             }
-        }else{
+        } else {
             SFU = false;
         }
 
@@ -300,10 +298,10 @@ var ssDynamicSettings = {
 var hot = new Handsontable(container, ssDefaultSettings);
 
 var clearCanvas = function (dataArray) {
-    if(dataArray != undefined){
+    if (dataArray != undefined) {
         ssDynamicSettings.data = dataArray;
         hot = new Handsontable(container, ssDynamicSettings);
-    }else{
+    } else {
         hot = new Handsontable(container, ssDefaultSettings);
 
     }
@@ -626,9 +624,9 @@ var openSheet = function (bookId, sheetName, sheetIndex) {
         for (let i = r1; i <= r2; i++) {
             let temp = []
             for (let j = c1; j < c2; j++) {
-                if(data.data.cells[(i - r1) * (c2 - c1 + 1) + (j - c1)].value != "null"){
+                if (data.data.cells[(i - r1) * (c2 - c1 + 1) + (j - c1)].value != "null") {
                     temp.push(data.data.cells[(i - r1) * (c2 - c1 + 1) + (j - c1)].value);
-                }else{
+                } else {
                     temp.push("");
                 }
 
@@ -706,61 +704,61 @@ var getBooks = function () {
 
 $('#open-book').click(function () {
 
-        $("#book-dialog").empty();
-        $('<label></label>').text("Open a book:").appendTo($("#book-dialog"));
-        $('<select></select>').attr("id", 'book-selector').appendTo($("#book-dialog"));
+    $("#book-dialog").empty();
+    $('<label></label>').text("Open a book:").appendTo($("#book-dialog"));
+    $('<select></select>').attr("id", 'book-selector').appendTo($("#book-dialog"));
 
-        $.get(baseUrl + "getBooks", function (data) {
-            // var i = 0;
-            var workbooks = data['data']['books']
-            workbooks.forEach(function (e) {
-                $("<option></option>").text(e['name']).attr("id", e['id']).attr("link", e['link']).appendTo($('#book-selector'));
-            });
-            $('#book-selector').selectmenu();
-        })
-
-
-        var dialog = $("#book-dialog").dialog({
-            buttons: {
-                "Confirm": function () {
-                    var bookName = $('#book-selector').prop('selectedIndex');
-                    var selectedBook = $('#book-selector>option')[bookName];
-
-                    var bookId = $(selectedBook).prop('id');
-
-                    bId = bookId;
-                    bName = $('#book-selector').val();
-
-
-                    $.get(baseUrl + "getSheets/" + bId, function (data) {
-                        $('#sheets').empty();
-                        //add sheet name to tabs
-                        var sheets = data['data']['sheets'];
-                        sName = sheets[0].name;
-
-                        // $('#sheets').empty();
-                        sheets.forEach(function (e) {
-
-                            $('<div class="btn-group dropup sheet"><button type="button" class="btn btn-secondary">' + e.name + '</button><button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="sr-only">Toggle Dropdown</span></button><div class="dropdown-menu"><a class="dropdown-item renameSheet" href=“#">Rename</a><a class="dropdown-item duplicateSheet" href="#">Duplicate</a><a class="dropdown-item deleteSheet" href="#">Delete</a><a class="dropdown-item clearSheet" href="#">Clear</a><a class="dropdown-item moveLeftSheet" href="#">Move Left</a><a class="dropdown-item moveRightSheet" href="#">Move Right</a></div></div>').appendTo($("#sheets"));
-
-                        });
-
-                        bindSheetListener();
-
-                        $("#tableName").text($('#book-selector').val());
-                        sheetData = data;
-
-                        openSheet(bId, sName, 0);
-
-                    })
-
-                    dialog.dialog('close');
-                },
-                Cancel: function () {
-                    dialog.dialog('close');
-                }
-            }
+    $.get(baseUrl + "getBooks", function (data) {
+        // var i = 0;
+        var workbooks = data['data']['books']
+        workbooks.forEach(function (e) {
+            $("<option></option>").text(e['name']).attr("id", e['id']).attr("link", e['link']).appendTo($('#book-selector'));
         });
+        $('#book-selector').selectmenu();
+    })
+
+
+    var dialog = $("#book-dialog").dialog({
+        buttons: {
+            "Confirm": function () {
+                var bookName = $('#book-selector').prop('selectedIndex');
+                var selectedBook = $('#book-selector>option')[bookName];
+
+                var bookId = $(selectedBook).prop('id');
+
+                bId = bookId;
+                bName = $('#book-selector').val();
+
+
+                $.get(baseUrl + "getSheets/" + bId, function (data) {
+                    $('#sheets').empty();
+                    //add sheet name to tabs
+                    var sheets = data['data']['sheets'];
+                    sName = sheets[0].name;
+
+                    // $('#sheets').empty();
+                    sheets.forEach(function (e) {
+
+                        $('<div class="btn-group dropup sheet"><button type="button" class="btn btn-secondary">' + e.name + '</button><button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="sr-only">Toggle Dropdown</span></button><div class="dropdown-menu"><a class="dropdown-item renameSheet" href=“#">Rename</a><a class="dropdown-item duplicateSheet" href="#">Duplicate</a><a class="dropdown-item deleteSheet" href="#">Delete</a><a class="dropdown-item clearSheet" href="#">Clear</a><a class="dropdown-item moveLeftSheet" href="#">Move Left</a><a class="dropdown-item moveRightSheet" href="#">Move Right</a></div></div>').appendTo($("#sheets"));
+
+                    });
+
+                    bindSheetListener();
+
+                    $("#tableName").text($('#book-selector').val());
+                    sheetData = data;
+
+                    openSheet(bId, sName, 0);
+
+                })
+
+                dialog.dialog('close');
+            },
+            Cancel: function () {
+                dialog.dialog('close');
+            }
+        }
+    });
 });
 
 
@@ -1120,7 +1118,7 @@ $("#importTable").click(function () {
                                 // $("#tableName").text(newBook);
                                 // bId = result['data']['book']['id'];
                                 // bName = result['data']['book']['name'];
-                                if(result.status == "success"){
+                                if (result.status == "success") {
                                     bId = result.data.book.id;
                                     //sName = result.data.sheetName;
                                     $.get(baseUrl + "getSheets/" + bId, function (data) {
@@ -1145,14 +1143,14 @@ $("#importTable").click(function () {
 
                                     })
                                     dialog.dialog('close');
-                                }else{
+                                } else {
                                     alert(result.message);
                                 }
 
                             })
 
                         };
-                    }else{
+                    } else {
                         alert("file not uploaded");
                     }
 
@@ -1182,9 +1180,9 @@ var importSheet = function (bookId, sheetName, sheetIndex) {
         for (let i = r1; i <= r2; i++) {
             let temp = []
             for (let j = c1; j < c2; j++) {
-                if(data.data.cells[(i - r1) * (c2 - c1 + 1) + (j - c1)].value != "null"){
+                if (data.data.cells[(i - r1) * (c2 - c1 + 1) + (j - c1)].value != "null") {
                     temp.push(data.data.cells[(i - r1) * (c2 - c1 + 1) + (j - c1)].value);
-                }else{
+                } else {
                     temp.push("");
                 }
 
@@ -1202,77 +1200,77 @@ var importSheet = function (bookId, sheetName, sheetIndex) {
 
 }
 
-$(window).resize(function(){
-  console.log("resized")
-   wrapperHeight = $(".wrapper").height();
-   wrapperWidth = $(".wrapper").width();
-   if(exploreOpen){
-     hot.updateSettings({
-       width: wrapperWidth * 0.79,
-       height: wrapperHeight * 0.95,
-      });
-      nav.updateSettings({
-        width: wrapperWidth * 0.19,
-        height: wrapperHeight * 0.95,
-      })
+$(window).resize(function () {
+    console.log("resized")
+    wrapperHeight = $(".wrapper").height();
+    wrapperWidth = $(".wrapper").width();
+    if (exploreOpen) {
+        hot.updateSettings({
+            width: wrapperWidth * 0.79,
+            height: wrapperHeight * 0.95,
+        });
+        nav.updateSettings({
+            width: wrapperWidth * 0.19,
+            height: wrapperHeight * 0.95,
+        })
 
-   }else{
-     hot.updateSettings({
-        width: $(".wrapper").width(),
-        height: $(".wrapper").height(),
-      });
-   }
-   });
+    } else {
+        hot.updateSettings({
+            width: $(".wrapper").width(),
+            height: $(".wrapper").height(),
+        });
+    }
+});
 
-var updateData = function(r1,c1,r2,c2,scrollTo){
-  //   clearCanvas();
+var updateData = function (r1, c1, r2, c2, scrollTo) {
+    //   clearCanvas();
 
-  //sName = sheetName;
-  if(r1 < 0){
-    r1 = 0;
-  }
-  let temp1 = ((r1-30) < 0)? r1:r1-30;
+    //sName = sheetName;
+    if (r1 < 0) {
+        r1 = 0;
+    }
+    let temp1 = ((r1 - 30) < 0) ? r1 : r1 - 30;
 
 
-  $.get(baseUrl+"getCells/"+bId+"/"+sName+"/"+temp1+"/"+c1+"/"+r2+"/"+c2, function(data){
+    $.get(baseUrl + "getCells/" + bId + "/" + sName + "/" + temp1 + "/" + c1 + "/" + r2 + "/" + c2, function (data) {
 
-      // data['data']['cells'].forEach(function(e){
-      //   if(e.value!=='null'){
-      //     hot.setDataAtCell(e.row, e.col, e.value);
-      //   }
-      // })
-      var testingarray = [];
-      for(let i = temp1; i <= r2; i++){
-        let temp = []
-        for (let j = c1; j < c2; j++){
-          temp.push(data.data.cells[(i-temp1)*(c2-c1+1)+(j-c1)].value);
+        // data['data']['cells'].forEach(function(e){
+        //   if(e.value!=='null'){
+        //     hot.setDataAtCell(e.row, e.col, e.value);
+        //   }
+        // })
+        var testingarray = [];
+        for (let i = temp1; i <= r2; i++) {
+            let temp = []
+            for (let j = c1; j < c2; j++) {
+                temp.push(data.data.cells[(i - temp1) * (c2 - c1 + 1) + (j - c1)].value);
+            }
+            testingarray.push(temp);
         }
-        testingarray.push(temp);
-      }
-      // for(let i = 0; i < 100; i++){
-      //   for (let j = 0; j < 10; j++){
-      //      hot.setDataAtCell(i, j, testingarray[i][j]);
-      //   }
-      // }
-      hot.populateFromArray(temp1,c1,testingarray);
-      if(scrollTo){
-          hot.scrollViewportTo(r1);
-      }
-  })
+        // for(let i = 0; i < 100; i++){
+        //   for (let j = 0; j < 10; j++){
+        //      hot.setDataAtCell(i, j, testingarray[i][j]);
+        //   }
+        // }
+        hot.populateFromArray(temp1, c1, testingarray);
+        if (scrollTo) {
+            hot.scrollViewportTo(r1);
+        }
+    })
 
 }
 
 
-function createData(){
-  var testingarray = [];
-  for(let i = 0; i < 1000; i++){
-    let temp = []
-    for (let j = 0; j < 10; j++){
-      temp.push("test");
+function createData() {
+    var testingarray = [];
+    for (let i = 0; i < 1000; i++) {
+        let temp = []
+        for (let j = 0; j < 10; j++) {
+            temp.push("test");
+        }
+        testingarray.push(temp);
     }
-    testingarray.push(temp);
-  }
-  return testingarray;
+    return testingarray;
 };
 
 // import handlebars;
@@ -1329,82 +1327,139 @@ var currRange;
 
 
 // first step start showing navigation options
-$("#navigationPanel").click(function(){
-  console.log("2")
-  // updateData(0,0,1000,15);
-  lowerRange = 0;
-  upperRange = 1000;
-  $("#explorationtool-bar").css("display","inline");
+// $("#navigationPanel").click(function () {
+//     console.log("2")
+//     // updateData(0,0,1000,15);
+//     lowerRange = 0;
+//     upperRange = 1000;
+//     $("#explorationtool-bar").css("display", "inline");
+//
+//     $.get(baseUrl + 'getSortAttrs/' + bId + '/' + sName, function (data) {
+//         var $dropdown = $("#exploreOpt");
+//         options = data.data
+//         console.log(options)
+//         for (let i = 0; i < options.length; i++) {
+//             let tempString = "<div class='form-check'>" +
+//                 "<input class='form-check-input' " +
+//                 "type='radio' name='exploreValue' id='Radios" + i + "' value='" + (i + 1) + "'>" +
+//                 "<label class='form-check-label' for='Radios" + i + "'> " +
+//                 options[i] + "</label></div>"
+//             $dropdown.append(tempString);
+//         }
+//         var $aggregateCol = $("#aggregateCol");
+//         $aggregateCol.append(createAggreString());
+//
+//         $("#aggregateOpt0").change(function () {
+//             // Do something with the previous value after the change
+//             $(this).nextAll().remove();
+//             switch (this.value) {
+//                 case "COUNTIF":
+//                 case "SUMIF":
+//                     $(this).after("<span>Predicate:&nbsp</span><input class='' type='text' name='' id='aggrePara0'>");
+//                     break;
+//                 case "LARGE":
+//                 case "SMALL":
+//                     $(this).after("<span>Int:&nbsp</span><input class='' type='text' name='' id='aggrePara0'>");
+//                     break;
+//                 case "SUBTOTAL":
+//                     let tempString = "<select class='' id='aggrePara0'><option value='' disabled selected hidden>Function_num</option>";
+//                     for (let i = 0; i < subtotalFunc.length; i++) {
+//                         tempString += "<option value='" + (i + 1) + "''>" + subtotalFunc[i] + "</option>";
+//                     }
+//                     tempString += "</select>";
+//                     $(this).after(tempString);
+//                     break;
+//                 case "RANK":
+//                     tempString = "<span>Value:&nbsp</span><input class='' type='text' name='' id='aggrePara0'>";
+//                     tempString += "<select class='' id='aggrePara00'><option value='0' selected >ascending</option><option value='1'>descending</option></select>"
+//                     $(this).after(tempString);
+//                     break;
+//             }
+//         });
+//
+//         var $sortDropdown = $("#inlineOpt");
+//         $sortDropdown.append(createSortString());
+//
+//     });
+var firstTime = true;
 
-  $.get(baseUrl + 'getSortAttrs/' + bId +'/' + sName, function(data){
-          var $dropdown = $("#exploreOpt");
-          options = data.data
-          console.log(options)
-           for (let i = 0; i < options.length; i++){
-             let tempString = "<div class='form-check'>"+
-                               "<input class='form-check-input' "+
-                               "type='radio' name='exploreValue' id='Radios"+ i +"' value='"+(i+1)+"'>"+
-                               "<label class='form-check-label' for='Radios"+ i +"'> "+
-                               options[i] + "</label></div>"
-             $dropdown.append(tempString);
-           }
-           var $aggregateCol = $("#aggregateCol");
-           $aggregateCol.append(createAggreString());
+$("#Explore").click(function () {
+    lowerRange = 0;
+    upperRange = 1000;
 
-        $("#aggregateOpt0").change(function () {
-            // Do something with the previous value after the change
-            $(this).nextAll().remove();
-            switch (this.value) {
-                case "COUNTIF":
-                case "SUMIF":
-                    $(this).after("<span>Predicate:&nbsp</span><input class='' type='text' name='' id='aggrePara0'>");
-                    break;
-                case "LARGE":
-                case "SMALL":
-                    $(this).after("<span>Int:&nbsp</span><input class='' type='text' name='' id='aggrePara0'>");
-                    break;
-                case "SUBTOTAL":
-                    let tempString = "<select class='' id='aggrePara0'><option value='' disabled selected hidden>Function_num</option>";
-                    for (let i = 0; i < subtotalFunc.length; i++) {
-                        tempString += "<option value='" + (i + 1) + "''>" + subtotalFunc[i] + "</option>";
-                    }
-                    tempString += "</select>";
-                    $(this).after(tempString);
-                    break;
-                case "RANK":
-                    tempString = "<span>Value:&nbsp</span><input class='' type='text' name='' id='aggrePara0'>";
-                    tempString += "<select class='' id='aggrePara00'><option value='0' selected >ascending</option><option value='1'>descending</option></select>"
-                    $(this).after(tempString);
-                    break;
+    if (firstTime) {
+        $.get(baseUrl + 'getSortAttrs/' + bId + '/' + sName, function (data) {
+            var $dropdown = $("#exploreOpt");
+            options = data.data
+            console.log(options)
+            for (let i = 0; i < options.length; i++) {
+                let tempString = "<div class='form-check'>" +
+                    "<input class='form-check-input' " +
+                    "type='radio' name='exploreValue' id='Radios" + i + "' value='" + (i + 1) + "'>" +
+                    "<label class='form-check-label' for='Radios" + i + "'> " +
+                    options[i] + "</label></div>"
+                $dropdown.append(tempString);
             }
-        });
+            var $aggregateCol = $("#aggregateCol");
+            $aggregateCol.append(createAggreString());
 
-        var $sortDropdown = $("#inlineOpt");
-        $sortDropdown.append(createSortString());
-
-         });
-
-    $("#Explore").click(function () {
-        hieraOpen = false;
-        if (exploreOpen) {
-            hot.updateSettings({
-                width: $('.wrapper').width() * 0.59,
+            $("#aggregateOpt0").change(function () {
+                // Do something with the previous value after the change
+                $(this).nextAll().remove();
+                switch (this.value) {
+                    case "COUNTIF":
+                    case "SUMIF":
+                        $(this).after("<span>Predicate:&nbsp</span><input class='' type='text' name='' id='aggrePara0'>");
+                        break;
+                    case "LARGE":
+                    case "SMALL":
+                        $(this).after("<span>Int:&nbsp</span><input class='' type='text' name='' id='aggrePara0'>");
+                        break;
+                    case "SUBTOTAL":
+                        let tempString = "<select class='' id='aggrePara0'><option value='' disabled selected hidden>Function_num</option>";
+                        for (let i = 0; i < subtotalFunc.length; i++) {
+                            tempString += "<option value='" + (i + 1) + "''>" + subtotalFunc[i] + "</option>";
+                        }
+                        tempString += "</select>";
+                        $(this).after(tempString);
+                        break;
+                    case "RANK":
+                        tempString = "<span>Value:&nbsp</span><input class='' type='text' name='' id='aggrePara0'>";
+                        tempString += "<select class='' id='aggrePara00'><option value='0' selected >ascending</option><option value='1'>descending</option></select>"
+                        $(this).after(tempString);
+                        break;
+                }
             });
-        } else {
-            hot.updateSettings({
-                width: $('.wrapper').width() * 0.79,
-            });
-        }
-        $("#hierarchical-col").css("display", "none");
-        $("#test-hot").css({"float": "left"});
-        $("#exploration-bar").css({
-            "display": "inline",
-            "float": "left",
-            "width": "19%",
-            "height": wrapperHeight * 0.95
+
+            var $sortDropdown = $("#inlineOpt");
+            $sortDropdown.append(createSortString());
+
         });
-    })
-});
+        firstTime = false;
+    }
+
+
+    hieraOpen = false;
+    if (exploreOpen) {
+        hot.updateSettings({
+            width: $('.wrapper').width() * 0.59,
+        });
+    } else {
+        hot.updateSettings({
+            width: $('.wrapper').width() * 0.79,
+        });
+    }
+    $("#hierarchical-col").css("display", "none");
+    $("#test-hot").css({"float": "left"});
+    $("#exploration-bar").css({
+        "display": "inline",
+        "float": "left",
+        "width": "19%",
+        "height": wrapperHeight * 0.95
+    });
+})
+
+//});
 
 function createAggreString() {
     let tempString = "<div><select class='custom-select my-1' id='aggregateCol" + aggregateTotalNum + "''><option value='' disabled selected hidden>Attribute" + aggregateTotalNum + "</option>";
@@ -1467,13 +1522,13 @@ $("#aggreAdd").click(function () {
         }
     });
 })
-$("#aggreRemove").click(function(){
-  console.log("remove")
+$("#aggreRemove").click(function () {
+    console.log("remove")
 
-  if(aggregateTotalNum > 1){
-    $("#aggregateCol").children().last().remove();
-    aggregateTotalNum -= 1;
-  }
+    if (aggregateTotalNum > 1) {
+        $("#aggregateCol").children().last().remove();
+        aggregateTotalNum -= 1;
+    }
 })
 
 
@@ -1492,32 +1547,31 @@ function createSortString() {
     console.log(tempString)
     return tempString;
 }
+
 // for sort pop-up menue
-$("#sortAdd").click(function(){
-     var $sortDropdown = $("#inlineOpt");
-     $sortDropdown.append(createSortString());
+$("#sortAdd").click(function () {
+    var $sortDropdown = $("#inlineOpt");
+    $sortDropdown.append(createSortString());
 })
-$("#sortRemove").click(function(){
-  console.log("remove")
-  if(sortTotalNum > 1){
-    $("#inlineOpt :last-child").remove();
-    $("#inlineOpt :last-child").remove();
-    sortTotalNum -= 1;
-  }
+$("#sortRemove").click(function () {
+    console.log("remove")
+    if (sortTotalNum > 1) {
+        $("#inlineOpt :last-child").remove();
+        $("#inlineOpt :last-child").remove();
+        sortTotalNum -= 1;
+    }
 })
 
 
-
-
-$("#explore-form").submit(function(e){
-      e.preventDefault();
-       exploreAttr = $('input[name=exploreValue]:checked').val();
-       if(exploreAttr !== undefined){
-         $("#exploration-bar").css("display","none");
-         exploreOpen = true;
-         Explore(exploreAttr);
-     }
-   });
+$("#explore-form").submit(function (e) {
+    e.preventDefault();
+    exploreAttr = $('input[name=exploreValue]:checked').val();
+    if (exploreAttr !== undefined) {
+        $("#exploration-bar").css("display", "none");
+        exploreOpen = true;
+        Explore(exploreAttr);
+    }
+});
 
 $(".formClose").click(function (e) {
     console.log(this)
@@ -1547,101 +1601,101 @@ function Explore(e) {
         });
     });
 
-    $("#exploretoolDropdown").click(function(event) {
-      var selectedArray = nav.getSelected();
-      console.log(selectedArray)
-      if(selectedArray && selectedArray.length == 1){
-        $("#Sort").css({"display":"block"})
-      }else{
-        $("#Sort").css({"display":"none"})
-      }
+    $("#exploretoolDropdown").click(function (event) {
+        var selectedArray = nav.getSelected();
+        console.log(selectedArray)
+        if (selectedArray && selectedArray.length == 1) {
+            $("#Sort").css({"display": "block"})
+        } else {
+            $("#Sort").css({"display": "none"})
+        }
     })
 
-    $("#test-hot").css({"float":"left"});
-    $("#navChart").css({"display":"inline","float":"left"});
+    $("#test-hot").css({"float": "left"});
+    $("#navChart").css({"display": "inline", "float": "left"});
 
-  //scrolling to zooming event;
-  //   $("#navChart").bind('wheel', function(event) {
-  //     console.log(event)
-  //     if(event.originalEvent.wheelDeltaY > 10) {
-  //
-  //     var selectedArray = nav.getSelected();
-  //     console.log(selectedArray)
-  //     if(selectedArray && selectedArray.length == 1 && clickable){
-  //
-  //       console.log("zoomin start");
-  //       console.log(selectedArray);
-  //         var child = selectedArray[0][0]/spanList[currLevel];
-  //         console.log(child);
-  //         // hot.scrollViewportTo(testData[row].rowRange[0]);
-  //          zoomIn(child,nav);
-  //
-  //       }
-  //        console.log('scroll up'+currLevel);
-  //     }  else if(event.originalEvent.wheelDeltaY < -20){
-  //       console.log('scroll down');
-  //     //  var selectedArray = nav.getSelected();
-  //
-  //     //  if(selectedArray && selectedArray.length == 1){
-  //       if(currLevel >= 1 && zoomOutOn){
-  //           console.log("zoomout start");
-  //           zoomOutOn = false;
-  //           setTimeout(function() {
-  //             zoomOutOn = true;
-  //             console.log(zoomOutOn)
-  //           },1000);
-  //           zoomOut(nav);
-  //       }
-  //   //  }
-  //     }
-  // });
+    //scrolling to zooming event;
+    //   $("#navChart").bind('wheel', function(event) {
+    //     console.log(event)
+    //     if(event.originalEvent.wheelDeltaY > 10) {
+    //
+    //     var selectedArray = nav.getSelected();
+    //     console.log(selectedArray)
+    //     if(selectedArray && selectedArray.length == 1 && clickable){
+    //
+    //       console.log("zoomin start");
+    //       console.log(selectedArray);
+    //         var child = selectedArray[0][0]/spanList[currLevel];
+    //         console.log(child);
+    //         // hot.scrollViewportTo(testData[row].rowRange[0]);
+    //          zoomIn(child,nav);
+    //
+    //       }
+    //        console.log('scroll up'+currLevel);
+    //     }  else if(event.originalEvent.wheelDeltaY < -20){
+    //       console.log('scroll down');
+    //     //  var selectedArray = nav.getSelected();
+    //
+    //     //  if(selectedArray && selectedArray.length == 1){
+    //       if(currLevel >= 1 && zoomOutOn){
+    //           console.log("zoomout start");
+    //           zoomOutOn = false;
+    //           setTimeout(function() {
+    //             zoomOutOn = true;
+    //             console.log(zoomOutOn)
+    //           },1000);
+    //           zoomOut(nav);
+    //       }
+    //   //  }
+    //     }
+    // });
 
-  $.get(baseUrl + 'startNav/' + bId +'/' + sName +'/'+ e, function(data){
-                   clickable = true;
-                   currLevel = 0;
-                   levelList = [];
-                   spanList = [];
-                   cumulativeData = [];
-                  // for (let i = 0; i < 11; i++){
-                  //   viewData[i] = [""];
-                  // }
-                  mergeCellInfo = [];
-                  colHeader = [options[e-1]];
-                  console.log(colHeader)
-                  cumulativeDataSize = 0;
+    $.get(baseUrl + 'startNav/' + bId + '/' + sName + '/' + e, function (data) {
+        clickable = true;
+        currLevel = 0;
+        levelList = [];
+        spanList = [];
+        cumulativeData = [];
+        // for (let i = 0; i < 11; i++){
+        //   viewData[i] = [""];
+        // }
+        mergeCellInfo = [];
+        colHeader = [options[e - 1]];
+        console.log(colHeader)
+        cumulativeDataSize = 0;
 
-                   var result = JSON.parse(data.data);
-                   currData = result.data;
-                   currRange = currData[currData.length-1].rowRange[1] - currData[0].rowRange[0];
-                   console.log(currData);
+        var result = JSON.parse(data.data);
+        currData = result.data;
+        currRange = currData[currData.length - 1].rowRange[1] - currData[0].rowRange[0];
+        console.log(currData);
 
-                   // let span = Math.round(11 / currData.length)
-                   // for ( let  i  = 0; i < currData.length; i++){
-                   //   if( i == currData.length - 1){
-                   //      mergeCellInfo.push({row: i*span, col: 0, rowspan: 11 - i*span, colspan: 1});
-                   //   }else{
-                   //      mergeCellInfo.push({row: i*span, col: 0, rowspan: span, colspan: 1});
-                   //   }
-                   // }
-                   // spanList.push(span);
+        // let span = Math.round(11 / currData.length)
+        // for ( let  i  = 0; i < currData.length; i++){
+        //   if( i == currData.length - 1){
+        //      mergeCellInfo.push({row: i*span, col: 0, rowspan: 11 - i*span, colspan: 1});
+        //   }else{
+        //      mergeCellInfo.push({row: i*span, col: 0, rowspan: span, colspan: 1});
+        //   }
+        // }
+        // spanList.push(span);
 
 
-                   cumulativeData.push(currData);
-                   viewData = new Array(currData.length);
-                   // for (let i = 0; i < currData.length; i++){
-                   //   console.log(i);
-                   //   viewData[mergeCellInfo[i].row][currLevel]= cumulativeData[0][i].name;
-                   // }
-                   console.log(viewData)
-                   for (let i = 0; i < currData.length; i++){
-                     viewData[i] = [""];
-                   }
-                   for (let i = 0; i < currData.length; i++){
-                     console.log(i);
-                     viewData[i][0] = cumulativeData[0][i].name;
-                   }
+        cumulativeData.push(currData);
+        viewData = new Array(currData.length);
+        // for (let i = 0; i < currData.length; i++){
+        //   console.log(i);
+        //   viewData[mergeCellInfo[i].row][currLevel]= cumulativeData[0][i].name;
+        // }
+        console.log(viewData)
+        for (let i = 0; i < currData.length; i++) {
+            viewData[i] = [""];
+        }
+        for (let i = 0; i < currData.length; i++) {
+            console.log(i);
+            viewData[i][0] = cumulativeData[0][i].name;
+        }
 
-                   cumulativeDataSize += currData.length;
+        cumulativeDataSize += currData.length;
 
         hot.updateSettings({
             width: wrapperWidth * 0.79,
@@ -1649,17 +1703,17 @@ function Explore(e) {
         });
 
 
-                     //default setting
-                     var navSettings = {
-                       //  minRows: testData.length,
+        //default setting
+        var navSettings = {
+            //  minRows: testData.length,
 
-           // minRows: currData.length,
+            // minRows: currData.length,
             //   maxRows:11,
             minCols: 1,
             // maxCols:1,
             //  autoColumnSize : true,
             readOnly: true,
-            rowHeights: (wrapperHeight * 0.95 / currData.length > 80)? wrapperHeight * 0.95 / currData.length:80,
+            rowHeights: (wrapperHeight * 0.95 / currData.length > 80) ? wrapperHeight * 0.95 / currData.length : 80,
             // startRows: 200,
             //  startCols: 5,
             width: wrapperWidth * 0.19,
@@ -1668,41 +1722,41 @@ function Explore(e) {
             rowHeaders: true,
             colHeaders: function (col) {
 
-                           if(col < colHeader.length){
-                             if(currLevel == 0){
-                               switch (col) {
-                                 case 0:
-                                    return  colHeader[0] ;
-                                 default:
-                                   return colHeader[col] + "<span id='colClose' >x</span>";
-                               }
-                             }else{
-                               switch (col) {
-                                 case 0:
-                                    return colHeader[0]  ;
-                                 case 1:
-                                    return  colHeader[1]  ;
-                                 default:
-                                   return colHeader[col] + "<span id='colClose'>x</span>";
-                               }
-                             }
+                if (col < colHeader.length) {
+                    if (currLevel == 0) {
+                        switch (col) {
+                            case 0:
+                                return colHeader[0];
+                            default:
+                                return colHeader[col] + "<span id='colClose' >x</span>";
+                        }
+                    } else {
+                        switch (col) {
+                            case 0:
+                                return colHeader[0];
+                            case 1:
+                                return colHeader[1];
+                            default:
+                                return colHeader[col] + "<span id='colClose'>x</span>";
+                        }
+                    }
 
-                           }
-                         },
-                        // colHeaders: colHeader,
-                         //fixedRowsTop: 11,
-                        // fixedColumnsLeft: 1,
-                         stretchH: 'all',
-                         contextMenu: false,
-                         outsideClickDeselects: false,
-                         // manualColumnResize: true,
-                         // manualRowResize: true,
-                         className:"htCenter htMiddle wrap",
+                }
+            },
+            // colHeaders: colHeader,
+            //fixedRowsTop: 11,
+            // fixedColumnsLeft: 1,
+            stretchH: 'all',
+            contextMenu: false,
+            outsideClickDeselects: false,
+            // manualColumnResize: true,
+            // manualRowResize: true,
+            className: "htCenter htMiddle wrap",
 
-                         search:true,
-                         sortIndicator: true,
-                         manualColumnResize: true,
-                         mergeCells: mergeCellInfo,
+            search: true,
+            sortIndicator: true,
+            manualColumnResize: true,
+            mergeCells: mergeCellInfo,
 
             beforeOnCellMouseDown: function (e, coords, element) {
                 console.log(e)
@@ -1712,148 +1766,148 @@ function Explore(e) {
 
                 let topLevel = (currLevel == 0 && coords.col != 0)
                 let otherLevel = (currLevel > 0 && coords.col != 1)
-                if(topLevel && coords.row >= 0){
-                    $("#formulaBar").val("="+navRawFormula[coords.row][coords.col-1]);
-                }else if(currLevel > 0 && coords.row >= 0 && coords.col >= 2) {
+                if (topLevel && coords.row >= 0) {
+                    $("#formulaBar").val("=" + navRawFormula[coords.row][coords.col - 1]);
+                } else if (currLevel > 0 && coords.row >= 0 && coords.col >= 2) {
                     $("#formulaBar").val("=" + navRawFormula[coords.row][coords.col - 2]);
                 }
 
 
-                           if( topLevel || otherLevel || zoomming || e.realTarget.className == "colHeader" || e.realTarget.className == "relative" ){
-                             e.stopImmediatePropagation();
-                           }
-                           if(e.realTarget.id == "colClose"){
-                             removeHierarchiCol(coords.col)
-                             console.log(colHeader);
-                             console.log(viewData)
-                           }
-                         },
-                       afterSelection: function (r, c, r2, c2, preventScrolling, selectionLayerLevel) {
-                           // setting if prevent scrolling after selection
-                            // console.log("selection")
-                            // console.log(cumulativeData)
-                            // console.log(currLevel)
-                             console.log(r)
-                            // console.log(c)
-                            //  console.log(r/spanList[currLevel])
-                            //  console.log(cumulativeData[currLevel][r/spanList[currLevel]])
-                            // if(cumulativeData[currLevel][r/spanList[currLevel]] != undefined){
-                            //   lowerRange = cumulativeData[currLevel][r/spanList[currLevel]].rowRange[0];
-                            //   upperRange = cumulativeData[currLevel][r/spanList[currLevel]].rowRange[1];
-                            //   updateData(cumulativeData[currLevel][r/spanList[currLevel]].rowRange[0],0,cumulativeData[currLevel][r/spanList[currLevel]].rowRange[1],15,true);
-                            //   console.log(upperRange)
-                            // }
+                if (topLevel || otherLevel || zoomming || e.realTarget.className == "colHeader" || e.realTarget.className == "relative") {
+                    e.stopImmediatePropagation();
+                }
+                if (e.realTarget.id == "colClose") {
+                    removeHierarchiCol(coords.col)
+                    console.log(colHeader);
+                    console.log(viewData)
+                }
+            },
+            afterSelection: function (r, c, r2, c2, preventScrolling, selectionLayerLevel) {
+                // setting if prevent scrolling after selection
+                // console.log("selection")
+                // console.log(cumulativeData)
+                // console.log(currLevel)
+                console.log(r)
+                // console.log(c)
+                //  console.log(r/spanList[currLevel])
+                //  console.log(cumulativeData[currLevel][r/spanList[currLevel]])
+                // if(cumulativeData[currLevel][r/spanList[currLevel]] != undefined){
+                //   lowerRange = cumulativeData[currLevel][r/spanList[currLevel]].rowRange[0];
+                //   upperRange = cumulativeData[currLevel][r/spanList[currLevel]].rowRange[1];
+                //   updateData(cumulativeData[currLevel][r/spanList[currLevel]].rowRange[0],0,cumulativeData[currLevel][r/spanList[currLevel]].rowRange[1],15,true);
+                //   console.log(upperRange)
+                // }
 
-                            if(cumulativeData[currLevel][r] != undefined){
-                              selectedChild = r;
-                              lowerRange = cumulativeData[currLevel][r].rowRange[0];
-                              upperRange = cumulativeData[currLevel][r].rowRange[1];
-                              updateData(cumulativeData[currLevel][r].rowRange[0],0,cumulativeData[currLevel][r].rowRange[1],15,true);
-                              console.log(upperRange)
-                              nav.render();
-                            }
-                            // hot.scrollViewportTo(cumulativeData[currLevel][r/spanList[currLevel]].rowRange[0]);
-                            // hot.scrollViewportTo(cumulativeData[currLevel][r/spanList[currLevel]].rowRange[0]);
+                if (cumulativeData[currLevel][r] != undefined) {
+                    selectedChild = r;
+                    lowerRange = cumulativeData[currLevel][r].rowRange[0];
+                    upperRange = cumulativeData[currLevel][r].rowRange[1];
+                    updateData(cumulativeData[currLevel][r].rowRange[0], 0, cumulativeData[currLevel][r].rowRange[1], 15, true);
+                    console.log(upperRange)
+                    nav.render();
+                }
+                // hot.scrollViewportTo(cumulativeData[currLevel][r/spanList[currLevel]].rowRange[0]);
+                // hot.scrollViewportTo(cumulativeData[currLevel][r/spanList[currLevel]].rowRange[0]);
 
-                       },
-                       // cells: function(row,column,prop){
-                       //   let cellMeta = {}
-                       //   if (column == 0 && row == 0) {
-                       //   cellMeta.renderer = function(hotInstance, td, row, col, prop, value, cellProperties) {
-                       //    Handsontable.renderers.TextRenderer.apply(this, arguments);
-                       //    console.log(td)
-                       //    td.style.background = '#D3D3D3';
-                       //    td.style.color = 'white';
-                       //  }};
-                       // return cellMeta;
-                       // },
-                       data: viewData,
-                  //  doubleclick implementation option1:
-                   //  afterOnCellMouseDown: function(event, cell, td) {
-                   //   var now = new Date().getTime();
-                   //    // check if dbl-clicked within 1/5th of a second. change 200 (milliseconds) to other value if you want
-                   //   if(!(td.lastClick && now - td.lastClick < 200)) {
-                   //     td.lastClick = now;
-                   //     return; // no double-click detected
-                   //   }
-                   //  console.log(cell)
-                   //   // double-click code goes here
-                   //   if(currLevel == 0){
-                   //        if(clickable && cell.col == 0){
-                   //          var child = cell.row/spanList[currLevel];
-                   //          console.log(child);
-                   //          nav.deselectCell();
-                   //          zoomIn(child,nav);
-                   //        }
-                   //      }else{
-                   //        if(clickable && cell.col == 1){
-                   //          var child = cell.row/spanList[currLevel];
-                   //          console.log(child);
-                   //          nav.deselectCell();
-                   //          zoomIn(child,nav);
-                   //        }else if(cell.col == 0){
-                   //          zoomOut(nav);
-                   //        }
-                   //      }
-                   //   console.log('double clicked');
-                   // },
-                       cells: function(row,column,prop){
-                         let cellMeta = {}
-                         if(currLevel == 0){
-                           if(column == 0 && row == selectedChild) {
-                             cellMeta.renderer = function(hotInstance, td, row, col, prop, value, cellProperties){
-                             Handsontable.renderers.TextRenderer.apply(this, arguments);
-                             td.style.background = '#D3D3D3';
-                             td.style.color = 'white';
-                             }
-                           }else if(column == 0){
-                            cellMeta.renderer = function(hotInstance, td, row, col, prop, value, cellProperties) {
-                             Handsontable.renderers.TextRenderer.apply(this, arguments);
-                             td.style.background = '#F5F5DC';
-                             }
-                           }else{
-                             cellMeta.renderer = function(hotInstance, td, row, col, prop, value, cellProperties) {
-                              Handsontable.renderers.TextRenderer.apply(this, arguments);
-                              td.style.background = '#FAEBD7';
-                           }
-                          }
-                         }else{
-                           if (column == 1 && row == selectedChild) {
-                             cellMeta.renderer = function(hotInstance, td, row, col, prop, value, cellProperties) {
-                             Handsontable.renderers.TextRenderer.apply(this, arguments);
-                             td.style.background = '#D3D3D3';
-                             td.style.color = 'white';
-                             }
-                           }else if(column <= 1){
-                             cellMeta.renderer = function(hotInstance, td, row, col, prop, value, cellProperties) {
-                             Handsontable.renderers.TextRenderer.apply(this, arguments);
-                             td.style.background = '#F5F5DC';
-                            }
-                           }else{
-                             cellMeta.renderer = function(hotInstance, td, row, col, prop, value, cellProperties) {
-                             Handsontable.renderers.TextRenderer.apply(this, arguments);
-                             td.style.background = '#FAEBD7';
-                            }
-                         }
-                       }
-                       return cellMeta;
-                      }
-                     }
-                     // //initializing interface
-                     navContainer.innerHTML = ""
-                     nav = new Handsontable(navContainer, navSettings);
-                     nav.selectCell(0,0);
-
-
-                     console.log(viewData);
-                     updateData(0,0,1000,15,true);
-                     lowerRange = 0;
-                     upperRange = 1000;
-                     updataHighlight();
+            },
+            // cells: function(row,column,prop){
+            //   let cellMeta = {}
+            //   if (column == 0 && row == 0) {
+            //   cellMeta.renderer = function(hotInstance, td, row, col, prop, value, cellProperties) {
+            //    Handsontable.renderers.TextRenderer.apply(this, arguments);
+            //    console.log(td)
+            //    td.style.background = '#D3D3D3';
+            //    td.style.color = 'white';
+            //  }};
+            // return cellMeta;
+            // },
+            data: viewData,
+            //  doubleclick implementation option1:
+            //  afterOnCellMouseDown: function(event, cell, td) {
+            //   var now = new Date().getTime();
+            //    // check if dbl-clicked within 1/5th of a second. change 200 (milliseconds) to other value if you want
+            //   if(!(td.lastClick && now - td.lastClick < 200)) {
+            //     td.lastClick = now;
+            //     return; // no double-click detected
+            //   }
+            //  console.log(cell)
+            //   // double-click code goes here
+            //   if(currLevel == 0){
+            //        if(clickable && cell.col == 0){
+            //          var child = cell.row/spanList[currLevel];
+            //          console.log(child);
+            //          nav.deselectCell();
+            //          zoomIn(child,nav);
+            //        }
+            //      }else{
+            //        if(clickable && cell.col == 1){
+            //          var child = cell.row/spanList[currLevel];
+            //          console.log(child);
+            //          nav.deselectCell();
+            //          zoomIn(child,nav);
+            //        }else if(cell.col == 0){
+            //          zoomOut(nav);
+            //        }
+            //      }
+            //   console.log('double clicked');
+            // },
+            cells: function (row, column, prop) {
+                let cellMeta = {}
+                if (currLevel == 0) {
+                    if (column == 0 && row == selectedChild) {
+                        cellMeta.renderer = function (hotInstance, td, row, col, prop, value, cellProperties) {
+                            Handsontable.renderers.TextRenderer.apply(this, arguments);
+                            td.style.background = '#D3D3D3';
+                            td.style.color = 'white';
+                        }
+                    } else if (column == 0) {
+                        cellMeta.renderer = function (hotInstance, td, row, col, prop, value, cellProperties) {
+                            Handsontable.renderers.TextRenderer.apply(this, arguments);
+                            td.style.background = '#F5F5DC';
+                        }
+                    } else {
+                        cellMeta.renderer = function (hotInstance, td, row, col, prop, value, cellProperties) {
+                            Handsontable.renderers.TextRenderer.apply(this, arguments);
+                            td.style.background = '#FAEBD7';
+                        }
+                    }
+                } else {
+                    if (column == 1 && row == selectedChild) {
+                        cellMeta.renderer = function (hotInstance, td, row, col, prop, value, cellProperties) {
+                            Handsontable.renderers.TextRenderer.apply(this, arguments);
+                            td.style.background = '#D3D3D3';
+                            td.style.color = 'white';
+                        }
+                    } else if (column <= 1) {
+                        cellMeta.renderer = function (hotInstance, td, row, col, prop, value, cellProperties) {
+                            Handsontable.renderers.TextRenderer.apply(this, arguments);
+                            td.style.background = '#F5F5DC';
+                        }
+                    } else {
+                        cellMeta.renderer = function (hotInstance, td, row, col, prop, value, cellProperties) {
+                            Handsontable.renderers.TextRenderer.apply(this, arguments);
+                            td.style.background = '#FAEBD7';
+                        }
+                    }
+                }
+                return cellMeta;
+            }
+        }
+        // //initializing interface
+        navContainer.innerHTML = ""
+        nav = new Handsontable(navContainer, navSettings);
+        nav.selectCell(0, 0);
 
 
-                //   doubleclick implementation option2:
-                     nav.view.wt.update('onCellDblClick', function (e,cell) {
+        console.log(viewData);
+        updateData(0, 0, 1000, 15, true);
+        lowerRange = 0;
+        upperRange = 1000;
+        updataHighlight();
+
+
+        //   doubleclick implementation option2:
+        nav.view.wt.update('onCellDblClick', function (e, cell) {
 
             console.log("double")
             console.log(cell);
@@ -1882,7 +1936,7 @@ function Explore(e) {
                 }
             }
 
-                    });
+        });
 
     });
 }
@@ -1901,7 +1955,7 @@ function removeHierarchiCol(colIdx) {
     nav.alter('remove_col', colIdx);
     console.log(viewData)
 
-  //nav.render();
+    //nav.render();
 }
 
 $("#hierarchi-form").submit(function (e) {
@@ -2118,7 +2172,7 @@ function addHierarchiCol(aggregateValue) {
             let text = aggregateValue[j][i].value;
             if (isNaN(text)) {
                 viewData[i][targetCol + j] = text;
-            } else{
+            } else {
                 viewData[i][targetCol + j] = text.toFixed(2);
             }
             console.log("start" + i)
@@ -2143,18 +2197,18 @@ function addHierarchiCol(aggregateValue) {
     nav.updateSettings({
         //colWidths:columWidth,
         minCols: 1,
-        data:viewData,
-        rowHeights: (wrapperHeight * 0.95 / numChild > 80)? wrapperHeight * 0.95 / numChild:80,
+        data: viewData,
+        rowHeights: (wrapperHeight * 0.95 / numChild > 80) ? wrapperHeight * 0.95 / numChild : 80,
 
         //maxCols: 3,
         //  fixedColumnsLeft: targetCol,
         mergeCells: mergeCellInfo,
     });
-    if(zoomming){
+    if (zoomming) {
         zoomming = false;
         nav.selectCell(0, 1);
     }
-    if(zoomouting){
+    if (zoomouting) {
         zoomouting = false;
         if (currLevel == 0) {
             nav.selectCell(targetChild, 0)
@@ -2166,32 +2220,32 @@ function addHierarchiCol(aggregateValue) {
 }
 
 
-   // http://127.0.0.1:8080/api/getHierarchicalAggregate/' + bookId +'/' +
-   //           sheetName +'/'+ "1" + '/'+ "9" + '/' + "0"
+// http://127.0.0.1:8080/api/getHierarchicalAggregate/' + bookId +'/' +
+//           sheetName +'/'+ "1" + '/'+ "9" + '/' + "0"
 
 
-function computePath(){
-  let childlist = "";
-  for ( let i = 0; i < levelList.length - 1; i++){
-   childlist += levelList[i] + ",";
-  }
-   if(levelList.length > 0){
-     childlist += levelList[ levelList.length - 1 ];
-   }
-  return childlist;
+function computePath() {
+    let childlist = "";
+    for (let i = 0; i < levelList.length - 1; i++) {
+        childlist += levelList[i] + ",";
+    }
+    if (levelList.length > 0) {
+        childlist += levelList[levelList.length - 1];
+    }
+    return childlist;
 }
 
 
-function zoomIn(child,nav){
+function zoomIn(child, nav) {
     nav.deselectCell();
-  if(currLevel == 0){
-    colHeader.splice(1,0,"")
-  }
-  levelList.push(child);
-  let childlist = computePath();
+    if (currLevel == 0) {
+        colHeader.splice(1, 0, "")
+    }
+    levelList.push(child);
+    let childlist = computePath();
 
 
-  $.get(baseUrl + 'getChildren/'+ bId +'/' + sName +'/' + childlist , function(data){
+    $.get(baseUrl + 'getChildren/' + bId + '/' + sName + '/' + childlist, function (data) {
 
         console.log(data);
         var result = JSON.parse(data.data);
@@ -2203,56 +2257,56 @@ function zoomIn(child,nav){
         mergeCellInfo.push({row: 0, col: 0, rowspan: currData.length, colspan: 1});
 
 
-            viewData = new Array(currData.length);
-            for (let i = 0; i < currData.length; i++){
-              if( i == 0){
-                viewData[i] = [cumulativeData[currLevel-1][child].name];
-              }else{
+        viewData = new Array(currData.length);
+        for (let i = 0; i < currData.length; i++) {
+            if (i == 0) {
+                viewData[i] = [cumulativeData[currLevel - 1][child].name];
+            } else {
                 viewData[i] = [""];
-              }
             }
-            // for (let i = 0; i < 11; i++){
-            //   if( i == 0){
-            //     viewData[i][0] = cumulativeData[currLevel-1][child].name;
-            //   }else{
-            //     viewData[i][0] = "";
-            //   }
-            // }
+        }
+        // for (let i = 0; i < 11; i++){
+        //   if( i == 0){
+        //     viewData[i][0] = cumulativeData[currLevel-1][child].name;
+        //   }else{
+        //     viewData[i][0] = "";
+        //   }
+        // }
 
-           //showing only most recent two layers
-           // let span = Math.floor(11 / currData.length)
-           // console.log(span)
-           // for ( let  i  = 0; i < currData.length; i++){
-           //   if( i == currData.length - 1){
-           //      mergeCellInfo.push({row: i*span, col: 1, rowspan: 11 - i*span, colspan: 1});
-           //   }else{
-           //      mergeCellInfo.push({row: i*span, col: 1, rowspan: span, colspan: 1});
-           //   }
-           // }
+        //showing only most recent two layers
+        // let span = Math.floor(11 / currData.length)
+        // console.log(span)
+        // for ( let  i  = 0; i < currData.length; i++){
+        //   if( i == currData.length - 1){
+        //      mergeCellInfo.push({row: i*span, col: 1, rowspan: 11 - i*span, colspan: 1});
+        //   }else{
+        //      mergeCellInfo.push({row: i*span, col: 1, rowspan: span, colspan: 1});
+        //   }
+        // }
 
-          // spanList.push(span);
-           console.log(mergeCellInfo)
+        // spanList.push(span);
+        console.log(mergeCellInfo)
 
-           cumulativeData.push(currData);
+        cumulativeData.push(currData);
 
-          console.log(cumulativeData);
-
-
-          // for (let i = 0; i < currData.length; i++){
-          //
-          //    //double layer
-          //     viewData[i*span][1]= cumulativeData[currLevel][i].name;
-          //
-          //  }
-
-          for (let i = 0; i < currData.length; i++){
-             //double layer
-              viewData[i][1]= cumulativeData[currLevel][i].name;
-
-           }
+        console.log(cumulativeData);
 
 
-           cumulativeDataSize += currData.length;
+        // for (let i = 0; i < currData.length; i++){
+        //
+        //    //double layer
+        //     viewData[i*span][1]= cumulativeData[currLevel][i].name;
+        //
+        //  }
+
+        for (let i = 0; i < currData.length; i++) {
+            //double layer
+            viewData[i][1] = cumulativeData[currLevel][i].name;
+
+        }
+
+
+        cumulativeDataSize += currData.length;
 
         let columWidth = [];
         if (currLevel >= 1) {
@@ -2264,16 +2318,16 @@ function zoomIn(child,nav){
         // console.log(viewData);
         // console.log(nav.getColWidth(1))
         // console.log(nav.getCopyableText(0,0,10,2))
-       // nav.render();
+        // nav.render();
 
         if (hieraOpen) {
             getAggregateValue();
 
-        }else{
+        } else {
             nav.updateSettings({
-               // minRows: currData.length,
+                // minRows: currData.length,
                 data: viewData,
-                rowHeights: (wrapperHeight * 0.95 / currData.length > 80)? wrapperHeight * 0.95 / currData.length:80,
+                rowHeights: (wrapperHeight * 0.95 / currData.length > 80) ? wrapperHeight * 0.95 / currData.length : 80,
                 mergeCells: mergeCellInfo,
             });
             zoomming = false;
@@ -2281,12 +2335,12 @@ function zoomIn(child,nav){
         }
         updateNavPath();
         // zoomming = false;
-      //  nav.selectCell(0, 1)
-      //  nav.render();
+        //  nav.selectCell(0, 1)
+        //  nav.render();
     });
 
 
-           }
+}
 
 function updateNavPath() {
     let $breadcrumbList = $(".breadcrumb");
@@ -2310,8 +2364,6 @@ function updateNavPath() {
         }
     });
 }
-
-
 
 
 //  currLevel += 1;
@@ -2415,13 +2467,11 @@ function updateNavPath() {
 //   nav.deselectCell();
 
 
+function zoomOut(nav) {
+    clickable = true;
+    nav.deselectCell();
 
-
-function zoomOut(nav){
-clickable = true;
-nav.deselectCell();
-
- //api call to /levelList + '.' + child to get currData
+    //api call to /levelList + '.' + child to get currData
 
 
     //spanList.pop();
@@ -2446,30 +2496,29 @@ nav.deselectCell();
 //   }
 // }
 
-console.log(levelList)
- numChild = cumulativeData[currLevel].length;
- viewData = new Array(numChild);
- mergeCellInfo = [];
- if(currLevel > 0){
-   mergeCellInfo.push({row: 0, col: 0, rowspan: numChild, colspan: 1});
-   for (let i = 0; i < numChild; i++){
-     if( i == 0){
-       viewData[i] = [cumulativeData[currLevel-1][levelList[currLevel-1]].name];
-     }else{
-       viewData[i] = [""];
-     }
-     viewData[i][1] = cumulativeData[currLevel][i].name;
-   }
- }else{
-   colHeader.splice(1, 1);
-    for (let i = 0; i < numChild; i++){
-      viewData[i]= [cumulativeData[currLevel][i].name];
-  }
- }
+    console.log(levelList)
+    numChild = cumulativeData[currLevel].length;
+    viewData = new Array(numChild);
+    mergeCellInfo = [];
+    if (currLevel > 0) {
+        mergeCellInfo.push({row: 0, col: 0, rowspan: numChild, colspan: 1});
+        for (let i = 0; i < numChild; i++) {
+            if (i == 0) {
+                viewData[i] = [cumulativeData[currLevel - 1][levelList[currLevel - 1]].name];
+            } else {
+                viewData[i] = [""];
+            }
+            viewData[i][1] = cumulativeData[currLevel][i].name;
+        }
+    } else {
+        colHeader.splice(1, 1);
+        for (let i = 0; i < numChild; i++) {
+            viewData[i] = [cumulativeData[currLevel][i].name];
+        }
+    }
 
 
-
- //for multiple layer zoomout
+    //for multiple layer zoomout
 // for( let i = 0; i < levelList.length; i++ ){
 //     mergeCellInfo.push({row: 0, col: i, rowspan: 10, colspan: 1});
 //     for( let j = 0; j < 10; j++ ){
@@ -2480,45 +2529,44 @@ console.log(levelList)
 //       }
 //     }
 // }
-console.log(viewData);
- // for (let i = 0; i < cumulativeData[currLevel].length; i++){
- //
- //      if( i == cumulativeData[currLevel].length - 1){
- //         mergeCellInfo.push({row: i*spanList[currLevel], col: currLevel, rowspan: 10 - i*spanList[currLevel], colspan: 1});
- //      }else{
- //         mergeCellInfo.push({row: i*spanList[currLevel], col: currLevel, rowspan: spanList[currLevel], colspan: 1});
- //      }
- //     viewData[i*spanList[currLevel]][currLevel]= cumulativeData[currLevel][i].name;
- //    console.log("start"+ i + viewData)
- //  }
+    console.log(viewData);
+    // for (let i = 0; i < cumulativeData[currLevel].length; i++){
+    //
+    //      if( i == cumulativeData[currLevel].length - 1){
+    //         mergeCellInfo.push({row: i*spanList[currLevel], col: currLevel, rowspan: 10 - i*spanList[currLevel], colspan: 1});
+    //      }else{
+    //         mergeCellInfo.push({row: i*spanList[currLevel], col: currLevel, rowspan: spanList[currLevel], colspan: 1});
+    //      }
+    //     viewData[i*spanList[currLevel]][currLevel]= cumulativeData[currLevel][i].name;
+    //    console.log("start"+ i + viewData)
+    //  }
 
- //for double layer zoonOut
- // let targetCol = (currLevel == 0)? 0:1 ;
- // for (let i = 0; i < cumulativeData[currLevel].length; i++){
- //      if( i == cumulativeData[currLevel].length - 1){
- //         mergeCellInfo.push({row: i*spanList[currLevel], col: targetCol, rowspan: 11 - i*spanList[currLevel], colspan: 1});
- //      }else{
- //         mergeCellInfo.push({row: i*spanList[currLevel], col: targetCol, rowspan: spanList[currLevel], colspan: 1});
- //      }
- //     viewData[i*spanList[currLevel]][targetCol]= cumulativeData[currLevel][i].name;
- //    console.log("start"+ i + viewData)
- //  }
+    //for double layer zoonOut
+    // let targetCol = (currLevel == 0)? 0:1 ;
+    // for (let i = 0; i < cumulativeData[currLevel].length; i++){
+    //      if( i == cumulativeData[currLevel].length - 1){
+    //         mergeCellInfo.push({row: i*spanList[currLevel], col: targetCol, rowspan: 11 - i*spanList[currLevel], colspan: 1});
+    //      }else{
+    //         mergeCellInfo.push({row: i*spanList[currLevel], col: targetCol, rowspan: spanList[currLevel], colspan: 1});
+    //      }
+    //     viewData[i*spanList[currLevel]][targetCol]= cumulativeData[currLevel][i].name;
+    //    console.log("start"+ i + viewData)
+    //  }
 
 
- // for multiple layer columwidth change
- // let columWidth = [];
- // for ( let i = 0; i < currLevel; i++){
- //   columWidth.push(40);
- // }
- // columWidth.push(200 - 40*currLevel);
+    // for multiple layer columwidth change
+    // let columWidth = [];
+    // for ( let i = 0; i < currLevel; i++){
+    //   columWidth.push(40);
+    // }
+    // columWidth.push(200 - 40*currLevel);
 
- let columWidth = [];
- if(currLevel >= 1){
-   columWidth = [40,160];
- }else{
-   columWidth = 200;
- }
-
+    let columWidth = [];
+    if (currLevel >= 1) {
+        columWidth = [40, 160];
+    } else {
+        columWidth = 200;
+    }
 
 
     if (hieraOpen) {
@@ -2529,22 +2577,22 @@ console.log(viewData);
         //     rowHeights: (wrapperHeight * 0.95 / numChild > 80)? wrapperHeight * 0.95 / numChild:80,
         //     mergeCells: mergeCellInfo,
         // });
-    }else{
+    } else {
         nav.updateSettings({
             //  colWidths: columWidth,
 //    minCols: currLevel + 1,
 //    maxCols: currLevel + 1,
 //    fixedColumnsLeft: currLevel + 1,
-         //   minRows: numChild,
+            //   minRows: numChild,
             data: viewData,
-            rowHeights: (wrapperHeight * 0.95 / numChild > 80)? wrapperHeight * 0.95 / numChild:80,
+            rowHeights: (wrapperHeight * 0.95 / numChild > 80) ? wrapperHeight * 0.95 / numChild : 80,
             mergeCells: mergeCellInfo,
         });
         zoomouting = false;
         if (currLevel == 0) {
-             nav.selectCell(targetChild, 0)
+            nav.selectCell(targetChild, 0)
         } else {
-             nav.selectCell(targetChild, 1);
+            nav.selectCell(targetChild, 1);
         }
     }
 
@@ -2555,35 +2603,35 @@ console.log(viewData);
     //nav.render();
 }
 
-$("#sort-form").submit(function(e){
-  e.preventDefault();
-  $("#exampleModal").modal('hide')
-  sortAttrIndices = [];
-  for(let i = 0; i < sortTotalNum; i++){
-      sortAttrIndices.push( $('#inlineOpt'+ i).val());
-  }
-  var selectedArray = nav.getSelected();
-  console.log(selectedArray)
+$("#sort-form").submit(function (e) {
+    e.preventDefault();
+    $("#exampleModal").modal('hide')
+    sortAttrIndices = [];
+    for (let i = 0; i < sortTotalNum; i++) {
+        sortAttrIndices.push($('#inlineOpt' + i).val());
+    }
+    var selectedArray = nav.getSelected();
+    console.log(selectedArray)
 //  var child = selectedArray[0][0]/spanList[currLevel];
-  var child = selectedArray[0][0]
-  console.log(child);
-  let childlist = computePath();
-  let path = ""
-  if(childlist !== ""){
-    path += childlist + ',' + child
-  }else{
-    path = child
-  }
+    var child = selectedArray[0][0]
+    console.log(child);
+    let childlist = computePath();
+    let path = ""
+    if (childlist !== "") {
+        path += childlist + ',' + child
+    } else {
+        path = child
+    }
 
-  $.get(baseUrl + 'sortBlock/' + bId +'/'
-    + sName + '/ ' + path + '/'+ sortAttrIndices + '/' + 0, function(data){
+    $.get(baseUrl + 'sortBlock/' + bId + '/'
+        + sName + '/ ' + path + '/' + sortAttrIndices + '/' + 0, function (data) {
         console.log(data);
-        updateData(cumulativeData[currLevel][child].rowRange[0],0,cumulativeData[currLevel][child].rowRange[1]+10,15,true)
+        updateData(cumulativeData[currLevel][child].rowRange[0], 0, cumulativeData[currLevel][child].rowRange[1] + 10, 15, true)
 
         console.log(cumulativeData[currLevel][child].rowRange[0]);
         updataHighlight(child);
 
-   });
+    });
 
 })
 // function updateNavColor(){
