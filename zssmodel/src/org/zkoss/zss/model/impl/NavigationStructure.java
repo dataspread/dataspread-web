@@ -81,7 +81,7 @@ public class NavigationStructure {
             return false;
         typeCheckedColumns.add(col);
         System.out.println("Type converting column " + col);
-        CellRegion tableRegion = new CellRegion(0, col, totalRows, col);
+        CellRegion tableRegion = new CellRegion(0, col, totalRows-1, col);
         ArrayList<SCell> result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
         result.forEach(x -> x.updateCellTypeFromString(connection, false));
         Collection<AbstractCellAdv> castCells = new ArrayList<>();
@@ -172,7 +172,7 @@ public class NavigationStructure {
      * Called when user select an index to start navigation. This function must be called after {@link #setRecordList}.
      */
     public void initIndexedBucket(int totalRows) {
-        this.totalRows = totalRows;
+        //this.totalRows = totalRows;
         navBucketTree = getNonOverlappingBuckets(1, this.totalRows - 1);
     }
 

@@ -223,6 +223,7 @@ public class RCV_Model extends Model {
         }
         this.navS.setIndexString(indexString);
         this.navS.setCurrentSheet(currentSheet);
+        this.navS.setTotalRows(currentSheet.getEndRowIndex()+1);
         ArrayList<Object> recordList = new ArrayList<>();
         navigationSortRangeByAttribute(currentSheet, 1, currentSheet.getEndRowIndex(), new int[]{columnIndex}, 0, recordList);
         this.navS.setRecordList(recordList);
