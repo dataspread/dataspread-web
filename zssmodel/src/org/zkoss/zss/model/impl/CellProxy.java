@@ -366,4 +366,7 @@ class CellProxy extends AbstractCellAdv {
 		this._rowIdx += rowShift;
 		this._columnIdx += colShift;
 	}
+
+	@Override
+	public void updateCellTypeFromString(AutoRollbackConnection connection, boolean updateToDB) {}
 }

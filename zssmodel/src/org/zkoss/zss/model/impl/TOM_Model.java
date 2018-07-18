@@ -44,9 +44,10 @@ public class TOM_Model extends Model {
     }
 
     @Override
-    public ArrayList<Bucket<String>> createNavS(SSheet currentsheet, int start, int count) {
+    public String createNavS(SSheet currentsheet) {
         return null;
     }
+
 
     public void loadColumnInfo(DBContext dbContext) {
         columnNames = new TreeMap<>();
@@ -95,7 +96,7 @@ public class TOM_Model extends Model {
     @Override
     public ArrayList<Bucket<String>> createNavS(String bucketName, int start, int count) {
         //load sorted data from table
-        ArrayList<String> recordList =  new ArrayList<String>();
+        ArrayList<Object> recordList =  new ArrayList<>();
 
         AutoRollbackConnection connection = DBHandler.instance.getConnection();
         DBContext context = new DBContext(connection);
@@ -147,7 +148,7 @@ public class TOM_Model extends Model {
 
         //create nav data structure
         this.navS.setRecordList(recordList);
-        ArrayList<Bucket<String>> newList = this.navS.getNonOverlappingBuckets(0,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
+        ArrayList<Bucket<String>> newList = this.navS.getNonOverlappingBuckets(1,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
 
         if(bucketName==null)
         {
@@ -192,6 +193,11 @@ public class TOM_Model extends Model {
     @Override
     public void setIndexString(String str) {
         this.indexString = str;
+    }
+
+    @Override
+    public String getNavChildren(int[] indices) {
+        return null;
     }
 
     @Override

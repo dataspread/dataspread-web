@@ -1,9 +1,7 @@
 package org.zkoss.zss.model.impl;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 /**
  * Created by Sajjadur on 11/6/2017.
@@ -19,7 +17,11 @@ public class Bucket<T> implements Serializable{
     String id;
     String summary;
     ArrayList<Bucket<T>> children;
+    Map<String, Object> aggMem;
 
+    Bucket() {
+        aggMem = new HashMap<>();
+    }
 
     @Override
     public String toString() {
@@ -55,6 +57,10 @@ public class Bucket<T> implements Serializable{
         this.children=children;
         this.childrenCount = children.size();
         this.size = this.endPos-this.startPos+1;
+    }
+
+    public boolean isSingleton(){
+        return maxValue.equals(minValue);
     }
 
     public void setId() {

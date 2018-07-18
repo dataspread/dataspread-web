@@ -38,10 +38,9 @@ public class COM_Model extends Model {
     }
 
     @Override
-    public ArrayList<Bucket<String>> createNavS(SSheet currentsheet, int start, int count) {
+    public String createNavS(SSheet currentsheet) {
         return null;
     }
-
 
     @Override
     public ArrayList<Bucket<String>> createNavS(String bucketName, int start, int count) {
@@ -138,6 +137,11 @@ public class COM_Model extends Model {
     @Override
     public void setIndexString(String str) {
         this.indexString = str;
+    }
+
+    @Override
+    public String getNavChildren(int[] indices) {
+        return null;
     }
 
 

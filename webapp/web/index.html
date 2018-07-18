@@ -16,7 +16,7 @@
         <div class="span12">
 
             <div id="toolbox">
-                <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <nav class="navbar navbar-expand-lg navbar-light bg-light navbar1">
                     <a class="navbar-brand" href="#">DataSpread</a>
                     <button class="navbar-toggler" type="button" data-toggle="collapse"
                             data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
@@ -58,7 +58,6 @@
                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">View</a>
                                 <div class="dropdown-menu" aria-labelledby="viewDropdown">
                                     <a class="dropdown-item" href="#">Formula Bar</a>
-                                    <a class="dropdown-item" href="#">Navigation Panel</a>
                                     <div class="dropdown-divider"></div>
                                     <a class="dropdown-item" href="#">Freeze Row</a>
                                     <a class="dropdown-item" href="#">UnFreeze Row</a>
@@ -80,6 +79,19 @@
                             <li class="nav-item">
                                 <a class="nav-link disabled" href="#">Help</a>
                             </li>
+
+                            <li class="nav-item dropdown" id='explorationtool-bar' >
+                                <a class="nav-link dropdown-toggle" href="#" id="exploretoolDropdown" role="button"
+                                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Exploration
+                                    Tools</a>
+                                <div class="dropdown-menu" id='explorationtool-option'
+                                     aria-labelledby="exploretoolDropdown">
+                                    <a class="dropdown-item" href="#" id="Explore">Explore</a>
+                                    <a class="dropdown-item" href="#" id='Hierarchical'>Hierarchical Column</a>
+                                    <a class="dropdown-item" href="#" id='Sort' style="display:none" data-toggle="modal"
+                                       data-target="#exampleModal">Sort</a>
+                                </div>
+                            </li>
                         </ul>
 
                         <ul class="nav justify-content-end">
@@ -98,7 +110,7 @@
                     </div>
                 </nav>
 
-                <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <nav class="navbar navbar-expand-lg navbar-light bg-light navbar2">
 
                     <ul class="navbar-nav mr-auto">
 
@@ -238,7 +250,7 @@
                     </ul>
                 </nav>
 
-                <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <nav class="navbar navbar-expand-lg navbar-light bg-light navbar3">
 
                     <ul class="navbar-nav mr-auto">
 
@@ -285,10 +297,74 @@
             </div>
 
             <div class="wrapper">
-                <div id="navChart"></div>
-                <div id="test-hot"></div>
-            </div>
+                <nav aria-label="breadcrumb" id="navPath" style="display:none">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item" aria-current="page">TopLevel</li>
+                    </ol>
+                </nav>
+                <div id="testnav">
+                    <div class="progress"></div>
+                    <div class="progress-bar parallax-one"></div>
+                    <div id="navChart"></div>
 
+                </div>
+                <div id="test-hot"></div>
+                <div id='exploration-bar' style="display:none">
+                    <form id="explore-form">
+
+                        <span class="formClose">x</span>
+
+                        <fieldset class="form-group m-3" id="exploreOpt">
+                            <legend class="form-label" style="font-size:1rem">Attribute Name</legend>
+                        </fieldset>
+
+                        <div class="form-group m-5">
+                            <button type="submit" class="btn btn-primary">Start Explore!</button>
+                        </div>
+                    </form>
+                </div>
+                <div id="hierarchical-col" style="display:none;">
+                    <form id="hierarchi-form">
+                        <span class="formClose">x</span>
+                        <legend class="form-label m-3" style="font-size:1.5rem">Hierarchical form</legend>
+
+
+                        <fieldset class="form-group m-3" id="aggregateCol">
+                        </fieldset>
+                        <div class="m-3">
+                            <button type="button" class="btn btn-secondary " id="aggreAdd">Add</button>
+                            <button type="button" class="btn btn-secondary" id="aggreRemove">Remove</button>
+                            <button type="submit" class="btn btn-primary">Done</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <!-- Modal -->
+            <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel">Sort</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="sort-form">
+                                <div class="form-group" id="inlineOpt">
+                                    <!-- <label class="my-1 mr-2" for="inlineOpt1">Attribute</label>
+                                    <select class="custom-select my-1 mr-xl-5" id="inlineOpt1">
+                                    </select> -->
+                                </div>
+                                <button type="button" class="btn btn-secondary " id="sortAdd">Add</button>
+                                <button type="button" class="btn btn-secondary" id="sortRemove">Remove</button>
+                                <button type="submit" class="btn btn-primary my-1">OK</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div id="sheet-panel">
 
                 <div id="sheets">

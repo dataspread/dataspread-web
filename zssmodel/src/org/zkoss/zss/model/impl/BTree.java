@@ -361,6 +361,7 @@ public class BTree <K extends AbstractStatistic> {
         } else {
             leftNode.children.addAll(rightNode.children);
         }
+        leftNode.next_sibling = rightNode.next_sibling;
         // Free block
         rightNode.free(bs);
         leftNode.update(bs);

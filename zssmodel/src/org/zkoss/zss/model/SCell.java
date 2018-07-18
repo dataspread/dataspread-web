@@ -177,6 +177,14 @@ public interface SCell extends CellStyleHolder,FormulaContent{
 	void setValueParse(String valueParse, AutoRollbackConnection connection, int trxId, boolean updateToDB);
 
 	/**
+	 * Get the String value from the cell and try to parse it and decide it's datatype. This is useful since bulk importing table will not parse the data. The navigation will trick the function for the navigated column when invoked. TODO: Not sure what the parameter 'trxId' means here, but it's set to -1 temporarily.
+	 *
+	 * @param connection
+	 * @param updateToDB
+	 */
+	void updateCellTypeFromString(AutoRollbackConnection connection, boolean updateToDB);
+
+	/**
 	 * Delete the comment associated with this cell.
 	 * @since 3.7.0
 	 */
@@ -191,6 +199,7 @@ public interface SCell extends CellStyleHolder,FormulaContent{
     int getComputeCost();
 
     void translate(int rowShift, int colShift);
+
 
     /**
 	 * @since 3.5.0
