@@ -119,6 +119,12 @@
             <artifactId>popper.js</artifactId>
             <version>1.14.1</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>w2ui</artifactId>
+            <version>1.5.rc1</version>
+        </dependency>
     </dependencies>
     <build>
         <finalName>DataSpread</finalName>
