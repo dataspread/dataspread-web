@@ -74,6 +74,84 @@ var loadMoreData = function (n) {
     hot.render();
 };
 
+
+
+var tempdata = [
+    ["<div id=\"chartdiv\"></div>"],["<dl>\n" +
+"  <dt>\n" +
+"    Browser market share June 2015\n" +
+"  </dt>\n" +
+"  <dd class=\"percentage percentage-11\"><span class=\"text\">IE 11: 11.33%</span></dd>\n" +
+"  <dd class=\"percentage percentage-49\"><span class=\"text\">Chrome: 49.77%</span></dd>\n" +
+"  <dd class=\"percentage percentage-16\"><span class=\"text\">Firefox: 16.09%</span></dd>\n" +
+"  <dd class=\"percentage percentage-5\"><span class=\"text\">Safari: 5.41%</span></dd>\n" +
+"  <dd class=\"percentage percentage-2\"><span class=\"text\">Opera: 1.62%</span></dd>\n" +
+"  <dd class=\"percentage percentage-2\"><span class=\"text\">Android 4.4: 2%</span></dd>\n" +
+"</dl>",]];
+
+function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
+    td.innerHTML = value;
+    if(row == 0 && col == 0){
+        var chart = AmCharts.makeChart("chartdiv", {
+            "type": "serial",
+            "theme": "light",
+            "columnWidth": 1,
+            "dataProvider": [{
+                "category": "0"
+            }, {
+                "category": "1",
+                "count": 25
+            }, {
+                "category": "2",
+                "count": 81
+            }, {
+                "category": "3",
+                "count": 73
+            }, {
+                "category": "4",
+                "count": 40
+            }, {
+                "category": "5",
+                "count": 20
+            }, {
+                "category": "6",
+                "count": 7
+            }, {
+                "category": "7",
+                "count": 5
+            }, {
+                "category": "8",
+                "count": 2
+            }, {
+                "category": "9",
+                "count": 2
+            }, {
+                "category": "10",
+                "count": 1
+            }, {
+                "category": "11"
+            }],
+            "graphs": [{
+                "fillColors": "#c55",
+                "fillAlphas": 0.9,
+                "lineColor": "#fff",
+                "lineAlpha": 0.7,
+                "type": "column",
+                "valueField": "count"
+            }],
+            "categoryField": "category",
+            "categoryAxis": {
+                "startOnAxis": true,
+                "title": "Try"
+            },
+            "valueAxes": [{
+                "title": "Count"
+            }]
+        });
+    }
+
+    return td;
+}
 var wrapperHeight = $(".wrapper").height();
 var wrapperWidth = $(".wrapper").width();
 //default setting
@@ -105,56 +183,58 @@ var ssDefaultSettings = {
         console.log("scroll down");
     }
     ,
-    afterChange: function (change, source) {
-        var updatedData = [];
-        console.log(change)
-        console.log(source)
-        if (change !== null) {
-            change.forEach(function (e) {
-                if (e[3].charAt(0) == '=') {
-                    updatedData.push({
-                        "row": e[0],
-                        "col": e[1],
-                        "value": '',
-                        "formula": e[3].substring(1),
-                        "type": 'String',
-                        "format": ''
-                    });
-
-                } else {
-                    updatedData.push({
-                        "row": e[0],
-                        "col": e[1],
-                        "value": e[3],
-                        "formula": '',
-                        "type": '',
-                        "format": ''
-                    });
-                }
-
-            })
-        }
-
-        var update = {
-            'bookId': bId,
-            'sheetName': sName,
-            'range': range,
-            'cells': updatedData
-        };
-        if (!(update.cells.length == 0)) {
-            $.ajax({
-                url: baseUrl + "putCells",
-                method: 'PUT',
-                headers: {
-                    'auth-token': 'guest'
-                },
-                dataType: "json",
-                contentType: "application/json",
-                data: JSON.stringify(update)
-            })
-        }
-
-    },
+    columns:[{renderer:chartRenderer}],
+    data:tempdata,
+    // afterChange: function (change, source) {
+    //     var updatedData = [];
+    //     console.log(change)
+    //     console.log(source)
+    //     if (change !== null) {
+    //         change.forEach(function (e) {
+    //             if (e[3].charAt(0) == '=') {
+    //                 updatedData.push({
+    //                     "row": e[0],
+    //                     "col": e[1],
+    //                     "value": '',
+    //                     "formula": e[3].substring(1),
+    //                     "type": 'String',
+    //                     "format": ''
+    //                 });
+    //
+    //             } else {
+    //                 updatedData.push({
+    //                     "row": e[0],
+    //                     "col": e[1],
+    //                     "value": e[3],
+    //                     "formula": '',
+    //                     "type": '',
+    //                     "format": ''
+    //                 });
+    //             }
+    //
+    //         })
+    //     }
+    //
+    //     var update = {
+    //         'bookId': bId,
+    //         'sheetName': sName,
+    //         'range': range,
+    //         'cells': updatedData
+    //     };
+    //     if (!(update.cells.length == 0)) {
+    //         $.ajax({
+    //             url: baseUrl + "putCells",
+    //             method: 'PUT',
+    //             headers: {
+    //                 'auth-token': 'guest'
+    //             },
+    //             dataType: "json",
+    //             contentType: "application/json",
+    //             data: JSON.stringify(update)
+    //         })
+    //     }
+    //
+    // },
     beforeSetRangeEnd: function (e) {
 
 
