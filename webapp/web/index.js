@@ -75,9 +75,7 @@ var loadMoreData = function (n) {
 };
 
 
-
-var tempdata = [
-    ["<div id=\"chartdiv\"></div>"],["<dl>\n" +
+var tempdata = [["<div id=\"chartdiv\"></div>"], ["<dl>\n" +
 "  <dt>\n" +
 "    Browser market share June 2015\n" +
 "  </dt>\n" +
@@ -89,69 +87,6 @@ var tempdata = [
 "  <dd class=\"percentage percentage-2\"><span class=\"text\">Android 4.4: 2%</span></dd>\n" +
 "</dl>",]];
 
-function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
-    td.innerHTML = value;
-    if(row == 0 && col == 0){
-        var chart = AmCharts.makeChart("chartdiv", {
-            "type": "serial",
-            "theme": "light",
-            "columnWidth": 1,
-            "dataProvider": [{
-                "category": "0"
-            }, {
-                "category": "1",
-                "count": 25
-            }, {
-                "category": "2",
-                "count": 81
-            }, {
-                "category": "3",
-                "count": 73
-            }, {
-                "category": "4",
-                "count": 40
-            }, {
-                "category": "5",
-                "count": 20
-            }, {
-                "category": "6",
-                "count": 7
-            }, {
-                "category": "7",
-                "count": 5
-            }, {
-                "category": "8",
-                "count": 2
-            }, {
-                "category": "9",
-                "count": 2
-            }, {
-                "category": "10",
-                "count": 1
-            }, {
-                "category": "11"
-            }],
-            "graphs": [{
-                "fillColors": "#c55",
-                "fillAlphas": 0.9,
-                "lineColor": "#fff",
-                "lineAlpha": 0.7,
-                "type": "column",
-                "valueField": "count"
-            }],
-            "categoryField": "category",
-            "categoryAxis": {
-                "startOnAxis": true,
-                "title": "Try"
-            },
-            "valueAxes": [{
-                "title": "Count"
-            }]
-        });
-    }
-
-    return td;
-}
 var wrapperHeight = $(".wrapper").height();
 var wrapperWidth = $(".wrapper").width();
 //default setting
@@ -181,10 +116,9 @@ var ssDefaultSettings = {
     afterScrollVertically: function (e) {
         compute_window(e);
         console.log("scroll down");
-    }
-    ,
-    columns:[{renderer:chartRenderer}],
-    data:tempdata,
+    },
+    // data: tempdata,
+    // columns: [{renderer: chartRenderer}],
     // afterChange: function (change, source) {
     //     var updatedData = [];
     //     console.log(change)
@@ -1286,7 +1220,7 @@ $(window).resize(function () {
     wrapperWidth = $(".wrapper").width();
     if (exploreOpen) {
         hot.updateSettings({
-            width: wrapperWidth * 0.79,
+            width: wrapperWidth * 0.8,
             height: wrapperHeight * 0.95,
         });
         nav.updateSettings({
@@ -1787,7 +1721,7 @@ function Explore(e) {
         cumulativeDataSize += currData.length;
 
         hot.updateSettings({
-            width: wrapperWidth * 0.79,
+            width: wrapperWidth * 0.8,
             height: wrapperHeight * 0.95,
         });
 
@@ -1800,7 +1734,7 @@ function Explore(e) {
             //   maxRows:11,
             minCols: 1,
             // maxCols:1,
-            //  autoColumnSize : true,
+            //autoColumnSize : true,
             readOnly: true,
             rowHeights: (wrapperHeight * 0.95 / currData.length > 80) ? wrapperHeight * 0.95 / currData.length : 80,
             // startRows: 200,
@@ -1955,10 +1889,11 @@ function Explore(e) {
                             td.style.background = '#F5F5DC';
                         }
                     } else {
-                        cellMeta.renderer = function (hotInstance, td, row, col, prop, value, cellProperties) {
-                            Handsontable.renderers.TextRenderer.apply(this, arguments);
-                            td.style.background = '#FAEBD7';
-                        }
+                        cellMeta.renderer = chartRenderer;
+                        //     function (hotInstance, td, row, col, prop, value, cellProperties) {
+                        //     Handsontable.renderers.TextRenderer.apply(this, arguments);
+                        //     td.style.background = '#FAEBD7';
+                        // }
                     }
                 } else {
                     if (column == 1 && row == selectedChild) {
@@ -2197,7 +2132,7 @@ function getAggregateValue() {
     }).done(function (e) {
         if (e.status == "success") {
             $("#hierarchical-col").css("display", "none");
-            hot.updateSettings({width: wrapperWidth * 0.79});
+            hot.updateSettings({width: wrapperWidth * 0.8});
             hieraOpen = true;
             if (currLevel == 0) {
                 colHeader.splice(1, colHeader.length - 1,);
@@ -2241,6 +2176,7 @@ function getAggregateValue() {
 
 
 function addHierarchiCol(aggregateValue) {
+    console.log(nav.getRowHeight(0))
     console.log(viewData);
     console.log(aggregateValue);
     let targetCol = (currLevel == 0) ? 1 : 2;
@@ -2271,20 +2207,20 @@ function addHierarchiCol(aggregateValue) {
     }
     console.log(navRawFormula);
     console.log(viewData)
-    // let columWidth = [];
-    // if(currLevel >= 1){
-    //   columWidth = [40,60];
-    // }else{
-    //   columWidth = [100];
-    // }
-    // for(let j = 0; j < aggregateValue.length; j++){
-    //   columWidth.push(100);
-    // }
-    // console.log(columWidth)
+    let columWidth = [];
+    if (currLevel >= 1) {
+        columWidth = [, ,];
+    } else {
+        columWidth = [,];
+    }
+    for (let j = 0; j < aggregateValue.length; j++) {
+        columWidth.push(wrapperWidth * 0.14);
+    }
+    console.log(columWidth)
 
     let numChild = cumulativeData[currLevel].length;
     nav.updateSettings({
-        //colWidths:columWidth,
+        manualColumnResize: columWidth,
         minCols: 1,
         data: viewData,
         rowHeights: (wrapperHeight * 0.95 / numChild > 80) ? wrapperHeight * 0.95 / numChild : 80,
@@ -2739,6 +2675,155 @@ $("#sort-form").submit(function (e) {
 //   });
 //
 // }
+
+function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
+    if (currLevel == 0) {
+        if (navRawFormula[row][col - 1].includes("AVERAGE")) {
+            let tempString = "chartdiv" + row + col;
+            td.innerHTML = "<div id=" + tempString + " ></div>";
+            console.log(td.innerHTML)
+            let special = 3;
+            var distribution = [{
+                boundary: "1-10",
+                count: 80,
+            }, {
+                boundary: "10-20",
+                count: 100,
+            }, {
+                boundary: "20-30",
+                count: 30,
+            }, {
+                boundary: "30-40",
+                count: 50,
+            }, {
+                boundary: "40-50",
+                count: 70,
+            },
+                //   {temp: 83, month: 'Auguest'},
+            ];
+            var boundaries = distribution.map(function (t) {
+                return t.boundary
+            });
+
+            var margin = {top: 20, right: 15, bottom: 18, left: 35};
+            // here, we want the full chart to be 700x200, so we determine
+            // the width and height by subtracting the margins from those values
+            var fullWidth = wrapperWidth * 0.14;
+            var fullHeight = nav.getRowHeight(row);
+            console.log(nav.getRowHeight(0))
+            console.log(nav.getRowHeight(1))
+            // the width and height values will be used in the ranges of our scales
+            var width = fullWidth - margin.right - margin.left;
+            var height = fullHeight - margin.top - margin.bottom;
+            var svg = d3.select('#' + tempString).append('svg')
+                .attr('width', fullWidth)
+                .attr('height', fullHeight)
+                // this g is where the bar chart will be drawn
+                .append('g')
+                // translate it to leave room for the left and top margins
+                .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+            var colors = d3.scaleLinear()
+                .domain([130, 200])
+                .range(d3.schemeYlGn);
+
+
+            svg.append("rect")
+                .attr("x", width + margin.right / 10)
+                .attr("y", 0 - margin.top)
+                .attr("width", margin.right)
+                .attr("height", fullHeight)
+                .attr("fill", d3.interpolateGreens(((value-129.28)*0.85 + 0.15)/(193.22-129.28)))
+
+            svg.append("text")
+                .attr("x", (width / 2))
+                .attr("y", 0 - (margin.top / 2))
+                .attr("text-anchor", "middle")
+                .style("font-size", "10px")
+                .style("font-weight", "bold")
+                .text("AVG:" + value);
+
+            // x value determined by month
+            var boundScale = d3.scaleBand()
+                .domain(boundaries)
+                .range([0, width])
+                .paddingInner(0.2);
+
+            // the width of the bars is determined by the scale
+            var bandwidth = boundScale.bandwidth();
+
+            // y value determined by temp
+            var maxTemp = d3.max(distribution, function (d) {
+                return d.count;
+            });
+            var tempScale = d3.scaleLinear()
+                .domain([0, maxTemp])
+                .range([height, 0])
+                .nice();
+            var xAxis = d3.axisBottom(boundScale);
+            var yAxis = d3.axisLeft(tempScale);
+            yAxis.ticks(5);
+// draw the axes
+            svg.append('g')
+                .classed('x axis', true)
+                .attr('transform', 'translate(0,' + height + ')')
+                .call(xAxis);
+
+            var yAxisEle = svg.append('g')
+                .classed('y axis', true)
+                .call(yAxis);
+
+// add a label to the yAxis
+            svg.append('text')
+                .attr('transform', 'rotate(-90)')
+                .attr("y", 0 - margin.left)
+                .attr("x", 0 - (height / 2))
+                .style('text-anchor', 'middle')
+                .style('fill', 'black')
+                .attr('dy', '1em')
+                .style('font-size', 10)
+                .text('Count');
+
+            var barHolder = svg.append('g')
+                .classed('bar-holder', true);
+
+// draw the bars
+            var bars = barHolder.selectAll('rect.bar')
+                .data(distribution)
+                .enter().append('rect')
+                .classed('bar', true)
+                .attr('x', function (d, i) {
+                    // the x value is determined using the
+                    // month of the datum
+                    return boundScale(d.boundary)
+                })
+                .attr('width', bandwidth)
+                .attr('y', function (d) {
+                    // the y position is determined by the datum's temp
+                    // this value is the top edge of the rectangle
+                    return tempScale(d.count);
+                })
+                .attr('fill', function (d, i) {
+                    if (i == special) {
+                        return '#ffa158'
+                    } else {
+                        return '#0099ff';
+                    }
+                })
+                .attr('height', function (d) {
+                    // the bar's height should align it with the base of the chart (y=0)
+                    return height - tempScale(d.count);
+                });
+        } else {
+            Handsontable.renderers.TextRenderer.apply(this, arguments);
+        }
+    } else {
+
+    }
+
+    td.style.background = '#FAEBD7';
+    return td;
+}
 
 var colors = ['#32CC99', '#70DCB8', '#ADEBD6', '#EBFAF5']
 
