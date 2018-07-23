@@ -1204,12 +1204,6 @@ var importSheet = function (bookId, sheetName, sheetIndex) {
             testingarray.push(temp);
         }
         clearCanvas(testingarray);
-        //hot.setDataAtCell(10, 10, "10");
-        // data['data']['cells'].forEach(function (e) {
-        //     if (e.value !== 'null') {
-        //         hot.setDataAtCell(e.row, e.col, e.value);
-        //     }
-        // })
     })
 
 }
@@ -1637,41 +1631,6 @@ function Explore(e) {
     $("#test-hot").css({"float": "left"});
     $("#navChart").css({"display": "inline", "float": "left"});
 
-    //scrolling to zooming event;
-    //   $("#navChart").bind('wheel', function(event) {
-    //     console.log(event)
-    //     if(event.originalEvent.wheelDeltaY > 10) {
-    //
-    //     var selectedArray = nav.getSelected();
-    //     console.log(selectedArray)
-    //     if(selectedArray && selectedArray.length == 1 && clickable){
-    //
-    //       console.log("zoomin start");
-    //       console.log(selectedArray);
-    //         var child = selectedArray[0][0]/spanList[currLevel];
-    //         console.log(child);
-    //         // hot.scrollViewportTo(testData[row].rowRange[0]);
-    //          zoomIn(child,nav);
-    //
-    //       }
-    //        console.log('scroll up'+currLevel);
-    //     }  else if(event.originalEvent.wheelDeltaY < -20){
-    //       console.log('scroll down');
-    //     //  var selectedArray = nav.getSelected();
-    //
-    //     //  if(selectedArray && selectedArray.length == 1){
-    //       if(currLevel >= 1 && zoomOutOn){
-    //           console.log("zoomout start");
-    //           zoomOutOn = false;
-    //           setTimeout(function() {
-    //             zoomOutOn = true;
-    //             console.log(zoomOutOn)
-    //           },1000);
-    //           zoomOut(nav);
-    //       }
-    //   //  }
-    //     }
-    // });
 
     $.get(baseUrl + 'startNav/' + bId + '/' + sName + '/' + e, function (data) {
         clickable = true;
@@ -1679,9 +1638,7 @@ function Explore(e) {
         levelList = [];
         spanList = [];
         cumulativeData = [];
-        // for (let i = 0; i < 11; i++){
-        //   viewData[i] = [""];
-        // }
+
         mergeCellInfo = [];
         colHeader = [options[e - 1]];
         console.log(colHeader)
@@ -1691,16 +1648,6 @@ function Explore(e) {
         currData = result.data;
         currRange = currData[currData.length - 1].rowRange[1] - currData[0].rowRange[0];
         console.log(currData);
-
-        // let span = Math.round(11 / currData.length)
-        // for ( let  i  = 0; i < currData.length; i++){
-        //   if( i == currData.length - 1){
-        //      mergeCellInfo.push({row: i*span, col: 0, rowspan: 11 - i*span, colspan: 1});
-        //   }else{
-        //      mergeCellInfo.push({row: i*span, col: 0, rowspan: span, colspan: 1});
-        //   }
-        // }
-        // spanList.push(span);
 
 
         cumulativeData.push(currData);
@@ -1807,19 +1754,8 @@ function Explore(e) {
             },
             afterSelection: function (r, c, r2, c2, preventScrolling, selectionLayerLevel) {
                 // setting if prevent scrolling after selection
-                // console.log("selection")
-                // console.log(cumulativeData)
-                // console.log(currLevel)
                 console.log(r)
-                // console.log(c)
-                //  console.log(r/spanList[currLevel])
-                //  console.log(cumulativeData[currLevel][r/spanList[currLevel]])
-                // if(cumulativeData[currLevel][r/spanList[currLevel]] != undefined){
-                //   lowerRange = cumulativeData[currLevel][r/spanList[currLevel]].rowRange[0];
-                //   upperRange = cumulativeData[currLevel][r/spanList[currLevel]].rowRange[1];
-                //   updateData(cumulativeData[currLevel][r/spanList[currLevel]].rowRange[0],0,cumulativeData[currLevel][r/spanList[currLevel]].rowRange[1],15,true);
-                //   console.log(upperRange)
-                // }
+
 
                 if (cumulativeData[currLevel][r] != undefined) {
                     selectedChild = r;
@@ -1833,17 +1769,7 @@ function Explore(e) {
                 // hot.scrollViewportTo(cumulativeData[currLevel][r/spanList[currLevel]].rowRange[0]);
 
             },
-            // cells: function(row,column,prop){
-            //   let cellMeta = {}
-            //   if (column == 0 && row == 0) {
-            //   cellMeta.renderer = function(hotInstance, td, row, col, prop, value, cellProperties) {
-            //    Handsontable.renderers.TextRenderer.apply(this, arguments);
-            //    console.log(td)
-            //    td.style.background = '#D3D3D3';
-            //    td.style.color = 'white';
-            //  }};
-            // return cellMeta;
-            // },
+
             data: viewData,
             //  doubleclick implementation option1:
             //  afterOnCellMouseDown: function(event, cell, td) {
@@ -2060,63 +1986,6 @@ $("#hierarchi-form").submit(function (e) {
     }
     getAggregateValue();
 
-    // $('input[name=aggregateCol]:checked').each(function(){
-    //    attr_index.push($(this).val());
-    //    funcId.push($('input[name=aggregateOpt]:checked').val());
-    // });
-    // console.log(funcId);
-
-
-    //   if(funcId[0] != undefined && attr_index.length > 0){
-    //     if(funcId[0] == 3){
-    //       if($('#custom-value').val() == ""){
-    //         funcId = [];
-    //         return;
-    //       }else{
-    //         funcOptions[3] = $('#custom-value').val();
-    //       }
-    //     }
-    //      $("#hierarchical-col").css("display","none");
-    //      hot.updateSettings({width:wrapperWidth*0.8});
-    //      hieraOpen = true;
-    //
-    //    //  agg_id_ls = "";
-    //
-    //      if(currLevel == 0){
-    //        colHeader.splice(1,colHeader.length-1,);
-    //        for(let i = 0; i < viewData.length; i++){
-    //          viewData[i].splice(1,viewData[i].length-1,)
-    //        }
-    //      //  console.log(mergeCellInfo)
-    //      //  mergeCellInfo = mergeCellInfo.filter(function(item){
-    //      //    console.log(item)
-    //      //    return item.col < 1;
-    //      //  })
-    //      // console.log(mergeCellInfo)
-    //        //
-    //      }else{
-    //        colHeader.splice(2,colHeader.length-2,);
-    //        for(let i = 0; i < viewData.length; i++){
-    //          viewData[i].splice(2,viewData[i].length-2,)
-    //        }
-    //        // mergeCellInfo = mergeCellInfo.filter(function(item){
-    //        //   console.log(item)
-    //        //   return item.col < 2;
-    //        // })
-    //      }
-    //
-    //      for ( let i = 0; i < attr_index.length; i++){
-    //        colHeader.push(options[attr_index[i]-1] + " " + funcOptions[funcId[i]]);
-    //        if(funcId[i] == 3){
-    //          funcId[i] = funcOptions[3];
-    //        }
-    //  //      agg_id_ls += funcId[i] + ",";
-    //      }
-    //
-    //      getAggregateValue();
-    // }else{
-    //   funcId = [];
-    // }
 });
 
 function getAggregateValue() {
@@ -2156,21 +2025,6 @@ function getAggregateValue() {
             alert("There is some problem with the formula: " + e.message);
         }
     })
-    // $.post('http://127.0.0.1:8080/api/getHierarchicalAggregateFormula/',{ name: "John", time: "2pm" },function(data){
-    //                console.log(data)
-    //             //   addHierarchiCol(data.data);
-    //  });
-    //  $.ajax({
-    //    async: false,
-    //    type: 'GET',
-    //    url: 'http://127.0.0.1:8080/api/getHierarchicalAggregate/' + bookId +'/'
-    //       + sheetName + '/ ' + childlist + '/'+ attr_index[i] + '/' + funcId,
-    //    success: function(data) {
-    //      console.log(data);
-    //      aggregateValue.push(data.data);
-    //  }
-    //  });
-    // }
 
 }
 
@@ -2245,10 +2099,6 @@ function addHierarchiCol(aggregateValue) {
 }
 
 
-// http://127.0.0.1:8080/api/getHierarchicalAggregate/' + bookId +'/' +
-//           sheetName +'/'+ "1" + '/'+ "9" + '/' + "0"
-
-
 function computePath() {
     let childlist = "";
     for (let i = 0; i < levelList.length - 1; i++) {
@@ -2290,24 +2140,7 @@ function zoomIn(child, nav) {
                 viewData[i] = [""];
             }
         }
-        // for (let i = 0; i < 11; i++){
-        //   if( i == 0){
-        //     viewData[i][0] = cumulativeData[currLevel-1][child].name;
-        //   }else{
-        //     viewData[i][0] = "";
-        //   }
-        // }
 
-        //showing only most recent two layers
-        // let span = Math.floor(11 / currData.length)
-        // console.log(span)
-        // for ( let  i  = 0; i < currData.length; i++){
-        //   if( i == currData.length - 1){
-        //      mergeCellInfo.push({row: i*span, col: 1, rowspan: 11 - i*span, colspan: 1});
-        //   }else{
-        //      mergeCellInfo.push({row: i*span, col: 1, rowspan: span, colspan: 1});
-        //   }
-        // }
 
         // spanList.push(span);
         console.log(mergeCellInfo)
@@ -2391,105 +2224,7 @@ function updateNavPath() {
 }
 
 
-//  currLevel += 1;
-//  var currData = [
-//    {   "name": "Ashville to B",
-//      "rowRange": [0,100],
-//      "value": 1073, // # of group entry
-//      "rate": 3},
-//      {"name": "Chicago to D",
-//      "rowRange": [101,400],
-//      "value": 631,
-//      "rate": 2},
-//      ];
-//   levelList.push(child);
-//   mergeCellInfo = [];
-//   mergeCellInfo.push({row: 0, col: 0, rowspan: 11, colspan: 1});
-//   for (let i = 0; i < 11; i++){
-//     if( i == 0){
-//       viewData[i][0] = cumulativeData[currLevel-1][child].name;
-//     }else{
-//       viewData[i][0] = "";
-//     }
-//   }
-//
-//
-//   // showing for multiple layer
-//   // for( let i = 0; i < levelList.length; i++ ){
-//   //     mergeCellInfo.push({row: 0, col: i, rowspan: 10, colspan: 1});
-//   //     for( let j = 0; j < 10; j++ ){
-//   //       if(j == 0){
-//   //         viewData[0][i] = cumulativeData[i][levelList[i]].name;
-//   //       }else{
-//   //         viewData[j][i] = "";
-//   //       }
-//   //     }
-//   // }
-//  // let span = Math.round(10 / currData.length)
-//  // for ( let  i  = 0; i < currData.length; i++){
-//  //   if( i == currData.length - 1){
-//  //      mergeCellInfo.push({row: i*span, col: currLevel, rowspan: 10 - i*span, colspan: 1});
-//  //   }else{
-//  //      mergeCellInfo.push({row: i*span, col: currLevel, rowspan: span, colspan: 1});
-//  //   }
-//  // }
-//
-//  //showing only most recent two layers
-//  let span = Math.round(11 / currData.length)
-//  for ( let  i  = 0; i < currData.length; i++){
-//    if( i == currData.length - 1){
-//       mergeCellInfo.push({row: i*span, col: 1, rowspan: 11 - i*span, colspan: 1});
-//    }else{
-//       mergeCellInfo.push({row: i*span, col: 1, rowspan: span, colspan: 1});
-//    }
-//  }
-//
-//  spanList.push(span);
-//  console.log(mergeCellInfo)
-//
-//  cumulativeData.push(currData);
-//
-// console.log(cumulativeData);
-//
-//
-// for (let i = 0; i < 11; i++){
-//   viewData[i].push("");
-// }
-// console.log(cumulativeDataSize)
-//
-//
-// for (let i = 0; i < currData.length; i++){
-//    // for multiple layer use
-//    //viewData[i*span][currLevel]= cumulativeData[currLevel][i].name;
-//
-//    //double layer
-//     viewData[i*span][1]= cumulativeData[currLevel][i].name;
-//    console.log("start"+ i + viewData)
-//  }
-//  console.log(viewData);
-//
-//  cumulativeDataSize += currData.length;
-//
-//  let columWidth = [];
-//  if(currLevel >= 1){
-//    columWidth = [40,160];
-//  }else{
-//    columWidth = 200;
-//  }
-//  // for ( let i = 0; i < currLevel; i++){
-//  //   columWidth.push(40);
-//  // }
-//  // columWidth.push(200 - 40*currLevel);
-//
-//   nav.updateSettings({
-//     colWidths:columWidth,
-//     minCols: 2,
-//     maxCols: 2,
-//     fixedColumnsLeft: 2,
-//     mergeCells: mergeCellInfo,
-//   });
-//
-//   nav.deselectCell();
+
 
 
 function zoomOut(nav) {
@@ -2542,49 +2277,7 @@ function zoomOut(nav) {
         }
     }
 
-
-    //for multiple layer zoomout
-// for( let i = 0; i < levelList.length; i++ ){
-//     mergeCellInfo.push({row: 0, col: i, rowspan: 10, colspan: 1});
-//     for( let j = 0; j < 10; j++ ){
-//       if(j == 0){
-//         viewData[0][i] = cumulativeData[i][levelList[i]].name;
-//       }else{
-//         viewData[j][i] = "";
-//       }
-//     }
-// }
     console.log(viewData);
-    // for (let i = 0; i < cumulativeData[currLevel].length; i++){
-    //
-    //      if( i == cumulativeData[currLevel].length - 1){
-    //         mergeCellInfo.push({row: i*spanList[currLevel], col: currLevel, rowspan: 10 - i*spanList[currLevel], colspan: 1});
-    //      }else{
-    //         mergeCellInfo.push({row: i*spanList[currLevel], col: currLevel, rowspan: spanList[currLevel], colspan: 1});
-    //      }
-    //     viewData[i*spanList[currLevel]][currLevel]= cumulativeData[currLevel][i].name;
-    //    console.log("start"+ i + viewData)
-    //  }
-
-    //for double layer zoonOut
-    // let targetCol = (currLevel == 0)? 0:1 ;
-    // for (let i = 0; i < cumulativeData[currLevel].length; i++){
-    //      if( i == cumulativeData[currLevel].length - 1){
-    //         mergeCellInfo.push({row: i*spanList[currLevel], col: targetCol, rowspan: 11 - i*spanList[currLevel], colspan: 1});
-    //      }else{
-    //         mergeCellInfo.push({row: i*spanList[currLevel], col: targetCol, rowspan: spanList[currLevel], colspan: 1});
-    //      }
-    //     viewData[i*spanList[currLevel]][targetCol]= cumulativeData[currLevel][i].name;
-    //    console.log("start"+ i + viewData)
-    //  }
-
-
-    // for multiple layer columwidth change
-    // let columWidth = [];
-    // for ( let i = 0; i < currLevel; i++){
-    //   columWidth.push(40);
-    // }
-    // columWidth.push(200 - 40*currLevel);
 
     let columWidth = [];
     if (currLevel >= 1) {
@@ -2596,19 +2289,10 @@ function zoomOut(nav) {
 
     if (hieraOpen) {
         getAggregateValue();
-        // nav.updateSettings({
-        //     minRows: numChild,
-        //     data: viewData,
-        //     rowHeights: (wrapperHeight * 0.95 / numChild > 80)? wrapperHeight * 0.95 / numChild:80,
-        //     mergeCells: mergeCellInfo,
-        // });
+
     } else {
         nav.updateSettings({
-            //  colWidths: columWidth,
-//    minCols: currLevel + 1,
-//    maxCols: currLevel + 1,
-//    fixedColumnsLeft: currLevel + 1,
-            //   minRows: numChild,
+
             data: viewData,
             rowHeights: (wrapperHeight * 0.95 / numChild > 80) ? wrapperHeight * 0.95 / numChild : 80,
             mergeCells: mergeCellInfo,
@@ -2659,22 +2343,7 @@ $("#sort-form").submit(function (e) {
     });
 
 })
-// function updateNavColor(){
-//   nav.updateSettings({
-//     cells: function(row,column,prop){
-//       let cellMeta = {}
-//       if (column == 0 && row == 0) {
-//       cellMeta.renderer = function(hotInstance, td, row, col, prop, value, cellProperties) {
-//        Handsontable.renderers.TextRenderer.apply(this, arguments);
-//        console.log(td)
-//        td.style.background = '#D3D3D3';
-//        td.style.color = 'white';
-//      }};
-//     return cellMeta;
-//     }
-//   });
-//
-// }
+
 
 function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
     if (currLevel == 0) {
