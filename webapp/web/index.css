@@ -67,6 +67,10 @@
     margin-bottom: 0;
 }
 
+.breadcrumb > li + li:before {
+    content: "> " !important;
+}
+
 .custom-select{
     width:50%;
 }
@@ -111,4 +115,14 @@
 }
 .exploration{
     color: white;
+}
+.toolTip {
+    position: fixed;
+    display: none;
+    min-width: 10px;
+    height: auto;
+    background: none repeat scroll 0 0 #ffffff;
+    border: 1px solid #6F257F;
+    padding: 3px;
+    text-align: center;
 }

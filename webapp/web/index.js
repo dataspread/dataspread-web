@@ -1269,17 +1269,6 @@ var updateData = function (r1, c1, r2, c2, scrollTo) {
 }
 
 
-function createData() {
-    var testingarray = [];
-    for (let i = 0; i < 1000; i++) {
-        let temp = []
-        for (let j = 0; j < 10; j++) {
-            temp.push("test");
-        }
-        testingarray.push(temp);
-    }
-    return testingarray;
-};
 
 // import handlebars;
 var navContainer = document.getElementById('navChart');
@@ -1390,7 +1379,7 @@ var currRange;
 //
 //     });
 
-
+//showing exploration options and create corresponding html
 $("#Explore").click(function () {
     lowerRange = 0;
     upperRange = 1000;
@@ -1420,6 +1409,7 @@ $("#Explore").click(function () {
         aggregateTotalNum = 0
         $aggregateCol.append(createAggreString());
 
+        //customize input field for different formula
         $("#aggregateOpt0").change(function () {
             // Do something with the previous value after the change
             $(this).nextAll().remove();
@@ -1504,7 +1494,7 @@ function createAggreString() {
     return tempString;
 }
 
-// for aggregate menu
+// for adding more aggregate attribute
 $("#aggreAdd").click(function () {
     var $aggregateCol = $("#aggregateCol");
     $aggregateCol.append(createAggreString());
@@ -1512,6 +1502,7 @@ $("#aggreAdd").click(function () {
         console.log(e)
         let number = e.target.id.charAt(e.target.id.length - 1)
         console.log(number)
+
         // Do something with the previous value after the change
         $(this).nextAll().remove();
         switch (this.value) {
@@ -1539,6 +1530,7 @@ $("#aggreAdd").click(function () {
         }
     });
 })
+
 $("#aggreRemove").click(function () {
     console.log("remove")
 
@@ -1548,7 +1540,7 @@ $("#aggreRemove").click(function () {
     }
 })
 
-
+// create sorting html code
 function createSortString() {
     let tempString = "<label class='my-1 mr-5' for='inlineOpt" + sortTotalNum + "'>Attribute</label><select class='custom-select my-1 mr-xl-5' id='inlineOpt" + sortTotalNum + "''> ";
     if (sortTotalNum == 0) {
@@ -1565,11 +1557,12 @@ function createSortString() {
     return tempString;
 }
 
-// for sort pop-up menue
+// adding a new attribute for sort pop-up menue
 $("#sortAdd").click(function () {
     var $sortDropdown = $("#inlineOpt");
     $sortDropdown.append(createSortString());
 })
+
 $("#sortRemove").click(function () {
     console.log("remove")
     if (sortTotalNum > 1) {
@@ -1580,6 +1573,7 @@ $("#sortRemove").click(function () {
 })
 
 
+// handle exploration form submit
 $("#explore-form").submit(function (e) {
     e.preventDefault();
     exploreAttr = $('input[name=exploreValue]:checked').val();
@@ -1590,6 +1584,7 @@ $("#explore-form").submit(function (e) {
     }
 });
 
+// handle exploration form and hierarchi-form close
 $(".formClose").click(function (e) {
     console.log(this)
     this.parentNode.parentNode.style.display = 'none';
@@ -2224,9 +2219,6 @@ function updateNavPath() {
 }
 
 
-
-
-
 function zoomOut(nav) {
     clickable = true;
     nav.deselectCell();
@@ -2402,7 +2394,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
                 .attr("y", 0 - margin.top)
                 .attr("width", margin.right)
                 .attr("height", fullHeight)
-                .attr("fill", d3.interpolateGreens(((value-129.28)*0.85 + 0.15)/(193.22-129.28)))
+                .attr("fill", d3.interpolateGreens(((value - 129.28) * 0.85 + 0.15) / (193.22 - 129.28)))
 
             svg.append("text")
                 .attr("x", (width / 2))
@@ -2412,27 +2404,79 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
                 .style("font-weight", "bold")
                 .text("AVG:" + value);
 
-            // x value determined by month
-            var boundScale = d3.scaleBand()
-                .domain(boundaries)
-                .range([0, width])
-                .paddingInner(0.2);
+            // // x value determined by month
+            // var boundScale = d3.scaleBand()
+            //     .domain([0,100])
+            //     .range([0, width])
+            //     .paddingInner(0.1);
+            // // the width of the bars is determined by the scale
+            // var bandwidth = boundScale.bandwidth();
 
-            // the width of the bars is determined by the scale
-            var bandwidth = boundScale.bandwidth();
+            let xScale = d3.scaleLinear()
+                .domain([0,200])
+                .range([0, width]);
 
             // y value determined by temp
-            var maxTemp = d3.max(distribution, function (d) {
+            var maxValue = d3.max(distribution, function (d) {
                 return d.count;
             });
-            var tempScale = d3.scaleLinear()
-                .domain([0, maxTemp])
+            var yScale = d3.scaleLinear()
+                .domain([0, maxValue])
                 .range([height, 0])
                 .nice();
-            var xAxis = d3.axisBottom(boundScale);
-            var yAxis = d3.axisLeft(tempScale);
-            yAxis.ticks(5);
-// draw the axes
+
+            var xAxis = d3.axisBottom(xScale)
+                //.ticks(6,'s');
+                .tickValues([0, 40,80, 120, 160,200]);
+
+
+            var yAxis = d3.axisLeft(yScale);
+            yAxis.ticks(4);
+
+            var barHolder = svg.append('g')
+                .classed('bar-holder', true);
+
+            var tooltip = d3.select('#' + tempString).append("div")
+                .attr("class", "toolTip");
+
+
+            // draw the bars
+             var bars = barHolder.selectAll('rect.bar')
+                 .data(distribution)
+                 .enter().append('rect')
+                 .classed('bar', true)
+                 .attr('x', function (d, i) {
+                     // the x value is determined using the
+                     // month of the datum
+                     return 1 + width/5*i;
+                 })
+                 .attr('width', width/5)
+                 .attr('y', function (d) {
+                     return yScale(d.count);
+                 })
+                 .attr('fill', function (d, i) {
+                     if (i == special) {
+                         return '#ffa158'
+                     } else {
+                         return '#0099ff';
+                     }
+                 })
+                 .attr('height', function (d) {
+                     // the bar's height should align it with the base of the chart (y=0)
+                     return height - yScale(d.count);
+                 })
+                 .on("mouseover", function(d) {
+                     tooltip
+                         .style("left", d3.event.pageX- 20  + "px")
+                         .style("top", d3.event.pageY + "px")
+                         .style("display", "inline-block")
+                         .html((d.boundary));
+                 })
+                 .on("mouseout", function(d) {
+                     tooltip.style("display", "none");
+                 });
+
+            // draw the axes
             svg.append('g')
                 .classed('x axis', true)
                 .attr('transform', 'translate(0,' + height + ')')
@@ -2442,7 +2486,9 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
                 .classed('y axis', true)
                 .call(yAxis);
 
-// add a label to the yAxis
+
+
+         // add a label to the yAxis
             svg.append('text')
                 .attr('transform', 'rotate(-90)')
                 .attr("y", 0 - margin.left)
@@ -2453,36 +2499,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
                 .style('font-size', 10)
                 .text('Count');
 
-            var barHolder = svg.append('g')
-                .classed('bar-holder', true);
 
-// draw the bars
-            var bars = barHolder.selectAll('rect.bar')
-                .data(distribution)
-                .enter().append('rect')
-                .classed('bar', true)
-                .attr('x', function (d, i) {
-                    // the x value is determined using the
-                    // month of the datum
-                    return boundScale(d.boundary)
-                })
-                .attr('width', bandwidth)
-                .attr('y', function (d) {
-                    // the y position is determined by the datum's temp
-                    // this value is the top edge of the rectangle
-                    return tempScale(d.count);
-                })
-                .attr('fill', function (d, i) {
-                    if (i == special) {
-                        return '#ffa158'
-                    } else {
-                        return '#0099ff';
-                    }
-                })
-                .attr('height', function (d) {
-                    // the bar's height should align it with the base of the chart (y=0)
-                    return height - tempScale(d.count);
-                });
         } else {
             Handsontable.renderers.TextRenderer.apply(this, arguments);
         }
