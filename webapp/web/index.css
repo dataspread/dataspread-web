@@ -8,7 +8,7 @@
     height: 5vh;
     position: fixed;
     bottom: 0;
-    left: 0;
+    right: 0;
     z-index: 5
 }
 
@@ -101,17 +101,17 @@
 .progress {
     position:fixed;
     left: 0;
-    width: 30px;
-    height: 76vh;
-    background-color: #333;
+    width: 15px;
+    height: 74.1vh;
+    background-color: #aaa;
 }
 
 .progress-bar {
     position: fixed;
     left: 0;
     height: 0px;
-    width: 30px;
-    background-color: #aaa;
+    width: 15px;
+    background-color: #333;
 }
 .exploration{
     color: white;
