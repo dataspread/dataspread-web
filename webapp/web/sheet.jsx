@@ -15,33 +15,55 @@ class DSGrid extends React.Component {
         this.state = {
             rows: 100000000,
             columns: 500,
+            version: 0
         }
 
         this.dataCache = new LRUMap(10000);
+        this._infiniteLoaderChildFunction = this._infiniteLoaderChildFunction.bind(this);
         this._onSectionRendered = this._onSectionRendered.bind(this);
-        this._cellRenderer = this._cellRenderer.bind(this);
+        this._isRowLoaded = this._isRowLoaded.bind(this);
+        this._loadMoreRows = this._loadMoreRows.bind(this);
     }
 
     render() {
+        const {infiniteLoaderProps} = this.props;
+        return (
+            <div>
+                <ReactVirtualized.InfiniteLoader
+                    isRowLoaded={this._isRowLoaded}
+                    loadMoreRows={this._loadMoreRows}
+                    rowCount={this.state.rows}
+                    {...infiniteLoaderProps}>
+                    {this._infiniteLoaderChildFunction}
+                </ReactVirtualized.InfiniteLoader>
+            </div>
+        )
+
+    }
+
+
+    _infiniteLoaderChildFunction({onRowsRendered, registerChild}) {
+        this._onRowsRendered = onRowsRendered;
+        const {gridProps} = this.props;
         return (
             <div style={{display: 'flex'}}>
-                <div style={{flex: 'auto', height: '95vh'}}>
+                <div style={{flex: 'auto', height: '90vh'}}>
                     <ReactVirtualized.AutoSizer>
                         {({height, width}) => (
                             <ReactVirtualized.MultiGrid
-                                ref={(grid) => {
-                                    this.grid = grid
-                                }}
+                                {...gridProps}
                                 height={height}
                                 width={width}
                                 cellRenderer={this._cellRenderer}
-                                onSectionRendered={this._onSectionRendered}
+                                rowRenderer={this.rowRenderer}
                                 fixedColumnCount={1}
                                 fixedRowCount={1}
                                 columnCount={this.state.columns + 1}
                                 columnWidth={150}
                                 rowCount={this.state.rows + 1}
                                 rowHeight={30}
+                                onSectionRendered={this._onSectionRendered}
+                                ref={registerChild}
                             />
                         )}
                     </ReactVirtualized.AutoSizer>
@@ -49,7 +71,6 @@ class DSGrid extends React.Component {
             </div>
         )
     }
-
 
     _onSectionRendered({
                            columnOverscanStartIndex,
@@ -61,61 +82,63 @@ class DSGrid extends React.Component {
                            rowStartIndex,
                            rowStopIndex
                        }) {
-        console.log('_onSectionRendered ' +
+        console.log(
             rowStartIndex + " "
             + rowStopIndex + " - " + rowOverscanStartIndex + " " + rowOverscanStopIndex);
 
-        // Check if visible range is loaded, if not load overScanRange.
-        let loaded = true;
-        // Added 1 to rowStopIndex to get around last row bug
-        for (let i = rowStartIndex; i <= rowStopIndex + 1; i++) {
-            if (!(this.dataCache.has(i))) {
-                loaded = false;
-                break;
-            }
-        }
-
-        if (!loaded) {
-            console.log("Data Not loaded " + rowStartIndex + " "
-                + rowStopIndex)
-            // Load Data.
-            fetch("http://localhost:8080/getRows/" + rowOverscanStartIndex + "/" + rowOverscanStopIndex)
-                .then(res => res.json())
-                .then(
-                    (result) => {
-                        for (let i = rowOverscanStartIndex, j = 0; i <= rowOverscanStopIndex; i++, j++) {
-                            this.dataCache.set(i, result[j]);
-                        }
-                        console.log("Size " + this.dataCache.size);
-                        this.grid.forceUpdateGrids();
-                    }
-                ),
-                (error) => {
-                };
-        }
+        this._onRowsRendered({
+            startIndex: rowStartIndex,
+            stopIndex: rowStopIndex
+        });
     }
 
 
-    _cellRenderer({
-                      columnIndex, // Horizontal (column) index of cell
-                      isScrolling, // The Grid is currently being scrolled
-                      isVisible,   // This cell is visible within the grid (eg it is not an overscanned cell)
-                      key,         // Unique key within array of cells
-                      parent,      // Reference to the parent Grid (instance)
-                      rowIndex,    // Vertical (row) index of cell
-                      style
-                  }) {
-        //console.log("Cell Render " + rowIndex);
-        //const {loadedRowsMap} = this.state;
-        // console.log(rowIndex);
+    _isRowLoaded({index}) {
+        //   console.log('_isRowLoaded ' + index + this.dataCache.has(index));
+        const {loadedRowsMap} = this.state;
+        //return !!loadedRowsMap[index]; // STATUS_LOADING or STATUS_LOADED
+        return this.dataCache.has(index);
+    }
+
+    _loadMoreRows({startIndex, stopIndex}) {
+        console.log('loadMoreRows' + startIndex + " " + stopIndex);
+
+        // Load Data.
+        fetch("http://localhost:8080/getRows/" + startIndex + "/" + stopIndex)
+            .then(res => res.json())
+            .then(
+                (result) => {
+                    for (let i = startIndex, j = 0; i <= stopIndex; i++, j++) {
+                        this.dataCache.set(i, result[j]);
+                    }
+                    console.log("Size " + this.dataCache.size);
+                    //this.grid.forceUpdateGrids();
+                    this.setState((prevState, props) => ({
+                        version: prevState.version + 1
+                    }));
+                }
+            ),
+            (error) => {
+            };
+
+    }
+
+
+    _cellRenderer = ({
+                         columnIndex, // Horizontal (column) index of cell
+                         isScrolling, // The Grid is currently being scrolled
+                         isVisible,   // This cell is visible within the grid (eg it is not an overscanned cell)
+                         key,         // Unique key within array of cells
+                         parent,      // Reference to the parent Grid (instance)
+                         rowIndex,    // Vertical (row) index of cell
+                         style
+                     }) => {
         let content;
 
         content = this.dataCache.get(rowIndex);
         if (content == undefined)
             content = 'Loading...';
 
-
-        //style = pStyle
         var cellClass = 'cell'
         if (rowIndex == 0) {
             content = this.toColumnName(columnIndex);
@@ -131,6 +154,7 @@ class DSGrid extends React.Component {
             content = '';
         }
 
+
         return (
             <div
                 key={key}
@@ -140,8 +164,6 @@ class DSGrid extends React.Component {
             </div>
         )
     }
-
-
 }
 
 
