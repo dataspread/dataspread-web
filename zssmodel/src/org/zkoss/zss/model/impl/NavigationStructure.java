@@ -452,7 +452,6 @@ public class NavigationStructure {
                 Process the graph information.
                  */
                 NavChartsPrototype.getPrototype().generateChartObject(model, this, obj, attr_indices[attr_i], subgroup, agg_ids[attr_i]);
-                System.out.println(obj);
                 aggList.add(obj);
             }
             attrAggList.add(aggList);
