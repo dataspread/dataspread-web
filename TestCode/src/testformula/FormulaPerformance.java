@@ -53,7 +53,7 @@ public class FormulaPerformance {
     private static void loadAndShuffleTest(String dbid) {
         SBook book= BookBindings.getBookByName(dbid);
         //TransactionManager.INSTANCE.startTransaction(book);
-        book.setNameAndLoad(dbid);
+        book.setNameAndLoad(book.getBookName(), dbid);
         shuffle(book.getSheet(0));
         //TransactionManager.INSTANCE.endTransaction(book);
     }

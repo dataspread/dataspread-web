@@ -393,7 +393,6 @@ public class RCV_Model extends Model {
                 recordList.add(new String(rs.getBytes(2), "UTF-8"));
             }
             rs.close();
-            stmt.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
