@@ -146,12 +146,11 @@
 .columnHeaderCell {
     width: 100%;
     height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 0 .5em;
+    padding:  .5em;
     box-sizing: border-box;
+    vertical-align: middle;
 }
+
 .cell {
     width: 100%;
     height: 100%;
@@ -163,18 +162,18 @@
 }
 
 .columnHeaderCell {
-    font-weight: bold;
     border-right: 1px solid #e0e0e0;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid black;
     border-top: 1px solid #e0e0e0;
-    background-color: #fafafa;
+    background-color: #d5d5d5;
+    text-align: center;
 }
 
 .rowHeaderCell {
-    font-weight: bold;
     border-right: 1px solid #e0e0e0;
     border-bottom: 1px solid #e0e0e0;
-    background-color: #fafafa;
+    background-color: #d5d5d5;
+    text-align: center;
 }
 
 
