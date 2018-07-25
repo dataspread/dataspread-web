@@ -29,14 +29,16 @@ class NavChartsPrototype {
             type0Chart(obj, attr, subGroup);
         else if (type == 1)
             type1Chart(obj, attr, subGroup);
-        else
+        else if (type == 2)
             type2Chart(obj, attr, subGroup);
+        else
+            obj.put("chartType", 3);
         NavChartsPrototype.model = null;
         NavChartsPrototype.navS = null;
     }
 
     private int getChartType(String formulaStr) {
-        return chartType.getOrDefault(formulaStr, 2);
+        return chartType.getOrDefault(formulaStr, 3);
     }
 
     private void type0Chart(Map<String, Object> obj, int attr, Bucket<String> subGroup) {
@@ -76,6 +78,9 @@ class NavChartsPrototype {
         String[] freqType = new String[]{
                 "COUNT", "COUNTIF", "COUNTA", "COUNTBLANK", "MODE", "RANK", "LARGE", "SMALL"
         };
+        String[] spreadType = new String[]{
+                "SUM", "SUMIF"
+        };
 
         chartType = new HashMap<>();
         for (String x : valueType) {
@@ -83,6 +88,9 @@ class NavChartsPrototype {
         }
         for (String x : freqType) {
             chartType.put(x, 1);
+        }
+        for (String x : spreadType) {
+            chartType.put(x, 2);
         }
     }
 }
