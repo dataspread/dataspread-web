@@ -1311,6 +1311,7 @@ var aggregateColStr = "";
 var aggregateOptStr = "";
 var aggregateData = {};
 var navRawFormula;
+var navAggRawData = [];
 
 var exploreAttr;
 
@@ -1994,6 +1995,7 @@ function getAggregateValue() {
         contentType: 'text/plain',
         data: JSON.stringify(aggregateData),
     }).done(function (e) {
+        console.log(e)
         if (e.status == "success") {
             $("#hierarchical-col").css("display", "none");
             hot.updateSettings({width: wrapperWidth * 0.8});
@@ -2025,9 +2027,8 @@ function getAggregateValue() {
 
 
 function addHierarchiCol(aggregateValue) {
-    console.log(nav.getRowHeight(0))
-    console.log(viewData);
-    console.log(aggregateValue);
+    navAggRawData = aggregateValue;
+
     let targetCol = (currLevel == 0) ? 1 : 2;
     console.log(cumulativeData[currLevel])
     navRawFormula = [];
@@ -2338,41 +2339,38 @@ $("#sort-form").submit(function (e) {
 
 
 function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
-    if (currLevel == 0) {
-        if (navRawFormula[row][col - 1].includes("AVERAGE")) {
+        let colOffset = (currLevel == 0) ? 1 : 2;
+        if(navAggRawData[col-colOffset][row].chartType == 1){
             let tempString = "chartdiv" + row + col;
             td.innerHTML = "<div id=" + tempString + " ></div>";
             console.log(td.innerHTML)
-            let special = 3;
-            var distribution = [{
-                boundary: "1-10",
-                count: 80,
-            }, {
-                boundary: "10-20",
-                count: 100,
-            }, {
-                boundary: "20-30",
-                count: 30,
-            }, {
-                boundary: "30-40",
-                count: 50,
-            }, {
-                boundary: "40-50",
-                count: 70,
-            },
-                //   {temp: 83, month: 'Auguest'},
-            ];
-            var boundaries = distribution.map(function (t) {
-                return t.boundary
-            });
 
-            var margin = {top: 20, right: 15, bottom: 18, left: 35};
+            let chartData = navAggRawData[col-colOffset][row]['chartData'];
+            let distribution = [];
+
+
+            for(let i = 0; i < chartData.counts.length; i++){
+                let boundstr = chartData.bins[i] + " - " + chartData.bins[i+1];
+                distribution.push({boundary:boundstr,count:chartData.counts[i]});
+            }
+            let min = navAggRawData[col-colOffset][0]['value'];
+            let max = navAggRawData[col-colOffset][0]['value'];
+            for(let i = 0; i < navAggRawData[col-colOffset].length; i++){
+                if(navAggRawData[col-colOffset][i]['value'] < min){
+                    min = navAggRawData[col-colOffset][i]['value'];
+                }else if(navAggRawData[col-colOffset][i]['value'] > min){
+                    max = navAggRawData[col-colOffset][i]['value'];
+                }
+            }
+
+            let special = navAggRawData[col-colOffset][row]['valueIndex'];
+
+            var margin = {top: 20, right: 25, bottom: 18, left: 35};
             // here, we want the full chart to be 700x200, so we determine
             // the width and height by subtracting the margins from those values
             var fullWidth = wrapperWidth * 0.14;
             var fullHeight = nav.getRowHeight(row);
-            console.log(nav.getRowHeight(0))
-            console.log(nav.getRowHeight(1))
+
             // the width and height values will be used in the ranges of our scales
             var width = fullWidth - margin.right - margin.left;
             var height = fullHeight - margin.top - margin.bottom;
@@ -2384,17 +2382,13 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
                 // translate it to leave room for the left and top margins
                 .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
-            var colors = d3.scaleLinear()
-                .domain([130, 200])
-                .range(d3.schemeYlGn);
-
 
             svg.append("rect")
-                .attr("x", width + margin.right / 10)
+                .attr("x", width + margin.right / 4)
                 .attr("y", 0 - margin.top)
                 .attr("width", margin.right)
                 .attr("height", fullHeight)
-                .attr("fill", d3.interpolateGreens(((value - 129.28) * 0.85 + 0.15) / (193.22 - 129.28)))
+                .attr("fill", d3.interpolateGreens(((value - min) * 0.85 + 0.15) / (max-min)))
 
             svg.append("text")
                 .attr("x", (width / 2))
@@ -2402,18 +2396,10 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
                 .attr("text-anchor", "middle")
                 .style("font-size", "10px")
                 .style("font-weight", "bold")
-                .text("AVG:" + value);
-
-            // // x value determined by month
-            // var boundScale = d3.scaleBand()
-            //     .domain([0,100])
-            //     .range([0, width])
-            //     .paddingInner(0.1);
-            // // the width of the bars is determined by the scale
-            // var bandwidth = boundScale.bandwidth();
+                .text( value);
 
             let xScale = d3.scaleLinear()
-                .domain([0,200])
+                .domain([chartData.bins[0],chartData.bins[chartData.bins.length-1]])
                 .range([0, width]);
 
             // y value determined by temp
@@ -2427,11 +2413,11 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
 
             var xAxis = d3.axisBottom(xScale)
                 //.ticks(6,'s');
-                .tickValues([0, 40,80, 120, 160,200]);
+                .tickValues(chartData.bins);
 
 
             var yAxis = d3.axisLeft(yScale);
-            yAxis.ticks(4);
+            yAxis.ticks(5);
 
             var barHolder = svg.append('g')
                 .classed('bar-holder', true);
@@ -2448,9 +2434,9 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
                  .attr('x', function (d, i) {
                      // the x value is determined using the
                      // month of the datum
-                     return 1 + width/5*i;
+                     return 1 + width/(chartData.counts.length)*i;
                  })
-                 .attr('width', width/5)
+                 .attr('width', width/(chartData.counts.length))
                  .attr('y', function (d) {
                      return yScale(d.count);
                  })
@@ -2467,10 +2453,10 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
                  })
                  .on("mouseover", function(d) {
                      tooltip
-                         .style("left", d3.event.pageX- 20  + "px")
-                         .style("top", d3.event.pageY + "px")
+                         .style("left", d3.event.pageX - 20  + "px")
+                         .style("top", d3.event.pageY - 30 + "px")
                          .style("display", "inline-block")
-                         .html((d.boundary));
+                         .html((d.count));
                  })
                  .on("mouseout", function(d) {
                      tooltip.style("display", "none");
@@ -2503,9 +2489,6 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
         } else {
             Handsontable.renderers.TextRenderer.apply(this, arguments);
         }
-    } else {
-
-    }
 
     td.style.background = '#FAEBD7';
     return td;
