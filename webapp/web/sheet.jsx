@@ -55,7 +55,6 @@ class DSGrid extends React.Component {
                                 height={height}
                                 width={width}
                                 cellRenderer={this._cellRenderer}
-                                rowRenderer={this.rowRenderer}
                                 fixedColumnCount={1}
                                 fixedRowCount={1}
                                 columnCount={this.state.columns + 1}

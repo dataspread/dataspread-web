@@ -1665,6 +1665,19 @@
             key: "getSizeAndPositionOfCell",
             value: function(index) {
                 if (index < 0 || index >= this._cellCount) throw Error("Requested index " + index + " is outside of range 0.." + this._cellCount);
+                /* Mangesh - Workaround for cell height */
+                /* TODO: Develop an efficient mechanism for computing cell heights */
+                if (index > 10000)
+                {
+                    var _size = this._cellSizeGetter({
+                        index: 0
+                    });
+                    return {
+                        offset:index * _size,
+                        size: _size
+                    }
+                }
+                /* End Workaround */
                 if (index > this._lastMeasuredIndex) for (var lastMeasuredCellSizeAndPosition = this.getSizeAndPositionOfLastMeasuredCell(), _offset = lastMeasuredCellSizeAndPosition.offset + lastMeasuredCellSizeAndPosition.size, i = this._lastMeasuredIndex + 1; i <= index; i++) {
                     var _size = this._cellSizeGetter({
                         index: i
