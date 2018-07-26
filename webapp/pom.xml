@@ -125,6 +125,33 @@
             <artifactId>w2ui</artifactId>
             <version>1.5.rc1</version>
         </dependency>
+
+
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>react</artifactId>
+            <version>16.3.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.webjars.npm</groupId>
+            <artifactId>react-dom</artifactId>
+            <version>16.4.1</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.webjars.npm</groupId>
+            <artifactId>babel-standalone</artifactId>
+            <version>6.26.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.webjars.npm</groupId>
+            <artifactId>react-virtualized</artifactId>
+            <version>9.20.0</version>
+        </dependency>
+
     </dependencies>
     <build>
         <finalName>DataSpread</finalName>
