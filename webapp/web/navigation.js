@@ -15,6 +15,7 @@ var nav;
 var clickable = true;
 
 var navHistroyTable = {};
+var navHistoryPathIndex = [];
 
 var options = [];
 var hieraOpen = false;
@@ -955,18 +956,23 @@ function updateNavPath() {
 
     //add to navigation history
 
-    let navHistoryPath = "Home"
+    let navHistoryPath = "Home";
     for(let j=0;j<currLevel;j++)
     {
         navHistoryPath += " > "+cumulativeData[j][levelList[j]].name;
     }
+
+    navHistoryPathIndex[navHistoryPath] = computePath();
+
 
     if(currLevel==0)
         return;
 
     if(navHistroyTable[navHistoryPath]==undefined) //if new path
     {
+        //" onclick="jumpToHistorialView(navHistoryPathIndex[navHistoryPath])""
         $("#history-option").prepend("<a class=\"dropdown-item\" href=\"#\" id=\"" + navHistoryPath + "\">" + navHistoryPath + "</a>");
+
         navHistroyTable[navHistoryPath] = true;
     }
     else //if existing path, delete from dropdown and prepend
@@ -986,6 +992,12 @@ function updateNavPath() {
         $("#history-option").prepend("<a class=\"dropdown-item\" href=\"#\" id=\"" + navHistoryPath + "\">"+navHistoryPath+ "</a>");
         navHistroyTable[navHistoryPath] = true;
     }
+
+    $("#history-option a").click(function(e){
+            jumpToHistorialView(navHistoryPathIndex[e.target.id]);
+
+        }
+    );
 
 }
 
@@ -1073,6 +1085,21 @@ function zoomOut(nav) {
 
 
     //nav.render();
+}
+
+function jumpToHistorialView(id)
+{
+    console.log(id+" :Jumped to View: " + navHistoryPathIndex[id]);
+
+    while(currLevel!=0)
+        zoomOut(nav);
+
+    let index_ls = id.split(",");
+
+    for(let i=0;i<index_ls.length;i++)
+    {
+        zoomIn(index_ls[i],nav);
+    }
 }
 
 $("#sort-form").submit(function (e) {
