@@ -64,11 +64,23 @@
 
 .breadcrumb{
     padding: 0.25rem 0.5rem 0.25rem 0.5rem;
+    width: 80%;
     margin-bottom: 0;
+    display: inline-flex;
 }
 
 .breadcrumb > li + li:before {
     content: "> " !important;
+}
+
+#nav-history{
+    width: 20%;
+    display: inline-block;
+    float:right;
+}
+#historyDropdown{
+    padding: 0.25rem 0.5rem 0.25rem 0.5rem;
+    background-color: #e9ecef;
 }
 
 .custom-select{

@@ -14,6 +14,8 @@ var cumulativeDataSize = 0;
 var nav;
 var clickable = true;
 
+var navHistroyTable = {};
+
 var options = [];
 var hieraOpen = false;
 var exploreOpen = false;
@@ -844,7 +846,7 @@ function zoomIn(child, nav) {
         colHeader.splice(1, 0, "")
     }
     levelList.push(child);
-    let childlist = computePath();
+    let childlist = computePath(); //get the list of children
 
 
     $.get(baseUrl + 'getChildren/' + bId + '/' + sName + '/' + childlist, function (data) {
@@ -918,7 +920,7 @@ function zoomIn(child, nav) {
             zoomming = false;
             nav.selectCell(0, 1)
         }
-        updateNavPath();
+        updateNavPath(); //calculate breadcrumb
         // zoomming = false;
         //  nav.selectCell(0, 1)
         //  nav.render();
@@ -934,13 +936,13 @@ function updateNavPath() {
     $breadcrumbList.empty();
     let tempString = "";
     if (currLevel > 0) {
-        tempString = "<li class='breadcrumb-item'><a href='#' id='0'>TopLevel</a></li>";
+        tempString = "<li class='breadcrumb-item'><a href='#' id='0'>Home</a></li>";
         for (let i = 0; i < levelList.length - 1; i++) {
             tempString += "<li class='breadcrumb-item'> <a href='#' id='" + (i + 1) + "'>" + cumulativeData[i][levelList[i]].name + "</a></li>";
         }
         tempString += "<li class='breadcrumb-item active' aria-current='page'>" + cumulativeData[currLevel - 1][levelList[currLevel - 1]].name + "</li>";
     } else {
-        tempString = "<li class='breadcrumb-item' aria-current='page'>TopLevel</li>"
+        tempString = "<li class='breadcrumb-item' aria-current='page'>Home</li>"
     }
     $breadcrumbList.append(tempString);
     $(".breadcrumb-item a").click(function (e) {
@@ -950,6 +952,41 @@ function updateNavPath() {
             zoomOut(nav);
         }
     });
+
+    //add to navigation history
+
+    let navHistoryPath = "Home"
+    for(let j=0;j<currLevel;j++)
+    {
+        navHistoryPath += " > "+cumulativeData[j][levelList[j]].name;
+    }
+
+    if(currLevel==0)
+        return;
+
+    if(navHistroyTable[navHistoryPath]==undefined) //if new path
+    {
+        $("#history-option").prepend("<a class=\"dropdown-item\" href=\"#\" id=\"" + navHistoryPath + "\">" + navHistoryPath + "</a>");
+        navHistroyTable[navHistoryPath] = true;
+    }
+    else //if existing path, delete from dropdown and prepend
+    {
+        console.log(navHistoryPath+"  exist!");
+        let temp_ls = [];
+
+        $("#history-option").children().each(function(){
+            let idVal = $(this)[0].id;
+            if(idVal!=navHistoryPath)
+                temp_ls.push(idVal);
+        });
+        console.log(temp_ls);
+        $("#history-option").children().remove();
+        for(let i=0;i<temp_ls.length;i++)
+            $("#history-option").append("<a class=\"dropdown-item\" href=\"#\" id=\"" + temp_ls[i] + "\">"+temp_ls[i]+ "</a>");
+        $("#history-option").prepend("<a class=\"dropdown-item\" href=\"#\" id=\"" + navHistoryPath + "\">"+navHistoryPath+ "</a>");
+        navHistroyTable[navHistoryPath] = true;
+    }
+
 }
 
 
