@@ -8,17 +8,17 @@ import java.util.stream.DoubleStream;
 public class NavigationHistogram {
     public static void main(String[] args) {
         int n = 10000;
-        List<Double> numData = new ArrayList<>();
+        ArrayList<Double> numData = new ArrayList<>();
         DoubleStream inStream = (new Random()).doubles(n);
         inStream.forEach(numData::add);
-        numData.clear();
+//        numData.clear();
         NavigationHistogram test = new NavigationHistogram(numData);
         System.out.println(test.getBins());
         System.out.println(test.getFrequencies());
     }
 
     private static final int MAX_BARS = 6; // corresponding to 27 unique values
-    private List<Double> numData;
+    private ArrayList<Double> numData;
     private int numberOfBins;
     private List<Double> bins;
     private TreeMap<Double, Integer> hist;
@@ -27,18 +27,57 @@ public class NavigationHistogram {
     private Map<Double, Integer> visitedMap;
     private int visitingPointer;
 
-    NavigationHistogram(List<Double> numData) {
+    NavigationHistogram(ArrayList<Double> numData) {
         this.numData = numData;
     }
 
     private void findMinMax() {
         minV = Double.POSITIVE_INFINITY;
         maxV = Double.NEGATIVE_INFINITY;
-        for (Double v : numData) {
-            if (v > maxV)
-                maxV = v;
-            if (v < minV)
-                minV = v;
+        int offSet = (int) (0.05 * numData.size());
+        if (offSet > 0) {
+            QuickSelect selector = new QuickSelect();
+            minV = selector.quickSelect(numData, offSet);
+            maxV = selector.quickSelect(numData, numData.size() - offSet);
+        }
+    }
+
+    private static class QuickSelect {
+        Double quickSelect(ArrayList<Double> G, int k) {
+            return quickSelect(G, 0, G.size() - 1, k - 1);
+        }
+
+        private Double quickSelect(ArrayList<Double> G, int first, int last, int k) {
+            if (first <= last) {
+                int pivot = partition(G, first, last);
+                if (pivot == k) {
+                    return G.get(k);
+                }
+                if (pivot > k) {
+                    return quickSelect(G, first, pivot - 1, k);
+                }
+                return quickSelect(G, pivot + 1, last, k);
+            }
+            return Double.NEGATIVE_INFINITY;
+        }
+
+        private int partition(ArrayList<Double> G, int first, int last) {
+            int pivot = first + new Random().nextInt(last - first + 1);
+            swap(G, last, pivot);
+            for (int i = first; i < last; i++) {
+                if (G.get(i) < G.get(last)) {
+                    swap(G, i, first);
+                    first++;
+                }
+            }
+            swap(G, first, last);
+            return first;
+        }
+
+        private void swap(ArrayList<Double> G, int x, int y) {
+            Double tmp = G.get(x);
+            G.set(x, G.get(y));
+            G.set(y, tmp);
         }
     }
 
@@ -89,8 +128,9 @@ public class NavigationHistogram {
 
     private void fillInHist() {
         BiConsumer<Double, Integer> addToKey = (key, inc) -> {
+            if (key > maxV || key < minV)
+                return;
             Double eKey = hist.floorKey(key);
-            //noinspection ConstantConditions
             hist.compute(eKey, (_ignored, val) -> val + inc);
         };
         Consumer<Double> addOneToKey = key -> addToKey.accept(key, 1);

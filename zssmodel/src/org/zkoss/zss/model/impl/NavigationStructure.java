@@ -91,12 +91,12 @@ public class NavigationStructure {
         return true;
     }
 
-    public List<Double> collectDoubleValues(int columnIndex, Bucket<String> subgroup) {
+    public ArrayList<Double> collectDoubleValues(int columnIndex, Bucket<String> subgroup) {
         int startRow = subgroup.getStartPos();
         int endRow = subgroup.getEndPos();
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
 
-            List<Double> doubleOnly = new ArrayList<>();
+            ArrayList<Double> doubleOnly = new ArrayList<>();
             ArrayList<SCell> result;
             {
                 typeConvertColumnIfHavent(connection, columnIndex);
