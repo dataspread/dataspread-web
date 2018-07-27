@@ -14,6 +14,7 @@ class DSGrid extends React.Component {
         super(props);
         this.state = {
             rows: 100000000,
+            bookName:'',
             columns: 500,
             version: 0
         }
@@ -23,12 +24,24 @@ class DSGrid extends React.Component {
         this._onSectionRendered = this._onSectionRendered.bind(this);
         this._isRowLoaded = this._isRowLoaded.bind(this);
         this._loadMoreRows = this._loadMoreRows.bind(this);
+        this._handleEvent = this._handleEvent.bind(this);
+
     }
 
     render() {
         const {infiniteLoaderProps} = this.props;
         return (
             <div>
+                <semanticUIReact.Input
+                    placeholder='Book Name...'
+                    name="bookName"
+                onChange={this._handleEvent}/>
+                <semanticUIReact.Button
+                    name="bookLoadButton"
+                    onClick={this._handleEvent}>
+                    Load
+                </semanticUIReact.Button>
+
                 <ReactVirtualized.InfiniteLoader
                     isRowLoaded={this._isRowLoaded}
                     loadMoreRows={this._loadMoreRows}
@@ -39,6 +52,37 @@ class DSGrid extends React.Component {
             </div>
         )
 
+    }
+
+    _handleEvent(event) {
+        const target = event.target;
+        const name = target.name;
+        if (name=="bookName")
+        {
+            this.bookName = target.value;
+            console.log(this.bookName);
+        }
+        else if (name=="bookLoadButton")
+        {
+            fetch("http://localhost:8080/api/getSheets/" + this.bookName)
+                .then(res => res.json())
+                .then(
+                    (result) => {
+                        console.log("Rows " + result['data']['sheets'][0]['numRow']);
+                        console.log("numCol " + result['data']['sheets'][0]['numCol']);
+
+                        this.setState({
+                            bookName:this.bookName,
+                            rows:result['data']['sheets'][0]['numRow'],
+                            columns:result['data']['sheets'][0]['numCol']
+                        });
+                    }
+                ),
+                (error) => {
+                };
+
+
+        }
     }
 
 
@@ -101,17 +145,15 @@ class DSGrid extends React.Component {
 
     _loadMoreRows({startIndex, stopIndex}) {
         console.log('loadMoreRows' + startIndex + " " + stopIndex);
-
-        // Load Data.
-        fetch("http://localhost:8080/getRows/" + startIndex + "/" + stopIndex)
+        fetch("http://localhost:8080/api/getCellsV2/" + this.bookName
+            + "/Sheet1/" + (startIndex) + "/" + (stopIndex) )
             .then(res => res.json())
             .then(
                 (result) => {
                     for (let i = startIndex, j = 0; i <= stopIndex; i++, j++) {
-                        this.dataCache.set(i, result[j]);
+                        this.dataCache.set(i, result['values'][j]);
                     }
-                    console.log("Size " + this.dataCache.size);
-                    //this.grid.forceUpdateGrids();
+                    this._grid.forceUpdateGrids;
                     this.setState((prevState, props) => ({
                         version: prevState.version + 1
                     }));
@@ -119,7 +161,6 @@ class DSGrid extends React.Component {
             ),
             (error) => {
             };
-
     }
 
 
@@ -133,26 +174,26 @@ class DSGrid extends React.Component {
                          style
                      }) => {
         let content;
-
-        content = this.dataCache.get(rowIndex);
-        if (content == undefined)
-            content = 'Loading...';
-
-        var cellClass = 'cell'
-        if (rowIndex == 0) {
-            content = this.toColumnName(columnIndex);
-            cellClass = 'columnHeaderCell';
-        }
-
-        if (columnIndex == 0) {
-            content = rowIndex;
-            cellClass = 'rowHeaderCell';
-        }
+        let cellClass = 'cell'
 
         if (columnIndex == 0 && rowIndex == 0) {
             content = '';
         }
-
+        else if (rowIndex == 0) {
+            content = this.toColumnName(columnIndex);
+            cellClass = 'columnHeaderCell';
+        }
+        else if (columnIndex == 0) {
+            content = rowIndex;
+            cellClass = 'rowHeaderCell';
+        }
+        else
+        {
+            if (this.dataCache.has(rowIndex-1))
+                content = this.dataCache.get(rowIndex-1)[columnIndex-1];
+            else
+                content = '';
+        }
 
         return (
             <div
@@ -168,6 +209,6 @@ class DSGrid extends React.Component {
 
 // Render DataSpread Grid
 ReactDOM.render(
-    <DSGrid/>,
+        <DSGrid/>,
     rootElement
 );
