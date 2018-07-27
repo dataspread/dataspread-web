@@ -438,7 +438,7 @@ public class NavigationStructure {
      * @param paraList
      * @return
      */
-    public List<List<Object>> navigationGroupAggregateValue(Model model, int[] paths, int[] attr_indices, String[] agg_ids, List<List<String>> paraList) {
+    public List<List<Object>> navigationGroupAggregateValue(Model model, int[] paths, int[] attr_indices, String[] agg_ids, List<List<String>> paraList, List<Boolean> getCharts) {
         List<List<Object>> attrAggList = new ArrayList<>();
         List<Object> aggList = new ArrayList<>();
 
@@ -449,9 +449,13 @@ public class NavigationStructure {
                 Map<String, Object> obj = getBucketAggWithMemoization(model, subgroup, attr_indices[attr_i], agg_ids[attr_i], paraList.get(attr_i));
 
                 /*
-                Process the graph information.
+                Process the chart information.
                  */
-                NavChartsPrototype.getPrototype().generateChartObject(model, this, obj, attr_indices[attr_i], subgroup, agg_ids[attr_i]);
+                if (getCharts.get(attr_i)) {
+                    NavChartsPrototype.getPrototype().generateChartObject(model, this, obj, attr_indices[attr_i], subgroup, agg_ids[attr_i]);
+                } else {
+                    obj.put("chartType", 3);
+                }
                 aggList.add(obj);
             }
             attrAggList.add(aggList);

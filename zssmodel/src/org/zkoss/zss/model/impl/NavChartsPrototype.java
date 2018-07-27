@@ -14,6 +14,10 @@ class NavChartsPrototype {
     private static Model model = null;
     private static NavigationStructure navS = null;
 
+    /**
+     * Get the globally unique instance of this class.
+     * @return The unique instance.
+     */
     static NavChartsPrototype getPrototype() {
         if (uniqueInstance == null) {
             uniqueInstance = new NavChartsPrototype();
@@ -55,8 +59,8 @@ class NavChartsPrototype {
 
     private void type1Chart(Map<String, Object> obj, int attr, Bucket<String> subGroup) {
         NavigationHistogram hist = new NavigationHistogram(navS.collectDoubleValues(attr, subGroup));
+        obj.put("chartType", 1); // must be called before formattedOutput, which might overwrite chartType
         hist.formattedOutput(obj, obj.get("value"));
-        obj.put("chartType", 1);
     }
 
     private void type2Chart(Map<String, Object> obj, int attr, Bucket<String> subGroup) {
@@ -71,6 +75,9 @@ class NavChartsPrototype {
         obj.put("chartData", chartData);
     }
 
+    /**
+     * The private constructor that can only be called by the {@link #getPrototype()} function.
+     */
     private NavChartsPrototype() {
         String[] valueType = new String[]{
                 "AVERAGE", "MAX", "MAXA", "MIN", "MINA", "MEDIAN"

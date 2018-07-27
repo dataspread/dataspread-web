@@ -163,12 +163,14 @@ public class NavigationController {
         int[] attrIndices = new int[formula_ls.size()];
         String[] aggregates = new String[formula_ls.size()];
         List<List<String>> param_arr_ls = new ArrayList<>();
+        List<Boolean> getCharts = new ArrayList<>();
 
         for(int i=0;i<formula_ls.size();i++)
         {
             JSONObject temp = (JSONObject) formula_ls.get(i);
             attrIndices[i] = Integer.parseInt((String)temp.get("attr_index")) - 1;
             aggregates[i] = (String) temp.get("function");
+            getCharts.add((Boolean) temp.get("getChart"));
 
             JSONArray param_ls = (JSONArray) temp.get("param_ls");
 
@@ -183,7 +185,7 @@ public class NavigationController {
         List<List<Object>> agg;
         try {
             Model model = currentSheet.getDataModel();
-            agg = model.navS.navigationGroupAggregateValue(model, indices, attrIndices, aggregates, param_arr_ls);
+            agg = model.navS.navigationGroupAggregateValue(model, indices, attrIndices, aggregates, param_arr_ls, getCharts);
         } catch (RuntimeException e) {
             return JsonWrapper.generateError(e.getMessage());
         }
