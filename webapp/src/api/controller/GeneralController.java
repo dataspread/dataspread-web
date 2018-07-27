@@ -168,6 +168,7 @@ public class GeneralController {
 
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
+        int endColumn = sheet.getEndColumnIndex();
 
         for (int row = row1; row <= row2; row++)
         {
@@ -175,7 +176,7 @@ public class GeneralController {
             List<String> formulaRow = new ArrayList<>();
             returnValues.add(valuesRow);
             returnFormulae.add(formulaRow);
-            for (int col = 0; col <= sheet.getEndColumnIndex(); col++) {
+            for (int col = 0; col <= endColumn; col++) {
                 //TODO: Change to range get
                 SCell sCell = sheet.getCell(row, col);
                 valuesRow.add(String.valueOf(sCell.getValue()));
