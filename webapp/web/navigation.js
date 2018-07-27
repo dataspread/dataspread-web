@@ -279,7 +279,7 @@ function createSortString() {
     let tempString = "<label class='my-1 mr-5' for='inlineOpt" + sortTotalNum + "'>Attribute</label><select class='custom-select my-1 mr-xl-5' id='inlineOpt" + sortTotalNum + "''> ";
     if (sortTotalNum == 0) {
         for (let i = 0; i < options.length; i++) {
-            sortOptionString += "<option value='" + (i + 1) + "''>" + options[i] + "</option>";
+            sortOptionString += "<option value='" + (i + 1) + "'>" + options[i] + "</option>";
         }
         sortOptionString += "</select>";
         tempString += sortOptionString;
@@ -427,7 +427,11 @@ function Explore(e) {
                             case 0:
                                 return colHeader[0];
                             default:
-                                return colHeader[col] + "<span id='colClose' >x</span>";
+                                let check = aggregateData.formula_ls[col - 1].getChart ? "checked" : "";
+                                return colHeader[col] + "<span id='colClose' >x</span>" + "<label class=\"switch\">" +
+                                    "  <input type=\"checkbox\"" + check + ">" +
+                                    "  <span class=\"slider round\"></span>" +
+                                    "</label>";
                         }
                     } else {
                         switch (col) {
@@ -479,6 +483,10 @@ function Explore(e) {
                     removeHierarchiCol(coords.col)
                     console.log(colHeader);
                     console.log(viewData)
+                }
+                if (e.realTarget.classList['0'] == "slider") {
+                    aggregateData.formula_ls[coords.col - 1].getChart = !aggregateData.formula_ls[coords.col - 1].getChart;
+                    getAggregateValue();
                 }
             },
             afterSelection: function (r, c, r2, c2, preventScrolling, selectionLayerLevel) {
@@ -646,6 +654,8 @@ $("#hierarchi-form").submit(function (e) {
     // attr_index = []
     // funcId = []
     hieraOpen = false;
+    let getChart = ($("#chartOpt").val() == 2);
+    console.log(getChart)
     for (let i = 0; i < aggregateTotalNum; i++) {
         let attrIdx = $("#aggregateCol" + i).val();
         let funct = $("#aggregateOpt" + i).val();
@@ -668,7 +678,12 @@ $("#hierarchi-form").submit(function (e) {
                     return;
                 } else {
                     paras = ["", para]
-                    aggregateData.formula_ls[i] = {attr_index: attrIdx, function: funct, param_ls: paras};
+                    aggregateData.formula_ls[i] = {
+                        attr_index: attrIdx,
+                        function: funct,
+                        param_ls: paras,
+                        getChart: getChart
+                    };
                 }
                 ;
                 break;
@@ -681,7 +696,12 @@ $("#hierarchi-form").submit(function (e) {
                     return;
                 } else {
                     paras = ["", para]
-                    aggregateData.formula_ls[i] = {attr_index: attrIdx, function: funct, param_ls: paras};
+                    aggregateData.formula_ls[i] = {
+                        attr_index: attrIdx,
+                        function: funct,
+                        param_ls: paras,
+                        getChart: getChart
+                    };
                 }
                 ;
                 break;
@@ -693,7 +713,12 @@ $("#hierarchi-form").submit(function (e) {
                     return;
                 } else {
                     paras = [para, ""]
-                    aggregateData.formula_ls[i] = {attr_index: attrIdx, function: funct, param_ls: paras};
+                    aggregateData.formula_ls[i] = {
+                        attr_index: attrIdx,
+                        function: funct,
+                        param_ls: paras,
+                        getChart: getChart
+                    };
                 }
                 ;
                 break;
@@ -706,12 +731,22 @@ $("#hierarchi-form").submit(function (e) {
                 } else {
                     console.log($("#aggrePara" + i + i).val());
                     paras = [para, "", $("#aggrePara" + i + i).val()]
-                    aggregateData.formula_ls[i] = {attr_index: attrIdx, function: funct, param_ls: paras};
+                    aggregateData.formula_ls[i] = {
+                        attr_index: attrIdx,
+                        function: funct,
+                        param_ls: paras,
+                        getChart: getChart
+                    };
                 }
                 ;
                 break;
             default:
-                aggregateData.formula_ls[i] = {attr_index: attrIdx, function: funct, param_ls: [""]};
+                aggregateData.formula_ls[i] = {
+                    attr_index: attrIdx,
+                    function: funct,
+                    param_ls: [""],
+                    getChart: getChart
+                };
         }
     }
     getAggregateValue();
@@ -957,18 +992,17 @@ function updateNavPath() {
     //add to navigation history
 
     let navHistoryPath = "Home";
-    for(let j=0;j<currLevel;j++)
-    {
-        navHistoryPath += " > "+cumulativeData[j][levelList[j]].name;
+    for (let j = 0; j < currLevel; j++) {
+        navHistoryPath += " > " + cumulativeData[j][levelList[j]].name;
     }
 
     navHistoryPathIndex[navHistoryPath] = computePath();
 
 
-    if(currLevel==0)
+    if (currLevel == 0)
         return;
 
-    if(navHistroyTable[navHistoryPath]==undefined) //if new path
+    if (navHistroyTable[navHistoryPath] == undefined) //if new path
     {
         //" onclick="jumpToHistorialView(navHistoryPathIndex[navHistoryPath])""
         $("#history-option").prepend("<a class=\"dropdown-item\" href=\"#\" id=\"" + navHistoryPath + "\">" + navHistoryPath + "</a>");
@@ -977,23 +1011,23 @@ function updateNavPath() {
     }
     else //if existing path, delete from dropdown and prepend
     {
-        console.log(navHistoryPath+"  exist!");
+        console.log(navHistoryPath + "  exist!");
         let temp_ls = [];
 
-        $("#history-option").children().each(function(){
+        $("#history-option").children().each(function () {
             let idVal = $(this)[0].id;
-            if(idVal!=navHistoryPath)
+            if (idVal != navHistoryPath)
                 temp_ls.push(idVal);
         });
         console.log(temp_ls);
         $("#history-option").children().remove();
-        for(let i=0;i<temp_ls.length;i++)
-            $("#history-option").append("<a class=\"dropdown-item\" href=\"#\" id=\"" + temp_ls[i] + "\">"+temp_ls[i]+ "</a>");
-        $("#history-option").prepend("<a class=\"dropdown-item\" href=\"#\" id=\"" + navHistoryPath + "\">"+navHistoryPath+ "</a>");
+        for (let i = 0; i < temp_ls.length; i++)
+            $("#history-option").append("<a class=\"dropdown-item\" href=\"#\" id=\"" + temp_ls[i] + "\">" + temp_ls[i] + "</a>");
+        $("#history-option").prepend("<a class=\"dropdown-item\" href=\"#\" id=\"" + navHistoryPath + "\">" + navHistoryPath + "</a>");
         navHistroyTable[navHistoryPath] = true;
     }
 
-    $("#history-option a").click(function(e){
+    $("#history-option a").click(function (e) {
             jumpToHistorialView(navHistoryPathIndex[e.target.id]);
 
         }
@@ -1087,18 +1121,16 @@ function zoomOut(nav) {
     //nav.render();
 }
 
-function jumpToHistorialView(id)
-{
-    console.log(id+" :Jumped to View: " + navHistoryPathIndex[id]);
+function jumpToHistorialView(id) {
+    console.log(id + " :Jumped to View: " + navHistoryPathIndex[id]);
 
-    while(currLevel!=0)
+    while (currLevel != 0)
         zoomOut(nav);
 
     let index_ls = id.split(",");
 
-    for(let i=0;i<index_ls.length;i++)
-    {
-        zoomIn(index_ls[i],nav);
+    for (let i = 0; i < index_ls.length; i++) {
+        zoomIn(index_ls[i], nav);
     }
 }
 
@@ -1137,30 +1169,30 @@ $("#sort-form").submit(function (e) {
 
 function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
     let colOffset = (currLevel == 0) ? 1 : 2;
-    if(navAggRawData[col-colOffset][row].chartType == 1){
+    if (navAggRawData[col - colOffset][row].chartType == 1) {
         let tempString = "chartdiv" + row + col;
         td.innerHTML = "<div id=" + tempString + " ></div>";
         console.log(td.innerHTML)
 
-        let chartData = navAggRawData[col-colOffset][row]['chartData'];
+        let chartData = navAggRawData[col - colOffset][row]['chartData'];
         let distribution = [];
 
 
-        for(let i = 0; i < chartData.counts.length; i++){
-            let boundstr = chartData.bins[i] + " - " + chartData.bins[i+1];
-            distribution.push({boundary:boundstr,count:chartData.counts[i]});
+        for (let i = 0; i < chartData.counts.length; i++) {
+            let boundstr = chartData.bins[i] + " - " + chartData.bins[i + 1];
+            distribution.push({boundary: boundstr, count: chartData.counts[i]});
         }
-        let min = navAggRawData[col-colOffset][0]['value'];
-        let max = navAggRawData[col-colOffset][0]['value'];
-        for(let i = 0; i < navAggRawData[col-colOffset].length; i++){
-            if(navAggRawData[col-colOffset][i]['value'] < min){
-                min = navAggRawData[col-colOffset][i]['value'];
-            }else if(navAggRawData[col-colOffset][i]['value'] > min){
-                max = navAggRawData[col-colOffset][i]['value'];
+        let min = navAggRawData[col - colOffset][0]['value'];
+        let max = navAggRawData[col - colOffset][0]['value'];
+        for (let i = 0; i < navAggRawData[col - colOffset].length; i++) {
+            if (navAggRawData[col - colOffset][i]['value'] < min) {
+                min = navAggRawData[col - colOffset][i]['value'];
+            } else if (navAggRawData[col - colOffset][i]['value'] > min) {
+                max = navAggRawData[col - colOffset][i]['value'];
             }
         }
 
-        let special = navAggRawData[col-colOffset][row]['valueIndex'];
+        let special = navAggRawData[col - colOffset][row]['valueIndex'];
 
         var margin = {top: 20, right: 25, bottom: 18, left: 35};
         // here, we want the full chart to be 700x200, so we determine
@@ -1185,7 +1217,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             .attr("y", 0 - margin.top)
             .attr("width", margin.right)
             .attr("height", fullHeight)
-            .attr("fill", d3.interpolateGreens(((value - min) * 0.85 + 0.15) / (max-min)))
+            .attr("fill", d3.interpolateGreens(((value - min) * 0.85 + 0.15) / (max - min)))
 
         svg.append("text")
             .attr("x", (width / 2))
@@ -1193,10 +1225,10 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             .attr("text-anchor", "middle")
             .style("font-size", "10px")
             .style("font-weight", "bold")
-            .text( value);
+            .text(value);
 
         let xScale = d3.scaleLinear()
-            .domain([chartData.bins[0],chartData.bins[chartData.bins.length-1]])
+            .domain([chartData.bins[0], chartData.bins[chartData.bins.length - 1]])
             .range([0, width]);
 
         // y value determined by temp
@@ -1231,9 +1263,9 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             .attr('x', function (d, i) {
                 // the x value is determined using the
                 // month of the datum
-                return 1 + width/(chartData.counts.length)*i;
+                return 1 + width / (chartData.counts.length) * i;
             })
-            .attr('width', width/(chartData.counts.length))
+            .attr('width', width / (chartData.counts.length))
             .attr('y', function (d) {
                 return yScale(d.count);
             })
@@ -1248,14 +1280,14 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
                 // the bar's height should align it with the base of the chart (y=0)
                 return height - yScale(d.count);
             })
-            .on("mouseover", function(d) {
+            .on("mouseover", function (d) {
                 tooltip
-                    .style("left", d3.event.pageX - 20  + "px")
+                    .style("left", d3.event.pageX - 20 + "px")
                     .style("top", d3.event.pageY - 30 + "px")
                     .style("display", "inline-block")
                     .html((d.count));
             })
-            .on("mouseout", function(d) {
+            .on("mouseout", function (d) {
                 tooltip.style("display", "none");
             });
 
@@ -1268,7 +1300,6 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
         var yAxisEle = svg.append('g')
             .classed('y axis', true)
             .call(yAxis);
-
 
 
         // add a label to the yAxis
