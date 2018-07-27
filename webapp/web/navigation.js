@@ -440,7 +440,10 @@ function Explore(e) {
                             case 1:
                                 return colHeader[1];
                             default:
-                                return colHeader[col] + "<span id='colClose'>x</span>";
+                                return colHeader[col] + "<span id='colClose'>x</span>" + "<label class=\"switch\">" +
+                                    "  <input type=\"checkbox\"" + check + ">" +
+                                    "  <span class=\"slider round\"></span>" +
+                                    "</label>";
                         }
                     }
 
@@ -634,14 +637,16 @@ function removeHierarchiCol(colIdx) {
     colHeader.splice(colIdx, 1,)
     if (currLevel == 0) {
         aggregateData.formula_ls.splice(colIdx - 1, 1,);
+        navAggRawData.splice(colIdx - 1, 1,);
     } else {
         aggregateData.formula_ls.splice(colIdx - 2, 1,);
+        navAggRawData.splice(colIdx - 2, 1,);
     }
     if (aggregateData.formula_ls.length == 0) {
         hieraOpen = false;
     }
     nav.alter('remove_col', colIdx);
-    console.log(viewData)
+    console.log(viewData);
 
     //nav.render();
 }
