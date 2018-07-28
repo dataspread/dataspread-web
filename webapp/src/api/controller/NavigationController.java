@@ -1,23 +1,16 @@
 package api.controller;
 
 import api.JsonWrapper;
-import org.model.AutoRollbackConnection;
-import org.model.DBContext;
-import org.model.DBHandler;
 import org.springframework.web.bind.annotation.*;
 import org.zkoss.json.JSONArray;
 import org.zkoss.json.JSONObject;
 import org.zkoss.json.parser.JSONParser;
-import org.zkoss.poi.ss.formula.functions.Mode;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.model.impl.Bucket;
 import org.zkoss.zss.model.impl.Model;
 import org.zkoss.zss.model.impl.RCV_Model;
-import org.zkoss.zss.model.impl.ROM_Model;
-import org.zkoss.zss.model.impl.sys.TableMonitor;
 import org.zkoss.zss.model.sys.BookBindings;
 
 
@@ -62,8 +55,7 @@ public class NavigationController {
         currentSheet.getDataModel().setIndexString("col_" + attr_index);
         currentSheet.clearCache();
 
-
-        return JsonWrapper.generateJson(currentSheet.getDataModel().createNavS(currentSheet));
+        return JsonWrapper.generateJson(currentSheet.getDataModel().navS.createNavS(currentSheet));
 
     }
 

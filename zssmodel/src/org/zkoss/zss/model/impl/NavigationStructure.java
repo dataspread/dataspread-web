@@ -70,6 +70,56 @@ public class NavigationStructure {
         typeCheckedColumns = new HashSet<>();
     }
 
+    public Object createNavS(SSheet currentSheet) {
+        Model model = currentSheet.getDataModel();
+        String prevIndexString = getIndexString();
+        setIndexString(model.indexString);
+        ROM_Model rom_model = (ROM_Model) ((Hybrid_Model) model).tableModels.get(0).y;
+        int columnIndex = Integer.parseInt(indexString.split("_")[1]) - 1;
+
+        currentSheet.clearCache();
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            DBContext context = new DBContext(connection);
+
+            if (rom_model.rowOrderTable.contains(indexString)) {
+                rom_model.rowMapping = rom_model.rowOrderTable.get(indexString);
+            } else {
+                ArrayList<Integer> rowIds;
+                CellRegion tableRegion = new CellRegion(0, columnIndex, currentSheet.getEndRowIndex(), columnIndex);
+                rowIds = rom_model.rowMapping.getIDs(context, tableRegion.getRow(), tableRegion.getLastRow() - tableRegion.getRow() + 1);
+
+                CountedBTree newOrder = new CountedBTree(context, null);
+                newOrder.insertIDs(context, tableRegion.getRow(), rowIds);
+                /*
+                Clear the Navigation history if using a lot of memory
+                 */
+                if (rom_model.rowOrderTable.size() >= 3) {
+                    rom_model.rowOrderTable.clear();
+                }
+                rom_model.rowOrderTable.put(indexString, newOrder);
+                rom_model.rowMapping = newOrder;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        //create nav data structure
+        if (prevIndexString != null && indexString.equals(prevIndexString)) {
+            resetToRoot();
+            return getSerializedBuckets();
+        } else {
+            clearAll();
+        }
+        setCurrentSheet(currentSheet);
+        setTotalRows(currentSheet.getEndRowIndex() + 1);
+        ArrayList<Object> recordList = new ArrayList<>();
+        ((RCV_Model) model).navigationSortRangeByAttribute(currentSheet, 1, currentSheet.getEndRowIndex(), new int[]{columnIndex}, 0, recordList);
+        setRecordList(recordList);
+        initIndexedBucket(currentSheet.getEndRowIndex() + 1);
+
+        return getSerializedBuckets();
+    }
+
     /**
      * Convert a given column from string to semantic type. If done then do nothing.
      *

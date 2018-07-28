@@ -43,11 +43,6 @@ public class RCV_Model_Simplified extends Model {
     }
 
     @Override
-    public Object createNavS(SSheet currentsheet) {
-        return null;
-    }
-
-    @Override
     public ArrayList<String> getHeaders() {
         return null;
     }

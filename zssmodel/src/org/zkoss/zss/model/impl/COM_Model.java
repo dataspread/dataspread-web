@@ -32,11 +32,6 @@ public class COM_Model extends Model {
     }
 
     @Override
-    public Object createNavS(SSheet currentsheet) {
-        return null;
-    }
-
-    @Override
     public ArrayList<Bucket<String>> createNavS(String bucketName, int start, int count) {
        return null;
 

@@ -42,11 +42,6 @@ public class TOM_Model extends Model {
         return new TOM_Model(dbContext,sheet,modelName, this);
     }
 
-    @Override
-    public Object createNavS(SSheet currentsheet) {
-        return null;
-    }
-
 
     public void loadColumnInfo(DBContext dbContext) {
         columnNames = new TreeMap<>();

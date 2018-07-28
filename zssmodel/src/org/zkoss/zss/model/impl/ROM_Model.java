@@ -45,6 +45,7 @@ public class ROM_Model extends Model {
         this.tableName = tableName;
         this.navSbuckets = new ArrayList<Bucket<String>>();
         this.navS = new NavigationStructure(tableName);
+        this.navS.setCurrentSheet(sheet);
         createSchema(context);
     }
 
@@ -63,12 +64,6 @@ public class ROM_Model extends Model {
     @Override
     public ROM_Model clone(DBContext dbContext, SSheet sheet, String modelName) {
         return new ROM_Model(dbContext, sheet, tableName, this);
-    }
-
-    @Override
-    public Object createNavS(SSheet currentsheet) {
-        ArrayList<Bucket<String>> newList = this.navS.getUniformBuckets(0,currentsheet.getEndRowIndex());
-        return "";
     }
 
     private void copySchema(DBContext context, String sourceTable){
@@ -617,25 +612,6 @@ public class ROM_Model extends Model {
 
                 ++importedRows;
                 sbSS = new StringBuffer();
-
-               /*if ((importedRows-1)% sampleSize ==0 && importedRows!=1) {
-                    connection.commit();
-
-                    insertRows(dbContext, insertedRows, importedRows-insertedRows);//there's am implicit +1 in imprtedrows
-
-                   if(insertedRows==0)
-                   {
-                       insertedRows += (importedRows-insertedRows);
-                       this.navSbuckets = this.createNavS(null,0,insertedRows);
-                   }
-                   else
-                       insertedRows += (importedRows-insertedRows);
-
-                    System.out.println((importedRows-1) + " rows imported ");
-                    logger.info((importedRows-1) + " rows imported ");
-                }*/
-
-
             }
 
             connection.commit();

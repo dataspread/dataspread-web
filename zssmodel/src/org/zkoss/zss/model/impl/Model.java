@@ -3,14 +3,12 @@ package org.zkoss.zss.model.impl;
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
-import org.zkoss.poi.ss.formula.FormulaParseException;
 import org.zkoss.zk.ui.UiException;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.ErrorValue;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.sys.EngineFactory;
-import org.zkoss.zss.model.sys.dependency.ObjectRef;
 import org.zkoss.zss.model.sys.formula.FormulaEngine;
 import org.zkoss.zss.model.sys.formula.FormulaEvaluationContext;
 import org.zkoss.zss.model.sys.formula.FormulaExpression;
@@ -117,8 +115,6 @@ public abstract class Model {
 
     // Clone only the corresponding tables in postgres
     public abstract Model clone(DBContext dbContext, SSheet sheet, String modelName);
-
-    public abstract Object createNavS(SSheet currentsheet);
 
     public abstract ArrayList<String> getHeaders();
     public abstract void setIndexString(String str);
