@@ -9,11 +9,8 @@ import org.postgresql.copy.CopyIn;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.model.impl.statistic.AbstractStatistic;
 import org.zkoss.zss.model.impl.statistic.CombinedStatistic;
-import org.zkoss.zss.model.impl.statistic.CountStatistic;
 import org.zkoss.zss.model.impl.statistic.KeyStatistic;
 
 import java.io.IOException;
@@ -69,7 +66,7 @@ public class ROM_Model extends Model {
     }
 
     @Override
-    public String createNavS(SSheet currentsheet) {
+    public Object createNavS(SSheet currentsheet) {
         ArrayList<Bucket<String>> newList = this.navS.getUniformBuckets(0,currentsheet.getEndRowIndex());
         return "";
     }
@@ -773,11 +770,6 @@ public class ROM_Model extends Model {
     @Override
     public void setIndexString(String str) {
         this.indexString = str;
-    }
-
-    @Override
-    public String getNavChildren(int[] indices) {
-        return null;
     }
 
     @Override

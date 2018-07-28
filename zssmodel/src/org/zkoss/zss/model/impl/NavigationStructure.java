@@ -129,14 +129,21 @@ public class NavigationStructure {
         recordList = null;
     }
 
+    public Object getNavChildren(int[] paths) {
+        HashMap<String, Object> ret = new HashMap<>();
+        this.computeOnDemandBucket(paths);
+        ret.put("breadCrumb", getStringPath(paths));
+        ret.put("buckets", getSerializedBuckets());
+        return ret;
+    }
+
     /**
      * Serialize the newly created buckets to JSON format.
      *
      * @return
      */
-    public String getSerializedBuckets() {
+    public Object getSerializedBuckets() {
         class ScrollingProtocol {
-            public boolean clickable;
             public ArrayList<BucketGroup> data;
 
             class BucketGroup {
@@ -176,10 +183,9 @@ public class NavigationStructure {
         }
 
         ScrollingProtocol obj = new ScrollingProtocol(returnBuffer);
-        ObjectMapper mapper = new ObjectMapper();
 
         try {
-            return mapper.writeValueAsString(obj);
+            return obj.data;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -229,6 +235,18 @@ public class NavigationStructure {
             subRoot = subRoot.getChildren().get(paths[i]);
         }
         return subRoot;
+    }
+
+    public List<String> getStringPath(int[] paths) {
+        if (paths.length == 0) return null;
+        List<String> ret = new ArrayList<>();
+        Bucket<String> subRoot = this.navBucketTree.get(paths[0]);
+        ret.add(subRoot.toString());
+        for (int i = 1; i < paths.length; i++) {
+            subRoot = subRoot.getChildren().get(paths[i]);
+            ret.add(subRoot.toString());
+        }
+        return ret;
     }
 
     public void setNavBucketTree(ArrayList<Bucket<String>> navBucketTree) {

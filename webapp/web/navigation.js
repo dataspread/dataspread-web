@@ -373,8 +373,7 @@ function Explore(e) {
         console.log(colHeader)
         cumulativeDataSize = 0;
 
-        var result = JSON.parse(data.data);
-        currData = result.data;
+        currData = data.data;
         currRange = currData[currData.length - 1].rowRange[1] - currData[0].rowRange[0];
         console.log(currData);
 
@@ -893,11 +892,12 @@ function zoomIn(child, nav) {
     $.get(baseUrl + 'getChildren/' + bId + '/' + sName + '/' + childlist, function (data) {
 
         console.log(data);
-        var result = JSON.parse(data.data);
+        var result = data.data;
         //clickable = result.clickable;
         console.log(result)
         currLevel += 1;
-        currData = result.data;
+        currData = result.buckets;
+        console.log(currData)
         mergeCellInfo = [];
         mergeCellInfo.push({row: 0, col: 0, rowspan: currData.length, colspan: 1});
 

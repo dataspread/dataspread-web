@@ -11,20 +11,13 @@ import org.model.DBHandler;
 import org.postgresql.copy.CopyIn;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.jdbc.PgConnection;
-import org.zkoss.json.JSONArray;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.model.impl.statistic.AbstractStatistic;
-import org.zkoss.zss.model.impl.statistic.CombinedStatistic;
-import org.zkoss.zss.model.impl.statistic.CountStatistic;
-import org.zkoss.zss.model.impl.statistic.KeyStatistic;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.sql.*;
-import java.text.NumberFormat;
-import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
@@ -190,7 +183,7 @@ public class RCV_Model extends Model {
 
     @Override
     @SuppressWarnings("unchecked")
-    public String createNavS(SSheet currentSheet) {
+    public Object createNavS(SSheet currentSheet) {
         ROM_Model rom_model = (ROM_Model) ((Hybrid_Model) this).tableModels.get(0).y;
         int columnIndex = Integer.parseInt(indexString.split("_")[1]) - 1;
 
@@ -207,6 +200,12 @@ public class RCV_Model extends Model {
 
                 CountedBTree newOrder = new CountedBTree(context, null);
                 newOrder.insertIDs(context, tableRegion.getRow(), rowIds);
+                /*
+                Clear the Navigation history if using a lot of memory
+                 */
+                if (rom_model.rowOrderTable.size() >= 3) {
+                    rom_model.rowOrderTable.clear();
+                }
                 rom_model.rowOrderTable.put(indexString, newOrder);
                 rom_model.rowMapping = newOrder;
             }
@@ -215,27 +214,21 @@ public class RCV_Model extends Model {
         }
 
         //create nav data structure
-        if (this.navS.getIndexString()!=null && indexString.equals(this.navS.getIndexString())){
+        if (this.navS.getIndexString() != null && indexString.equals(this.navS.getIndexString())) {
             this.navS.resetToRoot();
             return this.navS.getSerializedBuckets();
-        } else{
+        } else {
             this.navS.clearAll();
         }
         this.navS.setIndexString(indexString);
         this.navS.setCurrentSheet(currentSheet);
-        this.navS.setTotalRows(currentSheet.getEndRowIndex()+1);
+        this.navS.setTotalRows(currentSheet.getEndRowIndex() + 1);
         ArrayList<Object> recordList = new ArrayList<>();
         navigationSortRangeByAttribute(currentSheet, 1, currentSheet.getEndRowIndex(), new int[]{columnIndex}, 0, recordList);
         this.navS.setRecordList(recordList);
         navS.initIndexedBucket(currentSheet.getEndRowIndex() + 1);
 
         return this.navS.getSerializedBuckets();
-    }
-
-    @Override
-    public String getNavChildren(int[] indices) {
-        this.navS.computeOnDemandBucket ( indices );
-        return navS.getSerializedBuckets();
     }
 
     @Override

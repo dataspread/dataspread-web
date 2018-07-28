@@ -5,7 +5,6 @@ import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.zss.model.*;
 
-import java.io.IOException;
 import java.io.Reader;
 import java.sql.*;
 import java.util.*;
@@ -44,7 +43,7 @@ public class TOM_Model extends Model {
     }
 
     @Override
-    public String createNavS(SSheet currentsheet) {
+    public Object createNavS(SSheet currentsheet) {
         return null;
     }
 
@@ -193,11 +192,6 @@ public class TOM_Model extends Model {
     @Override
     public void setIndexString(String str) {
         this.indexString = str;
-    }
-
-    @Override
-    public String getNavChildren(int[] indices) {
-        return null;
     }
 
     @Override

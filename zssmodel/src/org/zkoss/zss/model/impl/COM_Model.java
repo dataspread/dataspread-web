@@ -1,16 +1,10 @@
 package org.zkoss.zss.model.impl;
 
-import org.model.AutoRollbackConnection;
 import org.model.DBContext;
-import org.model.DBHandler;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SSheet;
 
-import java.io.IOException;
 import java.io.Reader;
-import java.sql.Array;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -38,7 +32,7 @@ public class COM_Model extends Model {
     }
 
     @Override
-    public String createNavS(SSheet currentsheet) {
+    public Object createNavS(SSheet currentsheet) {
         return null;
     }
 
@@ -137,11 +131,6 @@ public class COM_Model extends Model {
     @Override
     public void setIndexString(String str) {
         this.indexString = str;
-    }
-
-    @Override
-    public String getNavChildren(int[] indices) {
-        return null;
     }
 
 

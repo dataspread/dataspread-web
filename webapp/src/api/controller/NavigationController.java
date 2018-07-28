@@ -15,6 +15,7 @@ import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.Bucket;
 import org.zkoss.zss.model.impl.Model;
+import org.zkoss.zss.model.impl.RCV_Model;
 import org.zkoss.zss.model.impl.ROM_Model;
 import org.zkoss.zss.model.impl.sys.TableMonitor;
 import org.zkoss.zss.model.sys.BookBindings;
@@ -28,14 +29,14 @@ public class NavigationController {
     @RequestMapping(value = "/api/getSortAttrs/{bookId}/{sheetName}",
             method = RequestMethod.GET)
     public HashMap<String, Object> getSortAttrs(@PathVariable String bookId,
-                                               @PathVariable String sheetName){
-        System.out.println("getSortAttrs:"+bookId+","+sheetName);
+                                                @PathVariable String sheetName) {
+        System.out.println("getSortAttrs:" + bookId + "," + sheetName);
 
         SBook book = BookBindings.getBookById(bookId);
         SSheet currentSheet = book.getSheetByName(sheetName);
 
-        CellRegion tableRegion =  new CellRegion(0, 0,//100000,20);
-                0,currentSheet.getEndColumnIndex());
+        CellRegion tableRegion = new CellRegion(0, 0,//100000,20);
+                0, currentSheet.getEndColumnIndex());
 
         ArrayList<SCell> result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
 
@@ -47,17 +48,18 @@ public class NavigationController {
         return JsonWrapper.generateJson(headers);
 
     }
+
     //http://127.0.0.1:8080//api/startNav/bjhv2juw1/airbnb_small/0
     @RequestMapping(value = "/api/startNav/{bookId}/{sheetName}/{attr_index}",
             method = RequestMethod.GET)
     public HashMap<String, Object> startNav(@PathVariable String bookId,
                                             @PathVariable String sheetName,
-                                            @PathVariable String attr_index){
+                                            @PathVariable String attr_index) {
         System.out.println("startNav");
         SBook book = BookBindings.getBookById(bookId);
         SSheet currentSheet = book.getSheetByName(sheetName);
 
-        currentSheet.getDataModel().setIndexString("col_"+attr_index);
+        currentSheet.getDataModel().setIndexString("col_" + attr_index);
         currentSheet.clearCache();
 
 
@@ -69,10 +71,10 @@ public class NavigationController {
     @RequestMapping(value = "/api/getFlatten/{bookId}/{sheetName}/{path}",
             method = RequestMethod.GET)
     public HashMap<String, Object> getFlatten(@PathVariable String bookId,
-                                               @PathVariable String sheetName,
-                                               @PathVariable String path){
+                                              @PathVariable String sheetName,
+                                              @PathVariable String path) {
         System.out.println("Retrieve flattened view.");
-        if (path == null){
+        if (path == null) {
             path = "";
             System.out.println("Warning: null path as parameter.");
         }
@@ -92,8 +94,8 @@ public class NavigationController {
     @RequestMapping(value = "/api/getChildren/{bookId}/{sheetName}/{path}",
             method = RequestMethod.GET)
     public HashMap<String, Object> getChildren(@PathVariable String bookId,
-                                            @PathVariable String sheetName,
-                                            @PathVariable String path){
+                                               @PathVariable String sheetName,
+                                               @PathVariable String path) {
         System.out.println("zoom in");
         SBook book = BookBindings.getBookById(bookId);
         SSheet currentSheet = book.getSheetByName(sheetName);
@@ -104,7 +106,7 @@ public class NavigationController {
             indices[i] = Integer.parseInt(tokens[i]);
         }
 
-        return JsonWrapper.generateJson(currentSheet.getDataModel().getNavChildren(indices));
+        return JsonWrapper.generateJson(((RCV_Model) currentSheet.getDataModel()).navS.getNavChildren(indices));
 
     }
 
@@ -142,16 +144,16 @@ public class NavigationController {
 
     @RequestMapping(value = "/api/getHierarchicalAggregateFormula",
             method = RequestMethod.POST)
-    public HashMap<String, Object> getHierarchicalAggregateFormula(@RequestBody String value){
+    public HashMap<String, Object> getHierarchicalAggregateFormula(@RequestBody String value) {
         JSONParser parser = new JSONParser();
         System.out.println(value);
-        JSONObject dict = (JSONObject)parser.parse(value);
+        JSONObject dict = (JSONObject) parser.parse(value);
 
         System.out.println(dict);
 
-        String bookId = (String)dict.get("bookId");
-        String sheetName = (String)dict.get("sheetName");
-        String path = (String)dict.get("path");
+        String bookId = (String) dict.get("bookId");
+        String sheetName = (String) dict.get("sheetName");
+        String path = (String) dict.get("path");
         JSONArray formula_ls = (JSONArray) dict.get("formula_ls");
 
         SBook book = BookBindings.getBookById(bookId);
@@ -165,10 +167,9 @@ public class NavigationController {
         List<List<String>> param_arr_ls = new ArrayList<>();
         List<Boolean> getCharts = new ArrayList<>();
 
-        for(int i=0;i<formula_ls.size();i++)
-        {
+        for (int i = 0; i < formula_ls.size(); i++) {
             JSONObject temp = (JSONObject) formula_ls.get(i);
-            attrIndices[i] = Integer.parseInt((String)temp.get("attr_index")) - 1;
+            attrIndices[i] = Integer.parseInt((String) temp.get("attr_index")) - 1;
             aggregates[i] = (String) temp.get("function");
             getCharts.add((Boolean) temp.get("getChart"));
 
@@ -176,7 +177,7 @@ public class NavigationController {
 
             List<String> param_arr = new ArrayList<>();
 
-            for(int j=0;j<param_ls.size();j++)
+            for (int j = 0; j < param_ls.size(); j++)
                 param_arr.add((String) param_ls.get(j));
 
             param_arr_ls.add(param_arr);

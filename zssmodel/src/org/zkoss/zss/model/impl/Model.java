@@ -118,12 +118,10 @@ public abstract class Model {
     // Clone only the corresponding tables in postgres
     public abstract Model clone(DBContext dbContext, SSheet sheet, String modelName);
 
-    public abstract String createNavS(SSheet currentsheet);
+    public abstract Object createNavS(SSheet currentsheet);
 
     public abstract ArrayList<String> getHeaders();
     public abstract void setIndexString(String str);
-
-    public abstract String getNavChildren(int[] indices);
 
     /**
      * Sort a bucket based on a given attribute. Calls the navigation structure to get starting / ending row number and then call the {@link #navigationSortRangeByAttribute(SSheet, int, int, int[], int)}

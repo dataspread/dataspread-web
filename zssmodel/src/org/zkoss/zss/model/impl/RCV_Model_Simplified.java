@@ -43,7 +43,7 @@ public class RCV_Model_Simplified extends Model {
     }
 
     @Override
-    public String createNavS(SSheet currentsheet) {
+    public Object createNavS(SSheet currentsheet) {
         return null;
     }
 
@@ -55,11 +55,6 @@ public class RCV_Model_Simplified extends Model {
     @Override
     public void setIndexString(String str) {
 
-    }
-
-    @Override
-    public String getNavChildren(int[] indices) {
-        return null;
     }
 
     //Copy the table
