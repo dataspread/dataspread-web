@@ -162,20 +162,6 @@ public class BookController {
         return bookWrapper(bookId, newBookName);
     }
 
-    @PostMapping("/api/importFile")
-    public Map<String, Object> uploadFile(@RequestParam("file") MultipartFile file,
-                                          @RequestParam("resumableIdentifier") String uploadIdentifier,
-                                          @RequestParam("resumableChunkNumber") int chunkNumber,
-                                          @RequestParam("resumableCurrentChunkSize") int chunkSize,
-                                          @RequestParam("resumableTotalSize") long totalSize,
-                                          @RequestParam("resumableTotalChunks") int totalChunks) {
-        Map<String, Object> ret = new HashMap<>();
-
-
-        return ret;
-    }
-
-
     @RequestMapping(value = "/api/importBook",
             method = RequestMethod.POST)
     public HashMap<String, Object> importBook(InputStream dataStream){
