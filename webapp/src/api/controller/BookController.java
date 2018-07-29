@@ -31,8 +31,6 @@ public class BookController {
     @Autowired
     private SimpMessagingTemplate template;
 
-    //TODO importBook
-
     @RequestMapping(value = "/api/getSyncBooks",
             method = RequestMethod.GET)
     public HashMap<String, Object> getSyncBooks(){

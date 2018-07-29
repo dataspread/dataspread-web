@@ -12,8 +12,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
-import java.util.HashMap;
-import java.util.Map;
 
 @CrossOrigin(origins = {"http://localhost:63342", "*"})
 @RestController
@@ -37,13 +35,9 @@ public class ImportController {
         ResumableInfo info = storage.get(resumableChunkSize, resumableTotalSize,
                 resumableIdentifier, resumableFilename, resumableFilePath);
 
-
         RandomAccessFile raf = new RandomAccessFile(info.resumableFilePath, "rw");
-
-        //Seek to position
         raf.seek((resumableChunkNumber - 1) * (long)info.resumableChunkSize);
 
-        //Save to file
         InputStream is = file.getInputStream();
         long read = 0;
         long content_length = file.getSize();
@@ -58,12 +52,13 @@ public class ImportController {
         }
         is.close();
         raf.close();
+
         info.uploadedChunks.add(new ResumableInfo.ResumableChunkNumber(resumableChunkNumber));
         if (info.checkIfUploadFinished()) { //Check if all chunks uploaded, and change filename
             ResumableInfoStorage.getInstance().remove(info);
             System.out.println("File uploaded to " + UPLOAD_DIR);
 
-            return "All finished.";
+            return "All chunks finished.";
         }
         else {
             return null;
