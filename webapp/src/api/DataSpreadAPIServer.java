@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
+
 @SpringBootApplication
 public class DataSpreadAPIServer extends SpringBootServletInitializer {
 
@@ -34,5 +36,18 @@ class GreetingController {
     @RequestMapping("/hello/{name}")
     String hello(@PathVariable String name) {
         return "Hello, " + name + "!";
+    }
+
+    @RequestMapping("/getRows/{start}/{end}")
+    ArrayList<String> hello1(@PathVariable int start,
+                  @PathVariable int end) {
+        ArrayList<String> out=new ArrayList<>();
+        System.out.println("getRows " + start + " " + end   );
+        for (int i=start;i<=end;i++)
+        {
+            out.add(Integer.toString(i));
+
+        }
+        return out;
     }
 }

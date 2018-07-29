@@ -7,6 +7,7 @@ import org.model.DBHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.zkoss.json.JSONArray;
 import org.zkoss.poi.util.IOUtils;
 import org.zkoss.zss.model.SBook;
@@ -20,14 +21,15 @@ import java.sql.SQLException;
 import java.util.*;
 import org.json.JSONObject;
 
+import javax.servlet.annotation.MultipartConfig;
+
 import static api.WebSocketConfig.MESSAGE_PREFIX;
 
+@CrossOrigin(origins = {"http://localhost:63342", "*"})
 @RestController
 public class BookController {
     @Autowired
     private SimpMessagingTemplate template;
-
-    //TODO importBook
 
     @RequestMapping(value = "/api/getSyncBooks",
             method = RequestMethod.GET)
