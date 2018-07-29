@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 
-@CrossOrigin(origins = {"http://localhost:63342", "*"})
 @RestController
 public class ImportController {
     static final String UPLOAD_DIR = System.getProperty("java.io.tmpdir");

@@ -46,7 +46,7 @@ class DSGrid extends React.Component {
 
                 <ReactResumableJs
                     uploaderID="importBook"
-                    service="http://localhost:8080/api/importFile"
+                    service="/api/importFile"
                     onFileSuccess={(file, message) => {
                         console.log(file, message);
                     }}
@@ -91,7 +91,7 @@ class DSGrid extends React.Component {
             console.log(this.bookName);
         }
         else if (name == "bookLoadButton") {
-            fetch("http://localhost:8080/api/getSheets/" + this.bookName)
+            fetch("/api/getSheets/" + this.bookName)
                 .then(res => res.json())
                 .then(
                     (result) => {
@@ -132,7 +132,7 @@ class DSGrid extends React.Component {
 
     _loadMoreRows({startIndex, stopIndex}) {
         console.log('loadMoreRows' + startIndex + " " + stopIndex);
-        fetch("http://localhost:8080/api/getCellsV2/" + this.bookName
+        fetch("/api/getCellsV2/" + this.bookName
             + "/Sheet1/" + (startIndex) + "/" + (stopIndex))
             .then(res => res.json())
             .then(
@@ -189,7 +189,7 @@ class DSGrid extends React.Component {
                     let startIndex = Math.trunc((rowIndex - 1) / this.fetchSize) * this.fetchSize;
                     let stopIndex = startIndex + this.fetchSize;
                     console.log("Fetching  " + startIndex + " " + stopIndex);
-                    fetch("http://localhost:8080/api/getCellsV2/" + this.bookName
+                    fetch("/api/getCellsV2/" + this.bookName
                         + "/Sheet1/" + startIndex + "/" + stopIndex)
                         .then(res => res.json())
                         .then(

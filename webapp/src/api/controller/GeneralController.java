@@ -36,7 +36,6 @@ import org.zkoss.json.*;
 
 import static api.WebSocketConfig.MESSAGE_PREFIX;
 
-@CrossOrigin(origins = {"http://localhost:63342", "*"})
 @RestController
 public class GeneralController {
     private static final Logger logger = Logger.getLogger(GeneralController.class.getName());

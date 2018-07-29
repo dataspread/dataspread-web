@@ -15,7 +15,6 @@ import org.json.JSONObject;
 
 import static api.WebSocketConfig.MESSAGE_PREFIX;
 
-@CrossOrigin(origins = {"http://localhost:63342", "*"})
 @RestController
 public class SheetController {
     @Autowired

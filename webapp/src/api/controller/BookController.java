@@ -25,7 +25,6 @@ import javax.servlet.annotation.MultipartConfig;
 
 import static api.WebSocketConfig.MESSAGE_PREFIX;
 
-@CrossOrigin(origins = {"http://localhost:63342", "*"})
 @RestController
 public class BookController {
     @Autowired
