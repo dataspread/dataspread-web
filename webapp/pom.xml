@@ -170,7 +170,7 @@
         <sourceDirectory>${project.basedir}/src</sourceDirectory>
         <resources>
             <resource>
-                <directory>${project.basedir}/src</directory>
+                <directory>${project.basedir}/web/WEB-INF</directory>
             </resource>
         </resources>
         <plugins>

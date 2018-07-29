@@ -1705,7 +1705,12 @@
             key: "getTotalSize",
             value: function() {
                 var lastMeasuredCellSizeAndPosition = this.getSizeAndPositionOfLastMeasuredCell();
-                return lastMeasuredCellSizeAndPosition.offset + lastMeasuredCellSizeAndPosition.size + (this._cellCount - this._lastMeasuredIndex - 1) * this._estimatedCellSize;
+                // Mangesh - Fixed cell height
+                // return lastMeasuredCellSizeAndPosition.offset + lastMeasuredCellSizeAndPosition.size + (this._cellCount - this._lastMeasuredIndex - 1) * this._estimatedCellSize;
+                var _size = this._cellSizeGetter({
+                    index: 0
+                });
+                return this._cellCount * _size;
             }
         }, {
             key: "getUpdatedOffsetForIndex",

@@ -4,7 +4,6 @@ const STATE_LOADING = 0;
 
 class DSGrid extends React.Component {
 
-
     toColumnName(num) {
         for (var ret = '', a = 1, b = 26; (num -= a) >= 0; a = b, b *= 26) {
             ret = String.fromCharCode(parseInt((num % b) / a) + 65) + ret;
@@ -28,6 +27,10 @@ class DSGrid extends React.Component {
         this._handleEvent = this._handleEvent.bind(this);
     }
 
+    componentDidMount() {
+
+    }
+
     render() {
         return (
             <div>
@@ -40,6 +43,18 @@ class DSGrid extends React.Component {
                     onClick={this._handleEvent}>
                     Load
                 </semanticUIReact.Button>
+
+                <ReactResumableJs
+                    uploaderID="importBook"
+                    service="http://localhost:8080/api/importFile"
+                    onFileSuccess={(file, message) => {
+                        console.log(file, message);
+                    }}
+                    onFileAdded={(file, resumable) => {
+                        resumable.upload();
+                    }}
+                />
+
 
                 <div style={{display: 'flex'}}>
                     <div style={{flex: 'auto', height: '90vh'}}>
@@ -159,8 +174,7 @@ class DSGrid extends React.Component {
         else {
             let fromCache = this.dataCache.get(Math.trunc((rowIndex - 1) / this.fetchSize));
             //console.log("fromCache " + fromCache);
-            if (typeof fromCache == "object")
-            {
+            if (typeof fromCache == "object") {
                 content = this.dataCache
                     .get(Math.trunc((rowIndex - 1) / this.fetchSize))
                     [(rowIndex - 1) % this.fetchSize][columnIndex - 1];
@@ -169,7 +183,7 @@ class DSGrid extends React.Component {
                 content = '';
             }
             else {
-                if (typeof fromCache == "undefined") {
+                if (typeof fromCache == "undefined" && typeof this.bookName != "undefined") {
                     this.dataCache.set(Math.trunc((rowIndex - 1) / this.fetchSize), STATE_LOADING);
                     // Load data - only if not scrolling.
                     let startIndex = Math.trunc((rowIndex - 1) / this.fetchSize) * this.fetchSize;
