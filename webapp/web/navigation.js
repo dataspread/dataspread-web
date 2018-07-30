@@ -439,6 +439,7 @@ function Explore(e) {
                             case 1:
                                 return colHeader[1];
                             default:
+                                let check = aggregateData.formula_ls[col-2].getChart ? "checked" : "";
                                 return colHeader[col] + "<span id='colClose'>x</span>" + "<label class=\"switch\">" +
                                     "  <input type=\"checkbox\"" + check + ">" +
                                     "  <span class=\"slider round\"></span>" +
