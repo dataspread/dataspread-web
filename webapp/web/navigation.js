@@ -488,7 +488,10 @@ function Explore(e) {
                     console.log(viewData)
                 }
                 if (e.realTarget.classList['0'] == "slider") {
-                    aggregateData.formula_ls[coords.col - 1].getChart = !aggregateData.formula_ls[coords.col - 1].getChart;
+                    let level = coords.col - 1;
+                    if(currLevel > 0)
+                        level = coords.col - 2;
+                    aggregateData.formula_ls[level].getChart = !aggregateData.formula_ls[level].getChart;
                     getAggregateValue();
                 }
             },
