@@ -44,21 +44,20 @@ public class NavigationHistogram {
 
     private static class QuickSelect {
         Double quickSelect(ArrayList<Double> G, int k) {
-            return quickSelect(G, 0, G.size() - 1, k - 1);
-        }
-
-        private Double quickSelect(ArrayList<Double> G, int first, int last, int k) {
-            if (first <= last) {
+            int first = 0, last = G.size() - 1;
+            while (true) {
+                if (first > last)
+                    return Double.NEGATIVE_INFINITY;
                 int pivot = partition(G, first, last);
                 if (pivot == k) {
                     return G.get(k);
                 }
                 if (pivot > k) {
-                    return quickSelect(G, first, pivot - 1, k);
+                    last = pivot - 1;
+                } else {
+                    first = pivot + 1;
                 }
-                return quickSelect(G, pivot + 1, last, k);
             }
-            return Double.NEGATIVE_INFINITY;
         }
 
         private int partition(ArrayList<Double> G, int first, int last) {
@@ -131,6 +130,7 @@ public class NavigationHistogram {
             if (key > maxV || key < minV)
                 return;
             Double eKey = hist.floorKey(key);
+            //noinspection ConstantConditions
             hist.compute(eKey, (_ignored, val) -> val + inc);
         };
         Consumer<Double> addOneToKey = key -> addToKey.accept(key, 1);
