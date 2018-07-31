@@ -23,23 +23,16 @@ public class NavigationController {
             method = RequestMethod.GET)
     public HashMap<String, Object> getSortAttrs(@PathVariable String bookId,
                                                 @PathVariable String sheetName) {
-        System.out.println("getSortAttrs:" + bookId + "," + sheetName);
-
         SBook book = BookBindings.getBookById(bookId);
         SSheet currentSheet = book.getSheetByName(sheetName);
-
         CellRegion tableRegion = new CellRegion(0, 0,//100000,20);
                 0, currentSheet.getEndColumnIndex());
-
         ArrayList<SCell> result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
-
         JSONArray headers = new JSONArray();
-
         for (SCell aResult : result) {
             headers.add(aResult.getStringValue());
         }
         return JsonWrapper.generateJson(headers);
-
     }
 
     //http://127.0.0.1:8080//api/startNav/bjhv2juw1/airbnb_small/0
@@ -48,15 +41,11 @@ public class NavigationController {
     public HashMap<String, Object> startNav(@PathVariable String bookId,
                                             @PathVariable String sheetName,
                                             @PathVariable String attr_index) {
-        System.out.println("startNav");
         SBook book = BookBindings.getBookById(bookId);
         SSheet currentSheet = book.getSheetByName(sheetName);
-
         currentSheet.getDataModel().setIndexString("col_" + attr_index);
         currentSheet.clearCache();
-
         return JsonWrapper.generateJson(currentSheet.getDataModel().navS.createNavS(currentSheet));
-
     }
 
     //http://127.0.0.1:8080//api/getFlatten/tjhtmdfii/airbnb_small/0,2
@@ -72,7 +61,6 @@ public class NavigationController {
         }
         SBook book = BookBindings.getBookById(bookId);
         SSheet currentSheet = book.getSheetByName(sheetName);
-
         String[] tokens = path.split(",");
         int[] indices = new int[tokens.length];
         for (int i = 0; i < tokens.length; i++) {
@@ -97,9 +85,7 @@ public class NavigationController {
         for (int i = 0; i < tokens.length; i++) {
             indices[i] = Integer.parseInt(tokens[i]);
         }
-
         return JsonWrapper.generateJson(((RCV_Model) currentSheet.getDataModel()).navS.getNavChildren(indices));
-
     }
 
     ///api/sortBlock/{bookId}/{sheetName}/{path}/{attr_indices}/{order}
@@ -117,16 +103,13 @@ public class NavigationController {
         SSheet currentSheet = book.getSheetByName(sheetName);
 
         int[] indices = getIndices(path);
-
         int[] attrIndices;
         String[] tokens = attr_indices.split(",");
         attrIndices = new int[tokens.length];
         for (int i = 0; i < tokens.length; i++) {
             attrIndices[i] = Integer.parseInt(tokens[i]) - 1;
         }
-
         int orderInt = Integer.parseInt(order);
-
         currentSheet.getDataModel().navigationSortBucketByAttribute(currentSheet, indices, attrIndices, orderInt);
         JSONObject retObj = new JSONObject();
         retObj.put("success", true);
@@ -140,9 +123,6 @@ public class NavigationController {
         JSONParser parser = new JSONParser();
         System.out.println(value);
         JSONObject dict = (JSONObject) parser.parse(value);
-
-        System.out.println(dict);
-
         String bookId = (String) dict.get("bookId");
         String sheetName = (String) dict.get("sheetName");
         String path = (String) dict.get("path");
@@ -153,7 +133,6 @@ public class NavigationController {
 
         int[] indices;
         indices = getIndices(path);
-
         int[] attrIndices = new int[formula_ls.size()];
         String[] aggregates = new String[formula_ls.size()];
         List<List<String>> param_arr_ls = new ArrayList<>();
@@ -164,17 +143,11 @@ public class NavigationController {
             attrIndices[i] = Integer.parseInt((String) temp.get("attr_index")) - 1;
             aggregates[i] = (String) temp.get("function");
             getCharts.add((Boolean) temp.get("getChart"));
-
             JSONArray param_ls = (JSONArray) temp.get("param_ls");
-
             List<String> param_arr = new ArrayList<>();
-
-            for (int j = 0; j < param_ls.size(); j++)
-                param_arr.add((String) param_ls.get(j));
-
+            for (Object param_l : param_ls) param_arr.add((String) param_l);
             param_arr_ls.add(param_arr);
         }
-
         List<List<Object>> agg;
         try {
             Model model = currentSheet.getDataModel();
@@ -199,5 +172,4 @@ public class NavigationController {
         }
         return indices;
     }
-
 }
