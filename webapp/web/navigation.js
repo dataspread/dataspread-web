@@ -1178,7 +1178,130 @@ $("#sort-form").submit(function (e) {
 
 function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
     let colOffset = (currLevel == 0) ? 1 : 2;
-    if (navAggRawData[col - colOffset][row].chartType == 1) {
+    if (navAggRawData[col - colOffset][row].chartType == 0) {
+        let tempString = "chartdiv" + row + col;
+        td.innerHTML = "<div id=" + tempString + " ></div>";
+        console.log(td.innerHTML)
+
+        let chartData = navAggRawData[col - colOffset][row]['chartData'];
+        let distribution = [];
+
+        distribution.push({min: chartData[0], max:chartData[1]});
+
+        let min = navAggRawData[col - colOffset][0]['value'];
+        let max = navAggRawData[col - colOffset][0]['value'];
+        for (let i = 0; i < navAggRawData[col - colOffset].length; i++) {
+            if (navAggRawData[col - colOffset][i]['value'] < min) {
+                min = navAggRawData[col - colOffset][i]['value'];
+            } else if (navAggRawData[col - colOffset][i]['value'] > min) {
+                max = navAggRawData[col - colOffset][i]['value'];
+            }
+        }
+
+
+        var margin = {top: 20, right: 40, bottom: 18, left: 15};
+        // here, we want the full chart to be 700x200, so we determine
+        // the width and height by subtracting the margins from those values
+        var fullWidth = wrapperWidth * 0.14;
+        var fullHeight = nav.getRowHeight(row);
+
+        // the width and height values will be used in the ranges of our scales
+        var width = fullWidth - margin.right - margin.left;
+        var height = fullHeight - margin.top - margin.bottom;
+        var svg = d3.select('#' + tempString).append('svg')
+            .attr('width', fullWidth)
+            .attr('height', fullHeight)
+            // this g is where the bar chart will be drawn
+            .append('g')
+            // translate it to leave room for the left and top margins
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+
+        svg.append("rect")
+            .attr("x", width + margin.right / 4)
+            .attr("y", 0 - margin.top)
+            .attr("width", margin.right)
+            .attr("height", fullHeight)
+            .attr("fill", d3.interpolateGreens(((value - min) * 0.85 + 0.15) / (max - min)))
+
+        svg.append("text")
+            .attr("x", (width / 2))
+            .attr("y", 0 - (margin.top / 2))
+            .attr("text-anchor", "middle")
+            .style("font-size", "10px")
+            .style("font-weight", "bold")
+            .text(value);
+
+         // draw the rectangle
+        //'#0099ff'
+
+        var valueBar = svg.append("rect")
+                                  .attr("x", 0)
+                                  .attr("y", height / 2)
+                                   .attr("width", width)
+                                    .attr("height", function () {
+                                        if(height/4 > 10 && height/4<50)
+                                            return height/4;
+                                        else
+                                            return 40;
+                                    })
+                                 .attr("fill",'#0099ff');
+        //add value rectangle
+        var xScale = d3.scaleLinear()
+            .domain([distribution[0].min, distribution[0].max])
+            .range([0,width])
+            .nice();
+
+        var highlightBar = svg.append("rect")
+            .attr("x", xScale(value))
+            .attr("y", height / 4)
+            .attr("width", 2)
+            .attr("height", function () {
+                if(height/4 > 10 && height/4<50)
+                    return 2*height/4;
+                else
+                    return 2*40;
+            })
+            .attr("fill",'#000000');
+        //add min, max, value text
+        svg.append("text")
+            .attr("x", 0)
+            .attr("y", function () {
+                if(height/4 > 10 && height/4<50)
+                    return height / 2+height/4+1;
+                else
+                    return height / 2+ 40+1;
+            })
+            .attr("text-anchor", "middle")
+            .style("font-size", "10px")
+            .style("font-weight", "bold")
+            .text(distribution[0].min);
+        svg.append("text")
+            .attr("x", width)
+            .attr("y", function () {
+                if(height/4 > 10 && height/4<50)
+                    return 10+height / 2+height/4+1;
+                else
+                    return 10+height / 2+ 40+1;
+            })
+            .attr("text-anchor", "middle")
+            .style("font-size", "10px")
+            .style("font-weight", "bold")
+            .text(distribution[0].max);
+        svg.append("text")
+            .attr("x", xScale(value))
+            .attr("y", function () {
+                if(height/4 > 10 && height/4<50)
+                    return 10+height / 2+2*height/4+1;
+                else
+                    return 10+height / 2+ 2*40+1;
+            })
+            .attr("text-anchor", "middle")
+            .style("font-size", "10px")
+            .style("font-weight", "bold")
+            .text(value);
+    }
+    else if (navAggRawData[col - colOffset][row].chartType == 1) {
         let tempString = "chartdiv" + row + col;
         td.innerHTML = "<div id=" + tempString + " ></div>";
         console.log(td.innerHTML)
