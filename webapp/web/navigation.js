@@ -1199,34 +1199,34 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
         }
 
 
-        var margin = {top: 20, right: 40, bottom: 18, left: 15};
+        let margin = {top: 20, right: 40, bottom: 18, left: 35};
         // here, we want the full chart to be 700x200, so we determine
         // the width and height by subtracting the margins from those values
-        var fullWidth = wrapperWidth * 0.14;
-        var fullHeight = nav.getRowHeight(row);
+        let fullWidth = wrapperWidth * 0.14;
+        let fullHeight = nav.getRowHeight(row);
 
         // the width and height values will be used in the ranges of our scales
-        var width = fullWidth - margin.right - margin.left;
-        var height = fullHeight - margin.top - margin.bottom;
-        var svg = d3.select('#' + tempString).append('svg')
+        let width = fullWidth - margin.right - margin.left;
+        let height = fullHeight;
+        let svg = d3.select('#' + tempString).append('svg')
             .attr('width', fullWidth)
             .attr('height', fullHeight)
             // this g is where the bar chart will be drawn
             .append('g')
             // translate it to leave room for the left and top margins
-            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+           .attr('transform', 'translate(' + margin.left + ',0)');
 
 
         svg.append("rect")
             .attr("x", width + margin.right / 4)
-            .attr("y", 0 - margin.top)
+            .attr("y", 0)
             .attr("width", margin.right)
             .attr("height", fullHeight)
-            .attr("fill", d3.interpolateGreens(((value - min) * 0.85 + 0.15) / (max - min)))
+            .attr("fill", d3.interpolateGreens(((value - min)/ (max - min))*0.85+0.15));
 
         svg.append("text")
             .attr("x", (width / 2))
-            .attr("y", 0 - (margin.top / 2))
+            .attr("y", (margin.top / 2))
             .attr("text-anchor", "middle")
             .style("font-size", "10px")
             .style("font-weight", "bold")
@@ -1234,55 +1234,40 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
 
          // draw the rectangle
         //'#0099ff'
-
-        var valueBar = svg.append("rect")
-                                  .attr("x", 0)
-                                  .attr("y", height / 2)
+        let fraction = 3; //what fraction of container is the valuebar
+        let valueBarHeight = height/fraction;
+        let valueBar = svg.append("rect")
+                                  .attr("x", 0-margin.left/2)
+                                  .attr("y", height/2 - valueBarHeight/ 2)
                                    .attr("width", width)
-                                    .attr("height", function () {
-                                        if(height/4 > 10 && height/4<50)
-                                            return height/4;
-                                        else
-                                            return 40;
-                                    })
+                                    .attr("height", valueBarHeight)
                                  .attr("fill",'#0099ff');
         //add value rectangle
-        var xScale = d3.scaleLinear()
+        let xScale = d3.scaleLinear()
             .domain([distribution[0].min, distribution[0].max])
-            .range([0,width])
+            .range([0-margin.left/2,width-margin.left/2])
             .nice();
 
         var highlightBar = svg.append("rect")
             .attr("x", xScale(value))
-            .attr("y", height / 4)
+            .attr("y", height/2 - valueBarHeight)
             .attr("width", 2)
-            .attr("height", function () {
-                if(height/4 > 10 && height/4<50)
-                    return 2*height/4;
-                else
-                    return 2*40;
-            })
+            .attr("height", 2*valueBarHeight)
             .attr("fill",'#000000');
         //add min, max, value text
         svg.append("text")
-            .attr("x", 0)
+            .attr("x", xScale(distribution[0].min)-5)
             .attr("y", function () {
-                if(height/4 > 10 && height/4<50)
-                    return height / 2+height/4+1;
-                else
-                    return height / 2+ 40+1;
+                return height / 2+ valueBarHeight/2+8;
             })
             .attr("text-anchor", "middle")
             .style("font-size", "10px")
             .style("font-weight", "bold")
             .text(distribution[0].min);
         svg.append("text")
-            .attr("x", width)
+            .attr("x", xScale(distribution[0].max)+5)
             .attr("y", function () {
-                if(height/4 > 10 && height/4<50)
-                    return 10+height / 2+height/4+1;
-                else
-                    return 10+height / 2+ 40+1;
+                return height / 2+ valueBarHeight/2+8;
             })
             .attr("text-anchor", "middle")
             .style("font-size", "10px")
@@ -1291,10 +1276,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
         svg.append("text")
             .attr("x", xScale(value))
             .attr("y", function () {
-                if(height/4 > 10 && height/4<50)
-                    return 10+height / 2+2*height/4+1;
-                else
-                    return 10+height / 2+ 2*40+1;
+                return height/2 + valueBarHeight+10;
             })
             .attr("text-anchor", "middle")
             .style("font-size", "10px")
@@ -1349,7 +1331,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             .attr("y", 0 - margin.top)
             .attr("width", margin.right)
             .attr("height", fullHeight)
-            .attr("fill", d3.interpolateGreens(((value - min) * 0.85 + 0.15) / (max - min)))
+            .attr("fill", d3.interpolateGreens(((value - min)/ (max - min))*0.85+0.15));
 
         svg.append("text")
             .attr("x", (width / 2))
