@@ -165,7 +165,7 @@ public class NavigationHistogram {
     void formattedOutput(Map<String, Object> obj, Object queryValue) {
         List<Integer> freq = getFrequencies();
         if (freq.size() == 0) {
-            obj.put("chartType", 3);
+            obj.put("chartType", -1);
             return;
         }
         Map<String, Object> chartData = new HashMap<>();

@@ -16,6 +16,7 @@ class NavChartsPrototype {
 
     /**
      * Get the globally unique instance of this class.
+     *
      * @return The unique instance.
      */
     static NavChartsPrototype getPrototype() {
@@ -35,8 +36,10 @@ class NavChartsPrototype {
             type1Chart(obj, attr, subGroup);
         else if (type == 2)
             type2Chart(obj, attr, subGroup);
+        else if (type == 3)
+            type3Chart(obj, attr, subGroup);
         else
-            obj.put("chartType", 3);
+            obj.put("chartType", -1);
         NavChartsPrototype.model = null;
         NavChartsPrototype.navS = null;
     }
@@ -65,14 +68,22 @@ class NavChartsPrototype {
 
     private void type2Chart(Map<String, Object> obj, int attr, Bucket<String> subGroup) {
         obj.put("chartType", 2);
-        List<Double> chartData = new ArrayList<>();
+        NavigationHistogram hist = new NavigationHistogram(navS.collectDoubleValues(attr, subGroup));
+        hist.formattedOutput(obj, null);
+
+        HashMap<String, Object> chartData = (HashMap) obj.get("chartData");
         for (String formula : type2Stat) {
             List<String> emptyList = new ArrayList<>();
             emptyList.add("");
             Map<String, Object> res = navS.getBucketAggWithMemoization(model, subGroup, attr, formula, emptyList);
-            chartData.add((Double) res.get("value"));
+            chartData.put(formula, res.get("value"));
         }
-        obj.put("chartData", chartData);
+    }
+
+    private void type3Chart(Map<String, Object> obj, int attr, Bucket<String> subGroup) {
+        obj.put("chartType", 3);
+        NavigationHistogram hist = new NavigationHistogram(navS.collectDoubleValues(attr, subGroup));
+        hist.formattedOutput(obj, null);
     }
 
     /**
@@ -83,11 +94,14 @@ class NavChartsPrototype {
                 "AVERAGE", "MAX", "MAXA", "MIN", "MINA", "MEDIAN"
         };
         String[] freqType = new String[]{
-                "COUNT", "COUNTIF", "COUNTA", "COUNTBLANK", "MODE", "RANK", "LARGE", "SMALL"
+                "MODE", "LARGE", "SMALL"
         };
         String[] spreadType = new String[]{
-                "SUM", "SUMIF"
+                "VARIANCE", "STDEV"
         };
+        String[] otherType = new String[]{
+                "COUNT", "COUNTIF", "COUNTA", "COUNTBLANK", "SUM", "SUMIF", "RANK"
+        }; // TODO: Put SUM, SUMIF, RANK into freqType (with highlight)
 
         chartType = new HashMap<>();
         for (String x : valueType) {
@@ -98,6 +112,9 @@ class NavChartsPrototype {
         }
         for (String x : spreadType) {
             chartType.put(x, 2);
+        }
+        for (String x : otherType) {
+            chartType.put(x, 3);
         }
     }
 }
