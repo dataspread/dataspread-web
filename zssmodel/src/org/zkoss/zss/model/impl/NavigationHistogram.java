@@ -19,6 +19,7 @@ public class NavigationHistogram {
 
     private static final int MAX_BARS = 6; // corresponding to 27 unique values
     private ArrayList<Double> numData;
+    private static final double OFFSET = 0.05;
     private int numberOfBins;
     private List<Double> bins;
     private TreeMap<Double, Integer> hist;
@@ -34,7 +35,7 @@ public class NavigationHistogram {
     private void findMinMax() {
         minV = Double.POSITIVE_INFINITY;
         maxV = Double.NEGATIVE_INFINITY;
-        int offSet = (int) (0.05 * numData.size());
+        int offSet = (int) (OFFSET * numData.size());
         if (offSet > 0) {
             QuickSelect selector = new QuickSelect();
             minV = selector.quickSelect(numData, offSet);
@@ -160,6 +161,18 @@ public class NavigationHistogram {
             generateHistogram();
         }
         return bins;
+    }
+
+    int queryBinByRank(int rank) {
+        int sum = (int) (numData.size() * OFFSET);
+        if (sum >= rank)
+            return -1;
+        for (int i = 0; i < bins.size() - 1; i++) {
+            sum += hist.get(bins.get(i));
+            if (sum >= rank)
+                return i;
+        }
+        return bins.size() - 1;
     }
 
     void formattedOutput(Map<String, Object> obj, Object queryValue) {

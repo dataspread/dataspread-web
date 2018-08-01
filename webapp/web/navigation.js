@@ -144,6 +144,7 @@ $("#Explore").click(function () {
         //customize input field for different formula
         $("#aggregateOpt0").change(function () {
             // Do something with the previous value after the change
+            let tempString;
             $(this).nextAll().remove();
             switch (this.value) {
                 case "COUNTIF":
@@ -155,7 +156,7 @@ $("#Explore").click(function () {
                     $(this).after("<span>Int:&nbsp</span><input class='' type='text' name='' id='aggrePara0'>");
                     break;
                 case "SUBTOTAL":
-                    let tempString = "<select class='' id='aggrePara0'><option value='' disabled selected hidden>Function_num</option>";
+                    tempString = "<select class='' id='aggrePara0'><option value='' disabled selected hidden>Function_num</option>";
                     for (let i = 0; i < subtotalFunc.length; i++) {
                         tempString += "<option value='" + (i + 1) + "''>" + subtotalFunc[i] + "</option>";
                     }
@@ -164,7 +165,7 @@ $("#Explore").click(function () {
                     break;
                 case "RANK":
                     tempString = "<span>Value:&nbsp</span><input class='' type='text' name='' id='aggrePara0'>";
-                    tempString += "<select class='' id='aggrePara00'><option value='0' selected >ascending</option><option value='1'>descending</option></select>"
+                    tempString += "<select class='' id='aggrePara00'><option value='1' selected >ascending</option><option value='0'>descending</option></select>"
                     $(this).after(tempString);
                     break;
             }

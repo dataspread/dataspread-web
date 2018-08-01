@@ -33,19 +33,19 @@ class NavChartsPrototype {
         if (type == 0)
             type0Chart(obj, attr, subGroup);
         else if (type == 1)
-            type1Chart(obj, attr, subGroup);
+            type1Chart(obj, attr, subGroup, formula);
         else if (type == 2)
             type2Chart(obj, attr, subGroup);
         else if (type == 3)
             type3Chart(obj, attr, subGroup);
         else
-            obj.put("chartType", -1);
+            obj.put("chartType", type);
         NavChartsPrototype.model = null;
         NavChartsPrototype.navS = null;
     }
 
     private int getChartType(String formulaStr) {
-        return chartType.getOrDefault(formulaStr, 3);
+        return chartType.getOrDefault(formulaStr, -1);
     }
 
     private void type0Chart(Map<String, Object> obj, int attr, Bucket<String> subGroup) {
@@ -58,6 +58,18 @@ class NavChartsPrototype {
             chartData.add((Double) res.get("value"));
         }
         obj.put("chartData", chartData);
+    }
+
+    private void type1Chart(Map<String, Object> obj, int attr, Bucket<String> subGroup, String formula) {
+        if (formula.equals("RANK")) {
+            NavigationHistogram hist = new NavigationHistogram(navS.collectDoubleValues(attr, subGroup));
+            obj.put("chartType", 1); // must be called before formattedOutput, which might overwrite chartType
+            hist.formattedOutput(obj, null);
+            int rank = ((Double) obj.get("value")).intValue();
+            obj.put("valueIndex", hist.queryBinByRank(rank));
+        } else {
+            type1Chart(obj, attr, subGroup);
+        }
     }
 
     private void type1Chart(Map<String, Object> obj, int attr, Bucket<String> subGroup) {
@@ -94,13 +106,13 @@ class NavChartsPrototype {
                 "AVERAGE", "MAX", "MAXA", "MIN", "MINA", "MEDIAN"
         };
         String[] freqType = new String[]{
-                "MODE", "LARGE", "SMALL"
+                "MODE", "LARGE", "SMALL", "RANK"
         };
         String[] spreadType = new String[]{
                 "VARIANCE", "STDEV"
         };
         String[] otherType = new String[]{
-                "COUNT", "COUNTIF", "COUNTA", "COUNTBLANK", "SUM", "SUMIF", "RANK"
+                "COUNT", "COUNTIF", "COUNTA", "COUNTBLANK", "SUM", "SUMIF"
         }; // TODO: Put SUM, SUMIF, RANK into freqType (with highlight)
 
         chartType = new HashMap<>();
