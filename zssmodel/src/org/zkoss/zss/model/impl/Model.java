@@ -28,7 +28,7 @@ public abstract class Model {
     public ArrayList<Bucket<String>> navSbuckets;
     public NavigationStructure navS;
     public String indexString;
-    public HashMap<Integer,Integer> trueOrder;
+    public HashMap<Integer, Integer> trueOrder;
 
     public static Model CreateModel(DBContext context, SSheet sheet, ModelType modelType, String tableName) {
         Model model = null;
@@ -59,6 +59,7 @@ public abstract class Model {
     }
 
     public abstract ArrayList<Bucket<String>> createNavS(String bucketName, int start, int count);
+
     // Drop the tables created.
     public abstract void dropSchema(DBContext context);
 
@@ -117,28 +118,31 @@ public abstract class Model {
     public abstract Model clone(DBContext dbContext, SSheet sheet, String modelName);
 
     public abstract ArrayList<String> getHeaders();
+
     public abstract void setIndexString(String str);
 
     /**
      * Sort a bucket based on a given attribute. Calls the navigation structure to get starting / ending row number and then call the {@link #navigationSortRangeByAttribute(SSheet, int, int, int[], int)}
+     *
      * @param currentSheet
      * @param paths
      * @param attr_indices
-     * @param order 0: ascending, 1: descending
+     * @param order        0: ascending, 1: descending
      */
-    public void navigationSortBucketByAttribute(SSheet currentSheet, int[] paths, int[] attr_indices, int order)  {
+    public void navigationSortBucketByAttribute(SSheet currentSheet, int[] paths, int[] attr_indices, int order) {
         return;
     }
 
     /**
      * Sort a block based on input starting and ending row number.
+     *
      * @param currentSheet
      * @param startRow
      * @param endRow
      * @param attr_indices
      * @param order
      */
-    public void navigationSortRangeByAttribute(SSheet currentSheet, int startRow, int endRow, int[] attr_indices, int order)  {
+    public void navigationSortRangeByAttribute(SSheet currentSheet, int startRow, int endRow, int[] attr_indices, int order) {
         return;
     }
 
@@ -162,7 +166,7 @@ public abstract class Model {
             this.navS.typeConvertColumnIfHavent(connection, columnIndex);
 
             String colStr = colToAlphabet.apply(columnIndex);
-            String regionStr = colStr + String.valueOf(startRow) + ":" + colStr + String.valueOf(endRow);
+            String regionStr = colStr + String.valueOf(startRow + 1) + ":" + colStr + String.valueOf(endRow + 1);
             String formula;
             {
                 StringBuilder fBuilder = new StringBuilder();
