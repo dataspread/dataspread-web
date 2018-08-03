@@ -485,8 +485,8 @@ function Explore(e) {
                 }
                 if (e.realTarget.id == "colClose") {
                     removeHierarchiCol(coords.col)
-                    console.log(colHeader);
-                    console.log(viewData)
+                 //   console.log(colHeader);
+                //    console.log(viewData)
                 }
                 if (e.realTarget.classList['0'] == "slider") {
                     let level = coords.col - 1;
@@ -498,7 +498,7 @@ function Explore(e) {
             },
             afterSelection: function (r, c, r2, c2, preventScrolling, selectionLayerLevel) {
                 // setting if prevent scrolling after selection
-                console.log(r)
+               // console.log(r)
 
 
                 if (cumulativeData[currLevel][r] != undefined) {
@@ -506,7 +506,7 @@ function Explore(e) {
                     lowerRange = cumulativeData[currLevel][r].rowRange[0];
                     upperRange = cumulativeData[currLevel][r].rowRange[1];
                     updateData(cumulativeData[currLevel][r].rowRange[0], 0, cumulativeData[currLevel][r].rowRange[1], 15, true);
-                    console.log(upperRange)
+                 //   console.log(upperRange)
                     nav.render();
                 }
                 // hot.scrollViewportTo(cumulativeData[currLevel][r/spanList[currLevel]].rowRange[0]);
@@ -594,7 +594,7 @@ function Explore(e) {
         nav.selectCell(0, 0);
 
 
-        console.log(viewData);
+      //  console.log(viewData);
         updateData(0, 0, 1000, 15, true);
         lowerRange = 0;
         upperRange = 1000;
@@ -604,14 +604,14 @@ function Explore(e) {
         //   doubleclick implementation option2:
         nav.view.wt.update('onCellDblClick', function (e, cell) {
 
-            console.log("double")
-            console.log(cell);
+       //     console.log("double")
+       //     console.log(cell);
             if (cell.row >= 0) {
                 if (currLevel == 0) {
                     if (cell.col == 0 && cumulativeData[currLevel][cell.row].clickable) {
                         //        var child = cell.row/spanList[currLevel];
                         var child = cell.row;
-                        console.log(child);
+               //         console.log(child);
                         nav.deselectCell();
                         zoomming = true;
                         zoomIn(child, nav);
@@ -620,7 +620,7 @@ function Explore(e) {
                     if (cell.col == 1 && cumulativeData[currLevel][cell.row].clickable) {
                         //  var child = cell.row/spanList[currLevel];
                         var child = cell.row;
-                        console.log(child);
+                 //       console.log(child);
                         nav.deselectCell();
                         zoomming = true;
                         zoomIn(child, nav);
@@ -650,7 +650,7 @@ function removeHierarchiCol(colIdx) {
         hieraOpen = false;
     }
     nav.alter('remove_col', colIdx);
-    console.log(viewData);
+  //  console.log(viewData);
 
     //nav.render();
 }
@@ -664,7 +664,7 @@ $("#hierarchi-form").submit(function (e) {
     // funcId = []
     hieraOpen = false;
     let getChart = ($("#chartOpt").val() == 2);
-    console.log(getChart)
+  //  console.log(getChart)
     for (let i = 0; i < aggregateTotalNum; i++) {
         let attrIdx = $("#aggregateCol" + i).val();
         let funct = $("#aggregateOpt" + i).val();
@@ -681,7 +681,7 @@ $("#hierarchi-form").submit(function (e) {
             case "COUNTIF":
             case "SUMIF":
                 para = $("#aggrePara" + i).val();
-                console.log(para)
+               // console.log(para)
                 if (para == "") {
                     alert("Predicate is empty");
                     return;
@@ -699,7 +699,7 @@ $("#hierarchi-form").submit(function (e) {
             case "LARGE":
             case "SMALL":
                 para = $("#aggrePara" + i).val();
-                console.log(para)
+               // console.log(para)
                 if (para == "") {
                     alert("int value is empty");
                     return;
@@ -716,7 +716,7 @@ $("#hierarchi-form").submit(function (e) {
                 break;
             case "SUBTOTAL":
                 para = $("#aggrePara" + i).val();
-                console.log(para)
+               // console.log(para)
                 if (para == null) {
                     alert("function ID is empty");
                     return;
@@ -733,12 +733,12 @@ $("#hierarchi-form").submit(function (e) {
                 break;
             case "RANK":
                 para = $("#aggrePara" + i).val();
-                console.log(para)
+              //  console.log(para)
                 if (para == "") {
                     alert("Rank value is empty");
                     return;
                 } else {
-                    console.log($("#aggrePara" + i + i).val());
+               //     console.log($("#aggrePara" + i + i).val());
                     paras = [para, "", $("#aggrePara" + i + i).val()]
                     aggregateData.formula_ls[i] = {
                         attr_index: attrIdx,
@@ -773,7 +773,7 @@ function getAggregateValue() {
         contentType: 'text/plain',
         data: JSON.stringify(aggregateData),
     }).done(function (e) {
-        console.log(e)
+       // console.log(e)
         if (e.status == "success") {
             $("#hierarchical-col").css("display", "none");
             hot.updateSettings({width: wrapperWidth * 0.8});
@@ -791,10 +791,10 @@ function getAggregateValue() {
             }
             for (let i = 0; i < e.data.length; i++) {
                 let hierCol = aggregateData.formula_ls[i];
-                console.log(aggregateData.formula_ls[i])
+             //   console.log(aggregateData.formula_ls[i])
                 colHeader.push(options[hierCol.attr_index - 1] + " " + hierCol.function + " " + hierCol.param_ls);
             }
-            console.log(e)
+          //  console.log(e)
             addHierarchiCol(e.data);
         } else {
             alert("There is some problem with the formula: " + e.message);
@@ -808,7 +808,7 @@ function addHierarchiCol(aggregateValue) {
     navAggRawData = aggregateValue;
 
     let targetCol = (currLevel == 0) ? 1 : 2;
-    console.log(cumulativeData[currLevel])
+  //  console.log(cumulativeData[currLevel])
     navRawFormula = [];
     for (let i = 0; i < cumulativeData[currLevel].length; i++) {
         let formulaRow = [];
@@ -819,8 +819,8 @@ function addHierarchiCol(aggregateValue) {
             //     mergeCellInfo.push({row: i*spanList[currLevel], col: targetCol + j, rowspan: spanList[currLevel], colspan: 1});
             //  }
             // viewData[i*spanList[currLevel]][targetCol+j]= aggregateValue[j].list[i].toFixed(2);
-            console.log(i)
-            console.log(j)
+      //      console.log(i)
+     //       console.log(j)
             formulaRow.push(aggregateValue[j][i].formula);
             let text = aggregateValue[j][i].value;
             if (isNaN(text)) {
@@ -828,13 +828,13 @@ function addHierarchiCol(aggregateValue) {
             } else {
                 viewData[i][targetCol + j] = text.toFixed(2);
             }
-            console.log("start" + i)
-            console.log(targetCol + j)
+       //     console.log("start" + i)
+        //    console.log(targetCol + j)
         }
         navRawFormula.push(formulaRow);
     }
-    console.log(navRawFormula);
-    console.log(viewData)
+  //  console.log(navRawFormula);
+  //  console.log(viewData)
     let columWidth = [];
     if (currLevel >= 1) {
         columWidth = [, ,];
@@ -844,7 +844,7 @@ function addHierarchiCol(aggregateValue) {
     for (let j = 0; j < aggregateValue.length; j++) {
         columWidth.push(wrapperWidth * 0.14);
     }
-    console.log(columWidth)
+  //  console.log(columWidth)
 
     let numChild = cumulativeData[currLevel].length;
     nav.updateSettings({
@@ -1145,80 +1145,98 @@ function zoomOutHist(nav) {
     nav.deselectCell();
     console.log(levelList);
     targetChild = levelList[levelList.length - 1];
-    let childlist = computePath(); //get the list of children
+
     levelList.pop();
+    let childlist = computePath(); //get the list of children
     console.log(childlist);
     console.log(levelList);
     //api call to /levelList + '.' + child to get currData
-    $.get(baseUrl + 'getChildren/' + bId + '/' + sName + '/' + childlist, function (data) {
-        console.log(data);
-        var result = data.data;
-        //clickable = result.clickable;
-        console.log(result)
-        currLevel -= 1;
-        currData = result.buckets;
-        console.log(currData);
-        console.log(levelList)
-        let numChild = currData.length;
-        viewData = new Array(numChild);
+    let queryData = {};
 
-        mergeCellInfo = [];
-        if (currLevel > 0) {
-            mergeCellInfo.push({row: 0, col: 0, rowspan: numChild, colspan: 1});
+    queryData.bookId = bId;
+    queryData.sheetName = sName;
+    queryData.path = childlist;
 
-            childlist = childlist.splice(childlist.length - 1, 1);
-            let parentData = [];
-            $.get(baseUrl + 'getChildren/' + bId + '/' + sName + '/' + childlist, function (data) {
-                parentData = data.data.buckets[childlist.split(",")[childlist.length - 1]];
-            });
-            for (let i = 0; i < numChild; i++) {
-                if (i == 0) {
-                    viewData[i] = [parentData.name];
-                } else {
-                    viewData[i] = [""];
+    $.ajax({
+        url: baseUrl + "getChildren",
+        method: "POST",
+        //dataType: 'json',
+        contentType: 'text/plain',
+        data: JSON.stringify(queryData),
+    }).done(function (e) {
+        console.log(e)
+        if (e.status == "success") {
+            console.log(e);
+            var result = e.data;
+            //clickable = result.clickable;
+            console.log(result)
+            currLevel -= 1;
+            currData = result.buckets;
+            console.log(currData);
+            console.log(levelList);
+            console.log(currLevel);
+            let numChild = currData.length;
+            viewData = new Array(numChild);
+            cumulativeData[currLevel] = currData;
+            mergeCellInfo = [];
+            if (currLevel > 0) {
+                mergeCellInfo.push({row: 0, col: 0, rowspan: numChild, colspan: 1});
+
+                childlist = childlist.substring(0,childlist.lastIndexOf(","));
+                queryData.path = childlist;
+                let breadCrumb = result.breadCrumb;
+                let parentName = breadCrumb[breadCrumb.length-1];
+
+
+                for (let i = 0; i < numChild; i++) {
+                    if (i == 0) {
+                        viewData[i] = [parentName];
+                    } else {
+                        viewData[i] = [""];
+                    }
+                    viewData[i][1] = currData[i].name;
                 }
-                viewData[i][1] = currData[i].name;
-            }
-        } else {
-            colHeader.splice(1, 1);
-            for (let i = 0; i < numChild; i++) {
-                viewData[i] = [currData.name];
-            }
-        }
-
-
-        console.log(viewData);
-
-        let columWidth = [];
-        if (currLevel >= 1) {
-            columWidth = [40, 160];
-        } else {
-            columWidth = 200;
-        }
-
-
-        if (hieraOpen) {
-            getAggregateValue();
-
-        } else {
-            nav.updateSettings({
-
-                data: viewData,
-                rowHeights: (wrapperHeight * 0.95 / numChild > 80) ? wrapperHeight * 0.95 / numChild : 80,
-                mergeCells: mergeCellInfo,
-            });
-            zoomouting = false;
-            if (currLevel == 0) {
-                nav.selectCell(targetChild, 0)
             } else {
-                nav.selectCell(targetChild, 1);
+                colHeader.splice(1, 1);
+                for (let i = 0; i < numChild; i++) {
+                    viewData[i] = [currData[i].name];
+                }
             }
+
+
+            console.log(viewData);
+
+            let columWidth = [];
+            if (currLevel >= 1) {
+                columWidth = [40, 160];
+            } else {
+                columWidth = 200;
+            }
+
+
+            if (hieraOpen) {
+                getAggregateValue();
+
+            } else {
+                nav.updateSettings({
+
+                    data: viewData,
+                    rowHeights: (wrapperHeight * 0.95 / numChild > 80) ? wrapperHeight * 0.95 / numChild : 80,
+                    mergeCells: mergeCellInfo,
+                });
+                zoomouting = false;
+                if (currLevel == 0) {
+                    nav.selectCell(targetChild, 0)
+                } else {
+                    nav.selectCell(targetChild, 1);
+                }
+            }
+
+
+            updateNavPath();
+
         }
-
-
-        updateNavPath();
-
-    });
+    })
 
 
 }
