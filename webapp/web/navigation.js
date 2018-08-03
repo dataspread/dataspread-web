@@ -626,7 +626,7 @@ function Explore(e) {
                         zoomIn(child, nav);
                     } else if (cell.col == 0) {
                         zoomouting = true;
-                        zoomOut(nav);
+                        zoomOutHist(nav);
                     }
                 }
             }
@@ -893,15 +893,29 @@ function zoomIn(child, nav) {
     levelList.push(child);
     let childlist = computePath(); //get the list of children
 
+    let queryData = {};
 
-    $.get(baseUrl + 'getChildren/' + bId + '/' + sName + '/' + childlist, function (data) {
+    queryData.bookId = bId;
+    queryData.sheetName = sName;
+    queryData.path = childlist;
+
+    $.ajax({
+        url: baseUrl + "getChildren",
+        method: "POST",
+        //dataType: 'json',
+        contentType: 'text/plain',
+        data: JSON.stringify(),
+    }).done(function (e) {
+        console.log(e)
+        if (e.status == "success") {
 
         console.log(data);
-        var result = data.data;
+        var result = e.data.data;
         //clickable = result.clickable;
         console.log(result)
         currLevel += 1;
         currData = result.buckets;
+        console.log("currLevel: "+currLevel)
         console.log(currData)
         mergeCellInfo = [];
         mergeCellInfo.push({row: 0, col: 0, rowspan: currData.length, colspan: 1});
@@ -970,7 +984,7 @@ function zoomIn(child, nav) {
         // zoomming = false;
         //  nav.selectCell(0, 1)
         //  nav.render();
-    });
+    }
 
 
 }
@@ -1130,6 +1144,91 @@ function zoomOut(nav) {
 
     //nav.render();
 }
+
+function zoomOutHist(nav) {
+
+    clickable = true;
+    nav.deselectCell();
+    console.log(levelList);
+    targetChild = levelList[levelList.length - 1];
+    let childlist = computePath(); //get the list of children
+    levelList.pop();
+    console.log(childlist);
+    console.log(levelList);
+    //api call to /levelList + '.' + child to get currData
+    $.get(baseUrl + 'getChildren/' + bId + '/' + sName + '/' + childlist, function (data) {
+        console.log(data);
+        var result = data.data;
+        //clickable = result.clickable;
+        console.log(result)
+        currLevel -= 1;
+        currData = result.buckets;
+        console.log(currData);
+        console.log(levelList)
+        let numChild = currData.length;
+        viewData = new Array(numChild);
+
+        mergeCellInfo = [];
+        if (currLevel > 0) {
+            mergeCellInfo.push({row: 0, col: 0, rowspan: numChild, colspan: 1});
+
+            childlist = childlist.splice(childlist.length-1,1);
+            let parentData=[];
+            $.get(baseUrl + 'getChildren/' + bId + '/' + sName + '/' + childlist, function (data) {
+                parentData = data.data.buckets[childlist.split(",")[childlist.length-1]];
+            });
+            for (let i = 0; i < numChild; i++) {
+                if (i == 0) {
+                    viewData[i] = [parentData.name];
+                } else {
+                    viewData[i] = [""];
+                }
+                viewData[i][1] = currData[i].name;
+            }
+        } else {
+            colHeader.splice(1, 1);
+            for (let i = 0; i < numChild; i++) {
+                viewData[i] = [currData.name];
+            }
+        }
+
+
+        console.log(viewData);
+
+        let columWidth = [];
+        if (currLevel >= 1) {
+            columWidth = [40, 160];
+        } else {
+            columWidth = 200;
+        }
+
+
+        if (hieraOpen) {
+            getAggregateValue();
+
+        } else {
+            nav.updateSettings({
+
+                data: viewData,
+                rowHeights: (wrapperHeight * 0.95 / numChild > 80) ? wrapperHeight * 0.95 / numChild : 80,
+                mergeCells: mergeCellInfo,
+            });
+            zoomouting = false;
+            if (currLevel == 0) {
+                nav.selectCell(targetChild, 0)
+            } else {
+                nav.selectCell(targetChild, 1);
+            }
+        }
+
+
+        updateNavPath();
+
+    });
+
+
+}
+
 
 function jumpToHistorialView(id) {
     console.log(id + " :Jumped to View: " + navHistoryPathIndex[id]);
