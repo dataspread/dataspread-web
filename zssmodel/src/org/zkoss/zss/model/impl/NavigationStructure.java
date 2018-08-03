@@ -288,8 +288,9 @@ public class NavigationStructure {
     }
 
     public List<String> getStringPath(int[] paths) {
-        if (paths.length == 0) return null;
         List<String> ret = new ArrayList<>();
+        if (paths.length == 0)
+            return ret;
         Bucket<String> subRoot = this.navBucketTree.get(paths[0]);
         ret.add(subRoot.toString());
         for (int i = 1; i < paths.length; i++) {

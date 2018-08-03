@@ -216,7 +216,6 @@ var ssDynamicSettings = {
     },
     afterChange: function (change, source) {
         var updatedData = [];
-        console.log(change)
         //alert(source);
         if (source == "populateFromArray") {
             return;
