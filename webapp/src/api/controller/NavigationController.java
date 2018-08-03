@@ -70,17 +70,21 @@ public class NavigationController {
     }
 
 
-    //http://127.0.0.1:8080//api/getChildren/tjhtmdfii/airbnb_small/0,2
-    @RequestMapping(value = "/api/getChildren/{bookId}/{sheetName}/{path}",
-            method = RequestMethod.GET)
-    public HashMap<String, Object> getChildren(@PathVariable String bookId,
-                                               @PathVariable String sheetName,
-                                               @PathVariable String path) {
+    @RequestMapping(value = "/api/getChildren", method = RequestMethod.POST)
+    public HashMap<String, Object> getChildren(@RequestBody String value) {
         System.out.println("zoom in");
-        SBook book = BookBindings.getBookById(bookId);
-        SSheet currentSheet = book.getSheetByName(sheetName);
+        JSONParser parser = new JSONParser();
+        JSONObject dict = (JSONObject) parser.parse(value);
+        SBook book = BookBindings.getBookById((String) dict.get("bookId"));
+        SSheet currentSheet = book.getSheetByName((String) dict.get("sheetName"));
 
-        String[] tokens = path.split(",");
+        String pathString = (String) dict.get("path");
+        String[] tokens;
+        if (pathString.isEmpty()) {
+            tokens = new String[0];
+        } else {
+            tokens = pathString.split(",");
+        }
         int[] indices = new int[tokens.length];
         for (int i = 0; i < tokens.length; i++) {
             indices[i] = Integer.parseInt(tokens[i]);
@@ -121,7 +125,6 @@ public class NavigationController {
             method = RequestMethod.POST)
     public HashMap<String, Object> getHierarchicalAggregateFormula(@RequestBody String value) {
         JSONParser parser = new JSONParser();
-        System.out.println(value);
         JSONObject dict = (JSONObject) parser.parse(value);
         String bookId = (String) dict.get("bookId");
         String sheetName = (String) dict.get("sheetName");

@@ -440,7 +440,7 @@ function Explore(e) {
                             case 1:
                                 return colHeader[1];
                             default:
-                                let check = aggregateData.formula_ls[col-2].getChart ? "checked" : "";
+                                let check = aggregateData.formula_ls[col - 2].getChart ? "checked" : "";
                                 return colHeader[col] + "<span id='colClose'>x</span>" + "<label class=\"switch\">" +
                                     "  <input type=\"checkbox\"" + check + ">" +
                                     "  <span class=\"slider round\"></span>" +
@@ -490,7 +490,7 @@ function Explore(e) {
                 }
                 if (e.realTarget.classList['0'] == "slider") {
                     let level = coords.col - 1;
-                    if(currLevel > 0)
+                    if (currLevel > 0)
                         level = coords.col - 2;
                     aggregateData.formula_ls[level].getChart = !aggregateData.formula_ls[level].getChart;
                     getAggregateValue();
@@ -904,89 +904,83 @@ function zoomIn(child, nav) {
         method: "POST",
         //dataType: 'json',
         contentType: 'text/plain',
-        data: JSON.stringify(),
+        data: JSON.stringify(queryData),
     }).done(function (e) {
         console.log(e)
         if (e.status == "success") {
-
-        console.log(data);
-        var result = e.data.data;
-        //clickable = result.clickable;
-        console.log(result)
-        currLevel += 1;
-        currData = result.buckets;
-        console.log("currLevel: "+currLevel)
-        console.log(currData)
-        mergeCellInfo = [];
-        mergeCellInfo.push({row: 0, col: 0, rowspan: currData.length, colspan: 1});
+            var result = e.data;
+            currLevel += 1;
+            currData = result.buckets;
+            console.log("currLevel: " + currLevel)
+            mergeCellInfo = [];
+            mergeCellInfo.push({row: 0, col: 0, rowspan: currData.length, colspan: 1});
 
 
-        viewData = new Array(currData.length);
-        for (let i = 0; i < currData.length; i++) {
-            if (i == 0) {
-                viewData[i] = [cumulativeData[currLevel - 1][child].name];
-            } else {
-                viewData[i] = [""];
+            viewData = new Array(currData.length);
+            for (let i = 0; i < currData.length; i++) {
+                if (i == 0) {
+                    viewData[i] = [cumulativeData[currLevel - 1][child].name];
+                } else {
+                    viewData[i] = [""];
+                }
             }
+
+
+            // spanList.push(span);
+            console.log(mergeCellInfo)
+
+            cumulativeData.push(currData);
+
+            console.log(cumulativeData);
+
+
+            // for (let i = 0; i < currData.length; i++){
+            //
+            //    //double layer
+            //     viewData[i*span][1]= cumulativeData[currLevel][i].name;
+            //
+            //  }
+
+            for (let i = 0; i < currData.length; i++) {
+                //double layer
+                viewData[i][1] = cumulativeData[currLevel][i].name;
+
+            }
+
+
+            cumulativeDataSize += currData.length;
+
+            let columWidth = [];
+            if (currLevel >= 1) {
+                //columWidth = [50];
+            } else {
+                columWidth = 200;
+            }
+            // console.log(nav.getColHeader())
+            // console.log(viewData);
+            // console.log(nav.getColWidth(1))
+            // console.log(nav.getCopyableText(0,0,10,2))
+            // nav.render();
+
+            if (hieraOpen) {
+                getAggregateValue();
+
+            } else {
+                nav.updateSettings({
+                    // minRows: currData.length,
+                    data: viewData,
+                    rowHeights: (wrapperHeight * 0.95 / currData.length > 80) ? wrapperHeight * 0.95 / currData.length : 80,
+                    mergeCells: mergeCellInfo,
+                });
+                zoomming = false;
+                nav.selectCell(0, 1)
+            }
+            updateNavPath(); //calculate breadcrumb
+            // zoomming = false;
+            //  nav.selectCell(0, 1)
+            //  nav.render();
         }
-
-
-        // spanList.push(span);
-        console.log(mergeCellInfo)
-
-        cumulativeData.push(currData);
-
-        console.log(cumulativeData);
-
-
-        // for (let i = 0; i < currData.length; i++){
-        //
-        //    //double layer
-        //     viewData[i*span][1]= cumulativeData[currLevel][i].name;
-        //
-        //  }
-
-        for (let i = 0; i < currData.length; i++) {
-            //double layer
-            viewData[i][1] = cumulativeData[currLevel][i].name;
-
-        }
-
-
-        cumulativeDataSize += currData.length;
-
-        let columWidth = [];
-        if (currLevel >= 1) {
-            //columWidth = [50];
-        } else {
-            columWidth = 200;
-        }
-        // console.log(nav.getColHeader())
-        // console.log(viewData);
-        // console.log(nav.getColWidth(1))
-        // console.log(nav.getCopyableText(0,0,10,2))
-        // nav.render();
-
-        if (hieraOpen) {
-            getAggregateValue();
-
-        } else {
-            nav.updateSettings({
-                // minRows: currData.length,
-                data: viewData,
-                rowHeights: (wrapperHeight * 0.95 / currData.length > 80) ? wrapperHeight * 0.95 / currData.length : 80,
-                mergeCells: mergeCellInfo,
-            });
-            zoomming = false;
-            nav.selectCell(0, 1)
-        }
-        updateNavPath(); //calculate breadcrumb
-        // zoomming = false;
-        //  nav.selectCell(0, 1)
-        //  nav.render();
-    }
-
-
+    })
 }
 
 
@@ -1172,10 +1166,10 @@ function zoomOutHist(nav) {
         if (currLevel > 0) {
             mergeCellInfo.push({row: 0, col: 0, rowspan: numChild, colspan: 1});
 
-            childlist = childlist.splice(childlist.length-1,1);
-            let parentData=[];
+            childlist = childlist.splice(childlist.length - 1, 1);
+            let parentData = [];
             $.get(baseUrl + 'getChildren/' + bId + '/' + sName + '/' + childlist, function (data) {
-                parentData = data.data.buckets[childlist.split(",")[childlist.length-1]];
+                parentData = data.data.buckets[childlist.split(",")[childlist.length - 1]];
             });
             for (let i = 0; i < numChild; i++) {
                 if (i == 0) {
@@ -1286,7 +1280,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
         let chartData = navAggRawData[col - colOffset][row]['chartData'];
         let distribution = [];
 
-        distribution.push({min: chartData[0], max:chartData[1]});
+        distribution.push({min: chartData[0], max: chartData[1]});
 
         let min = navAggRawData[col - colOffset][0]['value'];
         let max = navAggRawData[col - colOffset][0]['value'];
@@ -1314,7 +1308,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             // this g is where the bar chart will be drawn
             .append('g')
             // translate it to leave room for the left and top margins
-           .attr('transform', 'translate(' + margin.left + ',0)');
+            .attr('transform', 'translate(' + margin.left + ',0)');
 
 
         svg.append("rect")
@@ -1322,7 +1316,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             .attr("y", 0)
             .attr("width", margin.right)
             .attr("height", fullHeight)
-            .attr("fill", d3.interpolateGreens(((value - min)/ (max - min))*0.85+0.15));
+            .attr("fill", d3.interpolateGreens(((value - min) / (max - min)) * 0.85 + 0.15));
 
         svg.append("text")
             .attr("x", (width / 2))
@@ -1332,42 +1326,42 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             .style("font-weight", "bold")
             .text(value);
 
-         // draw the rectangle
+        // draw the rectangle
         //'#0099ff'
         let fraction = 3; //what fraction of container is the valuebar
-        let valueBarHeight = height/fraction;
+        let valueBarHeight = height / fraction;
         let valueBar = svg.append("rect")
-                                  .attr("x", 0-margin.left/2)
-                                  .attr("y", height/2 - valueBarHeight/ 2)
-                                   .attr("width", width)
-                                    .attr("height", valueBarHeight)
-                                 .attr("fill",'#0099ff');
+            .attr("x", 0 - margin.left / 2)
+            .attr("y", height / 2 - valueBarHeight / 2)
+            .attr("width", width)
+            .attr("height", valueBarHeight)
+            .attr("fill", '#0099ff');
         //add value rectangle
         let xScale = d3.scaleLinear()
             .domain([distribution[0].min, distribution[0].max])
-            .range([0-margin.left/2,width-margin.left/2])
+            .range([0 - margin.left / 2, width - margin.left / 2])
             .nice();
 
         var highlightBar = svg.append("rect")
             .attr("x", xScale(value))
-            .attr("y", height/2 - valueBarHeight)
+            .attr("y", height / 2 - valueBarHeight)
             .attr("width", 2)
-            .attr("height", 2*valueBarHeight)
-            .attr("fill",'#000000');
+            .attr("height", 2 * valueBarHeight)
+            .attr("fill", '#000000');
         //add min, max, value text
         svg.append("text")
-            .attr("x", xScale(distribution[0].min)-5)
+            .attr("x", xScale(distribution[0].min) - 5)
             .attr("y", function () {
-                return height / 2+ valueBarHeight/2+8;
+                return height / 2 + valueBarHeight / 2 + 8;
             })
             .attr("text-anchor", "middle")
             .style("font-size", "10px")
             .style("font-weight", "bold")
             .text(distribution[0].min);
         svg.append("text")
-            .attr("x", xScale(distribution[0].max)+5)
+            .attr("x", xScale(distribution[0].max) + 5)
             .attr("y", function () {
-                return height / 2+ valueBarHeight/2+8;
+                return height / 2 + valueBarHeight / 2 + 8;
             })
             .attr("text-anchor", "middle")
             .style("font-size", "10px")
@@ -1376,7 +1370,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
         svg.append("text")
             .attr("x", xScale(value))
             .attr("y", function () {
-                return height/2 + valueBarHeight+10;
+                return height / 2 + valueBarHeight + 10;
             })
             .attr("text-anchor", "middle")
             .style("font-size", "10px")
@@ -1431,7 +1425,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             .attr("y", 0 - margin.top)
             .attr("width", margin.right)
             .attr("height", fullHeight)
-            .attr("fill", d3.interpolateGreens(((value - min)/ (max - min))*0.85+0.15));
+            .attr("fill", d3.interpolateGreens(((value - min) / (max - min)) * 0.85 + 0.15));
 
         svg.append("text")
             .attr("x", (width / 2))
@@ -1556,7 +1550,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
         let stdev = chartData.STDEV;
 
         let showSquare = 1;
-        if(navAggRawData[col - colOffset][row]['formula'].includes("STDEV"))
+        if (navAggRawData[col - colOffset][row]['formula'].includes("STDEV"))
             showSquare = 0;
 
         var margin = {top: 20, right: 25, bottom: 18, left: 35};
@@ -1582,7 +1576,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             .attr("y", 0 - margin.top)
             .attr("width", margin.right)
             .attr("height", fullHeight)
-            .attr("fill", d3.interpolateGreens(((value - min)/ (max - min))*0.85+0.15));
+            .attr("fill", d3.interpolateGreens(((value - min) / (max - min)) * 0.85 + 0.15));
 
         svg.append("text")
             .attr("x", (width / 2))
@@ -1591,10 +1585,10 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             .style("font-size", "10px")
             .style("font-weight", "bold")
             .text(function () {
-                if(showSquare==1)
-                    return "\u03c3"+"^2: "+value;
+                if (showSquare == 1)
+                    return "\u03c3" + "^2: " + value;
                 else
-                    return "\u03c3"+": "+value;
+                    return "\u03c3" + ": " + value;
             });
 
         let xScale = d3.scaleLinear()
@@ -1666,8 +1660,8 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
 
         //add \mu text
         svg.append("text")
-            .attr("x", xScale(avg)-5)
-            .attr("y", margin.top/4)
+            .attr("x", xScale(avg) - 5)
+            .attr("y", margin.top / 4)
             .attr("text-anchor", "middle")
             .style("font-size", "10px")
             .style("font-weight", "bold")
@@ -1676,16 +1670,16 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
         // add the stdev line
         svg.append("line")
             .attr("x1", xScale(avg))  //<<== change your code here
-            .attr("y1", margin.top/2)
-            .attr("x2", xScale(avg+stdev))  //<<== and here
-            .attr("y2", margin.top/2)
+            .attr("y1", margin.top / 2)
+            .attr("x2", xScale(avg + stdev))  //<<== and here
+            .attr("y2", margin.top / 2)
             .style("stroke", '#000000')
             .style("stroke-width", 2);
 
         //add \sigma text
         svg.append("text")
-            .attr("x", (xScale(avg)+xScale(avg+stdev))/2)
-            .attr("y", margin.top/4)
+            .attr("x", (xScale(avg) + xScale(avg + stdev)) / 2)
+            .attr("y", margin.top / 4)
             .attr("text-anchor", "middle")
             .style("font-size", "10px")
             .style("font-weight", "bold")
@@ -1693,13 +1687,13 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
         //add the stdev rectangle
         svg.append("rect")
             .attr("x", xScale(avg))  //<<== change your code here
-            .attr("y", margin.top/2)
-            .attr("width", xScale(avg+stdev)-xScale(avg))  //<<== and here
-            .attr("height", height-margin.top/2)
+            .attr("y", margin.top / 2)
+            .attr("width", xScale(avg + stdev) - xScale(avg))  //<<== and here
+            .attr("height", height - margin.top / 2)
             .attr('fill', '#0099ff')
             .style("stroke", "red")
             .style("stroke-dasharray", ("3, 3"))
-            .style("fill-opacity",0.2);
+            .style("fill-opacity", 0.2);
 
         // draw the axes
         svg.append('g')
@@ -1724,7 +1718,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             .text('Count');
 
 
-    }else if (navAggRawData[col - colOffset][row].chartType == 3) {
+    } else if (navAggRawData[col - colOffset][row].chartType == 3) {
         let tempString = "chartdiv" + row + col;
         td.innerHTML = "<div id=" + tempString + " ></div>";
         console.log(td.innerHTML)
@@ -1770,7 +1764,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             .attr("y", 0 - margin.top)
             .attr("width", margin.right)
             .attr("height", fullHeight)
-            .attr("fill", d3.interpolateGreens(((value - min)/ (max - min))*0.85+0.15));
+            .attr("fill", d3.interpolateGreens(((value - min) / (max - min)) * 0.85 + 0.15));
 
         svg.append("text")
             .attr("x", (width / 2))
