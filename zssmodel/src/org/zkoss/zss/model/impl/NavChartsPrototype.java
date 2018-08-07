@@ -1,8 +1,16 @@
 package org.zkoss.zss.model.impl;
 
+import org.zkoss.poi.ss.formula.FormulaConfiguration;
+import org.zkoss.poi.ss.formula.functions.Countif;
+import org.zkoss.zss.model.sys.EngineFactory;
+import org.zkoss.zss.model.sys.formula.FormulaEngine;
+import org.zkoss.zss.model.sys.formula.FormulaEvaluationContext;
+import org.zkoss.zss.model.sys.formula.FormulaExpression;
+import org.zkoss.zss.model.sys.formula.FormulaParseContext;
+
 import java.util.*;
 
-class NavChartsPrototype {
+public class NavChartsPrototype {
     private static Map<String, Integer> chartType;
     private static final String[] type0Stat = new String[]{
             "MIN", "MAX", "MEDIAN", "AVERAGE"
@@ -19,27 +27,39 @@ class NavChartsPrototype {
      *
      * @return The unique instance.
      */
-    static NavChartsPrototype getPrototype() {
+    public static NavChartsPrototype getPrototype() {
         if (uniqueInstance == null) {
             uniqueInstance = new NavChartsPrototype();
         }
         return uniqueInstance;
     }
 
-    void generateChartObject(Model model, NavigationStructure navS, Map<String, Object> obj, int attr, Bucket<String> subGroup, String formula) {
+    void generateChartObject(Model model, NavigationStructure navS, Map<String, Object> obj, int attr, Bucket<String> subGroup, String formula, List<String> paraList) {
         NavChartsPrototype.model = model;
         NavChartsPrototype.navS = navS;
         int type = getChartType(formula);
-        if (type == 0)
-            type0Chart(obj, attr, subGroup);
-        else if (type == 1)
-            type1Chart(obj, attr, subGroup, formula);
-        else if (type == 2)
-            type2Chart(obj, attr, subGroup);
-        else if (type == 3)
-            type3Chart(obj, attr, subGroup);
-        else
-            obj.put("chartType", type);
+        switch (type) {
+            case 0:
+                type0Chart(obj, attr, subGroup);
+                break;
+            case 1:
+                type1Chart(obj, attr, subGroup, formula);
+                break;
+            case 2:
+                type2Chart(obj, attr, subGroup);
+                break;
+            case 3:
+                type3Chart(obj, attr, subGroup);
+                break;
+            case 4:
+                FormulaConfiguration.getInstance().setCutEvalAtIfCond(true);
+                type4Chart(obj);
+                FormulaConfiguration.getInstance().setCutEvalAtIfCond(false);
+                break;
+            default:
+                obj.put("chartType", type);
+                break;
+        }
         NavChartsPrototype.model = null;
         NavChartsPrototype.navS = null;
     }
@@ -98,6 +118,25 @@ class NavChartsPrototype {
         hist.formattedOutput(obj, null);
     }
 
+    private void type4Chart(Map<String, Object> obj) {
+        try {
+            obj.put("chartType", 4); // Could be changed to -1 by the exception handler
+            String formula = (String) obj.get("formula");
+            FormulaEngine engine = EngineFactory.getInstance().createFormulaEngine();
+            FormulaExpression expr = engine.parse(formula, new FormulaParseContext(navS.currentSheet, null));
+            if (expr.hasError()) {
+                throw new RuntimeException(expr.getErrorMessage());
+            }
+            new FormulaResultCellValue(engine.evaluate(expr, new FormulaEvaluationContext(navS.currentSheet, null)));
+            throw new RuntimeException("Unexpected control flow, formula cut failed."); // Should not reach here.
+        } catch (Countif.CutFormulaEvaluationException expected) {
+            /**
+             * Thrown by {@link org.zkoss.poi.ss.formula.functions.Countif}
+             */
+            expected.fillInIfCondition(obj);
+        }
+    }
+
     /**
      * The private constructor that can only be called by the {@link #getPrototype()} function.
      */
@@ -111,9 +150,12 @@ class NavChartsPrototype {
         String[] spreadType = new String[]{
                 "VARIANCE", "STDEV"
         };
+        String[] conditionType = new String[]{
+                "COUNTIF", "SUMIF"
+        };
         String[] otherType = new String[]{
-                "COUNT", "COUNTIF", "COUNTA", "COUNTBLANK", "SUM", "SUMIF"
-        }; // TODO: Put SUM, SUMIF, RANK into freqType (with highlight)
+                "COUNT", "COUNTA", "COUNTBLANK", "SUM"
+        };
 
         chartType = new HashMap<>();
         for (String x : valueType) {
@@ -124,6 +166,9 @@ class NavChartsPrototype {
         }
         for (String x : spreadType) {
             chartType.put(x, 2);
+        }
+        for (String x : conditionType) {
+            chartType.put(x, 4);
         }
         for (String x : otherType) {
             chartType.put(x, 3);

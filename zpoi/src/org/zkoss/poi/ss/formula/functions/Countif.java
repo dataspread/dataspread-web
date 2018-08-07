@@ -17,8 +17,10 @@
 
 package org.zkoss.poi.ss.formula.functions;
 
+import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import org.zkoss.poi.ss.formula.FormulaConfiguration;
 import org.zkoss.poi.ss.formula.eval.BlankEval;
 import org.zkoss.poi.ss.formula.eval.BoolEval;
 import org.zkoss.poi.ss.formula.eval.ErrorEval;
@@ -430,9 +432,50 @@ public final class Countif extends Fixed2ArgFunction {
 		}
 	}
 
+	public static class CutFormulaEvaluationException extends RuntimeException {
+		private double pivotValue;
+		private int expandDirection;
+		private boolean valid;
+
+		CutFormulaEvaluationException(I_MatchPredicate mp) {
+			super();
+			setupPivotAndDirection(mp);
+		}
+
+		private void setupPivotAndDirection(I_MatchPredicate mp) {
+			if (mp instanceof NumberMatcher) {
+				valid = true;
+				pivotValue = ((NumberMatcher) mp)._value;
+				int opCode = ((NumberMatcher) mp).getCode();
+				if (opCode <= 2) {
+					expandDirection = 0;
+				} else if (opCode <= 4) {
+					expandDirection = -1;
+				} else {
+					expandDirection = 1;
+				}
+			} else {
+				valid = false;
+			}
+		}
+
+		public void fillInIfCondition(Object obj) {
+			HashMap<String, Object> hashMap = (HashMap) obj;
+			if (valid) {
+				hashMap.put("pivotValue", pivotValue);
+				hashMap.put("expandDirection", expandDirection);
+			} else {
+				hashMap.put("chartType", -1);
+			}
+		}
+	}
+
 	public ValueEval evaluate(int srcRowIndex, int srcColumnIndex, ValueEval arg0, ValueEval arg1) {
 
 		I_MatchPredicate mp = createCriteriaPredicate(arg1, srcRowIndex, srcColumnIndex);
+		if (FormulaConfiguration.getInstance().isCutEvalAtIfCond()){
+			throw new CutFormulaEvaluationException(mp);
+		}
 		if(mp == null) {
 			// If the criteria arg is a reference to a blank cell, countif always returns zero.
 			return NumberEval.ZERO;

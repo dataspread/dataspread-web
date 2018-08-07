@@ -199,8 +199,8 @@ public abstract class Model {
                 if (expr.hasError()) {
                     throw new RuntimeException(expr.getErrorMessage());
                 }
+                System.out.println("Computing " + formula);
                 FormulaResultCellValue result = new FormulaResultCellValue(engine.evaluate(expr, new FormulaEvaluationContext(currentSheet, null)));
-                System.out.println("Computing" + formula);
                 Object evalResult = result.getValue();
                 if (evalResult instanceof ErrorValue) {
                     aggStr = ((ErrorValue) evalResult).getMessage();

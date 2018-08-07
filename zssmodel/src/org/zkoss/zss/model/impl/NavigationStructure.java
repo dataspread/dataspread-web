@@ -50,7 +50,7 @@ public class NavigationStructure {
         this.currentSheet = currentSheet;
     }
 
-    private SSheet currentSheet;
+    SSheet currentSheet;
 
     /**
      * Must be set externally for the bucket generator to work.
@@ -521,7 +521,7 @@ public class NavigationStructure {
                 Process the chart information.
                  */
                 if (getCharts.get(attr_i)) {
-                    NavChartsPrototype.getPrototype().generateChartObject(model, this, obj, attr_indices[attr_i], subgroup, agg_ids[attr_i]);
+                    NavChartsPrototype.getPrototype().generateChartObject(model, this, obj, attr_indices[attr_i], subgroup, agg_ids[attr_i], paraList.get(attr_i));
                 } else {
                     obj.put("chartType", -1);
                 }
