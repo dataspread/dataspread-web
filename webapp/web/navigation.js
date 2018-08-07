@@ -1855,6 +1855,167 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             .text('Count');
 
 
+    } else if (navAggRawData[col - colOffset][row].chartType == 4) {
+        let tempString = "chartdiv" + row + col;
+        td.innerHTML = "<div id=" + tempString + " ></div>";
+        console.log(td.innerHTML)
+
+        let data = navAggRawData[col - colOffset][row];
+        let chartData = data['chartData'];
+        let distribution = [];
+
+
+        for (let i = 0; i < chartData.counts.length; i++) {
+            let boundstr = chartData.bins[i] + " - " + chartData.bins[i + 1];
+            distribution.push({boundary: boundstr, count: chartData.counts[i]});
+        }
+        let min = navAggRawData[col - colOffset][0]['value'];
+        let max = navAggRawData[col - colOffset][0]['value'];
+        for (let i = 0; i < navAggRawData[col - colOffset].length; i++) {
+            if (navAggRawData[col - colOffset][i]['value'] < min) {
+                min = navAggRawData[col - colOffset][i]['value'];
+            } else if (navAggRawData[col - colOffset][i]['value'] > min) {
+                max = navAggRawData[col - colOffset][i]['value'];
+            }
+        }
+
+        var margin = {top: 20, right: 25, bottom: 18, left: 35};
+        // here, we want the full chart to be 700x200, so we determine
+        // the width and height by subtracting the margins from those values
+        var fullWidth = wrapperWidth * 0.14;
+        var fullHeight = nav.getRowHeight(row);
+
+        // the width and height values will be used in the ranges of our scales
+        var width = fullWidth - margin.right - margin.left;
+        var height = fullHeight - margin.top - margin.bottom;
+        var svg = d3.select('#' + tempString).append('svg')
+            .attr('width', fullWidth)
+            .attr('height', fullHeight)
+            // this g is where the bar chart will be drawn
+            .append('g')
+            // translate it to leave room for the left and top margins
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+
+        svg.append("rect")
+            .attr("x", width + margin.right / 4)
+            .attr("y", 0 - margin.top)
+            .attr("width", margin.right)
+            .attr("height", fullHeight)
+            .attr("fill", d3.interpolateGreens(((value - min) / (max - min)) * 0.85 + 0.15));
+
+        svg.append("text")
+            .attr("x", (width / 2))
+            .attr("y", 0 - (margin.top / 2))
+            .attr("text-anchor", "middle")
+            .style("font-size", "10px")
+            .style("font-weight", "bold")
+            .text(value);
+
+        let xScale = d3.scaleLinear()
+            .domain([chartData.bins[0], chartData.bins[chartData.bins.length - 1]])
+            .range([0, width]);
+
+        // y value determined by temp
+        var maxValue = d3.max(distribution, function (d) {
+            return d.count;
+        });
+        var yScale = d3.scaleLinear()
+            .domain([0, maxValue])
+            .range([height, 0])
+            .nice();
+
+        var xAxis = d3.axisBottom(xScale)
+        //.ticks(6,'s');
+            .tickValues(chartData.bins);
+
+
+        var yAxis = d3.axisLeft(yScale);
+        yAxis.ticks(5);
+
+        var barHolder = svg.append('g')
+            .classed('bar-holder', true);
+
+        var tooltip = d3.select('#' + tempString).append("div")
+            .attr("class", "toolTip");
+
+
+        // draw the bars
+        var bars = barHolder.selectAll('rect.bar')
+            .data(distribution)
+            .enter().append('rect')
+            .classed('bar', true)
+            .attr('x', function (d, i) {
+                // the x value is determined using the
+                // month of the datum
+                return 1 + width / (chartData.counts.length) * i;
+            })
+            .attr('width', width / (chartData.counts.length))
+            .attr('y', function (d) {
+                return yScale(d.count);
+            })
+            .attr('fill', '#0099ff')
+            .attr('height', function (d) {
+                // the bar's height should align it with the base of the chart (y=0)
+                return height - yScale(d.count);
+            })
+            .on("mouseover", function (d) {
+                tooltip
+                    .style("left", d3.event.pageX - 20 + "px")
+                    .style("top", d3.event.pageY - 30 + "px")
+                    .style("display", "inline-block")
+                    .html((d.count));
+            })
+            .on("mouseout", function (d) {
+                tooltip.style("display", "none");
+            });
+
+        // draw the axes
+        svg.append('g')
+            .classed('x axis', true)
+            .attr('transform', 'translate(0,' + height + ')')
+            .call(xAxis);
+
+        var yAxisEle = svg.append('g')
+            .classed('y axis', true)
+            .call(yAxis);
+
+
+        // add a label to the yAxis
+        svg.append('text')
+            .attr('transform', 'rotate(-90)')
+            .attr("y", 0 - margin.left)
+            .attr("x", 0 - (height / 2))
+            .style('text-anchor', 'middle')
+            .style('fill', 'black')
+            .attr('dy', '1em')
+            .style('font-size', 10)
+            .text('Count');
+
+        let pivotValue = data.pivotValue;
+        svg.append("line")
+            .attr("x1", xScale(pivotValue))  //<<== change your code here
+            .attr("y1", 0)
+            .attr("x2", xScale(pivotValue))  //<<== and here
+            .attr("y2", height)
+            .style("stroke", '#000000')
+            .style("stroke-width", 2);
+
+        let dir = data.expandDirection;
+        if (dir != 0) {
+            let prefix = svg.append("line")
+                .attr("x1", xScale(pivotValue))  //<<== change your code here
+                .attr("y1", 0)
+                .attr("y2", 0);
+            if (dir == 1) {
+                prefix = prefix.attr("x2", width); //<<== and here
+            } else if (dir == -1) {
+                prefix = prefix.attr("x2", 0); //<<== and here
+            }
+            prefix.style("stroke", '#000000')
+                .style("stroke-width", 2);
+        }
+
     } else {
         Handsontable.renderers.TextRenderer.apply(this, arguments);
     }

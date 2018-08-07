@@ -53,7 +53,7 @@ public class NavChartsPrototype {
                 break;
             case 4:
                 FormulaConfiguration.getInstance().setCutEvalAtIfCond(true);
-                type4Chart(obj);
+                type4Chart(obj, attr, subGroup);
                 FormulaConfiguration.getInstance().setCutEvalAtIfCond(false);
                 break;
             default:
@@ -118,7 +118,9 @@ public class NavChartsPrototype {
         hist.formattedOutput(obj, null);
     }
 
-    private void type4Chart(Map<String, Object> obj) {
+    private void type4Chart(Map<String, Object> obj, int attr, Bucket<String> subGroup) {
+        NavigationHistogram hist = new NavigationHistogram(navS.collectDoubleValues(attr, subGroup));
+        hist.formattedOutput(obj, null);
         try {
             obj.put("chartType", 4); // Could be changed to -1 by the exception handler
             String formula = (String) obj.get("formula");
