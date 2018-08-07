@@ -1182,8 +1182,6 @@ function zoomOutHist(nav) {
             if (currLevel > 0) {
                 mergeCellInfo.push({row: 0, col: 0, rowspan: numChild, colspan: 1});
 
-                childlist = childlist.substring(0,childlist.lastIndexOf(","));
-                queryData.path = childlist;
                 let breadCrumb = result.breadCrumb;
                 let parentName = breadCrumb[breadCrumb.length-1];
 
@@ -1242,17 +1240,99 @@ function zoomOutHist(nav) {
 }
 
 
-function jumpToHistorialView(id) {
-    console.log(id + " :Jumped to View: " + navHistoryPathIndex[id]);
+function jumpToHistorialView(childlist) {
+    console.log(childlist + " :Jumped to View: ");
 
-    while (currLevel != 0)
-        zoomOut(nav);
+    clickable = true;
+    nav.deselectCell();
+    targetChild = levelList[levelList.length - 1];
 
-    let index_ls = id.split(",");
+    //api call to /levelList + '.' + child to get currData
+    let queryData = {};
 
-    for (let i = 0; i < index_ls.length; i++) {
-        zoomIn(index_ls[i], nav);
-    }
+    queryData.bookId = bId;
+    queryData.sheetName = sName;
+    queryData.path = childlist;
+
+    $.ajax({
+        url: baseUrl + "getChildren",
+        method: "POST",
+        //dataType: 'json',
+        contentType: 'text/plain',
+        data: JSON.stringify(queryData),
+    }).done(function (e) {
+        console.log(e)
+        if (e.status == "success") {
+            console.log(e);
+            var result = e.data;
+            //clickable = result.clickable;
+            console.log(result)
+            currLevel -= 1;
+            currData = result.buckets;
+            console.log(currData);
+            console.log(levelList);
+            console.log(currLevel);
+            let numChild = currData.length;
+            viewData = new Array(numChild);
+            cumulativeData[currLevel] = currData;
+            mergeCellInfo = [];
+            if (currLevel > 0) {
+                mergeCellInfo.push({row: 0, col: 0, rowspan: numChild, colspan: 1});
+
+                let breadCrumb = result.breadCrumb;
+                let parentName = breadCrumb[breadCrumb.length - 1];
+
+
+                for (let i = 0; i < numChild; i++) {
+                    if (i == 0) {
+                        viewData[i] = [parentName];
+                    } else {
+                        viewData[i] = [""];
+                    }
+                    viewData[i][1] = currData[i].name;
+                }
+            } else {
+                colHeader.splice(1, 1);
+                for (let i = 0; i < numChild; i++) {
+                    viewData[i] = [currData[i].name];
+                }
+            }
+
+
+            console.log(viewData);
+
+            let columWidth = [];
+            if (currLevel >= 1) {
+                columWidth = [40, 160];
+            } else {
+                columWidth = 200;
+            }
+
+
+            if (hieraOpen) {
+                getAggregateValue();
+
+            } else {
+                nav.updateSettings({
+
+                    data: viewData,
+                    rowHeights: (wrapperHeight * 0.95 / numChild > 80) ? wrapperHeight * 0.95 / numChild : 80,
+                    mergeCells: mergeCellInfo,
+                });
+                zoomouting = false;
+                if (currLevel == 0) {
+                    nav.selectCell(targetChild, 0)
+                } else {
+                    nav.selectCell(targetChild, 1);
+                }
+            }
+
+
+            updateNavPath();
+
+        }
+
+    });
 }
 
 $("#sort-form").submit(function (e) {
