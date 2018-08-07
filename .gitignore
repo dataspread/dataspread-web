@@ -73,3 +73,5 @@ dsapi/src/ui/node_modules/
 .idea/dataSources.xml
 .idea/artifacts/
 .idea/emacs.xml
+.idea/copyright/
+.idea/

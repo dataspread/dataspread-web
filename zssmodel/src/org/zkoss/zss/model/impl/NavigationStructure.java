@@ -50,7 +50,7 @@ public class NavigationStructure {
         this.currentSheet = currentSheet;
     }
 
-    private SSheet currentSheet;
+    SSheet currentSheet;
 
     /**
      * Must be set externally for the bucket generator to work.
