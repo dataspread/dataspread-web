@@ -2093,25 +2093,33 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
         let pivotValue = data.pivotValue;
         svg.append("line")
             .attr("x1", xScale(pivotValue))  //<<== change your code here
-            .attr("y1", 0)
+            .attr("y1", 0-margin.top/4)
             .attr("x2", xScale(pivotValue))  //<<== and here
-            .attr("y2", height)
+            .attr("y2", height+margin.top / 4)
             .style("stroke", '#000000')
+            .style("stroke-dasharray", ("3, 3"))
             .style("stroke-width", 2);
 
         let dir = data.expandDirection;
         if (dir != 0) {
-            let prefix = svg.append("line")
-                .attr("x1", xScale(pivotValue))  //<<== change your code here
-                .attr("y1", 0)
-                .attr("y2", 0);
-            if (dir == 1) {
-                prefix = prefix.attr("x2", width); //<<== and here
-            } else if (dir == -1) {
-                prefix = prefix.attr("x2", 0); //<<== and here
-            }
-            prefix.style("stroke", '#000000')
-                .style("stroke-width", 2);
+            //add the rectangle
+            svg.append("rect")
+                .attr("x", function () {
+                    if(dir==1)
+                        return 0;
+                    return xScale(pivotValue);
+                })  //<<== change your code here
+                .attr("y", yScale(maxValue))
+                .attr("width", function () {
+                    if(dir==1)
+                        return xScale(pivotValue) - xScale(chartData.bins[0]);
+                    return xScale(chartData.bins[chartData.bins.length - 1]) - xScale(pivotValue);
+                })  //<<== and here
+                .attr("height", height - yScale(maxValue))
+                .attr('fill', '#ffffff')
+                .style("stroke", "black")
+                //.style("stroke-dasharray", ("3, 3"))
+                .style("fill-opacity", 0.7);
         }
 
     } else {
