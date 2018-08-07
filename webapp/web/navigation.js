@@ -1245,6 +1245,9 @@ function jumpToHistorialView(childlist) {
 
     clickable = true;
     nav.deselectCell();
+
+    levelList = childlist.split(",");
+
     targetChild = levelList[levelList.length - 1];
 
     //api call to /levelList + '.' + child to get currData
@@ -1265,21 +1268,22 @@ function jumpToHistorialView(childlist) {
         if (e.status == "success") {
             console.log(e);
             var result = e.data;
+            let breadCrumb = result.breadCrumb;
             //clickable = result.clickable;
-            console.log(result)
-            currLevel -= 1;
+            currLevel = breadCrumb.length;
             currData = result.buckets;
-            console.log(currData);
+            console.log(childlist);
             console.log(levelList);
-            console.log(currLevel);
             let numChild = currData.length;
             viewData = new Array(numChild);
             cumulativeData[currLevel] = currData;
+
+
             mergeCellInfo = [];
-            if (currLevel > 0) {
+            if (breadCrumb.length!=0) {
                 mergeCellInfo.push({row: 0, col: 0, rowspan: numChild, colspan: 1});
 
-                let breadCrumb = result.breadCrumb;
+
                 let parentName = breadCrumb[breadCrumb.length - 1];
 
 
@@ -1302,7 +1306,7 @@ function jumpToHistorialView(childlist) {
             console.log(viewData);
 
             let columWidth = [];
-            if (currLevel >= 1) {
+            if (breadCrumb.length >= 1) {
                 columWidth = [40, 160];
             } else {
                 columWidth = 200;
@@ -1320,7 +1324,7 @@ function jumpToHistorialView(childlist) {
                     mergeCells: mergeCellInfo,
                 });
                 zoomouting = false;
-                if (currLevel == 0) {
+                if (breadCrumb.length == 0) {
                     nav.selectCell(targetChild, 0)
                 } else {
                     nav.selectCell(targetChild, 1);
