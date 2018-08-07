@@ -1,3 +1,8 @@
+/*
+ * Developed by Shichu Zhu on 8/7/18 8:53 AM.
+ * Last modified 8/7/18 8:37 AM.
+ */
+
 package org.zkoss.zss.model.impl;
 
 import org.zkoss.poi.ss.formula.FormulaConfiguration;
@@ -10,7 +15,7 @@ import org.zkoss.zss.model.sys.formula.FormulaParseContext;
 
 import java.util.*;
 
-public class NavChartsPrototype {
+class NavChartsPrototype {
     private static Map<String, Integer> chartType;
     private static final String[] type0Stat = new String[]{
             "MIN", "MAX", "MEDIAN", "AVERAGE"
@@ -27,14 +32,14 @@ public class NavChartsPrototype {
      *
      * @return The unique instance.
      */
-    public static NavChartsPrototype getPrototype() {
+    static NavChartsPrototype getPrototype() {
         if (uniqueInstance == null) {
             uniqueInstance = new NavChartsPrototype();
         }
         return uniqueInstance;
     }
 
-    void generateChartObject(Model model, NavigationStructure navS, Map<String, Object> obj, int attr, Bucket<String> subGroup, String formula, List<String> paraList) {
+    void generateChartObject(Model model, NavigationStructure navS, Map<String, Object> obj, int attr, Bucket<String> subGroup, String formula) {
         NavChartsPrototype.model = model;
         NavChartsPrototype.navS = navS;
         int type = getChartType(formula);
@@ -98,6 +103,7 @@ public class NavChartsPrototype {
         hist.formattedOutput(obj, obj.get("value"));
     }
 
+    @SuppressWarnings("unchecked")
     private void type2Chart(Map<String, Object> obj, int attr, Bucket<String> subGroup) {
         obj.put("chartType", 2);
         NavigationHistogram hist = new NavigationHistogram(navS.collectDoubleValues(attr, subGroup));
