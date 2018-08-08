@@ -16,6 +16,7 @@ var clickable = true;
 
 var navHistroyTable = {};
 var navHistoryPathIndex = [];
+var breadCrumbHistoryPathIndex = [];
 
 var options = [];
 var hieraOpen = false;
@@ -763,7 +764,10 @@ $("#hierarchi-form").submit(function (e) {
 });
 
 function getAggregateValue() {
+    console.log("getHierarchicalAggregateFormula");
+    console.log(levelList);
     let childlist = computePath();
+    console.log(childlist);
     aggregateData.path = " " + childlist;
 
     $.ajax({
@@ -911,6 +915,7 @@ function zoomIn(child, nav) {
             var result = e.data;
             currLevel += 1;
             currData = result.buckets;
+            let breadcrum_ls = result.breadCrumb;
             console.log("currLevel: " + currLevel)
             mergeCellInfo = [];
             mergeCellInfo.push({row: 0, col: 0, rowspan: currData.length, colspan: 1});
@@ -975,7 +980,7 @@ function zoomIn(child, nav) {
                 zoomming = false;
                 nav.selectCell(0, 1)
             }
-            updateNavPath(); //calculate breadcrumb
+            updateNavPath(breadcrum_ls); //calculate breadcrumb
             // zoomming = false;
             //  nav.selectCell(0, 1)
             //  nav.render();
@@ -985,38 +990,42 @@ function zoomIn(child, nav) {
 
 
 //computing the breadcrumb
-function updateNavPath() {
+function updateNavPath(breadcrumb_ls) {
     let $breadcrumbList = $(".breadcrumb");
     $breadcrumbList.empty();
     let tempString = "";
     if (currLevel > 0) {
         tempString = "<li class='breadcrumb-item'><a href='#' id='0'>Home</a></li>";
-        for (let i = 0; i < levelList.length - 1; i++) {
-            tempString += "<li class='breadcrumb-item'> <a href='#' id='" + (i + 1) + "'>" + cumulativeData[i][levelList[i]].name + "</a></li>";
+        for (let i = 0; i < breadcrumb_ls.length-1; i++) {
+            tempString += "<li class='breadcrumb-item'> <a href='#' id='" + (i + 1) + "'>" + breadcrumb_ls[i] + "</a></li>";
         }
-        tempString += "<li class='breadcrumb-item active' aria-current='page'>" + cumulativeData[currLevel - 1][levelList[currLevel - 1]].name + "</li>";
+        tempString += "<li class='breadcrumb-item active' aria-current='page'>" + breadcrumb_ls[breadcrumb_ls.length-1] + "</li>";
     } else {
         tempString = "<li class='breadcrumb-item' aria-current='page'>Home</li>"
     }
     $breadcrumbList.append(tempString);
-    $(".breadcrumb-item a").click(function (e) {
-        console.log(e.target.id);
-        for (let i = e.target.id; i < currLevel;) {
-            zoomouting = true;
-            zoomOut(nav);
-        }
-    });
 
     //add to navigation history
 
     let navHistoryPath = "Home";
-    for (let j = 0; j < currLevel; j++) {
-        navHistoryPath += " > " + cumulativeData[j][levelList[j]].name;
+    for (let j = 0; j < breadcrumb_ls.length; j++) {
+        navHistoryPath += " > " + breadcrumb_ls[j];
     }
 
     navHistoryPathIndex[navHistoryPath] = computePath();
 
+    let child_str = navHistoryPathIndex[navHistoryPath];
 
+    child_str = child_str.substring(0, child_str.lastIndexOf(","));
+
+    for(let j=breadcrumb_ls.length-2;j >=0; j--)
+    {
+        breadCrumbHistoryPathIndex[j+1] = child_str;
+        child_str = child_str.substring(0, child_str.lastIndexOf(","));
+    }
+    breadCrumbHistoryPathIndex[0] = "";
+    console.log("breadCrumbHistoryPathIndex");
+    console.log(breadCrumbHistoryPathIndex);
     if (currLevel == 0)
         return;
 
@@ -1050,6 +1059,14 @@ function updateNavPath() {
 
         }
     );
+
+    $(".breadcrumb-item a").click(function (e) {
+        console.log(e.target.id);
+        console.log("breadCrumbHistoryPath");
+        console.log(breadCrumbHistoryPathIndex[e.target.id]);
+        console.log(breadCrumbHistoryPathIndex[parseInt(e.target.id)]);
+        jumpToHistorialView(breadCrumbHistoryPathIndex[parseInt(e.target.id)]);
+    });
 
 }
 
@@ -1148,7 +1165,8 @@ function zoomOutHist(nav) {
 
     levelList.pop();
     let childlist = computePath(); //get the list of children
-    console.log(childlist);
+    console.log(childlist+" zoom out to hist");
+    console.log("levelList");
     console.log(levelList);
     //api call to /levelList + '.' + child to get currData
     let queryData = {};
@@ -1168,6 +1186,7 @@ function zoomOutHist(nav) {
         if (e.status == "success") {
             console.log(e);
             var result = e.data;
+            let breadcrum_ls = result.breadCrumb;
             //clickable = result.clickable;
             console.log(result)
             currLevel -= 1;
@@ -1231,7 +1250,7 @@ function zoomOutHist(nav) {
             }
 
 
-            updateNavPath();
+            updateNavPath(breadcrum_ls);
 
         }
     })
@@ -1246,10 +1265,19 @@ function jumpToHistorialView(childlist) {
     clickable = true;
     nav.deselectCell();
 
-    levelList = childlist.split(",");
-
+    let tmp_ls = childlist.split(",");
+    console.log(tmp_ls);
+    levelList = []
+    for (let i = 0; i < tmp_ls.length; i++) {
+        if(tmp_ls[i].length!=0)
+           levelList[i] = parseInt(tmp_ls[i]);
+       // else
+       //     continue;
+    }
+    console.log("levelList");
+    console.log(levelList);
     targetChild = levelList[levelList.length - 1];
-
+    console.log(targetChild);
     //api call to /levelList + '.' + child to get currData
     let queryData = {};
 
@@ -1266,25 +1294,25 @@ function jumpToHistorialView(childlist) {
     }).done(function (e) {
         console.log(e)
         if (e.status == "success") {
-            console.log(e);
+            //console.log(e);
             var result = e.data;
-            let breadCrumb = result.breadCrumb;
+            let breadcrumb_ls = result.breadCrumb;
             //clickable = result.clickable;
-            currLevel = breadCrumb.length;
+            currLevel = breadcrumb_ls.length;
             currData = result.buckets;
-            console.log(childlist);
-            console.log(levelList);
+            //console.log(childlist);
+            //console.log(levelList);
             let numChild = currData.length;
             viewData = new Array(numChild);
             cumulativeData[currLevel] = currData;
 
 
             mergeCellInfo = [];
-            if (breadCrumb.length!=0) {
+            if (breadcrumb_ls.length!=0) {
                 mergeCellInfo.push({row: 0, col: 0, rowspan: numChild, colspan: 1});
 
 
-                let parentName = breadCrumb[breadCrumb.length - 1];
+                let parentName = breadcrumb_ls[breadcrumb_ls.length - 1];
 
 
                 for (let i = 0; i < numChild; i++) {
@@ -1303,10 +1331,10 @@ function jumpToHistorialView(childlist) {
             }
 
 
-            console.log(viewData);
+           // console.log(viewData);
 
             let columWidth = [];
-            if (breadCrumb.length >= 1) {
+            if (breadcrumb_ls.length >= 1) {
                 columWidth = [40, 160];
             } else {
                 columWidth = 200;
@@ -1324,15 +1352,14 @@ function jumpToHistorialView(childlist) {
                     mergeCells: mergeCellInfo,
                 });
                 zoomouting = false;
-                if (breadCrumb.length == 0) {
+                if (breadcrumb_ls.length == 0) {
                     nav.selectCell(targetChild, 0)
                 } else {
                     nav.selectCell(targetChild, 1);
                 }
             }
 
-
-            updateNavPath();
+            updateNavPath(breadcrumb_ls);
 
         }
 
@@ -1377,7 +1404,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
     if (navAggRawData[col - colOffset][row].chartType == 0) {
         let tempString = "chartdiv" + row + col;
         td.innerHTML = "<div id=" + tempString + " ></div>";
-        console.log(td.innerHTML)
+      //  console.log(td.innerHTML)
 
         let chartData = navAggRawData[col - colOffset][row]['chartData'];
         let distribution = [];
