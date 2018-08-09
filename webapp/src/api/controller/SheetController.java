@@ -15,7 +15,6 @@ import org.json.JSONObject;
 
 import static api.WebSocketConfig.MESSAGE_PREFIX;
 
-@CrossOrigin(origins = {"http://localhost:3000", "*"})
 @RestController
 public class SheetController {
     @Autowired
@@ -32,11 +31,10 @@ public class SheetController {
     // Sheets API
     @RequestMapping(value = "/api/getSheets/{bookId}",
             method = RequestMethod.GET)
-    public HashMap<String, Object> getSheets(@RequestHeader("auth-token") String authToken,
-                                             @PathVariable String bookId) {
-        if (!Authorization.authorizeBook(bookId, authToken)){
-            JsonWrapper.generateError("Permission denied for accessing this book");
-        }
+    public HashMap<String, Object> getSheets(@PathVariable String bookId) {
+       // if (!Authorization.authorizeBook(bookId, authToken)){
+       //     JsonWrapper.generateError("Permission denied for accessing this book");
+       // }
         SBook book = BookBindings.getBookById(bookId);
         return sheetWrapper(book);
     }

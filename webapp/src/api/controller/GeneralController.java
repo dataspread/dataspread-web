@@ -89,17 +89,15 @@ public class GeneralController {
 
     @RequestMapping(value = "/api/getCells/{bookId}/{sheetName}/{row1}/{col1}/{row2}/{col2}",
             method = RequestMethod.GET)
-    public HashMap<String, Object> getCells(@RequestHeader("auth-token") String authToken,
-                                            @PathVariable String bookId,
+    public HashMap<String, Object> getCells(@PathVariable String bookId,
                                             @PathVariable String sheetName,
                                             @PathVariable int row1,
                                             @PathVariable int col1,
                                             @PathVariable int row2,
                                             @PathVariable int col2) {
+        System.out.print("Bookid" + bookId);
+        System.out.print("sheetName " + sheetName);
         List<Cell> returnCells = new ArrayList<>();
-        if (!Authorization.authorizeBook(bookId, authToken)){
-            JsonWrapper.generateError("Permission denied for accessing this book");
-        }
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
         CellRegion range = new CellRegion(row1, col1, row2, col2);
@@ -154,6 +152,46 @@ public class GeneralController {
         data.put("tables", tableInfo);
         return JsonWrapper.generateJson(data);
     }
+
+
+    @RequestMapping(value = "/api/getCellsV2/{bookId}/{sheetName}/{row1}/{row2}",
+            method = RequestMethod.GET)
+    public Map<String, List<List<String>>> getCellsV2(@PathVariable String bookId,
+                                            @PathVariable String sheetName,
+                                            @PathVariable int row1,
+                                            @PathVariable int row2) {
+        //TODO: Update to directly call the data model.
+        // TODO: Improve efficiency.
+        List<List<String>> returnValues = new ArrayList<>();
+        List<List<String>> returnFormulae = new ArrayList<>();
+
+        SBook book = BookBindings.getBookById(bookId);
+        SSheet sheet = book.getSheetByName(sheetName);
+        int endColumn = sheet.getEndColumnIndex();
+
+        for (int row = row1; row <= row2; row++)
+        {
+            List<String> valuesRow = new ArrayList<>();
+            List<String> formulaRow = new ArrayList<>();
+            returnValues.add(valuesRow);
+            returnFormulae.add(formulaRow);
+            for (int col = 0; col <= endColumn; col++) {
+                //TODO: Change to range get
+                SCell sCell = sheet.getCell(row, col);
+                valuesRow.add(String.valueOf(sCell.getValue()));
+                if (sCell.getType() == SCell.CellType.FORMULA)
+                    formulaRow.add(sCell.getFormulaValue());
+                else
+                    formulaRow.add(null);
+            }
+        }
+        Map<String, List<List<String>>> ret = new HashMap<>();
+        ret.put("values", returnValues);
+        ret.put("formulae", returnFormulae);
+        return ret;
+    }
+
+
 
     @RequestMapping(value = "/api/putCells",
             method = RequestMethod.PUT)

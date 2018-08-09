@@ -128,6 +128,95 @@
 .exploration{
     color: white;
 }
+
+
+.GridRow {
+    margin-top: 15px;
+    display: flex;
+    flex-direction: row;
+}
+.GridColumn {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+}
+.LeftSideGridContainer {
+    flex: 0 0 50px;
+}
+
+.BodyGrid {
+    width: 100%;
+    border: 1px solid #e0e0e0;
+}
+
+.evenRow,
+.oddRow {
+    border-bottom: 1px solid #e0e0e0;
+}
+.oddRow {
+    background-color: #fafafa;
+}
+
+
+.cell,
+.rowHeaderCell,
+.columnHeaderCell {
+    width: 100%;
+    height: 100%;
+    padding:  .5em;
+    box-sizing: border-box;
+    vertical-align: middle;
+}
+
+.cell {
+    width: 100%;
+    height: 100%;
+    border-right: 1px solid #e0e0e0;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+
+}
+
+.columnHeaderCell {
+    border-right: 1px solid #e0e0e0;
+    border-bottom: 1px solid black;
+    border-top: 1px solid #e0e0e0;
+    background-color: #d5d5d5;
+    text-align: center;
+}
+
+.rowHeaderCell {
+    border-right: 1px solid #e0e0e0;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: #d5d5d5;
+    text-align: center;
+}
+
+
+.centeredCell {
+    align-items: center;
+    text-align: center;
+}
+
+.letterCell {
+    font-size: 1.5em;
+    color: #fff;
+    text-align: center;
+}
+
+.noCells {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1em;
+    color: #bdbdbd;
+}
 .toolTip {
     position: fixed;
     display: none;
