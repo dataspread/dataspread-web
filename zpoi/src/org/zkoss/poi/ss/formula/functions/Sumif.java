@@ -17,6 +17,7 @@
 
 package org.zkoss.poi.ss.formula.functions;
 
+import org.zkoss.poi.ss.formula.FormulaConfiguration;
 import org.zkoss.poi.ss.formula.eval.AreaEval;
 import org.zkoss.poi.ss.formula.eval.ErrorEval;
 import org.zkoss.poi.ss.formula.eval.EvaluationException;
@@ -69,6 +70,9 @@ public final class Sumif extends Var2or3ArgFunction {
 			AreaEval aeSum) {
 		// TODO - junit to prove last arg must be srcColumnIndex and not srcRowIndex
 		I_MatchPredicate mp = Countif.createCriteriaPredicate(arg1, srcRowIndex, srcColumnIndex);
+		if (FormulaConfiguration.getInstance().isCutEvalAtIfCond()){
+			throw new Countif.CutFormulaEvaluationException(mp);
+		}
 		double result = sumMatchingCells(aeRange, mp, aeSum);
 		return new NumberEval(result);
 	}

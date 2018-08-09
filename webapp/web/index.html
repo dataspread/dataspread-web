@@ -80,7 +80,7 @@
                                 <a class="nav-link disabled" href="#">Help</a>
                             </li>
 
-                            <li class="nav-item dropdown" id='explorationtool-bar' >
+                            <li class="nav-item dropdown" id='explorationtool-bar'>
                                 <a class="nav-link dropdown-toggle" href="#" id="exploretoolDropdown" role="button"
                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Exploration
                                     Tools</a>
@@ -299,8 +299,15 @@
             <div class="wrapper">
                 <nav aria-label="breadcrumb" id="navPath" style="display:none">
                     <ol class="breadcrumb">
-                        <li class="breadcrumb-item" aria-current="page">TopLevel</li>
+                        <li class="breadcrumb-item" aria-current="page">Home</li>
                     </ol>
+                    <li class="nav-item dropdown" id="nav-history">
+                        <a class="nav-link dropdown-toggle" href="#" id="historyDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Navigation History</a>
+                        <div class="dropdown-menu" id="history-option" aria-labelledby="historyDropdown">
+
+                        </div>
+                    </li>
+
                 </nav>
                 <div id="testnav">
                     <div class="progress"></div>
@@ -315,7 +322,6 @@
                         <span class="formClose">x</span>
 
                         <fieldset class="form-group m-3" id="exploreOpt">
-                            <legend class="form-label" style="font-size:1rem">Attribute Name</legend>
                         </fieldset>
 
                         <div class="form-group m-5">
@@ -331,6 +337,14 @@
 
                         <fieldset class="form-group m-3" id="aggregateCol">
                         </fieldset>
+                        <fieldset>
+                            <label class="my-1 ml-2" for="chartOpt">Show result by</label>
+                                   <select class="custom-select my-1" id="chartOpt">
+                                       <option value="1">Raw Value</option>
+                                       <option value="2">Chart</option>
+                                   </select>
+                        </fieldset>
+
                         <div class="m-3">
                             <button type="button" class="btn btn-secondary " id="aggreAdd">Add</button>
                             <button type="button" class="btn btn-secondary" id="aggreRemove">Remove</button>
@@ -379,7 +393,6 @@
     </div>
 </div>
 
-
 <div id="book-dialog"></div>
 <div id="sheet-dialog"></div>
 <div id="table-dialog"></div>
@@ -392,7 +405,9 @@
         integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T"
         crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jscolor/2.0.4/jscolor.min.js"></script>
+<script src="https://d3js.org/d3.v5.js"></script>
 <script src="index.js"></script>
+<script src="navigation.js"></script>
 
 </body>
 

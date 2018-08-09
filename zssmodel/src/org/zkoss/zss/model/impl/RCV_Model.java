@@ -11,20 +11,13 @@ import org.model.DBHandler;
 import org.postgresql.copy.CopyIn;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.jdbc.PgConnection;
-import org.zkoss.json.JSONArray;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.model.impl.statistic.AbstractStatistic;
-import org.zkoss.zss.model.impl.statistic.CombinedStatistic;
-import org.zkoss.zss.model.impl.statistic.CountStatistic;
-import org.zkoss.zss.model.impl.statistic.KeyStatistic;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.sql.*;
-import java.text.NumberFormat;
-import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
@@ -45,6 +38,7 @@ public class RCV_Model extends Model {
         this.tableName = tableName;
         this.navSbuckets = new ArrayList<Bucket<String>>();
         this.navS = new NavigationStructure(tableName);
+        this.navS.setCurrentSheet(sheet);
         this.navS.setNavBucketTree(this.navSbuckets);
         createSchema(context);
         loadMetaData(context);
@@ -189,56 +183,6 @@ public class RCV_Model extends Model {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public String createNavS(SSheet currentSheet) {
-        ROM_Model rom_model = (ROM_Model) ((Hybrid_Model) this).tableModels.get(0).y;
-        int columnIndex = Integer.parseInt(indexString.split("_")[1]) - 1;
-
-        currentSheet.clearCache();
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
-            DBContext context = new DBContext(connection);
-
-            if (rom_model.rowOrderTable.contains(indexString)) {
-                rom_model.rowMapping = rom_model.rowOrderTable.get(indexString);
-            } else {
-                ArrayList<Integer> rowIds;
-                CellRegion tableRegion = new CellRegion(0, columnIndex, currentSheet.getEndRowIndex(), columnIndex);
-                rowIds = rom_model.rowMapping.getIDs(context, tableRegion.getRow(), tableRegion.getLastRow() - tableRegion.getRow() + 1);
-
-                CountedBTree newOrder = new CountedBTree(context, null);
-                newOrder.insertIDs(context, tableRegion.getRow(), rowIds);
-                rom_model.rowOrderTable.put(indexString, newOrder);
-                rom_model.rowMapping = newOrder;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        //create nav data structure
-        if (this.navS.getIndexString()!=null && indexString.equals(this.navS.getIndexString())){
-            this.navS.resetToRoot();
-            return this.navS.getSerializedBuckets();
-        } else{
-            this.navS.clearAll();
-        }
-        this.navS.setIndexString(indexString);
-        this.navS.setCurrentSheet(currentSheet);
-        this.navS.setTotalRows(currentSheet.getEndRowIndex()+1);
-        ArrayList<Object> recordList = new ArrayList<>();
-        navigationSortRangeByAttribute(currentSheet, 1, currentSheet.getEndRowIndex(), new int[]{columnIndex}, 0, recordList);
-        this.navS.setRecordList(recordList);
-        navS.initIndexedBucket(currentSheet.getEndRowIndex() + 1);
-
-        return this.navS.getSerializedBuckets();
-    }
-
-    @Override
-    public String getNavChildren(int[] indices) {
-        this.navS.computeOnDemandBucket ( indices );
-        return navS.getSerializedBuckets();
-    }
-
-    @Override
     public void navigationSortBucketByAttribute(SSheet currentSheet, int[] paths, int[] attr_indices, int orderInt) {
         Bucket<String> subRoot = this.navS.getSubRootBucket(paths);
         subRoot.children = null;
@@ -249,7 +193,7 @@ public class RCV_Model extends Model {
      * The sort will clear any previously created sub-groups of the bucket.
      */
     @SuppressWarnings("unchecked")
-    private void navigationSortRangeByAttribute(SSheet currentSheet, int startRow, int endRow, int[] attr_indices, int orderInt, ArrayList<Object> recordListInNavS) {
+    public void navigationSortRangeByAttribute(SSheet currentSheet, int startRow, int endRow, int[] attr_indices, int orderInt, ArrayList<Object> recordListInNavS) {
 
         /*
          * Retrieve the positional mapping, i.e. the countedBTree
@@ -393,7 +337,6 @@ public class RCV_Model extends Model {
                 recordList.add(new String(rs.getBytes(2), "UTF-8"));
             }
             rs.close();
-            stmt.close();
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -9,11 +9,8 @@ import org.postgresql.copy.CopyIn;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.jdbc.PgConnection;
 import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.model.impl.statistic.AbstractStatistic;
 import org.zkoss.zss.model.impl.statistic.CombinedStatistic;
-import org.zkoss.zss.model.impl.statistic.CountStatistic;
 import org.zkoss.zss.model.impl.statistic.KeyStatistic;
 
 import java.io.IOException;
@@ -48,6 +45,7 @@ public class ROM_Model extends Model {
         this.tableName = tableName;
         this.navSbuckets = new ArrayList<Bucket<String>>();
         this.navS = new NavigationStructure(tableName);
+        this.navS.setCurrentSheet(sheet);
         createSchema(context);
     }
 
@@ -66,12 +64,6 @@ public class ROM_Model extends Model {
     @Override
     public ROM_Model clone(DBContext dbContext, SSheet sheet, String modelName) {
         return new ROM_Model(dbContext, sheet, tableName, this);
-    }
-
-    @Override
-    public String createNavS(SSheet currentsheet) {
-        ArrayList<Bucket<String>> newList = this.navS.getUniformBuckets(0,currentsheet.getEndRowIndex());
-        return "";
     }
 
     private void copySchema(DBContext context, String sourceTable){
@@ -620,25 +612,6 @@ public class ROM_Model extends Model {
 
                 ++importedRows;
                 sbSS = new StringBuffer();
-
-               /*if ((importedRows-1)% sampleSize ==0 && importedRows!=1) {
-                    connection.commit();
-
-                    insertRows(dbContext, insertedRows, importedRows-insertedRows);//there's am implicit +1 in imprtedrows
-
-                   if(insertedRows==0)
-                   {
-                       insertedRows += (importedRows-insertedRows);
-                       this.navSbuckets = this.createNavS(null,0,insertedRows);
-                   }
-                   else
-                       insertedRows += (importedRows-insertedRows);
-
-                    System.out.println((importedRows-1) + " rows imported ");
-                    logger.info((importedRows-1) + " rows imported ");
-                }*/
-
-
             }
 
             connection.commit();
@@ -773,11 +746,6 @@ public class ROM_Model extends Model {
     @Override
     public void setIndexString(String str) {
         this.indexString = str;
-    }
-
-    @Override
-    public String getNavChildren(int[] indices) {
-        return null;
     }
 
     @Override

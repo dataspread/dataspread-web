@@ -50,7 +50,7 @@ public class NavigationStructure {
         this.currentSheet = currentSheet;
     }
 
-    private SSheet currentSheet;
+    SSheet currentSheet;
 
     /**
      * Must be set externally for the bucket generator to work.
@@ -70,6 +70,56 @@ public class NavigationStructure {
         typeCheckedColumns = new HashSet<>();
     }
 
+    public Object createNavS(SSheet currentSheet) {
+        Model model = currentSheet.getDataModel();
+        String prevIndexString = getIndexString();
+        setIndexString(model.indexString);
+        ROM_Model rom_model = (ROM_Model) ((Hybrid_Model) model).tableModels.get(0).y;
+        int columnIndex = Integer.parseInt(indexString.split("_")[1]) - 1;
+
+        currentSheet.clearCache();
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            DBContext context = new DBContext(connection);
+
+            if (rom_model.rowOrderTable.contains(indexString)) {
+                rom_model.rowMapping = rom_model.rowOrderTable.get(indexString);
+            } else {
+                ArrayList<Integer> rowIds;
+                CellRegion tableRegion = new CellRegion(0, columnIndex, currentSheet.getEndRowIndex(), columnIndex);
+                rowIds = rom_model.rowMapping.getIDs(context, tableRegion.getRow(), tableRegion.getLastRow() - tableRegion.getRow() + 1);
+
+                CountedBTree newOrder = new CountedBTree(context, null);
+                newOrder.insertIDs(context, tableRegion.getRow(), rowIds);
+                /*
+                Clear the Navigation history if using a lot of memory
+                 */
+                if (rom_model.rowOrderTable.size() >= 3) {
+                    rom_model.rowOrderTable.clear();
+                }
+                rom_model.rowOrderTable.put(indexString, newOrder);
+                rom_model.rowMapping = newOrder;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        //create nav data structure
+        if (prevIndexString != null && indexString.equals(prevIndexString)) {
+            resetToRoot();
+            return getSerializedBuckets();
+        } else {
+            clearAll();
+        }
+        setCurrentSheet(currentSheet);
+        setTotalRows(currentSheet.getEndRowIndex() + 1);
+        ArrayList<Object> recordList = new ArrayList<>();
+        ((RCV_Model) model).navigationSortRangeByAttribute(currentSheet, 1, currentSheet.getEndRowIndex(), new int[]{columnIndex}, 0, recordList);
+        setRecordList(recordList);
+        initIndexedBucket(currentSheet.getEndRowIndex() + 1);
+
+        return getSerializedBuckets();
+    }
+
     /**
      * Convert a given column from string to semantic type. If done then do nothing.
      *
@@ -81,7 +131,7 @@ public class NavigationStructure {
             return false;
         typeCheckedColumns.add(col);
         System.out.println("Type converting column " + col);
-        CellRegion tableRegion = new CellRegion(0, col, totalRows-1, col);
+        CellRegion tableRegion = new CellRegion(0, col, totalRows - 1, col);
         ArrayList<SCell> result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
         result.forEach(x -> x.updateCellTypeFromString(connection, false));
         Collection<AbstractCellAdv> castCells = new ArrayList<>();
@@ -91,14 +141,50 @@ public class NavigationStructure {
         return true;
     }
 
-    public void resetToRoot(){
+    public ArrayList<Double> collectDoubleValues(int columnIndex, Bucket<String> subgroup) {
+        int startRow = subgroup.getStartPos();
+        int endRow = subgroup.getEndPos();
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+
+            ArrayList<Double> doubleOnly = new ArrayList<>();
+            ArrayList<SCell> result;
+            {
+                typeConvertColumnIfHavent(connection, columnIndex);
+                CellRegion tableRegion = new CellRegion(startRow, columnIndex, endRow, columnIndex);
+                result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
+                result.sort(Comparator.comparing(SCell::getRowIndex));
+            }
+
+            /*
+             * Populate the attribute.
+             */
+            result.forEach(x -> {
+                Object val = x.getValue();
+                if (val instanceof Double) {
+                    doubleOnly.add((Double) val);
+                }
+            });
+            return doubleOnly;
+        }
+    }
+
+
+    public void resetToRoot() {
         returnBuffer.buckets = navBucketTree;
     }
 
-    public void clearAll(){
+    public void clearAll() {
         if (navBucketTree != null)
             navBucketTree.clear();
         recordList = null;
+    }
+
+    public Object getNavChildren(int[] paths) {
+        HashMap<String, Object> ret = new HashMap<>();
+        this.computeOnDemandBucket(paths);
+        ret.put("breadCrumb", getStringPath(paths));
+        ret.put("buckets", getSerializedBuckets());
+        return ret;
     }
 
     /**
@@ -106,9 +192,8 @@ public class NavigationStructure {
      *
      * @return
      */
-    public String getSerializedBuckets() {
+    public Object getSerializedBuckets() {
         class ScrollingProtocol {
-            public boolean clickable;
             public ArrayList<BucketGroup> data;
 
             class BucketGroup {
@@ -148,24 +233,13 @@ public class NavigationStructure {
         }
 
         ScrollingProtocol obj = new ScrollingProtocol(returnBuffer);
-        ObjectMapper mapper = new ObjectMapper();
 
         try {
-            return mapper.writeValueAsString(obj);
+            return obj.data;
         } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
-    }
-
-    /**
-     * Called upon importing a new table. Compute the top level groups based on row number.
-     *
-     * @param totalRows
-     */
-    public void initRowNumberBucket(int totalRows) {
-        this.totalRows = totalRows;
-        navBucketTree = getUniformBuckets(1, totalRows);
     }
 
     /**
@@ -181,7 +255,7 @@ public class NavigationStructure {
      */
     public void computeOnDemandBucket(int[] paths) {
         if (paths.length == 0) {
-            if (navBucketTree.size()==0)
+            if (navBucketTree.size() == 0)
                 navBucketTree = getNonOverlappingBuckets(1, this.totalRows - 1);
             else
                 resetToRoot();
@@ -199,25 +273,6 @@ public class NavigationStructure {
     }
 
     /**
-     * Get a ArrayList of start/end row ID for each group of the path.
-     *
-     * @param paths navigation paths from root to selected sub-root.
-     * @return The length of the list will be two times the number of buckets.
-     */
-    public List<Integer> getGroupStartEndIndex(int[] paths) {
-        ArrayList<Bucket<String>> subRoot = navBucketTree;
-        for (int i = 0; i < paths.length; i++) {
-            subRoot = subRoot.get(paths[i]).children;
-        }
-        List<Integer> ret = new ArrayList<>();
-        for (Bucket<String> group : subRoot) {
-            ret.add(group.startPos);
-            ret.add(group.endPos);
-        }
-        return ret;
-    }
-
-    /**
      * Find the bucket given the paths. Currently doesn't support empty paths. i.e. will return null. TODO: construct a root-level navBucketTree.
      *
      * @param paths
@@ -232,6 +287,19 @@ public class NavigationStructure {
         return subRoot;
     }
 
+    public List<String> getStringPath(int[] paths) {
+        List<String> ret = new ArrayList<>();
+        if (paths.length == 0)
+            return ret;
+        Bucket<String> subRoot = this.navBucketTree.get(paths[0]);
+        ret.add(subRoot.toString());
+        for (int i = 1; i < paths.length; i++) {
+            subRoot = subRoot.getChildren().get(paths[i]);
+            ret.add(subRoot.toString());
+        }
+        return ret;
+    }
+
     public void setNavBucketTree(ArrayList<Bucket<String>> navBucketTree) {
         this.navBucketTree = navBucketTree;
     }
@@ -242,11 +310,12 @@ public class NavigationStructure {
 
     /**
      * Set the RecordList of navigation structure. Assume input list is a list of Comparable and does not contain the header row. The function will add a dummy header row to align the index with the back-end row positional mapping.
+     *
      * @param ls Input Arraylist<Comparable> excluding the header info.
      */
     public void setRecordList(ArrayList<Object> ls) {
         this.recordList = ls;
-        recordList.add(0,null);
+        recordList.add(0, null);
     }
 
     public void setTotalRows(int rows) {
@@ -413,6 +482,21 @@ public class NavigationStructure {
         return returnDict;
     }
 
+    public Map<String, Object> getBucketAggWithMemoization(Model model, Bucket<String> subGroup, int attrIndex, String agg_id, List<String> paras) {
+        int startRow = subGroup.getStartPos();
+        int endRow = subGroup.getEndPos();
+        Map<String, Object> obj = model.getColumnAggregate(currentSheet, startRow, endRow, attrIndex, agg_id, paras, true);
+        String formula = (String) obj.get("formula");
+        Map<String, Object> aggMemMap = subGroup.aggMem;
+        if (aggMemMap.containsKey(formula)) {
+            obj.put("value", aggMemMap.get(formula));
+        } else {
+            obj = model.getColumnAggregate(currentSheet, startRow, endRow, attrIndex, agg_id, paras, false);
+            aggMemMap.put(formula, obj.get("value"));
+        }
+        return obj;
+    }
+
     /**
      * Perform aggregation operation on groups of navigation.
      *
@@ -423,7 +507,7 @@ public class NavigationStructure {
      * @param paraList
      * @return
      */
-    public List<List<Object>> navigationGroupAggregateValue(Model model, int[] paths, int[] attr_indices, String[] agg_ids, List<List<String>> paraList) {
+    public List<List<Object>> navigationGroupAggregateValue(Model model, int[] paths, int[] attr_indices, String[] agg_ids, List<List<String>> paraList, List<Boolean> getCharts) {
         List<List<Object>> attrAggList = new ArrayList<>();
         List<Object> aggList = new ArrayList<>();
 
@@ -431,18 +515,17 @@ public class NavigationStructure {
         List<Bucket<String>> subgroups = subroot == null ? navBucketTree : subroot.getChildren();
         for (int attr_i = 0; attr_i < attr_indices.length; attr_i++) {
             for (Bucket<String> subgroup : subgroups) {
-                int startRow = subgroup.getStartPos();
-                int endRow = subgroup.getEndPos();
-                Map<String, Object> tmp = model.getColumnAggregate(currentSheet, startRow, endRow, attr_indices[attr_i], agg_ids[attr_i], paraList.get(attr_i), true);
-                String formula = (String) tmp.get("formula");
-                Map<String, Object> aggMemMap = subgroup.aggMem;
-                if (aggMemMap.containsKey(formula)) {
-                    tmp.put("value", aggMemMap.get(formula));
+                Map<String, Object> obj = getBucketAggWithMemoization(model, subgroup, attr_indices[attr_i], agg_ids[attr_i], paraList.get(attr_i));
+
+                /*
+                Process the chart information.
+                 */
+                if (getCharts.get(attr_i)) {
+                    NavChartsPrototype.getPrototype().generateChartObject(model, this, obj, attr_indices[attr_i], subgroup, agg_ids[attr_i]);
                 } else {
-                    tmp = model.getColumnAggregate(currentSheet, startRow, endRow, attr_indices[attr_i], agg_ids[attr_i], paraList.get(attr_i), false);
-                    aggMemMap.put(formula, tmp.get("value"));
+                    obj.put("chartType", -1);
                 }
-                aggList.add(tmp);
+                aggList.add(obj);
             }
             attrAggList.add(aggList);
             aggList = new ArrayList<>();
@@ -467,7 +550,8 @@ public class NavigationStructure {
 
     /**
      * Search from cur position towards bound for next different key.
-     * @param cur current position of key
+     *
+     * @param cur   current position of key
      * @param bound The boundary of search inclusively.
      * @return The positional index of next different key.
      */

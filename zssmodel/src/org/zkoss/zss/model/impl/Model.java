@@ -3,14 +3,12 @@ package org.zkoss.zss.model.impl;
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
-import org.zkoss.poi.ss.formula.FormulaParseException;
 import org.zkoss.zk.ui.UiException;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.ErrorValue;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.sys.EngineFactory;
-import org.zkoss.zss.model.sys.dependency.ObjectRef;
 import org.zkoss.zss.model.sys.formula.FormulaEngine;
 import org.zkoss.zss.model.sys.formula.FormulaEvaluationContext;
 import org.zkoss.zss.model.sys.formula.FormulaExpression;
@@ -30,7 +28,7 @@ public abstract class Model {
     public ArrayList<Bucket<String>> navSbuckets;
     public NavigationStructure navS;
     public String indexString;
-    public HashMap<Integer,Integer> trueOrder;
+    public HashMap<Integer, Integer> trueOrder;
 
     public static Model CreateModel(DBContext context, SSheet sheet, ModelType modelType, String tableName) {
         Model model = null;
@@ -61,6 +59,7 @@ public abstract class Model {
     }
 
     public abstract ArrayList<Bucket<String>> createNavS(String bucketName, int start, int count);
+
     // Drop the tables created.
     public abstract void dropSchema(DBContext context);
 
@@ -118,33 +117,32 @@ public abstract class Model {
     // Clone only the corresponding tables in postgres
     public abstract Model clone(DBContext dbContext, SSheet sheet, String modelName);
 
-    public abstract String createNavS(SSheet currentsheet);
-
     public abstract ArrayList<String> getHeaders();
-    public abstract void setIndexString(String str);
 
-    public abstract String getNavChildren(int[] indices);
+    public abstract void setIndexString(String str);
 
     /**
      * Sort a bucket based on a given attribute. Calls the navigation structure to get starting / ending row number and then call the {@link #navigationSortRangeByAttribute(SSheet, int, int, int[], int)}
+     *
      * @param currentSheet
      * @param paths
      * @param attr_indices
-     * @param order 0: ascending, 1: descending
+     * @param order        0: ascending, 1: descending
      */
-    public void navigationSortBucketByAttribute(SSheet currentSheet, int[] paths, int[] attr_indices, int order)  {
+    public void navigationSortBucketByAttribute(SSheet currentSheet, int[] paths, int[] attr_indices, int order) {
         return;
     }
 
     /**
      * Sort a block based on input starting and ending row number.
+     *
      * @param currentSheet
      * @param startRow
      * @param endRow
      * @param attr_indices
      * @param order
      */
-    public void navigationSortRangeByAttribute(SSheet currentSheet, int startRow, int endRow, int[] attr_indices, int order)  {
+    public void navigationSortRangeByAttribute(SSheet currentSheet, int startRow, int endRow, int[] attr_indices, int order) {
         return;
     }
 
@@ -168,7 +166,7 @@ public abstract class Model {
             this.navS.typeConvertColumnIfHavent(connection, columnIndex);
 
             String colStr = colToAlphabet.apply(columnIndex);
-            String regionStr = colStr + String.valueOf(startRow) + ":" + colStr + String.valueOf(endRow);
+            String regionStr = colStr + String.valueOf(startRow + 1) + ":" + colStr + String.valueOf(endRow + 1);
             String formula;
             {
                 StringBuilder fBuilder = new StringBuilder();
@@ -201,8 +199,8 @@ public abstract class Model {
                 if (expr.hasError()) {
                     throw new RuntimeException(expr.getErrorMessage());
                 }
+                System.out.println("Computing " + formula);
                 FormulaResultCellValue result = new FormulaResultCellValue(engine.evaluate(expr, new FormulaEvaluationContext(currentSheet, null)));
-                System.out.println("Computing" + formula);
                 Object evalResult = result.getValue();
                 if (evalResult instanceof ErrorValue) {
                     aggStr = ((ErrorValue) evalResult).getMessage();

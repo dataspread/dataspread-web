@@ -15,6 +15,7 @@ import org.zkoss.poi.ss.formula.*;
 import org.zkoss.poi.ss.formula.EvaluationWorkbook.ExternalSheet;
 import org.zkoss.poi.ss.formula.eval.*;
 import org.zkoss.poi.ss.formula.function.FunctionMetadataRegistry;
+import org.zkoss.poi.ss.formula.functions.Countif;
 import org.zkoss.poi.ss.formula.ptg.*;
 import org.zkoss.poi.ss.formula.ptg.TablePtg.Item;
 import org.zkoss.poi.ss.formula.udf.UDFFinder;
@@ -407,6 +408,9 @@ public class FormulaEngineImpl implements FormulaEngine {
 			_logger.error(e.getMessage() + " when eval " + expr.getFormulaString());
 			result = new EvaluationResultImpl(ResultType.ERROR, new ErrorValue(ErrorValue.INVALID_FORMULA, e.getMessage()), ErrorEval.FORMULA_INVALID);
 		} catch(Exception e) {
+			if (e instanceof Countif.CutFormulaEvaluationException) {
+				throw (Countif.CutFormulaEvaluationException) e;
+			}
 			_logger.error(e.getMessage() + " when eval " + expr.getFormulaString(), e);
 			result = new EvaluationResultImpl(ResultType.ERROR, new ErrorValue(ErrorValue.INVALID_FORMULA, e.getMessage()), ErrorEval.FORMULA_INVALID);
 		}
