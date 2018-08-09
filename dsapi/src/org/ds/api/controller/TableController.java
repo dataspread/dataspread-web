@@ -160,7 +160,7 @@ public class TableController {
     }
 
     @RequestMapping(value = "/api/getTables",
-            method = RequestMethod.POST)
+            method = RequestMethod.GET)
     public JSONObject getTables(@RequestHeader("auth-token") String userId){
         JSONObject ret = new JSONObject();
         try {
