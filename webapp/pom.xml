@@ -9,6 +9,7 @@
     <properties>
         <zss.version>3.8.1</zss.version>
         <blockstore.version>1.0.0</blockstore.version>
+        <dataspread-ui.version>1.0.0</dataspread-ui.version>
         <rtree.version>1.0.0</rtree.version>
         <commons-math.version>2.2</commons-math.version>
         <servlet.version>2.4</servlet.version>
@@ -44,6 +45,13 @@
             <artifactId>zssmodel</artifactId>
             <version>${zss.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.github.dataspread</groupId>
+            <artifactId>dataspread-ui</artifactId>
+            <version>${dataspread-ui.version}</version>
+        </dependency>
+
+
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -75,6 +83,7 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-websocket</artifactId>
         </dependency>
+
 
 
         <dependency>
@@ -158,6 +167,8 @@
         </dependency>
 -->
     </dependencies>
+
+
     <build>
         <finalName>DataSpread</finalName>
         <sourceDirectory>${project.basedir}/src</sourceDirectory>
@@ -181,6 +192,11 @@
                 <configuration>
                     <webXml>${project.basedir}/web/WEB-INF/web.xml</webXml>
                     <warSourceDirectory>${project.basedir}/web</warSourceDirectory>
+                    <webResources>
+                        <resource>
+                            <directory>${project.basedir}/../dataspread-ui/build</directory>
+                        </resource>
+                    </webResources>
                 </configuration>
             </plugin>
         </plugins>

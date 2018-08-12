@@ -75,3 +75,26 @@ dsapi/src/ui/node_modules/
 .idea/emacs.xml
 .idea/copyright/
 .idea/
+
+
+# Node js
+# dependencies
+dataspread-ui/node_modules
+dataspread-ui/npm
+
+# testing
+dataspread-ui/coverage
+
+# production
+dataspread-ui/build
+
+# misc
+.DS_Store
+dataspread-ui/.env.local
+dataspread-ui/.env.development.local
+dataspread-ui/.env.test.local
+dataspread-ui/.env.production.local
+
+dataspread-ui/npm-debug.log*
+dataspread-ui/yarn-debug.log*
+dataspread-ui/yarn-error.log*
