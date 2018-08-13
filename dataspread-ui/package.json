@@ -5,6 +5,7 @@
   "dependencies": {
     "react": "^16.4.2",
     "react-dom": "^16.4.2",
+    "react-resumable-js": "^1.1.24",
     "react-scripts": "1.1.4"
   },
   "scripts": {
