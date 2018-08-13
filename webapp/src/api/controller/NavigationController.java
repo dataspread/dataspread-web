@@ -48,6 +48,18 @@ public class NavigationController {
         return JsonWrapper.generateJson(currentSheet.getDataModel().navS.createNavS(currentSheet));
     }
 
+    @RequestMapping(value = "/api/getScrollPath",
+            method = RequestMethod.POST)
+    public HashMap<String, Object> getScrollPath(@RequestBody String value) {
+        JSONParser parser = new JSONParser();
+        JSONObject dict = (JSONObject) parser.parse(value);
+        SBook book = BookBindings.getBookById((String) dict.get("bookId"));
+        SSheet currentSheet = book.getSheetByName((String) dict.get("sheetName"));
+        int row = (int) dict.get("rowNum");
+        int level = (int) dict.get("level");
+        return JsonWrapper.generateJson(currentSheet.getDataModel().navS.getScrollPath(row, level));
+    }
+
     //http://127.0.0.1:8080//api/getFlatten/tjhtmdfii/airbnb_small/0,2
     @RequestMapping(value = "/api/getFlatten/{bookId}/{sheetName}/{path}",
             method = RequestMethod.GET)
@@ -89,7 +101,7 @@ public class NavigationController {
         for (int i = 0; i < tokens.length; i++) {
             indices[i] = Integer.parseInt(tokens[i]);
         }
-        return JsonWrapper.generateJson(((RCV_Model) currentSheet.getDataModel()).navS.getNavChildren(indices));
+        return JsonWrapper.generateJson(((RCV_Model) currentSheet.getDataModel()).navS.getNavChildrenWithContext(indices));
     }
 
     ///api/sortBlock/{bookId}/{sheetName}/{path}/{attr_indices}/{order}

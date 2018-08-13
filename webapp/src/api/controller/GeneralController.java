@@ -95,8 +95,6 @@ public class GeneralController {
                                             @PathVariable int col1,
                                             @PathVariable int row2,
                                             @PathVariable int col2) {
-        System.out.print("Bookid" + bookId);
-        System.out.print("sheetName " + sheetName);
         List<Cell> returnCells = new ArrayList<>();
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
