@@ -1,22 +1,37 @@
 import React, {Component} from 'react';
-import logo from './logo.svg';
 import './App.css';
+import ReactDataSheet from 'react-datasheet';
+import 'react-datasheet/lib/react-datasheet.css';
+import GridExample from './ScrollSync.example';
 
 class App extends Component {
-  render() {
-
-    return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <h1 className="App-title">Welcome to React</h1>
-        </header>
-        <p className="App-intro">
-          To get started, edit <code>src/App.js</code> and save to reload.
-        </p>
-      </div>
-    );
-  }
+    constructor (props) {
+        super(props)
+        this.state = {
+            grid: [
+                [{value:  1}, {value:  3}],
+                [{value:  2}, {value:  4}]
+            ]
+        }
+    }
+    render () {
+        return (
+            <div>
+            <ReactDataSheet
+                data={this.state.grid}
+                valueRenderer={(cell) => cell.value}
+                onCellsChanged={changes => {
+                    const grid = this.state.grid.map(row => [...row])
+                    changes.forEach(({cell, row, col, value}) => {
+                        grid[row][col] = {...grid[row][col], value}
+                    })
+                    this.setState({grid})
+                }}
+            />
+            <GridExample/>
+            </div>
+        )
+    }
 }
 
 export default App;
