@@ -36,7 +36,7 @@ public class RCV_Model extends Model {
         rowMapping = new CountedBTree(context, tableName + "_row_idx");
         colMapping = new CountedBTree(context, tableName + "_col_idx");
         this.tableName = tableName;
-        this.navSbuckets = new ArrayList<Bucket<String>>();
+        this.navSbuckets = new ArrayList<Bucket>();
         this.navS = new NavigationStructure(tableName);
         this.navS.setCurrentSheet(sheet);
         this.navS.setNavBucketTree(this.navSbuckets);
@@ -110,7 +110,7 @@ public class RCV_Model extends Model {
     }
 
     @Override
-    public ArrayList<Bucket<String>> createNavS(String bucketName, int start, int count) {
+    public ArrayList<Bucket> createNavS(String bucketName, int start, int count) {
         //load sorted data from table
         ArrayList<Object> recordList = new ArrayList<>();
 
@@ -135,7 +135,7 @@ public class RCV_Model extends Model {
         // TotalRows does not include the header row.
         this.navS.setTotalRows(count);
         if (this.indexString == null) {
-            ArrayList<Bucket<String>> newList = this.navS.getUniformBuckets(0, count);
+            ArrayList<Bucket> newList = this.navS.getUniformBuckets(0, count);
             return newList;
         }
 
@@ -176,7 +176,7 @@ public class RCV_Model extends Model {
 
         //create nav data structure
         this.navS.setRecordList(recordList);
-        ArrayList<Bucket<String>> newList = this.navS.getNonOverlappingBuckets(1, recordList.size() - 1);//getBucketsNoOverlap(0,recordList.size()-1,true);
+        ArrayList<Bucket> newList = this.navS.getNonOverlappingBuckets(1, recordList.size() - 1);//getBucketsNoOverlap(0,recordList.size()-1,true);
 
         return newList;
 
@@ -291,7 +291,7 @@ public class RCV_Model extends Model {
     }
 
 
-    public ArrayList<Bucket<String>> createNavSOnDemand(String bucketName, int start, int count) {
+    public ArrayList<Bucket> createNavSOnDemand(String bucketName, int start, int count) {
         //load sorted data from table
         ArrayList<Object> recordList = new ArrayList<>();
 
@@ -343,7 +343,7 @@ public class RCV_Model extends Model {
 
         //create nav data structure
         this.navS.setRecordList(recordList);
-        ArrayList<Bucket<String>> newList = this.navS.getNonOverlappingBuckets(1, recordList.size() - 1);//getBucketsNoOverlap(0,recordList.size()-1,true);
+        ArrayList<Bucket> newList = this.navS.getNonOverlappingBuckets(1, recordList.size() - 1);//getBucketsNoOverlap(0,recordList.size()-1,true);
 
         if (bucketName == null) {
             return newList;
@@ -392,8 +392,6 @@ public class RCV_Model extends Model {
     public void setIndexString(String str) {
         this.indexString = str;
     }
-
-
 
 
     @Override
@@ -597,7 +595,7 @@ public class RCV_Model extends Model {
         */
 
         ArrayList<Integer> rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
-        int rseize  = rowMapping.size(context);
+        int rseize = rowMapping.size(context);
         ArrayList<Integer> colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
         HashMap<Integer, Integer> row_map = IntStream.range(0, rowIds.size())
                 .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(rowIds.get(i), fetchRegion.getRow() + i),

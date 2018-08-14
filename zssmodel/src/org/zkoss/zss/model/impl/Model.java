@@ -25,7 +25,7 @@ public abstract class Model {
     /**
      * Todo: get rid of navSbuckets since navS already contains it.
      */
-    public ArrayList<Bucket<String>> navSbuckets;
+    public ArrayList<Bucket> navSbuckets;
     public NavigationStructure navS;
     public String indexString;
     public HashMap<Integer, Integer> trueOrder;
@@ -58,7 +58,7 @@ public abstract class Model {
         return model;
     }
 
-    public abstract ArrayList<Bucket<String>> createNavS(String bucketName, int start, int count);
+    public abstract ArrayList<Bucket> createNavS(String bucketName, int start, int count);
 
     // Drop the tables created.
     public abstract void dropSchema(DBContext context);

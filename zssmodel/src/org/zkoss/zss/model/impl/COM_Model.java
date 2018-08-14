@@ -32,7 +32,7 @@ public class COM_Model extends Model {
     }
 
     @Override
-    public ArrayList<Bucket<String>> createNavS(String bucketName, int start, int count) {
+    public ArrayList<Bucket> createNavS(String bucketName, int start, int count) {
        return null;
 
     }
