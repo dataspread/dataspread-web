@@ -25,14 +25,14 @@ public class NavigationStructure {
     /**
      * Navigation bucket tree structure. Lazily constructed upon user clicking. The Model object has a reference to this Bucket Tree structure {@link Model#navSbuckets}. TODO: This link would break by reassigning in method init*. HOW TO FIX???
      */
-    private ArrayList<Bucket<String>> navBucketTree;
+    private ArrayList<Bucket> navBucketTree;
     /**
      * Temporarily store the computed bucket for user call. To be serialized by calling {@link #getSerializedBuckets}.
      */
     private ReturnBuffer returnBuffer;
 
     class ReturnBuffer {
-        public ArrayList<Bucket<String>> buckets;
+        ArrayList<Bucket> buckets;
     }
 
     /**
@@ -179,7 +179,7 @@ public class NavigationStructure {
         if (row > totalRows || row < 1) {
             return null;
         }
-        List<Bucket<String>> subBuckets = this.navBucketTree;
+        List<Bucket> subBuckets = this.navBucketTree;
         List<String> path = new ArrayList<>();
         while (subBuckets != null && level-- > 0) {
             for (int i = 0; i < subBuckets.size(); i++) {
@@ -309,8 +309,8 @@ public class NavigationStructure {
      */
     private void computeOnDemandBucket(int[] paths, List<Integer> prev, List<Integer> later) {
         if (computeOnDemandBucketIfEmptyPath(paths)) return;
-        Bucket<String> left = null, right = null, subRoot;
-        List<Bucket<String>> subBuckets = navBucketTree;
+        Bucket left = null, right = null, subRoot;
+        List<Bucket> subBuckets = navBucketTree;
         for (int i = 0; i < paths.length; i++) {
             int path = paths[i];
             subRoot = subBuckets.get(path);
@@ -319,7 +319,7 @@ public class NavigationStructure {
                     expandChild(right);
                     if (right.children != null) {
                         int seq = 0;
-                        right = right.children.get(seq);
+                        right = (Bucket) right.children.get(seq);
                         later.add(seq);
                     }
                 }
@@ -336,7 +336,7 @@ public class NavigationStructure {
                     expandChild(left);
                     if (left.children != null) {
                         int seq = left.children.size() - 1;
-                        left = left.children.get(seq);
+                        left = (Bucket) left.children.get(seq);
                         prev.add(seq);
                     }
                 }
@@ -405,7 +405,7 @@ public class NavigationStructure {
         return ret;
     }
 
-    public void setNavBucketTree(ArrayList<Bucket<String>> navBucketTree) {
+    public void setNavBucketTree(ArrayList<Bucket> navBucketTree) {
         this.navBucketTree = navBucketTree;
     }
 
@@ -431,9 +431,9 @@ public class NavigationStructure {
         return this.totalRows;
     }
 
-    public ArrayList<Bucket<String>> getNonOverlappingBuckets(int startPos, int endPos) {
+    public ArrayList<Bucket> getNonOverlappingBuckets(int startPos, int endPos) {
 
-        ArrayList<Bucket<String>> bucketList = new ArrayList<>();
+        ArrayList<Bucket> bucketList = new ArrayList<>();
         int bucketSize = (endPos - startPos + 1) / kHist;
 
         if (bucketSize == 0) {
@@ -507,8 +507,8 @@ public class NavigationStructure {
      * @param endPos   Same as above. Last row is totalRows.
      * @return Bucket list.
      */
-    public ArrayList<Bucket<String>> getUniformBuckets(int startPos, int endPos) {
-        ArrayList<Bucket<String>> bucketList = new ArrayList<Bucket<String>>();
+    public ArrayList<Bucket> getUniformBuckets(int startPos, int endPos) {
+        ArrayList<Bucket> bucketList = new ArrayList<>();
         int bucketSize = (endPos - startPos + 1) / kHist;
 
         //System.out.println("(start,end): ("+startPos+","+endPos+"), BUCKET Size: "+bucketSize);
@@ -616,7 +616,7 @@ public class NavigationStructure {
         List<Object> aggList = new ArrayList<>();
 
         Bucket<String> subroot = getSubRootBucket(paths);
-        List<Bucket<String>> subgroups = subroot == null ? navBucketTree : subroot.getChildren();
+        List<Bucket> subgroups = subroot == null ? navBucketTree : subroot.getChildren();
         for (int attr_i = 0; attr_i < attr_indices.length; attr_i++) {
             for (Bucket<String> subgroup : subgroups) {
                 Map<String, Object> obj = getBucketAggWithMemoization(model, subgroup, attr_indices[attr_i], agg_ids[attr_i], paraList.get(attr_i));
@@ -734,7 +734,7 @@ public class NavigationStructure {
         return indexes;
     }
 
-    public void printBuckets(List<Bucket<String>> bucketList) {
+    public void printBuckets(List<Bucket> bucketList) {
         for (int i = 0; i < bucketList.size(); i++) {
             System.out.println("Bucket " + (i + 1));
             System.out.println("Max: " + bucketList.get(i).maxValue);
@@ -848,8 +848,8 @@ public class NavigationStructure {
         return bucketList;
     }
 
-    public ArrayList<Bucket<String>> recomputeNavS(String bucketName, ArrayList<Bucket<String>> navSbuckets, ArrayList<Bucket<String>> newList) {
-        ArrayList<Bucket<String>> newNavs = navSbuckets;
+    public ArrayList<Bucket> recomputeNavS(String bucketName, ArrayList<Bucket> navSbuckets, ArrayList<Bucket> newList) {
+        ArrayList<Bucket> newNavs = navSbuckets;
 
         for (int i = 0; i < newNavs.size(); i++) {
             Bucket<String> newParent = updateParentBucket(bucketName, newNavs.get(i), newList);
@@ -864,7 +864,7 @@ public class NavigationStructure {
 
     }
 
-    private Bucket<String> updateParentBucket(String bucketName, Bucket<String> parent, ArrayList<Bucket<String>> children) {
+    private Bucket<String> updateParentBucket(String bucketName, Bucket parent, ArrayList<Bucket> children) {
         System.out.println("Calling: " + parent.getName());
         if (parent.getName().equals(bucketName)) {
             parent.setChildren(children);
@@ -875,7 +875,7 @@ public class NavigationStructure {
             return null;
 
         for (int i = 0; i < parent.children.size(); i++) {
-            Bucket<String> newParent = updateParentBucket(bucketName, parent.children.get(i), children);
+            Bucket<String> newParent = updateParentBucket(bucketName, (Bucket) parent.children.get(i), children);
             if (newParent != null) {
                 parent.children.remove(i);
                 parent.children.add(i, newParent);
