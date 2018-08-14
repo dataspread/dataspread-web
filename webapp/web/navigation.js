@@ -932,8 +932,9 @@ function zoomIn(child, nav) {
 
 
             // spanList.push(span);
-            console.log(mergeCellInfo)
+            console.log(mergeCellInfo);
 
+            cumulativeData.splice(currLevel);
             cumulativeData.push(currData);
 
             console.log(cumulativeData);
