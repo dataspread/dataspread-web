@@ -307,7 +307,11 @@ function Explore(e) {
     $("#Hierarchical").click(function () { // handling hierarchical column click in
         // the Exploration Tools
         $("#exploration-bar").css("display", "none");
-        hot.updateSettings({width: wrapperWidth * 0.59});
+        let originalWidth = $("#test-hot");
+        let newWidth = originalWidth - wrapperWidth * 0.41;
+        if (newWidth < 0) newWidth = 0;
+        console.log(newWidth);
+        hot.updateSettings({width: newWidth});
         $("#hierarchical-col").css({
             "float": "left",
             "width": "19%",
@@ -516,6 +520,17 @@ function Explore(e) {
         navContainer.innerHTML = ""
         nav = new Handsontable(navContainer, navSettings);
         nav.selectCell(0, 0);
+
+        $("#navChart").resizable({handles: 'e'});
+        // The resizing will also invoke the $(window).resize function in index.js
+        $('#navChart').resize(function () {
+            let leftWidth = $("#navChart").width();
+            let rightWidth = wrapperWidth * 0.98 - leftWidth;
+            if (rightWidth < 0) rightWidth = 0;
+            nav.render();
+            $('#test-hot').width(rightWidth);
+            hot.render();
+        });
 
         updateData(0, 0, 1000, 15, true);
         lowerRange = 0;

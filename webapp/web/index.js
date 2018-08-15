@@ -1204,16 +1204,12 @@ $(window).resize(function () {
     console.log("resized")
     wrapperHeight = $(".wrapper").height();
     wrapperWidth = $(".wrapper").width();
+    let leftWidth = $("#navChart").width();
     if (exploreOpen) {
         hot.updateSettings({
-            width: wrapperWidth * 0.8,
+            width: wrapperWidth - leftWidth,
             height: wrapperHeight * 0.95,
         });
-        nav.updateSettings({
-            width: wrapperWidth * 0.19,
-            height: wrapperHeight * 0.95,
-        })
-
     } else {
         hot.updateSettings({
             width: $(".wrapper").width(),

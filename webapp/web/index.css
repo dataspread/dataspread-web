@@ -106,10 +106,6 @@
     cursor: pointer;
 }
 
-/* #navChart .ht_master tr > td.current {
-  background-color: #D3D3D3 !important;
-  color:white;
-} */
 .progress {
     position:fixed;
     left: 0;
