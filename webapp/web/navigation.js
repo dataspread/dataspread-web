@@ -529,7 +529,7 @@ function Explore(e) {
             if (rightWidth < 0) rightWidth = 0;
             nav.render();
             $('#test-hot').width(rightWidth);
-            hot.render();
+            // hot.render(); // Surprisingly, this is not needed to refresh both panels. nav.render() is needed though.
         });
 
         updateData(0, 0, 1000, 15, true);
