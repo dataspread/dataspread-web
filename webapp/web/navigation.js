@@ -328,6 +328,8 @@ function Explore(e) {
     $("#test-hot").css({"float": "left"});
     $("#navChart").css({"display": "inline", "float": "left"});
 
+    $("#history-option").empty();
+
     $.get(baseUrl + 'startNav/' + bId + '/' + sName + '/' + e, function (data) {
         clickable = true;
         currLevel = 0;
