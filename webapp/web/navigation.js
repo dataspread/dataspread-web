@@ -330,6 +330,7 @@ function Explore(e) {
 
     $("#history-option").empty();
 
+
     $.get(baseUrl + 'startNav/' + bId + '/' + sName + '/' + e, function (data) {
         clickable = true;
         currLevel = 0;
