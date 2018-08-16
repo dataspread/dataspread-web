@@ -136,11 +136,11 @@ $("#Explore").click(function () {
     hieraOpen = false;
     if (exploreOpen) {
         hot.updateSettings({
-            width: $('.wrapper').width() * 0.59,
+            width: $("#test-hot").width() - wrapperWidth*0.19,
         });
     } else {
         hot.updateSettings({
-            width: $('.wrapper').width() * 0.79,
+            width: wrapperWidth * 0.79,
         });
     }
     $("#hierarchical-col").css("display", "none");
@@ -291,7 +291,7 @@ $(".formClose").click(function (e) {
     this.parentNode.parentNode.style.display = 'none';
     if (exploreOpen) {
         hot.updateSettings({
-            width: $('.wrapper').width() * 0.79,
+            width: $("#test-hot").width() + wrapperWidth*0.19,
         });
     } else {
         hot.updateSettings({
@@ -307,8 +307,8 @@ function Explore(e) {
     $("#Hierarchical").click(function () { // handling hierarchical column click in
         // the Exploration Tools
         $("#exploration-bar").css("display", "none");
-        let originalWidth = $("#test-hot");
-        let newWidth = originalWidth - wrapperWidth * 0.41;
+        let originalWidth = $("#test-hot").width();
+        let newWidth = originalWidth - wrapperWidth * 0.19;
         if (newWidth < 0) newWidth = 0;
         console.log(newWidth);
         hot.updateSettings({width: newWidth});
@@ -527,7 +527,8 @@ function Explore(e) {
             let leftWidth = $("#navChart").width();
             let rightWidth = wrapperWidth * 0.98 - leftWidth;
             if (rightWidth < 0) rightWidth = 0;
-            nav.render();
+            //nav.render();
+            nav.updateSettings({width:$("#navChart").width()})
             $('#test-hot').width(rightWidth);
             // hot.render(); // Surprisingly, this is not needed to refresh both panels. nav.render() is needed though.
         });
@@ -711,7 +712,7 @@ function getAggregateValue() {
     }).done(function (e) {
         if (e.status == "success") {
             $("#hierarchical-col").css("display", "none");
-            hot.updateSettings({width: wrapperWidth * 0.8});
+            hot.updateSettings({width: wrapperWidth - $("#navChart").width()});
             hieraOpen = true;
             if (currLevel == 0) {
                 colHeader.splice(
