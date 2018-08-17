@@ -64,7 +64,7 @@ public class NavigationStructure {
 
     public NavigationStructure(String tableName) {
         this.tableName = tableName;
-        this.kHist = 9;    // max # of histograms is kHist + 1
+        this.kHist = 6;    // max # of histograms is kHist + 1
         kryo = new Kryo();
         this.useKryo = true;
         returnBuffer = new ReturnBuffer();

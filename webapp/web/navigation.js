@@ -392,11 +392,11 @@ function Explore(e) {
                             default:
                                 let check =
                                     aggregateData.formula_ls[col - 1].getChart ? "checked" : "";
-                                return colHeader[col] + "<span id='colClose' >x</span>" +
+                                return colHeader[col]; /*+ "<span id='colClose' >x</span>" +
                                     "<label class=\"switch\">" +
                                     "  <input type=\"checkbox\"" + check + ">" +
                                     "  <span class=\"slider round\"></span>" +
-                                    "</label>";
+                                    "</label>";*/
                         }
                     } else {
                         switch (col) {
@@ -407,11 +407,11 @@ function Explore(e) {
                             default:
                                 let check =
                                     aggregateData.formula_ls[col - 2].getChart ? "checked" : "";
-                                return colHeader[col] + "<span id='colClose'>x</span>" +
+                                return colHeader[col]; /* + "<span id='colClose'>x</span>" +
                                     "<label class=\"switch\">" +
                                     "  <input type=\"checkbox\"" + check + ">" +
                                     "  <span class=\"slider round\"></span>" +
-                                    "</label>";
+                                    "</label>";*/
                         }
                     }
                 }
@@ -1297,6 +1297,14 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             .style("font-weight", "bold")
             .text(value);
 
+        // add a label to the xAxis
+        svg.append("text")
+            .attr("x", (width / 2))
+            .attr("y", height )
+            .attr("text-anchor", "middle")
+            .style("font-size", "12px")
+            .text("Availability");
+
         // draw the rectangle
         //'#0099ff'
         let fraction = 3; // what fraction of container is the valuebar
@@ -1846,7 +1854,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             }
         }
 
-        var margin = {top: 20, right: 25, bottom: 18, left: 35};
+        var margin = {top: 20, right: 25, bottom: 30, left: 35};
         // here, we want the full chart to be 700x200, so we determine
         // the width and height by subtracting the margins from those values
         var fullWidth = wrapperWidth * 0.14;
@@ -1953,13 +1961,20 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
         // add a label to the yAxis
         svg.append('text')
             .attr('transform', 'rotate(-90)')
-            .attr("y", 0 - margin.left)
+            .attr("y", 0 - margin.left-3)
             .attr("x", 0 - (height / 2))
             .style('text-anchor', 'middle')
             .style('fill', 'black')
             .attr('dy', '1em')
-            .style('font-size', 10)
+            .style('font-size', "11px")
             .text('Count');
+        // add a label to the xAxis
+        svg.append("text")
+            .attr("x", (width / 2))
+            .attr("y", height + (margin.bottom))
+            .attr("text-anchor", "middle")
+            .style("font-size", "12px")
+            .text("Reviews Per Month");
 
         let pivotValue = data.pivotValue;
         svg.append("line")
