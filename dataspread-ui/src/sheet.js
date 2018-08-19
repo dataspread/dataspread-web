@@ -1,9 +1,9 @@
-// Obtain the root
-const rootElement = document.getElementById('root')
-const STATE_LOADING = 0;
+import React, {Component} from 'react';
+import { Input, Button } from 'semantic-ui-react'
+import ReactResumableJs from 'react-resumable-js'
+import {AutoSizer, MultiGrid} from './react-virtualized'
 
-class DSGrid extends React.Component {
-
+export default class DSGrid extends Component {
     toColumnName(num) {
         for (var ret = '', a = 1, b = 26; (num -= a) >= 0; a = b, b *= 26) {
             ret = String.fromCharCode(parseInt((num % b) / a) + 65) + ret;
@@ -19,8 +19,12 @@ class DSGrid extends React.Component {
             columns: 500,
             version: 0
         }
+        var LRU = require("lru-cache");
 
-        this.dataCache = new LRUMap(100);
+
+        this.dataCache = new LRU(1000);
+
+
         this.fetchSize = 100;
         this._onSectionRendered = this._onSectionRendered.bind(this);
         this._loadMoreRows = this._loadMoreRows.bind(this);
@@ -34,15 +38,15 @@ class DSGrid extends React.Component {
     render() {
         return (
             <div>
-                <semanticUIReact.Input
+                <Input
                     placeholder='Book Name...'
                     name="bookName"
                     onChange={this._handleEvent}/>
-                <semanticUIReact.Button
+                <Button
                     name="bookLoadButton"
                     onClick={this._handleEvent}>
                     Load
-                </semanticUIReact.Button>
+                </Button>
 
                 <ReactResumableJs
                     uploaderID="importBook"
@@ -58,9 +62,9 @@ class DSGrid extends React.Component {
 
                 <div style={{display: 'flex'}}>
                     <div style={{flex: 'auto', height: '90vh'}}>
-                        <ReactVirtualized.AutoSizer>
+                        <AutoSizer>
                             {({height, width}) => (
-                                <ReactVirtualized.MultiGrid
+                                <MultiGrid
                                     height={height}
                                     width={width}
                                     cellRenderer={this._cellRenderer}
@@ -74,7 +78,7 @@ class DSGrid extends React.Component {
                                     ref={(ref) => this.grid = ref}
                                 />
                             )}
-                        </ReactVirtualized.AutoSizer>
+                        </AutoSizer>
                     </div>
                 </div>
 
@@ -184,7 +188,7 @@ class DSGrid extends React.Component {
             }
             else {
                 if (typeof fromCache == "undefined" && typeof this.bookName != "undefined") {
-                    this.dataCache.set(Math.trunc((rowIndex - 1) / this.fetchSize), STATE_LOADING);
+                    this.dataCache.set(Math.trunc((rowIndex - 1) / this.fetchSize), 1);
                     // Load data - only if not scrolling.
                     let startIndex = Math.trunc((rowIndex - 1) / this.fetchSize) * this.fetchSize;
                     let stopIndex = startIndex + this.fetchSize;
@@ -215,10 +219,3 @@ class DSGrid extends React.Component {
         )
     }
 }
-
-
-// Render DataSpread Grid
-ReactDOM.render(
-    <DSGrid/>,
-    rootElement
-);

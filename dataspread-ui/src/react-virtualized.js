@@ -234,7 +234,7 @@
     }(React.PureComponent);
     function createDetectElementResize(nonce) {
         var _window;
-        _window = "undefined" != typeof window ? window : "undefined" != typeof self ? self : global;
+        _window = "undefined" != typeof window ? window : "undefined" != typeof window.self ? window.self : global;
         var cancel, raf, attachEvent = "undefined" != typeof document && document.attachEvent;
         if (!attachEvent) {
             var requestFrame = (raf = _window.requestAnimationFrame || _window.mozRequestAnimationFrame || _window.webkitRequestAnimationFrame || function(fn) {
@@ -1958,7 +1958,7 @@
         renderedCell && renderedCell.props && void 0 === renderedCell.props.style && !0 !== parent.__warnedAboutMissingStyle && (parent.__warnedAboutMissingStyle = !0, 
         console.warn("Rendered cell should include style property for positioning.")));
     }
-    var win = void 0, raf = (win = "undefined" != typeof window ? window : "undefined" != typeof self ? self : {}).requestAnimationFrame || win.webkitRequestAnimationFrame || win.mozRequestAnimationFrame || win.oRequestAnimationFrame || win.msRequestAnimationFrame || function(callback) {
+    var win = void 0, raf = (win = "undefined" != typeof window ? window : "undefined" != typeof window.self ? window.self : {}).requestAnimationFrame || win.webkitRequestAnimationFrame || win.mozRequestAnimationFrame || win.oRequestAnimationFrame || win.msRequestAnimationFrame || function(callback) {
         return win.setTimeout(callback, 1e3 / 60);
     }, caf = win.cancelAnimationFrame || win.webkitCancelAnimationFrame || win.mozCancelAnimationFrame || win.oCancelAnimationFrame || win.msCancelAnimationFrame || function(id) {
         win.clearTimeout(id);

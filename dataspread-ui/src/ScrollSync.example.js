@@ -3,6 +3,7 @@ import * as React from 'react';
 import {AutoSizer, ScrollSync, Grid} from 'react-virtualized';
 import cn from 'classnames';
 import styles from './ScrollSync.example.css';
+import 'react-virtualized/styles.css';
 import ContentBox from './ContentBox'
 import scrollbarSize from 'dom-helpers/util/scrollbarSize';
 
@@ -42,6 +43,10 @@ export default class GridExample extends React.PureComponent {
         } = this.state;
 
         return (
+
+
+            <div className={styles.Body}>
+                <div className={styles.column}>
             <ContentBox>
                 <ScrollSync>
                     {({
@@ -82,33 +87,12 @@ export default class GridExample extends React.PureComponent {
                                     style={{
                                         position: 'absolute',
                                         left: 0,
-                                        top: 0,
-                                        color: leftColor,
-                                        backgroundColor: `rgb(${topBackgroundColor.r},${
-                                            topBackgroundColor.g
-                                            },${topBackgroundColor.b})`,
-                                    }}>
-                                    <Grid
-                                        cellRenderer={this._renderLeftHeaderCell}
-                                        className={styles.HeaderGrid}
-                                        width={columnWidth}
-                                        height={rowHeight}
-                                        rowHeight={rowHeight}
-                                        columnWidth={columnWidth}
-                                        rowCount={1}
-                                        columnCount={1}
-                                    />
-                                </div>
-                                <div
-                                    className={styles.LeftSideGridContainer}
-                                    style={{
-                                        position: 'absolute',
-                                        left: 0,
                                         top: rowHeight,
                                         color: leftColor,
                                         backgroundColor: `rgb(${leftBackgroundColor.r},${
                                             leftBackgroundColor.g
                                             },${leftBackgroundColor.b})`,
+                                        overflow: 'hidden !important'
                                     }}>
                                     <Grid
                                         overscanColumnCount={overscanColumnCount}
@@ -139,6 +123,9 @@ export default class GridExample extends React.PureComponent {
                                                     }}>
                                                     <Grid
                                                         className={styles.HeaderGrid}
+                                                        style={{
+                                                            overflow: 'hidden'
+                                                        }}
                                                         columnWidth={columnWidth}
                                                         columnCount={columnCount}
                                                         height={rowHeight}
@@ -182,6 +169,8 @@ export default class GridExample extends React.PureComponent {
                     }}
                 </ScrollSync>
             </ContentBox>
+                </div>
+            </div>
         );
     }
 

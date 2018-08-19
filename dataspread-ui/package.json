@@ -10,7 +10,8 @@
     "react-dom": "^16.4.2",
     "react-resumable-js": "^1.1.24",
     "react-scripts": "1.1.4",
-    "react-virtualized": "^9.20.1"
+    "react-virtualized": "^9.20.1",
+    "semantic-ui-react": "^0.82.2"
   },
   "scripts": {
     "start": "react-scripts start",

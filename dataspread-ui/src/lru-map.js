@@ -16,12 +16,6 @@
  *
  *  removed  <--  <--  <--  <--  <--  <--  <--  <--  <--  <--  <--  added
  */
-(function(g,f){
-  const e = typeof exports == 'object' ? exports : typeof g == 'object' ? g : {};
-  f(e);
-  if (typeof define == 'function' && define.amd) { define('lru', e); }
-})(this, function(exports) {
-
 const NEWER = Symbol('newer');
 const OLDER = Symbol('older');
 
@@ -301,5 +295,3 @@ LRUMap.prototype.toString = function() {
   }
   return s;
 };
-
-});

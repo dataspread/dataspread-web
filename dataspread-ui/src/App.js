@@ -1,8 +1,9 @@
 import React, {Component} from 'react';
 import './App.css';
-import ReactDataSheet from 'react-datasheet';
+//import ReactDataSheet from 'react-datasheet';
 import 'react-datasheet/lib/react-datasheet.css';
-import GridExample from './ScrollSync.example';
+import DSGrid from './sheet';
+
 
 class App extends Component {
     constructor (props) {
@@ -16,20 +17,7 @@ class App extends Component {
     }
     render () {
         return (
-            <div>
-            <ReactDataSheet
-                data={this.state.grid}
-                valueRenderer={(cell) => cell.value}
-                onCellsChanged={changes => {
-                    const grid = this.state.grid.map(row => [...row])
-                    changes.forEach(({cell, row, col, value}) => {
-                        grid[row][col] = {...grid[row][col], value}
-                    })
-                    this.setState({grid})
-                }}
-            />
-            <GridExample/>
-            </div>
+            <DSGrid/>
         )
     }
 }
