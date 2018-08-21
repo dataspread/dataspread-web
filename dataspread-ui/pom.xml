@@ -95,7 +95,7 @@
                 </executions>
                 <configuration>
                     <environmentVariables>
-                        <CI>true</CI>
+                        <CI>false</CI>
                         <!-- The following parameters create an NPM sandbox for CI -->
                         <NPM_CONFIG_PREFIX>${basedir}/npm</NPM_CONFIG_PREFIX>
                         <NPM_CONFIG_TMP>${project.build.directory}/npmtmp</NPM_CONFIG_TMP>
