@@ -157,13 +157,6 @@ body {
   border: 1px solid #e0e0e0;
 }
 
-.evenRow,
-.oddRow {
-  border-bottom: 1px solid #e0e0e0;
-}
-.oddRow {
-  background-color: #fafafa;
-}
 
 
 .cell,
