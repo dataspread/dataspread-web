@@ -71,7 +71,7 @@ export default class DSGrid extends Component {
                                                  style={{
                                                      position: 'absolute',
                                                      left: 0,
-                                                     top: 0,
+                                                     top: 30,
                                                      height:1000,
                                                      width:1000
                                                  }}>
@@ -82,18 +82,42 @@ export default class DSGrid extends Component {
                                                         overflow: 'hidden'
                                                     }}
                                                     scrollTop={scrollTop}
-                                                    cellRenderer={this._headerCellRenderer}
+                                                    cellRenderer={this._rowHeaderCellRenderer}
                                                     columnWidth={150}
                                                     columnCount={1}
                                                     rowCount={this.state.rows + 1}
                                                     rowHeight={30}
                                                 />
                                             </div>
+
+                                            <div className='LeftSideGridContainer'
+                                                 style={{
+                                                     position: 'absolute',
+                                                     left: 150,
+                                                     top: 0,
+                                                     height:30
+                                                 }}>
+                                                <Grid
+                                                    height={height}
+                                                    width={width - 200}
+                                                    style={{
+                                                        overflow: 'hidden'
+                                                    }}
+                                                    scrollLeft={scrollLeft}
+                                                    cellRenderer={this._columnHeaderCellRenderer}
+                                                    columnWidth={150}
+                                                    columnCount={this.state.columns}
+                                                    rowCount={1}
+                                                    rowHeight={30}
+                                                />
+                                            </div>
+
+
                                             <div className='RightColumn'
                                                  style={{
                                                      position: 'absolute',
                                                      left: 150,
-                                                     top: 0
+                                                     top: 30
                                                  }}>
                                                 <Grid
                                                     height={height}
@@ -101,9 +125,9 @@ export default class DSGrid extends Component {
                                                     cellRenderer={this._cellRenderer}
                                                     fixedColumnCount={1}
                                                     fixedRowCount={1}
-                                                    columnCount={this.state.columns + 1}
+                                                    columnCount={this.state.columns}
                                                     columnWidth={150}
-                                                    rowCount={this.state.rows + 1}
+                                                    rowCount={this.state.rows}
                                                     rowHeight={30}
                                                     onScroll={onScroll}
                                                     //onSectionRendered={this._onSectionRendered}
@@ -187,12 +211,8 @@ export default class DSGrid extends Component {
             };
     }
 
-    _headerCellRenderer = ({
-                               columnIndex, // Horizontal (column) index of cell
-                               isScrolling, // The Grid is currently being scrolled
-                               isVisible,   // This cell is visible within the grid (eg it is not an overscanned cell)
+    _rowHeaderCellRenderer = ({
                                key,         // Unique key within array of cells
-                               parent,      // Reference to the parent Grid (instance)
                                rowIndex,    // Vertical (row) index of cell
                                style
                            }) => {
@@ -202,6 +222,21 @@ export default class DSGrid extends Component {
                 style={style}
                 className='rowHeaderCell'>
                 {rowIndex}
+            </div>
+        )
+    }
+
+    _columnHeaderCellRenderer = ({
+                               columnIndex, // Horizontal (column) index of cell
+                               key,         // Unique key within array of cells
+                               style
+                           }) => {
+        return (
+            <div
+                key={key}
+                style={style}
+                className='rowHeaderCell'>
+                {this.toColumnName(columnIndex + 1)}
             </div>
         )
     }
@@ -219,48 +254,43 @@ export default class DSGrid extends Component {
         let cellClass = 'cell'
 
 
-        if (rowIndex == 0) {
-            content = this.toColumnName(columnIndex + 1);
-            cellClass = 'columnHeaderCell';
+        let fromCache = this.dataCache.get(Math.trunc((rowIndex - 1) / this.fetchSize));
+        //console.log("fromCache " + fromCache);
+        if (typeof fromCache == "object") {
+            content = this.dataCache
+                .get(Math.trunc((rowIndex - 1) / this.fetchSize))
+                [(rowIndex - 1) % this.fetchSize][columnIndex];
+        }
+        else if (isScrolling) {
+            cellClass = 'isScrollingPlaceholder'
+            content = 'Loading ...';
         }
         else {
-            let fromCache = this.dataCache.get(Math.trunc((rowIndex - 1) / this.fetchSize));
-            //console.log("fromCache " + fromCache);
-            if (typeof fromCache == "object") {
-                content = this.dataCache
-                    .get(Math.trunc((rowIndex - 1) / this.fetchSize))
-                    [(rowIndex - 1) % this.fetchSize][columnIndex];
-            }
-            else if (isScrolling) {
-                cellClass = 'isScrollingPlaceholder'
-                content = 'Loading ...';
-            }
-            else {
-                if (typeof fromCache == "undefined" && typeof this.bookName != "undefined") {
-                    var fetchRowIndex = rowIndex - 1;
-                    //for (var i = 0; i < 5; i++) {  // TODO: Multithreaded broken -- need to fix the backend
-                    this.dataCache.set(Math.trunc((fetchRowIndex) / this.fetchSize), 0);
-                    // Load data - only if not scrolling.
-                    let startIndex = Math.trunc((fetchRowIndex) / this.fetchSize) * this.fetchSize;
-                    let stopIndex = startIndex + this.fetchSize - 1;
-                    console.log("Fetching  " + startIndex + " " + stopIndex);
-                    fetch("/api/getCellsV2/" + this.bookName
-                        + "/Sheet1/" + startIndex + "/" + stopIndex)
-                        .then(res => res.json())
-                        .then(
-                            (result) => {
-                                this.dataCache.set(Math.trunc((fetchRowIndex) / this.fetchSize), result['values']);
-                                this.grid.forceUpdate();
-                            }
-                        ),
-                        (error) => {
-                        };
-                    //     fetchRowIndex = fetchRowIndex + this.fetchSize;
-                    // }
+            if (typeof fromCache == "undefined" && typeof this.bookName != "undefined") {
+                var fetchRowIndex = rowIndex - 1;
+                //for (var i = 0; i < 5; i++) {  // TODO: Multithreaded broken -- need to fix the backend
+                this.dataCache.set(Math.trunc((fetchRowIndex) / this.fetchSize), 0);
+                // Load data - only if not scrolling.
+                let startIndex = Math.trunc((fetchRowIndex) / this.fetchSize) * this.fetchSize;
+                let stopIndex = startIndex + this.fetchSize - 1;
+                console.log("Fetching  " + startIndex + " " + stopIndex);
+                fetch("/api/getCellsV2/" + this.bookName
+                    + "/Sheet1/" + startIndex + "/" + stopIndex)
+                    .then(res => res.json())
+                    .then(
+                        (result) => {
+                            this.dataCache.set(Math.trunc((fetchRowIndex) / this.fetchSize), result['values']);
+                            this.grid.forceUpdate();
+                        }
+                    ),
+                    (error) => {
+                    };
+                //     fetchRowIndex = fetchRowIndex + this.fetchSize;
+                // }
 
-                }
             }
         }
+
 
         return (
             <div
