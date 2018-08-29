@@ -3,6 +3,10 @@ import { Input, Button } from 'semantic-ui-react'
 import ReactResumableJs from 'react-resumable-js'
 import {AutoSizer, Grid, ScrollSync} from './react-virtualized'
 
+import Cell  from './cell';
+import 'react-datasheet/lib/react-datasheet.css';
+
+
 export default class DSGrid extends Component {
     toColumnName(num) {
         for (var ret = '', a = 1, b = 26; (num -= a) >= 0; a = b, b *= 26) {
@@ -297,7 +301,11 @@ export default class DSGrid extends Component {
                 key={key}
                 style={style}
                 className={cellClass}>
-                {content}
+                <Cell  data={[
+                    [{value:  content}]
+                ]}
+                      valueRenderer={(cell) => cell.value}
+                />
             </div>
 
 

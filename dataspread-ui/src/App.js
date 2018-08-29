@@ -1,7 +1,5 @@
 import React, {Component} from 'react';
 import './App.css';
-//import ReactDataSheet from 'react-datasheet';
-import 'react-datasheet/lib/react-datasheet.css';
 import DSGrid from './dsgrid';
 
 
