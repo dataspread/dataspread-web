@@ -13,6 +13,7 @@
     "react-scripts": "1.1.4",
     "react-virtualized": "^9.20.1",
     "require": "^2.4.20",
+    "semantic-ui-css": "^2.3.3",
     "semantic-ui-react": "^0.82.2"
   },
   "scripts": {

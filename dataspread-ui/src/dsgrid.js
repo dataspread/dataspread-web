@@ -297,18 +297,12 @@ export default class DSGrid extends Component {
 
 
         return (
-            <div
-                key={key}
-                style={style}
-                className={cellClass}>
-                <Cell  data={[
-                    [{value:  content}]
-                ]}
-                      valueRenderer={(cell) => cell.value}
+                <Cell
+                    key={key}
+                    style={style}
+                    className={cellClass}
+                    value={content}
                 />
-            </div>
-
-
         )
     }
 }

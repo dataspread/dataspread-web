@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import { Input } from 'semantic-ui-react'
-
+import 'semantic-ui-css/semantic.min.css';
 
 export default class Cell extends Component {
 
@@ -11,6 +11,7 @@ export default class Cell extends Component {
             value: '',
             formula: ''
         }
+        console.log('Mangesh ' + props.style);
         this.handleClick = this.handleClick.bind(this);
         this.handleBlur = this.handleBlur.bind(this);
     }
@@ -35,6 +36,7 @@ export default class Cell extends Component {
     render() {
             if (this.state.editing) {
                 return (<Input
+                    style={this.props.style}
                     transparent
                     ref={(input) => { this.input = input;}}
                     onBlur={this.handleBlur}/>)
@@ -42,12 +44,12 @@ export default class Cell extends Component {
             else {
                 return (
                     <div
-                        style={{
-                            display: 'flex',
-                            flex:'1 1'
-                        }}
+                        key={this.props.key}
+                        style={this.props.style}
+                        className={this.props.className}
                         onClick={this.handleClick}>
-                    {this.state.value}</div>);
+                        {this.props.value}
+                    </div>);
             }
 
     }
