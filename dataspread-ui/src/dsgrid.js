@@ -23,6 +23,9 @@ export default class DSGrid extends Component {
             columns: 500,
             version: 0
         }
+        this.rowHeight = 32;
+        this.columnWidth = 150;
+
         var LRU = require("lru-cache");
 
 
@@ -65,7 +68,7 @@ export default class DSGrid extends Component {
 
 
                 <div style={{display: 'flex'}}>
-                    <div style={{flex: 'auto', height: '80vh'}}>
+                    <div style={{flex: 'auto', height: '90vh'}}>
                         <AutoSizer>
                             {({height, width}) => (
                                 <ScrollSync>
@@ -75,44 +78,42 @@ export default class DSGrid extends Component {
                                                  style={{
                                                      position: 'absolute',
                                                      left: 0,
-                                                     top: 30,
-                                                     height:1000,
-                                                     width:1000
+                                                     top: this.rowHeight,
                                                  }}>
                                                 <Grid
                                                     height={height}
-                                                    width={150}
+                                                    width={this.columnWidth}
                                                     style={{
                                                         overflow: 'hidden'
                                                     }}
                                                     scrollTop={scrollTop}
                                                     cellRenderer={this._rowHeaderCellRenderer}
-                                                    columnWidth={150}
+                                                    columnWidth={this.columnWidth}
                                                     columnCount={1}
-                                                    rowCount={this.state.rows + 1}
-                                                    rowHeight={30}
+                                                    rowCount={this.state.rows}
+                                                    rowHeight={this.rowHeight}
                                                 />
                                             </div>
 
                                             <div className='LeftSideGridContainer'
                                                  style={{
                                                      position: 'absolute',
-                                                     left: 150,
+                                                     left: this.columnWidth,
                                                      top: 0,
-                                                     height:30
+                                                     height:this.rowHeight
                                                  }}>
                                                 <Grid
                                                     height={height}
-                                                    width={width - 200}
+                                                    width={width - this.columnWidth}
                                                     style={{
                                                         overflow: 'hidden'
                                                     }}
                                                     scrollLeft={scrollLeft}
                                                     cellRenderer={this._columnHeaderCellRenderer}
-                                                    columnWidth={150}
+                                                    columnWidth={this.columnWidth}
                                                     columnCount={this.state.columns}
                                                     rowCount={1}
-                                                    rowHeight={30}
+                                                    rowHeight={this.rowHeight}
                                                 />
                                             </div>
 
@@ -120,19 +121,19 @@ export default class DSGrid extends Component {
                                             <div className='RightColumn'
                                                  style={{
                                                      position: 'absolute',
-                                                     left: 150,
-                                                     top: 30
+                                                     left: this.columnWidth,
+                                                     top: this.rowHeight
                                                  }}>
                                                 <Grid
                                                     height={height}
-                                                    width={width - 200}
+                                                    width={width - this.columnWidth}
                                                     cellRenderer={this._cellRenderer}
                                                     fixedColumnCount={1}
                                                     fixedRowCount={1}
                                                     columnCount={this.state.columns}
-                                                    columnWidth={150}
+                                                    columnWidth={this.columnWidth}
                                                     rowCount={this.state.rows}
-                                                    rowHeight={30}
+                                                    rowHeight={this.rowHeight}
                                                     onScroll={onScroll}
                                                     //onSectionRendered={this._onSectionRendered}
                                                     ref={(ref) => this.grid = ref}
@@ -297,18 +298,13 @@ export default class DSGrid extends Component {
 
 
         return (
+
             <div
                 key={key}
                 style={style}
                 className={cellClass}>
-                <Cell  data={[
-                    [{value:  content}]
-                ]}
-                      valueRenderer={(cell) => cell.value}
-                />
+                {content}
             </div>
-
-
         )
     }
 }
