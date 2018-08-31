@@ -14,7 +14,8 @@
     "react-virtualized": "^9.20.1",
     "require": "^2.4.20",
     "semantic-ui-css": "^2.3.3",
-    "semantic-ui-react": "^0.82.2"
+    "semantic-ui-react": "^0.82.2",
+    "stompjs": "^2.3.3"
   },
   "scripts": {
     "start": "react-scripts start",
