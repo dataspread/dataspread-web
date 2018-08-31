@@ -57,15 +57,23 @@ export default class DSGrid extends Component {
 
                 <ReactResumableJs
                     uploaderID="importBook"
+                    filetypes={["csv"]}
+                    fileAccept="text/csv"
+                    maxFileSize={1000000000}
                     service="/api/importFile"
+                    disableDragAndDrop={true}
+                    showFileList={false}
                     onFileSuccess={(file, message) => {
                         console.log(file, message);
                     }}
                     onFileAdded={(file, resumable) => {
                         resumable.upload();
                     }}
+                    maxFiles={1}
+                    onStartUpload={() => {
+                        console.log("Start upload");
+                    }}
                 />
-
 
                 <div style={{display: 'flex'}}>
                     <div style={{flex: 'auto', height: '90vh'}}>
