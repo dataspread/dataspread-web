@@ -194,6 +194,9 @@ body {
   text-align: center;
 }
 
+.isScrollingPlaceholder {
+  color: lightgray;
+}
 
 .centeredCell {
   align-items: center;

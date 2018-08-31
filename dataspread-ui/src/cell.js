@@ -11,23 +11,28 @@ export default class Cell extends Component {
             value: '',
             formula: ''
         }
-        console.log('Mangesh ' + props.style);
         this.handleClick = this.handleClick.bind(this);
         this.handleBlur = this.handleBlur.bind(this);
     }
 
-    componentDidMount() {
+    componentDidUpdate () {
         if (this.state.editing)
             this.input.focus();
     }
 
     handleClick(e) {
+
+
         this.setState({
             editing: true
         })
     }
 
     handleBlur(e) {
+        this.props.onUpdate({
+            rowIndex:this.props.rowIndex,
+            columnIndex:this.props.columnIndex,
+            value:e.target.value});
         this.setState({
             editing: false
         })
@@ -37,14 +42,14 @@ export default class Cell extends Component {
             if (this.state.editing) {
                 return (<Input
                     style={this.props.style}
-                    transparent
                     ref={(input) => { this.input = input;}}
-                    onBlur={this.handleBlur}/>)
+                    onBlur={this.handleBlur}
+                    defaultValue = {this.props.value}/>
+                )
             }
             else {
                 return (
                     <div
-                        key={this.props.key}
                         style={this.props.style}
                         className={this.props.className}
                         onClick={this.handleClick}>

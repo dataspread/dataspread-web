@@ -5,7 +5,7 @@ import {AutoSizer, Grid, ScrollSync} from './react-virtualized'
 
 import Cell  from './cell';
 import 'react-datasheet/lib/react-datasheet.css';
-
+import LRUCache from "lru-cache";
 
 export default class DSGrid extends Component {
     toColumnName(num) {
@@ -20,22 +20,22 @@ export default class DSGrid extends Component {
         this.state = {
             rows: 100000000,
             bookName: '',
+            sheetName: '',
             columns: 500,
             version: 0
         }
         this.rowHeight = 32;
         this.columnWidth = 150;
+        this.dataCache = new LRUCache(1000);
 
-        var LRU = require("lru-cache");
-
-
-        this.dataCache = new LRU(1000);
-
+        this.urlPrefix="http://localhost:8080"; // Only for testing.
 
         this.fetchSize = 100;
         this._onSectionRendered = this._onSectionRendered.bind(this);
+        this._cellRenderer = this._cellRenderer.bind(this);
         this._loadMoreRows = this._loadMoreRows.bind(this);
         this._handleEvent = this._handleEvent.bind(this);
+        this._updateCell = this._updateCell.bind(this);
     }
 
     componentDidMount() {
@@ -128,8 +128,6 @@ export default class DSGrid extends Component {
                                                     height={height}
                                                     width={width - this.columnWidth}
                                                     cellRenderer={this._cellRenderer}
-                                                    fixedColumnCount={1}
-                                                    fixedRowCount={1}
                                                     columnCount={this.state.columns}
                                                     columnWidth={this.columnWidth}
                                                     rowCount={this.state.rows}
@@ -160,22 +158,24 @@ export default class DSGrid extends Component {
             console.log(this.bookName);
         }
         else if (name == "bookLoadButton") {
-            fetch("/api/getSheets/" + this.bookName)
+            fetch(this.urlPrefix + "/api/getSheets/" + this.bookName)
                 .then(res => res.json())
                 .then(
                     (result) => {
                         console.log("Rows " + result['data']['sheets'][0]['numRow']);
                         console.log("numCol " + result['data']['sheets'][0]['numCol']);
-                        this.dataCache.clear();
+                        this.dataCache.reset();
                         this.setState({
                             bookName: this.bookName,
+                            sheetName: '',
                             rows: result['data']['sheets'][0]['numRow'],
                             columns: result['data']['sheets'][0]['numCol']
                         });
                     }
-                ),
-                (error) => {
-                };
+                )
+                .catch((error) => {
+                    console.error(error);
+                });
 
 
         }
@@ -201,7 +201,7 @@ export default class DSGrid extends Component {
 
     _loadMoreRows({startIndex, stopIndex}) {
         console.log('loadMoreRows' + startIndex + " " + stopIndex);
-        fetch("/api/getCellsV2/" + this.bookName
+        fetch(this.urlPrefix + "/api/getCellsV2/" + this.bookName
             + "/Sheet1/" + (startIndex) + "/" + (stopIndex))
             .then(res => res.json())
             .then(
@@ -209,18 +209,18 @@ export default class DSGrid extends Component {
                     for (let i = startIndex, j = 0; i <= stopIndex; i++, j++) {
                         this.dataCache.set(i, result['values'][j]);
                     }
-                    this.grid.forceUpdateGrids();
+                    this.grid.forceUpdate();
                 }
             ),
             (error) => {
             };
     }
 
-    _rowHeaderCellRenderer = ({
+    _rowHeaderCellRenderer({
                                key,         // Unique key within array of cells
                                rowIndex,    // Vertical (row) index of cell
                                style
-                           }) => {
+                           }) {
         return (
             <div
                 key={key}
@@ -246,7 +246,19 @@ export default class DSGrid extends Component {
         )
     }
 
-    _cellRenderer = ({
+    _updateCell (
+        {   rowIndex,
+            columnIndex,
+            value
+        }
+    ) {
+        this.dataCache
+            .get(Math.trunc((rowIndex) / this.fetchSize))
+            [(rowIndex) % this.fetchSize][columnIndex] = value;
+        this.grid.forceUpdate();
+    }
+
+    _cellRenderer ({
                          columnIndex, // Horizontal (column) index of cell
                          isScrolling, // The Grid is currently being scrolled
                          isVisible,   // This cell is visible within the grid (eg it is not an overscanned cell)
@@ -254,32 +266,33 @@ export default class DSGrid extends Component {
                          parent,      // Reference to the parent Grid (instance)
                          rowIndex,    // Vertical (row) index of cell
                          style
-                     }) => {
+                     })  {
         let content;
         let cellClass = 'cell'
 
+        let fromCache = this.dataCache.get(Math.trunc((rowIndex) / this.fetchSize));
 
-        let fromCache = this.dataCache.get(Math.trunc((rowIndex - 1) / this.fetchSize));
-        //console.log("fromCache " + fromCache);
         if (typeof fromCache == "object") {
             content = this.dataCache
-                .get(Math.trunc((rowIndex - 1) / this.fetchSize))
-                [(rowIndex - 1) % this.fetchSize][columnIndex];
+                .get(Math.trunc((rowIndex) / this.fetchSize))
+                [(rowIndex) % this.fetchSize][columnIndex];
         }
         else if (isScrolling) {
             cellClass = 'isScrollingPlaceholder'
             content = 'Loading ...';
         }
         else {
+            cellClass = 'isScrollingPlaceholder'
+            content = 'Loading ...';
             if (typeof fromCache == "undefined" && typeof this.bookName != "undefined") {
-                var fetchRowIndex = rowIndex - 1;
+                var fetchRowIndex = rowIndex;
                 //for (var i = 0; i < 5; i++) {  // TODO: Multithreaded broken -- need to fix the backend
                 this.dataCache.set(Math.trunc((fetchRowIndex) / this.fetchSize), 0);
                 // Load data - only if not scrolling.
                 let startIndex = Math.trunc((fetchRowIndex) / this.fetchSize) * this.fetchSize;
                 let stopIndex = startIndex + this.fetchSize - 1;
                 console.log("Fetching  " + startIndex + " " + stopIndex);
-                fetch("/api/getCellsV2/" + this.bookName
+                fetch(this.urlPrefix + "/api/getCellsV2/" + this.bookName
                     + "/Sheet1/" + startIndex + "/" + stopIndex)
                     .then(res => res.json())
                     .then(
@@ -287,9 +300,10 @@ export default class DSGrid extends Component {
                             this.dataCache.set(Math.trunc((fetchRowIndex) / this.fetchSize), result['values']);
                             this.grid.forceUpdate();
                         }
-                    ),
-                    (error) => {
-                    };
+                    )
+                    .catch((error) => {
+                        console.error(error);
+                    });
                 //     fetchRowIndex = fetchRowIndex + this.fetchSize;
                 // }
 
@@ -303,7 +317,11 @@ export default class DSGrid extends Component {
                     style={style}
                     className={cellClass}
                     value={content}
+                    rowIndex={rowIndex}
+                    columnIndex={columnIndex}
+                    onUpdate={this._updateCell}
                 />
         )
     }
+
 }

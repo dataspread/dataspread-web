@@ -193,6 +193,40 @@ public class GeneralController {
 
 
 
+    @RequestMapping(value = "/api/putCellsV2",
+            method = RequestMethod.PUT)
+    public HashMap<String, Object> putCells(@RequestBody String json) {
+        org.json.JSONObject obj = new org.json.JSONObject(json);
+        String bookId = obj.getString("bookId");
+        String sheetName = obj.getString("sheetName");
+        SBook book = BookBindings.getBookById(bookId);
+        SSheet sheet = book.getSheetByName(sheetName);
+        org.json.JSONArray cells = obj.getJSONArray("cells");
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            for (Object cell : cells) {
+                int row = ((org.json.JSONObject)cell).getInt("row");
+                int col = ((org.json.JSONObject)cell).getInt("col");
+                String type = ((org.json.JSONObject)cell).getString("type");
+                String formula = ((org.json.JSONObject)cell).getString("formula");
+                Object value = getValue((org.json.JSONObject) cell, type);
+                if (!formula.equals("")) {
+                    sheet.getCell(row,col).setFormulaValue(formula, connection, true);
+                } else {
+                    sheet.getCell(row, col).setValue(value, connection, true);
+                }
+            }
+            connection.commit();
+            template.convertAndSend(getCallbackPath(bookId, sheetName), "");
+            return JsonWrapper.generateJson(null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return JsonWrapper.generateError(e.getMessage());
+        }
+    }
+
+
+
+
     @RequestMapping(value = "/api/putCells",
             method = RequestMethod.PUT)
     public HashMap<String, Object> putCells(@RequestHeader("auth-token") String authToken,
