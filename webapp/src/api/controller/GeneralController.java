@@ -6,21 +6,23 @@ import api.JsonWrapper;
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.zkoss.json.JSONArray;
+import org.zkoss.json.JSONObject;
 import org.zkoss.util.Pair;
 import org.zkoss.zss.api.AreaRef;
-import org.zkoss.zss.api.CellOperationUtil;
 import org.zkoss.zss.api.Range;
 import org.zkoss.zss.api.Ranges;
 import org.zkoss.zss.api.model.CellStyle;
-import org.zkoss.zss.api.model.Color;
-import org.zkoss.zss.api.model.Font;
 import org.zkoss.zss.api.model.Sheet;
 import org.zkoss.zss.api.model.impl.SheetImpl;
 import org.zkoss.zss.api.model.impl.SimpleRef;
-import org.zkoss.zss.model.*;
+import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.SBook;
+import org.zkoss.zss.model.SCell;
+import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.sys.TableMonitor;
 import org.zkoss.zss.model.sys.BookBindings;
 
@@ -30,11 +32,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Logger;
 
-import org.zkoss.json.*;
-
-
-
-import static api.WebSocketConfig.MESSAGE_PREFIX;
 
 @RestController
 public class GeneralController {
@@ -77,7 +74,6 @@ public class GeneralController {
 
     public static String getCallbackPath(String bookId, String sheetName) {
         return new StringBuilder()
-                .append(MESSAGE_PREFIX)
                 .append("updateCells/")
                 .append(bookId)
                 .append("/")

@@ -1,11 +1,12 @@
 import React, {Component} from 'react';
-import { Input, Button } from 'semantic-ui-react'
+import {Button, Input} from 'semantic-ui-react'
 import ReactResumableJs from 'react-resumable-js'
 import {AutoSizer, Grid, ScrollSync} from './react-virtualized'
 
-import Cell  from './cell';
+import Cell from './cell';
 import 'react-datasheet/lib/react-datasheet.css';
 import LRUCache from "lru-cache";
+import Stomp from 'stompjs';
 
 export default class DSGrid extends Component {
     toColumnName(num) {
@@ -29,17 +30,36 @@ export default class DSGrid extends Component {
         this.dataCache = new LRUCache(1000);
 
         this.urlPrefix="http://localhost:8080"; // Only for testing.
-
         this.fetchSize = 100;
+
+
         this._onSectionRendered = this._onSectionRendered.bind(this);
         this._cellRenderer = this._cellRenderer.bind(this);
         this._loadMoreRows = this._loadMoreRows.bind(this);
         this._handleEvent = this._handleEvent.bind(this);
         this._updateCell = this._updateCell.bind(this);
+        this.processUpdates = this.processUpdates.bind(this);
+
+        //this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push")
+        var stompClient = Stomp.client("ws://localhost:8080/ds-push/websocket")
+        this.stompClient = stompClient;
+        stompClient.connect({}, function(frame) {
+            console.log('Connected: ' + frame);
+            stompClient.subscribe('/push/sheet1/updates', this.processUpdates);
+        });
+
+
+
+
     }
 
     componentDidMount() {
 
+    }
+
+    processUpdates(messageOutput)
+    {
+        console.log(messageOutput);
     }
 
     render() {
@@ -49,6 +69,15 @@ export default class DSGrid extends Component {
                     placeholder='Book Name...'
                     name="bookName"
                     onChange={this._handleEvent}/>
+
+
+
+                <Button
+                    name="sendMessage"
+                    onClick={this._handleEvent}>
+                    sendMessage
+                </Button>
+
                 <Button
                     name="bookLoadButton"
                     onClick={this._handleEvent}>
@@ -162,8 +191,6 @@ export default class DSGrid extends Component {
                 .then(res => res.json())
                 .then(
                     (result) => {
-                        console.log("Rows " + result['data']['sheets'][0]['numRow']);
-                        console.log("numCol " + result['data']['sheets'][0]['numCol']);
                         this.dataCache.reset();
                         this.setState({
                             bookName: this.bookName,
@@ -171,6 +198,8 @@ export default class DSGrid extends Component {
                             rows: result['data']['sheets'][0]['numRow'],
                             columns: result['data']['sheets'][0]['numCol']
                         });
+                        console.log("book loaded rows:" + result['data']['sheets'][0]['numRow']);
+
                     }
                 )
                 .catch((error) => {
@@ -178,6 +207,10 @@ export default class DSGrid extends Component {
                 });
 
 
+        }
+        else if (name== "sendMessage")
+        {
+            this.stompClient.send('/hello')
         }
     }
 

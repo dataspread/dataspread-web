@@ -5,11 +5,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.ArrayList;
 
 @SpringBootApplication
 public class DataSpreadAPIServer extends SpringBootServletInitializer {
@@ -31,23 +31,21 @@ public class DataSpreadAPIServer extends SpringBootServletInitializer {
 }
 
 @RestController
-class GreetingController {
+class GreetingController  {
 
-    @RequestMapping("/hello/{name}")
-    String hello(@PathVariable String name) {
-        return "Hello, " + name + "!";
+    @MessageMapping("/hello")
+    @SendTo("/push/sheet1/updates")
+    String hello3() {
+
+        System.out.println("hello");
+
+        return "Hello";
     }
 
-    @RequestMapping("/getRows/{start}/{end}")
-    ArrayList<String> hello1(@PathVariable int start,
-                  @PathVariable int end) {
-        ArrayList<String> out=new ArrayList<>();
-        System.out.println("getRows " + start + " " + end   );
-        for (int i=start;i<=end;i++)
-        {
-            out.add(Integer.toString(i));
-
-        }
-        return out;
+    @SubscribeMapping("/push/{bookName}/updates")
+    void subscribe(@DestinationVariable String bookName) {
+        System.out.println("subscribe to " + bookName);
     }
+
+
 }
