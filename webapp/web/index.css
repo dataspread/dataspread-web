@@ -3,7 +3,6 @@
     height: 500px;
 }
 
-
 #sheet-panel {
     height: 5vh;
     position: fixed;
@@ -13,28 +12,28 @@
 }
 
 #sheets {
-  display:inline;
+    display: inline;
 }
 
 #createSheet {
-  display: inline;
+    display: inline;
 }
 
 .alignRight {
-  position: absolute;
-  right: 0px;
+    position: absolute;
+    right: 0px;
 }
 
 .sheet {
-  padding-right: 3px;
+    padding-right: 3px;
 }
 
 .dsTableHead {
-  background-color: #003F13;
+    background-color: #003F13;
 }
 
 .dsTableBody {
-  background-color: #2A7E43;
+    background-color: #2A7E43;
 }
 
 /* .handsontable td.area {
@@ -48,21 +47,23 @@
   left: 0;
 } */
 
-.navbar1{
-    height: 6vh;
-}
-.navbar2{
-    height: 6vh;
-}
-.navbar3{
+.navbar1 {
     height: 6vh;
 }
 
-.wrapper{
-    height:78vh;
+.navbar2 {
+    height: 6vh;
 }
 
-.breadcrumb{
+.navbar3 {
+    height: 6vh;
+}
+
+.wrapper {
+    height: 78vh;
+}
+
+.breadcrumb {
     padding: 0.25rem 0.5rem 0.25rem 0.5rem;
     width: 80%;
     margin-bottom: 0;
@@ -73,18 +74,19 @@
     content: "> " !important;
 }
 
-#nav-history{
+#nav-history {
     width: 20%;
     display: inline-block;
-    float:right;
+    float: right;
 }
-#historyDropdown{
+
+#historyDropdown {
     padding: 0.25rem 0.5rem 0.25rem 0.5rem;
     background-color: #e9ecef;
 }
 
-.custom-select{
-    width:50%;
+.custom-select {
+    width: 46%;
 }
 
 .wrap {
@@ -99,6 +101,12 @@
     cursor: pointer;
 }
 
+.hierRemove{
+    cursor: pointer;
+    width:8%;
+
+}
+
 #colClose {
     padding-left: 10px;
     font-size: 17px;
@@ -111,7 +119,7 @@
   color:white;
 } */
 .progress {
-    position:fixed;
+    position: fixed;
     left: 0;
     width: 15px;
     height: 74.1vh;
@@ -125,21 +133,23 @@
     width: 15px;
     background-color: #333;
 }
-.exploration{
+
+.exploration {
     color: white;
 }
-
 
 .GridRow {
     margin-top: 15px;
     display: flex;
     flex-direction: row;
 }
+
 .GridColumn {
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
 }
+
 .LeftSideGridContainer {
     flex: 0 0 50px;
 }
@@ -153,17 +163,17 @@
 .oddRow {
     border-bottom: 1px solid #e0e0e0;
 }
+
 .oddRow {
     background-color: #fafafa;
 }
-
 
 .cell,
 .rowHeaderCell,
 .columnHeaderCell {
     width: 100%;
     height: 100%;
-    padding:  .5em;
+    padding: .5em;
     box-sizing: border-box;
     vertical-align: middle;
 }
@@ -193,7 +203,6 @@
     text-align: center;
 }
 
-
 .centeredCell {
     align-items: center;
     text-align: center;
@@ -217,6 +226,7 @@
     font-size: 1em;
     color: #bdbdbd;
 }
+
 .toolTip {
     position: fixed;
     display: none;
@@ -228,10 +238,6 @@
     text-align: center;
 }
 
-
-
-
-
 /* The switch - the box around the slider */
 .switch {
     position: absolute;
@@ -242,7 +248,9 @@
 }
 
 /* Hide default HTML checkbox */
-.switch input {display:none;}
+.switch input {
+    display: none;
+}
 
 /* The slider */
 .slider {
@@ -282,7 +290,6 @@ input:checked + .slider:before {
     -ms-transform: translateX(16px);
     transform: translateX(16px);
 }
-
 
 /* Rounded sliders */
 .slider.round {

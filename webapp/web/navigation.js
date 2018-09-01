@@ -126,7 +126,23 @@ $("#Explore").click(function () {
                     break;
             }
         });
+        $(".hierRemove#0").click(function (e) {
+                if (aggregateTotalNum > 1) {
+                    $("#aggregateCol").children()[e.target.id].remove();
 
+                    for (let i = Number(e.target.id) + 1; i < aggregateTotalNum; i++) {
+                        console.log($("#aggregateCol"));
+                        $("#" + i).prop('id', i - 1);
+                        $("#aggregateCol" + i).prop('id', "aggregateCol" + (i - 1));
+                        $("#aggregateOpt" + i).prop('id', "aggregateOpt" + (i - 1));
+                    }
+                    aggregateTotalNum -= 1;
+                } else {
+                    alert("You cannot remove all options.")
+                }
+
+            }
+        )
         var $sortDropdown = $("#inlineOpt");
         $sortDropdown.empty();
         sortTotalNum = 0;
@@ -155,10 +171,9 @@ $("#Explore").click(function () {
 
 // hierarchical formula builder: for each line
 function createAggreString() {
-    let tempString = "<div><select class='custom-select my-1' id='aggregateCol" +
+    let tempString = "<div><i class=\"fa fa-minus-circle fa-1x hierRemove\" id=" + aggregateTotalNum + " aria-hidden=\"true\"></i><select class='custom-select my-1' id='aggregateCol" +
         aggregateTotalNum +
-        "''><option value='' disabled selected hidden>Attribute" +
-        aggregateTotalNum + "</option>";
+        "''><option value='' disabled selected hidden>Attribute" + "</option>";
     if (aggregateTotalNum == 0) {
         for (let i = 0; i < options.length; i++) {
             aggregateColStr +=
@@ -173,7 +188,7 @@ function createAggreString() {
     tempString += "<select class='custom-select my-1 ' id='aggregateOpt" +
         aggregateTotalNum +
         "''><option value='' disabled selected hidden>Function" +
-        aggregateTotalNum + "</option>";
+        "</option>";
     if (aggregateTotalNum == 0) {
         for (let i = 0; i < funcOptions.length; i++) {
             aggregateOptStr += "<option value='" + funcOptions[i] + "''>" +
@@ -232,6 +247,23 @@ $("#aggreAdd").click(function () {
                 break;
         }
     });
+    $(".hierRemove#" + (aggregateTotalNum - 1)).click(function (e) {
+            if (aggregateTotalNum > 1) {
+                $("#aggregateCol").children()[Number(e.target.id)].remove();
+
+                for (let i = Number(e.target.id) + 1; i < aggregateTotalNum; i++) {
+                    console.log($("#aggregateCol"));
+                    $("#" + i).prop('id', i - 1);
+                    $("#aggregateCol" + i).prop('id', "aggregateCol" + (i - 1));
+                    $("#aggregateOpt" + i).prop('id', "aggregateOpt" + (i - 1));
+                }
+                aggregateTotalNum -= 1;
+            } else {
+                alert("You cannot remove all options.")
+            }
+
+        }
+    )
 })
 
 $("#aggreRemove").click(function () {
@@ -240,6 +272,7 @@ $("#aggreRemove").click(function () {
         aggregateTotalNum -= 1;
     }
 })
+
 
 // create sorting html code: for each line
 function createSortString() {
