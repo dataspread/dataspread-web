@@ -1,16 +1,23 @@
 package api;
 
+import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.messaging.simp.broker.BrokerAvailabilityEvent;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.messaging.SessionConnectEvent;
+import org.springframework.web.socket.messaging.SessionDisconnectEvent;
+import org.springframework.web.socket.messaging.SessionSubscribeEvent;
+import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 
 @Configuration
 @EnableWebSocketMessageBroker
-public class WebSocketConfig implements WebSocketMessageBrokerConfigurer, ApplicationListener<BrokerAvailabilityEvent> {
+public class WebSocketConfig implements WebSocketMessageBrokerConfigurer,
+        ApplicationListener
+{
+
 
     public static String MESSAGE_PREFIX = " ";
 
@@ -25,7 +32,30 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer, Applic
     }
 
     @Override
-    public void onApplicationEvent(BrokerAvailabilityEvent brokerAvailabilityEvent) {
-        System.out.println(brokerAvailabilityEvent);
+    public void onApplicationEvent(ApplicationEvent applicationEvent) {
+        if (applicationEvent instanceof SessionSubscribeEvent)
+        {
+            SessionSubscribeEvent sessionSubscribeEvent = (SessionSubscribeEvent) applicationEvent;
+            System.out.println("sessionSubscribeEvent " + sessionSubscribeEvent.toString());
+        }
+        else if(applicationEvent instanceof SessionUnsubscribeEvent)
+        {
+            SessionUnsubscribeEvent sessionUnsubscribeEvent = (SessionUnsubscribeEvent) applicationEvent;
+            System.out.println("sessionUnsubscribeEvent " + sessionUnsubscribeEvent.toString());
+        }
+        else if (applicationEvent instanceof SessionDisconnectEvent)
+        {
+            SessionDisconnectEvent sessionDisconnectEvent = (SessionDisconnectEvent) applicationEvent;
+            System.out.println("sessionDisconnectEvent " + sessionDisconnectEvent);
+        }
+        else if (applicationEvent instanceof SessionConnectEvent)
+        {
+            SessionConnectEvent sessionConnectEvent = (SessionConnectEvent) applicationEvent;
+            System.out.println("sessionConnectEvent " + sessionConnectEvent);
+        }
+        else
+        {
+            System.out.println("applicationEvent " + applicationEvent);
+        }
     }
 }

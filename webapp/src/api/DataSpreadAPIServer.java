@@ -5,11 +5,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
-import org.springframework.messaging.handler.annotation.DestinationVariable;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
-import org.springframework.messaging.simp.annotation.SubscribeMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 @SpringBootApplication
 public class DataSpreadAPIServer extends SpringBootServletInitializer {
@@ -27,25 +22,5 @@ public class DataSpreadAPIServer extends SpringBootServletInitializer {
         DBHandler.connectToDB(url, driver, userName, password);
 		SpringApplication.run(DataSpreadAPIServer.class, args);
 	}
-
-}
-
-@RestController
-class GreetingController  {
-
-    @MessageMapping("/hello")
-    @SendTo("/push/sheet1/updates")
-    String hello3() {
-
-        System.out.println("hello");
-
-        return "Hello";
-    }
-
-    @SubscribeMapping("/push/{bookName}/updates")
-    void subscribe(@DestinationVariable String bookName) {
-        System.out.println("subscribe to " + bookName);
-    }
-
 
 }

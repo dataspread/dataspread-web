@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import {Button, Input} from 'semantic-ui-react'
 import ReactResumableJs from 'react-resumable-js'
-import {AutoSizer, Grid, ScrollSync} from './react-virtualized'
+import {AutoSizer, defaultCellRangeRenderer, Grid, ScrollSync} from './react-virtualized'
 
 import Cell from './cell';
 import 'react-datasheet/lib/react-datasheet.css';
@@ -10,8 +10,9 @@ import Stomp from 'stompjs';
 
 export default class DSGrid extends Component {
     toColumnName(num) {
-        for (var ret = '', a = 1, b = 26; (num -= a) >= 0; a = b, b *= 26) {
-            ret = String.fromCharCode(parseInt((num % b) / a) + 65) + ret;
+        let ret, a, b;
+        for (ret = '', a = 1, b = 26; (num -= a) >= 0; a = b, b *= 26) {
+            ret = String.fromCharCode(Math.trunc((num % b) / a) + 65) + ret;
         }
         return ret;
     }
@@ -32,29 +33,38 @@ export default class DSGrid extends Component {
         this.urlPrefix="http://localhost:8080"; // Only for testing.
         this.fetchSize = 100;
 
-
         this._onSectionRendered = this._onSectionRendered.bind(this);
         this._cellRenderer = this._cellRenderer.bind(this);
         this._loadMoreRows = this._loadMoreRows.bind(this);
         this._handleEvent = this._handleEvent.bind(this);
         this._updateCell = this._updateCell.bind(this);
         this.processUpdates = this.processUpdates.bind(this);
+        this.cellRangeRenderer = this.cellRangeRenderer.bind(this);
 
         //this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push")
-        var stompClient = Stomp.client("ws://localhost:8080/ds-push/websocket")
-        this.stompClient = stompClient;
-        stompClient.connect({}, function(frame) {
-            console.log('Connected: ' + frame);
-            stompClient.subscribe('/push/sheet1/updates', this.processUpdates);
-        });
-
-
-
-
+        this.stompClient = Stomp.client("ws://localhost:8080/ds-push/websocket")
+        this.stompClient.connect();
+        this.stompSubscription = null;
     }
 
     componentDidMount() {
 
+    }
+
+    cellRangeRenderer (props) {
+        console.log("row " + props.rowStartIndex + " " + props.rowStopIndex);
+        if (this.stompSubscription !=null)
+        this.stompClient.send('/push/status', {},
+            {rowStartIndex: props.rowStartIndex,
+                rowStopIndex: props.rowStartIndex});
+
+        const children = defaultCellRangeRenderer(props);
+        return children;
+    }
+
+    componentWillUnmount() {
+        console.log('Closing');
+        this.stompClient.disconnect();
     }
 
     processUpdates(messageOutput)
@@ -170,6 +180,7 @@ export default class DSGrid extends Component {
                                                     rowCount={this.state.rows}
                                                     rowHeight={this.rowHeight}
                                                     onScroll={onScroll}
+                                                    cellRangeRenderer={this.cellRangeRenderer}
                                                     //onSectionRendered={this._onSectionRendered}
                                                     ref={(ref) => this.grid = ref}
                                                 />
@@ -190,11 +201,11 @@ export default class DSGrid extends Component {
     _handleEvent(event) {
         const target = event.target;
         const name = target.name;
-        if (name == "bookName") {
+        if (name === "bookName") {
             this.bookName = target.value;
             console.log(this.bookName);
         }
-        else if (name == "bookLoadButton") {
+        else if (name === "bookLoadButton") {
             fetch(this.urlPrefix + "/api/getSheets/" + this.bookName)
                 .then(res => res.json())
                 .then(
@@ -206,8 +217,11 @@ export default class DSGrid extends Component {
                             rows: result['data']['sheets'][0]['numRow'],
                             columns: result['data']['sheets'][0]['numCol']
                         });
+                        if (this.stompSubscription!=null)
+                            this.stompSubscription.unsubscribe();
+                        this.stompSubscription = this.stompClient.subscribe('/push/'
+                            + this.bookName + '/updates', this.processUpdates);
                         console.log("book loaded rows:" + result['data']['sheets'][0]['numRow']);
-
                     }
                 )
                 .catch((error) => {
@@ -216,9 +230,9 @@ export default class DSGrid extends Component {
 
 
         }
-        else if (name== "sendMessage")
+        else if (name === "sendMessage")
         {
-            this.stompClient.send('/hello')
+            this.stompClient.send('/push/status',{}, JSON.stringify({row:1234, col:2456}));
         }
     }
 
@@ -252,9 +266,9 @@ export default class DSGrid extends Component {
                     }
                     this.grid.forceUpdate();
                 }
-            ),
+            ).catch(
             (error) => {
-            };
+            });
     }
 
     _rowHeaderCellRenderer({
@@ -267,7 +281,7 @@ export default class DSGrid extends Component {
                 key={key}
                 style={style}
                 className='rowHeaderCell'>
-                {rowIndex}
+                {rowIndex + 1}
             </div>
         )
     }
@@ -293,10 +307,14 @@ export default class DSGrid extends Component {
             value
         }
     ) {
-        this.dataCache
-            .get(Math.trunc((rowIndex) / this.fetchSize))
-            [(rowIndex) % this.fetchSize][columnIndex] = value;
-        this.grid.forceUpdate();
+        let fromCache = this.dataCache.get(Math.trunc((rowIndex) / this.fetchSize));
+
+        if (typeof fromCache === "object") {
+            this.dataCache
+                .get(Math.trunc((rowIndex) / this.fetchSize))[(rowIndex) % this.fetchSize][columnIndex] = value;
+            this.grid.forceUpdate();
+        }
+        //TODO: send update to backend.
     }
 
     _cellRenderer ({
@@ -313,10 +331,9 @@ export default class DSGrid extends Component {
 
         let fromCache = this.dataCache.get(Math.trunc((rowIndex) / this.fetchSize));
 
-        if (typeof fromCache == "object") {
+        if (typeof fromCache === "object") {
             content = this.dataCache
-                .get(Math.trunc((rowIndex) / this.fetchSize))
-                [(rowIndex) % this.fetchSize][columnIndex];
+                .get(Math.trunc((rowIndex) / this.fetchSize))[(rowIndex) % this.fetchSize][columnIndex];
         }
         else if (isScrolling) {
             cellClass = 'isScrollingPlaceholder'
@@ -325,8 +342,8 @@ export default class DSGrid extends Component {
         else {
             cellClass = 'isScrollingPlaceholder'
             content = 'Loading ...';
-            if (typeof fromCache == "undefined" && typeof this.bookName != "undefined") {
-                var fetchRowIndex = rowIndex;
+            if (typeof fromCache === "undefined" && typeof this.bookName !== "undefined") {
+                let fetchRowIndex = rowIndex;
                 //for (var i = 0; i < 5; i++) {  // TODO: Multithreaded broken -- need to fix the backend
                 this.dataCache.set(Math.trunc((fetchRowIndex) / this.fetchSize), 0);
                 // Load data - only if not scrolling.

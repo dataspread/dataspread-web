@@ -7,7 +7,12 @@ import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.web.bind.annotation.*;
 import org.zkoss.json.JSONArray;
 import org.zkoss.json.JSONObject;
@@ -82,6 +87,41 @@ public class GeneralController {
     }
 
     //TODO formatAPIs
+
+
+    static class ViewPort {
+        public int row;
+        public int col;
+
+
+        @Override
+        public String toString() {
+            return "Row:" + row + ", Col" + col;
+        }
+    }
+
+    @MessageMapping("/push/status")
+    void clientStatus(@Payload ViewPort vp,
+            SimpMessageHeaderAccessor accessor) {
+
+        System.out.println("Session Id " + accessor.getSessionId() + " "  + vp);
+
+        //JSONParser parser = new JSONParser();
+        //JSONObject dict = (JSONObject) parser.parse(value);
+        //SBook book = BookBindings.getBookById((String) dict.get("bookId"));
+        //SSheet currentSheet = book.getSheetByName((String) dict.get("sheetName"));
+
+
+
+
+
+    }
+
+    @SubscribeMapping("/push/{bookName}/updates")
+    void subscribe(@DestinationVariable String bookName, SimpMessageHeaderAccessor accessor) {
+        System.out.println(accessor.getSessionId() + " - subscribe to " + bookName);
+    }
+
 
     @RequestMapping(value = "/api/getCells/{bookId}/{sheetName}/{row1}/{col1}/{row2}/{col2}",
             method = RequestMethod.GET)
@@ -188,10 +228,9 @@ public class GeneralController {
     }
 
 
-
     @RequestMapping(value = "/api/putCellsV2",
             method = RequestMethod.PUT)
-    public HashMap<String, Object> putCells(@RequestBody String json) {
+    public void putCells(@RequestBody String json) {
         org.json.JSONObject obj = new org.json.JSONObject(json);
         String bookId = obj.getString("bookId");
         String sheetName = obj.getString("sheetName");
@@ -212,11 +251,8 @@ public class GeneralController {
                 }
             }
             connection.commit();
-            template.convertAndSend(getCallbackPath(bookId, sheetName), "");
-            return JsonWrapper.generateJson(null);
         } catch (Exception e) {
             e.printStackTrace();
-            return JsonWrapper.generateError(e.getMessage());
         }
     }
 
