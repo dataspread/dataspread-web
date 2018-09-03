@@ -9,16 +9,14 @@ import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
-import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer,
-        ApplicationListener
-{
+        ApplicationListener {
 
-
+    // TODO remove this.
     public static String MESSAGE_PREFIX = " ";
 
     @Override
@@ -33,28 +31,27 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer,
 
     @Override
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
-        if (applicationEvent instanceof SessionSubscribeEvent)
-        {
-            SessionSubscribeEvent sessionSubscribeEvent = (SessionSubscribeEvent) applicationEvent;
-            System.out.println("sessionSubscribeEvent " + sessionSubscribeEvent.toString());
-        }
-        else if(applicationEvent instanceof SessionUnsubscribeEvent)
-        {
+        if (applicationEvent instanceof SessionUnsubscribeEvent) {
             SessionUnsubscribeEvent sessionUnsubscribeEvent = (SessionUnsubscribeEvent) applicationEvent;
-            System.out.println("sessionUnsubscribeEvent " + sessionUnsubscribeEvent.toString());
-        }
-        else if (applicationEvent instanceof SessionDisconnectEvent)
-        {
+            UISessionManager.getInstance().unassignSheet(
+                            sessionUnsubscribeEvent.getMessage()
+                                    .getHeaders().get("simpSessionId").toString());
+
+        } else if (applicationEvent instanceof SessionDisconnectEvent) {
             SessionDisconnectEvent sessionDisconnectEvent = (SessionDisconnectEvent) applicationEvent;
+            UISessionManager.getInstance().deleteSession(
+                            sessionDisconnectEvent.getMessage()
+                                    .getHeaders().get("simpSessionId").toString());
+
+
+
             System.out.println("sessionDisconnectEvent " + sessionDisconnectEvent);
-        }
-        else if (applicationEvent instanceof SessionConnectEvent)
-        {
+        } else if (applicationEvent instanceof SessionConnectEvent) {
             SessionConnectEvent sessionConnectEvent = (SessionConnectEvent) applicationEvent;
-            System.out.println("sessionConnectEvent " + sessionConnectEvent);
-        }
-        else
-        {
+            UISessionManager.getInstance().addSession(
+                                sessionConnectEvent.getMessage()
+                                    .getHeaders().get("simpSessionId").toString());
+        } else {
             System.out.println("applicationEvent " + applicationEvent);
         }
     }
