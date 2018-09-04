@@ -33,9 +33,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer,
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
         if (applicationEvent instanceof SessionUnsubscribeEvent) {
             SessionUnsubscribeEvent sessionUnsubscribeEvent = (SessionUnsubscribeEvent) applicationEvent;
-            UISessionManager.getInstance().unassignSheet(
-                            sessionUnsubscribeEvent.getMessage()
-                                    .getHeaders().get("simpSessionId").toString());
+            UISessionManager.getInstance()
+                    .getUISession(sessionUnsubscribeEvent.getMessage()
+                    .getHeaders().get("simpSessionId").toString())
+                    .clearSheet();
 
         } else if (applicationEvent instanceof SessionDisconnectEvent) {
             SessionDisconnectEvent sessionDisconnectEvent = (SessionDisconnectEvent) applicationEvent;
@@ -43,16 +44,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer,
                             sessionDisconnectEvent.getMessage()
                                     .getHeaders().get("simpSessionId").toString());
 
-
-
-            System.out.println("sessionDisconnectEvent " + sessionDisconnectEvent);
         } else if (applicationEvent instanceof SessionConnectEvent) {
             SessionConnectEvent sessionConnectEvent = (SessionConnectEvent) applicationEvent;
             UISessionManager.getInstance().addSession(
                                 sessionConnectEvent.getMessage()
                                     .getHeaders().get("simpSessionId").toString());
-        } else {
-            System.out.println("applicationEvent " + applicationEvent);
         }
     }
 }

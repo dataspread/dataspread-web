@@ -28,10 +28,13 @@ export default class DSGrid extends Component {
         }
         this.rowHeight = 32;
         this.columnWidth = 150;
-        this.dataCache = new LRUCache(1000);
+        this._disposeFromLRU = this._disposeFromLRU.bind(this);
+        this.dataCache = new LRUCache({max:10,
+            dispose: this._disposeFromLRU
+        });
 
         this.urlPrefix="http://localhost:8080"; // Only for testing.
-        this.fetchSize = 100;
+        this.fetchSize = 50;
 
         this._onSectionRendered = this._onSectionRendered.bind(this);
         this._cellRenderer = this._cellRenderer.bind(this);
@@ -46,6 +49,12 @@ export default class DSGrid extends Component {
         this.stompSubscription = null;
     }
 
+    _disposeFromLRU(key)
+    {
+        console.log(key);
+    }
+
+
     componentDidMount() {
 
     }
@@ -57,11 +66,10 @@ export default class DSGrid extends Component {
 
     processUpdates(message)
     {
-        console.log('processUpdates' + message);
         let jsonMessage =  JSON.parse(message.body);
-        console.log('processUpdates - ' + jsonMessage['message']);
         if (jsonMessage['message'] === 'getCellsResponse')
         {
+            console.log('getCellsResponse - ' + jsonMessage['startRowNumber']);
             this.dataCache.set(Math.trunc((jsonMessage['startRowNumber']) / this.fetchSize),
                 jsonMessage['data']);
             this.grid.forceUpdate();
@@ -219,7 +227,8 @@ export default class DSGrid extends Component {
                         this.stompSubscription = this.stompClient
                             .subscribe('/user/push/updates',
                                 this.processUpdates, {bookName: this.state.bookName,
-                                        sheetName: this.state.sheetName});
+                                        sheetName: this.state.sheetName,
+                                        fetchSize: this.fetchSize});
                         this.grid.forceUpdate();
                         console.log("book loaded rows:" + result['data']['sheets'][0]['numRow']);
                     }
@@ -308,10 +317,8 @@ export default class DSGrid extends Component {
                 if (!this.dataCache.has(Math.trunc(((props.rowStartIndex)) / this.fetchSize)))
                 {
                     let startIndex = Math.trunc((props.rowStartIndex) / this.fetchSize) * this.fetchSize;
-                    let stopIndex = startIndex + this.fetchSize - 1;
-                    console.log("stompClient.send --- ");
                     this.dataCache.set(Math.trunc((props.rowStartIndex) / this.fetchSize), 0);
-                    this.stompClient.send('/push/getCells/' + startIndex + '/' + stopIndex);
+                    this.stompClient.send('/push/getCells/' + startIndex);
                 }
             }
         }

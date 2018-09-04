@@ -10,6 +10,7 @@ public class UISessionManager {
 
     private static final Logger logger = Logger.getLogger(UISessionManager.class.getName());
     private static UISessionManager instance;
+    public static final int FETCH_SIZE = 100;
 
     //SessionID -> Session
     Map<String, UISession> uiSessionMap;
@@ -23,6 +24,7 @@ public class UISessionManager {
         final String sessionId;
         String bookName=null;
         String sheetName=null;
+        int fetchSize = 0;
         Set<Integer> cachedBlocks=null;
 
         UISession(String sessionId)
@@ -38,6 +40,39 @@ public class UISessionManager {
         public String getSheetName()
         {
             return sheetName;
+        }
+
+        public int getFetchSize() {
+            return fetchSize;
+        }
+
+        public void assignSheet(String bookName, String sheetName, int fetchSize)
+        {
+            this.bookName = bookName;
+            this.sheetName = sheetName;
+            this.fetchSize = fetchSize;
+            cachedBlocks = new HashSet<>();
+        }
+
+        public void clearSheet()
+        {
+            bookName = null;
+            sheetName = null;
+            fetchSize = 0;
+            cachedBlocks = null;
+        }
+
+        public void addCachedBlock(int startRow)
+        {
+            int blockNo=startRow / fetchSize;
+            cachedBlocks.add(blockNo);
+            System.out.println("addCachedBlock " + blockNo);
+        }
+
+        public void removeCachedBlock(int blockNo)
+        {
+            cachedBlocks.remove(blockNo);
+            System.out.println("removeCachedBlock " + blockNo);
         }
     }
 
@@ -68,21 +103,5 @@ public class UISessionManager {
     }
 
 
-    public void unassignSheet(String sessionId)
-    {
-        UISession uiSession = uiSessionMap.get(sessionId);
-        uiSession.bookName = null;
-        uiSession.sheetName = null;
-        uiSession.cachedBlocks = null;
-    }
-
-    public void assignSheet(String sessionId, String bookName, String sheetName)
-    {
-        UISession uiSession = uiSessionMap.get(sessionId);
-        uiSession.bookName = bookName;
-        uiSession.sheetName = sheetName;
-        uiSession.cachedBlocks = new HashSet<>();
-        logger.info("Sheet Assigned");
-    }
 
 }
