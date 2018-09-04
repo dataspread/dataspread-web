@@ -52,7 +52,7 @@ export default class Cell extends Component {
                         ref={(input) => { this.input = input;}}
                         onBlur={this.handleBlur}
                         onKeyPress={this._handleKeyPress}
-                        defaultValue={this.props.formula == null ? this.props.value : this.props.formula}/>
+                        defaultValue={this.props.formula == null ? this.props.value : '=' + this.props.formula}/>
                 )
             }
             else {
