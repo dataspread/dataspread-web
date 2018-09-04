@@ -44,7 +44,7 @@ To host DataSpread locally you can either use one of the pre-build war files, av
 * [PostgreSQL JDBC driver][jdbc] = 42.1.4
 * [Apache Tomcat][tomcat] >= 8.5.4
 * [Apache Maven][maven] >= 3.5.0
-* [NodeJS] [node] >= 10.9
+* [NodeJS][node] >= 10.9
 
 
 ### Building Instructions (To generate a war file)
