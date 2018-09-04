@@ -25,11 +25,18 @@ public class UISessionManager {
         String bookName=null;
         String sheetName=null;
         int fetchSize = 0;
+        int startRow=0;
+        int endRow=0;
         Set<Integer> cachedBlocks=null;
 
         UISession(String sessionId)
         {
             this.sessionId = sessionId;
+        }
+
+        public String getSessionId()
+        {
+            return sessionId;
         }
 
         public String getBookName()
@@ -62,11 +69,10 @@ public class UISessionManager {
             cachedBlocks = null;
         }
 
-        public void addCachedBlock(int startRow)
+        public void addCachedBlock(int blockNumber)
         {
-            int blockNo=startRow / fetchSize;
-            cachedBlocks.add(blockNo);
-            System.out.println("addCachedBlock " + blockNo);
+            cachedBlocks.add(blockNumber);
+            System.out.println("addCachedBlock " + blockNumber);
         }
 
         public void removeCachedBlock(int blockNo)
@@ -74,6 +80,23 @@ public class UISessionManager {
             cachedBlocks.remove(blockNo);
             System.out.println("removeCachedBlock " + blockNo);
         }
+
+        public void updateViewPort(int startRow, int endRow) {
+            this.startRow = startRow;
+            this.endRow = endRow;
+            System.out.println("updateViewPort " + startRow + " " + endRow);
+        }
+
+        public int getViewPortBlockNumber()
+        {
+            return startRow/fetchSize;
+        }
+
+        public boolean isBlockCached(int blockNumber)
+        {
+            return cachedBlocks.contains(blockNumber);
+        }
+
     }
 
     private UISessionManager()

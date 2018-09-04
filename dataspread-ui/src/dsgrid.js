@@ -30,7 +30,8 @@ export default class DSGrid extends Component {
         this.columnWidth = 150;
         this._disposeFromLRU = this._disposeFromLRU.bind(this);
         this.dataCache = new LRUCache({max:10,
-            dispose: this._disposeFromLRU
+            dispose: this._disposeFromLRU,
+            noDisposeOnSet: true
         });
 
         this.urlPrefix="http://localhost:8080"; // Only for testing.
@@ -52,6 +53,12 @@ export default class DSGrid extends Component {
     _disposeFromLRU(key)
     {
         console.log(key);
+        if (this.stompSubscription !=null) {
+            this.stompClient.send('/push/status', {}, JSON.stringify({
+                message: 'disposeFromLRU',
+                blockNumber: key
+            }));
+        }
     }
 
 
@@ -70,7 +77,7 @@ export default class DSGrid extends Component {
         if (jsonMessage['message'] === 'getCellsResponse')
         {
             console.log('getCellsResponse - ' + jsonMessage['startRowNumber']);
-            this.dataCache.set(Math.trunc((jsonMessage['startRowNumber']) / this.fetchSize),
+            this.dataCache.set(parseInt(jsonMessage['blockNumber'], 10),
                 jsonMessage['data']);
             this.grid.forceUpdate();
         }
@@ -242,6 +249,7 @@ export default class DSGrid extends Component {
         else if (name === "sendMessage")
         {
             this.stompClient.send('/push/status',{}, JSON.stringify({row:1234, col:2456}));
+
         }
     }
 
@@ -311,14 +319,17 @@ export default class DSGrid extends Component {
 
 
     _cellRangeRenderer (props) {
-        console.log("row " + props.rowStartIndex + " " + props.rowStopIndex);
+
         if (this.stompSubscription !=null) {
             if (!props.isScrolling) {
-                if (!this.dataCache.has(Math.trunc(((props.rowStartIndex)) / this.fetchSize)))
-                {
-                    let startIndex = Math.trunc((props.rowStartIndex) / this.fetchSize) * this.fetchSize;
-                    this.dataCache.set(Math.trunc((props.rowStartIndex) / this.fetchSize), 0);
-                    this.stompClient.send('/push/getCells/' + startIndex);
+                if (this.rowStartIndex!==props.rowStartIndex || this.rowStopIndex!==props.rowStopIndex) {
+                    this.rowStartIndex=props.rowStartIndex;
+                    this.rowStopIndex=props.rowStopIndex;
+                    this.stompClient.send('/push/status', {}, JSON.stringify({
+                        message: 'changeViewPort',
+                        rowStartIndex: this.rowStartIndex,
+                        rowStopIndex: this.rowStopIndex
+                    }));
                 }
             }
         }
@@ -348,35 +359,6 @@ export default class DSGrid extends Component {
             cellClass = 'isScrollingPlaceholder'
             cellContent = ['Loading ...'];
         }
-        /*
-        else {
-            cellClass = 'isScrollingPlaceholder'
-            content = 'Loading ...';
-            if (typeof fromCache === "undefined" && typeof this.bookName !== "undefined") {
-                let fetchRowIndex = rowIndex;
-                //for (var i = 0; i < 5; i++) {  // TODO: Multithreaded broken -- need to fix the backend
-                this.dataCache.set(Math.trunc((fetchRowIndex) / this.fetchSize), 0);
-                // Load data - only if not scrolling.
-                let startIndex = Math.trunc((fetchRowIndex) / this.fetchSize) * this.fetchSize;
-                let stopIndex = startIndex + this.fetchSize - 1;
-                console.log("Fetching  " + startIndex + " " + stopIndex);
-                fetch(this.urlPrefix + "/api/getCellsV2/" + this.bookName
-                    + "/Sheet1/" + startIndex + "/" + stopIndex)
-                    .then(res => res.json())
-                    .then(
-                        (result) => {
-                            this.dataCache.set(Math.trunc((fetchRowIndex) / this.fetchSize), result['values']);
-                            this.grid.forceUpdate();
-                        }
-                    )
-                    .catch((error) => {
-                        console.error(error);
-                    });
-                //     fetchRowIndex = fetchRowIndex + this.fetchSize;
-                // }
-
-            }
-        } */
 
 
         return (

@@ -99,23 +99,68 @@ public class GeneralController {
         return headerAccessor.getMessageHeaders();
     }
 
+    public void pushCells(UISessionManager.UISession uiSession, int blockNumber) {
+        //TODO: Update to directly call the data model.
+        // TODO: Improve efficiency.
+        SBook book = BookBindings.getBookById(uiSession.getBookName());
+        SSheet sheet = book.getSheetByName(uiSession.getSheetName());
+        int endColumn = sheet.getEndColumnIndex();
 
-    static class ViewPort {
-        public int row;
-        public int col;
+            int row1 = blockNumber * uiSession.getFetchSize() ;
+            Map<String, Object> ret = new HashMap<>();
+            List<List<String[]>> data = new ArrayList<>();
+            for (int row = row1; row < row1 + uiSession.getFetchSize(); row++) {
+                List<String[]> cellsRow = new ArrayList<>();
+                data.add(cellsRow);
 
+                for (int col = 0; col <= endColumn; col++) {
+                    SCell sCell = sheet.getCell(row, col);
+                    if (sCell.isNull())
+                    {
+                        cellsRow.add(new String[]{""});
+                    }
+                    else if (sCell.getType() == SCell.CellType.FORMULA)
+                        cellsRow.add(new String[]{sCell.getValue().toString(), sCell.getFormulaValue()});
+                    else
+                        cellsRow.add(new String[]{sCell.getValue().toString()});
+                }
+            }
 
-        @Override
-        public String toString() {
-            return "Row:" + row + ", Col" + col;
-        }
+            ret.put("message", "getCellsResponse");
+            ret.put("blockNumber", blockNumber);
+            ret.put("data", data);
+
+            uiSession.addCachedBlock(blockNumber);
+
+            // Single cell update
+            simpMessagingTemplate.convertAndSendToUser(uiSession.getSessionId(),
+                    "/push/updates", ret,
+                    createHeaders(uiSession.getSessionId()));
+
     }
 
+
     @MessageMapping("/push/status")
-    void clientStatus(@Payload ViewPort vp,
+    void clientStatus(@Payload Map<String, Object> payload,
             SimpMessageHeaderAccessor accessor) {
 
-        System.out.println("Session Id " + accessor.getSessionId() + " "  + vp);
+        System.out.println("/push/status");
+        UISessionManager.UISession uiSession = UISessionManager.getInstance().getUISession(accessor.getSessionId());
+        String message = (String) payload.get("message");
+        if (message.equals("changeViewPort"))
+        {
+            uiSession.updateViewPort((int) payload.get("rowStartIndex"), (int) payload.get("rowStopIndex"));
+            // If viewport not cached, push to FE
+            int blockNumber = uiSession.getViewPortBlockNumber();
+            if (!uiSession.isBlockCached(uiSession.getViewPortBlockNumber()))
+                pushCells(uiSession, blockNumber);
+
+        }
+        else if (message.equals("disposeFromLRU"))
+        {
+            uiSession.removeCachedBlock((int) payload.get("blockNumber"));
+        }
+
 
         //JSONParser parser = new JSONParser();
         //JSONObject dict = (JSONObject) parser.parse(value);
