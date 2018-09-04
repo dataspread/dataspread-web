@@ -3,24 +3,34 @@ package api.controller;
 import api.Authorization;
 import api.Cell;
 import api.JsonWrapper;
+import api.UISessionManager;
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.SimpMessageType;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.annotation.SubscribeMapping;
+import org.springframework.web.bind.annotation.*;
+import org.zkoss.json.JSONArray;
+import org.zkoss.json.JSONObject;
 import org.zkoss.util.Pair;
 import org.zkoss.zss.api.AreaRef;
-import org.zkoss.zss.api.CellOperationUtil;
 import org.zkoss.zss.api.Range;
 import org.zkoss.zss.api.Ranges;
 import org.zkoss.zss.api.model.CellStyle;
-import org.zkoss.zss.api.model.Color;
-import org.zkoss.zss.api.model.Font;
 import org.zkoss.zss.api.model.Sheet;
 import org.zkoss.zss.api.model.impl.SheetImpl;
 import org.zkoss.zss.api.model.impl.SimpleRef;
-import org.zkoss.zss.model.*;
+import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.SBook;
+import org.zkoss.zss.model.SCell;
+import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.sys.TableMonitor;
 import org.zkoss.zss.model.sys.BookBindings;
 
@@ -30,11 +40,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Logger;
 
-import org.zkoss.json.*;
-
-
-
-import static api.WebSocketConfig.MESSAGE_PREFIX;
 
 @RestController
 public class GeneralController {
@@ -73,11 +78,10 @@ public class GeneralController {
     }
 
     // General API
-    @Autowired private SimpMessagingTemplate template;
+    @Autowired private SimpMessagingTemplate simpMessagingTemplate;
 
     public static String getCallbackPath(String bookId, String sheetName) {
         return new StringBuilder()
-                .append(MESSAGE_PREFIX)
                 .append("updateCells/")
                 .append(bookId)
                 .append("/")
@@ -86,6 +90,103 @@ public class GeneralController {
     }
 
     //TODO formatAPIs
+
+    private MessageHeaders createHeaders(String sessionId) {
+        SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.create(SimpMessageType.MESSAGE);
+        headerAccessor.setSessionId(sessionId);
+        headerAccessor.setLeaveMutable(true);
+        return headerAccessor.getMessageHeaders();
+    }
+
+    public void pushCells(UISessionManager.UISession uiSession, int blockNumber) {
+        //TODO: Update to directly call the data model.
+        // TODO: Improve efficiency.
+        SBook book = BookBindings.getBookById(uiSession.getBookName());
+        SSheet sheet = book.getSheetByName(uiSession.getSheetName());
+        int endColumn = sheet.getEndColumnIndex();
+
+            int row1 = blockNumber * uiSession.getFetchSize() ;
+            Map<String, Object> ret = new HashMap<>();
+            List<List<String[]>> data = new ArrayList<>();
+            for (int row = row1; row < row1 + uiSession.getFetchSize(); row++) {
+                List<String[]> cellsRow = new ArrayList<>();
+                data.add(cellsRow);
+
+                for (int col = 0; col <= endColumn; col++) {
+                    SCell sCell = sheet.getCell(row, col);
+                    if (sCell.isNull())
+                    {
+                        cellsRow.add(new String[]{""});
+                    }
+                    else if (sCell.getType() == SCell.CellType.FORMULA)
+                        cellsRow.add(new String[]{sCell.getValue().toString(), sCell.getFormulaValue()});
+                    else
+                        cellsRow.add(new String[]{sCell.getValue().toString()});
+                }
+            }
+
+            ret.put("message", "getCellsResponse");
+            ret.put("blockNumber", blockNumber);
+            ret.put("data", data);
+
+            uiSession.addCachedBlock(blockNumber);
+
+            // Single cell update
+            simpMessagingTemplate.convertAndSendToUser(uiSession.getSessionId(),
+                    "/push/updates", ret,
+                    createHeaders(uiSession.getSessionId()));
+
+    }
+
+
+    @MessageMapping("/push/status")
+    void clientStatus(@Payload Map<String, Object> payload,
+            SimpMessageHeaderAccessor accessor) {
+
+        UISessionManager.UISession uiSession = UISessionManager.getInstance().getUISession(accessor.getSessionId());
+        String message = (String) payload.get("message");
+        if (message.equals("changeViewPort"))
+        {
+            uiSession.updateViewPort((int) payload.get("rowStartIndex"), (int) payload.get("rowStopIndex"));
+            // If viewport not cached, push to FE
+            int blockNumber = uiSession.getViewPortBlockNumber();
+            for (int i = 0; i < 5; i++) {
+                if (!uiSession.isBlockCached(uiSession.getViewPortBlockNumber() + i))
+                    pushCells(uiSession, blockNumber + i);
+            }
+        }
+        else if (message.equals("disposeFromLRU"))
+        {
+            uiSession.removeCachedBlock((int) payload.get("blockNumber"));
+        } else if (message.equals("updateCell")) {
+            SBook book = BookBindings.getBookById(uiSession.getBookName());
+            SSheet sheet = book.getSheetByName(uiSession.getSheetName());
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+                int row = (int) payload.get("row");
+                int column = (int) payload.get("column");
+                SCell cell = sheet.getCell(row, column);
+                String value = (String) payload.get("value");
+                if (value.startsWith("="))
+                    cell.setFormulaValue(value.substring(1), connection, true);
+                else
+                    cell.setStringValue(value, connection, true);
+                connection.commit();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @SubscribeMapping("/user/push/updates")
+    void subscribe(@Header String bookName,
+                   @Header String sheetName,
+                   @Header int fetchSize,
+                   SimpMessageHeaderAccessor accessor) {
+        UISessionManager.getInstance()
+                .getUISession(accessor.getSessionId())
+                .assignSheet(bookName, sheetName, fetchSize);
+    }
+
 
     @RequestMapping(value = "/api/getCells/{bookId}/{sheetName}/{row1}/{col1}/{row2}/{col2}",
             method = RequestMethod.GET)
@@ -190,6 +291,36 @@ public class GeneralController {
     }
 
 
+    @RequestMapping(value = "/api/putCellsV2",
+            method = RequestMethod.PUT)
+    public void putCells(@RequestBody String json) {
+        org.json.JSONObject obj = new org.json.JSONObject(json);
+        String bookId = obj.getString("bookId");
+        String sheetName = obj.getString("sheetName");
+        SBook book = BookBindings.getBookById(bookId);
+        SSheet sheet = book.getSheetByName(sheetName);
+        org.json.JSONArray cells = obj.getJSONArray("cells");
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            for (Object cell : cells) {
+                int row = ((org.json.JSONObject)cell).getInt("row");
+                int col = ((org.json.JSONObject)cell).getInt("col");
+                String type = ((org.json.JSONObject)cell).getString("type");
+                String formula = ((org.json.JSONObject)cell).getString("formula");
+                Object value = getValue((org.json.JSONObject) cell, type);
+                if (!formula.equals("")) {
+                    sheet.getCell(row,col).setFormulaValue(formula, connection, true);
+                } else {
+                    sheet.getCell(row, col).setValue(value, connection, true);
+                }
+            }
+            connection.commit();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
 
     @RequestMapping(value = "/api/putCells",
             method = RequestMethod.PUT)
@@ -219,7 +350,7 @@ public class GeneralController {
                 String format = ((org.json.JSONObject)cell).getString("format");
             }
             connection.commit();
-            template.convertAndSend(getCallbackPath(bookId, sheetName), "");
+            simpMessagingTemplate.convertAndSend(getCallbackPath(bookId, sheetName), "");
             return JsonWrapper.generateJson(null);
         } catch (Exception e) {
             e.printStackTrace();
@@ -242,7 +373,7 @@ public class GeneralController {
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
         sheet.insertRow(rowIdx, lastRowIdx);
-        template.convertAndSend(GeneralController.getCallbackPath(bookId, sheetName), "");
+        simpMessagingTemplate.convertAndSend(GeneralController.getCallbackPath(bookId, sheetName), "");
         return JsonWrapper.generateJson(null);
     }
 
@@ -261,7 +392,7 @@ public class GeneralController {
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
         sheet.deleteRow(rowIdx, lastRowIdx);
-        template.convertAndSend(GeneralController.getCallbackPath(bookId, sheetName), "");
+        simpMessagingTemplate.convertAndSend(GeneralController.getCallbackPath(bookId, sheetName), "");
 
         return JsonWrapper.generateJson(null);
     }
@@ -281,7 +412,7 @@ public class GeneralController {
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
         sheet.insertColumn(colIdx, lastColIdx);
-        template.convertAndSend(getCallbackPath(bookId, sheetName), "");
+        simpMessagingTemplate.convertAndSend(getCallbackPath(bookId, sheetName), "");
         return JsonWrapper.generateJson(null);
     }
 
@@ -300,7 +431,7 @@ public class GeneralController {
         SBook book = BookBindings.getBookById(bookId);
         SSheet sheet = book.getSheetByName(sheetName);
         sheet.deleteColumn(colIdx, lastColIdx);
-        template.convertAndSend(getCallbackPath(bookId, sheetName), "");
+        simpMessagingTemplate.convertAndSend(getCallbackPath(bookId, sheetName), "");
         return JsonWrapper.generateJson(null);
     }
 
