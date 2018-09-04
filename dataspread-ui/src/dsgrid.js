@@ -29,12 +29,14 @@ export default class DSGrid extends Component {
         this.rowHeight = 32;
         this.columnWidth = 150;
         this._disposeFromLRU = this._disposeFromLRU.bind(this);
-        this.dataCache = new LRUCache({max:10,
+        this.dataCache = new LRUCache({
+            max: 100,
             dispose: this._disposeFromLRU,
             noDisposeOnSet: true
         });
 
-        this.urlPrefix="http://localhost:8080"; // Only for testing.
+        //this.urlPrefix="http://localhost:8080"; // Only for testing.
+        this.urlPrefix = ""; // Only for testing.
         this.fetchSize = 50;
 
         this._onSectionRendered = this._onSectionRendered.bind(this);
@@ -44,15 +46,17 @@ export default class DSGrid extends Component {
         this.processUpdates = this.processUpdates.bind(this);
         this._cellRangeRenderer = this._cellRangeRenderer.bind(this);
 
-        //this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push")
-        this.stompClient = Stomp.client("ws://localhost:8080/ds-push/websocket")
+        this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket")
+        //this.stompClient = Stomp.client("ws://localhost:8080/ds-push/websocket")
         this.stompClient.connect();
         this.stompSubscription = null;
+
+        this.stompClient.debug = () => {
+        };
     }
 
     _disposeFromLRU(key)
     {
-        console.log(key);
         if (this.stompSubscription !=null) {
             this.stompClient.send('/push/status', {}, JSON.stringify({
                 message: 'disposeFromLRU',
@@ -76,7 +80,6 @@ export default class DSGrid extends Component {
         let jsonMessage =  JSON.parse(message.body);
         if (jsonMessage['message'] === 'getCellsResponse')
         {
-            console.log('getCellsResponse - ' + jsonMessage['startRowNumber']);
             this.dataCache.set(parseInt(jsonMessage['blockNumber'], 10),
                 jsonMessage['data']);
             this.grid.forceUpdate();
@@ -90,14 +93,6 @@ export default class DSGrid extends Component {
                     placeholder='Book Name...'
                     name="bookName"
                     onChange={this._handleEvent}/>
-
-
-
-                <Button
-                    name="sendMessage"
-                    onClick={this._handleEvent}>
-                    sendMessage
-                </Button>
 
                 <Button
                     name="bookLoadButton"
@@ -246,11 +241,6 @@ export default class DSGrid extends Component {
 
 
         }
-        else if (name === "sendMessage")
-        {
-            this.stompClient.send('/push/status',{}, JSON.stringify({row:1234, col:2456}));
-
-        }
     }
 
 
@@ -310,10 +300,25 @@ export default class DSGrid extends Component {
         let fromCache = this.dataCache.get(Math.trunc((rowIndex) / this.fetchSize));
 
         if (typeof fromCache === "object") {
-            this.dataCache
-                .get(Math.trunc((rowIndex) / this.fetchSize))[(rowIndex) % this.fetchSize][columnIndex] = value;
+            if (value[0] === '=') {
+                this.dataCache
+                    .get(Math.trunc((rowIndex) / this.fetchSize))[(rowIndex) % this.fetchSize][columnIndex] = ['...', value];
+            }
+            else {
+                this.dataCache
+                    .get(Math.trunc((rowIndex) / this.fetchSize))[(rowIndex) % this.fetchSize][columnIndex] = [value];
+            }
+
             this.grid.forceUpdate();
         }
+        this.stompClient.send('/push/status', {}, JSON.stringify({
+            message: 'updateCell',
+            row: rowIndex,
+            column: columnIndex,
+            value: value
+        }));
+
+
         //TODO: send update to backend.
     }
 

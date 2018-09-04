@@ -9,7 +9,6 @@ import org.model.DBContext;
 import org.model.DBHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -144,7 +143,6 @@ public class GeneralController {
     void clientStatus(@Payload Map<String, Object> payload,
             SimpMessageHeaderAccessor accessor) {
 
-        System.out.println("/push/status");
         UISessionManager.UISession uiSession = UISessionManager.getInstance().getUISession(accessor.getSessionId());
         String message = (String) payload.get("message");
         if (message.equals("changeViewPort"))
@@ -152,65 +150,30 @@ public class GeneralController {
             uiSession.updateViewPort((int) payload.get("rowStartIndex"), (int) payload.get("rowStopIndex"));
             // If viewport not cached, push to FE
             int blockNumber = uiSession.getViewPortBlockNumber();
-            if (!uiSession.isBlockCached(uiSession.getViewPortBlockNumber()))
-                pushCells(uiSession, blockNumber);
-
+            for (int i = 0; i < 5; i++) {
+                if (!uiSession.isBlockCached(uiSession.getViewPortBlockNumber() + i))
+                    pushCells(uiSession, blockNumber + i);
+            }
         }
         else if (message.equals("disposeFromLRU"))
         {
             uiSession.removeCachedBlock((int) payload.get("blockNumber"));
-        }
-
-
-        //JSONParser parser = new JSONParser();
-        //JSONObject dict = (JSONObject) parser.parse(value);
-        //SBook book = BookBindings.getBookById((String) dict.get("bookId"));
-        //SSheet currentSheet = book.getSheetByName((String) dict.get("sheetName"));
-
-    }
-
-    @MessageMapping("/push/getCells/{startRow}")
-    public void getCellsPush(SimpMessageHeaderAccessor accessor,
-                                             @DestinationVariable int startRow) {
-        //TODO: Update to directly call the data model.
-        // TODO: Improve efficiency.
-        UISessionManager.UISession uiSession =
-                UISessionManager.getInstance().getUISession(accessor.getSessionId());
-        SBook book = BookBindings.getBookById(uiSession.getBookName());
-        SSheet sheet = book.getSheetByName(uiSession.getSheetName());
-        int endColumn = sheet.getEndColumnIndex();
-
-        for (int i = 0; i < 5; i++) {
-            int row1 = startRow + uiSession.getFetchSize() * i;
-            Map<String, Object> ret = new HashMap<>();
-            List<List<String[]>> data = new ArrayList<>();
-            for (int row = row1; row < row1 + uiSession.getFetchSize(); row++) {
-                List<String[]> cellsRow = new ArrayList<>();
-                data.add(cellsRow);
-
-                for (int col = 0; col <= endColumn; col++) {
-                    SCell sCell = sheet.getCell(row, col);
-                    if (sCell.isNull())
-                    {
-                        cellsRow.add(new String[]{""});
-                    }
-                    else if (sCell.getType() == SCell.CellType.FORMULA)
-                        cellsRow.add(new String[]{sCell.getValue().toString(), sCell.getFormulaValue()});
-                    else
-                        cellsRow.add(new String[]{sCell.getValue().toString()});
-                }
+        } else if (message.equals("updateCell")) {
+            SBook book = BookBindings.getBookById(uiSession.getBookName());
+            SSheet sheet = book.getSheetByName(uiSession.getSheetName());
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+                int row = (int) payload.get("row");
+                int column = (int) payload.get("column");
+                SCell cell = sheet.getCell(row, column);
+                String value = (String) payload.get("value");
+                if (value.startsWith("="))
+                    cell.setFormulaValue(value.substring(1), connection, true);
+                else
+                    cell.setStringValue(value, connection, true);
+                connection.commit();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-
-            ret.put("message", "getCellsResponse");
-            ret.put("startRowNumber", row1);
-            ret.put("data", data);
-
-            uiSession.addCachedBlock(row1);
-
-            // Single cell update
-            simpMessagingTemplate.convertAndSendToUser(accessor.getSessionId(),
-                    "/push/updates", ret,
-                    createHeaders(accessor.getSessionId()));
         }
     }
 

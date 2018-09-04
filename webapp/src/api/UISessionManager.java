@@ -72,19 +72,16 @@ public class UISessionManager {
         public void addCachedBlock(int blockNumber)
         {
             cachedBlocks.add(blockNumber);
-            System.out.println("addCachedBlock " + blockNumber);
         }
 
         public void removeCachedBlock(int blockNo)
         {
             cachedBlocks.remove(blockNo);
-            System.out.println("removeCachedBlock " + blockNo);
         }
 
         public void updateViewPort(int startRow, int endRow) {
             this.startRow = startRow;
             this.endRow = endRow;
-            System.out.println("updateViewPort " + startRow + " " + endRow);
         }
 
         public int getViewPortBlockNumber()
@@ -101,7 +98,6 @@ public class UISessionManager {
 
     private UISessionManager()
     {
-        logger.info("UISessionManager Created");
         uiSessionMap = new HashMap<>();
     }
 
@@ -115,16 +111,10 @@ public class UISessionManager {
     public void addSession(String sessionId)
     {
         uiSessionMap.put(sessionId, new UISession(sessionId));
-        System.out.println("New session:" + sessionId);
     }
 
     public void deleteSession(String sessionId)
     {
         uiSessionMap.remove(sessionId);
-        System.out.println("Session deleted:" + sessionId);
-
     }
-
-
-
 }

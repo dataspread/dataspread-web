@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import { Input } from 'semantic-ui-react'
+import {Input} from 'semantic-ui-react'
 import 'semantic-ui-css/semantic.min.css';
 
 export default class Cell extends Component {
@@ -13,6 +13,7 @@ export default class Cell extends Component {
         }
         this.handleClick = this.handleClick.bind(this);
         this.handleBlur = this.handleBlur.bind(this);
+        this._handleKeyPress = this._handleKeyPress.bind(this);
     }
 
     componentDidUpdate () {
@@ -20,9 +21,15 @@ export default class Cell extends Component {
             this.input.focus();
     }
 
+    _handleKeyPress(e) {
+        console.log(e.key);
+        if (e.key === 'Enter') {
+            this.handleBlur(e);
+        }
+    }
+
+
     handleClick(e) {
-
-
         this.setState({
             editing: true
         })
@@ -41,10 +48,11 @@ export default class Cell extends Component {
     render() {
             if (this.state.editing) {
                 return (<Input
-                    style={this.props.style}
-                    ref={(input) => { this.input = input;}}
-                    onBlur={this.handleBlur}
-                    defaultValue = {this.props.value}/>
+                        style={this.props.style}
+                        ref={(input) => { this.input = input;}}
+                        onBlur={this.handleBlur}
+                        onKeyPress={this._handleKeyPress}
+                        defaultValue={this.props.formula == null ? this.props.value : this.props.formula}/>
                 )
             }
             else {
