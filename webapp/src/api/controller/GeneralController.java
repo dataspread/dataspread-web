@@ -27,12 +27,12 @@ import org.zkoss.zss.api.model.CellStyle;
 import org.zkoss.zss.api.model.Sheet;
 import org.zkoss.zss.api.model.impl.SheetImpl;
 import org.zkoss.zss.api.model.impl.SimpleRef;
-import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.SBook;
-import org.zkoss.zss.model.SCell;
-import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.impl.sys.TableMonitor;
 import org.zkoss.zss.model.sys.BookBindings;
+import org.zkoss.zss.model.sys.dependency.Ref;
+import org.zkoss.zss.range.impl.ModelUpdate;
+import org.zkoss.zss.range.impl.ModelUpdateCollector;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -159,23 +159,54 @@ public class GeneralController {
         {
             uiSession.removeCachedBlock((int) payload.get("blockNumber"));
         } else if (message.equals("updateCell")) {
-            SBook book = BookBindings.getBookById(uiSession.getBookName());
-            SSheet sheet = book.getSheetByName(uiSession.getSheetName());
-            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
-                int row = (int) payload.get("row");
-                int column = (int) payload.get("column");
-                SCell cell = sheet.getCell(row, column);
-                String value = (String) payload.get("value");
-                if (value.startsWith("="))
-                    cell.setFormulaValue(value.substring(1), connection, true);
-                else
-                    cell.setStringValue(value, connection, true);
-                connection.commit();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            SSheet sheet = uiSession.getBook().getSheetByName(uiSession.getSheetName());
+            int row = (int) payload.get("row");
+            int column = (int) payload.get("column");
+            String value = (String) payload.get("value");
+            updateCellWithNotfication(uiSession, row, column, value);
         }
     }
+
+    private void updateCellWithNotfication (UISessionManager.UISession uiSession, int row, int column, String value){
+        SSheet sheet = uiSession.getBook().getSheetByName(uiSession.getSheetName());
+        ModelUpdateCollector modelUpdateCollector = new ModelUpdateCollector();
+        ModelUpdateCollector oldCollector = ModelUpdateCollector.setCurrent(modelUpdateCollector);;
+
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            SCell cell = sheet.getCell(row, column);
+            if (value.startsWith("="))
+                cell.setFormulaValue(value.substring(1), connection, true);
+            else
+                cell.setStringValue(value, connection, true);
+            connection.commit();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        List<ModelUpdate> modelUpdates = modelUpdateCollector.getModelUpdates();
+        for(ModelUpdate update:modelUpdates) {
+            System.out.println("Model Update " + update);
+            switch (update.getType())
+            {
+                case CELL:
+                    break;
+
+                case REFS:
+                    for(Ref ref:(Set<Ref>)update.getData()) {
+
+                        System.out.println(sheet.getCell(ref.getRow(), ref.getColumn()).getValue());
+                    }
+                    break;
+                case REF:
+                    break;
+            }
+
+        }
+        ModelUpdateCollector.setCurrent(oldCollector);
+    }
+
+
+
 
     @SubscribeMapping("/user/push/updates")
     void subscribe(@Header String bookName,
