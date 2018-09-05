@@ -302,11 +302,13 @@ export default class DSGrid extends Component {
         if (typeof fromCache === "object") {
             if (value[0] === '=') {
                 this.dataCache
-                    .get(Math.trunc((rowIndex) / this.fetchSize))[(rowIndex) % this.fetchSize][columnIndex] = ['...', value];
+                    .get(Math.trunc((rowIndex) / this.fetchSize))[(rowIndex) % this.fetchSize][columnIndex]
+                    = ['...', value.substring(15)];
             }
             else {
                 this.dataCache
-                    .get(Math.trunc((rowIndex) / this.fetchSize))[(rowIndex) % this.fetchSize][columnIndex] = [value];
+                    .get(Math.trunc((rowIndex) / this.fetchSize))[(rowIndex) % this.fetchSize][columnIndex]
+                    = [value];
             }
 
             this.grid.forceUpdate();

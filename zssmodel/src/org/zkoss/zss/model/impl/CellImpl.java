@@ -485,6 +485,7 @@ public class CellImpl extends AbstractCellAdv {
 		SBook book = getSheet().getBook();
 		SBookSeries bookSeries = book.getBookSeries();
 		ModelUpdateUtil.handlePrecedentUpdate(bookSeries, _sheet, getRef());
+		// TODO Check if we need add cell update.
 
 		//ZSS-985: if it is not destroying this cell
 		if (!destroy) {
