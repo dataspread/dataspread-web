@@ -43,7 +43,7 @@ export default class DSGrid extends Component {
         this._cellRenderer = this._cellRenderer.bind(this);
         this._handleEvent = this._handleEvent.bind(this);
         this._updateCell = this._updateCell.bind(this);
-        this.processUpdates = this.processUpdates.bind(this);
+        this._processUpdates = this._processUpdates.bind(this);
         this._cellRangeRenderer = this._cellRangeRenderer.bind(this);
 
         this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket")
@@ -75,7 +75,7 @@ export default class DSGrid extends Component {
         this.stompClient.disconnect();
     }
 
-    processUpdates(message)
+    _processUpdates(message)
     {
         let jsonMessage =  JSON.parse(message.body);
         if (jsonMessage['message'] === 'getCellsResponse')
@@ -228,7 +228,7 @@ export default class DSGrid extends Component {
                             this.stompSubscription.unsubscribe();
                         this.stompSubscription = this.stompClient
                             .subscribe('/user/push/updates',
-                                this.processUpdates, {bookName: this.state.bookName,
+                                this._processUpdates, {bookName: this.state.bookName,
                                         sheetName: this.state.sheetName,
                                         fetchSize: this.fetchSize});
                         this.grid.forceUpdate();
@@ -372,7 +372,7 @@ export default class DSGrid extends Component {
                     style={style}
                     className={cellClass}
                     value={cellContent[0]}
-                    formula={cellContent[1]}
+                    formula={cellContent[1] == null ? null : "=" + cellContent[1]}
                     rowIndex={rowIndex}
                     columnIndex={columnIndex}
                     onUpdate={this._updateCell}
