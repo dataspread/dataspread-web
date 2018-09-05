@@ -43,7 +43,7 @@ public class ROM_Model extends Model {
         rowOrderTable = new Hashtable<String,CountedBTree>();
 
         this.tableName = tableName;
-        this.navSbuckets = new ArrayList<Bucket<String>>();
+        this.navSbuckets = new ArrayList<Bucket>();
         this.navS = new NavigationStructure(tableName);
         this.navS.setCurrentSheet(sheet);
         createSchema(context);
@@ -639,7 +639,7 @@ public class ROM_Model extends Model {
     }
 
     @Override
-    public ArrayList<Bucket<String>> createNavS(String bucketName, int start, int count) {
+    public ArrayList<Bucket> createNavS(String bucketName, int start, int count) {
         //load sorted data from table
         ArrayList<Object> recordList =  new ArrayList<>();
 
@@ -695,7 +695,7 @@ public class ROM_Model extends Model {
 
         //create nav data structure
         this.navS.setRecordList(recordList);
-        ArrayList<Bucket<String>> newList = this.navS.getUniformBuckets(0,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
+        ArrayList<Bucket> newList = this.navS.getUniformBuckets(0,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
 
         if(bucketName==null)
         {

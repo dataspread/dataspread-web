@@ -88,7 +88,7 @@ public class TOM_Model extends Model {
 
 
     @Override
-    public ArrayList<Bucket<String>> createNavS(String bucketName, int start, int count) {
+    public ArrayList<Bucket> createNavS(String bucketName, int start, int count) {
         //load sorted data from table
         ArrayList<Object> recordList =  new ArrayList<>();
 
@@ -142,7 +142,7 @@ public class TOM_Model extends Model {
 
         //create nav data structure
         this.navS.setRecordList(recordList);
-        ArrayList<Bucket<String>> newList = this.navS.getNonOverlappingBuckets(1,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
+        ArrayList<Bucket> newList = this.navS.getNonOverlappingBuckets(1,recordList.size()-1);//getBucketsNoOverlap(0,recordList.size()-1,true);
 
         if(bucketName==null)
         {

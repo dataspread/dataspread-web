@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
+import org.zkoss.poi.hslf.model.Sheet;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
@@ -24,14 +25,14 @@ public class NavigationStructure {
     /**
      * Navigation bucket tree structure. Lazily constructed upon user clicking. The Model object has a reference to this Bucket Tree structure {@link Model#navSbuckets}. TODO: This link would break by reassigning in method init*. HOW TO FIX???
      */
-    private ArrayList<Bucket<String>> navBucketTree;
+    private ArrayList<Bucket> navBucketTree;
     /**
      * Temporarily store the computed bucket for user call. To be serialized by calling {@link #getSerializedBuckets}.
      */
     private ReturnBuffer returnBuffer;
 
     class ReturnBuffer {
-        public ArrayList<Bucket<String>> buckets;
+        ArrayList<Bucket> buckets;
     }
 
     /**
@@ -116,7 +117,6 @@ public class NavigationStructure {
         ((RCV_Model) model).navigationSortRangeByAttribute(currentSheet, 1, currentSheet.getEndRowIndex(), new int[]{columnIndex}, 0, recordList);
         setRecordList(recordList);
         initIndexedBucket(currentSheet.getEndRowIndex() + 1);
-
         return getSerializedBuckets();
     }
 
@@ -168,6 +168,31 @@ public class NavigationStructure {
         }
     }
 
+    /**
+     * Query the path given the row number and diving level.
+     *
+     * @param row   The row number being queried.
+     * @param level The maximum level to dive into. level=0 implies empty path.
+     * @return A path of "Path": "0,1,2" like return object.
+     */
+    public HashMap<String, Object> getScrollPath(int row, int level) {
+        if (row > totalRows || row < 1) {
+            return null;
+        }
+        List<Bucket> subBuckets = this.navBucketTree;
+        List<String> path = new ArrayList<>();
+        while (subBuckets != null && level-- > 0) {
+            for (int i = 0; i < subBuckets.size(); i++) {
+                if (row < subBuckets.get(i).endPos) {
+                    path.add(String.valueOf(i));
+                    subBuckets = subBuckets.get(i).children;
+                }
+            }
+        }
+        HashMap<String, Object> returnJson = new HashMap<>();
+        returnJson.put("Path", String.join(",", path));
+        return returnJson;
+    }
 
     public void resetToRoot() {
         returnBuffer.buckets = navBucketTree;
@@ -179,10 +204,28 @@ public class NavigationStructure {
         recordList = null;
     }
 
-    public Object getNavChildren(int[] paths) {
+    private static int[] listToArray(List<Integer> theList) {
+        int[] arr = new int[theList.size()];
+        for (int i = 0; i < theList.size(); i++) {
+            arr[i] = theList.get(i);
+        }
+        return arr;
+    }
+
+    public Object getNavChildrenWithContext(int[] paths) {
         HashMap<String, Object> ret = new HashMap<>();
-        this.computeOnDemandBucket(paths);
+        List<Integer> prevPath = new ArrayList<>();
+        List<Integer> laterPath = new ArrayList<>();
+        this.computeOnDemandBucket(paths, prevPath, laterPath);
         ret.put("breadCrumb", getStringPath(paths));
+        HashMap<String, Object> contextStruct = new HashMap<>();
+        contextStruct.put("breadCrumb", getStringPath(listToArray(prevPath)));
+        contextStruct.put("path", prevPath);
+        ret.put("prev", contextStruct);
+        contextStruct = new HashMap<>();
+        contextStruct.put("breadCrumb", getStringPath(listToArray(laterPath)));
+        contextStruct.put("path", laterPath);
+        ret.put("later", contextStruct);
         ret.put("buckets", getSerializedBuckets());
         return ret;
     }
@@ -248,28 +291,90 @@ public class NavigationStructure {
     public void initIndexedBucket(int totalRows) {
         //this.totalRows = totalRows;
         navBucketTree = getNonOverlappingBuckets(1, this.totalRows - 1);
+        returnBuffer.buckets = navBucketTree;
+    }
+
+    private boolean expandChild(Bucket subRoot) {
+        if (subRoot.children == null) {
+            if (!subRoot.minValue.equals(subRoot.maxValue)) {
+                subRoot.setChildren(getNonOverlappingBuckets(subRoot.startPos, subRoot.endPos));
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
      * Compute or fetch computed bucket list based on the input paths and store the result in {@link #returnBuffer}. Expect at least one level in the paths. This function assumes the target is expandable, i.e. it's user's job not to call this function on an end-node.
      */
-    public void computeOnDemandBucket(int[] paths) {
-        if (paths.length == 0) {
-            if (navBucketTree.size() == 0)
-                navBucketTree = getNonOverlappingBuckets(1, this.totalRows - 1);
-            else
-                resetToRoot();
-            return;
+    private void computeOnDemandBucket(int[] paths, List<Integer> prev, List<Integer> later) {
+        if (computeOnDemandBucketIfEmptyPath(paths)) return;
+        Bucket left = null, right = null, subRoot;
+        List<Bucket> subBuckets = navBucketTree;
+        for (int i = 0; i < paths.length; i++) {
+            int path = paths[i];
+            subRoot = subBuckets.get(path);
+            if (path == subBuckets.size() - 1) {
+                if (right != null) {
+                    expandChild(right);
+                    if (right.children != null) {
+                        int seq = 0;
+                        right = (Bucket) right.children.get(seq);
+                        later.add(seq);
+                    }
+                }
+            } else {
+                later.clear();
+                for (int j = 0; j < i; j++) {
+                    later.add(paths[j]);
+                }
+                later.add(path + 1);
+                right = subBuckets.get(path + 1);
+            }
+            if (path == 0) {
+                if (left != null) {
+                    expandChild(left);
+                    if (left.children != null) {
+                        int seq = left.children.size() - 1;
+                        left = (Bucket) left.children.get(seq);
+                        prev.add(seq);
+                    }
+                }
+            } else {
+                prev.clear();
+                for (int j = 0; j < i; j++) {
+                    prev.add(paths[j]);
+                }
+                prev.add(path - 1);
+                left = subBuckets.get(path - 1);
+            }
+            subBuckets = subRoot.children;
         }
-        Bucket<String> subRoot = getSubRootBucket(paths);
-        if (subRoot.getChildren() != null) {
+
+        subRoot = getSubRootBucket(paths);
+        if (subRoot != null) {
+            expandChild(subRoot);
             returnBuffer.buckets = subRoot.getChildren();
-            return;
+            if (right != null && expandChild(right))
+                later.add(0);
+            if (left != null && expandChild(left))
+                prev.add(left.children.size() - 1);
+        } else {
+            returnBuffer.buckets = navBucketTree;
         }
-        if (indexString == null)
-            subRoot.setChildren(getUniformBuckets(subRoot.startPos, subRoot.endPos));
-        else
-            subRoot.setChildren(getNonOverlappingBuckets(subRoot.startPos, subRoot.endPos));
+
+    }
+
+    private boolean computeOnDemandBucketIfEmptyPath(int[] paths) {
+        if (paths.length == 0) {
+            if (navBucketTree.size() == 0) {
+                navBucketTree = getNonOverlappingBuckets(1, this.totalRows - 1);
+                returnBuffer.buckets = navBucketTree;
+            } else
+                resetToRoot();
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -300,7 +405,7 @@ public class NavigationStructure {
         return ret;
     }
 
-    public void setNavBucketTree(ArrayList<Bucket<String>> navBucketTree) {
+    public void setNavBucketTree(ArrayList<Bucket> navBucketTree) {
         this.navBucketTree = navBucketTree;
     }
 
@@ -326,9 +431,9 @@ public class NavigationStructure {
         return this.totalRows;
     }
 
-    public ArrayList<Bucket<String>> getNonOverlappingBuckets(int startPos, int endPos) {
+    public ArrayList<Bucket> getNonOverlappingBuckets(int startPos, int endPos) {
 
-        ArrayList<Bucket<String>> bucketList = new ArrayList<>();
+        ArrayList<Bucket> bucketList = new ArrayList<>();
         int bucketSize = (endPos - startPos + 1) / kHist;
 
         if (bucketSize == 0) {
@@ -392,7 +497,6 @@ public class NavigationStructure {
             bucket.setId();
             bucketList.add(bucket);
         }
-        returnBuffer.buckets = bucketList;
         return bucketList;
     }
 
@@ -403,8 +507,8 @@ public class NavigationStructure {
      * @param endPos   Same as above. Last row is totalRows.
      * @return Bucket list.
      */
-    public ArrayList<Bucket<String>> getUniformBuckets(int startPos, int endPos) {
-        ArrayList<Bucket<String>> bucketList = new ArrayList<Bucket<String>>();
+    public ArrayList<Bucket> getUniformBuckets(int startPos, int endPos) {
+        ArrayList<Bucket> bucketList = new ArrayList<>();
         int bucketSize = (endPos - startPos + 1) / kHist;
 
         //System.out.println("(start,end): ("+startPos+","+endPos+"), BUCKET Size: "+bucketSize);
@@ -512,7 +616,7 @@ public class NavigationStructure {
         List<Object> aggList = new ArrayList<>();
 
         Bucket<String> subroot = getSubRootBucket(paths);
-        List<Bucket<String>> subgroups = subroot == null ? navBucketTree : subroot.getChildren();
+        List<Bucket> subgroups = subroot == null ? navBucketTree : subroot.getChildren();
         for (int attr_i = 0; attr_i < attr_indices.length; attr_i++) {
             for (Bucket<String> subgroup : subgroups) {
                 Map<String, Object> obj = getBucketAggWithMemoization(model, subgroup, attr_indices[attr_i], agg_ids[attr_i], paraList.get(attr_i));
@@ -630,7 +734,7 @@ public class NavigationStructure {
         return indexes;
     }
 
-    public void printBuckets(List<Bucket<String>> bucketList) {
+    public void printBuckets(List<Bucket> bucketList) {
         for (int i = 0; i < bucketList.size(); i++) {
             System.out.println("Bucket " + (i + 1));
             System.out.println("Max: " + bucketList.get(i).maxValue);
@@ -744,8 +848,8 @@ public class NavigationStructure {
         return bucketList;
     }
 
-    public ArrayList<Bucket<String>> recomputeNavS(String bucketName, ArrayList<Bucket<String>> navSbuckets, ArrayList<Bucket<String>> newList) {
-        ArrayList<Bucket<String>> newNavs = navSbuckets;
+    public ArrayList<Bucket> recomputeNavS(String bucketName, ArrayList<Bucket> navSbuckets, ArrayList<Bucket> newList) {
+        ArrayList<Bucket> newNavs = navSbuckets;
 
         for (int i = 0; i < newNavs.size(); i++) {
             Bucket<String> newParent = updateParentBucket(bucketName, newNavs.get(i), newList);
@@ -760,7 +864,7 @@ public class NavigationStructure {
 
     }
 
-    private Bucket<String> updateParentBucket(String bucketName, Bucket<String> parent, ArrayList<Bucket<String>> children) {
+    private Bucket<String> updateParentBucket(String bucketName, Bucket parent, ArrayList<Bucket> children) {
         System.out.println("Calling: " + parent.getName());
         if (parent.getName().equals(bucketName)) {
             parent.setChildren(children);
@@ -771,7 +875,7 @@ public class NavigationStructure {
             return null;
 
         for (int i = 0; i < parent.children.size(); i++) {
-            Bucket<String> newParent = updateParentBucket(bucketName, parent.children.get(i), children);
+            Bucket<String> newParent = updateParentBucket(bucketName, (Bucket) parent.children.get(i), children);
             if (newParent != null) {
                 parent.children.remove(i);
                 parent.children.add(i, newParent);

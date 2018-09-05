@@ -6,7 +6,7 @@ import java.util.*;
 /**
  * Created by Sajjadur on 11/6/2017.
  */
-public class Bucket<T> implements Serializable{
+public class Bucket<T> implements Serializable {
     T minValue;
     T maxValue;
     int startPos;
@@ -16,7 +16,7 @@ public class Bucket<T> implements Serializable{
     String name;
     String id;
     String summary;
-    ArrayList<Bucket<T>> children;
+    ArrayList<Bucket> children;
     Map<String, Object> aggMem;
 
     Bucket() {
@@ -25,55 +25,77 @@ public class Bucket<T> implements Serializable{
 
     @Override
     public String toString() {
-        if (minValue==null || maxValue==null)
+        if (minValue == null || maxValue == null)
             return null;
-        return minValue.toString().equals(maxValue.toString())?minValue.toString():minValue.toString()+" to "+maxValue.toString();
+        return minValue.toString().equals(maxValue.toString()) ? minValue.toString() : minValue.toString() + " to " + maxValue.toString();
     }
 
-    public T getMaxValue(){return  maxValue;}
-    public T getMinValue(){return  minValue;}
-    public int getStartPos(){return  startPos;}
-    public int getEndPos(){return  endPos;}
-    public int getChildrenCount(){return childrenCount;}
-    public int getSize(){return size;}
+    public T getMaxValue() {
+        return maxValue;
+    }
 
-    public void setName(boolean isUniform)
-    {
-        if(isUniform)
-            name = (this.startPos+2)+"_"+(this.endPos+2);
+    public T getMinValue() {
+        return minValue;
+    }
+
+    public int getStartPos() {
+        return startPos;
+    }
+
+    public int getEndPos() {
+        return endPos;
+    }
+
+    public int getChildrenCount() {
+        return childrenCount;
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public void setName(boolean isUniform) {
+        if (isUniform)
+            name = (this.startPos + 2) + "_" + (this.endPos + 2);
         else
             name = this.toString();
     }
-    public String getName(){
-        if(name.contains("_"))
-            return "Rows:"+name.replaceAll("_","-");
+
+    public String getName() {
+        if (name.contains("_"))
+            return "Rows:" + name.replaceAll("_", "-");
         return name;
     }
-    public String getId(){
+
+    public String getId() {
         return this.id;
     }
-    public ArrayList<Bucket<T>> getChildren(){return children;}
-    public void setChildren(ArrayList<Bucket<T>> children){
-        this.children=children;
-        this.childrenCount = children.size();
-        this.size = this.endPos-this.startPos+1;
+
+    public ArrayList<Bucket> getChildren() {
+        return children;
     }
 
-    public boolean isSingleton(){
+    public void setChildren(ArrayList<Bucket> children) {
+        this.children = children;
+        this.childrenCount = children.size();
+        this.size = this.endPos - this.startPos + 1;
+    }
+
+    public boolean isSingleton() {
         return maxValue.equals(minValue);
     }
 
     public void setId() {
 
-        this.id = this.name.replaceAll(" ","_");
+        this.id = this.name.replaceAll(" ", "_");
         //this.id = this.name.replaceAll(" ","_")+this.getSaltString();
     }
 
-    public String getSummary(){
-        summary = "Name: "+ this.getName()+"\n";
-        summary += "Sub-categories: " + this.childrenCount+"\n";
-        summary += "[Start,End]: ["+(this.startPos+2)+","+(this.endPos+2)+"]\n";
-        summary += "Rows: "+this.size;
+    public String getSummary() {
+        summary = "Name: " + this.getName() + "\n";
+        summary += "Sub-categories: " + this.childrenCount + "\n";
+        summary += "[Start,End]: [" + (this.startPos + 2) + "," + (this.endPos + 2) + "]\n";
+        summary += "Rows: " + this.size;
         return summary;
     }
 
