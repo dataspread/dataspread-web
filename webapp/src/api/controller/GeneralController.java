@@ -231,7 +231,11 @@ public class GeneralController {
                 "/push/updates", ret,
                 createHeaders(uiSession.getSessionId()));
 
-
+        ret.clear();
+        ret.put("message", "processingDone");
+        simpMessagingTemplate.convertAndSendToUser(uiSession.getSessionId(),
+                "/push/updates", ret,
+                createHeaders(uiSession.getSessionId()));
         ModelUpdateCollector.setCurrent(oldCollector);
     }
 

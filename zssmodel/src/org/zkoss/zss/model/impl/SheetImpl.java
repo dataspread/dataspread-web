@@ -55,7 +55,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	private static final long serialVersionUID = 1L;
 	private static final Log _logger = Log.lookup(SheetImpl.class);
     //Mangesh
-    static private int PreFetchRows = Library.getIntProperty("PreFetchRows", 200);
+    static private int PreFetchRows = Library.getIntProperty("PreFetchRows", 1000);
     static private int PreFetchColumns = Library.getIntProperty("PreFetchColumns", 30);
     /**
      * internal use only for developing/test state, should remove when stable
@@ -75,7 +75,7 @@ public class SheetImpl extends AbstractSheetAdv {
     }
 
     /* Shoud be more then prefetch region */
-    final int CACHE_SIZE = 50000;
+    final int CACHE_SIZE = 5000000;
     private final String _id;
 	private final IndexPool<AbstractRowAdv> _rows = new IndexPool<AbstractRowAdv>(){
 		private static final long serialVersionUID = 1L;

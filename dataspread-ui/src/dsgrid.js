@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Button, Input} from 'semantic-ui-react'
+import {Button, Input, Modal} from 'semantic-ui-react'
 import ReactResumableJs from 'react-resumable-js'
 import {
     ArrowKeyStepper,
@@ -33,7 +33,8 @@ export default class DSGrid extends Component {
             columns: 500,
             version: 0,
             focusCellRow: -1,
-            focusCellColumn: -1
+            focusCellColumn: -1,
+            isProcessing: false
         }
         this.rowHeight = 32;
         this.columnWidth = 150;
@@ -106,11 +107,22 @@ export default class DSGrid extends Component {
             }
             this.grid.forceUpdate();
         }
+        else if (jsonMessage['message'] === 'processingDone') {
+            this.setState({isProcessing: false});
+        }
     }
 
     render() {
         return (
             <div>
+                <Modal dimmer={'blurring'} open={this.state.isProcessing} size={'small'}
+                       style={{
+                           position: 'absolute',
+                           left: 0,
+                           top: 0
+                       }}>
+                    Processing.....
+                </Modal>
                 <Input
                     placeholder='Book Name...'
                     name="bookName"
@@ -331,6 +343,9 @@ export default class DSGrid extends Component {
             value
         }
     ) {
+        this.setState({isProcessing: true});
+
+
         let fromCache = this.dataCache.get(Math.trunc((rowIndex) / this.fetchSize));
 
         if (typeof fromCache === "object") {
