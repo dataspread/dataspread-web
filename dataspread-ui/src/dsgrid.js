@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Button, Input, Modal} from 'semantic-ui-react'
+import {Button, Dimmer, Input, Loader} from 'semantic-ui-react'
 import ReactResumableJs from 'react-resumable-js'
 import {
     ArrowKeyStepper,
@@ -115,14 +115,6 @@ export default class DSGrid extends Component {
     render() {
         return (
             <div>
-                <Modal dimmer={'blurring'} open={this.state.isProcessing} size={'small'}
-                       style={{
-                           position: 'absolute',
-                           left: 0,
-                           top: 0
-                       }}>
-                    Processing.....
-                </Modal>
                 <Input
                     placeholder='Book Name...'
                     name="bookName"
@@ -153,9 +145,11 @@ export default class DSGrid extends Component {
                         console.log("Start upload");
                     }}
                 />
-
                 <div style={{display: 'flex'}}>
                     <div style={{flex: 'auto', height: '90vh'}}>
+                        <Dimmer active={this.state.isProcessing}>
+                            <Loader>Processing</Loader>
+                        </Dimmer>
                         <AutoSizer>
                             {({height, width}) => (
                                 <ScrollSync>
@@ -243,7 +237,6 @@ export default class DSGrid extends Component {
                         </AutoSizer>
                     </div>
                 </div>
-
             </div>
         )
 

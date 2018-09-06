@@ -129,7 +129,7 @@ public class GeneralController {
                 }
             }
 
-            ret.put("message", "getCellsResponse");
+        ret.put("message", "getCellsResponse");
             ret.put("blockNumber", blockNumber);
             ret.put("data", data);
 
@@ -220,6 +220,12 @@ public class GeneralController {
             if (sCell.getType() == SCell.CellType.FORMULA)
                 cellArr.add(sCell.getFormulaValue());
             data.add(cellArr);
+        }
+
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
         ret.put("message", "pushCells");
