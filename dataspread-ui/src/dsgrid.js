@@ -44,8 +44,8 @@ export default class DSGrid extends Component {
             noDisposeOnSet: true
         });
 
-        this.urlPrefix = "http://localhost:8080"; // Only for testing.
-        //this.urlPrefix = ""; // Only for testing.
+        //this.urlPrefix = "http://localhost:8080"; // Only for testing.
+        this.urlPrefix = ""; // Only for testing.
         this.fetchSize = 50;
 
         this._onSectionRendered = this._onSectionRendered.bind(this);
@@ -55,8 +55,8 @@ export default class DSGrid extends Component {
         this._processUpdates = this._processUpdates.bind(this);
         this._cellRangeRenderer = this._cellRangeRenderer.bind(this);
 
-        //this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket")
-        this.stompClient = Stomp.client("ws://localhost:8080/ds-push/websocket")
+        this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket")
+        //this.stompClient = Stomp.client("ws://localhost:8080/ds-push/websocket")
         this.stompClient.connect();
         this.stompSubscription = null;
 
@@ -114,8 +114,7 @@ export default class DSGrid extends Component {
                 <Input
                     placeholder='Book Name...'
                     name="bookName"
-                    onChange={this._handleEvent}
-                    defaultValue='ljlhhd1oc'/>
+                    onChange={this._handleEvent}/>
 
                 <Button
                     name="bookLoadButton"
@@ -241,7 +240,7 @@ export default class DSGrid extends Component {
     _handleEvent(event) {
         const target = event.target;
         const name = target.name;
-        this.bookName = 'ljlhhd1oc';
+        // this.bookName = 'ljlhhd1oc';
         if (name === "bookName") {
             this.bookName = target.value;
             console.log(this.bookName);
