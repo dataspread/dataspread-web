@@ -45,8 +45,6 @@ export default class DSGrid extends Component {
             noDisposeOnSet: true
         });
 
-        //this.urlPrefix = "http://localhost:8080"; // Only for testing.
-        this.urlPrefix = ""; // Only for testing.
         this.fetchSize = 50;
 
         this._onSectionRendered = this._onSectionRendered.bind(this);
@@ -56,8 +54,12 @@ export default class DSGrid extends Component {
         this._processUpdates = this._processUpdates.bind(this);
         this._cellRangeRenderer = this._cellRangeRenderer.bind(this);
 
+        this.urlPrefix = ""; // Only for testing.
         this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket")
+
+        //this.urlPrefix = "http://localhost:8080"; // Only for testing.
         //this.stompClient = Stomp.client("ws://localhost:8080/ds-push/websocket")
+
         this.stompClient.connect();
         this.stompSubscription = null;
 
