@@ -381,6 +381,7 @@ public class ROM_Model extends Model {
     @Override
     public Collection<AbstractCellAdv> getCells(DBContext context, CellRegion fetchRange) {
         // Reduce Range to bounds
+        System.out.println("getCells " + fetchRange);
         Collection<AbstractCellAdv> cells = new ArrayList<>();
 
         CellRegion bounds =  getBounds(context);
