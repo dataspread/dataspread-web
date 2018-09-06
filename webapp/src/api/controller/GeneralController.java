@@ -27,7 +27,11 @@ import org.zkoss.zss.api.model.CellStyle;
 import org.zkoss.zss.api.model.Sheet;
 import org.zkoss.zss.api.model.impl.SheetImpl;
 import org.zkoss.zss.api.model.impl.SimpleRef;
-import org.zkoss.zss.model.*;
+import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.SBook;
+import org.zkoss.zss.model.SCell;
+import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.impl.FormulaCacheCleaner;
 import org.zkoss.zss.model.impl.sys.TableMonitor;
 import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.dependency.Ref;
@@ -159,7 +163,6 @@ public class GeneralController {
         {
             uiSession.removeCachedBlock((int) payload.get("blockNumber"));
         } else if (message.equals("updateCell")) {
-            SSheet sheet = uiSession.getBook().getSheetByName(uiSession.getSheetName());
             int row = (int) payload.get("row");
             int column = (int) payload.get("column");
             String value = (String) payload.get("value");
@@ -170,7 +173,8 @@ public class GeneralController {
     private void updateCellWithNotfication (UISessionManager.UISession uiSession, int row, int column, String value){
         SSheet sheet = uiSession.getBook().getSheetByName(uiSession.getSheetName());
         ModelUpdateCollector modelUpdateCollector = new ModelUpdateCollector();
-        ModelUpdateCollector oldCollector = ModelUpdateCollector.setCurrent(modelUpdateCollector);;
+        ModelUpdateCollector oldCollector = ModelUpdateCollector.setCurrent(modelUpdateCollector);
+        FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(uiSession.getBook().getBookSeries()));
 
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             SCell cell = sheet.getCell(row, column);
@@ -184,24 +188,50 @@ public class GeneralController {
         }
 
         List<ModelUpdate> modelUpdates = modelUpdateCollector.getModelUpdates();
+        Set<Ref> refSet = new HashSet<>();
         for(ModelUpdate update:modelUpdates) {
             System.out.println("Model Update " + update);
+            //TODO: refs can be regions
+
             switch (update.getType())
             {
                 case CELL:
                     break;
 
                 case REFS:
-                    for(Ref ref:(Set<Ref>)update.getData()) {
-
-                        System.out.println(sheet.getCell(ref.getRow(), ref.getColumn()).getValue());
-                    }
+                    refSet.addAll((Set<Ref>) update.getData());
                     break;
                 case REF:
+                    refSet.add((Ref) update.getData());
                     break;
             }
 
         }
+
+
+        Map<String, Object> ret = new HashMap<>();
+        List<List<Object>> data = new ArrayList<>();
+        for (Ref ref : refSet) {
+            List<Object> cellArr = new ArrayList<>(4);
+            cellArr.add(ref.getRow());
+            cellArr.add(ref.getColumn());
+            SCell sCell = sheet.getCell(ref.getRow(), ref.getColumn());
+            cellArr.add(sCell.getValue());
+            if (sCell.getType() == SCell.CellType.FORMULA)
+                cellArr.add(sCell.getFormulaValue());
+            data.add(cellArr);
+        }
+
+        ret.put("message", "pushCells");
+        ret.put("data", data);
+
+        //TODO: Push to other sessions viewing the same book.
+        // For each session check if the UI has the cells cached.
+        simpMessagingTemplate.convertAndSendToUser(uiSession.getSessionId(),
+                "/push/updates", ret,
+                createHeaders(uiSession.getSessionId()));
+
+
         ModelUpdateCollector.setCurrent(oldCollector);
     }
 
