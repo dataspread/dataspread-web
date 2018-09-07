@@ -22,7 +22,6 @@ export default class Cell extends Component {
     }
 
     _handleKeyPress(e) {
-        console.log(e.key);
         if (e.key === 'Enter') {
             this.handleBlur(e);
         }
@@ -60,7 +59,7 @@ export default class Cell extends Component {
                     <div
                         style={this.props.style}
                         className={this.props.className}
-                        onClick={this.handleClick}>
+                        onDoubleClick={this.handleClick}>
                         {this.props.value}
                     </div>);
             }

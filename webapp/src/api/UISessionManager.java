@@ -1,12 +1,17 @@
 package api;
 
+import org.zkoss.zss.model.ModelEvent;
+import org.zkoss.zss.model.ModelEventListener;
+import org.zkoss.zss.model.SBook;
+import org.zkoss.zss.model.sys.BookBindings;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
-public class UISessionManager {
+public class UISessionManager  {
 
     private static final Logger logger = Logger.getLogger(UISessionManager.class.getName());
     private static UISessionManager instance;
@@ -27,6 +32,7 @@ public class UISessionManager {
         int fetchSize = 0;
         int startRow=0;
         int endRow=0;
+        SBook book=null;
         Set<Integer> cachedBlocks=null;
 
         UISession(String sessionId)
@@ -58,12 +64,15 @@ public class UISessionManager {
             this.bookName = bookName;
             this.sheetName = sheetName;
             this.fetchSize = fetchSize;
+            // Change this to per sheet.
             cachedBlocks = new HashSet<>();
+            book = BookBindings.getBookById(this.bookName);
         }
 
         public void clearSheet()
         {
             bookName = null;
+            book = null;
             sheetName = null;
             fetchSize = 0;
             cachedBlocks = null;
@@ -94,6 +103,10 @@ public class UISessionManager {
             return cachedBlocks.contains(blockNumber);
         }
 
+        public SBook getBook()
+        {
+            return book;
+        }
     }
 
     private UISessionManager()

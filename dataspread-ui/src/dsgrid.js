@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
-import {Button, Input} from 'semantic-ui-react'
+import {Button, Dimmer, Input, Loader} from 'semantic-ui-react'
 import ReactResumableJs from 'react-resumable-js'
-import {AutoSizer, defaultCellRangeRenderer, Grid, ScrollSync} from './react-virtualized'
+import {ArrowKeyStepper, AutoSizer, defaultCellRangeRenderer, Grid, ScrollSync} from './react-virtualized'
 
 import Cell from './cell';
 import 'react-datasheet/lib/react-datasheet.css';
@@ -24,7 +24,10 @@ export default class DSGrid extends Component {
             bookName: '',
             sheetName: '',
             columns: 500,
-            version: 0
+            version: 0,
+            focusCellRow: -1,
+            focusCellColumn: -1,
+            isProcessing: false
         }
         this.rowHeight = 32;
         this.columnWidth = 150;
@@ -35,8 +38,6 @@ export default class DSGrid extends Component {
             noDisposeOnSet: true
         });
 
-        //this.urlPrefix="http://localhost:8080"; // Only for testing.
-        this.urlPrefix = ""; // Only for testing.
         this.fetchSize = 50;
 
         this._onSectionRendered = this._onSectionRendered.bind(this);
@@ -46,8 +47,12 @@ export default class DSGrid extends Component {
         this._processUpdates = this._processUpdates.bind(this);
         this._cellRangeRenderer = this._cellRangeRenderer.bind(this);
 
+        this.urlPrefix = ""; // Only for testing.
         this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket")
+
+        //this.urlPrefix = "http://localhost:8080"; // Only for testing.
         //this.stompClient = Stomp.client("ws://localhost:8080/ds-push/websocket")
+
         this.stompClient.connect();
         this.stompSubscription = null;
 
@@ -84,6 +89,22 @@ export default class DSGrid extends Component {
                 jsonMessage['data']);
             this.grid.forceUpdate();
         }
+        else if (jsonMessage['message'] === 'pushCells') {
+            for (let i in jsonMessage['data']) {
+                let cell = jsonMessage['data'][i];
+                let fromCache = this.dataCache.get(Math.trunc(cell[0] / this.fetchSize));
+                if (typeof fromCache === "object") {
+                    if (cell[3] == null)
+                        fromCache[cell[0] % this.fetchSize][cell[1]] = [cell[2]];
+                    else
+                        fromCache[cell[0] % this.fetchSize][cell[1]] = [cell[2], cell[3]];
+                }
+            }
+            this.grid.forceUpdate();
+        }
+        else if (jsonMessage['message'] === 'processingDone') {
+            this.setState({isProcessing: false});
+        }
     }
 
     render() {
@@ -119,9 +140,11 @@ export default class DSGrid extends Component {
                         console.log("Start upload");
                     }}
                 />
-
                 <div style={{display: 'flex'}}>
                     <div style={{flex: 'auto', height: '90vh'}}>
+                        <Dimmer active={this.state.isProcessing}>
+                            <Loader>Processing</Loader>
+                        </Dimmer>
                         <AutoSizer>
                             {({height, width}) => (
                                 <ScrollSync>
@@ -177,19 +200,30 @@ export default class DSGrid extends Component {
                                                      left: this.columnWidth,
                                                      top: this.rowHeight
                                                  }}>
-                                                <Grid
-                                                    height={height}
-                                                    width={width - this.columnWidth}
-                                                    cellRenderer={this._cellRenderer}
-                                                    columnCount={this.state.columns}
-                                                    columnWidth={this.columnWidth}
+
+                                                <ArrowKeyStepper
                                                     rowCount={this.state.rows}
-                                                    rowHeight={this.rowHeight}
-                                                    onScroll={onScroll}
-                                                    cellRangeRenderer={this._cellRangeRenderer}
-                                                    //onSectionRendered={this._onSectionRendered}
-                                                    ref={(ref) => this.grid = ref}
-                                                />
+                                                    columnCount={this.state.columns}>
+                                                    {({onSectionRendered, scrollToColumn, scrollToRow}) => (
+                                                        <div>
+                                                            <Grid
+                                                                height={height}
+                                                                width={width - this.columnWidth}
+                                                                cellRenderer={this._cellRenderer}
+                                                                columnCount={this.state.columns}
+                                                                columnWidth={this.columnWidth}
+                                                                rowCount={this.state.rows}
+                                                                rowHeight={this.rowHeight}
+                                                                onScroll={onScroll}
+                                                                cellRangeRenderer={this._cellRangeRenderer}
+                                                                scrollToRow={scrollToRow}
+                                                                scrollToColumn={scrollToColumn}
+                                                                onSectionRendered={onSectionRendered}
+                                                                //onSectionRendered={this._onSectionRendered}
+                                                                ref={(ref) => this.grid = ref}
+                                                            />
+                                                        </div>)}
+                                                </ArrowKeyStepper>
                                             </div>
                                         </div>
                                     )}
@@ -198,7 +232,6 @@ export default class DSGrid extends Component {
                         </AutoSizer>
                     </div>
                 </div>
-
             </div>
         )
 
@@ -207,6 +240,7 @@ export default class DSGrid extends Component {
     _handleEvent(event) {
         const target = event.target;
         const name = target.name;
+        // this.bookName = 'ljlhhd1oc';
         if (name === "bookName") {
             this.bookName = target.value;
             console.log(this.bookName);
@@ -297,18 +331,17 @@ export default class DSGrid extends Component {
             value
         }
     ) {
+        this.setState({isProcessing: true});
+
+
         let fromCache = this.dataCache.get(Math.trunc((rowIndex) / this.fetchSize));
 
         if (typeof fromCache === "object") {
             if (value[0] === '=') {
-                this.dataCache
-                    .get(Math.trunc((rowIndex) / this.fetchSize))[(rowIndex) % this.fetchSize][columnIndex]
-                        = ['...', value.substring(1)];
+                fromCache[(rowIndex) % this.fetchSize][columnIndex] = ['...', value.substring(1)];
             }
             else {
-                this.dataCache
-                    .get(Math.trunc((rowIndex) / this.fetchSize))[(rowIndex) % this.fetchSize][columnIndex]
-                        = [value];
+                fromCache[(rowIndex) % this.fetchSize][columnIndex] = [value];
             }
 
             this.grid.forceUpdate();

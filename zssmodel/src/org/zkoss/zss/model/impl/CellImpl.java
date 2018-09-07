@@ -116,11 +116,15 @@ public class CellImpl extends AbstractCellAdv {
 				if (cellImpl.getType()==CellType.FORMULA &&
 						cellImpl._formulaResultValue == null)
 					cellImpl._formulaResultValue = DirtyManager.getDirtyValue();
-				in.close();
 			} catch (Exception e) {
-				// data that cannot be parsed is considered as a string value.
+                // data that cannot be parsed parse as number else as string
 				cellImpl = new CellImpl(row, column);
-				cellImpl._localValue = new CellValue(new String(inByteArray));
+                String cellString = new String(inByteArray);
+                try {
+                    cellImpl._localValue = new CellValue(Double.parseDouble(cellString));
+                } catch (Exception e1) {
+                    cellImpl._localValue = new CellValue(cellString);
+                }
 			}
 		}
 		cellImpl._sheet = (AbstractSheetAdv) sheet;

@@ -381,6 +381,7 @@ public class ROM_Model extends Model {
     @Override
     public Collection<AbstractCellAdv> getCells(DBContext context, CellRegion fetchRange) {
         // Reduce Range to bounds
+        System.out.println("getCells " + fetchRange);
         Collection<AbstractCellAdv> cells = new ArrayList<>();
 
         CellRegion bounds =  getBounds(context);
@@ -395,10 +396,10 @@ public class ROM_Model extends Model {
         rowIds = rowMapping.getIDs(context, fetchRegion.getRow(), fetchRegion.getLastRow() - fetchRegion.getRow() + 1);
         colIds = colMapping.getIDs(context, fetchRegion.getColumn(), fetchRegion.getLastColumn() - fetchRegion.getColumn() + 1);
         HashMap<Integer, Integer> row_map = IntStream.range(0, rowIds.size())
-                .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(rowIds.get(i), fetchRegion.getRow() + i),
+                .collect(HashMap::new, (map, i) -> map.put(rowIds.get(i), fetchRegion.getRow() + i),
                         (map1, map2) -> map1.putAll(map2));
         HashMap<Integer, Integer> col_map = IntStream.range(0, colIds.size())
-                .collect(HashMap<Integer, Integer>::new, (map, i) -> map.put(colIds.get(i), fetchRegion.getColumn() + i),
+                .collect(HashMap::new, (map, i) -> map.put(colIds.get(i), fetchRegion.getColumn() + i),
                         (map1, map2) -> map1.putAll(map2));
 
         StringBuffer select = new StringBuffer("SELECT row");
@@ -430,7 +431,6 @@ public class ROM_Model extends Model {
                 }
             }
             rs.close();
-            stmt.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
