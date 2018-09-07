@@ -181,7 +181,11 @@ public class GeneralController {
             if (value.startsWith("="))
                 cell.setFormulaValue(value.substring(1), connection, true);
             else
-                cell.setStringValue(value, connection, true);
+                try {
+                    cell.setNumberValue(Double.parseDouble(value), connection, true);
+                } catch (Exception e) {
+                    cell.setStringValue(value, connection, true);
+                }
             connection.commit();
         } catch (Exception e) {
             e.printStackTrace();
@@ -220,12 +224,6 @@ public class GeneralController {
             if (sCell.getType() == SCell.CellType.FORMULA)
                 cellArr.add(sCell.getFormulaValue());
             data.add(cellArr);
-        }
-
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
 
         ret.put("message", "pushCells");

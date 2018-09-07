@@ -1,14 +1,7 @@
 import React, {Component} from 'react';
 import {Button, Dimmer, Input, Loader} from 'semantic-ui-react'
 import ReactResumableJs from 'react-resumable-js'
-import {
-    ArrowKeyStepper,
-    AutoSizer,
-    ContentBoxParagraph,
-    defaultCellRangeRenderer,
-    Grid,
-    ScrollSync
-} from './react-virtualized'
+import {ArrowKeyStepper, AutoSizer, defaultCellRangeRenderer, Grid, ScrollSync} from './react-virtualized'
 
 import Cell from './cell';
 import 'react-datasheet/lib/react-datasheet.css';
