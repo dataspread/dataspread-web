@@ -33,8 +33,11 @@ import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.FormulaCacheCleaner;
 import org.zkoss.zss.model.impl.sys.TableMonitor;
+import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncListener;
+import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerSimple;
 import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.dependency.Ref;
+import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 import org.zkoss.zss.range.impl.ModelUpdate;
 import org.zkoss.zss.range.impl.ModelUpdateCollector;
 
@@ -46,8 +49,45 @@ import java.util.logging.Logger;
 
 
 @RestController
-public class GeneralController {
+public class GeneralController implements FormulaAsyncListener {
+
+    public GeneralController() {
+        System.out.println("GeneralController");
+        FormulaAsyncScheduler.initFormulaAsyncScheduler(new FormulaAsyncSchedulerSimple());
+        FormulaAsyncScheduler.initFormulaAsyncListener(this);
+    }
+
     private static final Logger logger = Logger.getLogger(GeneralController.class.getName());
+
+    @Override
+    public void update(SBook book, SSheet sheet, CellRegion cellRegion, String value, String formula) {
+        System.out.print("Cell Updated from Async");
+
+        Map<String, Object> ret = new HashMap<>();
+        List<List<Object>> data = new ArrayList<>();
+
+        List<Object> cellArr = new ArrayList<>(4);
+        cellArr.add(cellRegion.getRow());
+        cellArr.add(cellRegion.getColumn());
+        cellArr.add(value);
+        cellArr.add(formula);
+        data.add(cellArr);
+
+        ret.put("message", "pushCells");
+        ret.put("data", data);
+
+        //TODO: Push to other sessions viewing the same book.
+        // For each session check if the UI has the cells cached.
+        Set<UISessionManager.UISession> uiSessionSet =
+                UISessionManager.getInstance().getSessionBySheet(sheet);
+
+        for (UISessionManager.UISession uiSession : uiSessionSet) {
+            simpMessagingTemplate.convertAndSendToUser(uiSession.getSessionId(),
+                    "/push/updates", ret,
+                    createHeaders(uiSession.getSessionId()));
+        }
+    }
+
     public enum FormatAction {
         FONT_FAMILY,
         FONT_SIZE,
@@ -105,8 +145,7 @@ public class GeneralController {
     public void pushCells(UISessionManager.UISession uiSession, int blockNumber) {
         //TODO: Update to directly call the data model.
         // TODO: Improve efficiency.
-        SBook book = BookBindings.getBookById(uiSession.getBookName());
-        SSheet sheet = book.getSheetByName(uiSession.getSheetName());
+        SSheet sheet = uiSession.getSheet();
         int endColumn = sheet.getEndColumnIndex();
 
             int row1 = blockNumber * uiSession.getFetchSize() ;
@@ -171,10 +210,10 @@ public class GeneralController {
     }
 
     private void updateCellWithNotfication (UISessionManager.UISession uiSession, int row, int column, String value){
-        SSheet sheet = uiSession.getBook().getSheetByName(uiSession.getSheetName());
+        SSheet sheet = uiSession.getSheet();
         ModelUpdateCollector modelUpdateCollector = new ModelUpdateCollector();
         ModelUpdateCollector oldCollector = ModelUpdateCollector.setCurrent(modelUpdateCollector);
-        FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(uiSession.getBook().getBookSeries()));
+        FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(sheet.getBook().getBookSeries()));
 
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             SCell cell = sheet.getCell(row, column);

@@ -58,9 +58,10 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
                 //}
                 if (sCell.getType()== SCell.CellType.FORMULA) {
                     // A sync call should synchronously compute the cells value.
-                    ((CellImpl) sCell).getValue(true,true);
                     // Push individual cells to the UI
-                    update(sheet, sCell.getCellRegion());
+                    update(sheet.getBook(), sheet, sCell.getCellRegion(),
+                            ((CellImpl) sCell).getValue(true, true).toString(),
+                            sCell.getFormulaValue());
                     DirtyManagerLog.instance.markClean(sCell.getCellRegion());
                 }
             }

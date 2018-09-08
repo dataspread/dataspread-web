@@ -1,8 +1,6 @@
 package api;
 
-import org.zkoss.zss.model.ModelEvent;
-import org.zkoss.zss.model.ModelEventListener;
-import org.zkoss.zss.model.SBook;
+import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.sys.BookBindings;
 
 import java.util.HashMap;
@@ -19,20 +17,23 @@ public class UISessionManager  {
 
     //SessionID -> Session
     Map<String, UISession> uiSessionMap;
+    Map<SSheet, Set<UISession>> uiSheetSessionMap;
+
+    public Set<UISession> getSessionBySheet(SSheet sheet) {
+        return uiSheetSessionMap.get(sheet);
+    }
 
     public UISession getUISession(String sessionId) {
         return uiSessionMap.get(sessionId);
     }
 
-
+    // UI session per sheet */
     public static class UISession {
         final String sessionId;
-        String bookName=null;
-        String sheetName=null;
         int fetchSize = 0;
         int startRow=0;
         int endRow=0;
-        SBook book=null;
+        SSheet sheet = null;
         Set<Integer> cachedBlocks=null;
 
         UISession(String sessionId)
@@ -45,14 +46,9 @@ public class UISessionManager  {
             return sessionId;
         }
 
-        public String getBookName()
+        public SSheet getSheet()
         {
-            return bookName;
-        }
-
-        public String getSheetName()
-        {
-            return sheetName;
+            return sheet;
         }
 
         public int getFetchSize() {
@@ -61,19 +57,18 @@ public class UISessionManager  {
 
         public void assignSheet(String bookName, String sheetName, int fetchSize)
         {
-            this.bookName = bookName;
-            this.sheetName = sheetName;
             this.fetchSize = fetchSize;
             // Change this to per sheet.
             cachedBlocks = new HashSet<>();
-            book = BookBindings.getBookById(this.bookName);
+            sheet = BookBindings.getBookById(bookName).getSheetByName(sheetName);
+            UISessionManager.getInstance().uiSheetSessionMap
+                    .computeIfAbsent(sheet, x -> new HashSet<>()).add(this);
         }
 
         public void clearSheet()
         {
-            bookName = null;
-            book = null;
-            sheetName = null;
+            UISessionManager.getInstance().uiSheetSessionMap.get(sheet).remove(this);
+            sheet = null;
             fetchSize = 0;
             cachedBlocks = null;
         }
@@ -102,16 +97,12 @@ public class UISessionManager  {
         {
             return cachedBlocks.contains(blockNumber);
         }
-
-        public SBook getBook()
-        {
-            return book;
-        }
     }
 
     private UISessionManager()
     {
         uiSessionMap = new HashMap<>();
+        uiSheetSessionMap = new HashMap<>();
     }
 
     public static UISessionManager getInstance()
@@ -128,6 +119,8 @@ public class UISessionManager  {
 
     public void deleteSession(String sessionId)
     {
-        uiSessionMap.remove(sessionId);
+        UISession session = uiSessionMap.remove(sessionId);
+        if (session.sheet != null)
+            uiSheetSessionMap.get(session.sheet).remove(session);
     }
 }
