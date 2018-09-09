@@ -90,6 +90,14 @@ export default class DSGrid extends Component {
                 jsonMessage['data']);
             this.grid.forceUpdate();
         }
+        else if (jsonMessage['message'] === 'asyncStatus') {
+            let cell = jsonMessage['data']
+            let fromCache = this.dataCache.get(Math.trunc(cell[0] / this.fetchSize));
+            if (typeof fromCache === "object") {
+                fromCache[cell[0] % this.fetchSize][cell[1]][2] = cell[2];
+                this.grid.forceUpdate();
+            }
+        }
         else if (jsonMessage['message'] === 'pushCells') {
             for (let i in jsonMessage['data']) {
                 let cell = jsonMessage['data'][i];
@@ -107,8 +115,8 @@ export default class DSGrid extends Component {
             this.setState({isProcessing: false});
         }
         else if (jsonMessage['message'] === 'subscribed') {
-            console.log("subscribeed ack ")
             this.subscribed = true;
+
             this.grid.forceUpdate();
 
         }
@@ -407,7 +415,6 @@ export default class DSGrid extends Component {
             cellContent = ['Loading ...'];
         }
 
-
         return (
                 <Cell
                     key={key}
@@ -417,6 +424,8 @@ export default class DSGrid extends Component {
                     formula={cellContent[1] == null ? null : "=" + cellContent[1]}
                     rowIndex={rowIndex}
                     columnIndex={columnIndex}
+                    isProcessing={cellContent[0] === '...'}
+                    pctProgress={cellContent[2]}
                     onUpdate={this._updateCell}
                 />
         )

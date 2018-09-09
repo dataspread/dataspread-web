@@ -1,5 +1,6 @@
 package org.zkoss.zss.model.impl.sys.formula;
 
+import org.zkoss.poi.ss.formula.FormulaComputationStatusManager;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
@@ -50,12 +51,10 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
             Collection<SCell> cells=sheet.getCells(new CellRegion(dirtyRecord.region));
             for (SCell sCell:cells)
             {
-                // Delay to demonstrate.
-                //try {
-                //    Thread.sleep(1000);
-                //} catch (InterruptedException e) {
-                //    e.printStackTrace();
-                //}
+                FormulaComputationStatusManager.getInstance().updateFormulaCell(
+                        sCell.getRowIndex(),
+                        sCell.getColumnIndex(),
+                        sCell);
                 if (sCell.getType()== SCell.CellType.FORMULA) {
                     // A sync call should synchronously compute the cells value.
                     // Push individual cells to the UI
@@ -64,6 +63,7 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
                             sCell.getFormulaValue());
                     DirtyManagerLog.instance.markClean(sCell.getCellRegion());
                 }
+                FormulaComputationStatusManager.getInstance().doneComputation();
             }
             DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,
                     dirtyRecord.trxId);

@@ -17,9 +17,12 @@ import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessageType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SubscribeMapping;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
 import org.zkoss.json.JSONArray;
 import org.zkoss.json.JSONObject;
+import org.zkoss.poi.ss.formula.FormulaComputationStatusManager;
 import org.zkoss.util.Pair;
 import org.zkoss.zss.api.AreaRef;
 import org.zkoss.zss.api.Range;
@@ -50,6 +53,7 @@ import java.util.logging.Logger;
 
 
 @RestController
+@EnableScheduling
 public class GeneralController implements FormulaAsyncListener {
 
     public GeneralController() {
@@ -60,22 +64,34 @@ public class GeneralController implements FormulaAsyncListener {
 
     private static final Logger logger = Logger.getLogger(GeneralController.class.getName());
 
+
+    @Scheduled(fixedDelay = 250)
+    public void updateFormulaProgress() {
+        FormulaComputationStatusManager.FormulaComputationStatus status
+                = FormulaComputationStatusManager.getInstance().getCurrentStatus();
+        if (status.cell != null) {
+            Set<UISessionManager.UISession> uiSessionSet =
+                    UISessionManager.getInstance().getSessionBySheet(((SCell) status.cell).getSheet());
+
+            for (UISessionManager.UISession uiSession : uiSessionSet) {
+                simpMessagingTemplate.convertAndSendToUser(uiSession.getSessionId(),
+                        "/push/updates", ImmutableMap.of("message", "asyncStatus",
+                                "data", new Integer[]{status.row, status.column,
+                                        (status.currentCells * 100 / status.totalCells)}),
+                        createHeaders(uiSession.getSessionId()));
+            }
+        }
+    }
+
     @Override
     public void update(SBook book, SSheet sheet, CellRegion cellRegion, String value, String formula) {
-        System.out.print("Cell Updated from Async");
-
-        Map<String, Object> ret = new HashMap<>();
         List<List<Object>> data = new ArrayList<>();
-
         List<Object> cellArr = new ArrayList<>(4);
         cellArr.add(cellRegion.getRow());
         cellArr.add(cellRegion.getColumn());
         cellArr.add(value);
         cellArr.add(formula);
         data.add(cellArr);
-
-        ret.put("message", "pushCells");
-        ret.put("data", data);
 
         //TODO: Push to other sessions viewing the same book.
         // For each session check if the UI has the cells cached.
@@ -84,7 +100,8 @@ public class GeneralController implements FormulaAsyncListener {
 
         for (UISessionManager.UISession uiSession : uiSessionSet) {
             simpMessagingTemplate.convertAndSendToUser(uiSession.getSessionId(),
-                    "/push/updates", ret,
+                    "/push/updates", ImmutableMap.of("message", "pushCells",
+                            "data", data),
                     createHeaders(uiSession.getSessionId()));
         }
     }
@@ -123,7 +140,8 @@ public class GeneralController implements FormulaAsyncListener {
     }
 
     // General API
-    @Autowired private SimpMessagingTemplate simpMessagingTemplate;
+    @Autowired
+    private SimpMessagingTemplate simpMessagingTemplate;
 
     public static String getCallbackPath(String bookId, String sheetName) {
         return new StringBuilder()
@@ -149,48 +167,45 @@ public class GeneralController implements FormulaAsyncListener {
         SSheet sheet = uiSession.getSheet();
         int endColumn = sheet.getEndColumnIndex();
 
-            int row1 = blockNumber * uiSession.getFetchSize() ;
-            Map<String, Object> ret = new HashMap<>();
-            List<List<String[]>> data = new ArrayList<>();
-            for (int row = row1; row < row1 + uiSession.getFetchSize(); row++) {
-                List<String[]> cellsRow = new ArrayList<>();
-                data.add(cellsRow);
+        int row1 = blockNumber * uiSession.getFetchSize();
+        Map<String, Object> ret = new HashMap<>();
+        List<List<String[]>> data = new ArrayList<>();
+        for (int row = row1; row < row1 + uiSession.getFetchSize(); row++) {
+            List<String[]> cellsRow = new ArrayList<>();
+            data.add(cellsRow);
 
-                for (int col = 0; col <= endColumn; col++) {
-                    SCell sCell = sheet.getCell(row, col);
-                    if (sCell.isNull())
-                    {
-                        cellsRow.add(new String[]{""});
-                    }
-                    else if (sCell.getType() == SCell.CellType.FORMULA)
-                        cellsRow.add(new String[]{sCell.getValue().toString(), sCell.getFormulaValue()});
-                    else
-                        cellsRow.add(new String[]{sCell.getValue().toString()});
-                }
+            for (int col = 0; col <= endColumn; col++) {
+                SCell sCell = sheet.getCell(row, col);
+                if (sCell.isNull()) {
+                    cellsRow.add(new String[]{""});
+                } else if (sCell.getType() == SCell.CellType.FORMULA)
+                    cellsRow.add(new String[]{sCell.getValue().toString(), sCell.getFormulaValue()});
+                else
+                    cellsRow.add(new String[]{sCell.getValue().toString()});
             }
+        }
 
         ret.put("message", "getCellsResponse");
-            ret.put("blockNumber", blockNumber);
-            ret.put("data", data);
+        ret.put("blockNumber", blockNumber);
+        ret.put("data", data);
 
-            uiSession.addCachedBlock(blockNumber);
+        uiSession.addCachedBlock(blockNumber);
 
-            // Single cell update
-            simpMessagingTemplate.convertAndSendToUser(uiSession.getSessionId(),
-                    "/push/updates", ret,
-                    createHeaders(uiSession.getSessionId()));
+        // Single cell update
+        simpMessagingTemplate.convertAndSendToUser(uiSession.getSessionId(),
+                "/push/updates", ret,
+                createHeaders(uiSession.getSessionId()));
 
     }
 
 
     @MessageMapping("/push/status")
     void clientStatus(@Payload Map<String, Object> payload,
-            SimpMessageHeaderAccessor accessor) {
+                      SimpMessageHeaderAccessor accessor) {
         UISessionManager.UISession uiSession = UISessionManager.getInstance().getUISession(accessor.getSessionId());
         String message = (String) payload.get("message");
 
-        if (message.equals("changeViewPort"))
-        {
+        if (message.equals("changeViewPort")) {
             uiSession.updateViewPort((int) payload.get("rowStartIndex"), (int) payload.get("rowStopIndex"));
             // If viewport not cached, push to FE
             int blockNumber = uiSession.getViewPortBlockNumber();
@@ -198,9 +213,7 @@ public class GeneralController implements FormulaAsyncListener {
                 if (!uiSession.isBlockCached(uiSession.getViewPortBlockNumber() + i))
                     pushCells(uiSession, blockNumber + i);
             }
-        }
-        else if (message.equals("disposeFromLRU"))
-        {
+        } else if (message.equals("disposeFromLRU")) {
             uiSession.removeCachedBlock((int) payload.get("blockNumber"));
         } else if (message.equals("updateCell")) {
             int row = (int) payload.get("row");
@@ -210,7 +223,7 @@ public class GeneralController implements FormulaAsyncListener {
         }
     }
 
-    private void updateCellWithNotfication (UISessionManager.UISession uiSession, int row, int column, String value){
+    private void updateCellWithNotfication(UISessionManager.UISession uiSession, int row, int column, String value) {
         SSheet sheet = uiSession.getSheet();
         ModelUpdateCollector modelUpdateCollector = new ModelUpdateCollector();
         ModelUpdateCollector oldCollector = ModelUpdateCollector.setCurrent(modelUpdateCollector);
@@ -233,12 +246,11 @@ public class GeneralController implements FormulaAsyncListener {
 
         List<ModelUpdate> modelUpdates = modelUpdateCollector.getModelUpdates();
         Set<Ref> refSet = new HashSet<>();
-        for(ModelUpdate update:modelUpdates) {
+        for (ModelUpdate update : modelUpdates) {
             System.out.println("Model Update " + update);
             //TODO: refs can be regions
 
-            switch (update.getType())
-            {
+            switch (update.getType()) {
                 case CELL:
                     break;
 
@@ -282,8 +294,6 @@ public class GeneralController implements FormulaAsyncListener {
     }
 
 
-
-
     @SubscribeMapping("/user/push/updates")
     void subscribe(@Header String bookName,
                    @Header String sheetName,
@@ -314,14 +324,14 @@ public class GeneralController implements FormulaAsyncListener {
         DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
         JSONArray tableInfo = null;
         try {
-            tableInfo = TableMonitor.getMonitor().getTableInformation(dbContext,range,sheetName,bookId);
+            tableInfo = TableMonitor.getMonitor().getTableInformation(dbContext, range, sheetName, bookId);
         } catch (Exception e) {
             e.printStackTrace();
             return JsonWrapper.generateError(e.getMessage());
         }
         HashSet<Pair<Integer, Integer>> checked = new HashSet<Pair<Integer, Integer>>();
-        if (tableInfo!= null){
-            for (int i = 0; i < tableInfo.size(); i++){
+        if (tableInfo != null) {
+            for (int i = 0; i < tableInfo.size(); i++) {
                 JSONObject table = (JSONObject) tableInfo.get(i);
                 JSONObject tableRange = (JSONObject) table.get("range");
                 int tableRow1 = Integer.parseInt(String.valueOf(tableRange.get("row1")));
@@ -344,7 +354,7 @@ public class GeneralController implements FormulaAsyncListener {
         for (int row = row1; row <= row2; row++) {
             for (int col = col1; col <= col2; col++) {
                 Pair<Integer, Integer> pair = new Pair<>(row, col);
-                if (!checked.contains(pair)){
+                if (!checked.contains(pair)) {
                     SCell sCell = sheet.getCell(row, col);
 
                     Cell cell = new Cell();
@@ -366,9 +376,9 @@ public class GeneralController implements FormulaAsyncListener {
     @RequestMapping(value = "/api/getCellsV2/{bookId}/{sheetName}/{row1}/{row2}",
             method = RequestMethod.GET)
     public Map<String, List<List<String>>> getCellsV2(@PathVariable String bookId,
-                                            @PathVariable String sheetName,
-                                            @PathVariable int row1,
-                                            @PathVariable int row2) {
+                                                      @PathVariable String sheetName,
+                                                      @PathVariable int row1,
+                                                      @PathVariable int row2) {
         //TODO: Update to directly call the data model.
         // TODO: Improve efficiency.
         List<List<String>> returnValues = new ArrayList<>();
@@ -378,8 +388,7 @@ public class GeneralController implements FormulaAsyncListener {
         SSheet sheet = book.getSheetByName(sheetName);
         int endColumn = sheet.getEndColumnIndex();
 
-        for (int row = row1; row <= row2; row++)
-        {
+        for (int row = row1; row <= row2; row++) {
             List<String> valuesRow = new ArrayList<>();
             List<String> formulaRow = new ArrayList<>();
             returnValues.add(valuesRow);
@@ -412,13 +421,13 @@ public class GeneralController implements FormulaAsyncListener {
         org.json.JSONArray cells = obj.getJSONArray("cells");
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             for (Object cell : cells) {
-                int row = ((org.json.JSONObject)cell).getInt("row");
-                int col = ((org.json.JSONObject)cell).getInt("col");
-                String type = ((org.json.JSONObject)cell).getString("type");
-                String formula = ((org.json.JSONObject)cell).getString("formula");
+                int row = ((org.json.JSONObject) cell).getInt("row");
+                int col = ((org.json.JSONObject) cell).getInt("col");
+                String type = ((org.json.JSONObject) cell).getString("type");
+                String formula = ((org.json.JSONObject) cell).getString("formula");
                 Object value = getValue((org.json.JSONObject) cell, type);
                 if (!formula.equals("")) {
-                    sheet.getCell(row,col).setFormulaValue(formula, connection, true);
+                    sheet.getCell(row, col).setFormulaValue(formula, connection, true);
                 } else {
                     sheet.getCell(row, col).setValue(value, connection, true);
                 }
@@ -430,8 +439,6 @@ public class GeneralController implements FormulaAsyncListener {
     }
 
 
-
-
     @RequestMapping(value = "/api/putCells",
             method = RequestMethod.PUT)
     public HashMap<String, Object> putCells(@RequestHeader("auth-token") String authToken,
@@ -439,7 +446,7 @@ public class GeneralController implements FormulaAsyncListener {
         org.json.JSONObject obj = new org.json.JSONObject(json);
         String bookId = obj.getString("bookId");
         String sheetName = obj.getString("sheetName");
-        if (!Authorization.authorizeBook(bookId, authToken)){
+        if (!Authorization.authorizeBook(bookId, authToken)) {
             JsonWrapper.generateError("Permission denied for accessing this book");
         }
         SBook book = BookBindings.getBookById(bookId);
@@ -447,17 +454,17 @@ public class GeneralController implements FormulaAsyncListener {
         org.json.JSONArray cells = obj.getJSONArray("cells");
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             for (Object cell : cells) {
-                int row = ((org.json.JSONObject)cell).getInt("row");
-                int col = ((org.json.JSONObject)cell).getInt("col");
-                String type = ((org.json.JSONObject)cell).getString("type");
-                String formula = ((org.json.JSONObject)cell).getString("formula");
+                int row = ((org.json.JSONObject) cell).getInt("row");
+                int col = ((org.json.JSONObject) cell).getInt("col");
+                String type = ((org.json.JSONObject) cell).getString("type");
+                String formula = ((org.json.JSONObject) cell).getString("formula");
                 Object value = getValue((org.json.JSONObject) cell, type);
                 if (!formula.equals("")) {
-                    sheet.getCell(row,col).setFormulaValue(formula, connection, true);
+                    sheet.getCell(row, col).setFormulaValue(formula, connection, true);
                 } else {
                     sheet.getCell(row, col).setValue(value, connection, true);
                 }
-                String format = ((org.json.JSONObject)cell).getString("format");
+                String format = ((org.json.JSONObject) cell).getString("format");
             }
             connection.commit();
             simpMessagingTemplate.convertAndSend(getCallbackPath(bookId, sheetName), "");
@@ -477,7 +484,7 @@ public class GeneralController implements FormulaAsyncListener {
         String bookId = obj.getString("bookId");
         int rowIdx = obj.getInt("startRow");
         int lastRowIdx = obj.getInt("endRow");
-        if (!Authorization.authorizeBook(bookId, authToken)){
+        if (!Authorization.authorizeBook(bookId, authToken)) {
             JsonWrapper.generateError("Permission denied for accessing this book");
         }
         SBook book = BookBindings.getBookById(bookId);
@@ -496,7 +503,7 @@ public class GeneralController implements FormulaAsyncListener {
         String bookId = obj.getString("bookId");
         int rowIdx = obj.getInt("startRow");
         int lastRowIdx = obj.getInt("endRow");
-        if (!Authorization.authorizeBook(bookId, authToken)){
+        if (!Authorization.authorizeBook(bookId, authToken)) {
             JsonWrapper.generateError("Permission denied for accessing this book");
         }
         SBook book = BookBindings.getBookById(bookId);
@@ -516,7 +523,7 @@ public class GeneralController implements FormulaAsyncListener {
         String bookId = obj.getString("bookId");
         int colIdx = obj.getInt("startCol");
         int lastColIdx = obj.getInt("endCol");
-        if (!Authorization.authorizeBook(bookId, authToken)){
+        if (!Authorization.authorizeBook(bookId, authToken)) {
             JsonWrapper.generateError("Permission denied for accessing this book");
         }
         SBook book = BookBindings.getBookById(bookId);
@@ -535,7 +542,7 @@ public class GeneralController implements FormulaAsyncListener {
         String bookId = obj.getString("bookId");
         int colIdx = obj.getInt("startCol");
         int lastColIdx = obj.getInt("endCol");
-        if (!Authorization.authorizeBook(bookId, authToken)){
+        if (!Authorization.authorizeBook(bookId, authToken)) {
             JsonWrapper.generateError("Permission denied for accessing this book");
         }
         SBook book = BookBindings.getBookById(bookId);
@@ -548,12 +555,12 @@ public class GeneralController implements FormulaAsyncListener {
     @RequestMapping(value = "/api/changeFormat",
             method = RequestMethod.PUT)
     public HashMap<String, Object> changeFormat(@RequestHeader("auth-token") String authToken,
-                                                @RequestBody String json){
+                                                @RequestBody String json) {
         org.json.JSONObject obj = new org.json.JSONObject(json);
         String sheetName = obj.getString("SheetName");
         String bookId = obj.getString("bookId");
 
-        if (!Authorization.authorizeBook(bookId, authToken)){
+        if (!Authorization.authorizeBook(bookId, authToken)) {
             JsonWrapper.generateError("Permission denied for accessing this book");
         }
         SBook book = BookBindings.getBookById(bookId);
@@ -567,9 +574,9 @@ public class GeneralController implements FormulaAsyncListener {
         int row2 = obj.getInt("row2");
         int col2 = obj.getInt("col2");
         Range range = Ranges.range(sheet, row1, col1, row2, col2);
-        AreaRef selection = new AreaRef(range.getRow(),range.getColumn(),range.getLastRow(),range.getLastColumn());
+        AreaRef selection = new AreaRef(range.getRow(), range.getColumn(), range.getLastRow(), range.getLastColumn());
 
-        switch (type){
+        switch (type) {
             case "font":
                 doFontChange(event, data, sheet, range, selection);
                 break;
@@ -663,7 +670,7 @@ public class GeneralController implements FormulaAsyncListener {
         Range.ApplyBorderType applyType = Range.ApplyBorderType.FULL;
         CellStyle.BorderType borderType = CellStyle.BorderType.THIN;
 
-        switch (event){
+        switch (event) {
             case BORDER:
                 applyType = Range.ApplyBorderType.EDGE_BOTTOM;
                 break;
@@ -780,7 +787,7 @@ public class GeneralController implements FormulaAsyncListener {
         */
     }
 
-    private Object getValue(org.json.JSONObject cell, String type){
+    private Object getValue(org.json.JSONObject cell, String type) {
         switch (type.toUpperCase()) {
             case "INTEGER":
                 return cell.getInt("value");
@@ -788,9 +795,9 @@ public class GeneralController implements FormulaAsyncListener {
             case "FLOAT":
                 return cell.getDouble("value");
             case "DATE":
-                try{
+                try {
                     return new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").parse(cell.getString("value"));
-                } catch  (Exception ex ){
+                } catch (Exception ex) {
                     return cell.getString("value");
                 }
             case "BOOLEAN":

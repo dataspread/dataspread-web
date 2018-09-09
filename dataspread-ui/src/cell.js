@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Input} from 'semantic-ui-react'
+import {Input, Progress} from 'semantic-ui-react'
 import 'semantic-ui-css/semantic.min.css';
 
 export default class Cell extends Component {
@@ -8,8 +8,6 @@ export default class Cell extends Component {
         super(props);
         this.state = {
             editing: false,
-            value: '',
-            formula: ''
         }
         this.handleClick = this.handleClick.bind(this);
         this.handleBlur = this.handleBlur.bind(this);
@@ -45,6 +43,7 @@ export default class Cell extends Component {
     }
 
     render() {
+
             if (this.state.editing) {
                 return (<Input
                         style={this.props.style}
@@ -53,6 +52,25 @@ export default class Cell extends Component {
                         onKeyPress={this._handleKeyPress}
                         defaultValue={this.props.formula == null ? this.props.value : this.props.formula}/>
                 )
+            }
+            else if (this.props.isProcessing) {
+                return (
+                    <div
+                        style={this.props.style}
+                        className={this.props.className}
+                        onDoubleClick={this.handleClick}>
+                        <Progress
+                            style={{
+                                height: '32px',
+                                left: '0px',
+                                top: '0px',
+                                width: '150px',
+                                position: 'absolute',
+                                fontSize: '0.9rem'
+                            }}
+                            size={'large'}
+                            percent={this.props.pctProgress}/>
+                    </div>);
             }
             else {
                 return (
