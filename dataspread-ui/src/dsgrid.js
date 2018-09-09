@@ -29,6 +29,7 @@ export default class DSGrid extends Component {
             focusCellColumn: -1,
             isProcessing: false
         }
+        this.subscribed = false;
         this.rowHeight = 32;
         this.columnWidth = 150;
         this._disposeFromLRU = this._disposeFromLRU.bind(this);
@@ -89,6 +90,14 @@ export default class DSGrid extends Component {
                 jsonMessage['data']);
             this.grid.forceUpdate();
         }
+        else if (jsonMessage['message'] === 'asyncStatus') {
+            let cell = jsonMessage['data']
+            let fromCache = this.dataCache.get(Math.trunc(cell[0] / this.fetchSize));
+            if (typeof fromCache === "object") {
+                fromCache[cell[0] % this.fetchSize][cell[1]][2] = cell[2];
+                this.grid.forceUpdate();
+            }
+        }
         else if (jsonMessage['message'] === 'pushCells') {
             for (let i in jsonMessage['data']) {
                 let cell = jsonMessage['data'][i];
@@ -104,6 +113,12 @@ export default class DSGrid extends Component {
         }
         else if (jsonMessage['message'] === 'processingDone') {
             this.setState({isProcessing: false});
+        }
+        else if (jsonMessage['message'] === 'subscribed') {
+            this.subscribed = true;
+
+            this.grid.forceUpdate();
+
         }
     }
 
@@ -257,6 +272,7 @@ export default class DSGrid extends Component {
                             rows: result['data']['sheets'][0]['numRow'],
                             columns: result['data']['sheets'][0]['numCol']
                         });
+                        this.subscribed = false;
                         this.grid.scrollToCell ({ columnIndex: 0, rowIndex: 0 });
                         if (this.stompSubscription!=null)
                             this.stompSubscription.unsubscribe();
@@ -265,7 +281,6 @@ export default class DSGrid extends Component {
                                 this._processUpdates, {bookName: this.state.bookName,
                                         sheetName: this.state.sheetName,
                                         fetchSize: this.fetchSize});
-                        this.grid.forceUpdate();
                         console.log("book loaded rows:" + result['data']['sheets'][0]['numRow']);
                     }
                 )
@@ -360,7 +375,7 @@ export default class DSGrid extends Component {
 
     _cellRangeRenderer (props) {
 
-        if (this.stompSubscription !=null) {
+        if (this.subscribed) {
             if (!props.isScrolling) {
                 if (this.rowStartIndex!==props.rowStartIndex || this.rowStopIndex!==props.rowStopIndex) {
                     this.rowStartIndex=props.rowStartIndex;
@@ -400,7 +415,6 @@ export default class DSGrid extends Component {
             cellContent = ['Loading ...'];
         }
 
-
         return (
                 <Cell
                     key={key}
@@ -410,6 +424,8 @@ export default class DSGrid extends Component {
                     formula={cellContent[1] == null ? null : "=" + cellContent[1]}
                     rowIndex={rowIndex}
                     columnIndex={columnIndex}
+                    isProcessing={cellContent[0] === '...'}
+                    pctProgress={cellContent[2]}
                     onUpdate={this._updateCell}
                 />
         )

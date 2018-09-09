@@ -57,10 +57,10 @@ public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
                 int i;
                 for (i = 0; i < Math.min(cellsToCompute.size(), QUEUE_SIZE / 2); i++) {
                     SCell sCell = cellsToCompute.get(i);
-                    ((CellImpl) sCell).getValue(true, true);
-                    //System.out.println("Computing " + sCell);
                     // Push individual cells to the UI
-                    update(sCell.getSheet(), sCell.getCellRegion());
+                    update(sCell.getSheet().getBook(), sCell.getSheet(), sCell.getCellRegion(),
+                            ((CellImpl) sCell).getValue(true, true).toString(),
+                            sCell.getFormulaValue());
                     DirtyManagerLog.instance.markClean(sCell.getCellRegion());
                 }
                 cellsToCompute.subList(0, i).clear();

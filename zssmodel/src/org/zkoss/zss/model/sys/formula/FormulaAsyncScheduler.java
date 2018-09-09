@@ -2,38 +2,33 @@ package org.zkoss.zss.model.sys.formula;
 
 
 import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncListener;
 
 
 public abstract class FormulaAsyncScheduler implements Runnable {
     private static FormulaAsyncScheduler _schedulerInstance;
-    private static FormulaAsyncUIController uiController;
+    private static FormulaAsyncListener formulaAsyncListener;
 
-
-    public static void initUiController(FormulaAsyncUIController uiController){
-        if (FormulaAsyncScheduler.uiController==null)
-            FormulaAsyncScheduler.uiController=uiController;
+    public static void initFormulaAsyncScheduler(FormulaAsyncScheduler formulaAsyncScheduler) {
+        _schedulerInstance = formulaAsyncScheduler;
     }
 
-    public static void initScheduler(FormulaAsyncScheduler scheduler){
-        if (_schedulerInstance==null)
-            _schedulerInstance=scheduler;
-    }
-
-    public static FormulaAsyncUIController getUiController(){
-        return uiController;
+    public static void initFormulaAsyncListener(FormulaAsyncListener formulaAsyncListener) {
+        FormulaAsyncScheduler.formulaAsyncListener = formulaAsyncListener;
     }
 
     public static FormulaAsyncScheduler getScheduler(){
         return _schedulerInstance;
     }
 
-    protected void update(SSheet sheet, CellRegion cellRegion) {
-        if (uiController!=null){
-            uiController.update(sheet, cellRegion);
+
+    protected void update(SBook book, SSheet sheet, CellRegion cellRegion, String value, String formula) {
+        if (formulaAsyncListener != null) {
+            formulaAsyncListener.update(book, sheet, cellRegion, value, formula);
         }
     }
-
 
     public abstract void waitForCompletion();
 

@@ -17,18 +17,9 @@
 
 package org.zkoss.poi.ss.formula.functions;
 
-import org.zkoss.poi.ss.formula.eval.ArrayEval;
-import org.zkoss.poi.ss.formula.eval.BlankEval;
-import org.zkoss.poi.ss.formula.eval.BoolEval;
-import org.zkoss.poi.ss.formula.eval.ErrorEval;
-import org.zkoss.poi.ss.formula.eval.EvaluationException;
-import org.zkoss.poi.ss.formula.eval.NumberEval;
-import org.zkoss.poi.ss.formula.eval.OperandResolver;
-import org.zkoss.poi.ss.formula.eval.RefEval;
-import org.zkoss.poi.ss.formula.eval.StringEval;
-import org.zkoss.poi.ss.formula.eval.ValueEval;
-import org.zkoss.poi.ss.formula.eval.ValuesEval;
+import org.zkoss.poi.ss.formula.FormulaComputationStatusManager;
 import org.zkoss.poi.ss.formula.TwoDEval;
+import org.zkoss.poi.ss.formula.eval.*;
 
 /**
  * @author Amol S. Deshmukh &lt; amolweb at ya hoo dot com &gt;
@@ -156,8 +147,11 @@ public abstract class MultiOperandNumericFunction implements Function {
 			TwoDEval ae = (TwoDEval) operand;
 			int width = ae.getWidth();
 			int height = ae.getHeight();
+            FormulaComputationStatusManager.getInstance().startComputation(width * height);
 			for (int rrIx=0; rrIx<height; rrIx++) {
 				for (int rcIx=0; rcIx<width; rcIx++) {
+                    if (rrIx % 1000 == 0)
+                        FormulaComputationStatusManager.getInstance().updateProgress((rrIx + 1) * (rcIx + 1));
 					ValueEval ve = ae.getValue(rrIx, rcIx);
                     if(!isSubtotalCounted() && ae.isSubTotal(rrIx, rcIx)) continue;
                     if(!isHiddenCounted() && ae.isHidden(rrIx, rcIx)) continue; //ZSS-962

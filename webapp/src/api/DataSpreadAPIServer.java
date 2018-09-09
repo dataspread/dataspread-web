@@ -12,7 +12,6 @@ public class DataSpreadAPIServer extends SpringBootServletInitializer {
     @Override
     protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
         System.out.println("Starting Spring Application");
-
         return application.sources(DataSpreadAPIServer.class);
     }
 
