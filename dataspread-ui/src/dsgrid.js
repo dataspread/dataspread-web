@@ -29,6 +29,7 @@ export default class DSGrid extends Component {
             focusCellColumn: -1,
             isProcessing: false
         }
+        this.subscribed = false;
         this.rowHeight = 32;
         this.columnWidth = 150;
         this._disposeFromLRU = this._disposeFromLRU.bind(this);
@@ -104,6 +105,12 @@ export default class DSGrid extends Component {
         }
         else if (jsonMessage['message'] === 'processingDone') {
             this.setState({isProcessing: false});
+        }
+        else if (jsonMessage['message'] === 'subscribed') {
+            console.log("subscribeed ack ")
+            this.subscribed = true;
+            this.grid.forceUpdate();
+
         }
     }
 
@@ -257,6 +264,7 @@ export default class DSGrid extends Component {
                             rows: result['data']['sheets'][0]['numRow'],
                             columns: result['data']['sheets'][0]['numCol']
                         });
+                        this.subscribed = false;
                         this.grid.scrollToCell ({ columnIndex: 0, rowIndex: 0 });
                         if (this.stompSubscription!=null)
                             this.stompSubscription.unsubscribe();
@@ -265,7 +273,6 @@ export default class DSGrid extends Component {
                                 this._processUpdates, {bookName: this.state.bookName,
                                         sheetName: this.state.sheetName,
                                         fetchSize: this.fetchSize});
-                        this.grid.forceUpdate();
                         console.log("book loaded rows:" + result['data']['sheets'][0]['numRow']);
                     }
                 )
@@ -360,7 +367,7 @@ export default class DSGrid extends Component {
 
     _cellRangeRenderer (props) {
 
-        if (this.stompSubscription !=null) {
+        if (this.subscribed) {
             if (!props.isScrolling) {
                 if (this.rowStartIndex!==props.rowStartIndex || this.rowStopIndex!==props.rowStopIndex) {
                     this.rowStartIndex=props.rowStartIndex;

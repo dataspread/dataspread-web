@@ -4,6 +4,7 @@ import api.Authorization;
 import api.Cell;
 import api.JsonWrapper;
 import api.UISessionManager;
+import com.google.common.collect.ImmutableMap;
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
@@ -185,9 +186,9 @@ public class GeneralController implements FormulaAsyncListener {
     @MessageMapping("/push/status")
     void clientStatus(@Payload Map<String, Object> payload,
             SimpMessageHeaderAccessor accessor) {
-
         UISessionManager.UISession uiSession = UISessionManager.getInstance().getUISession(accessor.getSessionId());
         String message = (String) payload.get("message");
+
         if (message.equals("changeViewPort"))
         {
             uiSession.updateViewPort((int) payload.get("rowStartIndex"), (int) payload.get("rowStopIndex"));
@@ -274,10 +275,8 @@ public class GeneralController implements FormulaAsyncListener {
                 "/push/updates", ret,
                 createHeaders(uiSession.getSessionId()));
 
-        ret.clear();
-        ret.put("message", "processingDone");
         simpMessagingTemplate.convertAndSendToUser(uiSession.getSessionId(),
-                "/push/updates", ret,
+                "/push/updates", ImmutableMap.of("message", "processingDone"),
                 createHeaders(uiSession.getSessionId()));
         ModelUpdateCollector.setCurrent(oldCollector);
     }
@@ -293,6 +292,9 @@ public class GeneralController implements FormulaAsyncListener {
         UISessionManager.getInstance()
                 .getUISession(accessor.getSessionId())
                 .assignSheet(bookName, sheetName, fetchSize);
+        simpMessagingTemplate.convertAndSendToUser(accessor.getSessionId(),
+                "/push/updates", ImmutableMap.of("message", "subscribed"),
+                createHeaders(accessor.getSessionId()));
     }
 
 
