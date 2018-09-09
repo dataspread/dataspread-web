@@ -95,16 +95,17 @@ $("#Explore").click(function () {
         $("#aggregateOpt0").change(function () {
             // Do something with the previous value after the change
             let tempString;
-            $(this).nextAll().remove();
+            console.log($(this))
+            $("#add0").nextAll().remove();
             switch (this.value) {
                 case "COUNTIF":
                 case "SUMIF":
-                    $(this).after(
+                    $(this).parent().append(
                         "<span>Predicate:&nbsp</span><input class='' type='text' name='' id='aggrePara0'>");
                     break;
                 case "LARGE":
                 case "SMALL":
-                    $(this).after(
+                    $(this).parent().append(
                         "<span>Int:&nbsp</span><input class='' type='text' name='' id='aggrePara0'>");
                     break;
                 case "SUBTOTAL":
@@ -115,24 +116,27 @@ $("#Explore").click(function () {
                             "</option>";
                     }
                     tempString += "</select>";
-                    $(this).after(tempString);
+                    $(this).parent().append(tempString);
                     break;
                 case "RANK":
                     tempString =
                         "<span>Value:&nbsp</span><input class='' type='text' name='' id='aggrePara0'>";
                     tempString +=
                         "<select class='' id='aggrePara00'><option value='1' selected >ascending</option><option value='0'>descending</option></select>"
-                    $(this).after(tempString);
+                    $(this).parent().append(tempString);
                     break;
             }
         });
-        $(".hierRemove#0").click(function (e) {
+        $(document).on("click", ".hierRemove", function (e) {
                 if (aggregateTotalNum > 1) {
-                    $("#aggregateCol").children()[e.target.id].remove();
+                    let id = e.target.id.slice(-1);
+                    $("#aggregateCol").children()[id].remove();
 
-                    for (let i = Number(e.target.id) + 1; i < aggregateTotalNum; i++) {
+                    for (let i = Number(id) + 1; i < aggregateTotalNum; i++) {
                         console.log($("#aggregateCol"));
-                        $("#" + i).prop('id', i - 1);
+                        $("#line" + i).prop('id', "line" + (i - 1))
+                        $("#rm" + i).prop('id', "rm" + (i - 1));
+                        $("#add" + i).prop('id', "add" + (i - 1));
                         $("#aggregateCol" + i).prop('id', "aggregateCol" + (i - 1));
                         $("#aggregateOpt" + i).prop('id', "aggregateOpt" + (i - 1));
                     }
@@ -142,7 +146,66 @@ $("#Explore").click(function () {
                 }
 
             }
-        )
+        );
+        $(document).on("click", ".hierAdd", function (e) {
+                if (aggregateTotalNum < 9) {
+                    let id = e.target.id.slice(-1);
+
+                    for (let i = aggregateTotalNum - 1; i > Number(id); i--) {
+                        $("#line" + i).prop('id', "line" + (i + 1))
+                        $("#rm" + i).prop('id', "rm" + (i + 1));
+                        $("#add" + i).prop('id', "add" + (i + 1));
+                        $("#aggregateCol" + i).prop('id', "aggregateCol" + (i + 1));
+                        $("#aggregateOpt" + i).prop('id', "aggregateOpt" + (i + 1));
+                    }
+
+                    $(createAggreString(Number(id) + 1)).insertAfter("#line" + id)
+                    $("#aggregateOpt" + (Number(id) + 1)).change(function (e) {
+                        let number = e.target.id.charAt(e.target.id.length - 1)
+
+                        // Do something with the previous value after the change
+                        $("#add" + e.target.id.slice(-1)).nextAll().remove();
+                        switch (this.value) {
+                            case "COUNTIF":
+                            case "SUMIF":
+                                $(this).parent().append(
+                                    "<span>Predicate:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
+                                    number + "'>");
+                                break;
+                            case "LARGE":
+                            case "SMALL":
+                                $(this).parent().append(
+                                    "<span>Int:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
+                                    number + "'>");
+                                break;
+                            case "SUBTOTAL":
+                                let tempString = "<select class='' id='aggrePara" + number +
+                                    "'><option value='' disabled selected hidden>Function_num</option>";
+                                for (let i = 0; i < subtotalFunc.length; i++) {
+                                    tempString +=
+                                        "<option value='" + (i + 1) + "''>" + subtotalFunc[i] + "</option>";
+                                }
+                                tempString += "</select>";
+                                $(this).parent().append(tempString);
+                                break;
+                            case "RANK":
+                                let tempString1 = "<span>Value:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
+                                    number + "'>";
+                                tempString1 +=
+                                    "<select class='' id='aggrePara" + number + number +
+                                    "'><option value='0' selected >ascending</option><option value='1'>descending</option></select>"
+                                $(this).parent().append(tempString1);
+                                break;
+                        }
+                    });
+
+
+                } else {
+                    alert("You have add too many options.")
+                }
+
+            }
+        );
         var $sortDropdown = $("#inlineOpt");
         $sortDropdown.empty();
         sortTotalNum = 0;
@@ -170,11 +233,12 @@ $("#Explore").click(function () {
 })
 
 // hierarchical formula builder: for each line
-function createAggreString() {
-    let tempString = "<div><i class=\"fa fa-minus-circle fa-1x hierRemove\" id=" + aggregateTotalNum + " aria-hidden=\"true\"></i><select class='custom-select my-1' id='aggregateCol" +
-        aggregateTotalNum +
+function createAggreString(specificId) {
+    let targetId = specificId ? specificId : aggregateTotalNum;
+    let tempString = "<div id='line" + targetId + "'><i class=\"fa fa-minus-circle fa-1x hierRemove\" style=\"color: #ff6b6b;\" id='rm" + targetId + "' aria-hidden=\"true\"></i><select class='custom-select my-1' id='aggregateCol" +
+        targetId +
         "''><option value='' disabled selected hidden>Attribute" + "</option>";
-    if (aggregateTotalNum == 0) {
+    if (targetId == 0) {
         for (let i = 0; i < options.length; i++) {
             aggregateColStr +=
                 "<option value='" + (i + 1) + "''>" + options[i] + "</option>";
@@ -186,19 +250,20 @@ function createAggreString() {
     }
 
     tempString += "<select class='custom-select my-1 ' id='aggregateOpt" +
-        aggregateTotalNum +
+        targetId +
         "''><option value='' disabled selected hidden>Function" +
         "</option>";
-    if (aggregateTotalNum == 0) {
+    if (targetId == 0) {
         for (let i = 0; i < funcOptions.length; i++) {
             aggregateOptStr += "<option value='" + funcOptions[i] + "''>" +
                 funcOptions[i] + "</option>";
         }
-        aggregateOptStr += "</select></div>";
+        aggregateOptStr += "</select>";
         tempString += aggregateOptStr;
     } else {
         tempString += aggregateOptStr;
     }
+    tempString += "<i class=\"fa fa-plus-circle fa-1x hierAdd\" style=\"color: #20c997;\" id='add" + targetId + "' aria-hidden=\"true\"></i></div>";
     aggregateTotalNum += 1;
     return tempString;
 }
@@ -211,59 +276,43 @@ $("#aggreAdd").click(function () {
         let number = e.target.id.charAt(e.target.id.length - 1)
 
         // Do something with the previous value after the change
-        $(this).nextAll().remove();
+        console.log(e);
+        console.log(e.target.id.slice(-1));
+        $("#add" + e.target.id.slice(-1)).nextAll().remove();
         switch (this.value) {
             case "COUNTIF":
             case "SUMIF":
-                $(this).after(
+                $(this).parent().append(
                     "<span>Predicate:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
                     number + "'>");
                 break;
             case "LARGE":
             case "SMALL":
-                $(this).after(
-                    "<span>Int:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
+                $(this).parent().append(
+                    "<span>&nbsp Int:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
                     number + "'>");
                 break;
             case "SUBTOTAL":
-                let tempString =
-                    "<select class='' id='aggrePara" + number +
+                let tempString = "<select class='' id='aggrePara" + number +
                     "'><option value='' disabled selected hidden>Function_num</option>";
                 for (let i = 0; i < subtotalFunc.length; i++) {
                     tempString +=
                         "<option value='" + (i + 1) + "''>" + subtotalFunc[i] + "</option>";
                 }
                 tempString += "</select>";
-                $(this).after(tempString);
+                $(this).parent().append(tempString);
                 break;
             case "RANK":
-                tempString =
-                    "<span>Value:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
+                let tempString1 = "<span>Value:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
                     number + "'>";
-                tempString +=
+                tempString1 +=
                     "<select class='' id='aggrePara" + number + number +
                     "'><option value='0' selected >ascending</option><option value='1'>descending</option></select>"
-                $(this).after(tempString);
+                $(this).parent().append(tempString1);
                 break;
         }
     });
-    $(".hierRemove#" + (aggregateTotalNum - 1)).click(function (e) {
-            if (aggregateTotalNum > 1) {
-                $("#aggregateCol").children()[Number(e.target.id)].remove();
 
-                for (let i = Number(e.target.id) + 1; i < aggregateTotalNum; i++) {
-                    console.log($("#aggregateCol"));
-                    $("#" + i).prop('id', i - 1);
-                    $("#aggregateCol" + i).prop('id', "aggregateCol" + (i - 1));
-                    $("#aggregateOpt" + i).prop('id', "aggregateOpt" + (i - 1));
-                }
-                aggregateTotalNum -= 1;
-            } else {
-                alert("You cannot remove all options.")
-            }
-
-        }
-    )
 })
 
 $("#aggreRemove").click(function () {
@@ -343,7 +392,7 @@ function Explore(e) {
         hot.updateSettings({width: wrapperWidth * 0.59});
         $("#hierarchical-col").css({
             "float": "left",
-            "width": "19%",
+            "width": wrapperWidth * 0.2,
             "height": wrapperHeight * 0.95,
             "display": "inline"
         });
