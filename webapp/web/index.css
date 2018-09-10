@@ -113,6 +113,17 @@
     padding-left: 5px;
 }
 
+.zoomInPlus{
+    cursor: pointer;
+    padding-left: 5px;
+    float:right;
+}
+
+.zoomOutM{
+    cursor: pointer;
+    float:right;
+}
+
 #colClose {
     padding-left: 10px;
     font-size: 17px;

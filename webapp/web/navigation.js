@@ -505,7 +505,7 @@ function Explore(e) {
             outsideClickDeselects: false,
             // manualColumnResize: true,
             // manualRowResize: true,
-            className: "htCenter htMiddle wrap",
+            className: " wrap",
 
             search: true,
             sortIndicator: true,
@@ -523,11 +523,19 @@ function Explore(e) {
                 else if (currLevel > 0 && coords.row >= 0 && coords.col >= 2) {
                     $("#formulaBar").val("=" + navRawFormula[coords.row][coords.col - 2]);
                 }
-
+                console.log(e);
                 if (topLevel || otherLevel || zoomming ||
                     e.realTarget.className == "colHeader" ||
                     e.realTarget.className == "relative") {
                     e.stopImmediatePropagation();
+                }
+                if (e.realTarget.classList['3'] == "zoomInPlus") {
+                    e.stopImmediatePropagation();
+                    zoomIn(coords.row, nav);
+                }
+                if (e.realTarget.classList['3'] == "zoomOutM") {
+                    e.stopImmediatePropagation();
+                    zoomOutHist(nav);
                 }
                 if (e.realTarget.id == "colClose") {
                     removeHierarchiCol(coords.col)
@@ -559,37 +567,15 @@ function Explore(e) {
             cells: function (row, column, prop) {
                 let cellMeta = {}
                 if (currLevel == 0) {
-                    if (column == 0 && row == selectedChild) {
-                        cellMeta.renderer = function (hotInstance, td, row, col, prop, value,
-                                                      cellProperties) {
-                            Handsontable.renderers.TextRenderer.apply(this, arguments);
-                            td.style.background = '#D3D3D3';
-                            td.style.color = 'white';
-                        }
-                    } else if (column == 0) {
-                        cellMeta.renderer = function (hotInstance, td, row, col, prop, value,
-                                                      cellProperties) {
-                            Handsontable.renderers.TextRenderer.apply(this, arguments);
-                            td.style.background = '#F5F5DC';
-                        }
+                    if (column == 0) {
+                        cellMeta.renderer = navCellRenderer;
                     } else {
                         cellMeta.renderer = chartRenderer;
                     }
                 }
                 else {
-                    if (column == 1 && row == selectedChild) {
-                        cellMeta.renderer = function (hotInstance, td, row, col, prop, value,
-                                                      cellProperties) {
-                            Handsontable.renderers.TextRenderer.apply(this, arguments);
-                            td.style.background = '#D3D3D3';
-                            td.style.color = 'white';
-                        }
-                    } else if (column <= 1) {
-                        cellMeta.renderer = function (hotInstance, td, row, col, prop, value,
-                                                      cellProperties) {
-                            Handsontable.renderers.TextRenderer.apply(this, arguments);
-                            td.style.background = '#F5F5DC';
-                        }
+                    if (column <= 1) {
+                        cellMeta.renderer = navCellRenderer;
                     } else {
                         cellMeta.renderer = chartRenderer;
                     }
@@ -634,6 +620,248 @@ function Explore(e) {
         });
     });
 }
+
+function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
+    let tempString = "<div><span>" + value + "</span>";
+
+    // differentiate single layer to double layer
+    if (currLevel == 0) {
+        if (row == selectedChild) {
+            td.style.background = '#D3D3D3';
+            td.style.color = 'white';
+        } else {
+            td.style.background = '#F5F5DC';
+        }
+        console.log(cumulativeData);
+        let targetCell = cumulativeData[currLevel][row];
+
+        if (targetCell.clickable) {
+            tempString += "<i class=\"fa fa-search-plus fa-2x zoomInPlus\" style=\"color: #51cf66;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
+            let queryData = {};
+            queryData.bookId = bId;
+            queryData.sheetName = sName;
+            queryData.path = row.toString();
+
+            $.ajax({
+                url: baseUrl + "getChildren",
+                method: "POST",
+                // dataType: 'json',
+                contentType: 'text/plain',
+                data: JSON.stringify(queryData),
+                //async: false,
+
+            }).done(function (e) {
+                if (e.status == "success") {
+                    console.log(nav)
+                    let chartString = "chartdiv" + row + col;
+                    tempString += "<div id=" + chartString + " ></div>";
+                    td.innerHTML = tempString + "</div>";
+                    let result = e.data.buckets;
+                    let number = result.length;
+
+                    let chartData = [];
+                    for (let i = 0; i < number; i++) {
+                        chartData.push({name: result[i].name, count: result[i].value});
+                    }
+
+                    //todo: compute on good width and height, margin left and right
+                    let margin = {top: 20, right: 45, bottom: 18, left: 70};
+                    var fullWidth = wrapperWidth * 0.16;
+                    var fullHeight = wrapperHeight * 0.1;
+                    var width = fullWidth - margin.right - margin.left;
+                    var height = fullHeight - margin.top - margin.bottom;
+                    var svg = d3.select("#" + chartString)
+                        .append("svg")
+                        .attr("width", width + margin.left + margin.right)
+                        .attr("height", height + margin.top + margin.bottom)
+                        .append("g")
+                        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+                    var x = d3.scaleLinear()
+                        .range([0, width])
+                        .domain([0, d3.max(chartData, function (d) {
+                            return d.count;
+                        })]);
+
+                    var y = d3.scaleBand()
+                        .rangeRound([0, height])
+                        .padding(0.1)
+                        .domain(chartData.map(function (d) {
+                            return d.name;
+                        }));
+
+                    // //make y axis to show bar names
+                    var yAxis = d3.axisLeft(y)
+                        .tickSize(0);
+
+
+                    var gy = svg.append("g")
+                        .attr("class", "y axis")
+                        .call(yAxis)
+
+                    var bars = svg.selectAll(".bar")
+                        .data(chartData)
+                        .enter()
+                        .append("g")
+
+                    //append rects
+                    bars.append("rect")
+                        .attr("class", "bar")
+                        .attr("y", function (d) {
+                            return y(d.name);
+                        })
+                        .attr("height", y.bandwidth())
+                        .attr("x", 0)
+                        .attr('fill', '#0099ff')
+                        .attr("width", function (d) {
+                            return x(d.count);
+                        });
+
+                    //add a value label to the right of each bar
+                    bars.append("text")
+                        .attr("class", "label")
+                        //y position of the label is halfway down the bar
+                        .attr("y", function (d) {
+                            return y(d.name) + y.bandwidth() / 2 + 4;
+                        })
+                        .style("font-size", "10px")
+                        //x position is 3 pixels to the right of the bar
+                        .attr("x", function (d) {
+                            return x(d.count) + 3;
+                        })
+                        .text(function (d) {
+                            return d.count;
+                        });
+                }
+            })
+        } else {
+            tempString += "<p>Rows: " + targetCell.value + "<br> Start: " + targetCell.rowRange[0] + "<br> End: " + targetCell.rowRange[1] + "</p>";
+            td.innerHTML = tempString + "</div>";
+        }
+
+    } else {
+        if (col == 1 && row == selectedChild) {
+            td.style.background = '#D3D3D3';
+            td.style.color = 'white';
+        }
+        else {
+            td.style.background = '#F5F5DC';
+        }
+        if (col == 0) {
+            tempString += "<i class=\"fa fa-search-minus fa-2x zoomOutM\" style=\"color: #339af0;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
+            td.innerHTML = tempString + "</div>";
+        } else {
+            let targetCell = cumulativeData[currLevel][row];
+            if (targetCell.clickable) {
+                tempString += "<i class=\"fa fa-search-plus fa-2x zoomInPlus\" style=\"color: #339af0;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
+                let queryData = {};
+
+                queryData.bookId = bId;
+                queryData.sheetName = sName;
+                queryData.path = computePath() + "," + row;
+
+                $.ajax({
+                    url: baseUrl + "getChildren",
+                    method: "POST",
+                    // dataType: 'json',
+                    contentType: 'text/plain',
+                    data: JSON.stringify(queryData),
+                    //async: false,
+
+                }).done(function (e) {
+                    if (e.status == "success") {
+                        console.log(nav)
+                        let chartString = "chartdiv" + row + col;
+                        tempString += "<div id=" + chartString + " ></div>";
+                        td.innerHTML = tempString + "</div>";
+                        let result = e.data.buckets;
+                        let number = result.length;
+
+                        let chartData = [];
+                        for (let i = 0; i < number; i++) {
+                            chartData.push({name: result[i].name, count: result[i].value});
+                        }
+
+                        let margin = {top: 20, right: 45, bottom: 18, left: 70};
+                        var fullWidth = wrapperWidth * 0.16;
+                        var fullHeight = wrapperHeight * 0.1;
+                        var width = fullWidth - margin.right - margin.left;
+                        var height = fullHeight - margin.top - margin.bottom;
+                        var svg = d3.select("#" + chartString)
+                            .append("svg")
+                            .attr("width", width + margin.left + margin.right)
+                            .attr("height", height + margin.top + margin.bottom)
+                            .append("g")
+                            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+                        var x = d3.scaleLinear()
+                            .range([0, width])
+                            .domain([0, d3.max(chartData, function (d) {
+                                return d.count;
+                            })]);
+
+                        var y = d3.scaleBand()
+                            .rangeRound([0, height])
+                            .padding(0.1)
+                            .domain(chartData.map(function (d) {
+                                return d.name;
+                            }));
+
+                        // //make y axis to show bar names
+                        var yAxis = d3.axisLeft(y)
+                            .tickSize(0);
+
+
+                        var gy = svg.append("g")
+                            .attr("class", "y axis")
+                            .call(yAxis)
+
+                        var bars = svg.selectAll(".bar")
+                            .data(chartData)
+                            .enter()
+                            .append("g")
+
+                        //append rects
+                        bars.append("rect")
+                            .attr("class", "bar")
+                            .attr("y", function (d) {
+                                return y(d.name);
+                            })
+                            .attr("height", y.bandwidth())
+                            .attr("x", 0)
+                            .attr('fill', '#0099ff')
+                            .attr("width", function (d) {
+                                return x(d.count);
+                            });
+
+                        //add a value label to the right of each bar
+                        bars.append("text")
+                            .attr("class", "label")
+                            //y position of the label is halfway down the bar
+                            .attr("y", function (d) {
+                                return y(d.name) + y.bandwidth() / 2 + 4;
+                            })
+                            .style("font-size", "10px")
+                            //x position is 3 pixels to the right of the bar
+                            .attr("x", function (d) {
+                                return x(d.count) + 3;
+                            })
+                            .text(function (d) {
+                                return d.count;
+                            });
+                    }
+                })
+            } else {
+                tempString += "<p>Rows: " + targetCell.value + "<br> Start: " + targetCell.rowRange[0] + "<br> End: " + targetCell.rowRange[1] + "</p>";
+                td.innerHTML = tempString + "</div>";
+            }
+        }
+
+    }
+
+
+}
+
 
 function removeHierarchiCol(colIdx) {
     colHeader.splice(
@@ -2067,6 +2295,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
 
     } else {
         Handsontable.renderers.TextRenderer.apply(this, arguments);
+        td.className = "htCenter htMiddle"
     }
 
     td.style.background = '#FAEBD7';
