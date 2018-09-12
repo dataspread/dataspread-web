@@ -4,12 +4,12 @@ import java.util.stream.Collectors;
 class DependencyGraph {
 
     //TODO: avoid creating multiple copies of the graph.
-    Map<CellRegionRef, Set<CellRegionRef>> forwardMap; //Depends -> DependOn
-    Map<CellRegionRef, Set<CellRegionRef>> reverseMap; // DependsOn -> Depends
+    private Map<CellRegionRef, Set<CellRegionRef>> forwardMap; //Depends -> DependOn
+    private Map<CellRegionRef, Set<CellRegionRef>> reverseMap; // DependsOn -> Depends
 
     // To maintain the formulae corresponding to the each Depends.
     // Ideally we do not require  a list but rather a weight or a count of formulae.
-    Map<CellRegionRef, Set<CellRegionRef>> formulaMapping; // Depends -> Set of formulae
+    private Map<CellRegionRef, Set<CellRegionRef>> formulaMapping; // Depends -> Set of formulae
     LinkedList<MergeOperation> mergeOperations;
 
 

@@ -64,6 +64,8 @@ public class DepOptTest {
             String tokens[] = formula[1].split("[ \t*+-/()<>!,]");
             for (String token : tokens)
                 if (token.matches("[A-Z]+[0-9]+:[A-Z]+[0-9]+") || token.matches("[A-Z]+[0-9]+"))
+
+
                     dependencyGraph.put(new CellRegionRef(formula[0]),
                             new CellRegionRef(token));
 
