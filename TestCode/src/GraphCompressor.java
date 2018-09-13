@@ -4,10 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 
 public class GraphCompressor {
@@ -48,11 +45,46 @@ public class GraphCompressor {
                 System.out.print("=>");
                 for (CellRegion depends : reverseMap.get(dependsOn))
                     System.out.print(depends.getReferenceString() + " ");
+                System.out.print(getCoverageArea(reverseMap.get(dependsOn)));
                 System.out.println();
             }
         }
 
-        public void greedyComressor() {
+        public int getCoverageArea(Set<CellRegion> cellRegionSet) {
+            Set<CellRegion> individualCells = new HashSet<>();
+            for (CellRegion cellRegion : cellRegionSet)
+                for (int row = cellRegion.getRow(); row <= cellRegion.getLastRow(); row++)
+                    for (int column = cellRegion.getColumn(); column <= cellRegion.getLastColumn(); column++)
+                        individualCells.add(new CellRegion(row, column));
+            return individualCells.size();
+        }
+
+
+        public void greedyCompressNode(CellRegion dependsOn, int nodeLimit) {
+            Set<CellRegion> depends = reverseMap.get(dependsOn);
+            // Each step reduce one node by merging two nodes.
+            // Simple merge, allow overlap.
+            int minArea = getCoverageArea(depends);
+            System.out.print("Start Area " + minArea);
+
+            while (depends.size() > nodeLimit) {
+
+
+            }
+        }
+
+        public void greedyReduceOne(Set<CellRegion> depends) {
+            List<CellRegion> cellRegionList = new ArrayList<>(depends);
+            int best_i = 0, best_j = 1;
+            for (int i = 0; i < cellRegionList.size() - 1; i++)
+                for (int j = i + 1; i < cellRegionList.size(); j++) {
+
+                }
+
+
+        }
+
+        public void greedyCompressor() {
 
         }
 
@@ -85,5 +117,6 @@ public class GraphCompressor {
     public static void main(String args[]) throws IOException {
         DependencyGraph dependencyGraph = getGraphFile();
         dependencyGraph.printReverseGraph();
+        dependencyGraph.greedyCompressNode(new CellRegion("A1"), 2);
     }
 }
