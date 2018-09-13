@@ -587,7 +587,10 @@ function Explore(e) {
         navContainer.innerHTML = ""
         nav = new Handsontable(navContainer, navSettings);
         nav.selectCell(0, 0);
-
+        console.log("dsa");
+        alert((wrapperHeight * 0.95 / currData.length > 80)
+            ? wrapperHeight * 0.95 / currData.length
+            : 80)
         updateData(0, 0, 1000, 15, true);
         lowerRange = 0;
         upperRange = 1000;
@@ -665,9 +668,10 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                     }
 
                     //todo: compute on good width and height, margin left and right
-                    let margin = {top: 20, right: 45, bottom: 18, left: 70};
+                    let margin = {top: 0, right: 45, bottom: 5, left: 70};
                     var fullWidth = wrapperWidth * 0.16;
-                    var fullHeight = wrapperHeight * 0.1;
+                    var fullHeight = (wrapperHeight * 0.95 / cumulativeData[currLevel].length > 80)
+                        ? wrapperHeight * 0.95 / cumulativeData[currLevel].length : 80;
                     var width = fullWidth - margin.right - margin.left;
                     var height = fullHeight - margin.top - margin.bottom;
                     var svg = d3.select("#" + chartString)
@@ -782,9 +786,10 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                             chartData.push({name: result[i].name, count: result[i].value});
                         }
 
-                        let margin = {top: 20, right: 45, bottom: 18, left: 70};
+                        let margin = {top: 0, right: 45, bottom: 5, left: 70};
                         var fullWidth = wrapperWidth * 0.16;
-                        var fullHeight = wrapperHeight * 0.1;
+                        var fullHeight = (wrapperHeight * 0.95 / cumulativeData[currLevel].length > 80)
+                            ? wrapperHeight * 0.95 / cumulativeData[currLevel].length : 80;
                         var width = fullWidth - margin.right - margin.left;
                         var height = fullHeight - margin.top - margin.bottom;
                         var svg = d3.select("#" + chartString)
