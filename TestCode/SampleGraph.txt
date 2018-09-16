@@ -1,5 +1,5 @@
 #LHS should not have any overlaps.
-C1:C2=A1
+C1:C2=sum(A1)
 C4=A1
 C6=A1
 C8=A1
