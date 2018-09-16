@@ -25,6 +25,12 @@ public class CountedBTree implements PosMapping{
         btree = new BTree<>(context, tableName, emptyStatistic, useKryo);
     }
 
+    public CountedBTree(DBContext context, String tableName, boolean useKryo, boolean useBackward) {
+        CountStatistic emptyStatistic = new CountStatistic();
+        btree = new BTree<>(context, tableName, emptyStatistic, useKryo);
+        btree.setUseBackward(useBackward);
+    }
+
     @Override
     public void dropSchema(DBContext context) {
         btree.dropSchema(context);
@@ -54,6 +60,22 @@ public class CountedBTree implements PosMapping{
         CountStatistic statistic = new CountStatistic(pos);
         ArrayList<Integer> ids = new ArrayList<>();
         btree.createIDs(context, statistic, max_value + 1, count, false, AbstractStatistic.Type.COUNT);
+        for (int i = 0; i < count; i++) {
+            ids.add(++max_value);
+        }
+        btree.updateMaxValue(context, max_value);
+        return ids;
+    }
+
+    public ArrayList createDenseIDs(DBContext context, int pos, int count) {
+        Integer max_value = btree.getMaxValue();
+        CountStatistic statistic = new CountStatistic(pos);
+        ArrayList<Integer> ids = new ArrayList<>();
+        int p = max_value + 1;
+        while (p <= max_value + count) {
+            btree.createIDs(context, statistic, p, 1, false, AbstractStatistic.Type.COUNT);
+            p++;
+        }
         for (int i = 0; i < count; i++) {
             ids.add(++max_value);
         }
