@@ -547,7 +547,7 @@ function Explore(e) {
                 console.log(e);
                 if (topLevel || otherLevel || zoomming ||
                     e.realTarget.className == "colHeader" ||
-                    e.realTarget.className == "relative") {
+                    e.realTarget.className == "relative" || e.realTarget.className.baseVal == "bar") {
                     e.stopImmediatePropagation();
                 }
                 if (e.realTarget.classList['3'] == "zoomInPlus") {
@@ -609,9 +609,7 @@ function Explore(e) {
         nav = new Handsontable(navContainer, navSettings);
         //nav.selectCell(0, 0);
         console.log("dsa");
-        alert((wrapperHeight * 0.95 / currData.length > 90)
-            ? wrapperHeight * 0.95 / currData.length
-            : 90)
+       
         updateData(0, 0, 1000, 15, true);
         lowerRange = 0;
         upperRange = 1000;
@@ -619,6 +617,7 @@ function Explore(e) {
 
         //   doubleclick implementation option2:
         nav.view.wt.update('onCellDblClick', function (e, cell) {
+            console.log(e);
             if (cell.row >= 0) {
                 if (currLevel == 0) {
                     if (cell.col == 0 && cumulativeData[currLevel][cell.row].clickable) {
@@ -685,6 +684,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                     let maxLen = 0;
                     let hash = new Map();
                     let chartData = [];
+
                     for (let i = 0; i < number; i++) {
                         if(result[i].name.length > maxLen){
                             maxLen = result[i].name.length;
@@ -692,15 +692,16 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                         let value;
                         if(result[i].name.length>20) {
                             value = result[i].name.substring(0,20)+"...";
-                            hash.set(value,result[i].name)
+                            hash.set(value,{name:result[i].name,range:result[i].rowRange[0]})
                         }else{
                             value = result[i].name;
-                            hash.set(value,value);
+                            hash.set(value,{name:result[i].name,range:result[i].rowRange[0]});
                         }
                         chartData.push({name: value , count: result[i].value});
                     }
+
                     let maxleft = (maxLen * 6) < 110?  maxLen*6:110;
-                    //todo: compute on good width and height, margin left and right
+
                     let margin = {top: 0, right: 40, bottom: 5, left: maxleft};
                     var fullWidth = wrapperWidth * 0.18;
                     var fullHeight = (wrapperHeight * 0.95 / cumulativeData[currLevel].length > 90)
@@ -748,7 +749,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                                     .style("top", d3.event.pageY - 30 + "px")
                                     .style("display", "inline-block")
                                     .style("font", "10px")
-                                    .html(hash.get(d.name));
+                                    .html(hash.get(d.name).name);
                             })
                         .on("mouseout", function (d) {
                             tooltip.style("display", "none");
@@ -770,7 +771,13 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                         .attr('fill', '#0099ff')
                         .attr("width", function (d) {
                             return x(d.count);
-                        });
+                        })
+                        .on("click",function (d) {
+                            lowerRange = hash.get(d.name).range;
+                            upperRange = lowerRange + 500;
+                            updateData(lowerRange, 0,upperRange, 15, true);
+                        })
+                        .on("dblclick",function(d){ alert("node was double clicked"); });
 
                     //add a value label to the right of each bar
                     bars.append("text")
@@ -843,10 +850,10 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                             let value;
                             if(result[i].name.length>20) {
                                 value = result[i].name.substring(0,20)+"...";
-                                hash.set(value,result[i].name)
+                                hash.set(value,{name:result[i].name,range:result[i].rowRange[0]})
                             }else{
                                 value = result[i].name;
-                                hash.set(value,value);
+                                hash.set(value,{name:result[i].name,range:result[i].rowRange[0]});
                             }
                             chartData.push({name: value , count: result[i].value});
                         }
@@ -903,7 +910,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                                         .style("top", d3.event.pageY - 30 + "px")
                                         .style("display", "inline-block")
                                         .style("font", "10px")
-                                        .html(hash.get(d.name));
+                                        .html(hash.get(d.name).name);
                                 })
                             .on("mouseout", function (d) {
                                 tooltip.style("display", "none");
@@ -925,6 +932,12 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                             .attr('fill', '#0099ff')
                             .attr("width", function (d) {
                                 return x(d.count);
+                            })
+                            .on("click",function (d) {
+                                alert(hash.get(d.name).range);
+                                lowerRange = hash.get(d.name).range;
+                                upperRange = lowerRange + 500;
+                                updateData(lowerRange, 0,upperRange, 15, true);
                             });
 
                         //add a value label to the right of each bar
