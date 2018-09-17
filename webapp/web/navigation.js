@@ -127,85 +127,7 @@ $("#Explore").click(function () {
                     break;
             }
         });
-        $(document).on("click", ".hierRemove", function (e) {
-                if (aggregateTotalNum > 1) {
-                    let id = e.target.id.slice(-1);
-                    $("#aggregateCol").children()[id].remove();
 
-                    for (let i = Number(id) + 1; i < aggregateTotalNum; i++) {
-                        console.log($("#aggregateCol"));
-                        $("#line" + i).prop('id', "line" + (i - 1))
-                        $("#rm" + i).prop('id', "rm" + (i - 1));
-                        $("#add" + i).prop('id', "add" + (i - 1));
-                        $("#aggregateCol" + i).prop('id', "aggregateCol" + (i - 1));
-                        $("#aggregateOpt" + i).prop('id', "aggregateOpt" + (i - 1));
-                    }
-                    aggregateTotalNum -= 1;
-                } else {
-                    alert("You cannot remove all options.")
-                }
-
-            }
-        );
-        $(document).on("click", ".hierAdd", function (e) {
-                if (aggregateTotalNum < 9) {
-                    let id = e.target.id.slice(-1);
-
-                    for (let i = aggregateTotalNum - 1; i > Number(id); i--) {
-                        $("#line" + i).prop('id', "line" + (i + 1))
-                        $("#rm" + i).prop('id', "rm" + (i + 1));
-                        $("#add" + i).prop('id', "add" + (i + 1));
-                        $("#aggregateCol" + i).prop('id', "aggregateCol" + (i + 1));
-                        $("#aggregateOpt" + i).prop('id', "aggregateOpt" + (i + 1));
-                    }
-
-                    $(createAggreString(Number(id) + 1)).insertAfter("#line" + id)
-                    $("#aggregateOpt" + (Number(id) + 1)).change(function (e) {
-                        let number = e.target.id.charAt(e.target.id.length - 1)
-
-                        // Do something with the previous value after the change
-                        $("#add" + e.target.id.slice(-1)).nextAll().remove();
-                        switch (this.value) {
-                            case "COUNTIF":
-                            case "SUMIF":
-                                $(this).parent().append(
-                                    "<span>Predicate:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
-                                    number + "'>");
-                                break;
-                            case "LARGE":
-                            case "SMALL":
-                                $(this).parent().append(
-                                    "<span>Int:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
-                                    number + "'>");
-                                break;
-                            case "SUBTOTAL":
-                                let tempString = "<select class='' id='aggrePara" + number +
-                                    "'><option value='' disabled selected hidden>Function_num</option>";
-                                for (let i = 0; i < subtotalFunc.length; i++) {
-                                    tempString +=
-                                        "<option value='" + (i + 1) + "''>" + subtotalFunc[i] + "</option>";
-                                }
-                                tempString += "</select>";
-                                $(this).parent().append(tempString);
-                                break;
-                            case "RANK":
-                                let tempString1 = "<span>Value:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
-                                    number + "'>";
-                                tempString1 +=
-                                    "<select class='' id='aggrePara" + number + number +
-                                    "'><option value='0' selected >ascending</option><option value='1'>descending</option></select>"
-                                $(this).parent().append(tempString1);
-                                break;
-                        }
-                    });
-
-
-                } else {
-                    alert("You have add too many options.")
-                }
-
-            }
-        );
         var $sortDropdown = $("#inlineOpt");
         $sortDropdown.empty();
         sortTotalNum = 0;
@@ -231,6 +153,87 @@ $("#Explore").click(function () {
         "height": wrapperHeight * 0.95
     });
 })
+
+
+$(document).on("click", ".hierRemove", function (e) {
+        if (aggregateTotalNum > 1) {
+            let id = e.target.id.slice(-1);
+            $("#aggregateCol").children()[id].remove();
+
+            for (let i = Number(id) + 1; i < aggregateTotalNum; i++) {
+                console.log($("#aggregateCol"));
+                $("#line" + i).prop('id', "line" + (i - 1))
+                $("#rm" + i).prop('id', "rm" + (i - 1));
+                $("#add" + i).prop('id', "add" + (i - 1));
+                $("#aggregateCol" + i).prop('id', "aggregateCol" + (i - 1));
+                $("#aggregateOpt" + i).prop('id', "aggregateOpt" + (i - 1));
+            }
+            aggregateTotalNum -= 1;
+        } else {
+            alert("You cannot remove all options.")
+        }
+
+    }
+);
+$(document).on("click", ".hierAdd", function (e) {
+        if (aggregateTotalNum < 9) {
+            let id = e.target.id.slice(-1);
+
+            for (let i = aggregateTotalNum - 1; i > Number(id); i--) {
+                $("#line" + i).prop('id', "line" + (i + 1))
+                $("#rm" + i).prop('id', "rm" + (i + 1));
+                $("#add" + i).prop('id', "add" + (i + 1));
+                $("#aggregateCol" + i).prop('id', "aggregateCol" + (i + 1));
+                $("#aggregateOpt" + i).prop('id', "aggregateOpt" + (i + 1));
+            }
+
+            $(createAggreString(Number(id) + 1)).insertAfter("#line" + id)
+            $("#aggregateOpt" + (Number(id) + 1)).change(function (e) {
+                let number = e.target.id.charAt(e.target.id.length - 1)
+
+                // Do something with the previous value after the change
+                $("#add" + e.target.id.slice(-1)).nextAll().remove();
+                switch (this.value) {
+                    case "COUNTIF":
+                    case "SUMIF":
+                        $(this).parent().append(
+                            "<span>Predicate:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
+                            number + "'>");
+                        break;
+                    case "LARGE":
+                    case "SMALL":
+                        $(this).parent().append(
+                            "<span>Int:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
+                            number + "'>");
+                        break;
+                    case "SUBTOTAL":
+                        let tempString = "<select class='' id='aggrePara" + number +
+                            "'><option value='' disabled selected hidden>Function_num</option>";
+                        for (let i = 0; i < subtotalFunc.length; i++) {
+                            tempString +=
+                                "<option value='" + (i + 1) + "''>" + subtotalFunc[i] + "</option>";
+                        }
+                        tempString += "</select>";
+                        $(this).parent().append(tempString);
+                        break;
+                    case "RANK":
+                        let tempString1 = "<span>Value:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
+                            number + "'>";
+                        tempString1 +=
+                            "<select class='' id='aggrePara" + number + number +
+                            "'><option value='0' selected >ascending</option><option value='1'>descending</option></select>"
+                        $(this).parent().append(tempString1);
+                        break;
+                }
+            });
+
+
+        } else {
+            alert("You have add too many options.")
+        }
+
+    }
+);
 
 // hierarchical formula builder: for each line
 function createAggreString(specificId) {
@@ -414,6 +417,8 @@ function Explore(e) {
 
 
     $.get(baseUrl + 'startNav/' + bId + '/' + sName + '/' + e, function (data) {
+        selectedChild = 0;
+
         clickable = true;
         currLevel = 0;
         levelList = [];
@@ -455,15 +460,31 @@ function Explore(e) {
             // maxCols:1,
             // autoColumnSize : true,
             readOnly: true,
-            rowHeights: (wrapperHeight * 0.95 / currData.length > 80)
+            rowHeights: (wrapperHeight * 0.95 / currData.length > 90)
                 ? wrapperHeight * 0.95 / currData.length
-                : 80,
+                : 90,
             // startRows: 200,
             //  startCols: 5,
             width: wrapperWidth * 0.19,
             height: wrapperHeight * 0.95,
             rowHeaderWidth: 0,
             rowHeaders: true,
+            colWidths: function(col){
+                if(currLevel==0){
+                    if(col == 0) {
+                        return wrapperWidth*0.18;
+                    }else {
+                        return wrapperWidth * 0.15;
+                    }
+                }else{
+                    if(col == 0) {
+                        return wrapperWidth*0.08;
+                    }else {
+                        return wrapperWidth * 0.15;
+                    }
+                }
+
+            },
             colHeaders: function (col) {
                 if (col < colHeader.length) {
                     if (currLevel == 0) {
@@ -586,11 +607,11 @@ function Explore(e) {
         // //initializing interface
         navContainer.innerHTML = ""
         nav = new Handsontable(navContainer, navSettings);
-        nav.selectCell(0, 0);
+        //nav.selectCell(0, 0);
         console.log("dsa");
-        alert((wrapperHeight * 0.95 / currData.length > 80)
+        alert((wrapperHeight * 0.95 / currData.length > 90)
             ? wrapperHeight * 0.95 / currData.length
-            : 80)
+            : 90)
         updateData(0, 0, 1000, 15, true);
         lowerRange = 0;
         upperRange = 1000;
@@ -631,7 +652,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
     if (currLevel == 0) {
         if (row == selectedChild) {
             td.style.background = '#D3D3D3';
-            td.style.color = 'white';
+            td.style.color = '#4e81d3';
         } else {
             td.style.background = '#F5F5DC';
         }
@@ -639,7 +660,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
         let targetCell = cumulativeData[currLevel][row];
 
         if (targetCell.clickable) {
-            tempString += "<i class=\"fa fa-search-plus fa-2x zoomInPlus\" style=\"color: #51cf66;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
+            tempString += "<i class=\"fa fa-plus-circle fa-2x zoomInPlus\" style=\"color: #51cf66;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
             let queryData = {};
             queryData.bookId = bId;
             queryData.sheetName = sName;
@@ -651,7 +672,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                 // dataType: 'json',
                 contentType: 'text/plain',
                 data: JSON.stringify(queryData),
-                //async: false,
+                async: false,
 
             }).done(function (e) {
                 if (e.status == "success") {
@@ -661,17 +682,32 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                     td.innerHTML = tempString + "</div>";
                     let result = e.data.buckets;
                     let number = result.length;
-
+                    let maxLen = 0;
+                    let hash = new Map();
                     let chartData = [];
                     for (let i = 0; i < number; i++) {
-                        chartData.push({name: result[i].name, count: result[i].value});
+                        if(result[i].name.length > maxLen){
+                            maxLen = result[i].name.length;
+                        }
+                        let value;
+                        if(result[i].name.length>20) {
+                            value = result[i].name.substring(0,20)+"...";
+                            hash.set(value,result[i].name)
+                        }else{
+                            value = result[i].name;
+                            hash.set(value,value);
+                        }
+                        chartData.push({name: value , count: result[i].value});
                     }
-
+                    let maxleft = (maxLen * 6) < 110?  maxLen*6:110;
                     //todo: compute on good width and height, margin left and right
-                    let margin = {top: 0, right: 45, bottom: 5, left: 70};
-                    var fullWidth = wrapperWidth * 0.16;
-                    var fullHeight = (wrapperHeight * 0.95 / cumulativeData[currLevel].length > 80)
-                        ? wrapperHeight * 0.95 / cumulativeData[currLevel].length : 80;
+                    let margin = {top: 0, right: 40, bottom: 5, left: maxleft};
+                    var fullWidth = wrapperWidth * 0.18;
+                    var fullHeight = (wrapperHeight * 0.95 / cumulativeData[currLevel].length > 90)
+                        ? wrapperHeight * 0.95 / cumulativeData[currLevel].length-10 : 80;
+                    if(number > 6){
+                        fullHeight += (number - 6)*5;
+                    }
                     var width = fullWidth - margin.right - margin.left;
                     var height = fullHeight - margin.top - margin.bottom;
                     var svg = d3.select("#" + chartString)
@@ -698,10 +734,25 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                     var yAxis = d3.axisLeft(y)
                         .tickSize(0);
 
-
+                    var tooltip =
+                        d3.select('#' + chartString).append("div").attr("class", "toolTip");
                     var gy = svg.append("g")
                         .attr("class", "y axis")
                         .call(yAxis)
+                        .selectAll(".tick text")
+                        .data(chartData)
+                        .on("mouseover",
+                            function (d) {
+                            console.log(d)
+                                tooltip.style("left", d3.event.pageX - 20 + "px")
+                                    .style("top", d3.event.pageY - 30 + "px")
+                                    .style("display", "inline-block")
+                                    .style("font", "10px")
+                                    .html(hash.get(d.name));
+                            })
+                        .on("mouseout", function (d) {
+                            tooltip.style("display", "none");
+                        });
 
                     var bars = svg.selectAll(".bar")
                         .data(chartData)
@@ -744,20 +795,22 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
         }
 
     } else {
+
+
         if (col == 1 && row == selectedChild) {
             td.style.background = '#D3D3D3';
-            td.style.color = 'white';
+            td.style.color = '#4e81d3';
         }
         else {
             td.style.background = '#F5F5DC';
         }
         if (col == 0) {
-            tempString += "<i class=\"fa fa-search-minus fa-2x zoomOutM\" style=\"color: #339af0;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
+            tempString += "<i class=\"fa fa-minus-circle fa-2x zoomOutM\" style=\"color: #339af0;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
             td.innerHTML = tempString + "</div>";
         } else {
             let targetCell = cumulativeData[currLevel][row];
             if (targetCell.clickable) {
-                tempString += "<i class=\"fa fa-search-plus fa-2x zoomInPlus\" style=\"color: #339af0;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
+                tempString += "<i class=\"fa fa-plus-circle fa-2x zoomInPlus\" style=\"color: #51cf66;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
                 let queryData = {};
 
                 queryData.bookId = bId;
@@ -770,7 +823,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                     // dataType: 'json',
                     contentType: 'text/plain',
                     data: JSON.stringify(queryData),
-                    //async: false,
+                    async: false,
 
                 }).done(function (e) {
                     if (e.status == "success") {
@@ -780,16 +833,35 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                         td.innerHTML = tempString + "</div>";
                         let result = e.data.buckets;
                         let number = result.length;
-
+                        let maxLen = 0;
+                        let hash = new Map();
                         let chartData = [];
                         for (let i = 0; i < number; i++) {
-                            chartData.push({name: result[i].name, count: result[i].value});
+                            if(result[i].name.length > maxLen){
+                                maxLen = result[i].name.length;
+                            }
+                            let value;
+                            if(result[i].name.length>20) {
+                                value = result[i].name.substring(0,20)+"...";
+                                hash.set(value,result[i].name)
+                            }else{
+                                value = result[i].name;
+                                hash.set(value,value);
+                            }
+                            chartData.push({name: value , count: result[i].value});
+                        }
+                        let maxleft = (maxLen * 6) < 110?  maxLen*6:110;
+                        //todo: compute on good width and height, margin left and right
+                        let margin = {top: 0, right: 40, bottom: 5, left: maxleft};
+                        var fullWidth = wrapperWidth * 0.15;
+                        console.log(fullWidth)
+
+                        var fullHeight = (wrapperHeight * 0.95 / cumulativeData[currLevel].length > 90)
+                            ? wrapperHeight * 0.95 / cumulativeData[currLevel].length-10 : 80;
+                        if(number > 6){
+                            fullHeight += (number - 6)*5;
                         }
 
-                        let margin = {top: 0, right: 45, bottom: 5, left: 70};
-                        var fullWidth = wrapperWidth * 0.16;
-                        var fullHeight = (wrapperHeight * 0.95 / cumulativeData[currLevel].length > 80)
-                            ? wrapperHeight * 0.95 / cumulativeData[currLevel].length : 80;
                         var width = fullWidth - margin.right - margin.left;
                         var height = fullHeight - margin.top - margin.bottom;
                         var svg = d3.select("#" + chartString)
@@ -817,9 +889,25 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                             .tickSize(0);
 
 
+                        var tooltip =
+                            d3.select('#' + chartString).append("div").attr("class", "toolTip");
                         var gy = svg.append("g")
                             .attr("class", "y axis")
                             .call(yAxis)
+                            .selectAll(".tick text")
+                            .data(chartData)
+                            .on("mouseover",
+                                function (d) {
+                                    console.log(d)
+                                    tooltip.style("left", d3.event.pageX - 20 + "px")
+                                        .style("top", d3.event.pageY - 30 + "px")
+                                        .style("display", "inline-block")
+                                        .style("font", "10px")
+                                        .html(hash.get(d.name));
+                                })
+                            .on("mouseout", function (d) {
+                                tooltip.style("display", "none");
+                            });
 
                         var bars = svg.selectAll(".bar")
                             .data(chartData)
@@ -1099,14 +1187,14 @@ function addHierarchiCol(aggregateValue) {
     });
     if (zoomming) {
         zoomming = false;
-        nav.selectCell(0, 1);
+        //nav.selectCell(0, 1);
     }
     if (zoomouting) {
         zoomouting = false;
         if (currLevel == 0) {
-            nav.selectCell(targetChild, 0)
+         //   nav.selectCell(targetChild, 0)
         } else {
-            nav.selectCell(targetChild, 1);
+          //  nav.selectCell(targetChild, 1);
         }
     }
 }
@@ -1124,6 +1212,7 @@ function computePath() {
 
 function zoomIn(child, nav) {
     nav.deselectCell();
+    selectedChild = 0;
     if (currLevel == 0) {
         colHeader.splice(1, 0, "")
     }
@@ -1192,7 +1281,7 @@ function zoomIn(child, nav) {
                     mergeCells: mergeCellInfo,
                 });
                 zoomming = false;
-                nav.selectCell(0, 1)
+                //nav.selectCell(0, 1)
             }
             updateNavPath(breadcrum_ls); // calculate breadcrumb
         }
@@ -1328,11 +1417,11 @@ function zoomOut(nav) {
             mergeCells: mergeCellInfo,
         });
         zoomouting = false;
-        if (currLevel == 0) {
-            nav.selectCell(targetChild, 0)
-        } else {
-            nav.selectCell(targetChild, 1);
-        }
+        // if (currLevel == 0) {
+        //     nav.selectCell(targetChild, 0)
+        // } else {
+        //     nav.selectCell(targetChild, 1);
+        // }
     }
 
     updateNavPath();
@@ -1345,7 +1434,7 @@ function zoomOutHist(nav) {
     clickable = true;
     nav.deselectCell();
     targetChild = levelList[levelList.length - 1];
-
+    selectedChild = targetChild;
     levelList.pop();
     let childlist = computePath(); // get the list of children
     // api call to /levelList + '.' + child to get currData
@@ -1413,11 +1502,11 @@ function zoomOutHist(nav) {
                     mergeCells: mergeCellInfo,
                 });
                 zoomouting = false;
-                if (currLevel == 0) {
-                    nav.selectCell(targetChild, 0)
-                } else {
-                    nav.selectCell(targetChild, 1);
-                }
+                // if (currLevel == 0) {
+                //     nav.selectCell(targetChild, 0)
+                // } else {
+                //     nav.selectCell(targetChild, 1);
+                // }
             }
 
             updateNavPath(breadcrum_ls);
@@ -1502,11 +1591,11 @@ function jumpToHistorialView(childlist) {
                     mergeCells: mergeCellInfo,
                 });
                 zoomouting = false;
-                if (breadcrumb_ls.length == 0) {
-                    nav.selectCell(targetChild, 0)
-                } else {
-                    nav.selectCell(targetChild, 1);
-                }
+                // if (breadcrumb_ls.length == 0) {
+                //     nav.selectCell(targetChild, 0)
+                // } else {
+                //     nav.selectCell(targetChild, 1);
+                // }
             }
 
             updateNavPath(breadcrumb_ls);

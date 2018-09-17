@@ -253,6 +253,7 @@
     border: 1px solid #6F257F;
     padding: 3px;
     text-align: center;
+    font: 12px sans-serif;
 }
 
 /* The switch - the box around the slider */
