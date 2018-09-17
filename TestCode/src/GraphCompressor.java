@@ -48,15 +48,12 @@ public class GraphCompressor extends Frame {
 
         public void printReverseGraph() {
             for (CellRegion dependsOn : reverseMap.keySet()) {
-                if (getCoverageArea(reverseMap.get(dependsOn)) > 20) {
-
                     System.out.print(dependsOn.getReferenceString());
                     System.out.print("=>");
                     for (CellRegion depends : reverseMap.get(dependsOn))
                         System.out.print(depends.getReferenceString() + " ");
                     System.out.print(getCoverageArea(reverseMap.get(dependsOn)));
                     System.out.println();
-                }
             }
         }
 
@@ -71,6 +68,7 @@ public class GraphCompressor extends Frame {
 
 
         public void greedyCompressNode(CellRegion dependsOn, int nodeLimit) {
+
             Set<CellRegion> depends = reverseMap.get(dependsOn);
             // Each step reduce one node by merging two nodes.
             // Simple merge, allow overlap.
@@ -114,10 +112,36 @@ public class GraphCompressor extends Frame {
             depends.add(mergedBox);
         }
 
-        public void greedyCompressor() {
-
+        public Set<CellRegion> getDirectDepends(CellRegion dependsOn)
+        {
+            Set<CellRegion> returnSet = new HashSet<>();
+            for (Map.Entry<CellRegion, Set<CellRegion>> reverseEntry:reverseMap.entrySet())
+            {
+                if (reverseEntry.getKey().overlaps(dependsOn))
+                    returnSet.addAll(reverseEntry.getValue());
+            }
+            return returnSet;
         }
 
+        public void expandNode(CellRegion dependsOn)
+        {
+            Set<CellRegion> expandedRegions = new HashSet<>();
+            Queue<CellRegion> queue = new LinkedList<>();
+            queue.add(dependsOn);
+            while(!queue.isEmpty()) {
+                CellRegion p = queue.remove();
+                Set<CellRegion> directDepends = getDirectDepends(p);
+                for(CellRegion depends:directDepends)
+                {
+                    if (!expandedRegions.contains(depends))
+                    {
+                        queue.add(depends);
+                        expandedRegions.add(depends);
+                    }
+                }
+            }
+            reverseMap.put(dependsOn, expandedRegions);
+        }
 
     }
 
@@ -209,10 +233,12 @@ public class GraphCompressor extends Frame {
         GraphCompressor graphCompressor1 = new GraphCompressor();
 
 
-        //DependencyGraph dependencyGraph = getGraphFile();
-        DependencyGraph dependencyGraph = getGraphDB();
+        DependencyGraph dependencyGraph = getGraphFile();
+        //DependencyGraph dependencyGraph = getGraphDB();
 
 
+        dependencyGraph.printReverseGraph();
+        dependencyGraph.expandNode(new CellRegion("A1"));
         dependencyGraph.printReverseGraph();
 
         graphCompressor1.setGraphToPlot(dependencyGraph.reverseMap.get(new CellRegion("A1")));
@@ -222,7 +248,7 @@ public class GraphCompressor extends Frame {
         dependencyGraph.printReverseGraph();
 
 
-        graphCompressor1.setVisible(true);
+        //graphCompressor1.setVisible(true);
 
     }
 }
