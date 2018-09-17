@@ -272,58 +272,58 @@ function createAggreString(specificId) {
 }
 
 // for adding more aggregate attribute
-$("#aggreAdd").click(function () {
-    var $aggregateCol = $("#aggregateCol");
-    $aggregateCol.append(createAggreString());
-    $("#aggregateOpt" + (aggregateTotalNum - 1)).change(function (e) {
-        let number = e.target.id.charAt(e.target.id.length - 1)
-
-        // Do something with the previous value after the change
-        console.log(e);
-        console.log(e.target.id.slice(-1));
-        $("#add" + e.target.id.slice(-1)).nextAll().remove();
-        switch (this.value) {
-            case "COUNTIF":
-            case "SUMIF":
-                $(this).parent().append(
-                    "<span>Predicate:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
-                    number + "'>");
-                break;
-            case "LARGE":
-            case "SMALL":
-                $(this).parent().append(
-                    "<span>&nbsp Int:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
-                    number + "'>");
-                break;
-            case "SUBTOTAL":
-                let tempString = "<select class='' id='aggrePara" + number +
-                    "'><option value='' disabled selected hidden>Function_num</option>";
-                for (let i = 0; i < subtotalFunc.length; i++) {
-                    tempString +=
-                        "<option value='" + (i + 1) + "''>" + subtotalFunc[i] + "</option>";
-                }
-                tempString += "</select>";
-                $(this).parent().append(tempString);
-                break;
-            case "RANK":
-                let tempString1 = "<span>Value:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
-                    number + "'>";
-                tempString1 +=
-                    "<select class='' id='aggrePara" + number + number +
-                    "'><option value='0' selected >ascending</option><option value='1'>descending</option></select>"
-                $(this).parent().append(tempString1);
-                break;
-        }
-    });
-
-})
-
-$("#aggreRemove").click(function () {
-    if (aggregateTotalNum > 1) {
-        $("#aggregateCol").children().last().remove();
-        aggregateTotalNum -= 1;
-    }
-})
+// $("#aggreAdd").click(function () {
+//     var $aggregateCol = $("#aggregateCol");
+//     $aggregateCol.append(createAggreString());
+//     $("#aggregateOpt" + (aggregateTotalNum - 1)).change(function (e) {
+//         let number = e.target.id.charAt(e.target.id.length - 1)
+//
+//         // Do something with the previous value after the change
+//         console.log(e);
+//         console.log(e.target.id.slice(-1));
+//         $("#add" + e.target.id.slice(-1)).nextAll().remove();
+//         switch (this.value) {
+//             case "COUNTIF":
+//             case "SUMIF":
+//                 $(this).parent().append(
+//                     "<span>Predicate:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
+//                     number + "'>");
+//                 break;
+//             case "LARGE":
+//             case "SMALL":
+//                 $(this).parent().append(
+//                     "<span>&nbsp Int:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
+//                     number + "'>");
+//                 break;
+//             case "SUBTOTAL":
+//                 let tempString = "<select class='' id='aggrePara" + number +
+//                     "'><option value='' disabled selected hidden>Function_num</option>";
+//                 for (let i = 0; i < subtotalFunc.length; i++) {
+//                     tempString +=
+//                         "<option value='" + (i + 1) + "''>" + subtotalFunc[i] + "</option>";
+//                 }
+//                 tempString += "</select>";
+//                 $(this).parent().append(tempString);
+//                 break;
+//             case "RANK":
+//                 let tempString1 = "<span>Value:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
+//                     number + "'>";
+//                 tempString1 +=
+//                     "<select class='' id='aggrePara" + number + number +
+//                     "'><option value='0' selected >ascending</option><option value='1'>descending</option></select>"
+//                 $(this).parent().append(tempString1);
+//                 break;
+//         }
+//     });
+//
+// })
+//
+// $("#aggreRemove").click(function () {
+//     if (aggregateTotalNum > 1) {
+//         $("#aggregateCol").children().last().remove();
+//         aggregateTotalNum -= 1;
+//     }
+// })
 
 
 // create sorting html code: for each line
@@ -776,8 +776,8 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                             lowerRange = hash.get(d.name).range;
                             upperRange = lowerRange + 500;
                             updateData(lowerRange, 0,upperRange, 15, true);
-                        })
-                        .on("dblclick",function(d){ alert("node was double clicked"); });
+                        });
+                     //   .on("dblclick",function(d){ alert("node was double clicked"); });
 
                     //add a value label to the right of each bar
                     bars.append("text")
