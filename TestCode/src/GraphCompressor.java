@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.sql.*;
 import java.util.*;
 import java.util.List;
+import java.util.Queue;
 
 
 public class GraphCompressor extends Frame {
@@ -48,12 +49,32 @@ public class GraphCompressor extends Frame {
 
         public void printReverseGraph() {
             for (CellRegion dependsOn : reverseMap.keySet()) {
+                if (getCoverageArea(reverseMap.get(dependsOn)) > 20) {
                     System.out.print(dependsOn.getReferenceString());
                     System.out.print("=>");
                     for (CellRegion depends : reverseMap.get(dependsOn))
                         System.out.print(depends.getReferenceString() + " ");
                     System.out.print(getCoverageArea(reverseMap.get(dependsOn)));
                     System.out.println();
+                }
+            }
+        }
+
+        public void printMaxTree() {
+            int maxArea = 0;
+            for (CellRegion dependsOn : reverseMap.keySet()) {
+                System.out.println(dependsOn);
+                Set<CellRegion> expandedRegions = expandNode(dependsOn);
+                int area = expandedRegions.stream().mapToInt(e -> e.getHeight() * e.getLength()).sum();
+                if (area > maxArea) {
+                    maxArea = area;
+                    System.out.print(dependsOn.getReferenceString());
+                    System.out.print("=>");
+                    for (CellRegion depends : expandedRegions)
+                        System.out.print(depends.getReferenceString() + " ");
+                    System.out.print(area);
+                    System.out.println();
+                }
             }
         }
 
@@ -123,7 +144,7 @@ public class GraphCompressor extends Frame {
             return returnSet;
         }
 
-        public void expandNode(CellRegion dependsOn)
+        public Set<CellRegion> expandNode(CellRegion dependsOn)
         {
             Set<CellRegion> expandedRegions = new HashSet<>();
             Queue<CellRegion> queue = new LinkedList<>();
@@ -140,7 +161,7 @@ public class GraphCompressor extends Frame {
                     }
                 }
             }
-            reverseMap.put(dependsOn, expandedRegions);
+            return expandedRegions;
         }
 
     }
@@ -230,22 +251,24 @@ public class GraphCompressor extends Frame {
     }
 
     public static void main(String args[]) throws Exception {
-        GraphCompressor graphCompressor1 = new GraphCompressor();
+        //GraphCompressor graphCompressor1 = new GraphCompressor();
 
 
-        DependencyGraph dependencyGraph = getGraphFile();
-        //DependencyGraph dependencyGraph = getGraphDB();
+        //DependencyGraph dependencyGraph = getGraphFile();
+        DependencyGraph dependencyGraph = getGraphDB();
+        dependencyGraph.printMaxTree();
+        System.out.println("Done");
+
+        //dependencyGraph.printReverseGraph();
+        //dependencyGraph.expandNode(new CellRegion("A1"));
+        //dependencyGraph.printReverseGraph();
 
 
-        dependencyGraph.printReverseGraph();
-        dependencyGraph.expandNode(new CellRegion("A1"));
-        dependencyGraph.printReverseGraph();
+        //graphCompressor1.setGraphToPlot(dependencyGraph.reverseMap.get(new CellRegion("A1")));
 
-        graphCompressor1.setGraphToPlot(dependencyGraph.reverseMap.get(new CellRegion("A1")));
-
-        dependencyGraph.greedyCompressNode(new CellRegion("A1"), 3);
-        System.out.println("Compressed Graph");
-        dependencyGraph.printReverseGraph();
+        //dependencyGraph.greedyCompressNode(new CellRegion("A1"), 3);
+        //System.out.println("Compressed Graph");
+        //dependencyGraph.printReverseGraph();
 
 
         //graphCompressor1.setVisible(true);

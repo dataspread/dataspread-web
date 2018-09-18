@@ -16,7 +16,6 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model;
 
-import org.zkoss.poi.ss.usermodel.Cell;
 import org.zkoss.poi.ss.util.AreaReference;
 import org.zkoss.poi.ss.util.CellReference;
 import org.zkoss.zss.model.sys.dependency.Ref;
@@ -288,8 +287,7 @@ public class CellRegion implements Serializable {
 
 
 	/**
-	 * @return returns the overlapping region between this region and the
-	 * specified region; null if no overlapping.
+     * @return returns a bounding box that contains the current and target regions.
 	 */
 	public CellRegion getBoundingBox(CellRegion target) {
 		final int row1 = Math.min(this.row, target.row);
