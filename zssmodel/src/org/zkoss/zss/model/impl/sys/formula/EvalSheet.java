@@ -108,6 +108,11 @@ public class EvalSheet implements EvaluationSheet {
 			}
 		}
 
+		@Override
+		public Object getCellValue() {
+			return cell.getValue();
+		}
+
 		public boolean getBooleanCellValue() {
 			return cell.getBooleanValue(true);
 		}

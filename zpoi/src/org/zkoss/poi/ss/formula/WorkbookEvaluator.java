@@ -397,6 +397,34 @@ public final class WorkbookEvaluator {
 			}
 			return result;
 		}
+		else
+		{
+			ValueEval result=null;
+			// Formula Cell
+			Object val = srcCell.getCellValue();
+			/* if unevaulated evulate it  */
+
+			if (val instanceof String && val.equals("...")) {
+				Ptg[] ptgs = _workbook.getFormulaTokens(srcCell);
+				OperationEvaluationContext ec = new OperationEvaluationContext(this, _workbook, sheetIndex, rowIndex, columnIndex, tracker, _dependencyTracker, ref);
+				result = evaluateFormula(ec, ptgs, false, false);
+				return result;
+			}
+
+			if (val == null || "".equals(val)) {
+				result = BlankEval.instance;
+			} else if (val instanceof String) {
+				result = new StringEval((String) val);
+			} else if (val instanceof Number) {
+				result = new NumberEval((double) val);
+			} else if (val instanceof Boolean) {
+				result = BoolEval.valueOf((boolean) val);
+			}
+			return result;
+		}
+		// TODO: Breaking the check for CIRCULAR_REF_ERROR
+
+		/*
 
 		FormulaCellCacheEntry cce = _cache.getOrCreateFormulaCellEntry(srcCell);
 		if (shouldCellDependencyBeRecorded || cce.isInputSensitive()) {
@@ -473,6 +501,7 @@ public final class WorkbookEvaluator {
 		// When circular references are detected, the cache entry is only updated for
 		// the top evaluation frame
 		return result;
+		*/
 	}
 
 	/**
@@ -959,6 +988,11 @@ public final class WorkbookEvaluator {
 			}
 
 			@Override
+			public Object getCellValue() {
+				return null;
+			}
+
+			@Override
 			public boolean getBooleanCellValue() {
 				// TODO Auto-generated method stub
 				return false;
@@ -1065,6 +1099,11 @@ public final class WorkbookEvaluator {
 			@Override
 			public String getStringCellValue() {
 				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public Object getCellValue() {
 				return null;
 			}
 

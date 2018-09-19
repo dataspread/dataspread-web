@@ -39,6 +39,7 @@ public interface EvaluationCell {
 
 	double getNumericCellValue();
 	String getStringCellValue();
+	Object getCellValue();
 	boolean getBooleanCellValue();
 	int getErrorCellValue();
 

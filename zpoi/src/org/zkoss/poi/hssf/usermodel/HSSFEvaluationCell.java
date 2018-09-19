@@ -69,6 +69,12 @@ final class HSSFEvaluationCell implements EvaluationCell {
 	public String getStringCellValue() {
 		return _cell.getRichStringCellValue().getString();
 	}
+
+	@Override
+	public Object getCellValue() {
+		return null;
+	}
+
 	public int getCachedFormulaResultType() {
 		return _cell.getCachedFormulaResultType();
 	}

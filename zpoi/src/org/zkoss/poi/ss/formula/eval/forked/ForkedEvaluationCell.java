@@ -119,6 +119,12 @@ final class ForkedEvaluationCell implements EvaluationCell {
 		checkCellType(Cell.CELL_TYPE_STRING);
 		return _stringValue;
 	}
+
+	@Override
+	public Object getCellValue() {
+		return _masterCell.getCellValue();
+	}
+
 	public EvaluationSheet getSheet() {
 		return _sheet;
 	}
