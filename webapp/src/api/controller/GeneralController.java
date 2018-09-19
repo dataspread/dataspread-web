@@ -268,6 +268,9 @@ public class GeneralController implements FormulaAsyncListener {
         Map<String, Object> ret = new HashMap<>();
         List<List<Object>> data = new ArrayList<>();
         for (Ref ref : refSet) {
+            // TODO: These can be ranges, need to explode into cells.
+            // TODO: Only push cells if the FE has them cached.
+
             List<Object> cellArr = new ArrayList<>(4);
             cellArr.add(ref.getRow());
             cellArr.add(ref.getColumn());
