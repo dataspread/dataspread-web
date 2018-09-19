@@ -21,7 +21,10 @@ import org.zkoss.poi.hssf.util.CellReference;
 import org.zkoss.poi.ss.formula.CollaboratingWorkbooksEnvironment.WorkbookNotFoundException;
 import org.zkoss.poi.ss.formula.atp.AnalysisToolPak;
 import org.zkoss.poi.ss.formula.eval.*;
-import org.zkoss.poi.ss.formula.functions.*;
+import org.zkoss.poi.ss.formula.functions.Choose;
+import org.zkoss.poi.ss.formula.functions.FreeRefFunction;
+import org.zkoss.poi.ss.formula.functions.Function;
+import org.zkoss.poi.ss.formula.functions.IfFunc;
 import org.zkoss.poi.ss.formula.ptg.*;
 import org.zkoss.poi.ss.formula.udf.AggregatingUDFFinder;
 import org.zkoss.poi.ss.formula.udf.UDFFinder;
@@ -402,9 +405,10 @@ public final class WorkbookEvaluator {
 			ValueEval result=null;
 			// Formula Cell
 			Object val = srcCell.getCellValue();
-			/* if unevaulated evulate it  */
+            /* if unevaluated   */
 
 			if (val instanceof String && val.equals("...")) {
+                System.out.println("Evaluating " + srcCell);
 				Ptg[] ptgs = _workbook.getFormulaTokens(srcCell);
 				OperationEvaluationContext ec = new OperationEvaluationContext(this, _workbook, sheetIndex, rowIndex, columnIndex, tracker, _dependencyTracker, ref);
 				result = evaluateFormula(ec, ptgs, false, false);

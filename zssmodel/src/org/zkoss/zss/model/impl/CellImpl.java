@@ -301,6 +301,9 @@ public class CellImpl extends AbstractCellAdv {
 
 		//if (sync)
 		//	logger.info("Sync eval - " + this.getReferenceString());
+		if (!sync && _formulaResultValue == DirtyManager.getDirtyValue())
+			return;
+
 
         if (trxId == _sheet.getTrxId() && _formulaResultValue != null
                 && _formulaResultValue != DirtyManager.getDirtyValue()) {
@@ -325,6 +328,7 @@ public class CellImpl extends AbstractCellAdv {
                 fe.clearCache(new FormulaClearContext(_sheet));
                 EvaluationResult result = fe.evaluate(expr, evalContext);
                 updateFormulaResultValue(result);
+				trxId = _sheet.getTrxId();
             }
 		}
 		else
