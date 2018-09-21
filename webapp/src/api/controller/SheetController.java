@@ -2,6 +2,7 @@ package api.controller;
 
 import api.Authorization;
 import api.JsonWrapper;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -9,9 +10,9 @@ import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.sys.BookBindings;
 
-import java.util.*;
-
-import org.json.JSONObject;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import static api.WebSocketConfig.MESSAGE_PREFIX;
 
@@ -147,7 +148,6 @@ public class SheetController {
         SSheet sheet = book.getSheetByName(sheetName);
         book.deleteSheet(sheet);
         book.createSheet(sheetName);
-        template.convertAndSend(GeneralController.getCallbackPath(bookId, sheetName), "");
         return sheetWrapper(book);
     }
 
