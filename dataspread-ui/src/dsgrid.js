@@ -257,7 +257,6 @@ export default class DSGrid extends Component {
     _handleEvent(event) {
         const target = event.target;
         const name = target.name;
-        // this.bookName = 'ljlhhd1oc';
         if (name === "bookName") {
             this.bookName = target.value;
             console.log(this.bookName);
