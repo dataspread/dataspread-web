@@ -90,6 +90,7 @@
                                     <a class="dropdown-item" href="#" id='Hierarchical'>Hierarchical Column</a>
                                     <a class="dropdown-item" href="#" id='Sort' style="display:none" data-toggle="modal"
                                        data-target="#exampleModal">Sort</a>
+                                    <a class="dropdown-item" href="#" id='Bucket' style="display:none">Customize Bucket</a>
                                 </div>
                             </li>
                         </ul>
@@ -346,9 +347,24 @@
                         </fieldset>
 
                         <div class="m-3">
-                            <!--<button type="button" class="btn btn-secondary " id="aggreAdd">Add</button>-->
-                            <!--<button type="button" class="btn btn-secondary" id="aggreRemove">Remove</button>-->
                             <button type="submit" class="btn btn-primary">Done</button>
+                        </div>
+                    </form>
+                </div>
+                <div id='bucket-col' style="display:none">
+                    <form id="bucket-form">
+                        <span class="formClose">x</span>
+                        <legend class="form-label m-1" style="font-size:1rem">Redefine Bucket Boundaries</legend>
+                        <fieldset class="form-group m-3" >
+                            <input class="form-check-input ml-2" type="checkbox" value="" id="bucketAll">
+                            <label class="form-check-label ml-5" for="bucketAll">
+                                Merge All Bucket
+                            </label>
+                        </fieldset>
+                        <fieldset class="form-group m-3" id="bucketOpt">
+                        </fieldset>
+                        <div class="form-group m-5">
+                            <button type="submit" class="btn btn-outline-primary">Done</button>
                         </div>
                     </form>
                 </div>

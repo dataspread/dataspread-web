@@ -89,6 +89,16 @@
     width: 42%;
 }
 
+.custom-bucket{
+    width: 33%;
+    border: 1px solid #9dbbdd;
+    margin: 6px;
+}
+#bucketlower0{
+    margin-left: 10%;
+
+}
+
 .wrap {
     word-wrap: normal;
 }
@@ -112,6 +122,23 @@
     width:8%;
     padding-left: 5px;
 }
+
+.bucket-add{
+    cursor: pointer;
+    width:8%;
+    padding-left: 2px;
+}
+
+.bucket-rm{
+    cursor: pointer;
+    padding-left: 5px;
+}
+
+.bucket-multiAdd{
+    cursor: pointer;
+}
+
+
 
 .zoomInPlus{
     cursor: pointer;

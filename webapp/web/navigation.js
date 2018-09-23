@@ -145,6 +145,7 @@ $("#Explore").click(function () {
         });
     }
     $("#hierarchical-col").css("display", "none");
+    $("#bucket-col").css("display","none");
     $("#test-hot").css({"float": "left"});
     $("#exploration-bar").css({
         "display": "inline",
@@ -271,60 +272,6 @@ function createAggreString(specificId) {
     return tempString;
 }
 
-// for adding more aggregate attribute
-// $("#aggreAdd").click(function () {
-//     var $aggregateCol = $("#aggregateCol");
-//     $aggregateCol.append(createAggreString());
-//     $("#aggregateOpt" + (aggregateTotalNum - 1)).change(function (e) {
-//         let number = e.target.id.charAt(e.target.id.length - 1)
-//
-//         // Do something with the previous value after the change
-//         console.log(e);
-//         console.log(e.target.id.slice(-1));
-//         $("#add" + e.target.id.slice(-1)).nextAll().remove();
-//         switch (this.value) {
-//             case "COUNTIF":
-//             case "SUMIF":
-//                 $(this).parent().append(
-//                     "<span>Predicate:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
-//                     number + "'>");
-//                 break;
-//             case "LARGE":
-//             case "SMALL":
-//                 $(this).parent().append(
-//                     "<span>&nbsp Int:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
-//                     number + "'>");
-//                 break;
-//             case "SUBTOTAL":
-//                 let tempString = "<select class='' id='aggrePara" + number +
-//                     "'><option value='' disabled selected hidden>Function_num</option>";
-//                 for (let i = 0; i < subtotalFunc.length; i++) {
-//                     tempString +=
-//                         "<option value='" + (i + 1) + "''>" + subtotalFunc[i] + "</option>";
-//                 }
-//                 tempString += "</select>";
-//                 $(this).parent().append(tempString);
-//                 break;
-//             case "RANK":
-//                 let tempString1 = "<span>Value:&nbsp</span><input class='' type='text' name='' id='aggrePara" +
-//                     number + "'>";
-//                 tempString1 +=
-//                     "<select class='' id='aggrePara" + number + number +
-//                     "'><option value='0' selected >ascending</option><option value='1'>descending</option></select>"
-//                 $(this).parent().append(tempString1);
-//                 break;
-//         }
-//     });
-//
-// })
-//
-// $("#aggreRemove").click(function () {
-//     if (aggregateTotalNum > 1) {
-//         $("#aggregateCol").children().last().remove();
-//         aggregateTotalNum -= 1;
-//     }
-// })
-
 
 // create sorting html code: for each line
 function createSortString() {
@@ -385,6 +332,116 @@ $(".formClose").click(function (e) {
     }
 })
 
+var dataBucket = [[0,50],[51,100],[101,150],[151,200],[201,300],[301,600],[601,1500]];
+// Customize Bucket start
+$("#Bucket").click(function () {
+    $("#exploration-bar").css("display", "none");
+    $("#hierarchical-col").css("display", "none");
+    hot.updateSettings({width: wrapperWidth * 0.59});
+    $("#bucket-col").css({
+        "float": "left",
+        "width": wrapperWidth * 0.2,
+        "height": wrapperHeight * 0.95,
+        "display": "inline"
+    });
+    var $buckets = $("#bucketOpt");
+    $buckets.empty();
+    console.log(dataBucket)
+    let tempString = "<div id='bucket" + 0 + "'>"
+        + "<input type='text' class='custom-bucket ' id='bucketlower"+ 0 +"' value =" + dataBucket[0][0] +" input>"
+        + "<input type='text' class='custom-bucket ' id='bucketupper"+ 0 +"' value =" + dataBucket[0][1] +" input>"
+        + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+        +  "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd\" + i + \"' aria-hidden=\"true\"></i></div>";
+    for(let i = 1; i < dataBucket.length; i ++) {
+        tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+              + "<input type='text' class='custom-bucket ' id='bucketlower"+ i +"' value =" + dataBucket[i][0] +" input>"
+              + "<input type='text' class='custom-bucket ' id='bucketupper"+ i +"' value =" + dataBucket[i][1] +" input>"
+              + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
+              +  "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd\" + i + \"' aria-hidden=\"true\"></i></div>";
+    }
+    $buckets.append(tempString);
+
+});
+
+$(document).on("click", ".bucket-add", function (e) {
+    $("#bucketAll").prop("checked",false);
+    let line = Number(e.target.id.substring(9));
+    let newupp = dataBucket[line][1];
+    if((newupp - dataBucket[line][0])/2 < 1){
+        alert("You cannot split further");
+        return;
+    }
+    dataBucket[line][1] = Math.ceil((newupp - dataBucket[line][0])/2 + dataBucket[line][0]);
+    let newBucket = [dataBucket[line][1]+1, newupp];
+    dataBucket.splice(line+1, 0, newBucket);
+
+    var $buckets = $("#bucketOpt");
+    $buckets.empty();
+    console.log(dataBucket)
+    let tempString = "<div id='bucket" + 0 + "'>"
+        + "<input type='text' class='custom-bucket ' id='bucketlower"+ 0 +"' value =" + dataBucket[0][0] +" input>"
+        + "<input type='text' class='custom-bucket ' id='bucketupper"+ 0 +"' value =" + dataBucket[0][1] +" input>"
+        + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+        +  "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd\" + i + \"' aria-hidden=\"true\"></i></div>";
+    for(let i = 1; i < dataBucket.length; i ++) {
+        tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+            + "<input type='text' class='custom-bucket ' id='bucketlower"+ i +"' value =" + dataBucket[i][0] +" input>"
+            + "<input type='text' class='custom-bucket ' id='bucketupper"+ i +"' value =" + dataBucket[i][1] +" input>"
+            + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
+            +  "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd\" + i + \"' aria-hidden=\"true\"></i></div>";
+    }
+    $buckets.append(tempString);
+
+});
+
+$(document).on("click", ".bucket-rm", function (e) {
+    let line = Number(e.target.id.substring(8));
+    let newupp = dataBucket[line][1];
+    dataBucket[line-1][1] = newupp;
+    dataBucket.splice(line, 1, );
+
+    var $buckets = $("#bucketOpt");
+    $buckets.empty();
+    console.log(dataBucket)
+    let tempString = "<div id='bucket" + 0 + "'>"
+        + "<input type='text' class='custom-bucket ' id='bucketlower"+ 0 +"' value =" + dataBucket[0][0] +" input>"
+        + "<input type='text' class='custom-bucket ' id='bucketupper"+ 0 +"' value =" + dataBucket[0][1] +" input>"
+        + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+        +  "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd\" + i + \"' aria-hidden=\"true\"></i></div>";
+    for(let i = 1; i < dataBucket.length; i ++) {
+        tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+            + "<input type='text' class='custom-bucket ' id='bucketlower"+ i +"' value =" + dataBucket[i][0] +" input>"
+            + "<input type='text' class='custom-bucket ' id='bucketupper"+ i +"' value =" + dataBucket[i][1] +" input>"
+            + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
+            +  "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd\" + i + \"' aria-hidden=\"true\"></i></div>";
+    }
+    $buckets.append(tempString);
+
+});
+
+$(document).on("click", ".bucket-multiAdd", function (e) {
+    console.log(e)
+    console.log("multiadd")
+
+});
+
+$("#bucketAll").click(function(e){
+   if($(this).prop("checked")){
+       var $buckets = $("#bucketOpt");
+       $buckets.empty();
+       let lower = dataBucket[0][0];
+       let upper = dataBucket[dataBucket.length-1][1]
+       dataBucket = [[lower,upper]];
+       let tempString = "";
+       tempString += "<div id='bucket" + 0 + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + 0 + "' aria-hidden=\"true\"></i>"
+               + "<input type='text' class='custom-bucket ' id='bucketlower"+ 0 +"' value =" + dataBucket[0][0] +" input>"
+               + "<input type='text' class='custom-bucket ' id='bucketupper"+ 0 +"' value =" + dataBucket[0][1] +" input>"
+               + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+               +  "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+       $buckets.append(tempString);
+   }
+});
+
 // navigation start, showing left column.
 function Explore(e) {
     $("#navPath")
@@ -392,6 +449,7 @@ function Explore(e) {
     $("#Hierarchical").click(function () { // handling hierarchical column click in
         // the Exploration Tools
         $("#exploration-bar").css("display", "none");
+        $("#bucket-col").css("display","none");
         hot.updateSettings({width: wrapperWidth * 0.59});
         $("#hierarchical-col").css({
             "float": "left",
@@ -407,6 +465,11 @@ function Explore(e) {
             $("#Sort").css({"display": "block"})
         } else {
             $("#Sort").css({"display": "none"})
+        }
+        if(exploreOpen){
+            $("#Bucket").css({"display": "block"})
+        }else{
+            $("#Bucket").css({"display": "none"})
         }
     })
 
