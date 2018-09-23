@@ -34,6 +34,7 @@
         <module>zpoi</module>
         <module>zss</module>
         <module>webapp</module>
+        <module>testcode</module>
     </modules>
     <build>
         <plugins>

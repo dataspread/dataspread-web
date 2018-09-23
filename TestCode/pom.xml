@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.github.dataspread</groupId>
+    <artifactId>testcode</artifactId>
+    <version>0.1.1</version>
+    <properties>
+        <zss.version>3.8.1</zss.version>
+        <blockstore.version>1.0.0</blockstore.version>
+        <dataspread-ui.version>1.0.0</dataspread-ui.version>
+        <rtree.version>1.0.0</rtree.version>
+        <commons-math.version>2.2</commons-math.version>
+    </properties>
+
+    <packaging>jar</packaging>
+    <name>testcode</name>
+    <description>Stand Alone Test Code</description>
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>tomcat-dbcp</artifactId>
+            <version>8.0.33</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>tomcat-jdbc</artifactId>
+            <version>8.5.11</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.dataspread</groupId>
+            <artifactId>rtree</artifactId>
+            <version>${rtree.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.dataspread</groupId>
+            <artifactId>blockstore</artifactId>
+            <version>${blockstore.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.dataspread</groupId>
+            <artifactId>zss</artifactId>
+            <version>${zss.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.dataspread</groupId>
+            <artifactId>zssmodel</artifactId>
+            <version>${zss.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20180130</version>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.2.1</version>
+            <scope>compile</scope>
+        </dependency>
+
+    </dependencies>
+    <build>
+        <finalName>DataSpread Test Code</finalName>
+        <sourceDirectory>${project.basedir}/src</sourceDirectory>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.2</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
