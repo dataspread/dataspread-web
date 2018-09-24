@@ -425,7 +425,7 @@ $(document).on("click", ".bucket-multiAdd", function (e) {
     let line = Number(e.target.id.substring(12));
 
     $(this).nextAll().remove();
-    let tempString = "<br><span style=\"margin-left:3em;\">No. of Buckets&nbsp</span><input class='multibuck' type='text' name='' id='multibuck" + line+"' >";
+    let tempString = "<br><span style=\"margin-left:2em;\">No. of Buckets&nbsp</span><input class='multibuck' type='text' name='' id='multibuck" + line+"' >";
     tempString += "<i class=\"fa fa-check fa-1x bucket-multiAddSub\" style=\"color: #33fa24;\" id='multibuckSub" + line + "' aria-hidden=\"true\"></i></div>"
                + "<i class=\"fa fa-times fa-1x bucket-multiAddCan\" style=\"color: #fa1426;\" id='multibuckCancel" + line + "' aria-hidden=\"true\"></i></div>";
     $(this).parent().append(tempString);
@@ -522,6 +522,16 @@ $("#bucketAll").click(function(e){
        $buckets.append(tempString);
    }
 });
+
+$("#bucket-form").submit(function (e) {
+    alert("backend processing");
+    e.preventDefault();
+    $("#bucket-col").css("display", "none");
+    hot.updateSettings({width: wrapperWidth * 0.8});
+
+});
+
+
 
 // navigation start, showing left column.
 function Explore(e) {
