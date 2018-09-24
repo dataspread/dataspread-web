@@ -2,15 +2,11 @@ package org.zkoss.zss.app.repository.impl;
 
 import org.model.DBHandler;
 import org.zkoss.util.logging.Log;
-import org.zkoss.zk.ui.WebApps;
-import org.zkoss.zss.app.BookManager;
-import org.zkoss.zss.app.impl.BookManagerImpl;
-import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerSimple;
+import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerThreaded;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-import java.io.IOException;
 import java.io.Serializable;
 
 public class ServletContextListenerImpl implements ServletContextListener, Serializable {
@@ -29,7 +25,7 @@ public class ServletContextListenerImpl implements ServletContextListener, Seria
 		}
 		DBHandler.instance.initApplication();
 
-		FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerSimple();
+        FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerThreaded();
 		Thread thread = new Thread(formulaAsyncScheduler);
 		thread.start();
 	}
