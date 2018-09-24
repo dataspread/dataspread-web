@@ -40,9 +40,9 @@ public class GeneralController implements FormulaAsyncListener {
 
     @Scheduled(fixedDelay = 250)
     public void updateFormulaProgress() {
-        FormulaComputationStatusManager.FormulaComputationStatus status
+        Collection<FormulaComputationStatusManager.FormulaComputationStatus> statusSet
                 = FormulaComputationStatusManager.getInstance().getCurrentStatus();
-        if (status.cell != null) {
+        for (FormulaComputationStatusManager.FormulaComputationStatus status : statusSet) {
             Set<UISessionManager.UISession> uiSessionSet =
                     UISessionManager.getInstance().getSessionBySheet(((SCell) status.cell).getSheet());
 

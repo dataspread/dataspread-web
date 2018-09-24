@@ -14,13 +14,11 @@ import java.util.Collection;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 /**
  * Execute formulae in a single thread.
  */
 public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
-    private static final Logger logger = Logger.getLogger(FormulaAsyncSchedulerThreaded.class.getName());
     private boolean keepRunning = true;
     private boolean emptyQueue = false;
     ThreadPoolExecutor executorPool;

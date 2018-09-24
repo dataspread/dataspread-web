@@ -1,11 +1,18 @@
 package org.zkoss.poi.ss.formula;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+
 public class FormulaComputationStatusManager {
     // Currently only supports single thread.
-    // Need to update for multiple threads.
     // Handle a single formula at a time.
     static FormulaComputationStatusManager _instance = new FormulaComputationStatusManager();
-    static FormulaComputationStatus formulaComputationStatus = new FormulaComputationStatus();
+
+    Map<Long, FormulaComputationStatus> formulaComputationStatusHashMap;
+
+
 
     public static class FormulaComputationStatus {
         public Object cell;
@@ -17,7 +24,7 @@ public class FormulaComputationStatusManager {
 
 
     private FormulaComputationStatusManager() {
-
+        formulaComputationStatusHashMap = new HashMap<>();
     }
 
     public static FormulaComputationStatusManager getInstance() {
@@ -25,32 +32,28 @@ public class FormulaComputationStatusManager {
     }
 
     public synchronized void updateFormulaCell(int row, int column, Object cell) {
+        FormulaComputationStatus formulaComputationStatus = new FormulaComputationStatus();
         formulaComputationStatus.row = row;
         formulaComputationStatus.column = column;
         formulaComputationStatus.cell = cell;
         formulaComputationStatus.totalCells = 1;
         formulaComputationStatus.currentCells = 0;
+        formulaComputationStatusHashMap.put(Thread.currentThread().getId(), formulaComputationStatus);
     }
 
     public synchronized void startComputation(int totalCells) {
-        formulaComputationStatus.totalCells = totalCells;
+        formulaComputationStatusHashMap.get(Thread.currentThread().getId()).totalCells = totalCells;
     }
 
     public synchronized void updateProgress(int currentCells) {
-        formulaComputationStatus.currentCells = currentCells;
+        formulaComputationStatusHashMap.get(Thread.currentThread().getId()).currentCells = currentCells;
     }
 
-    public synchronized FormulaComputationStatus getCurrentStatus() {
-        FormulaComputationStatus ret = new FormulaComputationStatus();
-        ret.cell = formulaComputationStatus.cell;
-        ret.row = formulaComputationStatus.row;
-        ret.column = formulaComputationStatus.column;
-        ret.totalCells = formulaComputationStatus.totalCells;
-        ret.currentCells = formulaComputationStatus.currentCells;
-        return ret;
+    public synchronized Collection<FormulaComputationStatus> getCurrentStatus() {
+        return new HashSet<>(formulaComputationStatusHashMap.values());
     }
 
     public synchronized void doneComputation() {
-        formulaComputationStatus.cell = null;
+        formulaComputationStatusHashMap.remove(Thread.currentThread().getId());
     }
 }
