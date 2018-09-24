@@ -95,12 +95,28 @@
     margin: 6px;
 }
 #bucketlower0{
-    margin-left: 10%;
+    margin-left: 9%;
+}
 
+.multibuck{
+    width: 20%;
+    border: 1px solid #9dbbdd;
 }
 
 .wrap {
     word-wrap: normal;
+}
+
+.bucket-multiAddSub{
+    cursor: pointer;
+    width:8%;
+    padding-left: 10px;
+}
+
+.bucket-multiAddCan{
+    cursor: pointer;
+    width:8%;
+    padding-left: 10px;
 }
 
 .formClose {
@@ -131,6 +147,7 @@
 
 .bucket-rm{
     cursor: pointer;
+    width:9%;
     padding-left: 5px;
 }
 
