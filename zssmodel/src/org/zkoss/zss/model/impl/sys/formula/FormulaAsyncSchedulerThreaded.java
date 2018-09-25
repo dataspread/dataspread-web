@@ -102,7 +102,7 @@ public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
     @Override
     public void run() {
         System.out.println("Starting FormulaAsyncSchedulerThreaded");
-        executorPool = new ThreadPoolExecutor(2, MaximumWorkers, 10, TimeUnit.SECONDS,
+        executorPool = new ThreadPoolExecutor(4, MaximumWorkers, 10, TimeUnit.SECONDS,
                 new ArrayBlockingQueue<>(MaximumWorkers));
         monitor = new MyMonitorThread(executorPool, 3);
         Thread monitorThread = new Thread(monitor);
