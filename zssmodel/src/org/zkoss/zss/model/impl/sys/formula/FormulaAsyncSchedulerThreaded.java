@@ -11,6 +11,8 @@ import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
 import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -24,6 +26,7 @@ public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
     ThreadPoolExecutor executorPool;
     MyMonitorThread monitor;
     final int MaximumWorkers = 4;
+    Map<SSheet, Set<CellRegion>> uiVisibleMap;
 
 
     public class WorkerThread implements Runnable {
@@ -36,10 +39,15 @@ public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
         @Override
         public void run() {
             System.out.println(Thread.currentThread().getName() + " Start. Cell = " + sCell);
+            int priority = 10;
+            // if visible increase priority.
+
+
             FormulaComputationStatusManager.getInstance().updateFormulaCell(
                     sCell.getRowIndex(),
                     sCell.getColumnIndex(),
-                    sCell);
+                    sCell,
+                    priority);
             if (sCell.getType() == SCell.CellType.FORMULA) {
                 // A sync call should synchronously compute the cells value.
                 // Push individual cells to the UI
@@ -154,6 +162,4 @@ public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
     public void shutdown() {
         keepRunning = false;
     }
-
-
 }

@@ -150,7 +150,7 @@ public abstract class MultiOperandNumericFunction implements Function {
             FormulaComputationStatusManager.getInstance().startComputation(width * height);
 			for (int rrIx=0; rrIx<height; rrIx++) {
 				for (int rcIx=0; rcIx<width; rcIx++) {
-                    if (rrIx % 1000 == 0)
+                    if (rrIx % 1000 == 999)
                         FormulaComputationStatusManager.getInstance().updateProgress((rrIx + 1) * (rcIx + 1));
 					ValueEval ve = ae.getValue(rrIx, rcIx);
                     if(!isSubtotalCounted() && ae.isSubTotal(rrIx, rcIx)) continue;
