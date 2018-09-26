@@ -30,6 +30,7 @@ public class NavigationStructure {
      * Temporarily store the computed bucket for user call. To be serialized by calling {@link #getSerializedBuckets}.
      */
     private ReturnBuffer returnBuffer;
+    public int isNumericNavAttr;
 
     class ReturnBuffer {
         ArrayList<Bucket> buckets;
@@ -57,6 +58,7 @@ public class NavigationStructure {
      * Must be set externally for the bucket generator to work.
      */
     private ArrayList<Object> recordList;
+    public LinkedHashMap<String,Integer> uniqueValues;
     private int kHist;
     private String tableName;
     private Kryo kryo;
@@ -114,6 +116,7 @@ public class NavigationStructure {
         setCurrentSheet(currentSheet);
         setTotalRows(currentSheet.getEndRowIndex() + 1);
         ArrayList<Object> recordList = new ArrayList<>();
+        this.uniqueValues = new LinkedHashMap<String,Integer>();
         ((RCV_Model) model).navigationSortRangeByAttribute(currentSheet, 1, currentSheet.getEndRowIndex(), new int[]{columnIndex}, 0, recordList);
         setRecordList(recordList);
         initIndexedBucket(currentSheet.getEndRowIndex() + 1);
@@ -481,6 +484,8 @@ public class NavigationStructure {
                 bucket.size = bucket.endPos - bucket.startPos + 1;
                 startIndex += bucket.size;
                 bucket.setName(false);
+
+
                 bucket.setId();
                 bucketList.add(bucket);
             }
@@ -498,6 +503,24 @@ public class NavigationStructure {
             bucketList.add(bucket);
         }
         return bucketList;
+    }
+
+    private LinkedHashSet generateBucketKeys(Bucket bucket) {
+        LinkedHashSet<String> lhs = new LinkedHashSet<String>();;
+
+        int keyIndex = bucket.startPos;
+        int keyCount = uniqueValues.get(recordList.get(keyIndex));
+        lhs.add((String) recordList.get(keyIndex));
+        keyIndex +=keyCount;
+
+        while(keyIndex <= bucket.endPos)
+        {
+            keyCount = uniqueValues.get(recordList.get(keyIndex));
+            lhs.add((String) recordList.get(keyIndex));
+            keyIndex +=keyCount;
+
+        }
+        return lhs;
     }
 
     /**
@@ -599,6 +622,59 @@ public class NavigationStructure {
             aggMemMap.put(formula, obj.get("value"));
         }
         return obj;
+    }
+
+    /**
+     * Return the leaves of  each bucket in the current path
+     *
+     * @param paths
+     * @return
+     */
+    public Object getBucketsWithLeaves(int[] paths) {
+        Bucket<String> subroot = getSubRootBucket(paths);
+        List<Bucket> subgroups = subroot == null ? navBucketTree : subroot.getChildren();
+
+        HashMap<String, Object> ret = new HashMap<>();
+
+        ret.put("isNumeric",this.isNumericNavAttr);
+
+        ArrayList<ArrayList<Object>> bucket_leaves_ls =  new ArrayList<ArrayList<Object>>();
+
+        for(int i=0;i<subgroups.size();i++)
+        {
+            if(this.isNumericNavAttr==1)
+            {
+                ArrayList<Object> ls = new ArrayList<Object>();
+                ls.add(subgroups.get(i).minValue);
+                ls.add(subgroups.get(i).maxValue);
+                bucket_leaves_ls.add(ls);
+            }
+            else
+            {
+                ArrayList<Object> ls = new ArrayList<Object>();
+
+                //generate the leaves of a bucket
+                if(subgroups.get(i).getLeaves()==null)
+                    subgroups.get(i).setLeaves(generateBucketKeys(subgroups.get(i)));
+
+                //if list of leaves is still null, that means the bucket itself is a leave
+                if(subgroups.get(i).getLeaves()==null)
+                {
+                    ls.add(subgroups.get(i).minValue);
+                }
+                else
+                {
+                    for(Object o:subgroups.get(i).getLeaves())
+                    {
+                        ls.add(o);
+                    }
+                }
+                bucket_leaves_ls.add(ls);
+
+            }
+        }
+        ret.put("bucketArray",bucket_leaves_ls);
+        return ret;
     }
 
     /**

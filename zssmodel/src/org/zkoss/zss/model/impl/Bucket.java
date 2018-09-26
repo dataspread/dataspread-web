@@ -9,6 +9,7 @@ import java.util.*;
 public class Bucket<T> implements Serializable {
     T minValue;
     T maxValue;
+    LinkedHashSet<T> leaves;
     int startPos;
     int endPos;
     int size;
@@ -54,6 +55,14 @@ public class Bucket<T> implements Serializable {
         return size;
     }
 
+    public LinkedHashSet<T> getLeaves() {
+        return leaves;
+    }
+
+    public void setLeaves(LinkedHashSet<T> leaves)
+    {
+        this.leaves = leaves;
+    }
     public void setName(boolean isUniform) {
         if (isUniform)
             name = (this.startPos + 2) + "_" + (this.endPos + 2);

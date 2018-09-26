@@ -240,6 +240,16 @@ public class RCV_Model extends Model {
                  * Populate the attribute.
                  */
                 for (int i = 0; i < result.size(); i++) {
+
+                    //set the type of the navigation attribute to be used lalter for Redefining bucket boundaries
+                    if(i==0)
+                    {
+                        if(result.get(i).getValue() instanceof String)
+                            this.navS.isNumericNavAttr = 0;
+                        else
+                            this.navS.isNumericNavAttr = 1;
+                    }
+
                     combinedEntries.get(i).appendEntry(result.get(i).getValue());
                 }
             }
@@ -264,9 +274,24 @@ public class RCV_Model extends Model {
                 /*
                  * If the given recordList is empty, populate it with the sorted range result. If the given recordList is not empty (presumably the current recordList in the navigation structure), Replace only the range (startRow, endRow) with the sorted result.
                  */
-                if (recordListInNavS.isEmpty()) {
+                if (recordListInNavS.isEmpty() && this.navS.isNumericNavAttr==1) {
                     combinedEntries.forEach(combinedEntry -> recordListInNavS.add(combinedEntry.getValues()[0]));
-                } else {
+                }
+                else if (recordListInNavS.isEmpty() && this.navS.isNumericNavAttr==0) { // get the leaves for Text data
+                    for(int ci = 0; ci < combinedEntries.size(); ci++)
+                    {
+                        recordListInNavS.add(combinedEntries.get(ci).getValues()[0]);
+                        if(this.navS.uniqueValues.containsKey(combinedEntries.get(ci).getValues()[0])) {
+                            int elemCount = this.navS.uniqueValues.get((String) combinedEntries.get(ci).getValues()[0])+1;
+                            this.navS.uniqueValues.put((String) combinedEntries.get(ci).getValues()[0], elemCount);
+                        }
+                        else
+                        {
+                            this.navS.uniqueValues.put((String) combinedEntries.get(ci).getValues()[0], 1);
+                        }
+                    }
+                }
+                else {
                     List<Object> firstAttrListSubList = recordListInNavS.subList(startRow, endRow + 1);
                     for (int i = 0; i < firstAttrListSubList.size(); i++) {
                         firstAttrListSubList.set(i, combinedEntries.get(i).getValues()[0]);
