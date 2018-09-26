@@ -20,7 +20,13 @@
 		<value>30</value>
 	</library-property>
 
-	<library-property>
+
+    <library-property>
+        <name>ds.model.CacheSize</name>
+        <value>500000</value>
+    </library-property>
+
+    <library-property>
 		<name>ds.model.syncComputation</name>
         <value>false</value>
 	</library-property>
