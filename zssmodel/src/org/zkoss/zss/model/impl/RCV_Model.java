@@ -274,21 +274,22 @@ public class RCV_Model extends Model {
                 /*
                  * If the given recordList is empty, populate it with the sorted range result. If the given recordList is not empty (presumably the current recordList in the navigation structure), Replace only the range (startRow, endRow) with the sorted result.
                  */
-                if (recordListInNavS.isEmpty() && this.navS.isNumericNavAttr==1) {
-                    combinedEntries.forEach(combinedEntry -> recordListInNavS.add(combinedEntry.getValues()[0]));
-                }
-                else if (recordListInNavS.isEmpty() && this.navS.isNumericNavAttr==0) { // get the leaves for Text data
+                if (recordListInNavS.isEmpty()) { // get the leaves for Text data
                     for(int ci = 0; ci < combinedEntries.size(); ci++)
                     {
                         recordListInNavS.add(combinedEntries.get(ci).getValues()[0]);
-                        if(this.navS.uniqueValues.containsKey(combinedEntries.get(ci).getValues()[0])) {
-                            int elemCount = this.navS.uniqueValues.get((String) combinedEntries.get(ci).getValues()[0])+1;
-                            this.navS.uniqueValues.put((String) combinedEntries.get(ci).getValues()[0], elemCount);
+                        if(this.navS.uniqueValuesCount.containsKey(combinedEntries.get(ci).getValues()[0])) {
+                            int elemCount = this.navS.uniqueValuesCount.get((String) combinedEntries.get(ci).getValues()[0])+1;
+                            this.navS.uniqueValuesCount.put((String) combinedEntries.get(ci).getValues()[0], elemCount);
                         }
                         else
                         {
-                            this.navS.uniqueValues.put((String) combinedEntries.get(ci).getValues()[0], 1);
+                            this.navS.uniqueValuesCount.put((String) combinedEntries.get(ci).getValues()[0], 1);
                         }
+                        if(!this.navS.uniqueValuesStart.containsKey(combinedEntries.get(ci).getValues()[0])) {
+                            this.navS.uniqueValuesStart.put((String) combinedEntries.get(ci).getValues()[0], ci+1);
+                        }
+
                     }
                 }
                 else {

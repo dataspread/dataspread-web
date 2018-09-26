@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
-import org.zkoss.poi.hslf.model.Sheet;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
@@ -31,6 +30,8 @@ public class NavigationStructure {
      */
     private ReturnBuffer returnBuffer;
     public int isNumericNavAttr;
+
+
 
     class ReturnBuffer {
         ArrayList<Bucket> buckets;
@@ -58,7 +59,8 @@ public class NavigationStructure {
      * Must be set externally for the bucket generator to work.
      */
     private ArrayList<Object> recordList;
-    public LinkedHashMap<String,Integer> uniqueValues;
+    public LinkedHashMap<String,Integer> uniqueValuesCount;
+    public LinkedHashMap<String,Integer> uniqueValuesStart;
     private int kHist;
     private String tableName;
     private Kryo kryo;
@@ -116,7 +118,8 @@ public class NavigationStructure {
         setCurrentSheet(currentSheet);
         setTotalRows(currentSheet.getEndRowIndex() + 1);
         ArrayList<Object> recordList = new ArrayList<>();
-        this.uniqueValues = new LinkedHashMap<String,Integer>();
+        this.uniqueValuesCount = new LinkedHashMap<String,Integer>();
+        this.uniqueValuesStart = new LinkedHashMap<String,Integer>();
         ((RCV_Model) model).navigationSortRangeByAttribute(currentSheet, 1, currentSheet.getEndRowIndex(), new int[]{columnIndex}, 0, recordList);
         setRecordList(recordList);
         initIndexedBucket(currentSheet.getEndRowIndex() + 1);
@@ -509,13 +512,13 @@ public class NavigationStructure {
         LinkedHashSet<String> lhs = new LinkedHashSet<String>();;
 
         int keyIndex = bucket.startPos;
-        int keyCount = uniqueValues.get(recordList.get(keyIndex));
+        int keyCount = uniqueValuesCount.get(recordList.get(keyIndex));
         lhs.add((String) recordList.get(keyIndex));
         keyIndex +=keyCount;
 
         while(keyIndex <= bucket.endPos)
         {
-            keyCount = uniqueValues.get(recordList.get(keyIndex));
+            keyCount = uniqueValuesCount.get(recordList.get(keyIndex));
             lhs.add((String) recordList.get(keyIndex));
             keyIndex +=keyCount;
 
@@ -622,6 +625,57 @@ public class NavigationStructure {
             aggMemMap.put(formula, obj.get("value"));
         }
         return obj;
+    }
+
+    /**
+     * Update bucket boundaries based on the FE push
+     *
+     * @param paths
+     * @param bkt_arr
+     */
+    public void updateNavBucketTree(int[] paths, ArrayList<String> bkt_arr) {
+
+
+        if (paths.length == 0) //construct new navBucketTree
+        {
+            navBucketTree.clear();
+            navBucketTree = createRedefinedBuckets(bkt_arr);
+        }
+        else
+        {
+            Bucket<String> subRoot = this.navBucketTree.get(paths[0]);
+            for (int i = 1; i < paths.length; i++) {
+                subRoot = subRoot.getChildren().get(paths[i]);
+            }
+            subRoot.setChildren(createRedefinedBuckets(bkt_arr));
+        }
+
+    }
+
+    private ArrayList<Bucket> createRedefinedBuckets(ArrayList<String> bkt_arr) {
+        ArrayList<Bucket> bkt_ls = new ArrayList<Bucket>();
+        Bucket bkt;
+
+        for(int i=0;i<bkt_arr.size();i++)
+        {
+            String[] start_end = bkt_arr.get(i).split("#");
+
+            bkt = new Bucket();
+
+            bkt.minValue = start_end[0];
+            bkt.maxValue = start_end[0];
+
+            bkt.startPos = uniqueValuesStart.get(bkt.minValue);
+            bkt.endPos = uniqueValuesStart.get(bkt.maxValue)+uniqueValuesCount.get(bkt.maxValue)-1;
+
+            bkt.size = bkt.endPos - bkt.startPos + 1;
+
+            bkt.setName(false);
+            bkt.setId();
+
+        }
+
+        return bkt_ls;
     }
 
     /**

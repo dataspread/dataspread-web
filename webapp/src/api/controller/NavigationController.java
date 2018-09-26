@@ -126,6 +126,41 @@ public class NavigationController {
         return JsonWrapper.generateJson(((RCV_Model) currentSheet.getDataModel()).navS.getBucketsWithLeaves(indices));
     }
 
+    @RequestMapping(value = "/api/updateBoundaries/", method = RequestMethod.POST)
+    public HashMap<String, Object> updateBoundaries(@RequestBody String value) {
+
+        JSONParser parser = new JSONParser();
+        JSONObject dict = (JSONObject) parser.parse(value);
+        SBook book = BookBindings.getBookById((String) dict.get("bookId"));
+        SSheet currentSheet = book.getSheetByName((String) dict.get("sheetName"));
+        JSONArray bucket_ls = (JSONArray) dict.get("bucketArray");
+
+        String pathString = (String) dict.get("path");
+        String[] tokens;
+        if (pathString.isEmpty()) {
+            tokens = new String[0];
+        } else {
+            tokens = pathString.split(",");
+        }
+        int[] indices = new int[tokens.length];
+        for (int i = 0; i < tokens.length; i++) {
+            indices[i] = Integer.parseInt(tokens[i]);
+        }
+
+        ArrayList<String> bkt_arr = new ArrayList<String>();
+
+        for(int i=0;i<bucket_ls.size();i++)
+        {
+            JSONArray ls = (JSONArray) bucket_ls.get(i);
+            String start = (String) ls.get(0);
+            String end = (String) ls.get(1);
+            bkt_arr.add(start+"#"+end);
+        }
+
+        ((RCV_Model) currentSheet.getDataModel()).navS.updateNavBucketTree(indices,bkt_arr);
+        return JsonWrapper.generateJson(null);
+    }
+
     ///api/sortBlock/{bookId}/{sheetName}/{path}/{attr_indices}/{order}
 //    http://localhost:8080/api/sortBlock/gji5fi8vh/airbnb_small/%201/9,6,7/0  (sort by price/longitude/latitude)
     @RequestMapping(value = "/api/sortBlock/{bookId}/{sheetName}/{path}/{attr_indices}/{order}",
