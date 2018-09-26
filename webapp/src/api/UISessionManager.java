@@ -1,7 +1,7 @@
 package api;
 
 import org.zkoss.zss.model.SSheet;
-import org.zkoss.zss.model.sys.BookBindings;
+import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -13,11 +13,15 @@ public class UISessionManager  {
 
     private static final Logger logger = Logger.getLogger(UISessionManager.class.getName());
     private static UISessionManager instance;
-    public static final int FETCH_SIZE = 100;
+
 
     //SessionID -> Session
     Map<String, UISession> uiSessionMap;
     Map<SSheet, Set<UISession>> uiSheetSessionMap;
+    // Visible Map for formula prioritization.
+    // Sheet->{session->visibleRange}
+    Map<Object, Map<String, int[]>> uiVisibleMap;
+
 
     public Set<UISession> getSessionBySheet(SSheet sheet) {
         return uiSheetSessionMap.get(sheet);
@@ -55,12 +59,12 @@ public class UISessionManager  {
             return fetchSize;
         }
 
-        public void assignSheet(String bookName, String sheetName, int fetchSize)
+        public void assignSheet(SSheet sheet, int fetchSize)
         {
             this.fetchSize = fetchSize;
             // Change this to per sheet.
             cachedBlocks = new HashSet<>();
-            sheet = BookBindings.getBookById(bookName).getSheetByName(sheetName);
+            this.sheet = sheet;
             UISessionManager.getInstance().uiSheetSessionMap
                     .computeIfAbsent(sheet, x -> new HashSet<>()).add(this);
         }
@@ -86,6 +90,10 @@ public class UISessionManager  {
         public void updateViewPort(int startRow, int endRow) {
             this.startRow = startRow;
             this.endRow = endRow;
+            UISessionManager.getInstance().uiVisibleMap
+                    .computeIfAbsent(sheet, x -> new HashMap<>())
+                    .put(this.sessionId,
+                            new int[]{startRow, endRow});
         }
 
         public int getViewPortBlockNumber()
@@ -103,6 +111,8 @@ public class UISessionManager  {
     {
         uiSessionMap = new HashMap<>();
         uiSheetSessionMap = new HashMap<>();
+        uiVisibleMap = new HashMap<>();
+        FormulaAsyncScheduler.updateVisibleMap(uiVisibleMap);
     }
 
     public static UISessionManager getInstance()
@@ -120,7 +130,12 @@ public class UISessionManager  {
     public void deleteSession(String sessionId)
     {
         UISession session = uiSessionMap.remove(sessionId);
-        if (session.sheet != null)
+        if (session.sheet != null) {
             uiSheetSessionMap.get(session.sheet).remove(session);
+            Map uiVisibleSession = uiVisibleMap.get(session.getSheet());
+            uiVisibleSession.remove(sessionId);
+            if (uiVisibleSession.isEmpty())
+                uiVisibleMap.remove(session.getSheet());
+        }
     }
 }

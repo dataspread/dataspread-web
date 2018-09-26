@@ -6,10 +6,14 @@ import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncListener;
 
+import java.util.Map;
+
 
 public abstract class FormulaAsyncScheduler implements Runnable {
     private static FormulaAsyncScheduler _schedulerInstance;
     private static FormulaAsyncListener formulaAsyncListener;
+    // sheet->session-> start,end row
+    protected static Map<Object, Map<String, int[]>> uiVisibleMap;
 
     public static void initFormulaAsyncScheduler(FormulaAsyncScheduler formulaAsyncScheduler) {
         _schedulerInstance = formulaAsyncScheduler;
@@ -21,6 +25,10 @@ public abstract class FormulaAsyncScheduler implements Runnable {
 
     public static FormulaAsyncScheduler getScheduler(){
         return _schedulerInstance;
+    }
+
+    public static void updateVisibleMap(Map<Object, Map<String, int[]>> uiVisibleMap) {
+        FormulaAsyncScheduler.uiVisibleMap = uiVisibleMap;
     }
 
 

@@ -23,6 +23,7 @@ import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.FormulaCacheCleaner;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncListener;
+import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 import org.zkoss.zss.range.impl.ModelUpdate;
@@ -228,9 +229,12 @@ public class GeneralController implements FormulaAsyncListener {
                    @Header String sheetName,
                    @Header int fetchSize,
                    SimpMessageHeaderAccessor accessor) {
+
+        SSheet sheet = BookBindings.getBookById(bookName).getSheetByName(sheetName);
         UISessionManager.getInstance()
                 .getUISession(accessor.getSessionId())
-                .assignSheet(bookName, sheetName, fetchSize);
+                .assignSheet(sheet, fetchSize);
+
         simpMessagingTemplate.convertAndSendToUser(accessor.getSessionId(),
                 "/push/updates", ImmutableMap.of("message", "subscribed"),
                 createHeaders(accessor.getSessionId()));

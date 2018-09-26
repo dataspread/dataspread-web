@@ -25,7 +25,9 @@ public class ServletContextListenerImpl implements ServletContextListener, Seria
 		}
 		DBHandler.instance.initApplication();
 
+
         FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerThreaded();
+		FormulaAsyncScheduler.initFormulaAsyncScheduler(formulaAsyncScheduler);
 		Thread thread = new Thread(formulaAsyncScheduler);
 		thread.start();
 	}
