@@ -59,8 +59,12 @@ public class NavigationStructure {
      * Must be set externally for the bucket generator to work.
      */
     private ArrayList<Object> recordList;
-    public LinkedHashMap<String,Integer> uniqueValuesCount;
-    public LinkedHashMap<String,Integer> uniqueValuesStart;
+    public HashMap<String,Integer> uniqueKeyCount;
+    public HashMap<String,Integer> uniqueKeyStart;
+
+    public ArrayList<String> uniqueKeyArr;
+    public ArrayList<Integer> uniqueKeyArrIndex;
+
     private int kHist;
     private String tableName;
     private Kryo kryo;
@@ -118,8 +122,12 @@ public class NavigationStructure {
         setCurrentSheet(currentSheet);
         setTotalRows(currentSheet.getEndRowIndex() + 1);
         ArrayList<Object> recordList = new ArrayList<>();
-        this.uniqueValuesCount = new LinkedHashMap<String,Integer>();
-        this.uniqueValuesStart = new LinkedHashMap<String,Integer>();
+        this.uniqueKeyCount = new HashMap<String,Integer>();
+        this.uniqueKeyStart = new HashMap<String,Integer>();
+        this.uniqueKeyArr = new ArrayList<String>();
+        this.uniqueKeyArrIndex = new ArrayList<Integer>();
+
+
         ((RCV_Model) model).navigationSortRangeByAttribute(currentSheet, 1, currentSheet.getEndRowIndex(), new int[]{columnIndex}, 0, recordList);
         setRecordList(recordList);
         initIndexedBucket(currentSheet.getEndRowIndex() + 1);
@@ -512,13 +520,13 @@ public class NavigationStructure {
         LinkedHashSet<String> lhs = new LinkedHashSet<String>();;
 
         int keyIndex = bucket.startPos;
-        int keyCount = uniqueValuesCount.get(recordList.get(keyIndex));
+        int keyCount = uniqueKeyCount.get(recordList.get(keyIndex));
         lhs.add((String) recordList.get(keyIndex));
         keyIndex +=keyCount;
 
         while(keyIndex <= bucket.endPos)
         {
-            keyCount = uniqueValuesCount.get(recordList.get(keyIndex));
+            keyCount = uniqueKeyCount.get(recordList.get(keyIndex));
             lhs.add((String) recordList.get(keyIndex));
             keyIndex +=keyCount;
 
@@ -656,6 +664,10 @@ public class NavigationStructure {
         ArrayList<Bucket> bkt_ls = new ArrayList<Bucket>();
         Bucket bkt;
 
+        int keyIndex = 0;
+
+        String prevMaxValue = "";
+
         for(int i=0;i<bkt_arr.size();i++)
         {
             String[] start_end = bkt_arr.get(i).split("#");
@@ -663,15 +675,36 @@ public class NavigationStructure {
             bkt = new Bucket();
 
             bkt.minValue = start_end[0];
-            bkt.maxValue = start_end[0];
+            bkt.maxValue = start_end[1];
 
-            bkt.startPos = uniqueValuesStart.get(bkt.minValue);
-            bkt.endPos = uniqueValuesStart.get(bkt.maxValue)+uniqueValuesCount.get(bkt.maxValue)-1;
+            //for numeric data we need to see if the actual max or min value exists in data. otherwise get the min and max pos for the nearest data
+            if(isNumericNavAttr==1)
+            {
+                //determine startPos
+                // first handle the first bucket separately
+                if(i==0 && this.uniqueKeyArr.indexOf(start_end[0])==-1) //does not exist in SS
+                {
 
+                }
+                else //exits in SS
+                {
+
+                }
+
+
+                //determine endPos
+                prevMaxValue = start_end[1];
+            }
+            else {
+                bkt.startPos = uniqueKeyStart.get(bkt.minValue);
+                bkt.endPos = uniqueKeyStart.get(bkt.maxValue) + uniqueKeyCount.get(bkt.maxValue) - 1;
+            }
             bkt.size = bkt.endPos - bkt.startPos + 1;
 
             bkt.setName(false);
             bkt.setId();
+
+
 
         }
 
