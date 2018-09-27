@@ -344,25 +344,42 @@ $("#Bucket").click(function () {
         "height": wrapperHeight * 0.95,
         "display": "inline"
     });
-    var $buckets = $("#bucketOpt");
-    $buckets.empty();
-    console.log(dataBucket)
-    let tempString = "<div id='bucket" + 0 + "'>"
-        + "<input type='text' class='custom-bucket ' id='bucketlower"+ 0 +"' value =" + dataBucket[0][0] +" readonly>"
-        + "<input type='text' class='custom-bucket ' id='bucketupper"+ 0 +"' value =" + dataBucket[0][1] +" >"
-        + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-        +  "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
-    for(let i = 1; i < dataBucket.length; i ++) {
-        tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
-              + "<input type='text' class='custom-bucket ' id='bucketlower"+ i +"' value =" + dataBucket[i][0] +" >"
-              + "<input type='text' class='custom-bucket ' id='bucketupper"+ i +"' value =" + dataBucket[i][1] +" >"
-              + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
-              +  "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
-    }
-    $buckets.append(tempString);
+    let queryData = {};
+    let childlist = computePath();
+    queryData.bookId = bId;
+    queryData.sheetName = sName;
+    queryData.path = childlist;
 
+    $.ajax({
+        url: baseUrl + "redefineBoundaries",
+        method: "POST",
+        // dataType: 'json',
+        contentType: 'text/plain',
+        data: JSON.stringify(queryData),
+    }).done(function (e) {
+        console.log(e);
+        if (e.status == "success") {
+            if(e.data.isNumeric){
+                dataBucket = e.data.bucketArray;
+                var $buckets = $("#bucketOpt");
+                $buckets.empty();
+                console.log(dataBucket)
+                let tempString = "<div id='bucket" + 0 + "'>"
+                    + "<input type='text' class='custom-bucket ' id='bucketlower"+ 0 +"' value =" + dataBucket[0][0] +" readonly>"
+                    + "<input type='text' class='custom-bucket ' id='bucketupper"+ 0 +"' value =" + dataBucket[0][1] +" >"
+                    + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+                    +  "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+                for(let i = 1; i < dataBucket.length; i ++) {
+                    tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+                        + "<input type='text' class='custom-bucket ' id='bucketlower"+ i +"' value =" + dataBucket[i][0] +" >"
+                        + "<input type='text' class='custom-bucket ' id='bucketupper"+ i +"' value =" + dataBucket[i][1] +" >"
+                        + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
+                        +  "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+                }
+                $buckets.append(tempString);
+            }
+  }})
 });
-
 $(document).on("click", ".bucket-add", function (e) {
     $("#bucketAll").prop("checked",false);
     let line = Number(e.target.id.substring(9));

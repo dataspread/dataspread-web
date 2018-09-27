@@ -104,7 +104,7 @@ public class NavigationController {
         return JsonWrapper.generateJson(((RCV_Model) currentSheet.getDataModel()).navS.getNavChildrenWithContext(indices));
     }
 
-    @RequestMapping(value = "/api/redefineBoundaries/", method = RequestMethod.POST)
+    @RequestMapping(value = "/api/redefineBoundaries", method = RequestMethod.POST)
     public HashMap<String, Object> redefineBoundaries(@RequestBody String value) {
 
         JSONParser parser = new JSONParser();
@@ -126,7 +126,7 @@ public class NavigationController {
         return JsonWrapper.generateJson(((RCV_Model) currentSheet.getDataModel()).navS.getBucketsWithLeaves(indices));
     }
 
-    @RequestMapping(value = "/api/updateBoundaries/", method = RequestMethod.POST)
+    @RequestMapping(value = "/api/updateBoundaries", method = RequestMethod.POST)
     public HashMap<String, Object> updateBoundaries(@RequestBody String value) {
 
         JSONParser parser = new JSONParser();
