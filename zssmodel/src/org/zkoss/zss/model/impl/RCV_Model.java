@@ -278,7 +278,7 @@ public class RCV_Model extends Model {
                     for(int ci = 0; ci < combinedEntries.size(); ci++)
                     {
                         recordListInNavS.add(combinedEntries.get(ci).getValues()[0]);
-                        if(this.navS.uniqueKeyCount.containsKey(combinedEntries.get(ci).getValues()[0])) {
+                        if(this.navS.uniqueKeyCount.containsKey(combinedEntries.get(ci).getValues()[0].toString())) {
                             int elemCount = this.navS.uniqueKeyCount.get(combinedEntries.get(ci).getValues()[0].toString())+1;
                             this.navS.uniqueKeyCount.put(combinedEntries.get(ci).getValues()[0].toString(), elemCount);
 
@@ -287,7 +287,7 @@ public class RCV_Model extends Model {
                         {
                             this.navS.uniqueKeyCount.put(combinedEntries.get(ci).getValues()[0].toString(), 1);
                         }
-                        if(!this.navS.uniqueKeyStart.containsKey(combinedEntries.get(ci).getValues()[0])) {
+                        if(!this.navS.uniqueKeyStart.containsKey(combinedEntries.get(ci).getValues()[0].toString())) {
                             this.navS.uniqueKeyStart.put(combinedEntries.get(ci).getValues()[0].toString(), ci+1);
                             this.navS.uniqueKeyArr.add(combinedEntries.get(ci).getValues()[0].toString());
                             this.navS.uniqueKeyArrIndex.add(this.navS.uniqueKeyArr.size()-1);

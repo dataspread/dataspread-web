@@ -736,7 +736,7 @@ public class NavigationStructure {
                         keyIndex = approxSearch(end_user, keyIndex-1, false);
 
                     }
-                    bkt.endPos = uniqueKeyStart.get(uniqueKeyArr.get(keyIndex));
+                    bkt.endPos = uniqueKeyStart.get(uniqueKeyArr.get(keyIndex))+ uniqueKeyCount.get(uniqueKeyArr.get(keyIndex)) - 1;
                 }
 
             }
@@ -768,17 +768,23 @@ public class NavigationStructure {
         int lo = lowStart;
         int hi = this.uniqueKeyArr.size()-1;
 
-        while (lo <= hi) {
+        while (lo < hi) {
             int mid = (hi + lo) / 2;
 
             if (value < Double.parseDouble(this.uniqueKeyArr.get(mid))) {
+                if(hi==mid)
+                    break;//value is between lo and high and doesn't exist
                 hi = mid - 1;
             } else if (value > Double.parseDouble(this.uniqueKeyArr.get(mid))) {
+                if(lo==mid)
+                    break; //value is between lo and high and doesn't exist
                 lo = mid + 1;
             } else {
                 return mid;
             }
         }
+        if(lo==hi)
+            return isStartVal ? (lo< uniqueKeyArr.size()-1 ? lo+1 : lo) : lo; //start is exclusive and end is inclusive
         // lo == hi + 1
         return isStartVal ? hi : lo; //start is exclusive and end is inclusive
     }
