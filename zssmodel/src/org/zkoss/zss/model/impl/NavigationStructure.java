@@ -152,7 +152,6 @@ public class NavigationStructure {
         result.forEach(x -> castCells.add((AbstractCellAdv) x));
         currentSheet.getDataModel().updateCells(new DBContext(connection), castCells);
         connection.commit();
-        currentSheet.clearCache();// to reflect type conversion
         return true;
     }
 
@@ -666,8 +665,6 @@ public class NavigationStructure {
         Bucket bkt;
 
         int keyIndex = 0;
-
-        String prevMaxValue = "";
 
         for(int i=0;i<bkt_arr.size();i++)
         {
