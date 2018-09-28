@@ -360,7 +360,13 @@ $("#Bucket").click(function () {
         console.log(e);
         if (e.status == "success") {
             if(e.data.isNumeric){
-                dataBucket = e.data.bucketArray;
+                dataBucket = [];
+                for (let i = 0; i < e.data.bucketArray.length; i++){
+                    let temp = [];
+                    temp.push(parseFloat(e.data.bucketArray[i][0]));
+                    temp.push(parseFloat(e.data.bucketArray[i][1]));
+                    dataBucket.push(temp);
+                }
                 var $buckets = $("#bucketOpt");
                 $buckets.empty();
                 console.log(dataBucket)
@@ -388,7 +394,7 @@ $(document).on("click", ".bucket-add", function (e) {
         alert("You cannot split further");
         return;
     }
-    dataBucket[line][1] = Math.ceil((newupp - dataBucket[line][0])/2 + dataBucket[line][0]);
+    dataBucket[line][1] = (newupp - dataBucket[line][0])/2 + dataBucket[line][0];
     let newBucket = [dataBucket[line][1]+1, newupp];
     dataBucket.splice(line+1, 0, newBucket);
 
@@ -495,13 +501,13 @@ $(document).on("click", ".bucket-multiAddCan",function(e){
 $(document).on("change", ".custom-bucket", function(e){
   if(e.target.id.includes("bucketlower")){
       let line = Number(e.target.id.substring(11));
-      if(e.target.value > dataBucket[line-1][0]){
+      if(e.target.value > dataBucket[line-1][0] && e.target.value < dataBucket[line][1]){
            dataBucket[line-1][1] = e.target.value;
           $("#bucketupper" + (line - 1)).val(dataBucket[line-1][1]);
            dataBucket[line][0] = e.target.value;
 
       }else{
-          alert("The modified lower range is too low");
+          alert("The modified lower range is too high or too low");
           $("#bucketlower" + line).val(dataBucket[line][0]);
       }
   }else if(e.target.id.includes("bucketupper")){
@@ -511,7 +517,7 @@ $(document).on("change", ".custom-bucket", function(e){
           $("#bucketupper" + line).val(dataBucket[line][1]);
           return;
       }
-      if(e.target.value < dataBucket[line+1][1]){
+      if(e.target.value < dataBucket[line+1][1] && e.target.value > dataBucket[line][0]){
           dataBucket[line+1][0] = e.target.value;
           $("#bucketupper" + (line + 0)).val(dataBucket[line+1][0]);
           dataBucket[line][1] = e.target.value;
@@ -545,7 +551,7 @@ $("#bucket-form").submit(function (e) {
     e.preventDefault();
     $("#bucket-col").css("display", "none");
     hot.updateSettings({width: wrapperWidth * 0.8});*/
-
+    e.preventDefault();
     let queryData = {};
     let childlist = computePath();
     queryData.bookId = bId;
