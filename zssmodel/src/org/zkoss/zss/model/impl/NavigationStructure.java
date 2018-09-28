@@ -152,6 +152,7 @@ public class NavigationStructure {
         result.forEach(x -> castCells.add((AbstractCellAdv) x));
         currentSheet.getDataModel().updateCells(new DBContext(connection), castCells);
         connection.commit();
+        currentSheet.clearCache();// to reflect type conversion
         return true;
     }
 
@@ -680,20 +681,64 @@ public class NavigationStructure {
             //for numeric data we need to see if the actual max or min value exists in data. otherwise get the min and max pos for the nearest data
             if(isNumericNavAttr==1)
             {
-                //determine startPos
+                //determine startPos: for numeric---> minVal is exlusive of exact value
                 // first handle the first bucket separately
-                if(i==0 && this.uniqueKeyArr.indexOf(start_end[0])==-1) //does not exist in SS
+                if(uniqueKeyStart.containsKey(bkt.minValue)) //exists in SS
                 {
+                    bkt.startPos = uniqueKeyStart.get(bkt.minValue);
 
                 }
-                else //exits in SS
+                else if(i==0) //does not exist in SS, frist bucket
                 {
-
+                    bkt.startPos = uniqueKeyStart.get(uniqueKeyArr.get(keyIndex));
+                    //TODO: what happens if the start of the bucket defined by the user (100) is greater than the actual start (50). We can make the start Uneditable in FE
+                }
+                else  //does not exist in SS, other bucket
+                {
+                    double start_user = Double.parseDouble(start_end[0].split("\\+")[0]);
+                    if(keyIndex<=uniqueKeyArr.size()-1)
+                    {
+                        keyIndex = approxSearch(start_user, keyIndex, true);
+                    }
+                    else //add the last bucket even if it doesn't contain any value in ss
+                    {
+                        keyIndex = approxSearch(start_user, keyIndex-1, true);
+                    }
+                    bkt.startPos = uniqueKeyStart.get(uniqueKeyArr.get(keyIndex));
                 }
 
 
-                //determine endPos
-                prevMaxValue = start_end[1];
+                //determine endPos: for numeric---> maxVal is exlusive of exact value
+                if(uniqueKeyStart.containsKey(bkt.maxValue)) //exists in SS
+                {
+                    bkt.endPos = uniqueKeyStart.get(bkt.maxValue) + uniqueKeyCount.get(bkt.maxValue) - 1;
+
+                    //find start val for next bucket
+                    for(int ki=keyIndex;ki<uniqueKeyArr.size();ki++)
+                    {
+                        if(uniqueKeyArr.get(keyIndex).equals(bkt.maxValue.toString()))
+                        {
+                            keyIndex = ki+1; //this should be the start val of next bucket
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    double end_user = Double.parseDouble(start_end[1]);
+                    if(keyIndex<=uniqueKeyArr.size()-1)
+                    {
+                       keyIndex = approxSearch(end_user, keyIndex, false);
+
+                    }
+                    else //add the last bucket even if it doesn't contain any value in ss
+                    {
+                        keyIndex = approxSearch(end_user, keyIndex-1, false);
+
+                    }
+                    bkt.endPos = uniqueKeyStart.get(uniqueKeyArr.get(keyIndex));
+                }
+
             }
             else {
                 bkt.startPos = uniqueKeyStart.get(bkt.minValue);
@@ -704,11 +749,38 @@ public class NavigationStructure {
             bkt.setName(false);
             bkt.setId();
 
-
+            bkt_ls.add(bkt);
 
         }
 
         return bkt_ls;
+    }
+
+    public int approxSearch(double value, int lowStart, boolean isStartVal) {
+
+        if(value < Double.parseDouble(this.uniqueKeyArr.get(lowStart))) {
+            return lowStart;
+        }
+        if(value > Double.parseDouble(this.uniqueKeyArr.get(this.uniqueKeyArr.size()-1))) {
+            return this.uniqueKeyArr.size()-1;
+        }
+
+        int lo = lowStart;
+        int hi = this.uniqueKeyArr.size()-1;
+
+        while (lo <= hi) {
+            int mid = (hi + lo) / 2;
+
+            if (value < Double.parseDouble(this.uniqueKeyArr.get(mid))) {
+                hi = mid - 1;
+            } else if (value > Double.parseDouble(this.uniqueKeyArr.get(mid))) {
+                lo = mid + 1;
+            } else {
+                return mid;
+            }
+        }
+        // lo == hi + 1
+        return isStartVal ? hi : lo; //start is exclusive and end is inclusive
     }
 
     /**
@@ -732,9 +804,9 @@ public class NavigationStructure {
             if(this.isNumericNavAttr==1)
             {
                 ArrayList<Object> ls = new ArrayList<Object>();
-                ls.add(subgroups.get(i).minValue);
-                ls.add(subgroups.get(i).maxValue);
-                bucket_leaves_ls.add(ls);
+                ls.add(subgroups.get(i).minValue.toString());
+                ls.add(subgroups.get(i).maxValue.toString());
+                bucket_leaves_ls.add(ls); //[[start,end]]
             }
             else
             {

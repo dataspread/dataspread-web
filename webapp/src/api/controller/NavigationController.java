@@ -152,8 +152,8 @@ public class NavigationController {
         for(int i=0;i<bucket_ls.size();i++)
         {
             JSONArray ls = (JSONArray) bucket_ls.get(i);
-            String start = (String) ls.get(0);
-            String end = (String) ls.get(1);
+            String start = ls.get(0).toString();
+            String end = ls.get(1).toString();
             bkt_arr.add(start+"#"+end);
         }
 

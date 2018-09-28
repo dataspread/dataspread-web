@@ -541,10 +541,27 @@ $("#bucketAll").click(function(e){
 });
 
 $("#bucket-form").submit(function (e) {
-    alert("backend processing");
+    /*alert("backend processing");
     e.preventDefault();
     $("#bucket-col").css("display", "none");
-    hot.updateSettings({width: wrapperWidth * 0.8});
+    hot.updateSettings({width: wrapperWidth * 0.8});*/
+
+    let queryData = {};
+    let childlist = computePath();
+    queryData.bookId = bId;
+    queryData.sheetName = sName;
+    queryData.path = childlist;
+    queryData.bucketArray = dataBucket;
+    $.ajax({
+        url: baseUrl + "updateBoundaries",
+        method: "POST",
+        // dataType: 'json',
+        contentType: 'text/plain',
+        data: JSON.stringify(queryData),
+    }).done(function (e) {
+        console.log(e);
+
+    })
 
 });
 
