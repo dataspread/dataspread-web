@@ -7,6 +7,7 @@ import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
+import java.io.IOException;
 import java.io.Serializable;
 
 public class ServletContextListenerImpl implements ServletContextListener, Serializable {
@@ -25,9 +26,7 @@ public class ServletContextListenerImpl implements ServletContextListener, Seria
 		}
 		DBHandler.instance.initApplication();
 
-
-        FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerThreaded();
-		FormulaAsyncScheduler.initFormulaAsyncScheduler(formulaAsyncScheduler);
+		FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerSimple();
 		Thread thread = new Thread(formulaAsyncScheduler);
 		thread.start();
 	}

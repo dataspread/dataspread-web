@@ -113,7 +113,7 @@ public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
                     e.printStackTrace();
                 }
             }
-            System.out.println("Shutdown  MyMonitorThread");
+
         }
     }
 
