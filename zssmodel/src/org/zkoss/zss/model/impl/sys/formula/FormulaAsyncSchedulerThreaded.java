@@ -11,22 +11,40 @@ import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
 import java.util.Collection;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 /**
  * Execute formulae in a single thread.
  */
 public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
-    private static final Logger logger = Logger.getLogger(FormulaAsyncSchedulerThreaded.class.getName());
     private boolean keepRunning = true;
     private boolean emptyQueue = false;
     ThreadPoolExecutor executorPool;
     MyMonitorThread monitor;
     final int MaximumWorkers = 4;
 
+    public class DynamicPriorityAdjuster implements Runnable {
+        boolean run = true;
+
+        @Override
+        public void run() {
+            while (run) {
+                FormulaComputationStatusManager.getInstance().updatePriorities(uiVisibleMap);
+                try {
+                    Thread.sleep(250);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        public void shutdown() {
+            this.run = false;
+        }
+
+    }
 
     public class WorkerThread implements Runnable {
         private SCell sCell;
@@ -38,10 +56,16 @@ public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
         @Override
         public void run() {
             System.out.println(Thread.currentThread().getName() + " Start. Cell = " + sCell);
+            int priority = 10;
+            // if visible increase priority.
+
+
             FormulaComputationStatusManager.getInstance().updateFormulaCell(
                     sCell.getRowIndex(),
                     sCell.getColumnIndex(),
-                    sCell);
+                    sCell,
+                    sCell.getSheet(),
+                    priority);
             if (sCell.getType() == SCell.CellType.FORMULA) {
                 // A sync call should synchronously compute the cells value.
                 // Push individual cells to the UI
@@ -96,12 +120,15 @@ public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
     @Override
     public void run() {
         System.out.println("Starting FormulaAsyncSchedulerThreaded");
-        executorPool = new ThreadPoolExecutor(2, MaximumWorkers, 10, TimeUnit.SECONDS,
-                new ArrayBlockingQueue<>(MaximumWorkers));
-        monitor = new MyMonitorThread(executorPool, 3);
+        executorPool = new ThreadPoolExecutor(4, MaximumWorkers, 10, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>());
+        monitor = new MyMonitorThread(executorPool, 10);
         Thread monitorThread = new Thread(monitor);
         monitorThread.start();
 
+        DynamicPriorityAdjuster dynamicPriorityAdjuster = new DynamicPriorityAdjuster();
+        Thread dynamicPriorityAdjusterThread = new Thread(dynamicPriorityAdjuster);
+        dynamicPriorityAdjusterThread.start();
 
         while (keepRunning) {
             DirtyManager.DirtyRecord dirtyRecord = DirtyManager.dirtyManagerInstance.getDirtyRegionFromQueue();
@@ -137,9 +164,16 @@ public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
             //update(sheet, new CellRegion(dirtyRecord.region));
             //logger.info("Done computing " + dirtyRecord.region );
         }
-
+        System.out.println("Shutdown  FormulaAsyncSchedulerThreaded");
         executorPool.shutdown();
         monitor.shutdown();
+        dynamicPriorityAdjuster.shutdown();
+        try {
+            monitorThread.join();
+            dynamicPriorityAdjusterThread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -154,8 +188,7 @@ public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
 
     @Override
     public void shutdown() {
+        System.out.println("Shutdown Called FormulaAsyncSchedulerThreaded");
         keepRunning = false;
     }
-
-
 }

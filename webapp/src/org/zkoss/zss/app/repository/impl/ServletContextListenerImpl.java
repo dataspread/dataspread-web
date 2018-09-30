@@ -1,8 +1,8 @@
 package org.zkoss.zss.app.repository.impl;
 
 import org.model.DBHandler;
+import org.zkoss.lang.Library;
 import org.zkoss.util.logging.Log;
-import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerThreaded;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
 import javax.servlet.ServletContextEvent;
@@ -25,7 +25,20 @@ public class ServletContextListenerImpl implements ServletContextListener, Seria
 		}
 		DBHandler.instance.initApplication();
 
-        FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerThreaded();
+        String FormulaAsyncSchedulerName = "org.zkoss.zss.model.impl.sys.formula." +
+                Library.getProperty("FormulaAsyncScheduler",
+                        "FormulaAsyncSchedulerThreaded");
+
+        FormulaAsyncScheduler formulaAsyncScheduler = null;
+        try {
+            formulaAsyncScheduler = (FormulaAsyncScheduler) Class.forName(FormulaAsyncSchedulerName).newInstance();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        }
 		Thread thread = new Thread(formulaAsyncScheduler);
 		thread.start();
 	}

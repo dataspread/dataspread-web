@@ -54,7 +54,7 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
                 FormulaComputationStatusManager.getInstance().updateFormulaCell(
                         sCell.getRowIndex(),
                         sCell.getColumnIndex(),
-                        sCell);
+                        sCell, sheet, 10);
                 if (sCell.getType()== SCell.CellType.FORMULA) {
                     // A sync call should synchronously compute the cells value.
                     // Push individual cells to the UI
