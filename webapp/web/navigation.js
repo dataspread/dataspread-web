@@ -422,7 +422,7 @@ $(document).on("click", ".bucket-add", function (e) {
     let line = Number(e.target.id.substring(9));
     if (isBucketNumeric) {
         let newupp = dataBucket[line][1];
-        let oldlower = isNaN(dataBucket[line][0]) ? parseFloat(dataBucket[line][0].slice(0, -1)) : parseFloat(dataBucket[line][0]);
+        let oldlower = isNaN(dataBucket[line][0]) ? parseFloat(dataBucket[line][0].slice(0, -1)) : +dataBucket[line][0];
         if (newupp - oldlower < 1) {
             alert("You cannot split further");
             return;
@@ -528,8 +528,6 @@ $(document).on("click", ".bucket-rm", function (e) {
 });
 
 $(document).on("click", ".bucket-multiAdd", function (e) {
-    console.log(e)
-    console.log("multiadd")
     let line = Number(e.target.id.substring(12));
     let len = dataBucket[line].length;
     if (len == 1) {
@@ -537,7 +535,13 @@ $(document).on("click", ".bucket-multiAdd", function (e) {
         return;
     }
     $(this).nextAll().remove();
-    let tempString = "<br><span style=\"margin-left:2em;\">No. of Buckets&nbsp</span><input class='multibuck' placeholder='Max" + len + "' type='text' name='' id='multibuck" + line + "' >";
+    let tempString = "";
+    if (isBucketNumeric) {
+        tempString += "<br><span style=\"margin-left:2em;\">No. of Buckets&nbsp</span><input class='multibuck' type='text' name='' id='multibuck" + line + "' >";
+    } else {
+        tempString += "<br><span style=\"margin-left:2em;\">No. of Buckets&nbsp</span><input class='multibuck' placeholder='Max"
+            + len + "' type='text' name='' id='multibuck" + line + "' >";
+    }
     tempString += "<i class=\"fa fa-check fa-1x bucket-multiAddSub\" style=\"color: #33fa24;\" id='multibuckSub" + line + "' aria-hidden=\"true\"></i></div>"
         + "<i class=\"fa fa-times fa-1x bucket-multiAddCan\" style=\"color: #fa1426;\" id='multibuckCancel" + line + "' aria-hidden=\"true\"></i></div>";
     $(this).parent().append(tempString);
@@ -551,12 +555,12 @@ $(document).on("click", ".bucket-multiAddSub", function (e) {
         return;
     }
     if (isBucketNumeric) {
-        let oldlower = isNaN(dataBucket[line][0]) ? parseFloat(dataBucket[line][0].slice(0, -1)) : dataBucket[line][0];
+        let oldlower = isNaN(dataBucket[line][0]) ? parseFloat(dataBucket[line][0].slice(0, -1)) : +dataBucket[line][0];
         if (targetValue >= 15 || targetValue >= (dataBucket[line][1] - oldlower)) {
             alert("The number of buckets specified is too many");
         } else {
             $("#bucketAll").prop("checked", false);
-            let indivisualSize = ((dataBucket[line][1] - oldlower) / targetValue);
+            let indivisualSize = parseFloat(((dataBucket[line][1] - oldlower) / targetValue).toFixed(2));
             let last = dataBucket[line][1];
             let front = dataBucket[line][0];
             dataBucket.splice(line, 1,);
@@ -627,7 +631,7 @@ $(document).on("click", ".bucket-multiAddCan", function (e) {
 $(document).on("change", ".custom-bucket", function (e) {
     if (e.target.id.includes("bucketlower")) {
         let line = Number(e.target.id.substring(11));
-        let prevLow = isNaN(dataBucket[line - 1][0]) ? parseFloat(dataBucket[line - 1][0].slice(0, -1)) : dataBucket[line - 1][0];
+        let prevLow = isNaN(dataBucket[line - 1][0]) ? parseFloat(dataBucket[line - 1][0].slice(0, -1)) : +dataBucket[line - 1][0];
         if (e.target.value > prevLow && e.target.value < dataBucket[line][1]) {
             dataBucket[line - 1][1] = e.target.value;
             $("#bucketupper" + (line - 1)).val(dataBucket[line - 1][1]);
@@ -648,7 +652,7 @@ $(document).on("change", ".custom-bucket", function (e) {
             e.preventDefault();
             return;
         }
-        let currLow = isNaN(dataBucket[line][0]) ? parseFloat(dataBucket[line][0].slice(0, -1)) : dataBucket[line][0];
+        let currLow = isNaN(dataBucket[line][0]) ? parseFloat(dataBucket[line][0].slice(0, -1)) : +dataBucket[line][0];
         if (e.target.value < dataBucket[line + 1][1] && e.target.value > currLow) {
             dataBucket[line + 1][0] = e.target.value + "+";
             $("#bucketlower" + (line + 1)).val(dataBucket[line + 1][0]);
@@ -663,12 +667,12 @@ $(document).on("change", ".custom-bucket", function (e) {
     }
 });
 
-$(document).on("input", ".custom-bucket", function (e){
+$(document).on("input", ".custom-bucket", function (e) {
     let line = Number(e.target.id.substring(11));
-    if (e.target.id.includes("bucketlower")){
+    if (e.target.id.includes("bucketlower")) {
         $("#bucketupper" + (line - 1)).val(e.target.value);
     } else if (e.target.id.includes("bucketupper") && line < (dataBucket.length - 1)) {
-        $("#bucketlower" + (line + 1)).val(e.target.value+"+");
+        $("#bucketlower" + (line + 1)).val(e.target.value + "+");
     }
 });
 
