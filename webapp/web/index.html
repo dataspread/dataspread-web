@@ -351,7 +351,7 @@
                         </div>
                     </form>
                 </div>
-                <div id='bucket-col' style="display:none">
+                <div id='bucket-col' style="display:none;overflow-y:scroll; " >
                     <form id="bucket-form">
                         <span class="formClose">x</span>
                         <legend class="form-label m-1" style="font-size:1rem">Redefine Bucket Boundaries</legend>
@@ -359,6 +359,12 @@
                             <input class="form-check-input ml-2" type="checkbox" value="" id="bucketAll">
                             <label class="form-check-label ml-5" for="bucketAll">
                                 Merge All Bucket
+                            </label>
+                        </fieldset>
+                        <fieldset class="form-group m-3" style="display: none" id="textBucket" >
+                            <input class="form-check-input ml-2" type="checkbox" value="" id="displayAll">
+                            <label class="form-check-label ml-5" for="displayAll">
+                                Display All text Bucket
                             </label>
                         </fieldset>
                         <fieldset class="form-group m-3" id="bucketOpt">

@@ -59,6 +59,8 @@ var upperRange;
 
 var currRange;
 
+var isBucketNumeric = false;
+
 // showing exploration options and create corresponding html
 $("#Explore").click(function () {
     lowerRange = 0;
@@ -145,7 +147,7 @@ $("#Explore").click(function () {
         });
     }
     $("#hierarchical-col").css("display", "none");
-    $("#bucket-col").css("display","none");
+    $("#bucket-col").css("display", "none");
     $("#test-hot").css({"float": "left"});
     $("#exploration-bar").css({
         "display": "inline",
@@ -332,7 +334,7 @@ $(".formClose").click(function (e) {
     }
 })
 
-var dataBucket = [[0,50],[51,100],[101,150],[151,200],[201,300],[301,600],[601,1500]];
+var dataBucket = [[0, 50], [51, 100], [101, 150], [151, 200], [201, 300], [301, 600], [601, 1500]];
 // Customize Bucket start
 $("#Bucket").click(function () {
     $("#exploration-bar").css("display", "none");
@@ -359,9 +361,11 @@ $("#Bucket").click(function () {
     }).done(function (e) {
         console.log(e);
         if (e.status == "success") {
-            if(e.data.isNumeric){
+            isBucketNumeric = e.data.isNumeric;
+            if (isBucketNumeric) {
+                $("#textBucket").css("display", "none");
                 dataBucket = [];
-                for (let i = 0; i < e.data.bucketArray.length; i++){
+                for (let i = 0; i < e.data.bucketArray.length; i++) {
                     let temp = [];
                     temp.push(parseFloat(e.data.bucketArray[i][0]));
                     temp.push(parseFloat(e.data.bucketArray[i][1]));
@@ -371,74 +375,154 @@ $("#Bucket").click(function () {
                 $buckets.empty();
                 console.log(dataBucket)
                 let tempString = "<div id='bucket" + 0 + "'>"
-                    + "<input type='text' class='custom-bucket ' id='bucketlower"+ 0 +"' value =" + dataBucket[0][0] +" readonly>"
-                    + "<input type='text' class='custom-bucket ' id='bucketupper"+ 0 +"' value =" + dataBucket[0][1] +" >"
+                    + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value =" + dataBucket[0][0] + " readonly>"
+                    + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][1] + " >"
                     + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-                    +  "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
-                for(let i = 1; i < dataBucket.length; i ++) {
+                    + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+                for (let i = 1; i < dataBucket.length; i++) {
                     tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
-                        + "<input type='text' class='custom-bucket ' id='bucketlower"+ i +"' value =" + dataBucket[i][0] +" >"
-                        + "<input type='text' class='custom-bucket ' id='bucketupper"+ i +"' value =" + dataBucket[i][1] +" >"
+                        + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value =" + dataBucket[i][0] + " >"
+                        + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value =" + dataBucket[i][1] + " >"
                         + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
-                        +  "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+                        + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
                 }
                 $buckets.append(tempString);
-            }
-  }})
-});
-$(document).on("click", ".bucket-add", function (e) {
-    $("#bucketAll").prop("checked",false);
-    let line = Number(e.target.id.substring(9));
-    let newupp = dataBucket[line][1];
-    if((newupp - dataBucket[line][0])/2 < 1){
-        alert("You cannot split further");
-        return;
-    }
-    dataBucket[line][1] = (newupp - dataBucket[line][0])/2 + dataBucket[line][0];
-    let newBucket = [dataBucket[line][1]+1, newupp];
-    dataBucket.splice(line+1, 0, newBucket);
+            } else {
+                // fot text based data
+                $("#bucketAll").prop("checked", false);
+                $("#textBucket").css("display", "block");
+                dataBucket = [];
+                dataBucket = e.data.bucketArray;
+                var $buckets = $("#bucketOpt");
+                $buckets.empty();
+                console.log(dataBucket)
+                let tempString = "<div id='bucket" + 0 + "'>"
+                    + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
+                    + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][dataBucket[0].length - 1] + "' readonly>"
+                    + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+                    + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+                for (let i = 1; i < dataBucket.length; i++) {
+                    tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+                        + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value ='" + dataBucket[i][0] + "' readonly>"
+                        + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value ='" + dataBucket[i][dataBucket[i].length - 1] + "' readonly>"
+                        + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
+                        + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+                }
+                $buckets.append(tempString);
 
-    var $buckets = $("#bucketOpt");
-    $buckets.empty();
-    console.log(dataBucket)
-    let tempString = "<div id='bucket" + 0 + "'>"
-        + "<input type='text' class='custom-bucket ' id='bucketlower"+ 0 +"' value =" + dataBucket[0][0] +" readonly>"
-        + "<input type='text' class='custom-bucket ' id='bucketupper"+ 0 +"' value =" + dataBucket[0][1] +" >"
-        + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-        +  "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
-    for(let i = 1; i < dataBucket.length; i ++) {
-        tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
-            + "<input type='text' class='custom-bucket ' id='bucketlower"+ i +"' value =" + dataBucket[i][0] +" >"
-            + "<input type='text' class='custom-bucket ' id='bucketupper"+ i +"' value =" + dataBucket[i][1] +" >"
-            + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
-            +  "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+
+            }
+        }
+    })
+});
+
+$(document).on("click", ".bucket-add", function (e) {
+    $("#bucketAll").prop("checked", false);
+    let line = Number(e.target.id.substring(9));
+    if (isBucketNumeric) {
+        let newupp = dataBucket[line][1];
+        let oldlower = isNaN(dataBucket[line][0]) ? parseFloat(dataBucket[line][0].slice(0, -1)) : dataBucket[line][0];
+        if (newupp - oldlower < 1) {
+            alert("You cannot split further");
+            return;
+        }
+        dataBucket[line][1] = parseFloat(((newupp - oldlower) / 2 + oldlower).toFixed(2));
+        let newBucket = [dataBucket[line][1] + "+", newupp];
+        dataBucket.splice(line + 1, 0, newBucket);
+
+        var $buckets = $("#bucketOpt");
+        $buckets.empty();
+        console.log(dataBucket)
+        let tempString = "<div id='bucket" + 0 + "'>"
+            + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value =" + dataBucket[0][0] + " readonly>"
+            + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][1] + " >"
+            + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+            + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+        for (let i = 1; i < dataBucket.length; i++) {
+            tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+                + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value =" + dataBucket[i][0] + " >"
+                + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value =" + dataBucket[i][1] + " >"
+                + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
+                + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+        }
+        $buckets.append(tempString);
+    } else {
+        let len = dataBucket[line].length;
+        if (len == 1) {
+            alert("You cannot split further");
+            return;
+        }
+        len = Math.ceil(len / 2);
+        let newBucket = dataBucket[line].splice(len);
+        dataBucket.splice(line + 1, 0, newBucket);
+        var $buckets = $("#bucketOpt");
+        $buckets.empty();
+        console.log(dataBucket)
+        let tempString = "<div id='bucket" + 0 + "'>"
+            + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
+            + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][dataBucket[0].length - 1] + "' readonly>"
+            + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+            + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+        for (let i = 1; i < dataBucket.length; i++) {
+            tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+                + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value ='" + dataBucket[i][0] + "' readonly>"
+                + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value ='" + dataBucket[i][dataBucket[i].length - 1] + "' readonly>"
+                + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
+                + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+        }
+        $buckets.append(tempString);
+
     }
-    $buckets.append(tempString);
 
 });
 
 $(document).on("click", ".bucket-rm", function (e) {
     let line = Number(e.target.id.substring(8));
-    let newupp = dataBucket[line][1];
-    dataBucket[line-1][1] = newupp;
-    dataBucket.splice(line, 1, );
+    if (isBucketNumeric) {
+        let newupp = dataBucket[line][1];
+        dataBucket[line - 1][1] = newupp;
+        dataBucket.splice(line, 1,);
 
-    var $buckets = $("#bucketOpt");
-    $buckets.empty();
-    console.log(dataBucket)
-    let tempString = "<div id='bucket" + 0 + "'>"
-        + "<input type='text' class='custom-bucket ' id='bucketlower"+ 0 +"' value =" + dataBucket[0][0] +" readonly>"
-        + "<input type='text' class='custom-bucket ' id='bucketupper"+ 0 +"' value =" + dataBucket[0][1] +" >"
-        + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-        +  "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
-    for(let i = 1; i < dataBucket.length; i ++) {
-        tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
-            + "<input type='text' class='custom-bucket ' id='bucketlower"+ i +"' value =" + dataBucket[i][0] +" >"
-            + "<input type='text' class='custom-bucket ' id='bucketupper"+ i +"' value =" + dataBucket[i][1] +" >"
-            + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
-            +  "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+        var $buckets = $("#bucketOpt");
+        $buckets.empty();
+        console.log(dataBucket)
+        let tempString = "<div id='bucket" + 0 + "'>"
+            + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value =" + dataBucket[0][0] + " readonly>"
+            + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][1] + " >"
+            + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+            + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+        for (let i = 1; i < dataBucket.length; i++) {
+            tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+                + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value =" + dataBucket[i][0] + " >"
+                + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value =" + dataBucket[i][1] + " >"
+                + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
+                + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+        }
+        $buckets.append(tempString);
+    } else {
+        let temp = dataBucket[line];
+        for (let i = 0; i < temp.length; i++) {
+            dataBucket[line - 1].push(temp[i]);
+        }
+        dataBucket.splice(line, 1,);
+        var $buckets = $("#bucketOpt");
+        $buckets.empty();
+        console.log(dataBucket)
+        let tempString = "<div id='bucket" + 0 + "'>"
+            + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
+            + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][dataBucket[0].length - 1] + "' readonly>"
+            + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+            + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+        for (let i = 1; i < dataBucket.length; i++) {
+            tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+                + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value ='" + dataBucket[i][0] + "' readonly>"
+                + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value ='" + dataBucket[i][dataBucket[i].length - 1] + "' readonly>"
+                + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
+                + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+        }
+        $buckets.append(tempString);
     }
-    $buckets.append(tempString);
+
 
 });
 
@@ -446,118 +530,214 @@ $(document).on("click", ".bucket-multiAdd", function (e) {
     console.log(e)
     console.log("multiadd")
     let line = Number(e.target.id.substring(12));
-
+    let len = dataBucket[line].length;
+    if (len == 1) {
+        alert("You cannot split further!");
+        return;
+    }
     $(this).nextAll().remove();
-    let tempString = "<br><span style=\"margin-left:2em;\">No. of Buckets&nbsp</span><input class='multibuck' type='text' name='' id='multibuck" + line+"' >";
+    let tempString = "<br><span style=\"margin-left:2em;\">No. of Buckets&nbsp</span><input class='multibuck' placeholder='Max" + len + "' type='text' name='' id='multibuck" + line + "' >";
     tempString += "<i class=\"fa fa-check fa-1x bucket-multiAddSub\" style=\"color: #33fa24;\" id='multibuckSub" + line + "' aria-hidden=\"true\"></i></div>"
-               + "<i class=\"fa fa-times fa-1x bucket-multiAddCan\" style=\"color: #fa1426;\" id='multibuckCancel" + line + "' aria-hidden=\"true\"></i></div>";
+        + "<i class=\"fa fa-times fa-1x bucket-multiAddCan\" style=\"color: #fa1426;\" id='multibuckCancel" + line + "' aria-hidden=\"true\"></i></div>";
     $(this).parent().append(tempString);
 });
 
-$(document).on("click", ".bucket-multiAddSub",function(e){
+$(document).on("click", ".bucket-multiAddSub", function (e) {
     let line = Number(e.target.id.substring(12));
-    let targetValue = $("#multibuck"+line).val();
-    if(targetValue == ''){
+    let targetValue = $("#multibuck" + line).val();
+    if (targetValue == '') {
         alert("You have to input the number of buckets");
-    }else if(targetValue >= 15 || targetValue >= (dataBucket[line][1] - dataBucket[line][0])){
-        alert("The number of buckets specified is too many");
-    }else{
-        $("#bucketAll").prop("checked",false);
-        let indivisualSize = (dataBucket[line][1] - dataBucket[line][0])/targetValue;
-        let last = dataBucket[line][1];
-        let front = dataBucket[line][0];
-        dataBucket.splice(line,1,);
-        for(let i = 0; i < targetValue - 1; i++) {
-            dataBucket.splice(line + i, 0, [front, front + indivisualSize]);
-            front += indivisualSize;
+        return;
+    }
+    if (isBucketNumeric) {
+        let oldlower = isNaN(dataBucket[line][0]) ? parseFloat(dataBucket[line][0].slice(0, -1)) : dataBucket[line][0];
+        if (targetValue >= 15 || targetValue >= (dataBucket[line][1] - oldlower)) {
+            alert("The number of buckets specified is too many");
+        } else {
+            $("#bucketAll").prop("checked", false);
+            let indivisualSize = ((dataBucket[line][1] - oldlower) / targetValue);
+            let last = dataBucket[line][1];
+            let front = dataBucket[line][0];
+            dataBucket.splice(line, 1,);
+            dataBucket.splice(line, 0, [front, parseFloat((oldlower + indivisualSize).toFixed(2))]);
+            front = oldlower + indivisualSize;
+            for (let i = 1; i < targetValue - 1; i++) {
+                dataBucket.splice(line + i, 0, [front.toFixed(2) + "+", parseFloat((front + indivisualSize).toFixed(2))]);
+                front += indivisualSize;
+                console.log(front);
+            }
+
+            dataBucket.splice(line + Number(targetValue) - 1, 0, [front.toFixed(2) + "+", last]);
+            console.log(dataBucket)
+            var $buckets = $("#bucketOpt");
+            $buckets.empty();
+            console.log(dataBucket)
+            let tempString = "<div id='bucket" + 0 + "'>"
+                + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value =" + dataBucket[0][0] + " readonly>"
+                + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][1] + " >"
+                + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+                + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+            for (let i = 1; i < dataBucket.length; i++) {
+                tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+                    + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value =" + dataBucket[i][0] + " >"
+                    + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value =" + dataBucket[i][1] + " >"
+                    + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
+                    + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+            }
+            $buckets.append(tempString);
+        }
+    } else {
+        if (targetValue > dataBucket[line].length) {
+            alert("The number of buckets specified is too many");
+        } else {
+            $("#bucketAll").prop("checked", false);
+            let size = Math.floor(dataBucket[line].length / targetValue);
+            for (let i = 0; i < targetValue - 1; i++) {
+                let temp = dataBucket[line + i].splice(size);
+                dataBucket.splice(line + i + 1, 0, temp);
+            }
+            console.log(dataBucket);
+            var $buckets = $("#bucketOpt");
+            $buckets.empty();
+            console.log(dataBucket)
+            let tempString = "<div id='bucket" + 0 + "'>"
+                + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
+                + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][dataBucket[0].length - 1] + "' readonly>"
+                + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+                + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+            for (let i = 1; i < dataBucket.length; i++) {
+                tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+                    + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value ='" + dataBucket[i][0] + "' readonly>"
+                    + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value ='" + dataBucket[i][dataBucket[i].length - 1] + "' readonly>"
+                    + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
+                    + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+            }
+            $buckets.append(tempString);
+        }
+    }
+
+});
+
+$(document).on("click", ".bucket-multiAddCan", function (e) {
+    let line = Number(e.target.id.substring(15));
+    $("#bucketMulAdd" + line).nextAll().remove();
+});
+
+$(document).on("change", ".custom-bucket", function (e) {
+    if (e.target.id.includes("bucketlower")) {
+        let line = Number(e.target.id.substring(11));
+        if (e.target.value > dataBucket[line - 1][0] && e.target.value < dataBucket[line][1]) {
+            dataBucket[line - 1][1] = e.target.value;
+            $("#bucketupper" + (line - 1)).val(dataBucket[line - 1][1]);
+            dataBucket[line][0] = e.target.value;
+
+        } else {
+            alert("The modified lower range is too high or too low");
+            $("#bucketlower" + line).val(dataBucket[line][0]);
+        }
+    } else if (e.target.id.includes("bucketupper")) {
+        let line = Number(e.target.id.substring(11));
+        if (line == (dataBucket.length - 1)) {
+            alert("You cannot modify the terminating point");
+            $("#bucketupper" + line).val(dataBucket[line][1]);
+            return;
+        }
+        if (e.target.value < dataBucket[line + 1][1] && e.target.value > dataBucket[line][0]) {
+            dataBucket[line + 1][0] = e.target.value;
+            $("#bucketupper" + (line + 0)).val(dataBucket[line + 1][0]);
+            dataBucket[line][1] = e.target.value;
+        } else {
+            alert("The modified upper range is too high");
+            $("#bucketupper" + line).val(dataBucket[line][1]);
         }
 
-        dataBucket.splice(line + Number(targetValue) - 1, 0, [front, last]);
-        console.log(dataBucket)
+    }
+});
+
+$("#bucketAll").click(function (e) {
+    if ($(this).prop("checked")) {
+        if (isBucketNumeric) {
+            var $buckets = $("#bucketOpt");
+            $buckets.empty();
+            let lower = dataBucket[0][0];
+            let upper = dataBucket[dataBucket.length - 1][1]
+            dataBucket = [[lower, upper]];
+            let tempString = "";
+            tempString += "<div id='bucket" + 0 + "'>"
+                + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value =" + dataBucket[0][0] + " readonly>"
+                + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][1] + " readonly>"
+                + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+                + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+            $buckets.append(tempString);
+        } else {
+            $("#displayAll").prop("checked", false);
+            var $buckets = $("#bucketOpt");
+            $buckets.empty();
+            let temp = [];
+            for (let i = 0; i < dataBucket.length; i++) {
+                for (let j = 0; j < dataBucket[i].length; j++) {
+                    temp.push(dataBucket[i][j]);
+                }
+            }
+            dataBucket = [temp];
+            let tempString = "";
+            tempString += "<div id='bucket" + 0 + "'>"
+                + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value =" + dataBucket[0][0] + " readonly>"
+                + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][dataBucket[0].length - 1] + " readonly>"
+                + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+                + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+            $buckets.append(tempString);
+        }
+
+    }
+});
+
+$("#displayAll").click(function (e) {
+    if ($(this).prop("checked")) {
+        $("#bucketAll").prop("checked", false);
+        let temp = [];
+        for (let i = 0; i < dataBucket.length; i++) {
+            for (let j = 0; j < dataBucket[i].length; j++) {
+                temp.push([dataBucket[i][j]]);
+            }
+        }
+        dataBucket = temp;
         var $buckets = $("#bucketOpt");
         $buckets.empty();
         console.log(dataBucket)
         let tempString = "<div id='bucket" + 0 + "'>"
-            + "<input type='text' class='custom-bucket ' id='bucketlower"+ 0 +"' value =" + dataBucket[0][0] +" readonly>"
-            + "<input type='text' class='custom-bucket ' id='bucketupper"+ 0 +"' value =" + dataBucket[0][1] +" >"
+            + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
+            + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
             + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-            +  "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
-        for(let i = 1; i < dataBucket.length; i ++) {
+            + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+        for (let i = 1; i < dataBucket.length; i++) {
             tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
-                + "<input type='text' class='custom-bucket ' id='bucketlower"+ i +"' value =" + dataBucket[i][0] +" >"
-                + "<input type='text' class='custom-bucket ' id='bucketupper"+ i +"' value =" + dataBucket[i][1] +" >"
+                + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value ='" + dataBucket[i][0] + "' readonly>"
+                + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value ='" + dataBucket[i][0] + "' readonly>"
                 + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
-                +  "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+                + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
         }
         $buckets.append(tempString);
     }
 });
 
-$(document).on("click", ".bucket-multiAddCan",function(e){
-    let line = Number(e.target.id.substring(15));
-    $("#bucketMulAdd"+line).nextAll().remove();
-});
-
-$(document).on("change", ".custom-bucket", function(e){
-  if(e.target.id.includes("bucketlower")){
-      let line = Number(e.target.id.substring(11));
-      if(e.target.value > dataBucket[line-1][0] && e.target.value < dataBucket[line][1]){
-           dataBucket[line-1][1] = e.target.value;
-          $("#bucketupper" + (line - 1)).val(dataBucket[line-1][1]);
-           dataBucket[line][0] = e.target.value;
-
-      }else{
-          alert("The modified lower range is too high or too low");
-          $("#bucketlower" + line).val(dataBucket[line][0]);
-      }
-  }else if(e.target.id.includes("bucketupper")){
-      let line = Number(e.target.id.substring(11));
-      if(line == (dataBucket.length-1)){
-          alert("You cannot modify the terminating point");
-          $("#bucketupper" + line).val(dataBucket[line][1]);
-          return;
-      }
-      if(e.target.value < dataBucket[line+1][1] && e.target.value > dataBucket[line][0]){
-          dataBucket[line+1][0] = e.target.value;
-          $("#bucketupper" + (line + 0)).val(dataBucket[line+1][0]);
-          dataBucket[line][1] = e.target.value;
-      }else{
-          alert("The modified upper range is too high");
-          $("#bucketupper" + line).val(dataBucket[line][1]);
-      }
-
-  }
-});
-
-$("#bucketAll").click(function(e){
-   if($(this).prop("checked")){
-       var $buckets = $("#bucketOpt");
-       $buckets.empty();
-       let lower = dataBucket[0][0];
-       let upper = dataBucket[dataBucket.length-1][1]
-       dataBucket = [[lower,upper]];
-       let tempString = "";
-       tempString += "<div id='bucket" + 0 + "'>"
-               + "<input type='text' class='custom-bucket ' id='bucketlower"+ 0 +"' value =" + dataBucket[0][0] +" readonly>"
-               + "<input type='text' class='custom-bucket ' id='bucketupper"+ 0 +"' value =" + dataBucket[0][1] +" readonly>"
-               + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-               +  "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
-       $buckets.append(tempString);
-   }
-});
-
 $("#bucket-form").submit(function (e) {
-    /*alert("backend processing");
-    e.preventDefault();
-    $("#bucket-col").css("display", "none");
-    hot.updateSettings({width: wrapperWidth * 0.8});*/
     e.preventDefault();
     let queryData = {};
     let childlist = computePath();
     queryData.bookId = bId;
     queryData.sheetName = sName;
     queryData.path = childlist;
-    queryData.bucketArray = dataBucket;
+    if (isBucketNumeric) {
+        queryData.bucketArray = dataBucket;
+    } else {
+        let temp = [];
+        for (let i = 0; i < dataBucket.length; i++) {
+            temp.push([dataBucket[i][0], dataBucket[i][dataBucket[i].length - 1]]);
+        }
+        queryData.bucketArray = temp;
+    }
+
     $.ajax({
         url: baseUrl + "updateBoundaries",
         method: "POST",
@@ -565,12 +745,22 @@ $("#bucket-form").submit(function (e) {
         contentType: 'text/plain',
         data: JSON.stringify(queryData),
     }).done(function (e) {
-        console.log(e);
+        if (e.status == "success") {
+            $("#bucket-col").css("display", "none");
+            hot.updateSettings({width: wrapperWidth * 0.79});
+            if (currLevel > 0) {
+                let targetChild = levelList[levelList.length - 1];
+                zoomOutHist(nav);
+                zoomIn(targetChild, nav);
+            } else {
+                Explore(exploreAttr);
+            }
+
+        }
 
     })
 
 });
-
 
 
 // navigation start, showing left column.
@@ -580,7 +770,7 @@ function Explore(e) {
     $("#Hierarchical").click(function () { // handling hierarchical column click in
         // the Exploration Tools
         $("#exploration-bar").css("display", "none");
-        $("#bucket-col").css("display","none");
+        $("#bucket-col").css("display", "none");
         hot.updateSettings({width: wrapperWidth * 0.59});
         $("#hierarchical-col").css({
             "float": "left",
@@ -597,9 +787,9 @@ function Explore(e) {
         } else {
             $("#Sort").css({"display": "none"})
         }
-        if(exploreOpen){
+        if (exploreOpen) {
             $("#Bucket").css({"display": "block"})
-        }else{
+        } else {
             $("#Bucket").css({"display": "none"})
         }
     })
@@ -663,17 +853,17 @@ function Explore(e) {
             height: wrapperHeight * 0.95,
             rowHeaderWidth: 0,
             rowHeaders: true,
-            colWidths: function(col){
-                if(currLevel==0){
-                    if(col == 0) {
-                        return wrapperWidth*0.18;
-                    }else {
+            colWidths: function (col) {
+                if (currLevel == 0) {
+                    if (col == 0) {
+                        return wrapperWidth * 0.18;
+                    } else {
                         return wrapperWidth * 0.15;
                     }
-                }else{
-                    if(col == 0) {
-                        return wrapperWidth*0.08;
-                    }else {
+                } else {
+                    if (col == 0) {
+                        return wrapperWidth * 0.08;
+                    } else {
                         return wrapperWidth * 0.15;
                     }
                 }
@@ -803,7 +993,7 @@ function Explore(e) {
         nav = new Handsontable(navContainer, navSettings);
         //nav.selectCell(0, 0);
         console.log("dsa");
-       
+
         updateData(0, 0, 1000, 15, true);
         lowerRange = 0;
         upperRange = 1000;
@@ -880,28 +1070,28 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                     let chartData = [];
 
                     for (let i = 0; i < number; i++) {
-                        if(result[i].name.length > maxLen){
+                        if (result[i].name.length > maxLen) {
                             maxLen = result[i].name.length;
                         }
                         let value;
-                        if(result[i].name.length>20) {
-                            value = result[i].name.substring(0,20)+"...";
-                            hash.set(value,{name:result[i].name,range:result[i].rowRange[0]})
-                        }else{
+                        if (result[i].name.length > 12) {
+                            value = result[i].name.substring(0, 13) + "...";
+                            hash.set(value, {name: result[i].name, range: result[i].rowRange[0]})
+                        } else {
                             value = result[i].name;
-                            hash.set(value,{name:result[i].name,range:result[i].rowRange[0]});
+                            hash.set(value, {name: result[i].name, range: result[i].rowRange[0]});
                         }
-                        chartData.push({name: value , count: result[i].value});
+                        chartData.push({name: value, count: result[i].value});
                     }
 
-                    let maxleft = (maxLen * 6) < 110?  maxLen*6:110;
+                    let maxleft = 75;
 
                     let margin = {top: 0, right: 40, bottom: 5, left: maxleft};
                     var fullWidth = wrapperWidth * 0.18;
                     var fullHeight = (wrapperHeight * 0.95 / cumulativeData[currLevel].length > 90)
-                        ? wrapperHeight * 0.95 / cumulativeData[currLevel].length-10 : 80;
-                    if(number > 6){
-                        fullHeight += (number - 6)*5;
+                        ? wrapperHeight * 0.95 / cumulativeData[currLevel].length - 10 : 80;
+                    if (number > 6) {
+                        fullHeight += (number - 6) * 5;
                     }
                     var width = fullWidth - margin.right - margin.left;
                     var height = fullHeight - margin.top - margin.bottom;
@@ -938,7 +1128,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                         .data(chartData)
                         .on("mouseover",
                             function (d) {
-                            console.log(d)
+                                console.log(d)
                                 tooltip.style("left", d3.event.pageX - 20 + "px")
                                     .style("top", d3.event.pageY - 30 + "px")
                                     .style("display", "inline-block")
@@ -966,12 +1156,12 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                         .attr("width", function (d) {
                             return x(d.count);
                         })
-                        .on("click",function (d) {
+                        .on("click", function (d) {
                             lowerRange = hash.get(d.name).range;
                             upperRange = lowerRange + 500;
-                            updateData(lowerRange, 0,upperRange, 15, true);
+                            updateData(lowerRange, 0, upperRange, 15, true);
                         });
-                     //   .on("dblclick",function(d){ alert("node was double clicked"); });
+                    //   .on("dblclick",function(d){ alert("node was double clicked"); });
 
                     //add a value label to the right of each bar
                     bars.append("text")
@@ -1038,29 +1228,30 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                         let hash = new Map();
                         let chartData = [];
                         for (let i = 0; i < number; i++) {
-                            if(result[i].name.length > maxLen){
+                            if (result[i].name.length > maxLen) {
                                 maxLen = result[i].name.length;
                             }
                             let value;
-                            if(result[i].name.length>20) {
-                                value = result[i].name.substring(0,20)+"...";
-                                hash.set(value,{name:result[i].name,range:result[i].rowRange[0]})
-                            }else{
+                            if (result[i].name.length > 13) {
+                                value = result[i].name.substring(0, 13) + "...";
+                                hash.set(value, {name: result[i].name, range: result[i].rowRange[0]})
+                            } else {
                                 value = result[i].name;
-                                hash.set(value,{name:result[i].name,range:result[i].rowRange[0]});
+                                hash.set(value, {name: result[i].name, range: result[i].rowRange[0]});
                             }
-                            chartData.push({name: value , count: result[i].value});
+                            chartData.push({name: value, count: result[i].value});
                         }
-                        let maxleft = (maxLen * 6) < 110?  maxLen*6:110;
+                        let maxleft = 75;
+                        /* (maxLen * 6) < 110?  maxLen*6:110;*/
                         //todo: compute on good width and height, margin left and right
                         let margin = {top: 0, right: 40, bottom: 5, left: maxleft};
                         var fullWidth = wrapperWidth * 0.15;
                         console.log(fullWidth)
 
                         var fullHeight = (wrapperHeight * 0.95 / cumulativeData[currLevel].length > 90)
-                            ? wrapperHeight * 0.95 / cumulativeData[currLevel].length-10 : 80;
-                        if(number > 6){
-                            fullHeight += (number - 6)*5;
+                            ? wrapperHeight * 0.95 / cumulativeData[currLevel].length - 10 : 80;
+                        if (number > 6) {
+                            fullHeight += (number - 6) * 5;
                         }
 
                         var width = fullWidth - margin.right - margin.left;
@@ -1127,11 +1318,11 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                             .attr("width", function (d) {
                                 return x(d.count);
                             })
-                            .on("click",function (d) {
+                            .on("click", function (d) {
                                 alert(hash.get(d.name).range);
                                 lowerRange = hash.get(d.name).range;
                                 upperRange = lowerRange + 500;
-                                updateData(lowerRange, 0,upperRange, 15, true);
+                                updateData(lowerRange, 0, upperRange, 15, true);
                             });
 
                         //add a value label to the right of each bar
@@ -1399,9 +1590,9 @@ function addHierarchiCol(aggregateValue) {
     if (zoomouting) {
         zoomouting = false;
         if (currLevel == 0) {
-         //   nav.selectCell(targetChild, 0)
+            //   nav.selectCell(targetChild, 0)
         } else {
-          //  nav.selectCell(targetChild, 1);
+            //  nav.selectCell(targetChild, 1);
         }
     }
 }
