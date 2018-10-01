@@ -1,9 +1,11 @@
-package org.model;
+package org.zkoss.zss.model.impl;
+
+import org.model.AutoRollbackConnection;
+import org.model.DBHandler;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.logging.Logger;
 
 public class GraphCompressor extends Thread {

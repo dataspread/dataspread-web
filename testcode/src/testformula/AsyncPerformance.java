@@ -2,7 +2,6 @@ package testformula;
 
 import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
-import org.model.GraphCompressor;
 import org.postgresql.geometric.PGbox;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
@@ -10,6 +9,7 @@ import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.AbstractBookSeriesAdv;
 import org.zkoss.zss.model.impl.FormulaCacheCleaner;
+import org.zkoss.zss.model.impl.GraphCompressor;
 import org.zkoss.zss.model.impl.SheetImpl;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerPriority;
 import org.zkoss.zss.model.sys.BookBindings;
