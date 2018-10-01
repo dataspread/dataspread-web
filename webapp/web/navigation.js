@@ -368,7 +368,7 @@ $("#Bucket").click(function () {
                 dataBucket = [];
                 for (let i = 0; i < e.data.bucketArray.length; i++) {
                     let temp = [];
-                    temp.push(parseFloat(e.data.bucketArray[i][0]));
+                    temp.push(e.data.bucketArray[i][0]);
                     temp.push(parseFloat(e.data.bucketArray[i][1]));
                     dataBucket.push(temp);
                 }
@@ -422,7 +422,7 @@ $(document).on("click", ".bucket-add", function (e) {
     let line = Number(e.target.id.substring(9));
     if (isBucketNumeric) {
         let newupp = dataBucket[line][1];
-        let oldlower = isNaN(dataBucket[line][0]) ? parseFloat(dataBucket[line][0].slice(0, -1)) : dataBucket[line][0];
+        let oldlower = isNaN(dataBucket[line][0]) ? parseFloat(dataBucket[line][0].slice(0, -1)) : parseFloat(dataBucket[line][0]);
         if (newupp - oldlower < 1) {
             alert("You cannot split further");
             return;
