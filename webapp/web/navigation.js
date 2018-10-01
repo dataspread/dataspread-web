@@ -637,12 +637,15 @@ $(document).on("change", ".custom-bucket", function (e) {
         } else {
             alert("The modified lower range is too high or too low");
             $("#bucketlower" + line).val(dataBucket[line][0]);
+            $("#bucketupper" + (line - 1)).val(dataBucket[line - 1][1]);
+            e.preventDefault();
         }
     } else if (e.target.id.includes("bucketupper")) {
         let line = Number(e.target.id.substring(11));
         if (line == (dataBucket.length - 1)) {
             alert("You cannot modify the terminating point");
             $("#bucketupper" + line).val(dataBucket[line][1]);
+            e.preventDefault();
             return;
         }
         let currLow = isNaN(dataBucket[line][0]) ? parseFloat(dataBucket[line][0].slice(0, -1)) : dataBucket[line][0];
@@ -653,8 +656,19 @@ $(document).on("change", ".custom-bucket", function (e) {
         } else {
             alert("The modified upper range is too high");
             $("#bucketupper" + line).val(dataBucket[line][1]);
+            $("#bucketlower" + (line + 1)).val(dataBucket[line + 1][0]);
+            e.preventDefault();
         }
 
+    }
+});
+
+$(document).on("input", ".custom-bucket", function (e){
+    let line = Number(e.target.id.substring(11));
+    if (e.target.id.includes("bucketlower")){
+        $("#bucketupper" + (line - 1)).val(e.target.value);
+    } else if (e.target.id.includes("bucketupper") && line < (dataBucket.length - 1)) {
+        $("#bucketlower" + (line + 1)).val(e.target.value+"+");
     }
 });
 
@@ -724,6 +738,15 @@ $("#displayAll").click(function (e) {
         $buckets.append(tempString);
     }
 });
+
+// $('#bucket-form').on('keyup keypress', function(e) {
+//
+//     var keyCode = e.keyCode || e.which;
+//     if (keyCode === 13) {
+//         e.preventDefault();
+//         return;
+//     }
+// });
 
 $("#bucket-form").submit(function (e) {
     e.preventDefault();
