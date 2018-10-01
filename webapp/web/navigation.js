@@ -626,10 +626,12 @@ $(document).on("click", ".bucket-multiAddCan", function (e) {
 $(document).on("change", ".custom-bucket", function (e) {
     if (e.target.id.includes("bucketlower")) {
         let line = Number(e.target.id.substring(11));
-        if (e.target.value > dataBucket[line - 1][0] && e.target.value < dataBucket[line][1]) {
+        let prevLow = isNaN(dataBucket[line - 1][0]) ? parseFloat(dataBucket[line - 1][0].slice(0, -1)) : dataBucket[line - 1][0];
+        if (e.target.value > prevLow && e.target.value < dataBucket[line][1]) {
             dataBucket[line - 1][1] = e.target.value;
             $("#bucketupper" + (line - 1)).val(dataBucket[line - 1][1]);
-            dataBucket[line][0] = e.target.value;
+            dataBucket[line][0] = e.target.value + "+";
+            $("#bucketlower" + line).val(dataBucket[line][0]);
 
         } else {
             alert("The modified lower range is too high or too low");
@@ -642,9 +644,10 @@ $(document).on("change", ".custom-bucket", function (e) {
             $("#bucketupper" + line).val(dataBucket[line][1]);
             return;
         }
-        if (e.target.value < dataBucket[line + 1][1] && e.target.value > dataBucket[line][0]) {
-            dataBucket[line + 1][0] = e.target.value;
-            $("#bucketupper" + (line + 0)).val(dataBucket[line + 1][0]);
+        let currLow = isNaN(dataBucket[line][0]) ? parseFloat(dataBucket[line][0].slice(0, -1)) : dataBucket[line][0];
+        if (e.target.value < dataBucket[line + 1][1] && e.target.value > currLow) {
+            dataBucket[line + 1][0] = e.target.value + "+";
+            $("#bucketlower" + (line + 1)).val(dataBucket[line + 1][0]);
             dataBucket[line][1] = e.target.value;
         } else {
             alert("The modified upper range is too high");
