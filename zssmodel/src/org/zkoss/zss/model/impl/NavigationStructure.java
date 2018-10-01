@@ -696,11 +696,13 @@ public class NavigationStructure {
                     if(keyIndex<=uniqueKeyArr.size()-1)
                     {
                         keyIndex = approxSearch(start_user, keyIndex, true);
+                        if(start_end[0].contains("+"))
+                            keyIndex++;
                     }
-                    else //add the last bucket even if it doesn't contain any value in ss
+                    /*else //add the last bucket even if it doesn't contain any value in ss
                     {
                         keyIndex = approxSearch(start_user, keyIndex-1, true);
-                    }
+                    }*/
                     bkt.startPos = uniqueKeyStart.get(uniqueKeyArr.get(keyIndex));
                 }
 

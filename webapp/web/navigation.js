@@ -359,6 +359,7 @@ $("#Bucket").click(function () {
         contentType: 'text/plain',
         data: JSON.stringify(queryData),
     }).done(function (e) {
+        console.log("Print BE Buckets");
         console.log(e);
         if (e.status == "success") {
             isBucketNumeric = e.data.isNumeric;
@@ -710,13 +711,13 @@ $("#displayAll").click(function (e) {
         console.log(dataBucket)
         let tempString = "<div id='bucket" + 0 + "'>"
             + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
-            + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
+            //+ "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
             + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
             + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
         for (let i = 1; i < dataBucket.length; i++) {
             tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
                 + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value ='" + dataBucket[i][0] + "' readonly>"
-                + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value ='" + dataBucket[i][0] + "' readonly>"
+                //+ "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value ='" + dataBucket[i][0] + "' readonly>"
                 + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
                 + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
         }
