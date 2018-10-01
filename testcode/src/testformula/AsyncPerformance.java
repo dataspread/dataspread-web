@@ -11,7 +11,7 @@ import org.zkoss.zss.model.impl.AbstractBookSeriesAdv;
 import org.zkoss.zss.model.impl.FormulaCacheCleaner;
 import org.zkoss.zss.model.impl.GraphCompressor;
 import org.zkoss.zss.model.impl.SheetImpl;
-import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerPriority;
+import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerSimple;
 import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
@@ -42,15 +42,15 @@ public class AsyncPerformance {
 
         SheetImpl.simpleModel = true;
         SheetImpl.disablePrefetch();
-        FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerPriority();
-        //FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerSimple();
+        //FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerPriority();
+        FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerSimple();
         Thread asyncThread = new Thread(formulaAsyncScheduler);
         asyncThread.start();
 
 
         GraphCompressor  graphCompressor = new GraphCompressor();
-        Thread graphThread = new Thread(graphCompressor);
-        // graphThread.start();
+        //Thread graphThread = new Thread(graphCompressor);
+        //graphThread.start();
 
         simpleTest(formulaAsyncScheduler);
         //realTest("survey", "Escalating OSA with Cost Share.xlsx", "Cost Share", formulaAsyncScheduler);
@@ -58,8 +58,8 @@ public class AsyncPerformance {
         formulaAsyncScheduler.shutdown();
         asyncThread.join();
 
-        //   graphCompressor.stopListener();
-        //   graphThread.join();
+        //graphCompressor.shutdown();
+        //graphThread.join();
     }
 
 
@@ -157,12 +157,13 @@ public class AsyncPerformance {
             sheet.clearCache();
             DirtyManagerLog.instance.init();
 
-            System.out.println("Starting Asyn ");
+            System.out.println("Starting Asyn " + System.currentTimeMillis());
             dt.getLastLookupTime(); // Reset time
             startTime = System.currentTimeMillis();
             sheet.getCell(badCell).setValue(random.nextInt());
             endTime = System.currentTimeMillis();
             System.out.println("Async time to update = " + (endTime - startTime) + " " + dt.getLastLookupTime());
+            System.out.println("Control returned to user = " + endTime);
 
             total_area_under_curve += (endTime - startTime) * cellsInSheet;
 
@@ -345,6 +346,9 @@ public class AsyncPerformance {
             sheet.getCell(i,0).setFormulaValue("A" + i + "+1");
 
 
+        List<CellRegion> sheetCells = sheet.getCells().stream().map(SCell::getCellRegion)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
         long startTime, endTime;
         /* Time to update A1 */
 
@@ -352,15 +356,17 @@ public class AsyncPerformance {
 
         sheet.setSyncComputation(false);
 
-        System.out.println("Starting Asyn ");
-        startTime = System.currentTimeMillis();
 
+        startTime = System.currentTimeMillis();
+        System.out.println("Starting Asyn " + startTime);
 
         sheet.getCell(0, 0).setValue(200);
         System.out.println("Before Waiting "
                 + sheet.getCell(cellCount, 0).getValue());
 
         endTime = System.currentTimeMillis();
+        System.out.println("Control retuned  " + endTime);
+
         System.out.println("Async time to update = " + (endTime-startTime));
         formulaAsyncScheduler.waitForCompletion();
         endTime = System.currentTimeMillis();
@@ -373,6 +379,9 @@ public class AsyncPerformance {
         Collection<SCell> cells = sheet.getCells().stream()
                 .filter(e->e.getType()== SCell.CellType.FORMULA)
                 .collect(Collectors.toList());
+
+        DirtyManagerLog.instance.groupPrint(sheetCells);
+
         long totalWaitTime = cells.stream()
                 .mapToLong(e-> DirtyManagerLog.instance.getDirtyTime(e.getCellRegion()))
                 .sum();

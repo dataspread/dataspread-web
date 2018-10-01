@@ -408,11 +408,11 @@ public final class WorkbookEvaluator {
             /* if unevaluated   */
 
 			if (val instanceof String && val.equals("...")) {
-                System.out.println("Evaluating " + srcCell);
+				//System.out.println("Evaluating " + srcCell);
 				Ptg[] ptgs = _workbook.getFormulaTokens(srcCell);
 				OperationEvaluationContext ec = new OperationEvaluationContext(this, _workbook, sheetIndex, rowIndex, columnIndex, tracker, _dependencyTracker, ref);
 				result = evaluateFormula(ec, ptgs, false, false);
-				System.out.println("Done Evaluating " + srcCell);
+				//System.out.println("Done Evaluating " + srcCell);
 				return result;
 			}
 
