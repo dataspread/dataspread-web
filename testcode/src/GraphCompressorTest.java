@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Queue;
 
 
-public class GraphCompressor extends Frame {
+public class GraphCompressorTest extends Frame {
 
     private Collection<CellRegion> cellRegionCollection;
 
@@ -166,7 +166,7 @@ public class GraphCompressor extends Frame {
 
     }
 
-    GraphCompressor() {
+    GraphCompressorTest() {
         super("Graph Compressor demo");
         prepareGUI();
     }
