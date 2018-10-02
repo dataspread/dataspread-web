@@ -21,9 +21,10 @@ import java.util.concurrent.TimeUnit;
 public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
     private boolean keepRunning = true;
     private boolean emptyQueue = false;
-    ThreadPoolExecutor executorPool;
-    MyMonitorThread monitor;
-    final int MaximumWorkers = 4;
+    private ThreadPoolExecutor executorPool;
+    private MyMonitorThread monitor;
+    private final boolean runMonitor = false;
+    private final int MaximumWorkers = 4;
 
     public class DynamicPriorityAdjuster implements Runnable {
         boolean run = true;
@@ -55,7 +56,7 @@ public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
 
         @Override
         public void run() {
-            System.out.println(Thread.currentThread().getName() + " Start. Cell = " + sCell);
+            //System.out.println(Thread.currentThread().getName() + " Start. Cell = " + sCell);
             int priority = 10;
             // if visible increase priority.
 
@@ -76,8 +77,7 @@ public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
             }
             FormulaComputationStatusManager.getInstance().doneComputation();
 
-
-            System.out.println(Thread.currentThread().getName() + " End.");
+            // System.out.println(Thread.currentThread().getName() + " End.");
         }
     }
 
@@ -120,11 +120,14 @@ public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
     @Override
     public void run() {
         System.out.println("Starting FormulaAsyncSchedulerThreaded");
-        executorPool = new ThreadPoolExecutor(4, MaximumWorkers, 10, TimeUnit.SECONDS,
+        executorPool = new ThreadPoolExecutor(MaximumWorkers, MaximumWorkers, 10, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>());
-        monitor = new MyMonitorThread(executorPool, 10);
-        Thread monitorThread = new Thread(monitor);
-        monitorThread.start();
+        Thread monitorThread;
+        if (runMonitor) {
+            monitor = new MyMonitorThread(executorPool, 10);
+            monitorThread = new Thread(monitor);
+            monitorThread.start();
+        }
 
         DynamicPriorityAdjuster dynamicPriorityAdjuster = new DynamicPriorityAdjuster();
         Thread dynamicPriorityAdjusterThread = new Thread(dynamicPriorityAdjuster);
@@ -138,7 +141,7 @@ public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
                     notifyAll();
                 }
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(50);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -166,10 +169,12 @@ public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
         }
         System.out.println("Shutdown  FormulaAsyncSchedulerThreaded");
         executorPool.shutdown();
-        monitor.shutdown();
+        if (runMonitor)
+            monitor.shutdown();
         dynamicPriorityAdjuster.shutdown();
         try {
-            monitorThread.join();
+            if (runMonitor)
+                monitorThread.join();
             dynamicPriorityAdjusterThread.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -178,7 +183,7 @@ public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
 
     @Override
     public synchronized void waitForCompletion() {
-        while (!emptyQueue) {
+        while (!emptyQueue || executorPool.getActiveCount() > 0) {
             try {
                 this.wait();
             } catch (InterruptedException e) {
