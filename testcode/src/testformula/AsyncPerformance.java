@@ -27,8 +27,10 @@ public class AsyncPerformance implements FormulaAsyncListener {
     private static final int modification=1000;
     private static Connection conn;
     int cellCount = 200;
-    long startTime, endTime;
+    long initTime;
     boolean testStarted = false;
+    private long controlReturnedTime;
+    private long computationDoneTime;
 
 
     public static void main(String[] args) throws Exception {
@@ -141,7 +143,7 @@ public class AsyncPerformance implements FormulaAsyncListener {
             System.out.println("Before Compression ");
             System.out.println(startTime + "\t" + cellsInSheet);
             System.out.println(endTime + "\t" + cellsInSheet);
-            DirtyManagerLog.instance.groupPrint(sheetCells);
+          //  DirtyManagerLog.instance.groupPrint(sheetCells);
 
             // long totalWaitTime = dependents.stream()
             //         .mapToLong(e -> DirtyManagerLog.instance.getDirtyTime(new CellRegion(e)))
@@ -198,7 +200,7 @@ public class AsyncPerformance implements FormulaAsyncListener {
             System.out.println("After Compression ");
             System.out.println(startTime + "\t" + cellsInSheet);
             System.out.println(endTime + "\t" + cellsInSheet);
-            DirtyManagerLog.instance.groupPrint(sheetCells);
+            //DirtyManagerLog.instance.groupPrint(sheetCells);
 
 
             // System.out.println("Avg Wait time " + totalWaitTime / dependents.size());
@@ -346,25 +348,19 @@ public class AsyncPerformance implements FormulaAsyncListener {
 
     public void simpleTest()
     {
-
         SBook book = BookBindings.getBookByName("testBook" + System.currentTimeMillis());
         /* Cleaner for sync computation */
         // FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(book.getBookSeries()));
         SSheet sheet = book.getSheet(0);
         sheet.setSyncComputation(false);
 
+        for (int i=1;i<=4000;i++)
+            sheet.getCell(i,2).setValue(System.currentTimeMillis());
+
 
         for (int i=1;i<=cellCount;i++)
             sheet.getCell(i,0).setFormulaValue("A" + i + "+1");
-
-
-
-        /* Time to update A1 */
-
         sheet.clearCache();
-        System.out.println("Before Update "
-                + sheet.getCell(cellCount, 0).getValue());
-
 
         try {
             Thread.sleep(10000);
@@ -372,21 +368,21 @@ public class AsyncPerformance implements FormulaAsyncListener {
             e.printStackTrace();
         }
 
-
         DirtyManagerLog.instance.init();
         testStarted = true;
 
-        startTime = System.currentTimeMillis();
-        System.out.println("Starting Asyn " + startTime);
+        initTime = System.currentTimeMillis();
+        System.out.println("Starting Asyn " + initTime);
 
         sheet.getCell(0, 0).setValue(200);
+
         System.out.println("Before Waiting "
                 + sheet.getCell(cellCount, 0).getValue());
 
-        endTime = System.currentTimeMillis();
-        System.out.println("Control retuned  " + endTime);
+        controlReturnedTime = System.currentTimeMillis();
+        System.out.println("Control retuned  " + controlReturnedTime);
 
-        System.out.println("Async time to update = " + (endTime-startTime));
+        System.out.println("Async time to update = " + (controlReturnedTime-initTime));
 
         try {
             Thread.sleep(10000);
@@ -510,10 +506,10 @@ public class AsyncPerformance implements FormulaAsyncListener {
             List<CellRegion> sheetCells = sheet.getCells().stream().map(SCell::getCellRegion)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
-            endTime = System.currentTimeMillis();
+            computationDoneTime = System.currentTimeMillis();
             System.out.println("Final Value "
                     + sheet.getCell(cellCount, 0).getValue());
-            System.out.println("Async time to complete = " + (endTime - startTime));
+            System.out.println("Async time to complete = " + (computationDoneTime - initTime));
 
 
             //Get total dirty time for all cells
@@ -522,7 +518,7 @@ public class AsyncPerformance implements FormulaAsyncListener {
                     .collect(Collectors.toList());
 
 
-            DirtyManagerLog.instance.groupPrint(sheetCells);
+            DirtyManagerLog.instance.groupPrint(sheetCells, controlReturnedTime, initTime);
 
             long totalWaitTime = cells.stream()
                     .mapToLong(e -> DirtyManagerLog.instance.getDirtyTime(e.getCellRegion()))
