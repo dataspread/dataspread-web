@@ -31,7 +31,7 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
                     notifyAll();
                 }
                  try {
-                     Thread.sleep(100);
+                     Thread.sleep(50);
                  } catch (InterruptedException e) {
                      e.printStackTrace();
                  }
@@ -43,7 +43,7 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
             if (dirtyRecord==null)
                 continue;
 
-            logger.info("Processing " + dirtyRecord.region);
+            //logger.info("Processing " + dirtyRecord.region);
             SSheet sheet=BookBindings.getSheetByRef(dirtyRecord.region);
 
             //TODO - Change to streaming.
