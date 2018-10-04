@@ -30,7 +30,8 @@ import java.util.Map;
  * @since 3.5.0
  */
 public interface SSheet {
-	
+
+	boolean isSyncCalc();
 	/**
 	 * Get the owner book
 	 * @return the owner book

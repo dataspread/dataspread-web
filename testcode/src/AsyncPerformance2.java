@@ -5,6 +5,8 @@ import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.impl.CellImpl;
+import org.zkoss.zss.model.impl.FormulaCacheCleaner;
 import org.zkoss.zss.model.impl.GraphCompressor;
 import org.zkoss.zss.model.impl.SheetImpl;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncListener;
@@ -20,9 +22,10 @@ import java.util.stream.Collectors;
 
 public class AsyncPerformance2 implements FormulaAsyncListener {
     private static Connection conn;
-    int cellCount = 10000;
+    int cellCount = 5000;
     long initTime;
     boolean testStarted = false;
+    final boolean sync=false;
     private long controlReturnedTime;
     private long computationDoneTime;
 
@@ -170,7 +173,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
     }
 
     private static void compressDependencies(ArrayList<CellRegion> dependencies) {
-        while (dependencies.size() > 30) {
+        while (dependencies.size() > 20) {
             int best_i = 0, best_j = 0, best_area = Integer.MAX_VALUE;
             CellRegion best_bounding_box = null;
             for (int i = 0; i < dependencies.size() - 1; i++) {
@@ -179,6 +182,16 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
                     int new_area = bounding.getCellCount() -
                             dependencies.get(i).getCellCount() - dependencies.get(j).getCellCount();
                     CellRegion overlap = dependencies.get(i).getOverlap(dependencies.get(j));
+                    if (new_area==0)
+                    {
+                        best_area = new_area;
+                        best_i = i;
+                        best_j = j;
+                        best_bounding_box = bounding;
+                        i=dependencies.size();
+                        break;
+                    }
+
                     if (overlap != null)
                         new_area -= overlap.getCellCount();
                     if (new_area < best_area) {
@@ -201,19 +214,22 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
     {
         SBook book = BookBindings.getBookByName("testBook" + System.currentTimeMillis());
         /* Cleaner for sync computation */
-        // FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(book.getBookSeries()));
+        if (sync)
+            FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(book.getBookSeries()));
         SSheet sheet = book.getSheet(0);
         //sheet.setSyncComputation(true);
 
-        for (int i=1;i<=2000;i++)
+        for (int i=1;i<=cellCount;i++)
             sheet.getCell(i,2).setValue(System.currentTimeMillis());
 
-        sheet.getCell(0,0).setValue(0);
+        sheet.getCell(0,0).setValue(10);
         for (int i=1;i<=cellCount;i++)
-            sheet.getCell(i,0).setFormulaValue("A" + i + "+1");
-        sheet.clearCache();
+            sheet.getCell(i,0).setFormulaValue("A1" + "+" + (System.currentTimeMillis()%5000) + "+" + i);
+        //sheet.clearCache();
 
-       // compressGraphNode(sheet.getBook().getBookName(), sheet.getSheetName(), new CellRegion(0,0));
+
+
+       //compressGraphNode(sheet.getBook().getBookName(), sheet.getSheetName(), new CellRegion(0,0));
 
         try {
             Thread.sleep(10000);
@@ -221,12 +237,17 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
             e.printStackTrace();
         }
 
+        sheet.setSyncComputation(sync);
 
         DirtyManagerLog.instance.init();
+        CellImpl.disableDBUpdates = true;
         testStarted = true;
 
         initTime = System.currentTimeMillis();
         System.out.println("Starting Asyn " + initTime);
+
+        System.out.println("Before Update "
+                + sheet.getCell(cellCount, 0).getValue());
 
         sheet.getCell(0, 0).setValue(200);
 
@@ -236,18 +257,17 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         controlReturnedTime = System.currentTimeMillis();
         System.out.println("Control retuned  " + controlReturnedTime);
 
-        System.out.println("Async time to update = " + (controlReturnedTime-initTime));
+        System.out.println("Time to update = " + (controlReturnedTime-initTime) );
 
-
-        synchronized (this)
-        {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        if (!sync) {
+            synchronized (this) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
-
     }
 
     @Override
@@ -277,7 +297,9 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
                     .sum();
             System.out.println("Total Wait time " + totalWaitTime);
             System.out.println("Avg Wait time " + totalWaitTime / cells.size());
-            notify();
+            synchronized (this) {
+                notify();
+            }
         }
     }
 }

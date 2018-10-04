@@ -140,4 +140,9 @@ final class ForkedEvaluationSheet implements EvaluationSheet {
 		// TODO Auto-generated method stub
 		return false;
 	}
+
+	@Override
+	public boolean isSyncCalc() {
+		return false;
+	}
 }

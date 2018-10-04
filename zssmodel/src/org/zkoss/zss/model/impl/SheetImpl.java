@@ -53,7 +53,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SheetImpl extends AbstractSheetAdv {
 	private static final long serialVersionUID = 1L;
 	private static final Log _logger = Log.lookup(SheetImpl.class);
-    //Mangesh
     static private int PreFetchRows = Library.getIntProperty("PreFetchRows", 100);
     static private int PreFetchColumns = Library.getIntProperty("PreFetchColumns", 30);
     /**

@@ -40,4 +40,6 @@ public interface EvaluationSheet {
 	 */
 	//ZSS-962
 	boolean isHidden(int rowIndex, int columnIndex);
+
+	boolean isSyncCalc();
 }

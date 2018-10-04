@@ -31,7 +31,7 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
                     notifyAll();
                 }
                  try {
-                     Thread.sleep(50);
+                     Thread.sleep(5);
                  } catch (InterruptedException e) {
                      e.printStackTrace();
                  }

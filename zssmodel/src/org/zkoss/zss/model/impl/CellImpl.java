@@ -68,6 +68,7 @@ public class CellImpl extends AbstractCellAdv {
         return kryo;
     };
 	private final static KryoPool kryoPool = new KryoPool.Builder(factory).softReferences().build();
+	public static boolean disableDBUpdates=false;
 	transient private int _row;
 	transient private int _column;
 	private CellValue _localValue = null;
@@ -526,7 +527,7 @@ public class CellImpl extends AbstractCellAdv {
 				}
 			}
 
-			if (updateToDB)
+			if (updateToDB && !disableDBUpdates)
 				updateCelltoDB(connection);
 		}
 	}

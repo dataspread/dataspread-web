@@ -404,10 +404,12 @@ public final class WorkbookEvaluator {
 		{
 			ValueEval result=null;
 			// Formula Cell
-			Object val = srcCell.getCellValue();
+			Object val = null;
+			if (!srcCell.getSheet().isSyncCalc())
+				val = srcCell.getCellValue();
             /* if unevaluated   */
 
-			if (val instanceof String && val.equals("...")) {
+			if (srcCell.getSheet().isSyncCalc() ||  (val instanceof String && val.equals("..."))) {
 				//System.out.println("Evaluating " + srcCell);
 				Ptg[] ptgs = _workbook.getFormulaTokens(srcCell);
 				OperationEvaluationContext ec = new OperationEvaluationContext(this, _workbook, sheetIndex, rowIndex, columnIndex, tracker, _dependencyTracker, ref);
