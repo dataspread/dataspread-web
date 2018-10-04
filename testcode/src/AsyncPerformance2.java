@@ -9,10 +9,12 @@ import org.zkoss.zss.model.impl.CellImpl;
 import org.zkoss.zss.model.impl.FormulaCacheCleaner;
 import org.zkoss.zss.model.impl.GraphCompressor;
 import org.zkoss.zss.model.impl.SheetImpl;
+import org.zkoss.zss.model.impl.sys.DependencyTableImpl;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncListener;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerSimple;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerThreaded;
 import org.zkoss.zss.model.sys.BookBindings;
+import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
@@ -39,7 +41,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         DBHandler.connectToDB(url, driver, userName, password);
 
         SheetImpl.simpleModel = true;
-        SheetImpl.disablePrefetch();
+        //SheetImpl.disablePrefetch();
         //FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerPriority();
         FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerSimple();
         Thread asyncThread = new Thread(formulaAsyncScheduler);
@@ -233,6 +235,8 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         if (graphCompression)
             compressGraphNode(sheet.getBook().getBookName(), sheet.getSheetName(), new CellRegion(0,0));
 
+
+
         try {
             Thread.sleep(10000);
         } catch (InterruptedException e) {
@@ -267,6 +271,36 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
                 }
             }
         }
+
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        List<CellRegion> sheetCells = sheet.getCells().stream().map(SCell::getCellRegion)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        computationDoneTime = System.currentTimeMillis();
+        System.out.println("Final Value "
+                + sheet.getCell(cellCount, 0).getValue());
+        System.out.println("Async time to complete = " + (computationDoneTime - initTime));
+
+
+        //Get total dirty time for all cells
+        Collection<SCell> cells = sheet.getCells().stream()
+                .filter(e -> e.getType() == SCell.CellType.FORMULA)
+                .collect(Collectors.toList());
+
+
+        DirtyManagerLog.instance.groupPrint(sheetCells, controlReturnedTime, initTime);
+
+        long totalWaitTime = cells.stream()
+                .mapToLong(e -> DirtyManagerLog.instance.getDirtyTime(e.getCellRegion()))
+                .sum();
+        System.out.println("Total Wait time " + totalWaitTime);
+        System.out.println("Avg Wait time " + totalWaitTime / cells.size());
+
     }
 
     @Override
@@ -274,28 +308,6 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         //System.out.println("Computed " + cellRegion + " " + formula);
         if (cellRegion.row == cellCount && testStarted) {
 
-            List<CellRegion> sheetCells = sheet.getCells().stream().map(SCell::getCellRegion)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-            computationDoneTime = System.currentTimeMillis();
-            System.out.println("Final Value "
-                    + sheet.getCell(cellCount, 0).getValue());
-            System.out.println("Async time to complete = " + (computationDoneTime - initTime));
-
-
-            //Get total dirty time for all cells
-            Collection<SCell> cells = sheet.getCells().stream()
-                    .filter(e -> e.getType() == SCell.CellType.FORMULA)
-                    .collect(Collectors.toList());
-
-
-            DirtyManagerLog.instance.groupPrint(sheetCells, controlReturnedTime, initTime);
-
-            long totalWaitTime = cells.stream()
-                    .mapToLong(e -> DirtyManagerLog.instance.getDirtyTime(e.getCellRegion()))
-                    .sum();
-            System.out.println("Total Wait time " + totalWaitTime);
-            System.out.println("Avg Wait time " + totalWaitTime / cells.size());
             synchronized (this) {
                 notify();
             }
