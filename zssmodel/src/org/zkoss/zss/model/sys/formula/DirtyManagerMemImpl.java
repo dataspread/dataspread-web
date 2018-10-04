@@ -69,6 +69,7 @@ public class DirtyManagerMemImpl extends DirtyManager {
 
     @Override
     public DirtyRecord getDirtyRegionFromQueue() {
+
         return dirtyRecordPriorityBlockingQueue.poll();
     }
 

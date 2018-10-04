@@ -26,6 +26,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
     long initTime;
     boolean testStarted = false;
     final boolean sync=false;
+    final boolean graphCompression = true;
     private long controlReturnedTime;
     private long computationDoneTime;
 
@@ -182,6 +183,8 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
                     int new_area = bounding.getCellCount() -
                             dependencies.get(i).getCellCount() - dependencies.get(j).getCellCount();
                     CellRegion overlap = dependencies.get(i).getOverlap(dependencies.get(j));
+                    if (overlap != null)
+                        new_area += overlap.getCellCount();
                     if (new_area==0)
                     {
                         best_area = new_area;
@@ -192,8 +195,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
                         break;
                     }
 
-                    if (overlap != null)
-                        new_area -= overlap.getCellCount();
+
                     if (new_area < best_area) {
                         best_area = new_area;
                         best_i = i;
@@ -203,7 +205,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
                 }
             }
             // Merge i,j
-            //System.out.println(best_i + " " + best_j + " " + deps.get(best_i) + " " + deps.get(best_j) + " " + best_bounding_box);
+            System.out.println(best_i + " " + best_j + " " + dependencies.get(best_i) + " " + dependencies.get(best_j) + " " + best_bounding_box);
             dependencies.remove(best_j);
             dependencies.remove(best_i);
             dependencies.add(best_bounding_box);
@@ -228,8 +230,8 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         //sheet.clearCache();
 
 
-
-       //compressGraphNode(sheet.getBook().getBookName(), sheet.getSheetName(), new CellRegion(0,0));
+        if (graphCompression)
+            compressGraphNode(sheet.getBook().getBookName(), sheet.getSheetName(), new CellRegion(0,0));
 
         try {
             Thread.sleep(10000);
@@ -245,9 +247,6 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
 
         initTime = System.currentTimeMillis();
         System.out.println("Starting Asyn " + initTime);
-
-        System.out.println("Before Update "
-                + sheet.getCell(cellCount, 0).getValue());
 
         sheet.getCell(0, 0).setValue(200);
 

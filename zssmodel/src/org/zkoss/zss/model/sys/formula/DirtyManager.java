@@ -1,12 +1,21 @@
 package org.zkoss.zss.model.sys.formula;
 
 import org.zkoss.poi.ss.formula.eval.ValueEval;
+import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.impl.FormulaResultCellValue;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
 public abstract class DirtyManager {
+    protected static CellRegion visibleArea=null;
+
     //static public DirtyManager dirtyManagerInstance = new DirtyManagerPGImpl();
     static public DirtyManager dirtyManagerInstance = new DirtyManagerMemImpl();
+
+
+    public void setVisibleArea(CellRegion cellRegion)
+    {
+        DirtyManager.visibleArea = cellRegion;
+    }
 
     /* Check if the given region is dirty
     *  Return the trxId that made this region dirty
