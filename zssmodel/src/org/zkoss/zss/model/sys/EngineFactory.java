@@ -18,7 +18,10 @@ package org.zkoss.zss.model.sys;
 
 import org.zkoss.lang.Library;
 import org.zkoss.util.logging.Log;
-import org.zkoss.zss.model.impl.sys.*;
+import org.zkoss.zss.model.impl.sys.CalendarUtilImpl;
+import org.zkoss.zss.model.impl.sys.DependencyTablePGImpl;
+import org.zkoss.zss.model.impl.sys.FormatEngineImpl;
+import org.zkoss.zss.model.impl.sys.InputEngineImpl;
 import org.zkoss.zss.model.impl.sys.formula.FormulaEngineImpl;
 import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.format.FormatEngine;
@@ -36,7 +39,7 @@ public class EngineFactory {
 	static Class<?> inputEngineClazz;
 	static Class<?> formulaEngineClazz;
 	//ZSS-815
-	static Class<?> dependencyTableClazz;
+    public static Class<?> dependencyTableClazz;
 	static FormatEngine _formatEngine;
 	static Class<?> formatEngineClazz;
 	static private EngineFactory _instance;
@@ -141,7 +144,7 @@ public class EngineFactory {
 			_logger.error(e.getMessage(), e);
 			dependencyTableClazz = null;
 		}
-		return new DependencyTableImplV2();//DependencyTableImpl();
+        return new DependencyTablePGImpl();
 	}
 
 	public FormatEngine createFormatEngine() {

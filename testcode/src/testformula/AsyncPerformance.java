@@ -133,7 +133,8 @@ public class AsyncPerformance implements FormulaAsyncListener {
 
             // System.out.println("Async time to complete = " + (endTime - startTime));
 
-            formulaAsyncScheduler.waitForCompletion();
+            //TODO: nolonger wait for completion.
+            //formulaAsyncScheduler.waitForCompletion();
             // endTime = System.currentTimeMillis();
 
             // Right now considering dependents with FP
@@ -179,7 +180,7 @@ public class AsyncPerformance implements FormulaAsyncListener {
 
             total_area_under_curve += (endTime - startTime) * cellsInSheet;
 
-            formulaAsyncScheduler.waitForCompletion();
+            //formulaAsyncScheduler.waitForCompletion();
             //endTime = System.currentTimeMillis();
             //  System.out.println("Async time to complete = " + (endTime - startTime));
 

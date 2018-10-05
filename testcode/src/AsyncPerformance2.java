@@ -9,9 +9,11 @@ import org.zkoss.zss.model.impl.CellImpl;
 import org.zkoss.zss.model.impl.FormulaCacheCleaner;
 import org.zkoss.zss.model.impl.GraphCompressor;
 import org.zkoss.zss.model.impl.SheetImpl;
+import org.zkoss.zss.model.impl.sys.DependencyTableImplV2;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncListener;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerSimple;
 import org.zkoss.zss.model.sys.BookBindings;
+import org.zkoss.zss.model.sys.EngineFactory;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
@@ -40,6 +42,8 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         String driver = "org.postgresql.Driver";
         String userName = "mangesh";
         String password = "mangesh";
+        EngineFactory.dependencyTableClazz = DependencyTableImplV2.class;
+
         DBHandler.connectToDB(url, driver, userName, password);
 
         SheetImpl.simpleModel = true;
