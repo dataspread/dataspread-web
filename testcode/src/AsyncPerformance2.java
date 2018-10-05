@@ -22,15 +22,16 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 
 public class AsyncPerformance2 implements FormulaAsyncListener {
     int cellCount = 5000;
     long initTime;
     boolean testStarted = false;
     final boolean sync=false;
-    final boolean graphCompression = true;
+    final boolean graphCompression = false;
     private long controlReturnedTime;
     private long updatedCells = 0;
     private long cellsToUpdate = 0;
@@ -287,7 +288,6 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         }
 
 
-
         try {
             Thread.sleep(10000);
         } catch (InterruptedException e) {
@@ -323,28 +323,20 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
             }
         }
 
-
-        List<CellRegion> sheetCells = sheet.getCells().stream().map(SCell::getCellRegion)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+        //Collection<SCell> sheetCells = sheet.getCells(new CellRegion(0,0,50,10));
+        Collection<SCell> sheetCells = sheet.getCells();
 
         System.out.println("Final Value "
                 + sheet.getCell(cellCount, 0).getValue());
 
-
-        //Get total dirty time for all cells
-        Collection<SCell> cells = sheet.getCells().stream()
-                .filter(e -> e.getType() == SCell.CellType.FORMULA)
-                .collect(Collectors.toList());
-
-
         DirtyManagerLog.instance.groupPrint(sheetCells, controlReturnedTime, initTime);
 
-        long totalWaitTime = cells.stream()
+        long totalWaitTime = sheetCells.stream()
+                //.filter(e->e.getType()==SCell.CellType.FORMULA)
                 .mapToLong(e -> DirtyManagerLog.instance.getDirtyTime(e.getCellRegion()))
                 .sum();
         System.out.println("Total Wait time " + totalWaitTime);
-        System.out.println("Avg Wait time " + totalWaitTime / cells.size());
+        System.out.println("Avg Wait time " + totalWaitTime / sheetCells.size());
 
         System.out.println("Updated cells  = " + updatedCells);
 
