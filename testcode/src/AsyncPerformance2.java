@@ -32,6 +32,8 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
     boolean testStarted = false;
     final boolean sync=false;
     final boolean graphCompression = false;
+    final CellRegion window = null;
+    //final CellRegion window = new CellRegion(0,0,50,10);
     private long controlReturnedTime;
     private long updatedCells = 0;
     private long cellsToUpdate = 0;
@@ -268,7 +270,6 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         if (sync)
             FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(book.getBookSeries()));
         SSheet sheet = book.getSheet(0);
-        //sheet.setSyncComputation(true);
 
         for (int i=1;i<=cellCount;i++)
             sheet.getCell(i,2).setValue(System.currentTimeMillis());
@@ -323,8 +324,12 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
             }
         }
 
-        //Collection<SCell> sheetCells = sheet.getCells(new CellRegion(0,0,50,10));
-        Collection<SCell> sheetCells = sheet.getCells();
+
+        Collection<SCell> sheetCells;
+        if (window == null)
+            sheetCells = sheet.getCells();
+        else
+            sheetCells = sheet.getCells(window);
 
         System.out.println("Final Value "
                 + sheet.getCell(cellCount, 0).getValue());

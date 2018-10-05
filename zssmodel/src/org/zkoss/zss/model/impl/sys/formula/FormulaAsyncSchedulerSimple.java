@@ -11,7 +11,7 @@ import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
 import java.util.Collection;
-import java.util.Set;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -24,7 +24,7 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
     @Override
     public void run() {
         while (keepRunning) {
-            Set<DirtyManager.DirtyRecord> dirtyRecordSet = DirtyManager.dirtyManagerInstance.getAllDirtyRegions();
+            List<DirtyManager.DirtyRecord> dirtyRecordSet = DirtyManager.dirtyManagerInstance.getAllDirtyRegions();
             for (DirtyManager.DirtyRecord dirtyRecord : dirtyRecordSet) {
                 //logger.info("Processing " + dirtyRecord.region);
                 SSheet sheet = BookBindings.getSheetByRef(dirtyRecord.region);

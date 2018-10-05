@@ -4,7 +4,7 @@ import org.zkoss.poi.ss.formula.eval.ValueEval;
 import org.zkoss.zss.model.impl.FormulaResultCellValue;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
-import java.util.Set;
+import java.util.List;
 
 public abstract class DirtyManager {
     //static public DirtyManager dirtyManagerInstance = new DirtyManagerPGImpl();
@@ -27,7 +27,7 @@ public abstract class DirtyManager {
 
     abstract public void removeDirtyRegion(Ref target, int trxId);
 
-    abstract public Set<DirtyRecord> getAllDirtyRegions();
+    abstract public List<DirtyRecord> getAllDirtyRegions();
 
     public static FormulaResultCellValue getDirtyValue(){
         return _val;
