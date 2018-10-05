@@ -18,6 +18,7 @@ package org.zkoss.zss.model;
 
 import org.model.DBContext;
 import org.zkoss.zss.model.impl.Model;
+import org.zkoss.zss.model.sys.dependency.DependencyTable;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -496,4 +497,6 @@ public interface SSheet {
 	}
 
 	void setSyncComputation(boolean syncComputation);
+
+	DependencyTable getDependencyTable();
 }

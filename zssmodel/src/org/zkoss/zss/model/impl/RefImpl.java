@@ -251,4 +251,33 @@ public class RefImpl implements Ref, Serializable {
 	public int getLastSheetIndex() {
 		return -1;
 	}
+
+	@Override
+	public Ref getBoundingBox(Ref target1) {
+		RefImpl target = (RefImpl) target1;
+		final int row1 = Math.min(this._row, target._row);
+		final int row2 = Math.max(this._lastRow, target._lastRow);
+		final int col1 = Math.min(this._column, target._column);
+		final int col2 = Math.max(this._lastColumn, target._lastColumn);
+		return new RefImpl(this.bookName, this.sheetName, row1, col1, row2, col2);
+	}
+
+	@Override
+	public Ref getOverlap(Ref target1) {
+		RefImpl target = (RefImpl) target1;
+		final int row1 = Math.max(this._row, target._row);
+		final int row2 = Math.min(this._lastRow, target._lastRow);
+		if (row1 > row2) return null; // no overlapping
+
+		final int col1 = Math.max(this._column, target._column);
+		final int col2 = Math.min(this._lastColumn, target._lastColumn);
+		if (col1 > col2) return null; // no overlapping
+
+		return new RefImpl(this.bookName, this.sheetName, row1, col1, row2, col2);
+	}
+
+	@Override
+	public int getCellCount() {
+		return (_lastRow - _row + 1) * (_lastColumn - _column + 1);
+	}
 }

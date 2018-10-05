@@ -35,6 +35,10 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
         //TODO: remove the concept of book series.
 	}
 
+	@Override
+	public void addPreDep(Ref precedent, Set<Ref> dependent) {
+		throw new UnsupportedOperationException();
+	}
 
 	private void addQuery(String insertQuery, Ref dependant, Ref precedent) {
 		try (AutoRollbackConnection connection = DBHandler.instance.getConnection();

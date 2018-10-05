@@ -2357,6 +2357,13 @@ public class SheetImpl extends AbstractSheetAdv {
 		this.syncComputation = syncComputation;
 	}
 
+	@Override
+	public DependencyTable getDependencyTable() {
+		SBook book = getBook();
+		AbstractBookSeriesAdv bs = (AbstractBookSeriesAdv)book.getBookSeries();
+		return bs.getDependencyTable();
+	}
+
 	public String getHashValue() {
         return _hashValue;
     }

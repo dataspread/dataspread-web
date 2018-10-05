@@ -40,6 +40,8 @@ public interface DependencyTable {
 
 	void add(Ref dependent, Ref precedent);
 
+	void addPreDep(Ref precedent, Set<Ref> dependent);
+
 	void clearDependents(Ref dependant);
 
 	Set<Ref> searchPrecedents(RefFilter filter);

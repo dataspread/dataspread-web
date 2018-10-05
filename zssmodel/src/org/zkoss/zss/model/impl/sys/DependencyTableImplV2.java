@@ -22,17 +22,21 @@ import java.util.Map.Entry;
  * @author Pao
  * @since 3.5.0
  */
-public class DependencyTableImpl extends DependencyTableAdv {
+public class DependencyTableImplV2 extends DependencyTableAdv {
 	private static final long serialVersionUID = 1L;
-	private static final Log _logger = Log.lookup(DependencyTableImpl.class.getName());
+	private static final Log _logger = Log.lookup(DependencyTableImplV2.class.getName());
 	protected static final EnumSet<RefType> _regionTypes = EnumSet.of(RefType.BOOK, RefType.SHEET, RefType.AREA,
 			RefType.CELL, RefType.TABLE);
 
 	/** Map<dependant, precedent> */
 	protected Map<Ref, Set<Ref>> _map = new LinkedHashMap<Ref, Set<Ref>>();
+
+	/** Map<precedent, Set<dependant>> */
+	protected Map<Ref, Set<Ref>> _mapCompressed = new LinkedHashMap<Ref, Set<Ref>>();
+
 	protected SBookSeries _books;
 
-	public DependencyTableImpl() {
+	public DependencyTableImplV2() {
 	}
 
 	@Override
@@ -52,7 +56,7 @@ public class DependencyTableImpl extends DependencyTableAdv {
 
 	@Override
 	public void addPreDep(Ref precedent, Set<Ref> dependent) {
-		throw new UnsupportedOperationException();
+		_mapCompressed.put(precedent, dependent);
 	}
 
 	public void clear() {
@@ -71,7 +75,13 @@ public class DependencyTableImpl extends DependencyTableAdv {
 
 	@Override
 	public Set<Ref> getDependents(Ref precedent) {
-		return getDependents(precedent,_map);
+		Set<Ref> dependantSet = _mapCompressed.get(precedent);
+		if (dependantSet!=null) {
+			System.out.println("Compressed lookup");
+			return dependantSet;
+		}
+		else
+			return getDependents(precedent,_map);
 	}
 
 	@Override
@@ -257,14 +267,14 @@ public class DependencyTableImpl extends DependencyTableAdv {
 
 	@Override
 	public void merge(DependencyTableAdv dependencyTable) {
-		if (!(dependencyTable instanceof DependencyTableImpl)) {
+		if (!(dependencyTable instanceof DependencyTableImplV2)) {
 			// just in case
 			_logger.error("can't merge different type of dependency table: " + dependencyTable.getClass().getName());
 			return;
 		}
 
 		// simply, just put everything in
-		DependencyTableImpl another = (DependencyTableImpl) dependencyTable;
+		DependencyTableImplV2 another = (DependencyTableImplV2) dependencyTable;
 		_map.putAll(another._map);
 	}
 

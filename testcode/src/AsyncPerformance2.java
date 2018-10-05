@@ -15,6 +15,7 @@ import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerSimple;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerThreaded;
 import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.dependency.DependencyTable;
+import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
@@ -175,6 +176,46 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         }
     }
 
+
+    private static void compressDependencies1(ArrayList<Ref> dependencies) {
+        while (dependencies.size() > 20) {
+            int best_i = 0, best_j = 0, best_area = Integer.MAX_VALUE;
+            Ref best_bounding_box = null;
+            for (int i = 0; i < dependencies.size() - 1; i++) {
+                for (int j = i + 1; j < dependencies.size(); j++) {
+                    Ref bounding = dependencies.get(i).getBoundingBox(dependencies.get(j));
+                    int new_area = bounding.getCellCount() -
+                            dependencies.get(i).getCellCount() - dependencies.get(j).getCellCount();
+                    Ref overlap = dependencies.get(i).getOverlap(dependencies.get(j));
+                    if (overlap != null)
+                        new_area += overlap.getCellCount();
+                    if (new_area==0)
+                    {
+                        best_area = new_area;
+                        best_i = i;
+                        best_j = j;
+                        best_bounding_box = bounding;
+                        i=dependencies.size();
+                        break;
+                    }
+
+
+                    if (new_area < best_area) {
+                        best_area = new_area;
+                        best_i = i;
+                        best_j = j;
+                        best_bounding_box = bounding;
+                    }
+                }
+            }
+            // Merge i,j
+            //ystem.out.println(best_i + " " + best_j + " " + dependencies.get(best_i) + " " + dependencies.get(best_j) + " " + best_bounding_box);
+            dependencies.remove(best_j);
+            dependencies.remove(best_i);
+            dependencies.add(best_bounding_box);
+        }
+    }
+
     private static void compressDependencies(ArrayList<CellRegion> dependencies) {
         while (dependencies.size() > 20) {
             int best_i = 0, best_j = 0, best_area = Integer.MAX_VALUE;
@@ -232,8 +273,17 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         //sheet.clearCache();
 
 
-        if (graphCompression)
-            compressGraphNode(sheet.getBook().getBookName(), sheet.getSheetName(), new CellRegion(0,0));
+
+
+
+        if (graphCompression) {
+            Ref updatedCell = sheet.getCell(0,0).getRef();
+            ArrayList<Ref> dependencies1 = new ArrayList<>(sheet.getDependencyTable().getDependents(updatedCell));
+            compressDependencies1(dependencies1);
+            sheet.getDependencyTable().addPreDep(updatedCell, new HashSet<>(dependencies1));
+
+         //   compressGraphNode(sheet.getBook().getBookName(), sheet.getSheetName(), new CellRegion(0, 0));
+        }
 
 
 
@@ -278,13 +328,13 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
             e.printStackTrace();
         }
 
+
         List<CellRegion> sheetCells = sheet.getCells().stream().map(SCell::getCellRegion)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        computationDoneTime = System.currentTimeMillis();
+
         System.out.println("Final Value "
                 + sheet.getCell(cellCount, 0).getValue());
-        System.out.println("Async time to complete = " + (computationDoneTime - initTime));
 
 
         //Get total dirty time for all cells

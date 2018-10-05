@@ -37,6 +37,12 @@ public class DependencyTableRtreeImpl extends DependencyTableAdv {
     }
 
     @Override
+    public void addPreDep(Ref precedent, Set<Ref> dependent) {
+        throw new UnsupportedOperationException();
+    }
+
+
+    @Override
     public void setBookSeries(SBookSeries series) {
         this._books = series;
     }
