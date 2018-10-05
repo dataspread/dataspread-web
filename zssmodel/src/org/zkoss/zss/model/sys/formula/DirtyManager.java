@@ -4,6 +4,8 @@ import org.zkoss.poi.ss.formula.eval.ValueEval;
 import org.zkoss.zss.model.impl.FormulaResultCellValue;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
+import java.util.Set;
+
 public abstract class DirtyManager {
     //static public DirtyManager dirtyManagerInstance = new DirtyManagerPGImpl();
     static public DirtyManager dirtyManagerInstance = new DirtyManagerMemImpl();
@@ -25,9 +27,7 @@ public abstract class DirtyManager {
 
     abstract public void removeDirtyRegion(Ref target, int trxId);
 
-    abstract public DirtyRecord getDirtyRegionFromQueue();
-
-    abstract public DirtyRecord getDirtyRegionFromQueue(long waitTime);
+    abstract public Set<DirtyRecord> getAllDirtyRegions();
 
     public static FormulaResultCellValue getDirtyValue(){
         return _val;
@@ -57,7 +57,6 @@ public abstract class DirtyManager {
         @Override
         public int compareTo(Object o) {
             return this.toString().compareTo(o.toString());
-            //return Integer.compare(trxId, ((DirtyRecord) o).trxId );
         }
 
         @Override

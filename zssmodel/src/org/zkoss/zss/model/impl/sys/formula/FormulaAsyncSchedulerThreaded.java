@@ -11,6 +11,7 @@ import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
 import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -21,9 +22,10 @@ import java.util.concurrent.TimeUnit;
 public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
     private boolean keepRunning = true;
     private boolean emptyQueue = false;
-    ThreadPoolExecutor executorPool;
-    MyMonitorThread monitor;
-    final int MaximumWorkers = 4;
+    private ThreadPoolExecutor executorPool;
+    private MyMonitorThread monitor;
+    private final boolean runMonitor = false;
+    private final int MaximumWorkers = 4;
 
     public class DynamicPriorityAdjuster implements Runnable {
         boolean run = true;
@@ -55,7 +57,7 @@ public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
 
         @Override
         public void run() {
-            System.out.println(Thread.currentThread().getName() + " Start. Cell = " + sCell);
+            //System.out.println(Thread.currentThread().getName() + " Start. Cell = " + sCell);
             int priority = 10;
             // if visible increase priority.
 
@@ -76,8 +78,7 @@ public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
             }
             FormulaComputationStatusManager.getInstance().doneComputation();
 
-
-            System.out.println(Thread.currentThread().getName() + " End.");
+            // System.out.println(Thread.currentThread().getName() + " End.");
         }
     }
 
@@ -120,69 +121,47 @@ public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
     @Override
     public void run() {
         System.out.println("Starting FormulaAsyncSchedulerThreaded");
-        executorPool = new ThreadPoolExecutor(4, MaximumWorkers, 10, TimeUnit.SECONDS,
+        executorPool = new ThreadPoolExecutor(MaximumWorkers, MaximumWorkers, 10, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>());
-        monitor = new MyMonitorThread(executorPool, 10);
-        Thread monitorThread = new Thread(monitor);
-        monitorThread.start();
+        Thread monitorThread;
+        if (runMonitor) {
+            monitor = new MyMonitorThread(executorPool, 10);
+            monitorThread = new Thread(monitor);
+            monitorThread.start();
+        }
 
         DynamicPriorityAdjuster dynamicPriorityAdjuster = new DynamicPriorityAdjuster();
         Thread dynamicPriorityAdjusterThread = new Thread(dynamicPriorityAdjuster);
         dynamicPriorityAdjusterThread.start();
 
         while (keepRunning) {
-            DirtyManager.DirtyRecord dirtyRecord = DirtyManager.dirtyManagerInstance.getDirtyRegionFromQueue();
-            if (DirtyManager.dirtyManagerInstance.isEmpty()) {
-                synchronized (this) {
-                    emptyQueue = true;
-                    notifyAll();
-                }
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                continue;
-            } else {
-                emptyQueue = false;
-            }
-            if (dirtyRecord == null)
-                continue;
+            Set<DirtyManager.DirtyRecord> dirtyRecordSet = DirtyManager.dirtyManagerInstance.getAllDirtyRegions();
+            for (DirtyManager.DirtyRecord dirtyRecord : dirtyRecordSet) {
+                // logger.info("Processing " + dirtyRecord.region );
+                SSheet sheet = BookBindings.getSheetByRef(dirtyRecord.region);
 
-            // logger.info("Processing " + dirtyRecord.region );
-            SSheet sheet = BookBindings.getSheetByRef(dirtyRecord.region);
-
-            //TODO - Change to streaming.
-            // Or break a big region into smaller parts.
-            Collection<SCell> cells = sheet.getCells(new CellRegion(dirtyRecord.region));
-            for (SCell sCell : cells) {
-                executorPool.execute(new WorkerThread(sCell));
+                //TODO - Change to streaming.
+                // Or break a big region into smaller parts.
+                Collection<SCell> cells = sheet.getCells(new CellRegion(dirtyRecord.region));
+                for (SCell sCell : cells) {
+                    executorPool.execute(new WorkerThread(sCell));
+                }
+                DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,
+                        dirtyRecord.trxId);
+                //logger.info("Done computing " + dirtyRecord.region );
             }
-            DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,
-                    dirtyRecord.trxId);
-            //This is to update the entire region
-            //update(sheet, new CellRegion(dirtyRecord.region));
-            //logger.info("Done computing " + dirtyRecord.region );
         }
         System.out.println("Shutdown  FormulaAsyncSchedulerThreaded");
         executorPool.shutdown();
-        monitor.shutdown();
+        if (runMonitor)
+            monitor.shutdown();
         dynamicPriorityAdjuster.shutdown();
         try {
-            monitorThread.join();
+            if (runMonitor)
+                monitorThread.join();
             dynamicPriorityAdjusterThread.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
-    }
-
-    @Override
-    public synchronized void waitForCompletion() {
-        while (!emptyQueue) {
-            try {
-                this.wait();
-            } catch (InterruptedException e) {
-            }
         }
     }
 

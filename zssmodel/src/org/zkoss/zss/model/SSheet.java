@@ -18,6 +18,7 @@ package org.zkoss.zss.model;
 
 import org.model.DBContext;
 import org.zkoss.zss.model.impl.Model;
+import org.zkoss.zss.model.sys.dependency.DependencyTable;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -30,7 +31,8 @@ import java.util.Map;
  * @since 3.5.0
  */
 public interface SSheet {
-	
+
+	boolean isSyncCalc();
 	/**
 	 * Get the owner book
 	 * @return the owner book
@@ -495,4 +497,6 @@ public interface SSheet {
 	}
 
 	void setSyncComputation(boolean syncComputation);
+
+	DependencyTable getDependencyTable();
 }

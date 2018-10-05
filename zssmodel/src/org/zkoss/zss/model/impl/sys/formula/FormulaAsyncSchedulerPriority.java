@@ -38,9 +38,10 @@ public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
                     synchronized (this) {
                         this.notify();
                     }
-                    dirtyRecord = DirtyManager.dirtyManagerInstance.getDirtyRegionFromQueue(20);
+                    // TODO: Fix this
+                    //dirtyRecord = DirtyManager.dirtyManagerInstance.getDirtyRegionFromQueue(20);
                 } else
-                    dirtyRecord = DirtyManager.dirtyManagerInstance.getDirtyRegionFromQueue();
+                    //dirtyRecord = DirtyManager.dirtyManagerInstance.getDirtyRegionFromQueue();
 
                 if (dirtyRecord != null) {
                     sheet = BookBindings.getSheetByRef(dirtyRecord.region);
@@ -92,17 +93,6 @@ public class FormulaAsyncSchedulerPriority extends FormulaAsyncScheduler {
 
     private void costBasedSort(ArrayList<SCell> cellsToCompute) {
         cellsToCompute.sort(Comparator.comparingInt(e->e.getComputeCost()));
-    }
-
-    @Override
-    public synchronized void waitForCompletion() {
-        while (!cellsToCompute.isEmpty() || !DirtyManager.dirtyManagerInstance.isEmpty()) {
-            try {
-                this.wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     @Override

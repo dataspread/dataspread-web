@@ -230,4 +230,9 @@ public class EvalSheet implements EvaluationSheet {
 	public boolean isHidden(int rowIndex, int columnIndex) {
 		return ((AbstractSheetAdv)_sheet).isHidden(rowIndex, columnIndex);
 	}
+
+	@Override
+	public boolean isSyncCalc() {
+		return _sheet.isSyncCalc();
+	}
 }

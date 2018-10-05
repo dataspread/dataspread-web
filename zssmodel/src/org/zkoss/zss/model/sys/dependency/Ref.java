@@ -34,6 +34,11 @@ public interface Ref {
 
 	Set<Ref> getPrecedents();
 
+	Ref getBoundingBox(Ref target);
+
+	int getCellCount();
+	Ref getOverlap(Ref target);
+
 	void addPrecedent(Ref precedent);
 
 	void clearDependent();

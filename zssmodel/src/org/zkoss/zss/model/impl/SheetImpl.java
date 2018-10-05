@@ -53,7 +53,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SheetImpl extends AbstractSheetAdv {
 	private static final long serialVersionUID = 1L;
 	private static final Log _logger = Log.lookup(SheetImpl.class);
-    //Mangesh
     static private int PreFetchRows = Library.getIntProperty("PreFetchRows", 100);
     static private int PreFetchColumns = Library.getIntProperty("PreFetchColumns", 30);
     /**
@@ -2356,6 +2355,13 @@ public class SheetImpl extends AbstractSheetAdv {
 	public void setSyncComputation(boolean syncComputation)
 	{
 		this.syncComputation = syncComputation;
+	}
+
+	@Override
+	public DependencyTable getDependencyTable() {
+		SBook book = getBook();
+		AbstractBookSeriesAdv bs = (AbstractBookSeriesAdv)book.getBookSeries();
+		return bs.getDependencyTable();
 	}
 
 	public String getHashValue() {

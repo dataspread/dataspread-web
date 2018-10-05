@@ -16,7 +16,6 @@ public class DBHandler {
     public static DBHandler instance;
     private DataSource ds;
     DBListener dbListener;
-    GraphCompressor graphCompressor;
 
     public static void connectToDB(String url, String driver, String userName, String password) {
         DBHandler.instance = new DBHandler();
@@ -74,9 +73,6 @@ public class DBHandler {
             connection.commit();
             //dbListener = new DBListener();
             //dbListener.start();
-            //TODO - fix issues with the graph compressor
-            //graphCompressor = new GraphCompressor();
-            //graphCompressor.start();
         } catch (Exception e) {
             e.printStackTrace();
         }

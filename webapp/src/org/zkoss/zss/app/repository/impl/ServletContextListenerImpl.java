@@ -3,6 +3,7 @@ package org.zkoss.zss.app.repository.impl;
 import org.model.DBHandler;
 import org.zkoss.lang.Library;
 import org.zkoss.util.logging.Log;
+import org.zkoss.zss.model.impl.GraphCompressor;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
 import javax.servlet.ServletContextEvent;
@@ -12,6 +13,7 @@ import java.io.Serializable;
 public class ServletContextListenerImpl implements ServletContextListener, Serializable {
 	private static final long serialVersionUID = 7123078891875657326L;
 	private static final Log logger = Log.lookup(ServletContextListenerImpl.class.getName());
+    private GraphCompressor graphCompressor;
 
 	@Override
 	public void contextInitialized(ServletContextEvent sce) {
@@ -29,23 +31,25 @@ public class ServletContextListenerImpl implements ServletContextListener, Seria
                 Library.getProperty("FormulaAsyncScheduler",
                         "FormulaAsyncSchedulerThreaded");
 
-        FormulaAsyncScheduler formulaAsyncScheduler = null;
+        FormulaAsyncScheduler formulaAsyncScheduler;
         try {
             formulaAsyncScheduler = (FormulaAsyncScheduler) Class.forName(FormulaAsyncSchedulerName).newInstance();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
+            Thread thread = new Thread(formulaAsyncScheduler);
+            thread.start();
+        } catch (Exception e) {
             e.printStackTrace();
         }
-		Thread thread = new Thread(formulaAsyncScheduler);
-		thread.start();
+
+        graphCompressor = new GraphCompressor();
+        Thread graphCompressorThread = new Thread(graphCompressor);
+        graphCompressorThread.start();
+
 	}
 
 	@Override
 	public void contextDestroyed(ServletContextEvent sce) {
 		//TODO save unfinished tasks
 		FormulaAsyncScheduler.getScheduler().shutdown();
+        graphCompressor.stopListener();
 	}
 }

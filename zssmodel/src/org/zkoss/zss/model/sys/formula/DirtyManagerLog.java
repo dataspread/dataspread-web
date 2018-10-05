@@ -82,8 +82,9 @@ public class DirtyManagerLog {
 
     }
 
-    public void groupPrint(Collection<CellRegion> sheetCells) {
+    public void groupPrint(Collection<CellRegion> sheetCells, long controlReturnedTime, long initTime) {
         int runningTotal = 0;
+        boolean firstNotDone = true;
         SortedMap<Long, Integer> dirtyCellsCounts = new TreeMap<>();
         for (DirtyRecordEntry e : dirtyRecordLog) {
             dirtyCellsCounts.putIfAbsent(e.timestamp, 0);
@@ -100,7 +101,15 @@ public class DirtyManagerLog {
         for (Map.Entry<Long, Integer> d : dirtyCellsCounts.entrySet()) {
             runningTotal += d.getValue();
 
-            System.out.println(d.getKey() + "\t" + runningTotal);
+            if (d.getKey() > controlReturnedTime) {
+                if (firstNotDone) {
+                    System.out.println(0 + "\t" + sheetCells.size());
+                    System.out.println(controlReturnedTime - initTime + "\t" + sheetCells.size());
+                    System.out.println(controlReturnedTime - initTime + "\t" + runningTotal);
+                    firstNotDone = false;
+                }
+                System.out.println((d.getKey() - initTime) + "\t" + runningTotal);
+            }
         }
     }
 

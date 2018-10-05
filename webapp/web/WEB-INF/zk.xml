@@ -35,4 +35,10 @@
 		<name>ds.model.simple</name>
         <value>false</value>
 	</library-property>
+
+
+	<library-property>
+		<name>FormulaAsyncScheduler</name>
+		<value>FormulaAsyncSchedulerThreaded</value>
+	</library-property>
 </zk>

@@ -2,7 +2,6 @@ package testformula;
 
 import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
-import org.model.GraphCompressor;
 import org.postgresql.geometric.PGbox;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
@@ -10,8 +9,10 @@ import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.AbstractBookSeriesAdv;
 import org.zkoss.zss.model.impl.FormulaCacheCleaner;
+import org.zkoss.zss.model.impl.GraphCompressor;
 import org.zkoss.zss.model.impl.SheetImpl;
-import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerPriority;
+import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncListener;
+import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerThreaded;
 import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
@@ -21,10 +22,16 @@ import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class AsyncPerformance {
+public class AsyncPerformance implements FormulaAsyncListener {
     private static final int range=100000;
     private static final int modification=1000;
     private static Connection conn;
+    int cellCount = 200;
+    long initTime;
+    boolean testStarted = false;
+    private long controlReturnedTime;
+    private long computationDoneTime;
+
 
     public static void main(String[] args) throws Exception {
         String url = "jdbc:postgresql://127.0.0.1:5432/ibd";
@@ -42,24 +49,29 @@ public class AsyncPerformance {
 
         SheetImpl.simpleModel = true;
         SheetImpl.disablePrefetch();
-        FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerPriority();
-        //FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerSimple();
+        //FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerPriority();
+        FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerThreaded();
         Thread asyncThread = new Thread(formulaAsyncScheduler);
         asyncThread.start();
 
 
         GraphCompressor  graphCompressor = new GraphCompressor();
-        Thread graphThread = new Thread(graphCompressor);
-        // graphThread.start();
+        //Thread graphThread = new Thread(graphCompressor);
+        //graphThread.start();
 
-        simpleTest(formulaAsyncScheduler);
+        //simpleTest(formulaAsyncScheduler);
         //realTest("survey", "Escalating OSA with Cost Share.xlsx", "Cost Share", formulaAsyncScheduler);
+
+
+        //graphCompressor.shutdown();
+        //graphThread.join();
+        AsyncPerformance asyncPerformance = new AsyncPerformance();
+        FormulaAsyncScheduler.initFormulaAsyncListener(asyncPerformance);
+        asyncPerformance.simpleTest();
 
         formulaAsyncScheduler.shutdown();
         asyncThread.join();
 
-        //   graphCompressor.stopListener();
-        //   graphThread.join();
     }
 
 
@@ -121,7 +133,8 @@ public class AsyncPerformance {
 
             // System.out.println("Async time to complete = " + (endTime - startTime));
 
-            formulaAsyncScheduler.waitForCompletion();
+            //TODO: nolonger wait for completion.
+            //formulaAsyncScheduler.waitForCompletion();
             // endTime = System.currentTimeMillis();
 
             // Right now considering dependents with FP
@@ -131,7 +144,7 @@ public class AsyncPerformance {
             System.out.println("Before Compression ");
             System.out.println(startTime + "\t" + cellsInSheet);
             System.out.println(endTime + "\t" + cellsInSheet);
-            DirtyManagerLog.instance.groupPrint(sheetCells);
+          //  DirtyManagerLog.instance.groupPrint(sheetCells);
 
             // long totalWaitTime = dependents.stream()
             //         .mapToLong(e -> DirtyManagerLog.instance.getDirtyTime(new CellRegion(e)))
@@ -157,16 +170,17 @@ public class AsyncPerformance {
             sheet.clearCache();
             DirtyManagerLog.instance.init();
 
-            System.out.println("Starting Asyn ");
+            System.out.println("Starting Asyn " + System.currentTimeMillis());
             dt.getLastLookupTime(); // Reset time
             startTime = System.currentTimeMillis();
             sheet.getCell(badCell).setValue(random.nextInt());
             endTime = System.currentTimeMillis();
             System.out.println("Async time to update = " + (endTime - startTime) + " " + dt.getLastLookupTime());
+            System.out.println("Control returned to user = " + endTime);
 
             total_area_under_curve += (endTime - startTime) * cellsInSheet;
 
-            formulaAsyncScheduler.waitForCompletion();
+            //formulaAsyncScheduler.waitForCompletion();
             //endTime = System.currentTimeMillis();
             //  System.out.println("Async time to complete = " + (endTime - startTime));
 
@@ -187,7 +201,7 @@ public class AsyncPerformance {
             System.out.println("After Compression ");
             System.out.println(startTime + "\t" + cellsInSheet);
             System.out.println(endTime + "\t" + cellsInSheet);
-            DirtyManagerLog.instance.groupPrint(sheetCells);
+            //DirtyManagerLog.instance.groupPrint(sheetCells);
 
 
             // System.out.println("Avg Wait time " + totalWaitTime / dependents.size());
@@ -333,51 +347,49 @@ public class AsyncPerformance {
         }
     }
 
-    public static void simpleTest(FormulaAsyncScheduler formulaAsyncScheduler)
+    public void simpleTest()
     {
         SBook book = BookBindings.getBookByName("testBook" + System.currentTimeMillis());
         /* Cleaner for sync computation */
-        FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(book.getBookSeries()));
+        // FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(book.getBookSeries()));
         SSheet sheet = book.getSheet(0);
-
-        int cellCount = 200;
-        for (int i=1;i<=cellCount;i++)
-            sheet.getCell(i,0).setFormulaValue("A" + i + "+1");
-
-
-        long startTime, endTime;
-        /* Time to update A1 */
-
-        sheet.clearCache();
-
         sheet.setSyncComputation(false);
 
-        System.out.println("Starting Asyn ");
-        startTime = System.currentTimeMillis();
+        for (int i=1;i<=4000;i++)
+            sheet.getCell(i,2).setValue(System.currentTimeMillis());
 
+
+        for (int i=1;i<=cellCount;i++)
+            sheet.getCell(i,0).setFormulaValue("A" + i + "+1");
+        sheet.clearCache();
+
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        DirtyManagerLog.instance.init();
+        testStarted = true;
+
+        initTime = System.currentTimeMillis();
+        System.out.println("Starting Asyn " + initTime);
 
         sheet.getCell(0, 0).setValue(200);
+
         System.out.println("Before Waiting "
                 + sheet.getCell(cellCount, 0).getValue());
 
-        endTime = System.currentTimeMillis();
-        System.out.println("Async time to update = " + (endTime-startTime));
-        formulaAsyncScheduler.waitForCompletion();
-        endTime = System.currentTimeMillis();
-        System.out.println("Final Value "
-                + sheet.getCell(cellCount,0).getValue());
-        System.out.println("Async time to complete = " + (endTime-startTime));
+        controlReturnedTime = System.currentTimeMillis();
+        System.out.println("Control retuned  " + controlReturnedTime);
 
+        System.out.println("Async time to update = " + (controlReturnedTime-initTime));
 
-        //Get total dirty time for all cells
-        Collection<SCell> cells = sheet.getCells().stream()
-                .filter(e->e.getType()== SCell.CellType.FORMULA)
-                .collect(Collectors.toList());
-        long totalWaitTime = cells.stream()
-                .mapToLong(e-> DirtyManagerLog.instance.getDirtyTime(e.getCellRegion()))
-                .sum();
-        System.out.println("Total Wait time " + totalWaitTime);
-        System.out.println("Avg Wait time " + totalWaitTime/cells.size());
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     public static ArrayList<CellRegion> getBadCells(String bookName, String sheetname)
@@ -488,4 +500,32 @@ public class AsyncPerformance {
     }
 
 
+    @Override
+    public void update(SBook book, SSheet sheet, CellRegion cellRegion, String value, String formula) {
+        if (cellRegion.row == cellCount && testStarted) {
+
+            List<CellRegion> sheetCells = sheet.getCells().stream().map(SCell::getCellRegion)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            computationDoneTime = System.currentTimeMillis();
+            System.out.println("Final Value "
+                    + sheet.getCell(cellCount, 0).getValue());
+            System.out.println("Async time to complete = " + (computationDoneTime - initTime));
+
+
+            //Get total dirty time for all cells
+            Collection<SCell> cells = sheet.getCells().stream()
+                    .filter(e -> e.getType() == SCell.CellType.FORMULA)
+                    .collect(Collectors.toList());
+
+
+            DirtyManagerLog.instance.groupPrint(sheetCells, controlReturnedTime, initTime);
+
+            long totalWaitTime = cells.stream()
+                    .mapToLong(e -> DirtyManagerLog.instance.getDirtyTime(e.getCellRegion()))
+                    .sum();
+            System.out.println("Total Wait time " + totalWaitTime);
+            System.out.println("Avg Wait time " + totalWaitTime / cells.size());
+        }
+    }
 }

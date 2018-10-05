@@ -39,7 +39,7 @@ public class EngineFactory {
 	static Class<?> inputEngineClazz;
 	static Class<?> formulaEngineClazz;
 	//ZSS-815
-	static Class<?> dependencyTableClazz;
+    public static Class<?> dependencyTableClazz;
 	static FormatEngine _formatEngine;
 	static Class<?> formatEngineClazz;
 	static private EngineFactory _instance;
@@ -144,7 +144,7 @@ public class EngineFactory {
 			_logger.error(e.getMessage(), e);
 			dependencyTableClazz = null;
 		}
-		return new DependencyTablePGImpl();//DependencyTableImpl();
+        return new DependencyTablePGImpl();
 	}
 
 	public FormatEngine createFormatEngine() {
