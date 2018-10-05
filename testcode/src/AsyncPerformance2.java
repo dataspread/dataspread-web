@@ -9,29 +9,30 @@ import org.zkoss.zss.model.impl.CellImpl;
 import org.zkoss.zss.model.impl.FormulaCacheCleaner;
 import org.zkoss.zss.model.impl.GraphCompressor;
 import org.zkoss.zss.model.impl.SheetImpl;
-import org.zkoss.zss.model.impl.sys.DependencyTableImpl;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncListener;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerSimple;
-import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerThreaded;
 import org.zkoss.zss.model.sys.BookBindings;
-import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
-import java.sql.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class AsyncPerformance2 implements FormulaAsyncListener {
-    private static Connection conn;
     int cellCount = 5000;
     long initTime;
     boolean testStarted = false;
     final boolean sync=false;
     final boolean graphCompression = true;
     private long controlReturnedTime;
-    private long computationDoneTime;
+    private long updatedCells = 0;
+    private long cellsToUpdate = 0;
+
 
 
     public static void main(String[] args) throws Exception {
@@ -273,16 +274,12 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         //sheet.clearCache();
 
 
-
-
-
+        Ref updatedCell = sheet.getCell(0, 0).getRef();
+        ArrayList<Ref> dependencies1 = new ArrayList<>(sheet.getDependencyTable().getDependents(updatedCell));
+        cellsToUpdate = dependencies1.size();
         if (graphCompression) {
-            Ref updatedCell = sheet.getCell(0,0).getRef();
-            ArrayList<Ref> dependencies1 = new ArrayList<>(sheet.getDependencyTable().getDependents(updatedCell));
             compressDependencies1(dependencies1);
             sheet.getDependencyTable().addPreDep(updatedCell, new HashSet<>(dependencies1));
-
-         //   compressGraphNode(sheet.getBook().getBookName(), sheet.getSheetName(), new CellRegion(0, 0));
         }
 
 
@@ -322,12 +319,6 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
             }
         }
 
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
 
         List<CellRegion> sheetCells = sheet.getCells().stream().map(SCell::getCellRegion)
                 .filter(Objects::nonNull)
@@ -351,16 +342,19 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         System.out.println("Total Wait time " + totalWaitTime);
         System.out.println("Avg Wait time " + totalWaitTime / cells.size());
 
+        System.out.println("Updated cells  = " + updatedCells);
+
     }
 
     @Override
     public void update(SBook book, SSheet sheet, CellRegion cellRegion, String value, String formula) {
         //System.out.println("Computed " + cellRegion + " " + formula);
-        if (cellRegion.row == cellCount && testStarted) {
-
-            synchronized (this) {
-                notify();
-            }
+        if (testStarted) {
+            updatedCells++;
+            if (updatedCells == cellsToUpdate)
+                synchronized (this) {
+                    notify();
+                }
         }
     }
 }

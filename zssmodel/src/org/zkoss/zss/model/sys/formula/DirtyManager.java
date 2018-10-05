@@ -1,21 +1,14 @@
 package org.zkoss.zss.model.sys.formula;
 
 import org.zkoss.poi.ss.formula.eval.ValueEval;
-import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.impl.FormulaResultCellValue;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
-public abstract class DirtyManager {
-    protected static CellRegion visibleArea=null;
+import java.util.Set;
 
+public abstract class DirtyManager {
     //static public DirtyManager dirtyManagerInstance = new DirtyManagerPGImpl();
     static public DirtyManager dirtyManagerInstance = new DirtyManagerMemImpl();
-
-
-    public void setVisibleArea(CellRegion cellRegion)
-    {
-        DirtyManager.visibleArea = cellRegion;
-    }
 
     /* Check if the given region is dirty
     *  Return the trxId that made this region dirty
@@ -34,9 +27,7 @@ public abstract class DirtyManager {
 
     abstract public void removeDirtyRegion(Ref target, int trxId);
 
-    abstract public DirtyRecord getDirtyRegionFromQueue();
-
-    abstract public DirtyRecord getDirtyRegionFromQueue(long waitTime);
+    abstract public Set<DirtyRecord> getAllDirtyRegions();
 
     public static FormulaResultCellValue getDirtyValue(){
         return _val;
@@ -66,7 +57,6 @@ public abstract class DirtyManager {
         @Override
         public int compareTo(Object o) {
             return this.toString().compareTo(o.toString());
-            //return Integer.compare(trxId, ((DirtyRecord) o).trxId );
         }
 
         @Override

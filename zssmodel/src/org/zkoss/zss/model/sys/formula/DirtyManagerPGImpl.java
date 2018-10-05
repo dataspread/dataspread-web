@@ -7,6 +7,7 @@ import org.zkoss.zss.model.impl.RefImpl;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
 import java.sql.*;
+import java.util.Set;
 
 /* Simple in-db implementation for DirtyManager */
 public class DirtyManagerPGImpl extends DirtyManager {
@@ -96,11 +97,15 @@ public class DirtyManagerPGImpl extends DirtyManager {
     }
 
     @Override
+    public Set<DirtyRecord> getAllDirtyRegions() {
+        throw new UnsupportedOperationException();
+    }
+
     public DirtyRecord getDirtyRegionFromQueue() {
         return getDirtyRegionFromQueue();
     }
 
-    @Override
+
     public DirtyRecord getDirtyRegionFromQueue(long waitTime) {
         //TODO - We can modify the query to select based on priority.
         DirtyRecord dirtyRecord = null;

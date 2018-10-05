@@ -3,19 +3,19 @@ package org.zkoss.zss.model.sys.formula;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 /* Simple in-memory implementation for DirtyManager */
 public class DirtyManagerMemImpl extends DirtyManager {
-    LinkedBlockingQueue<DirtyRecord> dirtyRecordPriorityBlockingQueue;
+    //LinkedBlockingQueue<DirtyRecord> dirtyRecordPriorityBlockingQueue;
     ConcurrentSkipListSet<DirtyRecord> dirtyRecords;
 
     DirtyManagerMemImpl()
     {
         dirtyRecords = new ConcurrentSkipListSet<>();
-        dirtyRecordPriorityBlockingQueue = new LinkedBlockingQueue<>();
+        //dirtyRecordPriorityBlockingQueue = new LinkedBlockingQueue<>();
     }
 
     private boolean overlaps(Ref region1, Ref region2)
@@ -39,7 +39,7 @@ public class DirtyManagerMemImpl extends DirtyManager {
     }
 
     @Override
-    public void addDirtyRegion(Ref region, int trxId) {
+    public synchronized void addDirtyRegion(Ref region, int trxId) {
         DirtyRecord dirtyRecord = new DirtyRecord();
 
         // For now only consider cell dependencies.
@@ -48,8 +48,8 @@ public class DirtyManagerMemImpl extends DirtyManager {
             dirtyRecord.region = region;
             dirtyRecord.trxId = trxId;
             dirtyRecords.add(dirtyRecord);
-            dirtyRecordPriorityBlockingQueue.add(dirtyRecord);
         }
+        notifyAll();
         DirtyManagerLog.instance.markDirty(region);
     }
 
@@ -63,22 +63,19 @@ public class DirtyManagerMemImpl extends DirtyManager {
         DirtyRecord dirtyRecord = new DirtyRecord();
         dirtyRecord.region = region;
         dirtyRecord.trxId = trxId;
-
         dirtyRecords.remove(dirtyRecord);
     }
 
-    @Override
-    public DirtyRecord getDirtyRegionFromQueue() {
-
-        return dirtyRecordPriorityBlockingQueue.poll();
-    }
-
-    @Override
-    public DirtyRecord getDirtyRegionFromQueue(long waitTime) {
-        try {
-            return dirtyRecordPriorityBlockingQueue.poll(waitTime, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            return null;
+    // Call in a single thread.
+    public synchronized Set<DirtyRecord> getAllDirtyRegions() {
+        Set<DirtyRecord> ret = new HashSet<>(dirtyRecords);
+        if (ret.isEmpty()) {
+            try {
+                wait(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
+        return ret;
     }
 }
