@@ -44,9 +44,9 @@ var compute_window = function (e) {
     var lastRow = rowOffset + (visibleRows * 1);
     var lastVisibleRow = rowOffset + visibleRows + (visibleRows / 2);
     var threshold = 15;
-    $(".parallax-one").css({   //progress bar
-        height: ((lastRow / currRange) * 80) + "%"
-    });
+    // $(".parallax-one").css({   //progress bar
+    //     height: ((lastRow / currRange) * 80) + "%"
+    // });
 
     if (lastVisibleRow > upperRange - threshold) {
         updateData(upperRange, 0, upperRange + 1000, 15, false)
@@ -78,6 +78,7 @@ var loadMoreData = function (n) {
 
 var wrapperHeight = $(".wrapper").height();
 var wrapperWidth = $(".wrapper").width();
+
 //default setting
 var ssDefaultSettings = {
     minRows: 200,
@@ -1204,9 +1205,10 @@ $(window).resize(function () {
     console.log("resized")
     wrapperHeight = $(".wrapper").height();
     wrapperWidth = $(".wrapper").width();
+    let leftWidth = $("#navChart").width();
     if (exploreOpen) {
         hot.updateSettings({
-            width: wrapperWidth * 0.8,
+            width: wrapperWidth - leftWidth,
             height: wrapperHeight * 0.95,
         });
         nav.updateSettings({

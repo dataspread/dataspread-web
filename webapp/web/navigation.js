@@ -139,11 +139,11 @@ $("#Explore").click(function () {
     hieraOpen = false;
     if (exploreOpen) {
         hot.updateSettings({
-            width: $('.wrapper').width() * 0.59,
+            width: $("#test-hot").width() - wrapperWidth*0.19,
         });
     } else {
         hot.updateSettings({
-            width: $('.wrapper').width() * 0.79,
+            width: wrapperWidth * 0.79,
         });
     }
     $("#hierarchical-col").css("display", "none");
@@ -325,7 +325,7 @@ $(".formClose").click(function (e) {
     this.parentNode.parentNode.style.display = 'none';
     if (exploreOpen) {
         hot.updateSettings({
-            width: $('.wrapper').width() * 0.79,
+            width: $("#test-hot").width() + wrapperWidth*0.19,
         });
     } else {
         hot.updateSettings({
@@ -802,7 +802,12 @@ function Explore(e) {
         // the Exploration Tools
         $("#exploration-bar").css("display", "none");
         $("#bucket-col").css("display", "none");
-        hot.updateSettings({width: wrapperWidth * 0.59});
+        //hot.updateSettings({width: wrapperWidth * 0.59});
+        let originalWidth = $("#test-hot").width();
+        let newWidth = originalWidth - wrapperWidth * 0.19;
+        if (newWidth < 0) newWidth = 0;
+        console.log(newWidth);
+        hot.updateSettings({width: newWidth});
         $("#hierarchical-col").css({
             "float": "left",
             "width": wrapperWidth * 0.2,
@@ -884,22 +889,22 @@ function Explore(e) {
             height: wrapperHeight * 0.95,
             rowHeaderWidth: 0,
             rowHeaders: true,
-            colWidths: function (col) {
-                if (currLevel == 0) {
-                    if (col == 0) {
-                        return wrapperWidth * 0.18;
-                    } else {
-                        return wrapperWidth * 0.15;
-                    }
-                } else {
-                    if (col == 0) {
-                        return wrapperWidth * 0.08;
-                    } else {
-                        return wrapperWidth * 0.15;
-                    }
-                }
-
-            },
+            // colWidths: function (col) {
+            //     if (currLevel == 0) {
+            //         if (col == 0) {
+            //             return wrapperWidth * 0.18;
+            //         } else {
+            //             return wrapperWidth * 0.15;
+            //         }
+            //     } else {
+            //         if (col == 0) {
+            //             return wrapperWidth * 0.08;
+            //         } else {
+            //             return wrapperWidth * 0.15;
+            //         }
+            //     }
+            //
+            // },
             colHeaders: function (col) {
                 if (col < colHeader.length) {
                     if (currLevel == 0) {
@@ -939,8 +944,6 @@ function Explore(e) {
             stretchH: 'all',
             contextMenu: false,
             outsideClickDeselects: false,
-            // manualColumnResize: true,
-            // manualRowResize: true,
             className: " wrap",
 
             search: true,
@@ -1023,6 +1026,17 @@ function Explore(e) {
         navContainer.innerHTML = ""
         nav = new Handsontable(navContainer, navSettings);
         //nav.selectCell(0, 0);
+        $("#navChart").resizable({handles: 'e'});
+        // The resizing will also invoke the $(window).resize function in index.js
+        $('#navChart').resize(function () {
+            let leftWidth = $("#navChart").width();
+            console.log(leftWidth);
+            let rightWidth = wrapperWidth * 0.98 - leftWidth;
+            if (rightWidth < 0) rightWidth = 0;
+            // nav.render();
+            nav.updateSettings({width:leftWidth,});
+            $('#test-hot').width(rightWidth);
+        });
         console.log("dsa");
 
         updateData(0, 0, 1000, 15, true);
@@ -1531,7 +1545,7 @@ function getAggregateValue() {
     }).done(function (e) {
         if (e.status == "success") {
             $("#hierarchical-col").css("display", "none");
-            hot.updateSettings({width: wrapperWidth * 0.8});
+            hot.updateSettings({width: wrapperWidth - $("#navChart").width()});
             hieraOpen = true;
             if (currLevel == 0) {
                 colHeader.splice(

@@ -179,21 +179,21 @@
   background-color: #D3D3D3 !important;
   color:white;
 } */
-.progress {
-    position: fixed;
-    left: 0;
-    width: 15px;
-    height: 74.1vh;
-    background-color: #aaa;
-}
+/*.progress {*/
+    /*position: fixed;*/
+    /*left: 0;*/
+    /*width: 15px;*/
+    /*height: 74.1vh;*/
+    /*background-color: #aaa;*/
+/*}*/
 
-.progress-bar {
-    position: fixed;
-    left: 0;
-    height: 0px;
-    width: 15px;
-    background-color: #333;
-}
+/*.progress-bar {*/
+    /*position: fixed;*/
+    /*left: 0;*/
+    /*height: 0px;*/
+    /*width: 15px;*/
+    /*background-color: #333;*/
+/*}*/
 
 .exploration {
     color: white;
