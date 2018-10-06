@@ -1,3 +1,4 @@
+import com.google.common.collect.ImmutableMap;
 import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
 import org.postgresql.geometric.PGbox;
@@ -22,22 +23,21 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
+import java.util.*;
 
 public class AsyncPerformance2 implements FormulaAsyncListener {
     int cellCount = 5000;
     long initTime;
     boolean testStarted = false;
     final boolean sync=false;
-    final boolean graphCompression = false;
-    final CellRegion window = null;
-    //final CellRegion window = new CellRegion(0,0,50,10);
+    final boolean graphCompression = true;
+    //final CellRegion window = null;
+    final CellRegion window = new CellRegion(0, 0, 50, 10);
     private long controlReturnedTime;
     private long updatedCells = 0;
     private long cellsToUpdate = 0;
-
+    // Sheet->{session->visibleRange}
+    Map<Object, Map<String, int[]>> uiVisibleMap;
 
 
     public static void main(String[] args) throws Exception {
@@ -73,8 +73,6 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         formulaAsyncScheduler.shutdown();
         asyncThread.join();
     }
-
-
 
 
     private static void revertGraphCompression(String bookName) {
@@ -197,8 +195,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
                     Ref overlap = dependencies.get(i).getOverlap(dependencies.get(j));
                     if (overlap != null)
                         new_area += overlap.getCellCount();
-                    if (new_area==0)
-                    {
+                    if (new_area==0) {
                         best_area = new_area;
                         best_i = i;
                         best_j = j;
@@ -236,8 +233,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
                     CellRegion overlap = dependencies.get(i).getOverlap(dependencies.get(j));
                     if (overlap != null)
                         new_area += overlap.getCellCount();
-                    if (new_area==0)
-                    {
+                    if (new_area==0) {
                         best_area = new_area;
                         best_i = i;
                         best_j = j;
@@ -263,19 +259,28 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         }
     }
 
-    public void simpleTest()
-    {
+    public void simpleTest() {
         SBook book = BookBindings.getBookByName("testBook" + System.currentTimeMillis());
         /* Cleaner for sync computation */
         if (sync)
             FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(book.getBookSeries()));
+
+        uiVisibleMap = new HashMap<>();
+        FormulaAsyncScheduler.updateVisibleMap(uiVisibleMap);
+
+
         SSheet sheet = book.getSheet(0);
 
-        for (int i=1;i<=cellCount;i++)
+        // Update visible Map
+        // Sheet->{session->visibleRange}
+        uiVisibleMap.put(sheet, ImmutableMap.of("Session1", new int[]{window.getRow(), window.getLastRow()}));
+
+
+        for (int i = 1; i<=cellCount; i++)
             sheet.getCell(i,2).setValue(System.currentTimeMillis());
 
         sheet.getCell(0,0).setValue(10);
-        for (int i=1;i<=cellCount;i++)
+        for (int i = 1; i<=cellCount; i++)
             sheet.getCell(i,0).setFormulaValue("A1" + "+" + (System.currentTimeMillis()%5000) + "+" + i);
         //sheet.clearCache();
 
