@@ -1211,10 +1211,10 @@ $(window).resize(function () {
             width: wrapperWidth - leftWidth,
             height: wrapperHeight * 0.95,
         });
-        nav.updateSettings({
-            width: wrapperWidth * 0.19,
-            height: wrapperHeight * 0.95,
-        })
+        // nav.updateSettings({
+        //     width: wrapperWidth * 0.19,
+        //     height: wrapperHeight * 0.95,
+        // })
 
     } else {
         hot.updateSettings({

@@ -944,8 +944,8 @@ function Explore(e) {
             stretchH: 'all',
             contextMenu: false,
             outsideClickDeselects: false,
-            className: " wrap",
-
+            //className: " wrap",
+            className: "wrap",
             search: true,
             sortIndicator: true,
             manualColumnResize: true,
@@ -1026,23 +1026,25 @@ function Explore(e) {
         navContainer.innerHTML = ""
         nav = new Handsontable(navContainer, navSettings);
         //nav.selectCell(0, 0);
-        $("#navChart").resizable({handles: 'e'});
-        // The resizing will also invoke the $(window).resize function in index.js
-        $('#navChart').resize(function () {
-            let leftWidth = $("#navChart").width();
-            console.log(leftWidth);
-            let rightWidth = wrapperWidth * 0.98 - leftWidth;
-            if (rightWidth < 0) rightWidth = 0;
-            // nav.render();
-            nav.updateSettings({width:leftWidth,});
-            $('#test-hot').width(rightWidth);
-        });
+
         console.log("dsa");
 
         updateData(0, 0, 1000, 15, true);
         lowerRange = 0;
         upperRange = 1000;
         updataHighlight();
+
+        $("#navChart").resizable({handles: 'e'});
+// The resizing will also invoke the $(window).resize function in index.js
+        $('#navChart').resize(function () {
+            let leftWidth = $("#navChart").width();
+            console.log(leftWidth);
+            let rightWidth = wrapperWidth * 0.98 - leftWidth;
+            if (rightWidth < 0) rightWidth = 0;
+            // nav.render();
+            nav.updateSettings({width:leftWidth});
+            $('#test-hot').width(rightWidth);
+        });
 
         //   doubleclick implementation option2:
         nav.view.wt.update('onCellDblClick', function (e, cell) {
@@ -1073,6 +1075,7 @@ function Explore(e) {
     });
 }
 
+
 function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
     let tempString = "<div><span>" + value + "</span>";
 
@@ -1084,7 +1087,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
         } else {
             td.style.background = '#F5F5DC';
         }
-        console.log(cumulativeData);
+        //console.log(cumulativeData);
         let targetCell = cumulativeData[currLevel][row];
 
         if (targetCell.clickable) {
@@ -1104,7 +1107,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
 
             }).done(function (e) {
                 if (e.status == "success") {
-                    console.log(nav)
+                 //   console.log(nav)
                     let chartString = "chartdiv" + row + col;
                     tempString += "<div id=" + chartString + " ></div>";
                     td.innerHTML = tempString + "</div>";
@@ -1173,7 +1176,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                         .data(chartData)
                         .on("mouseover",
                             function (d) {
-                                console.log(d)
+                     //           console.log(d)
                                 tooltip.style("left", d3.event.pageX - 20 + "px")
                                     .style("top", d3.event.pageY - 30 + "px")
                                     .style("display", "inline-block")
@@ -1263,7 +1266,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
 
                 }).done(function (e) {
                     if (e.status == "success") {
-                        console.log(nav)
+                     //   console.log(nav)
                         let chartString = "chartdiv" + row + col;
                         tempString += "<div id=" + chartString + " ></div>";
                         td.innerHTML = tempString + "</div>";
@@ -1291,7 +1294,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                         //todo: compute on good width and height, margin left and right
                         let margin = {top: 0, right: 40, bottom: 5, left: maxleft};
                         var fullWidth = wrapperWidth * 0.15;
-                        console.log(fullWidth)
+                    //    console.log(fullWidth)
 
                         var fullHeight = (wrapperHeight * 0.95 / cumulativeData[currLevel].length > 90)
                             ? wrapperHeight * 0.95 / cumulativeData[currLevel].length - 10 : 80;
@@ -1335,7 +1338,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                             .data(chartData)
                             .on("mouseover",
                                 function (d) {
-                                    console.log(d)
+                        //            console.log(d)
                                     tooltip.style("left", d3.event.pageX - 20 + "px")
                                         .style("top", d3.event.pageY - 30 + "px")
                                         .style("display", "inline-block")
