@@ -18,8 +18,7 @@ var breadCrumbHistoryPathIndex = [];
 var options = [];
 var hieraOpen = false;
 var exploreOpen = false;
-var attr_index = [];
-var funcId = [];
+
 
 var funcOptions =
     [
@@ -840,7 +839,7 @@ function Explore(e) {
 
     $.get(baseUrl + 'startNav/' + bId + '/' + sName + '/' + e, function (data) {
         selectedChild = 0;
-
+        childHash = new Map();
         clickable = true;
         currLevel = 0;
         levelList = [];
@@ -1077,7 +1076,126 @@ function Explore(e) {
     });
 }
 
+var childHash = new Map();
+function computeCellChart(chartString, row, ){
 
+    let result = childHash.get(row);
+    let number = result.length;
+    let maxLen = 0;
+    let hash = new Map();
+    let chartData = [];
+
+    for (let i = 0; i < number; i++) {
+        if (result[i].name.length > maxLen) {
+            maxLen = result[i].name.length;
+        }
+        let value;
+        if (result[i].name.length > 12) {
+            value = result[i].name.substring(0, 13) + "...";
+            hash.set(value, {name: result[i].name, range: result[i].rowRange[0]})
+        } else {
+            value = result[i].name;
+            hash.set(value, {name: result[i].name, range: result[i].rowRange[0]});
+        }
+        chartData.push({name: value, count: result[i].value});
+    }
+
+    let maxleft = 75;
+
+    let margin = {top: 0, right: 40, bottom: 5, left: maxleft};
+    var fullWidth = currLevel == 0? wrapperWidth * 0.18 : wrapperWidth*0.15 ;
+    var fullHeight = (wrapperHeight * 0.95 / cumulativeData[currLevel].length > 90)
+        ? wrapperHeight * 0.95 / cumulativeData[currLevel].length - 10 : 80;
+    if (number > 6) {
+        fullHeight += (number - 6) * 5;
+    }
+    var width = fullWidth - margin.right - margin.left;
+    var height = fullHeight - margin.top - margin.bottom;
+    var svg = d3.select("#" + chartString)
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var x = d3.scaleLinear()
+        .range([0, width])
+        .domain([0, d3.max(chartData, function (d) {
+            return d.count;
+        })]);
+
+    var y = d3.scaleBand()
+        .rangeRound([0, height])
+        .padding(0.1)
+        .domain(chartData.map(function (d) {
+            return d.name;
+        }));
+
+    // //make y axis to show bar names
+    var yAxis = d3.axisLeft(y)
+        .tickSize(0);
+
+    var tooltip =
+        d3.select('#' + chartString).append("div").attr("class", "toolTip");
+    var gy = svg.append("g")
+        .attr("class", "y axis")
+        .call(yAxis)
+        .selectAll(".tick text")
+        .data(chartData)
+        .on("mouseover",
+            function (d) {
+                //           console.log(d)
+                tooltip.style("left", d3.event.pageX - 20 + "px")
+                    .style("top", d3.event.pageY - 30 + "px")
+                    .style("display", "inline-block")
+                    .style("font", "10px")
+                    .html(hash.get(d.name).name);
+            })
+        .on("mouseout", function (d) {
+            tooltip.style("display", "none");
+        });
+
+    var bars = svg.selectAll(".bar")
+        .data(chartData)
+        .enter()
+        .append("g")
+
+    //append rects
+    bars.append("rect")
+        .attr("class", "bar")
+        .attr("y", function (d) {
+            return y(d.name);
+        })
+        .attr("height", y.bandwidth())
+        .attr("x", 0)
+        .attr('fill', '#0099ff')
+        .attr("width", function (d) {
+            return x(d.count);
+        })
+        .on("click", function (d) {
+            lowerRange = hash.get(d.name).range;
+            upperRange = lowerRange + 500;
+            updateData(lowerRange, 0, upperRange, 15, true);
+        });
+    //   .on("dblclick",function(d){ alert("node was double clicked"); });
+
+    //add a value label to the right of each bar
+    bars.append("text")
+        .attr("class", "label")
+        //y position of the label is halfway down the bar
+        .attr("y", function (d) {
+            return y(d.name) + y.bandwidth() / 2 + 4;
+        })
+        .style("font-size", "10px")
+        //x position is 3 pixels to the right of the bar
+        .attr("x", function (d) {
+            return x(d.count) + 3;
+        })
+        .text(function (d) {
+            return d.count;
+        });
+
+}
 function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
     let tempString = "<div><span>" + value + "</span>";
 
@@ -1094,6 +1212,15 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
 
         if (targetCell.clickable) {
             tempString += "<i class=\"fa fa-plus-circle fa-2x zoomInPlus\" style=\"color: #51cf66;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
+
+            if(childHash.has(row)){
+                let chartString = "navchartdiv" + row + col;
+                tempString += "<div id=" + chartString + " ></div>";
+                td.innerHTML = tempString + "</div>";
+                console.log("rerender");
+                computeCellChart(chartString,row);
+                return;
+            }
             let queryData = {};
             queryData.bookId = bId;
             queryData.sheetName = sName;
@@ -1105,7 +1232,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                 // dataType: 'json',
                 contentType: 'text/plain',
                 data: JSON.stringify(queryData),
-                //async: false,
+                async: false,
 
             }).done(function (e) {
                 if (e.status == "success") {
@@ -1114,120 +1241,8 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                     tempString += "<div id=" + chartString + " ></div>";
                     td.innerHTML = tempString + "</div>";
                     let result = e.data.buckets;
-                    let number = result.length;
-                    let maxLen = 0;
-                    let hash = new Map();
-                    let chartData = [];
-
-                    for (let i = 0; i < number; i++) {
-                        if (result[i].name.length > maxLen) {
-                            maxLen = result[i].name.length;
-                        }
-                        let value;
-                        if (result[i].name.length > 12) {
-                            value = result[i].name.substring(0, 13) + "...";
-                            hash.set(value, {name: result[i].name, range: result[i].rowRange[0]})
-                        } else {
-                            value = result[i].name;
-                            hash.set(value, {name: result[i].name, range: result[i].rowRange[0]});
-                        }
-                        chartData.push({name: value, count: result[i].value});
-                    }
-
-                    let maxleft = 75;
-
-                    let margin = {top: 0, right: 40, bottom: 5, left: maxleft};
-                    var fullWidth = wrapperWidth * 0.18;
-                    var fullHeight = (wrapperHeight * 0.95 / cumulativeData[currLevel].length > 90)
-                        ? wrapperHeight * 0.95 / cumulativeData[currLevel].length - 10 : 80;
-                    if (number > 6) {
-                        fullHeight += (number - 6) * 5;
-                    }
-                    var width = fullWidth - margin.right - margin.left;
-                    var height = fullHeight - margin.top - margin.bottom;
-                    var svg = d3.select("#" + chartString)
-                        .append("svg")
-                        .attr("width", width + margin.left + margin.right)
-                        .attr("height", height + margin.top + margin.bottom)
-                        .append("g")
-                        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-                    var x = d3.scaleLinear()
-                        .range([0, width])
-                        .domain([0, d3.max(chartData, function (d) {
-                            return d.count;
-                        })]);
-
-                    var y = d3.scaleBand()
-                        .rangeRound([0, height])
-                        .padding(0.1)
-                        .domain(chartData.map(function (d) {
-                            return d.name;
-                        }));
-
-                    // //make y axis to show bar names
-                    var yAxis = d3.axisLeft(y)
-                        .tickSize(0);
-
-                    var tooltip =
-                        d3.select('#' + chartString).append("div").attr("class", "toolTip");
-                    var gy = svg.append("g")
-                        .attr("class", "y axis")
-                        .call(yAxis)
-                        .selectAll(".tick text")
-                        .data(chartData)
-                        .on("mouseover",
-                            function (d) {
-                     //           console.log(d)
-                                tooltip.style("left", d3.event.pageX - 20 + "px")
-                                    .style("top", d3.event.pageY - 30 + "px")
-                                    .style("display", "inline-block")
-                                    .style("font", "10px")
-                                    .html(hash.get(d.name).name);
-                            })
-                        .on("mouseout", function (d) {
-                            tooltip.style("display", "none");
-                        });
-
-                    var bars = svg.selectAll(".bar")
-                        .data(chartData)
-                        .enter()
-                        .append("g")
-
-                    //append rects
-                    bars.append("rect")
-                        .attr("class", "bar")
-                        .attr("y", function (d) {
-                            return y(d.name);
-                        })
-                        .attr("height", y.bandwidth())
-                        .attr("x", 0)
-                        .attr('fill', '#0099ff')
-                        .attr("width", function (d) {
-                            return x(d.count);
-                        })
-                        .on("click", function (d) {
-                            lowerRange = hash.get(d.name).range;
-                            upperRange = lowerRange + 500;
-                            updateData(lowerRange, 0, upperRange, 15, true);
-                        });
-                    //   .on("dblclick",function(d){ alert("node was double clicked"); });
-
-                    //add a value label to the right of each bar
-                    bars.append("text")
-                        .attr("class", "label")
-                        //y position of the label is halfway down the bar
-                        .attr("y", function (d) {
-                            return y(d.name) + y.bandwidth() / 2 + 4;
-                        })
-                        .style("font-size", "10px")
-                        //x position is 3 pixels to the right of the bar
-                        .attr("x", function (d) {
-                            return x(d.count) + 3;
-                        })
-                        .text(function (d) {
-                            return d.count;
-                        });
+                    childHash.set(row, result);
+                    computeCellChart(chartString, row);
                 }
             })
         } else {
@@ -1255,8 +1270,17 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
             let targetCell = cumulativeData[currLevel][row];
             if (targetCell.clickable) {
                 tempString += "<i class=\"fa fa-plus-circle fa-2x zoomInPlus\" style=\"color: #51cf66;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
-                let queryData = {};
 
+                if(childHash.has(row)){
+                    let chartString = "navchartdiv" + row + col;
+                    tempString += "<div id=" + chartString + " ></div>";
+                    td.innerHTML = tempString + "</div>";
+                    console.log("rerender");
+                    computeCellChart(chartString,row);
+                    return;
+                }
+
+                let queryData = {};
                 queryData.bookId = bId;
                 queryData.sheetName = sName;
                 queryData.path = computePath() + "," + row;
@@ -1276,123 +1300,8 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                         tempString += "<div id=" + chartString + " ></div>";
                         td.innerHTML = tempString + "</div>";
                         let result = e.data.buckets;
-                        let number = result.length;
-                        let maxLen = 0;
-                        let hash = new Map();
-                        let chartData = [];
-                        for (let i = 0; i < number; i++) {
-                            if (result[i].name.length > maxLen) {
-                                maxLen = result[i].name.length;
-                            }
-                            let value;
-                            if (result[i].name.length > 13) {
-                                value = result[i].name.substring(0, 13) + "...";
-                                hash.set(value, {name: result[i].name, range: result[i].rowRange[0]})
-                            } else {
-                                value = result[i].name;
-                                hash.set(value, {name: result[i].name, range: result[i].rowRange[0]});
-                            }
-                            chartData.push({name: value, count: result[i].value});
-                        }
-                        let maxleft = 75;
-                        /* (maxLen * 6) < 110?  maxLen*6:110;*/
-                        //todo: compute on good width and height, margin left and right
-                        let margin = {top: 0, right: 40, bottom: 5, left: maxleft};
-                        var fullWidth = wrapperWidth * 0.15;
-                    //    console.log(fullWidth)
-
-                        var fullHeight = (wrapperHeight * 0.95 / cumulativeData[currLevel].length > 90)
-                            ? wrapperHeight * 0.95 / cumulativeData[currLevel].length - 10 : 80;
-                        if (number > 6) {
-                            fullHeight += (number - 6) * 5;
-                        }
-
-                        var width = fullWidth - margin.right - margin.left;
-                        var height = fullHeight - margin.top - margin.bottom;
-                        var svg = d3.select("#" + chartString)
-                            .append("svg")
-                            .attr("width", width + margin.left + margin.right)
-                            .attr("height", height + margin.top + margin.bottom)
-                            .append("g")
-                            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-                        var x = d3.scaleLinear()
-                            .range([0, width])
-                            .domain([0, d3.max(chartData, function (d) {
-                                return d.count;
-                            })]);
-
-                        var y = d3.scaleBand()
-                            .rangeRound([0, height])
-                            .padding(0.1)
-                            .domain(chartData.map(function (d) {
-                                return d.name;
-                            }));
-
-                        // //make y axis to show bar names
-                        var yAxis = d3.axisLeft(y)
-                            .tickSize(0);
-
-
-                        var tooltip =
-                            d3.select('#' + chartString).append("div").attr("class", "toolTip");
-                        var gy = svg.append("g")
-                            .attr("class", "y axis")
-                            .call(yAxis)
-                            .selectAll(".tick text")
-                            .data(chartData)
-                            .on("mouseover",
-                                function (d) {
-                        //            console.log(d)
-                                    tooltip.style("left", d3.event.pageX - 20 + "px")
-                                        .style("top", d3.event.pageY - 30 + "px")
-                                        .style("display", "inline-block")
-                                        .style("font", "10px")
-                                        .html(hash.get(d.name).name);
-                                })
-                            .on("mouseout", function (d) {
-                                tooltip.style("display", "none");
-                            });
-
-                        var bars = svg.selectAll(".bar")
-                            .data(chartData)
-                            .enter()
-                            .append("g")
-
-                        //append rects
-                        bars.append("rect")
-                            .attr("class", "bar")
-                            .attr("y", function (d) {
-                                return y(d.name);
-                            })
-                            .attr("height", y.bandwidth())
-                            .attr("x", 0)
-                            .attr('fill', '#0099ff')
-                            .attr("width", function (d) {
-                                return x(d.count);
-                            })
-                            .on("click", function (d) {
-                                alert(hash.get(d.name).range);
-                                lowerRange = hash.get(d.name).range;
-                                upperRange = lowerRange + 500;
-                                updateData(lowerRange, 0, upperRange, 15, true);
-                            });
-
-                        //add a value label to the right of each bar
-                        bars.append("text")
-                            .attr("class", "label")
-                            //y position of the label is halfway down the bar
-                            .attr("y", function (d) {
-                                return y(d.name) + y.bandwidth() / 2 + 4;
-                            })
-                            .style("font-size", "10px")
-                            //x position is 3 pixels to the right of the bar
-                            .attr("x", function (d) {
-                                return x(d.count) + 3;
-                            })
-                            .text(function (d) {
-                                return d.count;
-                            });
+                        childHash.set(row,result);
+                        computeCellChart(chartString, row);
                     }
                 })
             } else {
@@ -1663,6 +1572,7 @@ function computePath() {
 
 function zoomIn(child, nav) {
     nav.deselectCell();
+    childHash = new Map();
     selectedChild = 0;
     if (currLevel == 0) {
         colHeader.splice(1, 0, "")
@@ -1881,7 +1791,7 @@ function zoomOut(nav) {
 }
 
 function zoomOutHist(nav) {
-
+    childHash = new Map();
     clickable = true;
     nav.deselectCell();
     targetChild = levelList[levelList.length - 1];
@@ -1966,7 +1876,7 @@ function zoomOutHist(nav) {
 }
 
 function jumpToHistorialView(childlist) {
-
+    childHash = new Map();
     clickable = true;
     nav.deselectCell();
 
