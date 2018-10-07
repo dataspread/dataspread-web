@@ -139,7 +139,7 @@ $("#Explore").click(function () {
     hieraOpen = false;
     if (exploreOpen) {
         hot.updateSettings({
-            width: $("#test-hot").width() - wrapperWidth*0.19,
+            width: wrapperWidth - $("#navChart").width()- wrapperWidth*0.19,
         });
     } else {
         hot.updateSettings({
@@ -339,10 +339,13 @@ var dataBucket = [[0, 50], [51, 100], [101, 150], [151, 200], [201, 300], [301, 
 $("#Bucket").click(function () {
     $("#exploration-bar").css("display", "none");
     $("#hierarchical-col").css("display", "none");
-    hot.updateSettings({width: wrapperWidth * 0.59});
+    let originalWidth = wrapperWidth - $("#navChart").width();
+    let newWidth = originalWidth - wrapperWidth * 0.19;
+    if (newWidth < 0) newWidth = 0;
+    hot.updateSettings({width: newWidth});
     $("#bucket-col").css({
         "float": "left",
-        "width": wrapperWidth * 0.2,
+        "width": wrapperWidth * 0.19,
         "height": wrapperHeight * 0.95,
         "display": "inline"
     });
@@ -803,14 +806,13 @@ function Explore(e) {
         $("#exploration-bar").css("display", "none");
         $("#bucket-col").css("display", "none");
         //hot.updateSettings({width: wrapperWidth * 0.59});
-        let originalWidth = $("#test-hot").width();
+        let originalWidth = wrapperWidth - $("#navChart").width();
         let newWidth = originalWidth - wrapperWidth * 0.19;
         if (newWidth < 0) newWidth = 0;
-        console.log(newWidth);
         hot.updateSettings({width: newWidth});
         $("#hierarchical-col").css({
             "float": "left",
-            "width": wrapperWidth * 0.2,
+            "width": wrapperWidth * 0.19,
             "height": wrapperHeight * 0.95,
             "display": "inline"
         });
@@ -868,7 +870,7 @@ function Explore(e) {
         cumulativeDataSize += currData.length;
 
         hot.updateSettings({
-            width: wrapperWidth * 0.8,
+            width: wrapperWidth * 0.79,
             height: wrapperHeight * 0.95,
         });
 
@@ -889,22 +891,22 @@ function Explore(e) {
             height: wrapperHeight * 0.95,
             rowHeaderWidth: 0,
             rowHeaders: true,
-            // colWidths: function (col) {
-            //     if (currLevel == 0) {
-            //         if (col == 0) {
-            //             return wrapperWidth * 0.18;
-            //         } else {
-            //             return wrapperWidth * 0.15;
-            //         }
-            //     } else {
-            //         if (col == 0) {
-            //             return wrapperWidth * 0.08;
-            //         } else {
-            //             return wrapperWidth * 0.15;
-            //         }
-            //     }
-            //
-            // },
+            colWidths: function (col) {
+                if (currLevel == 0) {
+                    if (col == 0) {
+                        return wrapperWidth * 0.18;
+                    } else {
+                        return wrapperWidth * 0.15;
+                    }
+                } else {
+                    if (col == 0) {
+                        return wrapperWidth * 0.05;
+                    } else {
+                        return wrapperWidth * 0.15;
+                    }
+                }
+
+            },
             colHeaders: function (col) {
                 if (col < colHeader.length) {
                     if (currLevel == 0) {
@@ -1087,7 +1089,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
         } else {
             td.style.background = '#F5F5DC';
         }
-        //console.log(cumulativeData);
+        console.log("curr0");
         let targetCell = cumulativeData[currLevel][row];
 
         if (targetCell.clickable) {
@@ -1103,12 +1105,12 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                 // dataType: 'json',
                 contentType: 'text/plain',
                 data: JSON.stringify(queryData),
-                async: false,
+                //async: false,
 
             }).done(function (e) {
                 if (e.status == "success") {
-                 //   console.log(nav)
-                    let chartString = "chartdiv" + row + col;
+                    console.log("getingchild" + row);
+                    let chartString = "navchartdiv" + row + col;
                     tempString += "<div id=" + chartString + " ></div>";
                     td.innerHTML = tempString + "</div>";
                     let result = e.data.buckets;
@@ -1244,8 +1246,11 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
             td.style.background = '#F5F5DC';
         }
         if (col == 0) {
-            tempString += "<i class=\"fa fa-minus-circle fa-2x zoomOutM\" style=\"color: #339af0;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
+
+            tempString = "<div><i class=\"fa fa-minus-circle fa-2x zoomOutM\" style=\"color: #339af0;\" id='zm" + row + "' aria-hidden=\"true\"></i><br><br><br><br>";
+            tempString += "<span class='vertical'>" + value + "</span>";
             td.innerHTML = tempString + "</div>";
+            return;
         } else {
             let targetCell = cumulativeData[currLevel][row];
             if (targetCell.clickable) {
@@ -1262,12 +1267,12 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                     // dataType: 'json',
                     contentType: 'text/plain',
                     data: JSON.stringify(queryData),
-                    async: false,
+                    //async: false,
 
                 }).done(function (e) {
                     if (e.status == "success") {
-                     //   console.log(nav)
-                        let chartString = "chartdiv" + row + col;
+                        console.log("curr1 grchildrow" + row);
+                        let chartString = "navchartdiv" + row + col;
                         tempString += "<div id=" + chartString + " ></div>";
                         td.innerHTML = tempString + "</div>";
                         let result = e.data.buckets;
@@ -1403,6 +1408,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
 
 
 function removeHierarchiCol(colIdx) {
+   // nav.alter('remove_col', colIdx);
     colHeader.splice(
         colIdx,
         1,
@@ -1429,10 +1435,11 @@ function removeHierarchiCol(colIdx) {
     }
     if (aggregateData.formula_ls.length == 0) {
         hieraOpen = false;
+        nav.alter('remove_col', colIdx);
+        nav.updateSettings({width: wrapperWidth*0.19,});
+    }else{
+        nav.alter('remove_col', colIdx);
     }
-    nav.alter('remove_col', colIdx);
-
-    // nav.render();
 }
 
 $("#hierarchi-form").submit(function (e) {
@@ -1548,7 +1555,6 @@ function getAggregateValue() {
     }).done(function (e) {
         if (e.status == "success") {
             $("#hierarchical-col").css("display", "none");
-            hot.updateSettings({width: wrapperWidth - $("#navChart").width()});
             hieraOpen = true;
             if (currLevel == 0) {
                 colHeader.splice(
@@ -1620,17 +1626,16 @@ function addHierarchiCol(aggregateValue) {
 
     let numChild = cumulativeData[currLevel].length;
     nav.updateSettings({
+        width: wrapperWidth*0.25,
         manualColumnResize: columWidth,
         minCols: 1,
         data: viewData,
         rowHeights: (wrapperHeight * 0.95 / numChild > 80)
             ? wrapperHeight * 0.95 / numChild
             : 80,
-
-        // maxCols: 3,
-        //  fixedColumnsLeft: targetCol,
         mergeCells: mergeCellInfo,
     });
+    hot.updateSettings({width: wrapperWidth - $("#navChart").width()});
     if (zoomming) {
         zoomming = false;
         //nav.selectCell(0, 1);
@@ -1857,9 +1862,9 @@ function zoomOut(nav) {
         nav.updateSettings({
 
             data: viewData,
-            rowHeights: (wrapperHeight * 0.95 / numChild > 80)
-                ? wrapperHeight * 0.95 / numChild
-                : 80,
+            // rowHeights: (wrapperHeight * 0.95 / numChild > 80)
+            //     ? wrapperHeight * 0.95 / numChild
+            //     : 80,
             mergeCells: mergeCellInfo,
         });
         zoomouting = false;

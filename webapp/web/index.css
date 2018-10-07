@@ -10,6 +10,15 @@
     right: 0;
     z-index: 5
 }
+.vertical{
+    writing-mode: vertical-lr;
+    /*transform: rotate(270deg);*/
+    text-orientation: upright;
+    float: left;
+    position: relative;
+    top: 200px;
+
+}
 
 #sheets {
     display: inline;
@@ -165,7 +174,7 @@
 
 .zoomOutM{
     cursor: pointer;
-    float:right;
+    float:left;
 }
 
 #colClose {
