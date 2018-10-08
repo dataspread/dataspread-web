@@ -143,6 +143,9 @@ export default class DSGrid extends Component {
                     filetypes={["csv"]}
                     fileAccept="text/csv"
                     maxFileSize={100000000000}
+                    simultaneousUploads={4}
+                    fileAddedMessage="Started!"
+                    completedMessage="Complete!"
                     service="/api/importFile"
                     disableDragAndDrop={true}
                     showFileList={false}
