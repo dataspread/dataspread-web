@@ -138,7 +138,7 @@ $("#Explore").click(function () {
     hieraOpen = false;
     if (exploreOpen) {
         hot.updateSettings({
-            width: wrapperWidth - $("#navChart").width()- wrapperWidth*0.19,
+            width: wrapperWidth - $("#navChart").width() - wrapperWidth * 0.19,
         });
     } else {
         hot.updateSettings({
@@ -324,7 +324,7 @@ $(".formClose").click(function (e) {
     this.parentNode.parentNode.style.display = 'none';
     if (exploreOpen) {
         hot.updateSettings({
-            width: $("#test-hot").width() + wrapperWidth*0.19,
+            width: $("#test-hot").width() + wrapperWidth * 0.19,
         });
     } else {
         hot.updateSettings({
@@ -939,9 +939,6 @@ function Explore(e) {
                     }
                 }
             },
-            // colHeaders: colHeader,
-            // fixedRowsTop: 11,
-            // fixedColumnsLeft: 1,
             stretchH: 'all',
             contextMenu: false,
             outsideClickDeselects: false,
@@ -1043,7 +1040,7 @@ function Explore(e) {
             let rightWidth = wrapperWidth * 0.98 - leftWidth;
             if (rightWidth < 0) rightWidth = 0;
             // nav.render();
-            nav.updateSettings({width:leftWidth});
+            nav.updateSettings({width: leftWidth});
             $('#test-hot').width(rightWidth);
         });
 
@@ -1077,7 +1074,8 @@ function Explore(e) {
 }
 
 var childHash = new Map();
-function computeCellChart(chartString, row, ){
+
+function computeCellChart(chartString, row,) {
 
     let result = childHash.get(row);
     let number = result.length;
@@ -1103,7 +1101,7 @@ function computeCellChart(chartString, row, ){
     let maxleft = 75;
 
     let margin = {top: 0, right: 40, bottom: 5, left: maxleft};
-    var fullWidth = currLevel == 0? wrapperWidth * 0.18 : wrapperWidth*0.15 ;
+    var fullWidth = currLevel == 0 ? wrapperWidth * 0.18 : wrapperWidth * 0.15;
     var fullHeight = (wrapperHeight * 0.95 / cumulativeData[currLevel].length > 90)
         ? wrapperHeight * 0.95 / cumulativeData[currLevel].length - 10 : 80;
     if (number > 6) {
@@ -1196,6 +1194,7 @@ function computeCellChart(chartString, row, ){
         });
 
 }
+
 function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
     let tempString = "<div><span>" + value + "</span>";
 
@@ -1213,12 +1212,12 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
         if (targetCell.clickable) {
             tempString += "<i class=\"fa fa-plus-circle fa-2x zoomInPlus\" style=\"color: #51cf66;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
 
-            if(childHash.has(row)){
+            if (childHash.has(row)) {
                 let chartString = "navchartdiv" + row + col;
                 tempString += "<div id=" + chartString + " ></div>";
                 td.innerHTML = tempString + "</div>";
                 console.log("rerender");
-                computeCellChart(chartString,row);
+                computeCellChart(chartString, row);
                 return;
             }
             let queryData = {};
@@ -1232,7 +1231,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                 // dataType: 'json',
                 contentType: 'text/plain',
                 data: JSON.stringify(queryData),
-                async: false,
+               // async: false,
 
             }).done(function (e) {
                 if (e.status == "success") {
@@ -1271,12 +1270,12 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
             if (targetCell.clickable) {
                 tempString += "<i class=\"fa fa-plus-circle fa-2x zoomInPlus\" style=\"color: #51cf66;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
 
-                if(childHash.has(row)){
+                if (childHash.has(row)) {
                     let chartString = "navchartdiv" + row + col;
                     tempString += "<div id=" + chartString + " ></div>";
                     td.innerHTML = tempString + "</div>";
                     console.log("rerender");
-                    computeCellChart(chartString,row);
+                    computeCellChart(chartString, row);
                     return;
                 }
 
@@ -1300,7 +1299,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                         tempString += "<div id=" + chartString + " ></div>";
                         td.innerHTML = tempString + "</div>";
                         let result = e.data.buckets;
-                        childHash.set(row,result);
+                        childHash.set(row, result);
                         computeCellChart(chartString, row);
                     }
                 })
@@ -1317,7 +1316,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
 
 
 function removeHierarchiCol(colIdx) {
-   // nav.alter('remove_col', colIdx);
+    // nav.alter('remove_col', colIdx);
     colHeader.splice(
         colIdx,
         1,
@@ -1345,8 +1344,8 @@ function removeHierarchiCol(colIdx) {
     if (aggregateData.formula_ls.length == 0) {
         hieraOpen = false;
         nav.alter('remove_col', colIdx);
-        nav.updateSettings({width: wrapperWidth*0.19,});
-    }else{
+        nav.updateSettings({width: wrapperWidth * 0.19,});
+    } else {
         nav.alter('remove_col', colIdx);
     }
 }
@@ -1535,13 +1534,13 @@ function addHierarchiCol(aggregateValue) {
 
     let numChild = cumulativeData[currLevel].length;
     nav.updateSettings({
-        width: wrapperWidth*0.25,
+        width: wrapperWidth * 0.25,
         manualColumnResize: columWidth,
         minCols: 1,
         data: viewData,
-        rowHeights: (wrapperHeight * 0.95 / numChild > 80)
+        rowHeights: (wrapperHeight * 0.95 / numChild > 90)
             ? wrapperHeight * 0.95 / numChild
-            : 80,
+            : 90,
         mergeCells: mergeCellInfo,
     });
     hot.updateSettings({width: wrapperWidth - $("#navChart").width()});
@@ -1636,9 +1635,9 @@ function zoomIn(child, nav) {
                 nav.updateSettings({
                     // minRows: currData.length,
                     data: viewData,
-                    rowHeights: (wrapperHeight * 0.95 / currData.length > 80)
+                    rowHeights: (wrapperHeight * 0.95 / currData.length > 90)
                         ? wrapperHeight * 0.95 / currData.length
-                        : 80,
+                        : 90,
                     mergeCells: mergeCellInfo,
                 });
                 zoomming = false;
@@ -1813,7 +1812,7 @@ function zoomOutHist(nav) {
         data: JSON.stringify(queryData),
     }).done(function (e) {
         if (e.status == "success") {
-            var result = e.data;
+            let result = e.data;
             let breadcrum_ls = result.breadCrumb;
             // clickable = result.clickable;
             currLevel -= 1;
@@ -1857,9 +1856,9 @@ function zoomOutHist(nav) {
                 nav.updateSettings({
 
                     data: viewData,
-                    rowHeights: (wrapperHeight * 0.95 / numChild > 80)
+                    rowHeights: (wrapperHeight * 0.95 / numChild > 90)
                         ? wrapperHeight * 0.95 / numChild
-                        : 80,
+                        : 90,
                     mergeCells: mergeCellInfo,
                 });
                 zoomouting = false;
@@ -1946,9 +1945,9 @@ function jumpToHistorialView(childlist) {
                 nav.updateSettings({
 
                     data: viewData,
-                    rowHeights: (wrapperHeight * 0.95 / numChild > 80)
+                    rowHeights: (wrapperHeight * 0.95 / numChild > 90)
                         ? wrapperHeight * 0.95 / numChild
-                        : 80,
+                        : 90,
                     mergeCells: mergeCellInfo,
                 });
                 zoomouting = false;
@@ -2749,8 +2748,62 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
         }
 
     } else {
-        Handsontable.renderers.TextRenderer.apply(this, arguments);
-        td.className = "htCenter htMiddle"
+        // Handsontable.renderers.TextRenderer.apply(this, arguments);
+        // td.className = "htCenter htMiddle";
+        let tempString = "chartdiv" + row + col;
+        td.innerHTML = "<div id=" + tempString + " ></div>";
+        let data = navAggRawData[col - colOffset][row];
+        let min = navAggRawData[col - colOffset][0]['value'];
+        let max = navAggRawData[col - colOffset][0]['value'];
+        for (let i = 0; i < navAggRawData[col - colOffset].length; i++) {
+            if (navAggRawData[col - colOffset][i]['value'] < min) {
+                min = navAggRawData[col - colOffset][i]['value'];
+            } else if (navAggRawData[col - colOffset][i]['value'] > min) {
+                max = navAggRawData[col - colOffset][i]['value'];
+            }
+        }
+        var margin = {top: 20, right: 30, bottom: 0, left: -20};
+        var fullHeight = (wrapperHeight * 0.95 / cumulativeData[currLevel].length > 90)
+            ? wrapperHeight * 0.95 / cumulativeData[currLevel].length - 10 : 80;
+        if(childHash.has(row)){
+            let result = childHash.get(row);
+            let number = result.length;
+            fullHeight += 10;
+            if (number > 6) {
+                fullHeight += (number - 6) * 5;
+            }
+        }
+        var fullWidth = wrapperWidth * 0.14;
+        console.log("row: " + row + " " + fullHeight);
+
+        // the width and height values will be used in the ranges of our scales
+        var width = fullWidth - margin.right - margin.left;
+        var height = fullHeight - margin.top - margin.bottom;
+        var svg = d3.select('#' + tempString)
+            .append('svg')
+            .attr('width', fullWidth)
+            .attr('height', fullHeight)
+            // this g is where the bar chart will be drawn
+            .append('g')
+            // translate it to leave room for the left and top margins
+            .attr('transform',
+                'translate(' + margin.left + ',' + margin.top + ')');
+        svg.append("rect")
+            .attr("x", width)
+            .attr("y", 0 - margin.top)
+            .attr("width", margin.right)
+            .attr("height", fullHeight + 10)
+            .attr("fill", d3.interpolateGreens(
+                ((value - min) / (max - min)) * 0.85 + 0.15));
+
+        svg.append("text")
+            .attr("x", (width / 2))
+            .attr("y", height/2 + margin.top/2)
+            .attr("text-anchor", "middle")
+            .style("font-size", "20px")
+            .style("font-weight", "bold")
+            .text(value);
+
     }
 
     td.style.background = '#FAEBD7';
