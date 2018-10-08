@@ -52,7 +52,8 @@ var exploreAttr;
 
 var sortAttrIndices = [];
 
-var selectedChild = 0;
+var selectedChild = [];
+var selectedBars = [];
 var lowerRange;
 var upperRange;
 
@@ -838,7 +839,15 @@ function Explore(e) {
 
 
     $.get(baseUrl + 'startNav/' + bId + '/' + sName + '/' + e, function (data) {
-        selectedChild = 0;
+        selectedChild = [];
+        selectedChild.push(0);
+
+        selectedBars = [];
+        let barObj = {};
+        barObj.cell = 0;
+        barObj.bars = [0];
+        selectedBars.push(barObj);
+
         childHash = new Map();
         clickable = true;
         currLevel = 0;
@@ -991,7 +1000,15 @@ function Explore(e) {
                 // setting if prevent scrolling after selection
 
                 if (cumulativeData[currLevel][r] != undefined) {
-                    selectedChild = r;
+                    selectedChild = [];
+                    selectedChild.push(r);
+
+                    selectedBars = [];
+                    let barObj = {};
+                    barObj.cell = r;
+                    barObj.bars = [0];
+                    selectedBars.push(barObj);
+
                     lowerRange = cumulativeData[currLevel][r].rowRange[0];
                     upperRange = cumulativeData[currLevel][r].rowRange[1];
                     updateData(cumulativeData[currLevel][r].rowRange[0], 0,
@@ -1166,7 +1183,22 @@ function computeCellChart(chartString, row,) {
         })
         .attr("height", y.bandwidth())
         .attr("x", 0)
-        .attr('fill', '#0099ff')
+        .attr('fill', function (d,i) {
+            console.log("selectedBars");
+            console.log(selectedBars);
+            console.log(row,i);
+            for(let ind=0;ind<selectedBars.length;ind++)
+            {
+                if(selectedBars[ind].cell == row)
+                {
+                    if(selectedBars[ind].bars.includes(i))
+                        return '#ff7105';
+                    else
+                        return '#0099ff';
+                }
+            }
+            return '#0099ff';
+        })
         .attr("width", function (d) {
             return x(d.count);
         })
@@ -1200,7 +1232,8 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
 
     // differentiate single layer to double layer
     if (currLevel == 0) {
-        if (row == selectedChild) {
+
+        if (selectedChild.includes(row)) {
             td.style.background = '#D3D3D3';
             td.style.color = '#4e81d3';
         } else {
@@ -1252,7 +1285,8 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
     } else {
 
 
-        if (col == 1 && row == selectedChild) {
+
+        if (col == 1 && selectedChild.includes(row)) {
             td.style.background = '#D3D3D3';
             td.style.color = '#4e81d3';
         }
@@ -1572,7 +1606,15 @@ function computePath() {
 function zoomIn(child, nav) {
     nav.deselectCell();
     childHash = new Map();
-    selectedChild = 0;
+    selectedChild = [];
+    selectedChild.push(0);
+
+    selectedBars = [];
+    let barObj = {};
+    barObj.cell = 0;
+    barObj.bars = [0];
+    selectedBars.push(barObj);
+
     if (currLevel == 0) {
         colHeader.splice(1, 0, "")
     }
@@ -1794,7 +1836,15 @@ function zoomOutHist(nav) {
     clickable = true;
     nav.deselectCell();
     targetChild = levelList[levelList.length - 1];
-    selectedChild = targetChild;
+    selectedChild = [];
+    selectedChild.push(targetChild);
+
+    selectedBars = [];
+    let barObj = {};
+    barObj.cell = targetChild;
+    barObj.bars = [0];
+    selectedBars.push(barObj);
+
     levelList.pop();
     let childlist = computePath(); // get the list of children
     // api call to /levelList + '.' + child to get currData
@@ -2842,46 +2892,112 @@ function updataHighlight(child) {
     });
 }
 
+
+function updateBarChartFocus(firstRow, lastRow)
+{
+    console.log(childHash);
+    let newSelectedBars = [];
+    for(let selI=0;selI<cumulativeData[currLevel].length;selI++) {
+        if (childHash.get(selI) == undefined)
+            continue;
+
+        let newSelectedBar = [];
+        console.log(childHash.get(selI));
+        for (let selJ = 0; selJ < childHash.get(selI).length; selJ++) {
+            let lower = childHash.get(selI)[selJ].rowRange[0];
+            let upper = childHash.get(selI)[selJ].rowRange[1];
+
+            console.log("lowerRange,upperRange", lower, upper);
+            if (firstRow > upper)
+                continue;
+            if (lastRow < lower)
+                break;
+            newSelectedBar.push(selJ);
+        }
+
+        if (newSelectedBar.length > 0) {
+            let barObj = {};
+            barObj.cell = selI;
+            barObj.bars = newSelectedBar;
+            newSelectedBars.push(barObj);
+        }
+    }
+
+    console.log("newselectedBars");
+    console.log(newSelectedBars);
+    if(newSelectedBars.length==1 && selectedBars.length==1 && newSelectedBars[0].cell == selectedBars[0].cell && newSelectedBars[0].bars.length == selectedBars[0].bars.length)
+    {
+        for(let selI=0; selI < newSelectedBars[0].bars.length;selI++)
+        {
+            if(newSelectedBars[0].bars[selI]!=selectedBars[0].bars[selI]) {
+                selectedBars = [];
+                selectedBars = newSelectedBars;
+                return false;
+            }
+        }
+        return true;
+    }
+
+    selectedBars = [];
+    selectedBars = newSelectedBars;
+    return false;
+
+}
+
 function updateNavCellFocus(firstRow, lastRow)
 {
 
-    console.log(firstRow,lastRow);
-    console.log(cumulativeData[currLevel]);
+    console.log("firstRow,lastRow:",firstRow,lastRow);
+    //console.log(cumulativeData[currLevel]);
 
-    lowerRange = cumulativeData[currLevel][selectedChild].rowRange[0];
-    upperRange = cumulativeData[currLevel][selectedChild].rowRange[1];
+    //console.log("lowerRange,upperRange",lowerRange,upperRange);
 
-    console.log(lowerRange,upperRange);
-    if(firstRow > upperRange)
+    let newSelectedChild = [];
+    for(let selI=0;selI<cumulativeData[currLevel].length;selI++)
     {
-        nav.deselectCell();
-        while(firstRow > upperRange)
-        {
-            selectedChild++;
-            lowerRange = cumulativeData[currLevel][selectedChild].rowRange[0];
-            upperRange = cumulativeData[currLevel][selectedChild].rowRange[1];
-        }
+        let lower = cumulativeData[currLevel][selI].rowRange[0];
+        let upper = cumulativeData[currLevel][selI].rowRange[1];
 
-        nav.render();
+        //console.log("lowerRange,upperRange",lower,upper);
+        if(firstRow > upper)
+            continue;
+        if(lastRow < lower)
+            break;
+        newSelectedChild.push(selI);
     }
-    else if(firstRow < upperRange && lastRow > upperRange) //highlight multiple buckcets
+
+    if(newSelectedChild.length==1)
+    {
+        if(selectedChild.length> 1)
+        {
+            nav.deselectCell();
+            selectedChild = [];
+            selectedChild = newSelectedChild;
+            updateBarChartFocus(firstRow, lastRow);
+            nav.render();
+        }
+        else if(selectedChild[0]!=newSelectedChild[0])
+        {
+            nav.deselectCell();
+            selectedChild = [];
+            selectedChild = newSelectedChild;
+            updateBarChartFocus(firstRow, lastRow);
+            nav.render();
+        }
+        else
+        {
+            if(!updateBarChartFocus(firstRow, lastRow))
+                nav.render();
+        }
+
+    }
+    else if(newSelectedChild.length > 1)
     {
         nav.deselectCell();
-        let firstSelected = selectedChild;
-        let lastSelected = selectedChild;
-
-        while(lastRow > upperRange)
-        {
-            lastSelected++;
-            lowerRange = cumulativeData[currLevel][lastSelected].rowRange[0];
-            upperRange = cumulativeData[currLevel][lastSelected].rowRange[1];
-        }
-
-        for(let selI = firstSelected; selI < lastSelected && firstSelected!=lastSelected; selI++)
-        {
-            // highlight cell at selI
-        }
-
+        selectedChild = [];
+        selectedChild = newSelectedChild;
+        updateBarChartFocus(firstRow, lastRow);
+        nav.render();
     }
 }
 
