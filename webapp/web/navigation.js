@@ -2788,3 +2788,193 @@ function updataHighlight(child) {
         }
     });
 }
+
+function updateNavCellFocus(firstRow, lastRow)
+{
+
+    console.log(firstRow,lastRow);
+    console.log(cumulativeData[currLevel]);
+
+    lowerRange = cumulativeData[currLevel][selectedChild].rowRange[0];
+    upperRange = cumulativeData[currLevel][selectedChild].rowRange[1];
+
+    console.log(lowerRange,upperRange);
+    if(firstRow > upperRange)
+    {
+        nav.deselectCell();
+        while(firstRow > upperRange)
+        {
+            selectedChild++;
+            lowerRange = cumulativeData[currLevel][selectedChild].rowRange[0];
+            upperRange = cumulativeData[currLevel][selectedChild].rowRange[1];
+        }
+
+        nav.render();
+    }
+    else if(firstRow < upperRange && lastRow > upperRange) //highlight multiple buckcets
+    {
+        nav.deselectCell();
+        let firstSelected = selectedChild;
+        let lastSelected = selectedChild;
+
+        while(lastRow > upperRange)
+        {
+            lastSelected++;
+            lowerRange = cumulativeData[currLevel][lastSelected].rowRange[0];
+            upperRange = cumulativeData[currLevel][lastSelected].rowRange[1];
+        }
+
+        for(let selI = firstSelected; selI < lastSelected && firstSelected!=lastSelected; selI++)
+        {
+            // highlight cell at selI
+        }
+
+    }
+}
+
+function brushNlink(firstRow, lastRow) {
+    console.log("brush and link");
+
+    let path = computePath();
+
+    console.log("path: "+path);
+
+
+    let currentFocus = cumulativeData[currLevel];
+    if(currentFocus==undefined)
+        return;
+
+    console.log(currentFocus);
+    let lastElement = currentFocus[currentFocus.length-1];
+    console.log(lastElement)
+    let endRow = lastElement.rowRange[1];
+
+    console.log("endRow: "+endRow);
+    console.log("lastRow: "+lastRow);
+    if(endRow < lastRow)
+    {
+        jumpToFocus(nextPath,nav);
+        updateNavCellFocus(firstRow, lastRow);
+    }
+    else
+    {
+        updateNavCellFocus(firstRow, lastRow);
+    }
+    //TODO: if(totalRows < lastIndex)---> zoom out and repeat brushNLink
+    //TODO: if(totalRows > lastIndex)---> getPath and Zoom In
+    //TODO: if(totalRows > lastIndex and ind==0)---> do nothing//check
+}
+
+function jumpToFocus(path, nav) {
+    nav.deselectCell();
+    if (currLevel == 0) {
+        colHeader.splice(1, 0, "")
+    }
+
+    console.log("nextPath:"+path);
+    let path_str = "";
+    levelList = []
+    for (let i = 0; i < path.length; i++) {
+        if (path.length != 0) {
+            levelList[i] = parseInt(path[i]);
+            if(i==0)
+                path_str += path[i];
+            else if(i<path.length-1)
+                path_str += ","+path[i];
+        }
+    }
+    targetChild = levelList[levelList.length - 1];
+
+    let queryData = {};
+
+
+    queryData.bookId = bId;
+    queryData.sheetName = sName;
+    queryData.path = path_str;
+
+    $.ajax({
+        url: baseUrl + "getChildren",
+        method: "POST",
+        //dataType: 'json',
+        contentType: 'text/plain',
+        data: JSON.stringify(queryData),
+    }).done(function (e) {
+        console.log(e)
+        if (e.status == "success") {
+            var result = e.data;
+            currLevel = levelList.length;
+            currData = result.buckets;
+            prevPath = result.prev.path;
+            nextPath = result.later.path;
+            let breadcrum_ls = result.breadCrumb;
+            console.log("currLevel: " + currLevel)
+            mergeCellInfo = [];
+            mergeCellInfo.push({row: 0, col: 0, rowspan: currData.length, colspan: 1});
+
+
+            viewData = new Array(currData.length);
+            for (let i = 0; i < currData.length; i++) {
+                if (i == 0) {
+                    viewData[i] = breadcrum_ls[breadcrum_ls.length-1];
+                } else {
+                    viewData[i] = [""];
+                }
+            }
+
+
+            // spanList.push(span);
+            console.log(mergeCellInfo)
+
+            cumulativeData.push(currData);
+
+            console.log(cumulativeData);
+
+
+            // for (let i = 0; i < currData.length; i++){
+            //
+            //    //double layer
+            //     viewData[i*span][1]= cumulativeData[currLevel][i].name;
+            //
+            //  }
+
+            for (let i = 0; i < currData.length; i++) {
+                //double layer
+                viewData[i][1] = cumulativeData[currLevel][i].name;
+
+            }
+
+
+            cumulativeDataSize += currData.length;
+
+            let columWidth = [];
+            if (currLevel >= 1) {
+                //columWidth = [50];
+            } else {
+                columWidth = 200;
+            }
+            // console.log(nav.getColHeader())
+            // console.log(viewData);
+            // console.log(nav.getColWidth(1))
+            // console.log(nav.getCopyableText(0,0,10,2))
+            // nav.render();
+
+            if (hieraOpen) {
+                getAggregateValue();
+
+            } else {
+                nav.updateSettings({
+                    // minRows: currData.length,
+                    data: viewData,
+                    rowHeights: (wrapperHeight * 0.95 / currData.length > 80) ? wrapperHeight * 0.95 / currData.length : 80,
+                    mergeCells: mergeCellInfo,
+                });
+                zoomming = false;
+                nav.selectCell(0, 1)
+            }
+            updateNavPath(breadcrum_ls); //calculate breadcrumb
+            // zoomming = false;
+            //  nav.selectCell(0, 1)
+            //  nav.render();
+        }
+    })
+}
