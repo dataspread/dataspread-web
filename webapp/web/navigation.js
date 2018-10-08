@@ -10,7 +10,8 @@ var colHeader = [];
 var cumulativeDataSize = 0;
 var nav;
 var clickable = true;
-
+var nextPath = "";
+var prevPath = "";
 var navHistroyTable = {};
 var navHistoryPathIndex = [];
 var breadCrumbHistoryPathIndex = [];
@@ -1638,6 +1639,8 @@ function zoomIn(child, nav) {
             var result = e.data;
             currLevel += 1;
             currData = result.buckets;
+            prevPath = result.prev.path;
+            nextPath = result.later.path;
             let breadcrum_ls = result.breadCrumb;
             mergeCellInfo = [];
             mergeCellInfo.push(
@@ -1867,6 +1870,8 @@ function zoomOutHist(nav) {
             // clickable = result.clickable;
             currLevel -= 1;
             currData = result.buckets;
+            prevPath = result.prev.path;
+            nextPath = result.later.path;
             let numChild = currData.length;
             viewData = new Array(numChild);
             cumulativeData[currLevel] = currData;
@@ -1936,6 +1941,15 @@ function jumpToHistorialView(childlist) {
             levelList[i] = parseInt(tmp_ls[i]);
     }
     targetChild = levelList[levelList.length - 1];
+
+    selectedChild = [];
+    selectedChild.push(targetChild);
+
+    selectedBars = [];
+    let barObj = {};
+    barObj.cell = targetChild;
+    barObj.bars = [0];
+    selectedBars.push(barObj);
     // api call to /levelList + '.' + child to get currData
     let queryData = {};
 
@@ -1956,6 +1970,8 @@ function jumpToHistorialView(childlist) {
             // clickable = result.clickable;
             currLevel = breadcrumb_ls.length;
             currData = result.buckets;
+            prevPath = result.prev.path;
+            nextPath = result.later.path;
             let numChild = currData.length;
             viewData = new Array(numChild);
             cumulativeData[currLevel] = currData;
@@ -2895,19 +2911,19 @@ function updataHighlight(child) {
 
 function updateBarChartFocus(firstRow, lastRow)
 {
-    console.log(childHash);
+    //console.log(childHash);
     let newSelectedBars = [];
     for(let selI=0;selI<cumulativeData[currLevel].length;selI++) {
         if (childHash.get(selI) == undefined)
             continue;
 
         let newSelectedBar = [];
-        console.log(childHash.get(selI));
+        //console.log(childHash.get(selI));
         for (let selJ = 0; selJ < childHash.get(selI).length; selJ++) {
             let lower = childHash.get(selI)[selJ].rowRange[0];
             let upper = childHash.get(selI)[selJ].rowRange[1];
 
-            console.log("lowerRange,upperRange", lower, upper);
+            //console.log("lowerRange,upperRange", lower, upper);
             if (firstRow > upper)
                 continue;
             if (lastRow < lower)
@@ -2923,8 +2939,8 @@ function updateBarChartFocus(firstRow, lastRow)
         }
     }
 
-    console.log("newselectedBars");
-    console.log(newSelectedBars);
+    //console.log("newselectedBars");
+    //console.log(newSelectedBars);
     if(newSelectedBars.length==1 && selectedBars.length==1 && newSelectedBars[0].cell == selectedBars[0].cell && newSelectedBars[0].bars.length == selectedBars[0].bars.length)
     {
         for(let selI=0; selI < newSelectedBars[0].bars.length;selI++)
@@ -3013,7 +3029,7 @@ function brushNlink(firstRow, lastRow) {
     if(currentFocus==undefined)
         return;
 
-    console.log(currentFocus);
+    //console.log(currentFocus);
     let lastElement = currentFocus[currentFocus.length-1];
     console.log(lastElement)
     let endRow = lastElement.rowRange[1];
@@ -3053,6 +3069,15 @@ function jumpToFocus(path, nav) {
         }
     }
     targetChild = levelList[levelList.length - 1];
+
+    selectedChild = [];
+    selectedChild.push(targetChild);
+
+    selectedBars = [];
+    let barObj = {};
+    barObj.cell = targetChild;
+    barObj.bars = [0];
+    selectedBars.push(barObj);
 
     let queryData = {};
 
