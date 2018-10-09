@@ -31,8 +31,8 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
     boolean testStarted = false;
     final boolean sync=false;
     final boolean graphCompression = true;
-    //final CellRegion window = null;
-    final CellRegion window = new CellRegion(0, 0, 50, 10);
+    final CellRegion window = null;
+    //final CellRegion window = new CellRegion(0, 0, 50, 10);
     private long controlReturnedTime;
     private long updatedCells = 0;
     private long cellsToUpdate = 0;
@@ -273,7 +273,8 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
 
         // Update visible Map
         // Sheet->{session->visibleRange}
-        uiVisibleMap.put(sheet, ImmutableMap.of("Session1", new int[]{window.getRow(), window.getLastRow()}));
+        if (window!=null)
+            uiVisibleMap.put(sheet, ImmutableMap.of("Session1", new int[]{window.getRow(), window.getLastRow()}));
 
 
         for (int i = 1; i<=cellCount; i++)
