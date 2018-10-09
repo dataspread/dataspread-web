@@ -20,7 +20,6 @@ var options = [];
 var hieraOpen = false;
 var exploreOpen = false;
 
-
 var funcOptions =
     [
         "AVEDEV", "AVERAGE", "COUNT", "COUNTA", "COUNTBLANK", "COUNTIF",
@@ -838,8 +837,8 @@ function Explore(e) {
 
     $("#history-option").empty();
 
-
     $.get(baseUrl + 'startNav/' + bId + '/' + sName + '/' + e, function (data) {
+
         selectedChild = [];
         selectedChild.push(0);
 
@@ -2045,12 +2044,14 @@ $("#sort-form").submit(function (e) {
     e.preventDefault();
     $("#exampleModal").modal('hide')
     sortAttrIndices = [];
+    sortAttrIndices.push(exploreAttr);
     for (let i = 0; i < sortTotalNum; i++) {
         sortAttrIndices.push($('#inlineOpt' + i).val());
     }
+
     var selectedArray = nav.getSelected();
     //  var child = selectedArray[0][0]/spanList[currLevel];
-    var child = selectedArray[0][0]
+    var child = selectedArray[0][0];
     let childlist = computePath();
     let path = ""
     if (childlist !== "") {
@@ -2904,7 +2905,7 @@ function updataHighlight(child) {
             if (child != undefined) {
                 let lower = cumulativeData[currLevel][child].rowRange[0];
                 let upper = cumulativeData[currLevel][child].rowRange[1];
-                for (let i = 0; i < sortTotalNum; i++) {
+                for (let i = 1; i < sortAttrIndices.length; i++) {
                     if (column == (sortAttrIndices[i] - 1) && row >= lower &&
                         row <= upper) {
                         cellMeta.renderer = function (hotInstance, td, row, col, prop,
