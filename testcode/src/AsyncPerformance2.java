@@ -24,13 +24,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class AsyncPerformance2 implements FormulaAsyncListener {
     int cellCount = 5000;
     long initTime;
     boolean testStarted = false;
     final boolean sync=false;
-    final boolean graphCompression = true;
+    final boolean graphCompression = false;
+    final static int  graphCompressionSize = 20;
     final CellRegion window = null;
     //final CellRegion window = new CellRegion(0, 0, 50, 10);
     private long controlReturnedTime;
@@ -184,7 +186,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
 
 
     private static void compressDependencies1(ArrayList<Ref> dependencies) {
-        while (dependencies.size() > 20) {
+        while (dependencies.size() > graphCompressionSize) {
             int best_i = 0, best_j = 0, best_area = Integer.MAX_VALUE;
             Ref best_bounding_box = null;
             for (int i = 0; i < dependencies.size() - 1; i++) {
@@ -222,7 +224,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
     }
 
     private static void compressDependencies(ArrayList<CellRegion> dependencies) {
-        while (dependencies.size() > 20) {
+        while (dependencies.size() > graphCompressionSize) {
             int best_i = 0, best_j = 0, best_area = Integer.MAX_VALUE;
             CellRegion best_bounding_box = null;
             for (int i = 0; i < dependencies.size() - 1; i++) {
@@ -285,14 +287,22 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
             sheet.getCell(i,0).setFormulaValue("A1" + "+" + (System.currentTimeMillis()%5000) + "+" + i);
         //sheet.clearCache();
 
+        for (int i=1;i<=cellCount;i+=10)
+            for (int j=0;j<5;j++)
+            sheet.getCell(i+j,0).setFormulaValue("SUM(B1:B50)");
+
+
 
         Ref updatedCell = sheet.getCell(0, 0).getRef();
         ArrayList<Ref> dependencies1 = new ArrayList<>(sheet.getDependencyTable().getDependents(updatedCell));
         cellsToUpdate = dependencies1.size();
+        System.out.println("Dependencies " + cellsToUpdate);
         if (graphCompression) {
             compressDependencies1(dependencies1);
             sheet.getDependencyTable().addPreDep(updatedCell, new HashSet<>(dependencies1));
         }
+        cellsToUpdate= dependencies1.stream().mapToInt(Ref::getCellCount).sum();
+        System.out.println("After Compression Dependencies " + cellsToUpdate);
 
 
         try {
@@ -330,24 +340,36 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
             }
         }
 
+        Collection<CellRegion> sheetCells;
 
-        Collection<SCell> sheetCells;
         if (window == null)
-            sheetCells = sheet.getCells();
+            sheetCells = sheet.getCells().stream().map(SCell::getCellRegion)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
         else
-            sheetCells = sheet.getCells(window);
+            sheetCells = sheet.getCells(window).stream().map(SCell::getCellRegion)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+
 
         System.out.println("Final Value "
                 + sheet.getCell(cellCount, 0).getValue());
 
+
+        //Get total dirty time for all cells
+        Collection<SCell> cells = sheet.getCells().stream()
+                .filter(e -> e.getType() == SCell.CellType.FORMULA)
+                .collect(Collectors.toList());
+
+
         DirtyManagerLog.instance.groupPrint(sheetCells, controlReturnedTime, initTime);
 
-        long totalWaitTime = sheetCells.stream()
-                //.filter(e->e.getType()==SCell.CellType.FORMULA)
+        long totalWaitTime = cells.stream()
                 .mapToLong(e -> DirtyManagerLog.instance.getDirtyTime(e.getCellRegion()))
                 .sum();
         System.out.println("Total Wait time " + totalWaitTime);
-        System.out.println("Avg Wait time " + totalWaitTime / sheetCells.size());
+        System.out.println("Avg Wait time " + totalWaitTime / cells.size());
 
         System.out.println("Updated cells  = " + updatedCells);
 
