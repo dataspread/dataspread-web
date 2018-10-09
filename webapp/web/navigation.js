@@ -1203,6 +1203,18 @@ function computeCellChart(chartString, row,) {
         .attr("width", function (d) {
             return x(d.count);
         })
+        .on("mouseover",
+            function (d) {
+                //           console.log(d)
+                tooltip.style("left", d3.event.pageX - 20 + "px")
+                    .style("top", d3.event.pageY - 30 + "px")
+                    .style("display", "inline-block")
+                    .style("font", "10px")
+                    .html(hash.get(d.name).name);
+            })
+        .on("mouseout", function (d) {
+            tooltip.style("display", "none");
+        })
         .on("click", function (d) {
             lowerRange = hash.get(d.name).range;
             upperRange = lowerRange + 500;
@@ -2268,7 +2280,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
                 .attr('fill',
                     function (d, i) {
                         if (i == special) {
-                            return '#ffa158'
+                            return '#BC8F8F'
                         } else {
                             return '#0099ff';
                         }
