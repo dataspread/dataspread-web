@@ -1619,7 +1619,7 @@ function zoomIn(child, nav) {
     nav.deselectCell();
     childHash = new Map();
     selectedChild = [];
-    selectedChild.push(0);
+    selectedChild.push(0); //TODO: load the corresponding SS data
 
     selectedBars = [];
     let barObj = {};
@@ -3051,7 +3051,7 @@ function brushNlink(firstRow, lastRow) {
     console.log("firstRow: "+firstRow);
     if(endRow < firstRow)
     {
-       // jumpToFocus(nextPath,nav);
+        jumpToFocus(nextPath,nav);
         updateNavCellFocus(firstRow, lastRow);
     }
     else
@@ -3125,7 +3125,7 @@ function jumpToFocus(path, nav) {
             viewData = new Array(currData.length);
             for (let i = 0; i < currData.length; i++) {
                 if (i == 0) {
-                    viewData[i] = breadcrum_ls[breadcrum_ls.length-1];
+                    viewData[i] = [breadcrum_ls[breadcrum_ls.length-1]];
                 } else {
                     viewData[i] = [""];
                 }
@@ -3133,7 +3133,9 @@ function jumpToFocus(path, nav) {
 
 
             // spanList.push(span);
-            console.log(mergeCellInfo)
+            console.log(mergeCellInfo);
+
+            cumulativeData.pop();
 
             cumulativeData.push(currData);
 
@@ -3153,6 +3155,7 @@ function jumpToFocus(path, nav) {
 
             }
 
+            console.log(viewData);
 
             cumulativeDataSize += currData.length;
 
