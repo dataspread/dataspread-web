@@ -310,7 +310,8 @@
 }
 
 .bar:hover {
-    fill: #11a5a3;
+    //fill: #11a5a3;
+    stroke: black;
 }
 
 /* The switch - the box around the slider */

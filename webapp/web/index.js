@@ -37,10 +37,10 @@ var compute_window = function (e) {
     var rowCount = hot.countRows();
     var rowOffset = hot.rowOffset();
     var visibleRows = hot.countVisibleRows();
-    console.log("rowCount: "+rowCount)
-    console.log("rowOffset: "+rowOffset);
-    console.log("visibleRows: "+visibleRows);
-    console.log("countRenderedRows: "+hot.countRenderedRows());
+   // console.log("rowCount: "+rowCount)
+   // console.log("rowOffset: "+rowOffset);
+   // console.log("visibleRows: "+visibleRows);
+   // console.log("countRenderedRows: "+hot.countRenderedRows());
 
     var lastRow = rowOffset + (visibleRows * 1);
     var lastVisibleRow = rowOffset + visibleRows + (visibleRows / 2);
@@ -48,7 +48,7 @@ var compute_window = function (e) {
     // $(".parallax-one").css({   //progress bar
     //     height: ((lastRow / currRange) * 80) + "%"
     // });
-    console.log("lastVisibleRow: "+lastVisibleRow);
+   // console.log("lastVisibleRow: "+lastVisibleRow);
     if (lastVisibleRow > upperRange - threshold) {
         updateData(upperRange, 0, upperRange + 1000, 15, false)
         upperRange = upperRange + 1000;

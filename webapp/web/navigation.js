@@ -1185,20 +1185,20 @@ function computeCellChart(chartString, row,) {
         .attr("height", y.bandwidth())
         .attr("x", 0)
         .attr('fill', function (d,i) {
-            console.log("selectedBars");
-            console.log(selectedBars);
-            console.log(row,i);
+            //console.log("selectedBars");
+            //console.log(selectedBars);
+            //console.log(row,i);
             for(let ind=0;ind<selectedBars.length;ind++)
             {
                 if(selectedBars[ind].cell == row)
                 {
                     if(selectedBars[ind].bars.includes(i))
-                        return '#ff7105';
+                        return '#ff4500';
                     else
-                        return '#0099ff';
+                        return '#ffA500';
                 }
             }
-            return '#0099ff';
+            return '#ffA500';
         })
         .attr("width", function (d) {
             return x(d.count);
@@ -3035,10 +3035,10 @@ function brushNlink(firstRow, lastRow) {
     let endRow = lastElement.rowRange[1];
 
     console.log("endRow: "+endRow);
-    console.log("lastRow: "+lastRow);
-    if(endRow < lastRow)
+    console.log("firstRow: "+firstRow);
+    if(endRow < firstRow)
     {
-        jumpToFocus(nextPath,nav);
+       // jumpToFocus(nextPath,nav);
         updateNavCellFocus(firstRow, lastRow);
     }
     else
@@ -3086,6 +3086,8 @@ function jumpToFocus(path, nav) {
     queryData.sheetName = sName;
     queryData.path = path_str;
 
+    console.log("queryData:");
+    console.log(queryData);
     $.ajax({
         url: baseUrl + "getChildren",
         method: "POST",
@@ -3093,7 +3095,6 @@ function jumpToFocus(path, nav) {
         contentType: 'text/plain',
         data: JSON.stringify(queryData),
     }).done(function (e) {
-        console.log(e)
         if (e.status == "success") {
             var result = e.data;
             currLevel = levelList.length;
@@ -3101,6 +3102,8 @@ function jumpToFocus(path, nav) {
             prevPath = result.prev.path;
             nextPath = result.later.path;
             let breadcrum_ls = result.breadCrumb;
+
+            console.log(result);
             console.log("currLevel: " + currLevel)
             mergeCellInfo = [];
             mergeCellInfo.push({row: 0, col: 0, rowspan: currData.length, colspan: 1});
@@ -3168,7 +3171,7 @@ function jumpToFocus(path, nav) {
             updateNavPath(breadcrum_ls); //calculate breadcrumb
             // zoomming = false;
             //  nav.selectCell(0, 1)
-            //  nav.render();
+            nav.render();
         }
     })
 }
