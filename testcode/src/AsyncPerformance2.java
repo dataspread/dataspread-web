@@ -32,7 +32,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
     boolean testStarted = false;
     final boolean sync=false;
     final boolean graphCompression = false;
-    final static int  graphCompressionSize = 20;
+    static int  graphCompressionSize = 20;
     final CellRegion window = null;
     //final CellRegion window = new CellRegion(0, 0, 50, 10);
     private long controlReturnedTime;
@@ -261,6 +261,8 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         }
     }
 
+
+
     public void simpleTest() {
         SBook book = BookBindings.getBookByName("testBook" + System.currentTimeMillis());
         /* Cleaner for sync computation */
@@ -293,9 +295,25 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
 
 
 
+
+
         Ref updatedCell = sheet.getCell(0, 0).getRef();
         ArrayList<Ref> dependencies1 = new ArrayList<>(sheet.getDependencyTable().getDependents(updatedCell));
         cellsToUpdate = dependencies1.size();
+
+        //Test graph compression
+        /*int start = dependencies1.size();
+        for (int j=start;j>0;j--)
+        {
+            graphCompressionSize = j;
+            compressDependencies1(dependencies1);
+            System.out.println(j + "\t" +
+                    (dependencies1.stream().mapToInt(Ref::getCellCount).sum()-start));
+        }
+
+        System.out.println("Done ---------------"); */
+        /////////////////////////////////
+
         System.out.println("Dependencies " + cellsToUpdate);
         if (graphCompression) {
             compressDependencies1(dependencies1);
