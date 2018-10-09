@@ -30,7 +30,8 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
     long initTime;
     boolean testStarted = false;
     final boolean sync=false;
-    final boolean graphCompression = true;
+    final boolean graphCompression = false;
+    final static int  graphCompressionSize = 20;
     private long controlReturnedTime;
     private long updatedCells = 0;
     private long cellsToUpdate = 0;
@@ -183,7 +184,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
 
 
     private static void compressDependencies1(ArrayList<Ref> dependencies) {
-        while (dependencies.size() > 20) {
+        while (dependencies.size() > graphCompressionSize) {
             int best_i = 0, best_j = 0, best_area = Integer.MAX_VALUE;
             Ref best_bounding_box = null;
             for (int i = 0; i < dependencies.size() - 1; i++) {
@@ -222,7 +223,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
     }
 
     private static void compressDependencies(ArrayList<CellRegion> dependencies) {
-        while (dependencies.size() > 20) {
+        while (dependencies.size() > graphCompressionSize) {
             int best_i = 0, best_j = 0, best_area = Integer.MAX_VALUE;
             CellRegion best_bounding_box = null;
             for (int i = 0; i < dependencies.size() - 1; i++) {
@@ -277,14 +278,22 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
             sheet.getCell(i,0).setFormulaValue("A1" + "+" + (System.currentTimeMillis()%5000) + "+" + i);
         //sheet.clearCache();
 
+        for (int i=1;i<=cellCount;i+=10)
+            for (int j=0;j<5;j++)
+            sheet.getCell(i+j,0).setFormulaValue("SUM(B1:B50)");
+
+
 
         Ref updatedCell = sheet.getCell(0, 0).getRef();
         ArrayList<Ref> dependencies1 = new ArrayList<>(sheet.getDependencyTable().getDependents(updatedCell));
         cellsToUpdate = dependencies1.size();
+        System.out.println("Dependencies " + cellsToUpdate);
         if (graphCompression) {
             compressDependencies1(dependencies1);
             sheet.getDependencyTable().addPreDep(updatedCell, new HashSet<>(dependencies1));
         }
+        cellsToUpdate= dependencies1.stream().mapToInt(Ref::getCellCount).sum();
+        System.out.println("After Compression Dependencies " + cellsToUpdate);
 
 
 
