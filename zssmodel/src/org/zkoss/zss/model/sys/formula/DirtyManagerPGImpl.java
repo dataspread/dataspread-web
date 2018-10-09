@@ -7,7 +7,7 @@ import org.zkoss.zss.model.impl.RefImpl;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
 import java.sql.*;
-import java.util.Set;
+import java.util.List;
 
 /* Simple in-db implementation for DirtyManager */
 public class DirtyManagerPGImpl extends DirtyManager {
@@ -97,7 +97,7 @@ public class DirtyManagerPGImpl extends DirtyManager {
     }
 
     @Override
-    public Set<DirtyRecord> getAllDirtyRegions() {
+    public List<DirtyRecord> getAllDirtyRegions() {
         throw new UnsupportedOperationException();
     }
 

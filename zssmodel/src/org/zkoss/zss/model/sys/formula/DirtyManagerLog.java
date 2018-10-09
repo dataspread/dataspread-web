@@ -1,6 +1,7 @@
 package org.zkoss.zss.model.sys.formula;
 
 import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
 import java.util.*;
@@ -52,11 +53,9 @@ public class DirtyManagerLog {
     }
 
     public void markDirty(Ref region) {
-
         // For now only consider cell dependencies.
         // Later we need to consider sheet and book level as well.
         if (region.getType()== Ref.RefType.AREA || region.getType()== Ref.RefType.CELL) {
-
             DirtyRecordEntry dirtyRecordEntry = new DirtyRecordEntry();
 
             dirtyRecordEntry.cellRegion = new CellRegion(region);

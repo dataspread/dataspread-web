@@ -519,7 +519,7 @@ public class AsyncPerformance implements FormulaAsyncListener {
                     .collect(Collectors.toList());
 
 
-            DirtyManagerLog.instance.groupPrint(sheetCells, controlReturnedTime, initTime);
+            //  DirtyManagerLog.instance.groupPrint(sheetCells, controlReturnedTime, initTime);
 
             long totalWaitTime = cells.stream()
                     .mapToLong(e -> DirtyManagerLog.instance.getDirtyTime(e.getCellRegion()))

@@ -3,19 +3,17 @@ package org.zkoss.zss.model.sys.formula;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 /* Simple in-memory implementation for DirtyManager */
 public class DirtyManagerMemImpl extends DirtyManager {
-    //LinkedBlockingQueue<DirtyRecord> dirtyRecordPriorityBlockingQueue;
     ConcurrentSkipListSet<DirtyRecord> dirtyRecords;
 
     DirtyManagerMemImpl()
     {
         dirtyRecords = new ConcurrentSkipListSet<>();
-        //dirtyRecordPriorityBlockingQueue = new LinkedBlockingQueue<>();
     }
 
     private boolean overlaps(Ref region1, Ref region2)
@@ -67,8 +65,8 @@ public class DirtyManagerMemImpl extends DirtyManager {
     }
 
     // Call in a single thread.
-    public synchronized Set<DirtyRecord> getAllDirtyRegions() {
-        Set<DirtyRecord> ret = new HashSet<>(dirtyRecords);
+    public synchronized List<DirtyRecord> getAllDirtyRegions() {
+        List<DirtyRecord> ret = new ArrayList<>(dirtyRecords);
         if (ret.isEmpty()) {
             try {
                 wait(1000);
