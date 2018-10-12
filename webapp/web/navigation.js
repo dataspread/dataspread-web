@@ -1943,6 +1943,7 @@ function zoomOutHist(nav) {
 }
 
 function jumpToHistorialView(childlist) {
+    console.log("In Jump to Historical view");
     childHash = new Map();
     clickable = true;
     nav.deselectCell();
@@ -1956,13 +1957,7 @@ function jumpToHistorialView(childlist) {
     targetChild = levelList[levelList.length - 1];
 
     selectedChild = [];
-    selectedChild.push(targetChild);
-
     selectedBars = [];
-    let barObj = {};
-    barObj.cell = targetChild;
-    barObj.bars = [0];
-    selectedBars.push(barObj);
     // api call to /levelList + '.' + child to get currData
     let queryData = {};
 
@@ -3106,8 +3101,8 @@ function jumpToFocus(path, nav) {
     queryData.sheetName = sName;
     queryData.path = path_str;
 
-    //console.log("queryData:");
-    //console.log(queryData);
+    console.log("queryData:");
+    console.log(queryData);
     $.ajax({
         url: baseUrl + "getChildren",
         method: "POST",
@@ -3132,9 +3127,8 @@ function jumpToFocus(path, nav) {
             console.log(result);
             console.log("currLevel: " + currLevel);
             mergeCellInfo = [];
-            if (breadcrumb_ls.length != 0) {
+            if (currData.length != 0 && breadcrumb_ls.length!=0) {
                 mergeCellInfo.push({row: 0, col: 0, rowspan: currData.length, colspan: 1});
-
 
                 viewData = new Array(currData.length);
                 for (let i = 0; i < currData.length; i++) {
@@ -3145,15 +3139,9 @@ function jumpToFocus(path, nav) {
                     }
                 }
 
-
-                // spanList.push(span);
-                console.log(mergeCellInfo);
-
                 cumulativeData.pop();
 
                 cumulativeData.push(currData);
-
-                console.log(cumulativeData);
 
                 for (let i = 0; i < currData.length; i++) {
                     //double layer
@@ -3161,15 +3149,25 @@ function jumpToFocus(path, nav) {
 
                 }
 
-                console.log(viewData);
+                //console.log(viewData);
 
                 cumulativeDataSize += currData.length;
             }
-            else {
-                colHeader.splice(1, 1);
+            else if (currData.length != 0 && breadcrumb_ls.length==0)
+            {
+                //colHeader.splice(1, 1);
+                cumulativeData = [];
+                cumulativeData.push(currData);
                 for (let i = 0; i < numChild; i++) {
                     viewData[i] = [currData[i].name];
                 }
+                cumulativeDataSize += currData.length;
+            }
+            else {
+
+                path.splice(-1,1);
+                jumpToFocus(path,nav);
+                return;
             }
 
 
@@ -3179,11 +3177,6 @@ function jumpToFocus(path, nav) {
             } else {
                 columWidth = 200;
             }
-            // console.log(nav.getColHeader())
-            // console.log(viewData);
-            // console.log(nav.getColWidth(1))
-            // console.log(nav.getCopyableText(0,0,10,2))
-            // nav.render();
 
             if (hieraOpen) {
                 getAggregateValue();
@@ -3198,7 +3191,7 @@ function jumpToFocus(path, nav) {
                 zoomming = false;
                 //nav.selectCell(0, 1)
             }
-            updateNavPath(breadcrum_ls); //calculate breadcrumb
+            updateNavPath(breadcrumb_ls); //calculate breadcrumb
             // zoomming = false;
             //  nav.selectCell(0, 1)
             nav.render();
