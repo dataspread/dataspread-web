@@ -1288,6 +1288,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                     td.innerHTML = tempString + "</div>";
                     let result = e.data.buckets;
                     childHash.set(row, result);
+                    updateBarChartFocus(currentFirstRow,currentLastRow);
                     computeCellChart(chartString, row);
                 }
             })
@@ -1348,6 +1349,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                         td.innerHTML = tempString + "</div>";
                         let result = e.data.buckets;
                         childHash.set(row, result);
+                        updateBarChartFocus(currentFirstRow,currentLastRow);
                         computeCellChart(chartString, row);
 
                     }
