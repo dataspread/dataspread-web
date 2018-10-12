@@ -37,6 +37,8 @@ var currData;
 var zoomming = false;
 var zoomouting = false;
 var targetChild;
+var currentFirstRow=0;
+var currentLastRow=40;
 
 var sortOptionString = "";
 var sortTotalNum = 0;
@@ -1347,6 +1349,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                         let result = e.data.buckets;
                         childHash.set(row, result);
                         computeCellChart(chartString, row);
+
                     }
                 })
             } else {
@@ -1617,15 +1620,11 @@ function computePath() {
 
 function zoomIn(child, nav) {
     nav.deselectCell();
+
+    console.log("In zoom in");
     childHash = new Map();
     selectedChild = [];
-    selectedChild.push(0); //TODO: load the corresponding SS data
-
     selectedBars = [];
-    let barObj = {};
-    barObj.cell = 0;
-    barObj.bars = [0];
-    selectedBars.push(barObj);
 
     if (currLevel == 0) {
         colHeader.splice(1, 0, "")
@@ -1700,6 +1699,7 @@ function zoomIn(child, nav) {
                 //nav.selectCell(0, 1)
             }
             updateNavPath(breadcrum_ls); // calculate breadcrumb
+            updateNavCellFocus(currentFirstRow,currentLastRow);
         }
     })
 }
@@ -1851,13 +1851,7 @@ function zoomOutHist(nav) {
     nav.deselectCell();
     targetChild = levelList[levelList.length - 1];
     selectedChild = [];
-    selectedChild.push(targetChild);
-
     selectedBars = [];
-    let barObj = {};
-    barObj.cell = targetChild;
-    barObj.bars = [0];
-    selectedBars.push(barObj);
 
     levelList.pop();
     let childlist = computePath(); // get the list of children
@@ -1936,6 +1930,7 @@ function zoomOutHist(nav) {
             }
 
             updateNavPath(breadcrum_ls);
+            updateNavCellFocus(currentFirstRow,currentLastRow);
         }
     })
 }
@@ -2980,6 +2975,8 @@ function updateNavCellFocus(firstRow, lastRow)
     //console.log(cumulativeData[currLevel]);
 
     //console.log("lowerRange,upperRange",lowerRange,upperRange);
+    currentFirstRow = firstRow;
+    currentLastRow = lastRow;
 
     let newSelectedChild = [];
     for(let selI=0;selI<cumulativeData[currLevel].length;selI++)
@@ -2997,7 +2994,15 @@ function updateNavCellFocus(firstRow, lastRow)
 
     if(newSelectedChild.length==1)
     {
-        if(selectedChild.length> 1)
+        if(selectedChild.length==0)
+        {
+            nav.deselectCell();
+            selectedChild = [];
+            selectedChild = newSelectedChild;
+            updateBarChartFocus(firstRow, lastRow);
+            nav.render();
+        }
+        else if(selectedChild.length> 1)
         {
             nav.deselectCell();
             selectedChild = [];
@@ -3031,11 +3036,11 @@ function updateNavCellFocus(firstRow, lastRow)
 }
 
 function brushNlink(firstRow, lastRow) {
-    console.log("brush and link");
+    //console.log("brush and link");
 
     let path = computePath();
 
-    console.log("path: "+path);
+   // console.log("path: "+path);
 
 
     let currentFocus = cumulativeData[currLevel];
@@ -3044,12 +3049,20 @@ function brushNlink(firstRow, lastRow) {
 
     //console.log(currentFocus);
     let lastElement = currentFocus[currentFocus.length-1];
-    console.log(lastElement)
+    let firstElement = currentFocus[0];
+   // console.log(lastElement)
     let endRow = lastElement.rowRange[1];
+    let startRow = firstElement.rowRange[0];
 
-    console.log("endRow: "+endRow);
-    console.log("firstRow: "+firstRow);
-    if(endRow < firstRow)
+    console.log("endRow: "+endRow+", firstRow: "+firstRow);
+    console.log("startRow: "+startRow+", lastRow: "+lastRow);
+
+    if(startRow > lastRow)
+    {
+        jumpToFocus(prevPath,nav);
+        updateNavCellFocus(firstRow, lastRow);
+    }
+    else if(endRow < firstRow)
     {
         jumpToFocus(nextPath,nav);
         updateNavCellFocus(firstRow, lastRow);
@@ -3058,16 +3071,12 @@ function brushNlink(firstRow, lastRow) {
     {
         updateNavCellFocus(firstRow, lastRow);
     }
-    //TODO: if(totalRows < lastIndex)---> zoom out and repeat brushNLink
-    //TODO: if(totalRows > lastIndex)---> getPath and Zoom In
-    //TODO: if(totalRows > lastIndex and ind==0)---> do nothing//check
+
 }
 
 function jumpToFocus(path, nav) {
     nav.deselectCell();
-    if (currLevel == 0) {
-        colHeader.splice(1, 0, "")
-    }
+
 
     console.log("nextPath:"+path);
     let path_str = "";
@@ -3081,16 +3090,8 @@ function jumpToFocus(path, nav) {
                 path_str += ","+path[i];
         }
     }
-    targetChild = levelList[levelList.length - 1];
-
     selectedChild = [];
-    selectedChild.push(targetChild);
-
     selectedBars = [];
-    let barObj = {};
-    barObj.cell = targetChild;
-    barObj.bars = [0];
-    selectedBars.push(barObj);
 
     let queryData = {};
 
@@ -3099,8 +3100,8 @@ function jumpToFocus(path, nav) {
     queryData.sheetName = sName;
     queryData.path = path_str;
 
-    console.log("queryData:");
-    console.log(queryData);
+    //console.log("queryData:");
+    //console.log(queryData);
     $.ajax({
         url: baseUrl + "getChildren",
         method: "POST",
@@ -3116,8 +3117,11 @@ function jumpToFocus(path, nav) {
             nextPath = result.later.path;
             let breadcrum_ls = result.breadCrumb;
 
+            if (currLevel == 0) {
+                colHeader.splice(1, 0, "")
+            }
             console.log(result);
-            console.log("currLevel: " + currLevel)
+            console.log("currLevel: " + currLevel);
             mergeCellInfo = [];
             mergeCellInfo.push({row: 0, col: 0, rowspan: currData.length, colspan: 1});
 
@@ -3182,7 +3186,7 @@ function jumpToFocus(path, nav) {
                     mergeCells: mergeCellInfo,
                 });
                 zoomming = false;
-                nav.selectCell(0, 1)
+                //nav.selectCell(0, 1)
             }
             updateNavPath(breadcrum_ls); //calculate breadcrumb
             // zoomming = false;
