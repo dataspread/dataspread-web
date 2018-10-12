@@ -283,6 +283,8 @@ public class NavigationStructure {
 
             public ScrollingProtocol(ReturnBuffer ret) {
                 data = new ArrayList<>();
+                if(ret.buckets == null )
+                    return;
                 for (int i = 0; i < ret.buckets.size(); i++) {
                     data.add(new BucketGroup(ret.buckets.get(i)));
                 }
