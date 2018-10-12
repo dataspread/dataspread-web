@@ -1622,9 +1622,12 @@ function computePath() {
 
 function zoomIn(child, nav) {
     nav.deselectCell();
-
-    console.log("In zoom in");
+    var selectFirstChild = false;
+    console.log("In zoom in:"+child);
+    console.log(selectedChild);
     childHash = new Map();
+    if(!selectedChild.includes(child) || selectedChild.length==0)
+        selectFirstChild = true;
     selectedChild = [];
     selectedBars = [];
 
@@ -1702,6 +1705,8 @@ function zoomIn(child, nav) {
             }
             updateNavPath(breadcrum_ls); // calculate breadcrumb
             updateNavCellFocus(currentFirstRow,currentLastRow);
+            if(selectFirstChild)
+                nav.selectCell(0, 1);
         }
     })
 }
@@ -1983,7 +1988,6 @@ function jumpToHistorialView(childlist) {
             let numChild = currData.length;
             viewData = new Array(numChild);
             cumulativeData[currLevel] = currData;
-
             mergeCellInfo = [];
             if (breadcrumb_ls.length != 0) {
                 mergeCellInfo.push({row: 0, col: 0, rowspan: numChild, colspan: 1});
@@ -3022,8 +3026,8 @@ function updateNavCellFocus(firstRow, lastRow)
         }
         else
         {
-            if(!updateBarChartFocus(firstRow, lastRow))
-                nav.render();
+            //if(!updateBarChartFocus(firstRow, lastRow))
+            nav.render();
         }
 
     }
@@ -3113,11 +3117,14 @@ function jumpToFocus(path, nav) {
     }).done(function (e) {
         if (e.status == "success") {
             var result = e.data;
-            currLevel = levelList.length;
+
             currData = result.buckets;
             prevPath = result.prev.path;
             nextPath = result.later.path;
-            let breadcrum_ls = result.breadCrumb;
+            let breadcrumb_ls = result.breadCrumb;
+            currLevel = breadcrumb_ls.length;
+            let numChild = currData.length;
+            viewData = new Array(numChild);
 
             if (currLevel == 0) {
                 colHeader.splice(1, 0, "")
@@ -3125,45 +3132,46 @@ function jumpToFocus(path, nav) {
             console.log(result);
             console.log("currLevel: " + currLevel);
             mergeCellInfo = [];
-            mergeCellInfo.push({row: 0, col: 0, rowspan: currData.length, colspan: 1});
+            if (breadcrumb_ls.length != 0) {
+                mergeCellInfo.push({row: 0, col: 0, rowspan: currData.length, colspan: 1});
 
 
-            viewData = new Array(currData.length);
-            for (let i = 0; i < currData.length; i++) {
-                if (i == 0) {
-                    viewData[i] = [breadcrum_ls[breadcrum_ls.length-1]];
-                } else {
-                    viewData[i] = [""];
+                viewData = new Array(currData.length);
+                for (let i = 0; i < currData.length; i++) {
+                    if (i == 0) {
+                        viewData[i] = [breadcrumb_ls[breadcrumb_ls.length-1]];
+                    } else {
+                        viewData[i] = [""];
+                    }
+                }
+
+
+                // spanList.push(span);
+                console.log(mergeCellInfo);
+
+                cumulativeData.pop();
+
+                cumulativeData.push(currData);
+
+                console.log(cumulativeData);
+
+                for (let i = 0; i < currData.length; i++) {
+                    //double layer
+                    viewData[i][1] = cumulativeData[currLevel][i].name;
+
+                }
+
+                console.log(viewData);
+
+                cumulativeDataSize += currData.length;
+            }
+            else {
+                colHeader.splice(1, 1);
+                for (let i = 0; i < numChild; i++) {
+                    viewData[i] = [currData[i].name];
                 }
             }
 
-
-            // spanList.push(span);
-            console.log(mergeCellInfo);
-
-            cumulativeData.pop();
-
-            cumulativeData.push(currData);
-
-            console.log(cumulativeData);
-
-
-            // for (let i = 0; i < currData.length; i++){
-            //
-            //    //double layer
-            //     viewData[i*span][1]= cumulativeData[currLevel][i].name;
-            //
-            //  }
-
-            for (let i = 0; i < currData.length; i++) {
-                //double layer
-                viewData[i][1] = cumulativeData[currLevel][i].name;
-
-            }
-
-            console.log(viewData);
-
-            cumulativeDataSize += currData.length;
 
             let columWidth = [];
             if (currLevel >= 1) {
