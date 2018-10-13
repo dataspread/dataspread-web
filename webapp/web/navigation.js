@@ -910,7 +910,7 @@ function Explore(e) {
                     }
                 } else {
                     if (col == 0) {
-                        return wrapperWidth * 0.05;
+                        return wrapperWidth * 0.04;
                     } else {
                         return wrapperWidth * 0.15;
                     }
@@ -984,6 +984,7 @@ function Explore(e) {
                 if (e.realTarget.classList['3'] == "zoomOutM") {
                     e.stopImmediatePropagation();
                     zoomOutHist(nav);
+                    return;
                 }
                 if (e.realTarget.id == "colClose") {
                     removeHierarchiCol(coords.col)
@@ -1257,7 +1258,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
         let targetCell = cumulativeData[currLevel][row];
 
         if (targetCell.clickable) {
-            tempString += "<i class=\"fa fa-plus-circle fa-2x zoomInPlus\" style=\"color: #51cf66;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
+            tempString += "<i class=\"fa fa-angle-right fa-2x zoomInPlus\" style=\"color: #51cf66;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
 
             if (childHash.has(row)) {
                 let chartString = "navchartdiv" + row + col;
@@ -1278,7 +1279,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                 // dataType: 'json',
                 contentType: 'text/plain',
                 data: JSON.stringify(queryData),
-               // async: false,
+                async: false,
 
             }).done(function (e) {
                 if (e.status == "success") {
@@ -1295,6 +1296,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
         } else {
             tempString += "<p>Rows: " + targetCell.value + "<br> Start: " + targetCell.rowRange[0] + "<br> End: " + targetCell.rowRange[1] + "</p>";
             td.innerHTML = tempString + "</div>";
+            return;
         }
 
     } else {
@@ -1309,15 +1311,30 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
             td.style.background = '#F5F5DC';
         }
         if (col == 0) {
-
-            tempString = "<div><i class=\"fa fa-minus-circle fa-2x zoomOutM\" style=\"color: #339af0;\" id='zm" + row + "' aria-hidden=\"true\"></i><br><br><br><br>";
-            tempString += "<span class='vertical'>" + value + "</span>";
+            tempString = "<div><i class=\"fa fa-angle-left fa-3x zoomOutM\" style=\"color: #339af0;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
+            // tempString += "<span class='vertical'>" + value + "</span>";
+            // td.innerHTML = tempString + "</div>";
+            let chartString = "parentCol" + row + col;
+            tempString += "<div id=" + chartString + " ></div>";
             td.innerHTML = tempString + "</div>";
+            let holder = d3.select("#"+chartString)
+                .append("svg")
+                .attr("width", wrapperWidth * 0.02)
+                .attr("height", wrapperHeight * 0.7);
+            let yoffset = wrapperHeight* 0.4;
+            // draw the text
+            holder.append("text")
+                .style("fill", "black")
+                .style("font-size", "20px")
+                .attr("dy", ".35em")
+                .attr("text-anchor", "middle")
+                .attr("transform", "translate(8,"+yoffset +") rotate(270)")
+                .text(value);
             return;
         } else {
             let targetCell = cumulativeData[currLevel][row];
             if (targetCell.clickable) {
-                tempString += "<i class=\"fa fa-plus-circle fa-2x zoomInPlus\" style=\"color: #51cf66;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
+                tempString += "<i class=\"fa fa-angle-right fa-2x zoomInPlus\" style=\"color: #51cf66;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
 
                 if (childHash.has(row)) {
                     let chartString = "navchartdiv" + row + col;
@@ -1339,7 +1356,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                     // dataType: 'json',
                     contentType: 'text/plain',
                     data: JSON.stringify(queryData),
-                    //async: false,
+                   async: false,
 
                 }).done(function (e) {
                     if (e.status == "success") {
@@ -1584,8 +1601,9 @@ function addHierarchiCol(aggregateValue) {
     }
 
     let numChild = cumulativeData[currLevel].length;
+    let newWidth = wrapperWidth*(0.15 + aggregateValue.length * 0.13);
     nav.updateSettings({
-        width: wrapperWidth * 0.25,
+        width: newWidth,
         manualColumnResize: columWidth,
         minCols: 1,
         data: viewData,
@@ -1929,6 +1947,7 @@ function zoomOutHist(nav) {
                     mergeCells: mergeCellInfo,
                 });
                 zoomouting = false;
+                nav.render();
                 // if (currLevel == 0) {
                 //     nav.selectCell(targetChild, 0)
                 // } else {
