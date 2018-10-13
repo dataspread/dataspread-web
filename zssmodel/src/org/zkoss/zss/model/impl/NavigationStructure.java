@@ -387,10 +387,12 @@ public class NavigationStructure {
         subRoot = getSubRootBucket(paths);
         if (subRoot != null) {
             expandChild(subRoot);
-            ArrayList<Bucket> buckets = subRoot.getChildren();
-            for(Bucket b:buckets)
-            {
-                expandChild(b);
+            ArrayList<Bucket> buckets = new ArrayList<Bucket>();
+            if(subRoot.getChildren()!=null) {
+                buckets = subRoot.getChildren();
+                for (Bucket b : buckets) {
+                    expandChild(b);
+                }
             }
             returnBuffer.buckets = buckets;
             if (right != null && expandChild(right))

@@ -3164,12 +3164,9 @@ function jumpToFocus(path, nav) {
     }).done(function (e) {
         if (e.status == "success") {
             var result = e.data;
-
+            console.log(result);
             currData = result.buckets;
-            for(let i=0;i<currData.length;i++)
-            {
-                childHash.set(i,currData[i].children);
-            }
+
             prevPath = result.prev.path;
             nextPath = result.later.path;
             let breadcrumb_ls = result.breadCrumb;
@@ -3184,6 +3181,10 @@ function jumpToFocus(path, nav) {
             console.log("currLevel: " + currLevel);
             mergeCellInfo = [];
             if (currData.length != 0 && breadcrumb_ls.length!=0) {
+                for(let i=0;i<currData.length;i++)
+                {
+                    childHash.set(i,currData[i].children);
+                }
                 mergeCellInfo.push({row: 0, col: 0, rowspan: currData.length, colspan: 1});
 
                 viewData = new Array(currData.length);
@@ -3211,6 +3212,10 @@ function jumpToFocus(path, nav) {
             }
             else if (currData.length != 0 && breadcrumb_ls.length==0)
             {
+                for(let i=0;i<currData.length;i++)
+                {
+                    childHash.set(i,currData[i].children);
+                }
                 //colHeader.splice(1, 1);
                 cumulativeData = [];
                 cumulativeData.push(currData);
@@ -3248,6 +3253,7 @@ function jumpToFocus(path, nav) {
                 //nav.selectCell(0, 1)
             }
             updateNavPath(breadcrumb_ls); //calculate breadcrumb
+            updateNavCellFocus(currentLastRow,currentLastRow);
             // zoomming = false;
             //  nav.selectCell(0, 1)
             nav.render();
