@@ -244,21 +244,22 @@ public class NavigationStructure {
         return ret;
     }
 
-    /**
-     * Serialize the newly created buckets to JSON format.
-     *
-     * @return
-     */
+
     public Object getSerializedBuckets() {
         class ScrollingProtocol {
             public ArrayList<BucketGroup> data;
-
+            /**
+             * Serialize the newly created buckets to JSON format.
+             *
+             * @return
+             */
             class BucketGroup {
                 public String name;
                 public int[] rowRange;
                 public int value;
                 public int rate;
                 public boolean clickable;
+                public ArrayList<BucketGroup> children;
 
                 /**
                  * Needed for serialization
@@ -272,9 +273,19 @@ public class NavigationStructure {
                     value = item.size;
                     clickable = !item.isSingleton();
                     rate = 10;
+                    if(clickable)
+                    {
+                        children = new ArrayList<BucketGroup>();
+
+                        for(Bucket b:item.getChildren())
+                        {
+                            children.add(new BucketGroup(b));
+                        }
+                    }
+                    else
+                        children = new ArrayList<BucketGroup>();
                 }
             }
-
             /**
              * Needed for serialization
              */
@@ -307,6 +318,12 @@ public class NavigationStructure {
     public void initIndexedBucket(int totalRows) {
         //this.totalRows = totalRows;
         navBucketTree = getNonOverlappingBuckets(1, this.totalRows - 1);
+
+        for(Bucket subRoot:navBucketTree)
+        {
+            expandChild(subRoot);
+        }
+
         returnBuffer.buckets = navBucketTree;
     }
 
@@ -370,7 +387,12 @@ public class NavigationStructure {
         subRoot = getSubRootBucket(paths);
         if (subRoot != null) {
             expandChild(subRoot);
-            returnBuffer.buckets = subRoot.getChildren();
+            ArrayList<Bucket> buckets = subRoot.getChildren();
+            for(Bucket b:buckets)
+            {
+                expandChild(b);
+            }
+            returnBuffer.buckets = buckets;
             if (right != null && expandChild(right))
                 later.add(0);
             if (left != null && expandChild(left))
@@ -385,6 +407,10 @@ public class NavigationStructure {
         if (paths.length == 0) {
             if (navBucketTree.size() == 0) {
                 navBucketTree = getNonOverlappingBuckets(1, this.totalRows - 1);
+                for(Bucket subRoot:navBucketTree)
+                {
+                    expandChild(subRoot);
+                }
                 returnBuffer.buckets = navBucketTree;
             } else
                 resetToRoot();

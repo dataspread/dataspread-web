@@ -862,6 +862,13 @@ function Explore(e) {
         cumulativeDataSize = 0;
 
         currData = data.data;
+        for(let i=0;i<currData.length;i++)
+        {
+            childHash.set(i,currData[i].children);
+        }
+        //console.log("startNav currdata");
+        //console.log(currData);
+        //console.log(childHash);
         currRange =
             currData[currData.length - 1].rowRange[1] - currData[0].rowRange[0];
 
@@ -876,6 +883,8 @@ function Explore(e) {
         for (let i = 0; i < currData.length; i++) {
             viewData[i][0] = cumulativeData[0][i].name;
         }
+
+        console.log(viewData);
 
         cumulativeDataSize += currData.length;
 
@@ -1245,6 +1254,7 @@ function computeCellChart(chartString, row,) {
 function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
     let tempString = "<div><span>" + value + "</span>";
 
+   // console.log("currLevel in navcellRenderer: "+currLevel);
     // differentiate single layer to double layer
     if (currLevel == 0) {
 
@@ -1255,6 +1265,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
             td.style.background = '#F5F5DC';
         }
         console.log("curr0");
+       // console.log(cumulativeData[currLevel]);
         let targetCell = cumulativeData[currLevel][row];
 
         if (targetCell.clickable) {
@@ -1268,7 +1279,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                 computeCellChart(chartString, row);
                 return;
             }
-            let queryData = {};
+            /*let queryData = {};
             queryData.bookId = bId;
             queryData.sheetName = sName;
             queryData.path = row.toString();
@@ -1292,7 +1303,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                     updateBarChartFocus(currentFirstRow,currentLastRow);
                     computeCellChart(chartString, row);
                 }
-            })
+            })*/
         } else {
             tempString += "<p>Rows: " + targetCell.value + "<br> Start: " + targetCell.rowRange[0] + "<br> End: " + targetCell.rowRange[1] + "</p>";
             td.innerHTML = tempString + "</div>";
@@ -1344,7 +1355,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                     computeCellChart(chartString, row);
                     return;
                 }
-
+                /*
                 let queryData = {};
                 queryData.bookId = bId;
                 queryData.sheetName = sName;
@@ -1370,7 +1381,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                         computeCellChart(chartString, row);
 
                     }
-                })
+                })*/
             } else {
                 tempString += "<p>Rows: " + targetCell.value + "<br> Start: " + targetCell.rowRange[0] + "<br> End: " + targetCell.rowRange[1] + "</p>";
                 td.innerHTML = tempString + "</div>";
@@ -1642,7 +1653,7 @@ function zoomIn(child, nav) {
     nav.deselectCell();
     var selectFirstChild = false;
     console.log("In zoom in:"+child);
-    console.log(selectedChild);
+    //console.log(selectedChild);
     childHash = new Map();
     if(!selectedChild.includes(child) || selectedChild.length==0)
         selectFirstChild = true;
@@ -1670,8 +1681,13 @@ function zoomIn(child, nav) {
     }).done(function (e) {
         if (e.status == "success") {
             var result = e.data;
+            //console.log(result);
             currLevel += 1;
             currData = result.buckets;
+            for(let i=0;i<currData.length;i++)
+            {
+                childHash.set(i,currData[i].children);
+            }
             prevPath = result.prev.path;
             nextPath = result.later.path;
             let breadcrum_ls = result.breadCrumb;
@@ -1687,7 +1703,7 @@ function zoomIn(child, nav) {
                     viewData[i] = [""];
                 }
             }
-
+            //console.log(viewData);
             cumulativeData.splice(currLevel);
             cumulativeData.push(currData);
 
@@ -1871,9 +1887,13 @@ function zoomOut(nav) {
 }
 
 function zoomOutHist(nav) {
+    console.log("In Zoom Out");
     childHash = new Map();
     clickable = true;
     nav.deselectCell();
+    if (currLevel == 0) {
+        colHeader.splice(1, 0, "")
+    }
     targetChild = levelList[levelList.length - 1];
     selectedChild = [];
     selectedBars = [];
@@ -1896,10 +1916,15 @@ function zoomOutHist(nav) {
     }).done(function (e) {
         if (e.status == "success") {
             let result = e.data;
+            //console.log(result);
             let breadcrum_ls = result.breadCrumb;
             // clickable = result.clickable;
-            currLevel -= 1;
+            currLevel = breadcrum_ls.length;
             currData = result.buckets;
+            for(let i=0;i<currData.length;i++)
+            {
+                childHash.set(i,currData[i].children);
+            }
             prevPath = result.prev.path;
             nextPath = result.later.path;
             let numChild = currData.length;
@@ -1926,7 +1951,7 @@ function zoomOutHist(nav) {
                     viewData[i] = [currData[i].name];
                 }
             }
-
+            //console.log(viewData);
             let columWidth = [];
             if (currLevel >= 1) {
                 columWidth = [40, 160];
@@ -1997,6 +2022,10 @@ function jumpToHistorialView(childlist) {
             // clickable = result.clickable;
             currLevel = breadcrumb_ls.length;
             currData = result.buckets;
+            for(let i=0;i<currData.length;i++)
+            {
+                childHash.set(i,currData[i].children);
+            }
             prevPath = result.prev.path;
             nextPath = result.later.path;
             let numChild = currData.length;
@@ -2051,7 +2080,10 @@ function jumpToHistorialView(childlist) {
             }
 
             updateNavPath(breadcrumb_ls);
-            nav.selectCell(0, 1);
+            if(currLevel==0) {
+                updateNavCellFocus(currentFirstRow,currentLastRow);
+            }else
+                nav.selectCell(0, 1);
         }
     });
 }
@@ -3098,7 +3130,7 @@ function brushNlink(firstRow, lastRow) {
 function jumpToFocus(path, nav) {
     nav.deselectCell();
 
-
+    childHash = new Map();
     console.log("nextPath:"+path);
     let path_str = "";
     levelList = []
@@ -3134,6 +3166,10 @@ function jumpToFocus(path, nav) {
             var result = e.data;
 
             currData = result.buckets;
+            for(let i=0;i<currData.length;i++)
+            {
+                childHash.set(i,currData[i].children);
+            }
             prevPath = result.prev.path;
             nextPath = result.later.path;
             let breadcrumb_ls = result.breadCrumb;
