@@ -665,6 +665,14 @@ public class NavigationStructure {
         return obj;
     }
 
+    public void setBucketAggWithMemoization(Bucket<String> subGroup,String formula,double value) {
+        Map<String, Object> aggMemMap = subGroup.aggMem;
+        if (!aggMemMap.containsKey(formula)) {
+            aggMemMap.put(formula, value);
+        }
+
+    }
+
     /**
      * Update bucket boundaries based on the FE push
      *
