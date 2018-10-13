@@ -85,6 +85,76 @@ class NavChartsPrototype {
         obj.put("chartData", chartData);
     }
 
+    private void type0Chart(Map<String, Object> obj, int attr, Bucket<String> subGroup, String formula) {
+        obj.put("chartType", 0);
+        List<Double> chartData = new ArrayList<>();
+        HashMap<String,Double> res =  summaryStat(navS.collectDoubleValues(attr, subGroup),formula.equals("MEDIAN"));
+
+        for (String f : type0Stat) {
+            chartData.add(res.get(f));
+        }
+        obj.put("chartData", chartData);
+    }
+
+    private void type2Chart(Map<String, Object> obj, int attr, Bucket<String> subGroup, String formula) {
+        obj.put("chartType", 2);
+        NavigationHistogram hist = new NavigationHistogram(navS.collectDoubleValues(attr, subGroup));
+        hist.formattedOutput(obj, null);
+
+        HashMap<String,Double> res =  summaryStat(navS.collectDoubleValues(attr, subGroup),formula.equals("MEDIAN"));
+
+        HashMap<String, Object> chartData = (HashMap) obj.get("chartData");
+        for (String f : type2Stat) {
+           chartData.put(f, res.get(f));
+        }
+    }
+
+    public HashMap<String,Double> summaryStat(ArrayList<Double> numData, boolean calMedian)
+    {
+        HashMap<String,Double> result = new HashMap<String,Double>();
+        //min, max, average, var, STDDEV
+        //  0,   1,       2,   3,     4
+        double min = Double.MAX_VALUE;
+        double max = Double.MIN_VALUE;
+        double avg = 0;
+        double var = 0;
+        double avg_Sq = 0;
+        for(int i=0;i<numData.size();i++)
+        {
+            double data = numData.get(i);
+            if(data < min)
+                min = data;
+            if(data > max)
+                max = data;
+
+            avg += data;
+            avg_Sq += data*data;
+
+        }
+
+        var = avg_Sq/numData.size() - avg*avg;
+
+        result.put("MIN",min);
+        result.put("MAX",max);
+        if (calMedian)
+        {
+            result.put("MEDIAN",calcMedianRes(numData));
+        }
+        else
+            result.put("MEDIAN",Double.MAX_VALUE);
+        result.put("AVERAGE",avg/numData.size());
+        result.put("STDEV",Math.sqrt(var));
+
+        return result;
+    }
+
+    private Double calcMedianRes(ArrayList<Double> numData) {
+        Collections.sort(numData);
+        if(numData.size()%2==0)
+            return numData.get(numData.size()/2-1);
+        return numData.get(numData.size()/2);
+    }
+
     private void type1Chart(Map<String, Object> obj, int attr, Bucket<String> subGroup, String formula) {
         if (formula.equals("RANK")) {
             NavigationHistogram hist = new NavigationHistogram(navS.collectDoubleValues(attr, subGroup));
