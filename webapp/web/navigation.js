@@ -2051,6 +2051,7 @@ function jumpToHistorialView(childlist) {
             }
 
             updateNavPath(breadcrumb_ls);
+            nav.selectCell(0, 1);
         }
     });
 }
