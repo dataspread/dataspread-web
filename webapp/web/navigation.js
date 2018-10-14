@@ -1264,7 +1264,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
         } else {
             td.style.background = '#F5F5DC';
         }
-        console.log("curr0");
+        //console.log("curr0");
        // console.log(cumulativeData[currLevel]);
         let targetCell = cumulativeData[currLevel][row];
 
@@ -1275,7 +1275,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                 let chartString = "navchartdiv" + row + col;
                 tempString += "<div id=" + chartString + " ></div>";
                 td.innerHTML = tempString + "</div>";
-                console.log("rerender");
+                ///console.log("rerender");
                 computeCellChart(chartString, row);
                 return;
             }
@@ -1351,7 +1351,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                     let chartString = "navchartdiv" + row + col;
                     tempString += "<div id=" + chartString + " ></div>";
                     td.innerHTML = tempString + "</div>";
-                    console.log("rerender");
+                   // console.log("rerender");
                     computeCellChart(chartString, row);
                     return;
                 }
@@ -1532,7 +1532,8 @@ $("#hierarchi-form").submit(function (e) {
 function getAggregateValue() {
     let childlist = computePath();
     aggregateData.path = " " + childlist;
-
+    //console.log("hierarchical col");
+   // console.log(aggregateData);
     $.ajax({
         url: baseUrl + "getHierarchicalAggregateFormula",
         method: "POST",
@@ -1571,6 +1572,7 @@ function getAggregateValue() {
                 colHeader.push(options[hierCol.attr_index - 1] + " " +
                     hierCol.function + " " + hierCol.param_ls);
             }
+
             addHierarchiCol(e.data);
         } else {
             alert("There is some problem with the formula: " + e.message);
@@ -2226,6 +2228,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             .style("font-weight", "bold")
             .text(value);
     } else if (navAggRawData[col - colOffset][row].chartType == 1) {
+        console.log("in chart rendered");
         let tempString = "chartdiv" + row + col;
         td.innerHTML = "<div id=" + tempString + " ></div>";
 
@@ -2371,6 +2374,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             .text('Count');
 
     } else if (navAggRawData[col - colOffset][row].chartType == 2) {
+        console.log("in nav chart renderer");
         let tempString = "chartdiv" + row + col;
         td.innerHTML = "<div id=" + tempString + " ></div>";
 
@@ -2901,7 +2905,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             }
         }
         var fullWidth = wrapperWidth * 0.14;
-        console.log("row: " + row + " " + fullHeight);
+       // console.log("row: " + row + " " + fullHeight);
 
         // the width and height values will be used in the ranges of our scales
         var width = fullWidth - margin.right - margin.left;

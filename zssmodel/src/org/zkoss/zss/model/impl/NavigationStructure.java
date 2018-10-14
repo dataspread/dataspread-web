@@ -665,7 +665,11 @@ public class NavigationStructure {
         return obj;
     }
 
-    public void setBucketAggWithMemoization(Bucket<String> subGroup,String formula,double value) {
+    public void setBucketAggWithMemoization(Model model,Bucket<String> subGroup, int attrIndex, String agg_id, List<String> paras,double value) {
+        int startRow = subGroup.getStartPos();
+        int endRow = subGroup.getEndPos();
+        Map<String, Object> obj = model.getColumnAggregate(currentSheet, startRow, endRow, attrIndex, agg_id, paras, true);
+        String formula = (String) obj.get("formula");
         Map<String, Object> aggMemMap = subGroup.aggMem;
         if (!aggMemMap.containsKey(formula)) {
             aggMemMap.put(formula, value);
