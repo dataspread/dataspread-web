@@ -1269,6 +1269,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
         let targetCell = cumulativeData[currLevel][row];
 
         if (targetCell.clickable) {
+            tempString += " (Rows: " + targetCell.value+")"
             tempString += "<i class=\"fa fa-angle-right fa-2x zoomInPlus\" style=\"color: #51cf66;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
 
             if (childHash.has(row)) {
@@ -1453,7 +1454,7 @@ $("#hierarchi-form").submit(function (e) {
                 return;
             case "COUNTIF":
             case "SUMIF":
-                para = $("#aggrePara" + i).val();
+                para = "\""+$("#aggrePara" + i).val()+"\"";
                 if (para == "") {
                     alert("Predicate is empty");
                     return;
@@ -1470,7 +1471,7 @@ $("#hierarchi-form").submit(function (e) {
                 break;
             case "LARGE":
             case "SMALL":
-                para = $("#aggrePara" + i).val();
+                para = "\""+$("#aggrePara" + i).val()+"\"";
                 if (para == "") {
                     alert("int value is empty");
                     return;
@@ -1486,7 +1487,7 @@ $("#hierarchi-form").submit(function (e) {
                 ;
                 break;
             case "SUBTOTAL":
-                para = $("#aggrePara" + i).val();
+                para = "\""+$("#aggrePara" + i).val()+"\"";
                 if (para == null) {
                     alert("function ID is empty");
                     return;
@@ -1502,7 +1503,7 @@ $("#hierarchi-form").submit(function (e) {
                 ;
                 break;
             case "RANK":
-                para = $("#aggrePara" + i).val();
+                para = "\""+$("#aggrePara" + i).val()+"\"";
                 if (para == "") {
                     alert("Rank value is empty");
                     return;
@@ -3077,7 +3078,7 @@ function updateNavCellFocus(firstRow, lastRow)
         }
         else
         {
-            //if(!updateBarChartFocus(firstRow, lastRow))
+            updateBarChartFocus(firstRow, lastRow);
             nav.render();
         }
 
