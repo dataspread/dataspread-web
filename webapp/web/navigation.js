@@ -2978,7 +2978,7 @@ function updataHighlight(child) {
                 cellMeta.renderer = function (hotInstance, td, row, col, prop, value,
                                               cellProperties) {
                     Handsontable.renderers.TextRenderer.apply(this, arguments);
-                    td.style.background = '#F5C3C2';
+                    td.style.background = '#f5e9e1';
                 }
             }
 

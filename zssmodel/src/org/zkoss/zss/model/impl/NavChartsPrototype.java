@@ -23,6 +23,9 @@ class NavChartsPrototype {
     private static final String[] type2Stat = new String[]{
             "AVERAGE", "STDEV", "VAR"
     };
+    private static final String[] pointFormula = new String[]{
+            "MIN", "MAX", "MEDIAN", "MODE", "RANK", "SMALL", "LARGE", "COUNTIF", "SUMIF"
+    };
     private static NavChartsPrototype uniqueInstance = null;
     private static Model model = null;
     private static NavigationStructure navS = null;
@@ -73,8 +76,65 @@ class NavChartsPrototype {
         return chartType.getOrDefault(formulaStr, -1);
     }
 
-    public HashMap<String,Double> summaryStat(ArrayList<Double> numData)
+    public int getConditionCode(String condition)
     {
+        if(condition.equals("="))
+            return 0;
+        else if(condition.equals("<>"))
+            return 1;
+        else if(condition.equals(">"))
+            return 2;
+        else if(condition.equals(">="))
+            return 3;
+        else if(condition.equals("<"))
+            return 4;
+        else if(condition.equals("<="))
+            return 5;
+
+        return -1;
+
+    }
+
+    public boolean isConditionSatisfied(double data, String condition,Double value)
+    {
+        int conditionCode = getConditionCode(condition);
+
+        switch (conditionCode)
+        {
+            case 0:
+                if(data==value)
+                    return true;
+                break;
+            case 1:
+                if(data!=value)
+                    return true;
+                break;
+            case 2:
+                if(data>value)
+                    return true;
+                break;
+            case 3:
+                if(data>=value)
+                    return true;
+                break;
+            case 4:
+                if(data<value)
+                    return true;
+                break;
+            case 5:
+                if(data<=value)
+                    return true;
+                break;
+            default:
+                break;
+        }
+
+        return false;
+    }
+
+    public HashMap<String,Double> summaryStat(int attr, Bucket<String> subGroup)
+    {
+        ArrayList<Double> numData = navS.collectDoubleValues(attr, subGroup);
         HashMap<String,Double> result = new HashMap<String,Double>();
         //min, max, average, var, STDDEV
         //  0,   1,       2,   3,     4
@@ -91,7 +151,6 @@ class NavChartsPrototype {
                 max = data;
 
             avg += data;
-
 
         }
 
@@ -128,7 +187,7 @@ class NavChartsPrototype {
     private void type0Chart(Map<String, Object> obj, int attr, Bucket<String> subGroup, String formula) {
         obj.put("chartType", 0);
         List<Double> chartData = new ArrayList<>();
-        HashMap<String,Double> res =  summaryStat(navS.collectDoubleValues(attr, subGroup));
+        HashMap<String,Double> res =  summaryStat(attr,subGroup);
         List<String> emptyList = new ArrayList<>();
         emptyList.add("");
         for (String f : type0Stat) {
@@ -172,7 +231,7 @@ class NavChartsPrototype {
         NavigationHistogram hist = new NavigationHistogram(navS.collectDoubleValues(attr, subGroup));
         hist.formattedOutput(obj, null);
 
-        HashMap<String,Double> res =  summaryStat(navS.collectDoubleValues(attr, subGroup));
+        HashMap<String,Double> res =  summaryStat(attr,subGroup);
 
         HashMap<String, Object> chartData = (HashMap) obj.get("chartData");
         List<String> emptyList = new ArrayList<>();
