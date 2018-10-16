@@ -272,8 +272,11 @@ public class NavigationStructure {
                     rowRange = new int[]{item.startPos, item.endPos};
                     value = item.size;
                     clickable = !item.isSingleton();
+                    System.out.println("Print item");
+                    System.out.println(item.name);
+
                     rate = 10;
-                    if(clickable)
+                    if(clickable && item.getChildren()!=null)
                     {
                         children = new ArrayList<BucketGroup>();
 
@@ -690,6 +693,11 @@ public class NavigationStructure {
         {
             navBucketTree.clear();
             navBucketTree = createRedefinedBuckets(bkt_arr);
+
+            for(Bucket subRoot:navBucketTree)
+            {
+                expandChild(subRoot);
+            }
         }
         else
         {
@@ -698,6 +706,10 @@ public class NavigationStructure {
                 subRoot = subRoot.getChildren().get(paths[i]);
             }
             subRoot.setChildren(createRedefinedBuckets(bkt_arr));
+            for(Bucket b:subRoot.getChildren())
+            {
+                expandChild(b);
+            }
         }
 
     }

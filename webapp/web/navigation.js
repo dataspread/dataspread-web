@@ -51,7 +51,7 @@ var navRawFormula;
 var navAggRawData = [];
 
 var exploreAttr;
-
+var hierarchicalColAttr = [];
 var sortAttrIndices = [];
 
 var selectedChild = [];
@@ -1204,12 +1204,12 @@ function computeCellChart(chartString, row,) {
                 if(selectedBars[ind].cell == row)
                 {
                     if(selectedBars[ind].bars.includes(i))
-                        return '#ff4500';
+                        return "#32CC99";//'#ff4500';
                     else
-                        return '#ffA500';
+                        return "#70DCB8";//'#ffA500';
                 }
             }
-            return '#ffA500';
+            return "#70DCB8"//'#ffA500';
         })
         .attr("width", function (d) {
             return x(d.count);
@@ -1396,6 +1396,12 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
 
 
 function removeHierarchiCol(colIdx) {
+    if(hierarchicalColAttr.length==1)
+        hierarchicalColAttr = [];
+    else{
+        let index = hierarchicalColAttr.indexOf(colIdx);
+        if (index !== -1) hierarchicalColAttr.splice(index, 1);
+    }
     // nav.alter('remove_col', colIdx);
     colHeader.splice(
         colIdx,
@@ -1428,6 +1434,8 @@ function removeHierarchiCol(colIdx) {
     } else {
         nav.alter('remove_col', colIdx);
     }
+
+    updataHighlight();
 }
 
 $("#hierarchi-form").submit(function (e) {
@@ -1438,9 +1446,11 @@ $("#hierarchi-form").submit(function (e) {
     // attr_index = []
     // funcId = []
     hieraOpen = false;
+    hierarchicalColAttr = [];
     let getChart = ($("#chartOpt").val() == 2);
     for (let i = 0; i < aggregateTotalNum; i++) {
         let attrIdx = $("#aggregateCol" + i).val();
+        hierarchicalColAttr.push(parseInt(attrIdx)-1);
         let funct = $("#aggregateOpt" + i).val();
         let paras = [];
         let para;
@@ -1527,6 +1537,8 @@ $("#hierarchi-form").submit(function (e) {
                 };
         }
     }
+    console.log("hierarchicalColAttr");
+    console.log(hierarchicalColAttr);
     getAggregateValue();
 });
 
@@ -1575,6 +1587,9 @@ function getAggregateValue() {
             }
 
             addHierarchiCol(e.data);
+
+            //higlight hierarchical col
+            updataHighlight();
         } else {
             alert("There is some problem with the formula: " + e.message);
         }
@@ -2333,7 +2348,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
                 .attr('fill',
                     function (d, i) {
                         if (i == special) {
-                            return '#BC8F8F'
+                            return '#ffA500';
                         } else {
                             return '#0099ff';
                         }
@@ -2942,7 +2957,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
     return td;
 }
 
-var colors = ['#32CC99', '#70DCB8', '#ADEBD6', '#EBFAF5']
+var colors = ['#CEC', '#70DCB8', '#ADEBD6', '#EBFAF5']
 
 function updataHighlight(child) {
     hot.updateSettings({
@@ -2952,9 +2967,21 @@ function updataHighlight(child) {
                 cellMeta.renderer = function (hotInstance, td, row, col, prop, value,
                                               cellProperties) {
                     Handsontable.renderers.TextRenderer.apply(this, arguments);
-                    td.style.background = '#CEC';
+                    if(row > currentLastRow || row < currentFirstRow)
+                        td.style.background = '#70DCB8';
+                    td.style.background = '#32CC99';
                 }
             }
+
+            if(hierarchicalColAttr.includes(column))
+            {
+                cellMeta.renderer = function (hotInstance, td, row, col, prop, value,
+                                              cellProperties) {
+                    Handsontable.renderers.TextRenderer.apply(this, arguments);
+                    td.style.background = '#F5C3C2';
+                }
+            }
+
             if (child != undefined) {
                 let lower = cumulativeData[currLevel][child].rowRange[0];
                 let upper = cumulativeData[currLevel][child].rowRange[1];
