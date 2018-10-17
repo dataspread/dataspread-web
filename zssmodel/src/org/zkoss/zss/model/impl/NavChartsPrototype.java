@@ -196,7 +196,7 @@ class NavChartsPrototype {
                 chartData.add(res.get(f));
                 navS.setBucketAggWithMemoization(model,subGroup,attr,f,emptyList,res.get(f));
             }
-            else
+            else if(formula.equals("MEDIAN"))
             {
                 Map<String, Object> resMed = navS.getBucketAggWithMemoization(model, subGroup, attr, f, emptyList);
                 chartData.add((Double) resMed.get("value"));

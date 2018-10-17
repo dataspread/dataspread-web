@@ -1209,11 +1209,12 @@ function computeCellChart(chartString, row,) {
                         return "#70DCB8";//'#ffA500';
                 }
             }
-            return "#70DCB8"//'#ffA500';
+            return "#70DCB8";//'#ffA500';
         })
         .attr("width", function (d) {
             return x(d.count);
         })
+        .style("stroke-width", 1)
         .on("mouseover",
             function (d) {
                 //           console.log(d)
@@ -2957,7 +2958,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
     return td;
 }
 
-var colors = ['#CEC', '#70DCB8', '#ADEBD6', '#EBFAF5']
+var colors = ['#32CC99','#CEC', '#ADEBD6', '#EBFAF5']
 
 function updataHighlight(child) {
     hot.updateSettings({
