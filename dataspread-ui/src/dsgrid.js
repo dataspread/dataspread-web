@@ -257,6 +257,39 @@ export default class DSGrid extends Component {
 
     }
 
+    _loadBook(bookName)
+    {
+        this.bookName = bookName;
+        fetch(this.urlPrefix + "/api/getSheets/" + this.bookName)
+            .then(res => res.json())
+            .then(
+                (result) => {
+                    this.dataCache.reset();
+                    this.setState({
+                        bookName: this.bookName,
+                        sheetName: 'Sheet1',
+                        rows: result['data']['sheets'][0]['numRow'],
+                        columns: result['data']['sheets'][0]['numCol']
+                    });
+                    this.subscribed = false;
+                    this.grid.scrollToCell ({ columnIndex: 0, rowIndex: 0 });
+                    if (this.stompSubscription!=null)
+                        this.stompSubscription.unsubscribe();
+                    this.stompSubscription = this.stompClient
+                        .subscribe('/user/push/updates',
+                            this._processUpdates, {bookName: this.state.bookName,
+                                sheetName: this.state.sheetName,
+                                fetchSize: this.fetchSize});
+                    console.log("book loaded rows:" + result['data']['sheets'][0]['numRow']);
+                }
+            )
+            .catch((error) => {
+                console.error(error);
+            });
+
+    }
+
+
     _handleEvent(event) {
         const target = event.target;
         const name = target.name;
@@ -265,34 +298,7 @@ export default class DSGrid extends Component {
             console.log(this.bookName);
         }
         else if (name === "bookLoadButton") {
-            fetch(this.urlPrefix + "/api/getSheets/" + this.bookName)
-                .then(res => res.json())
-                .then(
-                    (result) => {
-                        this.dataCache.reset();
-                        this.setState({
-                            bookName: this.bookName,
-                            sheetName: 'Sheet1',
-                            rows: result['data']['sheets'][0]['numRow'],
-                            columns: result['data']['sheets'][0]['numCol']
-                        });
-                        this.subscribed = false;
-                        this.grid.scrollToCell ({ columnIndex: 0, rowIndex: 0 });
-                        if (this.stompSubscription!=null)
-                            this.stompSubscription.unsubscribe();
-                        this.stompSubscription = this.stompClient
-                            .subscribe('/user/push/updates',
-                                this._processUpdates, {bookName: this.state.bookName,
-                                        sheetName: this.state.sheetName,
-                                        fetchSize: this.fetchSize});
-                        console.log("book loaded rows:" + result['data']['sheets'][0]['numRow']);
-                    }
-                )
-                .catch((error) => {
-                    console.error(error);
-                });
-
-
+            this._loadBook(this.bookName);
         }
     }
 
