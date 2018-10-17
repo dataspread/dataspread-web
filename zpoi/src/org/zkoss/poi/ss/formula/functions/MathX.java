@@ -24,7 +24,7 @@ package org.zkoss.poi.ss.formula.functions;
  * provided by java.lang.Math class. It follows the Math class
  * in that it has a private constructor and all static methods.
  */
-final class MathX {
+public final class MathX {
 
     private MathX() {
         // no instances of this class

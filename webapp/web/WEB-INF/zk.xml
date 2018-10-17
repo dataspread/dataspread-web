@@ -39,6 +39,6 @@
 
 	<library-property>
 		<name>FormulaAsyncScheduler</name>
-		<value>FormulaAsyncSchedulerThreaded</value>
+		<value>FormulaAsyncSchedulerSimple</value>
 	</library-property>
 </zk>

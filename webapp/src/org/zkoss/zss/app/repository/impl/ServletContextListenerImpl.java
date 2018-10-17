@@ -29,7 +29,7 @@ public class ServletContextListenerImpl implements ServletContextListener, Seria
 
         String FormulaAsyncSchedulerName = "org.zkoss.zss.model.impl.sys.formula." +
                 Library.getProperty("FormulaAsyncScheduler",
-                        "FormulaAsyncSchedulerThreaded");
+                        "FormulaAsyncSchedulerSimple");
 
         FormulaAsyncScheduler formulaAsyncScheduler;
         try {
