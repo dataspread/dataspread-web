@@ -1595,7 +1595,7 @@ function getAggregateValue() {
 
             //higlight hierarchical col
             updataHighlight();
-            updateSScolor(currentFirstRow,currentLastRow);
+
         } else {
             alert("There is some problem with the formula: " + e.message);
         }
@@ -2984,6 +2984,86 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
 var colors = ['#32CC99','#CEC', '#ADEBD6', '#EBFAF5']
 
 function updataHighlight(child) {
+    let brushNLinkRows = [];
+    if(navAggRawData.length == 1 && isPointFormula(navAggRawData[0][0].formula)) {
+        let data = navAggRawData[0];
+        let queryObj = {}
+        let cond = [];
+        let value = [];
+        let firstR = [];
+        let lastR = [];
+
+        for (let i = 0; i < selectedChild.length; i++) {
+
+            let formula = data[selectedChild[i]].formula;
+
+            if (formula.includes("COUNTIF") || formula.includes("SUMIF")) {
+                let ls = formula.split(",")[1].split(")")[0];
+                let str = ls.substring(1, 3);
+                if(str.includes(">=") || str.includes("<=") || str.includes("<>"))
+                {
+                    cond.push(ls.substring(1, 3));
+                    value.push(ls.substring(3, ls.length - 1));
+                }
+                else if(str.includes(">") || str.includes("<") || str.includes("="))
+                {
+                    cond.push(ls.substring(1, 2));
+                    value.push(ls.substring(2, ls.length - 1));
+                }
+                else
+                    value.push(ls.substring(1, ls.length - 1));
+
+            }
+            else if (formula.includes("MIN") || formula.includes("MAX") || formula.includes("MEDIAN") || formula.includes("MODE") || formula.includes("RANK") || formula.includes("SMALL") || formula.includes("LARGE")) {
+                value.push(data[selectedChild[i]].value);
+            }
+
+            //TODO: when ondemand loading of data available
+            /*let first = cumulativeData[currLevel][selectedChild[i]].rowRange[0];
+            let last = cumulativeData[currLevel][selectedChild[i]].rowRange[1];
+
+            if (first < currentFirstRow)
+                firstR.push(currentFirstRow)
+            else
+                firstR.push(first);
+            if (last > currentLastRow)
+                lastR.push(currentLastRow);
+            else
+                lastR.push(last);*/
+            if(lowerRange==0)
+                firstR.push(lowerRange+1);
+            else
+                firstR.push(lowerRange);
+            lastR.push(upperRange);
+        }
+
+        queryObj.bookId = bId;
+        queryObj.sheetName = sName;
+        queryObj.index = hierarchicalColAttr[0];
+        queryObj.first = firstR;
+        queryObj.last = lastR;
+        queryObj.conditions = cond;
+        queryObj.values = value;
+
+        $.ajax({
+            url: baseUrl + "getBrushColorList",
+            method: "POST",
+            // dataType: 'json',
+            contentType: 'text/plain',
+            data: JSON.stringify(queryObj),
+        }).done(function (e) {
+            if (e.status == "success") {
+                console.log(e.data);//#d4eafc
+
+                brushNLinkRows = e.data;
+
+            }
+
+
+
+        });
+
+    }
     hot.updateSettings({
         cells: function (row, column, prop) {
             let cellMeta = {}
@@ -2991,8 +3071,7 @@ function updataHighlight(child) {
                 cellMeta.renderer = function (hotInstance, td, row, col, prop, value,
                                               cellProperties) {
                     Handsontable.renderers.TextRenderer.apply(this, arguments);
-                    if(row > currentLastRow || row < currentFirstRow)
-                        td.style.background = '#70DCB8';
+                    //td.style.background = '#70DCB8';
                     td.style.background = '#32CC99';
                 }
             }
@@ -3002,7 +3081,16 @@ function updataHighlight(child) {
                 cellMeta.renderer = function (hotInstance, td, row, col, prop, value,
                                               cellProperties) {
                     Handsontable.renderers.TextRenderer.apply(this, arguments);
-                    td.style.background = '#f5e9e1';
+                    if(brushNLinkRows.length!=0)
+                    {
+                        if(brushNLinkRows.includes(row))
+                            td.style.background = '#d4eafc';
+                        else
+                            td.style.background = '#f5e9e1';
+
+                    }
+                    else
+                        td.style.background = '#f5e9e1';
                 }
             }
 
@@ -3020,6 +3108,16 @@ function updataHighlight(child) {
                     }
                 }
             }
+
+            // if(brushNLinkRows.length!=0)
+            // {
+            //     cellMeta.renderer = function (hotInstance, td, row, col, prop, value,
+            //                                   cellProperties) {
+            //         Handsontable.renderers.TextRenderer.apply(this, arguments);
+            //         if(brushNLinkRows.includes(row) && column < 16 && column != exploreAttr - 1)
+            //             td.style.background = '#d4eafc';
+            //     }
+            // }
             return cellMeta;
         }
     });
@@ -3185,70 +3283,11 @@ function brushNlink(firstRow, lastRow) {
 
 }
 
-function updateSScolor(firstRow,lastRow) {
-    console.log("In update SS color");
-
-    if(navAggRawData.length == 1) {
-        let data = navAggRawData[0];
-        let queryObj = {}
-        let cond = [];
-        let value = [];
-        let firstR = [];
-        let lastR = [];
-
-        for (let i = 0; i < selectedChild.length; i++) {
-            console.log(selectedChild[i]);
-            console.log(data[selectedChild[i]]);
-
-            let formula = data[selectedChild[i]].formula;
-
-            if (formula.includes("COUNTIF") || formula.includes("SUMIF")) {
-                let ls = formula.split(",")[1].split(")")[i];
-                cond.push(ls.substring(1, 2));
-                value.push(ls.substring(2, ls.length - 1));
-            }
-            else if (formula.includes("MIN") || formula.includes("MAX") || formula.includes("MEDIAN") || formula.includes("MODE") || formula.includes("RANK") || formula.includes("SMALL") || formula.includes("LARGE")) {
-                value.push(data[selectedChild[i]].value);
-            }
-
-            let first = cumulativeData[currLevel][selectedChild[i]].rowRange[0];
-            let last = cumulativeData[currLevel][selectedChild[i]].rowRange[1];
-
-            if (first < firstRow)
-                firstR.push(firstRow)
-            else
-                firstR.push(first);
-            if (last > lastRow)
-                lastR.push(lastRow);
-            else
-                lastR.push(last);
-        }
-
-        queryObj.bookId = bId;
-        queryObj.sheetName = sName;
-        queryObj.first = firstR;
-        queryObj.last = lastR;
-        queryObj.conditions = cond;
-        queryObj.values = value;
-
-        $.ajax({
-            url: baseUrl + "getBrushColorList",
-            method: "POST",
-            // dataType: 'json',
-            contentType: 'text/plain',
-            data: JSON.stringify(queryObj),
-        }).done(function (e) {
-            if (e.status == "success") {
-
-            }
-
-
-
-        });
-
-    }
-
-
+function isPointFormula(formula) {
+    let str = formula.split("(")[0];
+    if(pointFunc.includes(str))
+        return true;
+    return false;
 }
 
 function jumpToFocus(path, nav) {

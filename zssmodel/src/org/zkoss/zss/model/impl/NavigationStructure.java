@@ -79,6 +79,62 @@ public class NavigationStructure {
         typeCheckedColumns = new HashSet<>();
     }
 
+    public int getConditionCode(String condition)
+    {
+        if(condition.equals("="))
+            return 0;
+        else if(condition.equals("<>"))
+            return 1;
+        else if(condition.equals(">"))
+            return 2;
+        else if(condition.equals(">="))
+            return 3;
+        else if(condition.equals("<"))
+            return 4;
+        else if(condition.equals("<="))
+            return 5;
+
+        return -1;
+
+    }
+
+    public boolean isConditionSatisfied(double currValue, String condition,double queryValue)
+    {
+        int conditionCode = getConditionCode(condition);
+
+        switch (conditionCode)
+        {
+            case 0:
+                if(currValue==queryValue)
+                    return true;
+                break;
+            case 1:
+                if(currValue!=queryValue)
+                    return true;
+                break;
+            case 2:
+                if(currValue>queryValue)
+                    return true;
+                break;
+            case 3:
+                if(currValue>=queryValue)
+                    return true;
+                break;
+            case 4:
+                if(currValue<queryValue)
+                    return true;
+                break;
+            case 5:
+                if(currValue<=queryValue)
+                    return true;
+                break;
+            default:
+                break;
+        }
+
+        return false;
+    }
+
     public Object createNavS(SSheet currentSheet) {
         Model model = currentSheet.getDataModel();
         String prevIndexString = getIndexString();

@@ -1191,7 +1191,7 @@ var importSheet = function (bookId, sheetName, sheetIndex) {
     $.get(baseUrl + "getCells/" + bookId + "/" + sheetName + "/" + r1 + "/" + c1 + "/" + r2 + "/" + c2, function (data) {
         //Todo check return success or failure
         var testingarray = [];
-        console.log(data)
+        //console.log(data)
         for (let i = r1; i <= r2; i++) {
             let temp = []
             for (let j = c1; j < c2; j++) {

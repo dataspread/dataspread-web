@@ -1,10 +1,12 @@
 package api.controller;
 
+import api.Cell;
 import api.JsonWrapper;
 import org.springframework.web.bind.annotation.*;
 import org.zkoss.json.JSONArray;
 import org.zkoss.json.JSONObject;
 import org.zkoss.json.parser.JSONParser;
+import org.zkoss.util.Pair;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
@@ -241,17 +243,43 @@ public class NavigationController {
         JSONArray last_ls = (JSONArray) dict.get("last");
         JSONArray cond_ls = (JSONArray) dict.get("conditions");
         JSONArray val_ls = (JSONArray) dict.get("values");
-
+        int attrIndex = (Integer) dict.get("index");
         SBook book = BookBindings.getBookById(bookId);
         SSheet currentSheet = book.getSheetByName(sheetName);
 
-        try {
-            Model model = currentSheet.getDataModel();
+        ArrayList<Integer> indices = new ArrayList<Integer>();
+        Model model = currentSheet.getDataModel();
+        //Todo: when on demand loading available
+        /*for(int i=0;i<first_ls.size();i++)
+        {
+            int first = (Integer) first_ls.get(i);
+            int last = (Integer) last_ls.get(i);
+            for(int j=first;j<=last;j++)
+            {
+                SCell sCell = currentSheet.getCell(j, attrIndex);
 
-        } catch (RuntimeException e) {
-            return JsonWrapper.generateError(e.getMessage());
+                double currvalue = Double.parseDouble(String.valueOf(sCell.getValue()));
+                double queryValue = Double.parseDouble((String) val_ls.get(i));
+
+                if(model.navS.isConditionSatisfied(currvalue,(String) cond_ls.get(i),queryValue))
+                    indices.add(j);
+            }
+        }*/
+        int first = (Integer) first_ls.get(0);
+        int last = (Integer) last_ls.get(0);
+        for(int j=first;j<=last;j++)
+        {
+            SCell sCell = currentSheet.getCell(j, attrIndex);
+
+            double currvalue = Double.parseDouble(String.valueOf(sCell.getValue()));
+            double queryValue = Double.parseDouble((String) val_ls.get(0));
+
+            if(model.navS.isConditionSatisfied(currvalue,(String) cond_ls.get(0),queryValue))
+                indices.add(j);
         }
-        return JsonWrapper.generateJson("");
+
+
+        return JsonWrapper.generateJson(indices);
     }
 
     private int[] getIndices(String path) {

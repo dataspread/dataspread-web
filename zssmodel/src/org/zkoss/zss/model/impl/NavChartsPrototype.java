@@ -76,61 +76,7 @@ class NavChartsPrototype {
         return chartType.getOrDefault(formulaStr, -1);
     }
 
-    public int getConditionCode(String condition)
-    {
-        if(condition.equals("="))
-            return 0;
-        else if(condition.equals("<>"))
-            return 1;
-        else if(condition.equals(">"))
-            return 2;
-        else if(condition.equals(">="))
-            return 3;
-        else if(condition.equals("<"))
-            return 4;
-        else if(condition.equals("<="))
-            return 5;
 
-        return -1;
-
-    }
-
-    public boolean isConditionSatisfied(double data, String condition,Double value)
-    {
-        int conditionCode = getConditionCode(condition);
-
-        switch (conditionCode)
-        {
-            case 0:
-                if(data==value)
-                    return true;
-                break;
-            case 1:
-                if(data!=value)
-                    return true;
-                break;
-            case 2:
-                if(data>value)
-                    return true;
-                break;
-            case 3:
-                if(data>=value)
-                    return true;
-                break;
-            case 4:
-                if(data<value)
-                    return true;
-                break;
-            case 5:
-                if(data<=value)
-                    return true;
-                break;
-            default:
-                break;
-        }
-
-        return false;
-    }
 
     public HashMap<String,Double> summaryStat(int attr, Bucket<String> subGroup)
     {
