@@ -1,6 +1,5 @@
-package org.zkoss.poi.ss.formula.Primitives;
+package org.zkoss.zss.model.sys.formula.Primitives;
 
-import org.zkoss.poi.ss.formula.ptg.AreaPtg;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
 
 public class DataWriteOperator extends LogicalOperator {

@@ -1,4 +1,4 @@
-package org.zkoss.poi.ss.formula.Primitives;
+package org.zkoss.zss.model.sys.formula.Primitives;
 
 import org.zkoss.poi.ss.formula.functions.MathX;
 

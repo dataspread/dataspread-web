@@ -1,6 +1,6 @@
-package org.zkoss.poi.ss.formula.QueryOptimization;
+package org.zkoss.zss.model.sys.formula.QueryOptimization;
 
-import org.zkoss.poi.ss.formula.Primitives.DataReadOperator;
+import org.zkoss.zss.model.sys.formula.Primitives.DataReadOperator;
 
 import java.util.ArrayList;
 import java.util.List;

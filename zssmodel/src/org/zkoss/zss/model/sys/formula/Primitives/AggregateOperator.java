@@ -1,4 +1,4 @@
-package org.zkoss.poi.ss.formula.Primitives;
+package org.zkoss.zss.model.sys.formula.Primitives;
 
 public class AggregateOperator extends LogicalOperator {
     BinaryFunction binaryFunction;

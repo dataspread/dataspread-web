@@ -1,4 +1,4 @@
-package org.zkoss.poi.ss.formula.Primitives;
+package org.zkoss.zss.model.sys.formula.Primitives;
 
 public class PhysicalOperator {
     LogicalOperator logicalOperator;

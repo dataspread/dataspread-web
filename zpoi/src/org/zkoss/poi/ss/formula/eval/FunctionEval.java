@@ -174,7 +174,7 @@ public final class FunctionEval {
 
 		retval[269] = AggregateFunction.AVEDEV;
 
-		retval[276] = NumericFunction.COMBIN;
+		retval[276] = NumericFunction.COMBIN ;
 
 		retval[279] = new Even();
 

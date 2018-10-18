@@ -1,4 +1,4 @@
-package org.zkoss.poi.ss.formula.QueryOptimization;
+package org.zkoss.zss.model.sys.formula.QueryOptimization;
 
 public class QueryOptimizer {
     private QueryOptimizer(){}
