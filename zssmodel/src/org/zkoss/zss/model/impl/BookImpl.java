@@ -120,13 +120,18 @@ public class BookImpl extends AbstractBookAdv{
     }
 
 	public static SBook getBookById(String bookId){
-        String getBookEntry = "SELECT bookname FROM books WHERE booktable = ?";
+		String getBookEntry;
+		if (bookId.equals("undefined"))
+			getBookEntry = "SELECT bookname,booktable FROM books ORDER BY lastmodified DESC";
+		else
+			getBookEntry = "SELECT bookname,booktable FROM books WHERE booktable = '" + bookId + "'";
+
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
              PreparedStatement getBookStmt = connection.prepareStatement(getBookEntry)) {
-            getBookStmt.setString(1, bookId);
             ResultSet rs = getBookStmt.executeQuery();
             if(rs.next()) {
-                String bookName = rs.getString(1);
+                String bookName = rs.getString("bookname");
+                bookId = rs.getString("booktable");
                 if (BookBindings.contains(bookName))
                     return BookBindings.get(bookName);
                 else {
