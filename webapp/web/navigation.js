@@ -1028,6 +1028,7 @@ function Explore(e) {
                     upperRange = cumulativeData[currLevel][r].rowRange[1];
                     updateData(cumulativeData[currLevel][r].rowRange[0], 0,
                         cumulativeData[currLevel][r].rowRange[1], 15, true);
+                    updataHighlight();
                     nav.render();
                 }
             },
@@ -1234,6 +1235,7 @@ function computeCellChart(chartString, row,) {
             lowerRange = hash.get(d.name).range;
             upperRange = lowerRange + 500;
             updateData(lowerRange, 0, upperRange, 15, true);
+            updataHighlight();
         });
     //   .on("dblclick",function(d){ alert("node was double clicked"); });
 
