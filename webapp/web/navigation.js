@@ -1270,7 +1270,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
         let targetCell = cumulativeData[currLevel][row];
 
         if (targetCell.clickable) {
-            tempString += " (Rows: " + targetCell.value+")"
+            tempString += " (Rows: " + targetCell.value+")";
             tempString += "<i class=\"fa fa-angle-right fa-2x zoomInPlus\" style=\"color: #51cf66;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
 
             if (childHash.has(row)) {
@@ -1347,6 +1347,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
         } else {
             let targetCell = cumulativeData[currLevel][row];
             if (targetCell.clickable) {
+                tempString += " (Rows: " + targetCell.value+")";
                 tempString += "<i class=\"fa fa-angle-right fa-2x zoomInPlus\" style=\"color: #51cf66;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
 
                 if (childHash.has(row)) {
@@ -2724,6 +2725,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             .text('Count');
 
     } else if (navAggRawData[col - colOffset][row].chartType == 4) {
+
         let tempString = "chartdiv" + row + col;
         td.innerHTML = "<div id=" + tempString + " ></div>";
 
@@ -2778,7 +2780,15 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             .attr("text-anchor", "middle")
             .style("font-size", "10px")
             .style("font-weight", "bold")
-            .text(value);
+            .text(function () {
+                if(navAggRawData[col - colOffset][row].formula.includes("COUNTIF"))
+                {
+                    let percent = (value*100.0)/cumulativeData[currLevel][row].value;
+                    return value+ " ("+percent.toFixed(2)+"%)";
+                }
+
+                return value;
+            });
 
         let xScale =
             d3.scaleLinear()
@@ -2950,7 +2960,14 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             .attr("text-anchor", "middle")
             .style("font-size", "20px")
             .style("font-weight", "bold")
-            .text(value);
+            .text(function () {
+                if(navAggRawData[col - colOffset][row].formula.includes("COUNTIF"))
+                {
+                    let percent = (value*100.0)/cumulativeData[currLevel][row].value;
+                    return value+ " ("+percent.toFixed(2)+"%)";
+                }
+                return value;
+            });
 
     }
 
