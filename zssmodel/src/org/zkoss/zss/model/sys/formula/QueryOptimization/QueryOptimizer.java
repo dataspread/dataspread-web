@@ -1,12 +1,18 @@
 package org.zkoss.zss.model.sys.formula.QueryOptimization;
 
+import java.util.List;
+
 public class QueryOptimizer {
     private QueryOptimizer(){}
     static QueryOptimizer queryOptimizer = new QueryOptimizer();
-    public static QueryOptimizer getExecutor(){
+    public static QueryOptimizer getOptimizer(){
         return queryOptimizer;
     }
-    public QueryPlanGraph optimize(QueryPlanGraph[] graphs){
-        return graphs[0];
+    public QueryPlanGraph optimize(List<QueryPlanGraph> graphs){
+        QueryPlanGraph ret = new QueryPlanGraph();
+        for (QueryPlanGraph graph:graphs){
+            ret.dataNodes.addAll(graph.dataNodes);
+        }
+        return ret;
     }
 }

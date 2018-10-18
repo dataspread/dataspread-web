@@ -6,21 +6,25 @@ public abstract class BinaryFunction {
     final static public BinaryFunction PLUS = new BinaryFunction(){
 
         @Override
-        double evluate(double a, double b) {
+        Double evluate(Double a, Double b) {
             return a + b;
         }
 
         @Override
-        double Invertedevluate(double a, double b) {
+        Double Invertedevluate(Double a, Double b) {
             return a - b;
         }
 
         @Override
-        double groupEvaluate(double[] values) {
-            return MathX.sum(values);
+        Double groupEvaluate(Double[] values) {
+            double sum = 0;
+            for (int i=0, iSize=values.length; i<iSize; i++) {
+                sum += values[i];
+            }
+            return sum;
         }
     };
-    abstract double evluate(double a, double b);
-    abstract double Invertedevluate(double a, double b);
-    abstract double groupEvaluate(double[] values);
+    abstract Double evluate(Double a, Double b);
+    abstract Double Invertedevluate(Double a, Double b);
+    abstract Double groupEvaluate(Double[] values);
 }

@@ -194,7 +194,7 @@ public class RangeImpl implements SRange {
 		return _lastColumn;
 	}
 
-	private abstract class CellVisitor {
+	private abstract class  CellVisitor {
 		/**
 		 * @param cell
 		 * @return true if continue the visit next cell

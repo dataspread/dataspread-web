@@ -17,4 +17,8 @@ public class LogicalOperator {
     public void addOutput(LogicalOperator op){
         outOp.add(op);
     }
+
+    public Vector<LogicalOperator> getOutputNodes(){
+        return outOp;
+    }
 }

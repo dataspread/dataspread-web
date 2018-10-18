@@ -1,9 +1,12 @@
 package org.zkoss.zss.model.sys.formula.Decomposer;
 
+import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.SCell;
+import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.Primitives.*;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.QueryPlanGraph;
 import org.zkoss.poi.ss.formula.ptg.*;
-import org.zkoss.zss.model.impl.AbstractCellAdv;
+import org.zkoss.zss.range.impl.RangeImpl;
 
 import java.util.Stack;
 
@@ -13,7 +16,7 @@ public class FormulaDecomposer {
 
     static FunctionDecomposer[] logicalOpDict = produceLogicalOperatorDictionary();
 
-    public static QueryPlanGraph decomposeFormula(Ptg[] ptgs, AbstractCellAdv target){
+    public static QueryPlanGraph decomposeFormula(Ptg[] ptgs, SCell target) throws OptimizationError {
         QueryPlanGraph result = new QueryPlanGraph();
         Stack<LogicalOperator> stack = new Stack<>();
         for (int i = 0, iSize = ptgs.length; i < iSize; i++) {
@@ -25,13 +28,13 @@ public class FormulaDecomposer {
                     ptg = FuncVarPtg.SUM;
                 }
                 if (attrPtg.isOptimizedChoose()) {
-                    throw new IllegalStateException("Unsupported case:attrPtg.isOptimizedChoose()");
+                    throw new OptimizationError("Unsupported case:attrPtg.isOptimizedChoose()");
                 }
                 if (attrPtg.isOptimizedIf()){
-                    throw new IllegalStateException("Unsupported case:attrPtg.isOptimizedIf()");
+                    throw new OptimizationError("Unsupported case:attrPtg.isOptimizedIf()");
                 }
                 if (attrPtg.isSkip()) {
-                    throw new IllegalStateException("Unsupported case:attrPtg.isSkip()");
+                    throw new OptimizationError("Unsupported case:attrPtg.isSkip()");
                 }
             }
             if (ptg instanceof ControlPtg) {
@@ -47,14 +50,14 @@ public class FormulaDecomposer {
             }
 
             if (ptg instanceof FilterHelperPtg) {
-                throw new IllegalStateException("Unsupported case:(ptg instanceof FilterHelperPtg");
+                throw new OptimizationError("Unsupported case:(ptg instanceof FilterHelperPtg");
             }
 
             LogicalOperator opResult = null;
             if (ptg instanceof OperationPtg) {
                 OperationPtg optg = (OperationPtg) ptg;
                 if (!(ptg instanceof AbstractFunctionPtg)){
-                    throw new IllegalStateException("Unsupported case");
+                    throw new OptimizationError("Unsupported case");
                 }
                 AbstractFunctionPtg fptg = (AbstractFunctionPtg)ptg;
                 if (optg.getInstance() != null)
@@ -74,13 +77,15 @@ public class FormulaDecomposer {
 //				logDebug("invoke " + operation + " (nAgs=" + numops + ")");
                 opResult = logicalOpDict[fptg.getFunctionIndex()].decompose(ops);
             } else if (ptg instanceof RelTableAttrPtg) {
-                throw new IllegalStateException("Unsupported case:((ptg instanceof RelTableAttrPtg)");
+                throw new OptimizationError("Unsupported case:((ptg instanceof RelTableAttrPtg)");
             } else if (ptg instanceof AreaPtg){
-                opResult = new DataReadOperator((AreaPtg) ptg);
-                result.addData((DataReadOperator) opResult);
+                CellRegion region = new CellRegion(((AreaPtg)ptg).getFirstRow(), ((AreaPtg)ptg).getFirstColumn(),
+                        ((AreaPtg)ptg).getLastRow(), ((AreaPtg)ptg).getLastColumn());
+                opResult = new DataOperator(new RangeImpl(target.getSheet(),region));
+                result.addData((DataOperator) opResult);
 
             } else {
-                throw new IllegalStateException("Unsupported case");
+                throw new OptimizationError("Unsupported case");
             }
             if (opResult == null) {
                 throw new RuntimeException("Evaluation result must not be null");
@@ -90,10 +95,12 @@ public class FormulaDecomposer {
         }
 
         LogicalOperator value = stack.pop();
-        DataWriteOperator targetCell = new DataWriteOperator(target);
+        DataOperator targetCell = new DataOperator(
+                new RangeImpl(target.getSheet(),target.getRowIndex(),target.getColumnIndex()));
         connect(value,targetCell);
+        result.addData(targetCell);
         if (!stack.isEmpty()) {
-            throw new IllegalStateException("evaluation stack not empty");
+            throw new OptimizationError("evaluation stack not empty");
         }
         return result;
 

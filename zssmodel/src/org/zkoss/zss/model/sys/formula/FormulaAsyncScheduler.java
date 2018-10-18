@@ -32,7 +32,7 @@ public abstract class FormulaAsyncScheduler implements Runnable {
     }
 
 
-    protected void update(SBook book, SSheet sheet, CellRegion cellRegion, String value, String formula) {
+    public void update(SBook book, SSheet sheet, CellRegion cellRegion, String value, String formula) {
         if (formulaAsyncListener != null) {
             formulaAsyncListener.update(book, sheet, cellRegion, value, formula);
         }
