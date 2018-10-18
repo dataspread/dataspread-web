@@ -108,6 +108,7 @@ var ssDefaultSettings = {
     search: true,
     sortIndicator: true,
     customBorders: true,
+    fixedRowsTop: 1,
     // contextMenu:[],
     afterScrollVertically: function (e) {
         compute_window(e);
@@ -199,6 +200,7 @@ var ssDynamicSettings = {
     search: true,
     sortIndicator: true,
     customBorders: true,
+    fixedRowsTop: 1,
     // contextMenu:[],
     afterScrollVertically: function (e) {
         compute_window(e);

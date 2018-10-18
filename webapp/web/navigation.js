@@ -19,7 +19,6 @@ var breadCrumbHistoryPathIndex = [];
 var options = [];
 var hieraOpen = false;
 var exploreOpen = false;
-
 var funcOptions =
     [
         "AVEDEV", "AVERAGE", "COUNT", "COUNTA", "COUNTBLANK", "COUNTIF",
@@ -1544,8 +1543,8 @@ $("#hierarchi-form").submit(function (e) {
                 };
         }
     }
-    console.log("hierarchicalColAttr");
-    console.log(hierarchicalColAttr);
+    //console.log("hierarchicalColAttr");
+    //console.log(hierarchicalColAttr);
     getAggregateValue();
 });
 
@@ -2163,7 +2162,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
         for (let i = 0; i < navAggRawData[col - colOffset].length; i++) {
             if (navAggRawData[col - colOffset][i]['value'] < min) {
                 min = navAggRawData[col - colOffset][i]['value'];
-            } else if (navAggRawData[col - colOffset][i]['value'] > min) {
+            } else if (navAggRawData[col - colOffset][i]['value'] > max) {
                 max = navAggRawData[col - colOffset][i]['value'];
             }
         }
@@ -2269,7 +2268,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
         for (let i = 0; i < navAggRawData[col - colOffset].length; i++) {
             if (navAggRawData[col - colOffset][i]['value'] < min) {
                 min = navAggRawData[col - colOffset][i]['value'];
-            } else if (navAggRawData[col - colOffset][i]['value'] > min) {
+            } else if (navAggRawData[col - colOffset][i]['value'] > max) {
                 max = navAggRawData[col - colOffset][i]['value'];
             }
         }
@@ -2415,7 +2414,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
         for (let i = 0; i < navAggRawData[col - colOffset].length; i++) {
             if (navAggRawData[col - colOffset][i]['value'] < min) {
                 min = navAggRawData[col - colOffset][i]['value'];
-            } else if (navAggRawData[col - colOffset][i]['value'] > min) {
+            } else if (navAggRawData[col - colOffset][i]['value'] > max) {
                 max = navAggRawData[col - colOffset][i]['value'];
             }
         }
@@ -2611,7 +2610,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
         for (let i = 0; i < navAggRawData[col - colOffset].length; i++) {
             if (navAggRawData[col - colOffset][i]['value'] < min) {
                 min = navAggRawData[col - colOffset][i]['value'];
-            } else if (navAggRawData[col - colOffset][i]['value'] > min) {
+            } else if (navAggRawData[col - colOffset][i]['value'] > max) {
                 max = navAggRawData[col - colOffset][i]['value'];
             }
         }
@@ -2749,7 +2748,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
         for (let i = 0; i < navAggRawData[col - colOffset].length; i++) {
             if (navAggRawData[col - colOffset][i]['value'] < min) {
                 min = navAggRawData[col - colOffset][i]['value'];
-            } else if (navAggRawData[col - colOffset][i]['value'] > min) {
+            } else if (navAggRawData[col - colOffset][i]['value'] > max) {
                 max = navAggRawData[col - colOffset][i]['value'];
             }
         }
@@ -2924,7 +2923,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
         for (let i = 0; i < navAggRawData[col - colOffset].length; i++) {
             if (navAggRawData[col - colOffset][i]['value'] < min) {
                 min = navAggRawData[col - colOffset][i]['value'];
-            } else if (navAggRawData[col - colOffset][i]['value'] > min) {
+            } else if (navAggRawData[col - colOffset][i]['value'] > max) {
                 max = navAggRawData[col - colOffset][i]['value'];
             }
         }
@@ -2940,7 +2939,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             }
         }
         var fullWidth = wrapperWidth * 0.14;
-        //console.log("row: " + row + " " + fullHeight+ " "+ fullWidth);
+        //console.log("row: " + row + " " + fullHeight+" "+ wrapperHeight+" "+ fullWidth+" "+wrapperWidth);
 
         // the width and height values will be used in the ranges of our scales
         var width = fullWidth - margin.right - margin.left;
@@ -2954,13 +2953,19 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             // translate it to leave room for the left and top margins
             .attr('transform',
                 'translate(' + margin.left + ',' + margin.top + ')');
-        svg.append("rect")
+        /*svg.append("rect")
             .attr("x", width)
             .attr("y", 0 - margin.top)
             .attr("width", margin.right)
             .attr("height", fullHeight + 10)
             .attr("fill", d3.interpolateGreens(
-                ((value - min) / (max - min)) * 0.85 + 0.15));
+                ((value - min) / (max - min)) * 0.85 + 0.15));*/
+        svg.append("rect")
+            .attr("x", 0)
+            .attr("y", 0-margin.top)
+            .attr("width", fullWidth*(value)/max)
+            .attr("height", fullHeight)
+            .attr("fill", '#B2EEB4');
 
         svg.append("text")
             .attr("x", (width / 2))
@@ -2979,7 +2984,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
 
     }
 
-    td.style.background = '#FAEBD7';
+    td.style.background = '#FAF2ED';
     return td;
 }
 
