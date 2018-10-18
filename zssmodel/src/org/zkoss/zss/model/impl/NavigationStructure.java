@@ -272,8 +272,8 @@ public class NavigationStructure {
                     rowRange = new int[]{item.startPos, item.endPos};
                     value = item.size;
                     clickable = !item.isSingleton();
-                    System.out.println("Print item");
-                    System.out.println(item.name);
+                    //System.out.println("Print item");
+                    //System.out.println(item.name);
 
                     rate = 10;
                     if(clickable && item.getChildren()!=null)

@@ -32,7 +32,10 @@ var subtotalFunc =
         "AVERAGE", "COUNT", "COUNTA", "MAX", "MIN", "PRODUCT", "STDEV", "SUM",
         "VAR", "VARP"
     ];
-
+var pointFunc =
+    [
+        "MIN", "MAX", "MEDIAN", "MODE", "RANK", "SMALL", "LARGE", "COUNTIF", "SUMIF"
+    ];
 var currData;
 var zoomming = false;
 var zoomouting = false;
@@ -1592,6 +1595,7 @@ function getAggregateValue() {
 
             //higlight hierarchical col
             updataHighlight();
+            updateSScolor(currentFirstRow,currentLastRow);
         } else {
             alert("There is some problem with the formula: " + e.message);
         }
@@ -2137,6 +2141,7 @@ $("#sort-form").submit(function (e) {
                 true)
 
             updataHighlight(child);
+            //updateSScolor(currentFirstRow,currentLastRow);
         });
 })
 
@@ -2908,6 +2913,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
     } else {
         // Handsontable.renderers.TextRenderer.apply(this, arguments);
         // td.className = "htCenter htMiddle";
+
         let tempString = "chartdiv" + row + col;
         td.innerHTML = "<div id=" + tempString + " ></div>";
         let data = navAggRawData[col - colOffset][row];
@@ -2932,7 +2938,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             }
         }
         var fullWidth = wrapperWidth * 0.14;
-       // console.log("row: " + row + " " + fullHeight);
+        //console.log("row: " + row + " " + fullHeight+ " "+ fullWidth);
 
         // the width and height values will be used in the ranges of our scales
         var width = fullWidth - margin.right - margin.left;
@@ -3139,7 +3145,7 @@ function updateNavCellFocus(firstRow, lastRow)
 }
 
 function brushNlink(firstRow, lastRow) {
-    //console.log("brush and link");
+    console.log("brush and link");
 
     let path = computePath();
 
@@ -3174,6 +3180,74 @@ function brushNlink(firstRow, lastRow) {
     {
         updateNavCellFocus(firstRow, lastRow);
     }
+
+    //updateSScolor(firstRow,lastRow);
+
+}
+
+function updateSScolor(firstRow,lastRow) {
+    console.log("In update SS color");
+
+    if(navAggRawData.length == 1) {
+        let data = navAggRawData[0];
+        let queryObj = {}
+        let cond = [];
+        let value = [];
+        let firstR = [];
+        let lastR = [];
+
+        for (let i = 0; i < selectedChild.length; i++) {
+            console.log(selectedChild[i]);
+            console.log(data[selectedChild[i]]);
+
+            let formula = data[selectedChild[i]].formula;
+
+            if (formula.includes("COUNTIF") || formula.includes("SUMIF")) {
+                let ls = formula.split(",")[1].split(")")[i];
+                cond.push(ls.substring(1, 2));
+                value.push(ls.substring(2, ls.length - 1));
+            }
+            else if (formula.includes("MIN") || formula.includes("MAX") || formula.includes("MEDIAN") || formula.includes("MODE") || formula.includes("RANK") || formula.includes("SMALL") || formula.includes("LARGE")) {
+                value.push(data[selectedChild[i]].value);
+            }
+
+            let first = cumulativeData[currLevel][selectedChild[i]].rowRange[0];
+            let last = cumulativeData[currLevel][selectedChild[i]].rowRange[1];
+
+            if (first < firstRow)
+                firstR.push(firstRow)
+            else
+                firstR.push(first);
+            if (last > lastRow)
+                lastR.push(lastRow);
+            else
+                lastR.push(last);
+        }
+
+        queryObj.bookId = bId;
+        queryObj.sheetName = sName;
+        queryObj.first = firstR;
+        queryObj.last = lastR;
+        queryObj.conditions = cond;
+        queryObj.values = value;
+
+        $.ajax({
+            url: baseUrl + "getBrushColorList",
+            method: "POST",
+            // dataType: 'json',
+            contentType: 'text/plain',
+            data: JSON.stringify(queryObj),
+        }).done(function (e) {
+            if (e.status == "success") {
+
+            }
+
+
+
+        });
+
+    }
+
 
 }
 

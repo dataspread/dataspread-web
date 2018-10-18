@@ -230,6 +230,30 @@ public class NavigationController {
         return JsonWrapper.generateJson(agg);
     }
 
+    @RequestMapping(value = "/api/getBrushColorList",
+            method = RequestMethod.POST)
+    public HashMap<String, Object> getBrushColorList(@RequestBody String value) {
+        JSONParser parser = new JSONParser();
+        JSONObject dict = (JSONObject) parser.parse(value);
+        String bookId = (String) dict.get("bookId");
+        String sheetName = (String) dict.get("sheetName");
+        JSONArray first_ls = (JSONArray) dict.get("first");
+        JSONArray last_ls = (JSONArray) dict.get("last");
+        JSONArray cond_ls = (JSONArray) dict.get("conditions");
+        JSONArray val_ls = (JSONArray) dict.get("values");
+
+        SBook book = BookBindings.getBookById(bookId);
+        SSheet currentSheet = book.getSheetByName(sheetName);
+
+        try {
+            Model model = currentSheet.getDataModel();
+
+        } catch (RuntimeException e) {
+            return JsonWrapper.generateError(e.getMessage());
+        }
+        return JsonWrapper.generateJson("");
+    }
+
     private int[] getIndices(String path) {
         int[] indices;
         if (!path.equals(" ")) {
