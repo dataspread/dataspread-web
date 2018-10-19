@@ -185,8 +185,15 @@ public class RCV_Model extends Model {
     @Override
     public void navigationSortBucketByAttribute(SSheet currentSheet, int[] paths, int[] attr_indices, int orderInt) {
         Bucket<String> subRoot = this.navS.getSubRootBucket(paths);
-        subRoot.children = null;
-        navigationSortRangeByAttribute(currentSheet, subRoot.startPos, subRoot.endPos, attr_indices, orderInt);
+        //subRoot.children = null;
+        if(subRoot.getChildren()!=null)
+        {
+
+            for(Bucket b:subRoot.getChildren())
+                navigationSortRangeByAttribute(currentSheet, b.startPos, b.endPos, attr_indices, orderInt);
+        }
+        else
+            navigationSortRangeByAttribute(currentSheet, subRoot.startPos, subRoot.endPos, attr_indices, orderInt);
     }
 
     /**

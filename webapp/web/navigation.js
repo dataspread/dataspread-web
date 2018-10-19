@@ -2118,12 +2118,12 @@ $("#sort-form").submit(function (e) {
     e.preventDefault();
     $("#exampleModal").modal('hide')
     sortAttrIndices = [];
-    sortAttrIndices.push(exploreAttr);
+    //sortAttrIndices.push(exploreAttr);
     for (let i = 0; i < sortTotalNum; i++) {
         sortAttrIndices.push($('#inlineOpt' + i).val());
     }
 
-    var selectedArray = nav.getSelected();
+    selectedArray = nav.getSelected();
     //  var child = selectedArray[0][0]/spanList[currLevel];
     var child = selectedArray[0][0];
     let childlist = computePath();
@@ -2994,7 +2994,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
     return td;
 }
 
-var colors = ['#32CC99','#CEC', '#ADEBD6', '#EBFAF5']
+var colors = ['#c799cc','#eba6ee', '#ea7beb', '#fa1aec']
 
 function updataHighlight(child) {
     let brushNLinkRows = [];
@@ -3110,7 +3110,7 @@ function updataHighlight(child) {
             if (child != undefined) {
                 let lower = cumulativeData[currLevel][child].rowRange[0];
                 let upper = cumulativeData[currLevel][child].rowRange[1];
-                for (let i = 1; i < sortAttrIndices.length; i++) {
+                for (let i = 0; i < sortAttrIndices.length; i++) {
                     if (column == (sortAttrIndices[i] - 1) && row >= lower &&
                         row <= upper) {
                         cellMeta.renderer = function (hotInstance, td, row, col, prop,
