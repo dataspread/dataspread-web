@@ -794,6 +794,7 @@ $("#bucket-form").submit(function (e) {
                 jumpToHistorialView(childlist);
             } else {
                 Explore(exploreAttr);
+                $("#history-option").empty();
             }
 
         }
