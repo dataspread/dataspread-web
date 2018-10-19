@@ -16,6 +16,7 @@ var navHistroyTable = {};
 var navHistoryPathIndex = [];
 var breadCrumbHistoryPathIndex = [];
 
+var sortChild_ls = [];
 var options = [];
 var hieraOpen = false;
 var exploreOpen = false;
@@ -841,6 +842,8 @@ function Explore(e) {
     $("#navChart").css({"display": "inline", "float": "left"});
 
     $("#history-option").empty();
+
+    sortChild_ls = [];
 
     $.get(baseUrl + 'startNav/' + bId + '/' + sName + '/' + e, function (data) {
 
@@ -1685,6 +1688,7 @@ function zoomIn(child, nav) {
         selectFirstChild = true;
     selectedChild = [];
     selectedBars = [];
+    sortChild_ls = [];
 
     if (currLevel == 0) {
         colHeader.splice(1, 0, "")
@@ -1923,6 +1927,7 @@ function zoomOutHist(nav) {
     targetChild = levelList[levelList.length - 1];
     selectedChild = [];
     selectedBars = [];
+    sortChild_ls = [];
 
     levelList.pop();
     let childlist = computePath(); // get the list of children
@@ -2028,6 +2033,7 @@ function jumpToHistorialView(childlist) {
 
     selectedChild = [];
     selectedBars = [];
+    sortChild_ls = [];
     // api call to /levelList + '.' + child to get currData
     let queryData = {};
 
@@ -2123,9 +2129,11 @@ $("#sort-form").submit(function (e) {
         sortAttrIndices.push($('#inlineOpt' + i).val());
     }
 
-    selectedArray = nav.getSelected();
+    var selectedArray = nav.getSelected();
     //  var child = selectedArray[0][0]/spanList[currLevel];
     var child = selectedArray[0][0];
+    sortChild_ls = [];
+    sortChild_ls.push(child);
     let childlist = computePath();
     let path = ""
     if (childlist !== "") {
@@ -2147,7 +2155,7 @@ $("#sort-form").submit(function (e) {
                 cumulativeData[currLevel][child].rowRange[1] + 10, 15,
                 true)
 
-            updataHighlight(child);
+            updataHighlight();
             //updateSScolor(currentFirstRow,currentLastRow);
         });
 })
@@ -2996,7 +3004,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
 
 var colors = ['#c799cc','#eba6ee', '#ea7beb', '#fa1aec']
 
-function updataHighlight(child) {
+function updataHighlight() {
     let brushNLinkRows = [];
     if(navAggRawData.length == 1 && isPointFormula(navAggRawData[0][0].formula)) {
         let data = navAggRawData[0];
@@ -3107,9 +3115,9 @@ function updataHighlight(child) {
                 }
             }
 
-            if (child != undefined) {
-                let lower = cumulativeData[currLevel][child].rowRange[0];
-                let upper = cumulativeData[currLevel][child].rowRange[1];
+            if (sortChild_ls.length>0) {
+                let lower = cumulativeData[currLevel][sortChild_ls[0]].rowRange[0];
+                let upper = cumulativeData[currLevel][sortChild_ls[0]].rowRange[1];
                 for (let i = 0; i < sortAttrIndices.length; i++) {
                     if (column == (sortAttrIndices[i] - 1) && row >= lower &&
                         row <= upper) {
@@ -3309,7 +3317,7 @@ function jumpToFocus(path, nav) {
     childHash = new Map();
     console.log("nextPath:"+path);
     let path_str = "";
-    levelList = []
+    levelList = [];
     for (let i = 0; i < path.length; i++) {
         if (path.length != 0) {
             levelList[i] = parseInt(path[i]);
@@ -3321,6 +3329,7 @@ function jumpToFocus(path, nav) {
     }
     selectedChild = [];
     selectedBars = [];
+    sortChild_ls = [];
 
     let queryData = {};
 
