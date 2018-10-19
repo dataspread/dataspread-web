@@ -290,7 +290,7 @@ function createSortString() {
             sortOptionString +=
                 "<option value='" + (i + 1) + "'>" + options[i] + "</option>";
         }
-        sortOptionString += "</select>";
+        sortOptionString += "</select><br>";
         tempString += sortOptionString;
     } else {
         tempString += sortOptionString;
@@ -2135,8 +2135,13 @@ $("#sort-form").submit(function (e) {
         path = child
     }
 
+    let order = 0;
+    if (document.getElementById('r2').checked) {
+        order = 1;
+    }
+
     $.get(baseUrl + 'sortBlock/' + bId + '/' + sName + '/ ' + path + '/' +
-        sortAttrIndices + '/' + 0,
+        sortAttrIndices + '/' + order,
         function (data) {
             updateData(cumulativeData[currLevel][child].rowRange[0], 0,
                 cumulativeData[currLevel][child].rowRange[1] + 10, 15,
