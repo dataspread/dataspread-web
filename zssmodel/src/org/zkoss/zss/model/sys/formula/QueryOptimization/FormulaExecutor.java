@@ -18,9 +18,9 @@ public class FormulaExecutor {
         return uniqueExecutor;
     }
     public void execute(QueryPlanGraph graph, FormulaAsyncScheduler scheduler) throws OptimizationError {
+        this.scheduler = scheduler;
         for (LogicalOperator op:graph.dataNodes)
             recursiveEvaluate(op);
-        this.scheduler = scheduler;
     }
 
     public void update(SSheet sheet, AbstractCellAdv sCell){
