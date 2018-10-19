@@ -788,15 +788,16 @@ $("#bucket-form").submit(function (e) {
             hot.updateSettings({width: wrapperWidth * 0.79});
             if (currLevel > 0) {
                 let targetChild = levelList[levelList.length - 1];
-                zoomOutHist(nav);
-                zoomIn(targetChild, nav);
+                //zoomOutHist(nav);
+                //zoomIn(targetChild, nav);
+                jumpToHistorialView(childlist);
             } else {
                 Explore(exploreAttr);
             }
 
         }
 
-    })
+    });
 
 });
 
