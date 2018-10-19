@@ -2,6 +2,8 @@ package org.zkoss.zss.model.sys.formula.Primitives;
 
 import org.zkoss.poi.ss.formula.functions.MathX;
 
+import java.util.List;
+
 public abstract class BinaryFunction {
     final static public BinaryFunction PLUS = new BinaryFunction(){
 
@@ -16,15 +18,20 @@ public abstract class BinaryFunction {
         }
 
         @Override
-        Double groupEvaluate(Double[] values) {
+        Double groupEvaluate(List<Double> values) {
             double sum = 0;
-            for (int i=0, iSize=values.length; i<iSize; i++) {
-                sum += values[i];
+            for (int i=0, iSize=values.size(); i<iSize; i++) {
+                sum += values.get(i);
             }
             return sum;
         }
     };
     abstract Double evluate(Double a, Double b);
     abstract Double Invertedevluate(Double a, Double b);
-    abstract Double groupEvaluate(Double[] values);
+    Double groupEvaluate(List<Double> values){
+        Double sum = values.get(0);
+        for (int i=1, iSize=values.size(); i<iSize; i++)
+            sum = evluate(sum, values.get(i));
+        return sum;
+    }
 }

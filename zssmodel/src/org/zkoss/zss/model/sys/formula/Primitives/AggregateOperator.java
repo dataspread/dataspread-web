@@ -1,5 +1,7 @@
 package org.zkoss.zss.model.sys.formula.Primitives;
 
+import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
+
 import java.util.List;
 
 public class AggregateOperator extends PhysicalOperator {
@@ -11,9 +13,9 @@ public class AggregateOperator extends PhysicalOperator {
     }
 
     @Override
-    public void evaluate() {
+    public void evaluate(FormulaExecutor context) {
         List data = (List)((PhysicalOperator)inOp.get(0)).getOutput(this);
-        result = binaryFunction.groupEvaluate((Double[])data.toArray());
+        result = binaryFunction.groupEvaluate(data);
         _evaluated = true;
     }
 

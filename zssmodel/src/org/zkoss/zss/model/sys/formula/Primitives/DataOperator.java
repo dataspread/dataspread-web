@@ -7,6 +7,7 @@ import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
 import org.zkoss.zss.model.impl.CellImpl;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
+import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
 import org.zkoss.zss.range.SRange;
 
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ public class DataOperator extends PhysicalOperator{
 
 
     @Override
-    public void evaluate() throws OptimizationError {
+    public void evaluate(FormulaExecutor context) throws OptimizationError {
         SSheet sheet = _range.getSheet();
         if (inOp.size() == 0){
             data = new ArrayList<>();
@@ -48,7 +49,7 @@ public class DataOperator extends PhysicalOperator{
                 Object result = ((PhysicalOperator)inOp.get(0)).getOutput(this);
                 data = new ArrayList<>();
                 data.add(result);
-                setFormulaValue(_range.getRow(),_range.getColumn(),result,sheet);
+                setFormulaValue(_range.getRow(),_range.getColumn(),result,sheet,context);
             }else {
                 List results = (List) ((PhysicalOperator)inOp.get(0)).getOutput(this);
                 data = results;
@@ -56,14 +57,14 @@ public class DataOperator extends PhysicalOperator{
                 for (int i = _range.getRow(); i <= _range.getLastRow(); i++)
                     for (int j = _range.getColumn(); j <= _range.getLastColumn(); j++) {
                         Object result = it.next();
-                        setFormulaValue(i,j,result,sheet);
+                        setFormulaValue(i,j,result,sheet,context);
                     }
             }
             _evaluated = true;
         }
     }
 
-    private void setFormulaValue(int row, int column, Object result, SSheet sheet) throws OptimizationError {
+    private void setFormulaValue(int row, int column, Object result, SSheet sheet,FormulaExecutor context) throws OptimizationError {
         ValueEval resultValue;
         if (result instanceof Double){
             resultValue = new NumberEval((Double)result);
@@ -72,9 +73,7 @@ public class DataOperator extends PhysicalOperator{
             throw new OptimizationError("Unsupported result type");
         AbstractCellAdv sCell = ((AbstractCellAdv)sheet.getCell(row,column));
         sCell.setFormulaResultValue(resultValue);
-        getScheduler().update(sheet.getBook(), sheet, sCell.getCellRegion(),
-                sCell.getValue(true, true).toString(),
-                sCell.getFormulaValue());
+        context.update(sheet,sCell);
     }
 
 

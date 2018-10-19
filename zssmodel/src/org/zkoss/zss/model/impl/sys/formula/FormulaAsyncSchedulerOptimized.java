@@ -1,6 +1,5 @@
 package org.zkoss.zss.model.impl.sys.formula;
 
-import org.zkoss.poi.ss.formula.FormulaComputationStatusManager;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
@@ -11,7 +10,7 @@ import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 import org.zkoss.zss.model.sys.formula.FormulaExpression;
-import org.zkoss.zss.model.sys.formula.QueryOptimization.MultiFormulaExecutor;
+import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.QueryOptimizer;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.QueryPlanGraph;
 
@@ -36,39 +35,6 @@ public class FormulaAsyncSchedulerOptimized extends FormulaAsyncScheduler {
 
             List<SCell> computedCells = new ArrayList<>();
 
-//            // Compute visible range first
-//            for (DirtyManager.DirtyRecord dirtyRecord : dirtyRecordSet) {
-//                SSheet sheet = BookBindings.getSheetByRef(dirtyRecord.region);
-//                Map<String, int[]> visibleRange = uiVisibleMap.get(sheet);
-//                if (visibleRange != null && !visibleRange.isEmpty()) {
-//                    for (int[] rows : visibleRange.values()) {
-//                        Ref overlap = dirtyRecord.region
-//                                .getOverlap(new RefImpl(null, null,
-//                                        rows[0], 0, rows[1], Integer.MAX_VALUE));
-//                        if (overlap != null) {
-//                            Collection<SCell> cells = sheet.getCells(new CellRegion(overlap));
-//                            for (SCell sCell : cells) {
-//                                if (sCell.getType() == SCell.CellType.FORMULA) {
-//                                    FormulaComputationStatusManager.getInstance().updateFormulaCell(
-//                                            sCell.getRowIndex(),
-//                                            sCell.getColumnIndex(),
-//                                            sCell, sheet, 10);
-//
-//                                    // A sync call should synchronously compute the cells value.
-//                                    // Push individual cells to the UI
-//                                    DirtyManagerLog.instance.markClean(sCell.getCellRegion());
-//                                    update(sheet.getBook(), sheet, sCell.getCellRegion(),
-//                                            ((CellImpl) sCell).getValue(true, true).toString(),
-//                                            sCell.getFormulaValue());
-//                                    computedCells.add(sCell);
-//                                }
-//                                FormulaComputationStatusManager.getInstance().doneComputation();
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-
             // Compute the remaining
             ArrayList<QueryPlanGraph> graphs = new ArrayList<>();
             for (DirtyManager.DirtyRecord dirtyRecord : dirtyRecordSet) {
@@ -79,10 +45,10 @@ public class FormulaAsyncSchedulerOptimized extends FormulaAsyncScheduler {
                     if (computedCells.contains(sCell))
                         continue;
                     if (sCell.getType() == SCell.CellType.FORMULA) {
-                        FormulaComputationStatusManager.getInstance().updateFormulaCell(
-                                sCell.getRowIndex(),
-                                sCell.getColumnIndex(),
-                                sCell, sheet, 10);
+//                        FormulaComputationStatusManager.getInstance().updateFormulaCell(
+//                                sCell.getRowIndex(),
+//                                sCell.getColumnIndex(),
+//                                sCell, sheet, 10);
                         DirtyManagerLog.instance.markClean(sCell.getCellRegion());
                         try {
                             graphs.add(decomposeFormula(((FormulaExpression) ((AbstractCellAdv) sCell)
@@ -92,18 +58,22 @@ public class FormulaAsyncSchedulerOptimized extends FormulaAsyncScheduler {
                         }
 
                     }
-                    FormulaComputationStatusManager.getInstance().doneComputation();
+//                    FormulaComputationStatusManager.getInstance().doneComputation();
                 }
 
                 DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,
                         dirtyRecord.trxId);
             }
+            if (graphs.size() == 0)
+                continue;
             QueryPlanGraph optimizedGraph = QueryOptimizer.getOptimizer().optimize(graphs);
             try {
-                MultiFormulaExecutor.getExecutor().execute(optimizedGraph);
+                FormulaExecutor.getExecutor().execute(optimizedGraph,this);
+                optimizedGraph.clean();
             } catch (OptimizationError optimizationError) {
                 optimizationError.printStackTrace();
             }
+
             //logger.info("Done computing " + dirtyRecord.region );
         }
     }
