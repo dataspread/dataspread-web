@@ -200,7 +200,7 @@ public class NavigationStructure {
         if (typeCheckedColumns.contains(col))
             return false;
         typeCheckedColumns.add(col);
-        System.out.println("Type converting column " + col);*/
+        System.out.println("Type converting column " + col);
 
 //        StringBuffer select = null;
 //        select = new StringBuffer("SELECT *");
