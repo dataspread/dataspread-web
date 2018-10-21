@@ -374,6 +374,8 @@ $("#Bucket").click(function () {
             isBucketNumeric = e.data.isNumeric;
             if (isBucketNumeric) {
                 $("#textBucket").css("display", "none");
+                $("#multibuck-text").css("display", "none");
+                $("#multibuck-numeric").css("display", "block");
                 dataBucket = [];
                 for (let i = 0; i < e.data.bucketArray.length; i++) {
                     let temp = [];
@@ -401,6 +403,9 @@ $("#Bucket").click(function () {
                 // fot text based data
                 //$("#bucketAll").prop("checked", false);
                 $("#textBucket").css("display", "block");
+                $("#multibuck-text").css("display", "block");
+                $("#multibuck-numeric").css("display", "none");
+
                 dataBucket = [];
                 dataBucket = e.data.bucketArray;
                 var $buckets = $("#bucketOpt");
