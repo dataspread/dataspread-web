@@ -127,7 +127,7 @@ public class SheetImpl extends AbstractSheetAdv {
 		this._book = book;
 		this._id = id;
 		sheetDataCache = CacheBuilder.newBuilder()
-				.maximumSize(CACHE_SIZE)
+                // TODO Revert this .maximumSize(CACHE_SIZE)
 				.build();
     }
 	
@@ -486,7 +486,8 @@ public class SheetImpl extends AbstractSheetAdv {
 		if (getBook().hasSchema()) {
 			AbstractCellAdv cell = null;
 			try {
-				cell = sheetDataCache.get(cellRegion, () -> preFetchCells(cellRegion));
+
+                cell = sheetDataCache.get(cellRegion, () -> preFetchCells(cellRegion));
 			} catch (ExecutionException e) {
 				e.printStackTrace();
 			}

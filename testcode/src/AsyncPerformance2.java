@@ -31,8 +31,8 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
     long initTime;
     boolean testStarted = false;
     final boolean sync=false;
-    final boolean graphCompression = false;
-    static int  graphCompressionSize = 20;
+    final boolean graphCompression = true;
+    static int graphCompressionSize = 1;
     final CellRegion window = null;
     //final CellRegion window = new CellRegion(0, 0, 50, 10);
     private long controlReturnedTime;
@@ -280,19 +280,11 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         if (window!=null)
             uiVisibleMap.put(sheet, ImmutableMap.of("Session1", new int[]{window.getRow(), window.getLastRow()}));
 
-
-        for (int i = 1; i<=cellCount; i++)
-            sheet.getCell(i,2).setValue(System.currentTimeMillis());
-
-        sheet.getCell(0,0).setValue(10);
-        for (int i = 1; i<=cellCount; i++)
-            sheet.getCell(i,0).setFormulaValue("A1" + "+" + (System.currentTimeMillis()%5000) + "+" + i);
-        //sheet.clearCache();
-
-        for (int i=1;i<=cellCount;i+=10)
-            for (int j=0;j<5;j++)
-            sheet.getCell(i+j,0).setFormulaValue("SUM(B1:B50)");
-
+        System.out.println("Starting data creation");
+        sheet.setSyncComputation(true);
+        Test4_CreateSheet(sheet);
+        sheet.setSyncComputation(sync);
+        System.out.println("Data Creation done");
 
 
 
@@ -322,14 +314,6 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         cellsToUpdate= dependencies1.stream().mapToInt(Ref::getCellCount).sum();
         System.out.println("After Compression Dependencies " + cellsToUpdate);
 
-
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        sheet.setSyncComputation(sync);
 
         DirtyManagerLog.instance.init();
         CellImpl.disableDBUpdates = true;
@@ -393,10 +377,58 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
 
     }
 
+    private void Test1_CreateSheet(SSheet sheet) {
+        for (int i = 1; i <= cellCount; i++)
+            sheet.getCell(i, 2).setValue(System.currentTimeMillis());
+
+        sheet.getCell(0, 0).setValue(10);
+        for (int i = 1; i <= cellCount; i++)
+            sheet.getCell(i, 0).setFormulaValue("A1" + "+" + (System.currentTimeMillis() % 5000) + "+" + i);
+    }
+
+    private void Test2_CreateSheet(SSheet sheet) {
+        for (int i = 1; i <= cellCount; i++)
+            sheet.getCell(i, 2).setValue(System.currentTimeMillis());
+
+        sheet.getCell(0, 0).setValue(10);
+        for (int i = 1; i <= cellCount; i++)
+            sheet.getCell(i, 0).setFormulaValue("A1" + "+" + (System.currentTimeMillis() % 5000) + "+" + i);
+
+        for (int i = 1; i <= cellCount; i += 10)
+            for (int j = 0; j < 5; j++)
+                sheet.getCell(i + j, 0).setFormulaValue("SUM(B1:B50)");
+    }
+
+
+    private void Test3_CreateSheet(SSheet sheet) {
+        Random random = new Random(7);
+
+        for (int i = 1; i <= cellCount * 4; i++)
+            sheet.getCell(i, 2).setValue(System.currentTimeMillis());
+
+        for (int i = 1; i <= 2000; i++)
+            sheet.getCell(i, 0).setFormulaValue("A1 + SUM(B1:B" + random.nextInt(cellCount * 4) + ")");
+    }
+
+    // Vlookup test
+    private void Test4_CreateSheet(SSheet sheet) {
+        Random random = new Random(7);
+
+        int tableRows = 10000;
+        for (int i = 0; i < tableRows; i++) {
+            sheet.getCell(i, 0).setValue(i);
+            sheet.getCell(i, 1).setValue(System.currentTimeMillis());
+        }
+
+        for (int i = 1; i <= tableRows; i++)
+            sheet.getCell(i, 3).setFormulaValue("VLOOKUP(" + random.nextInt(tableRows) + ",A1:B"
+                    + tableRows + ",2,FALSE)");
+    }
+
     @Override
     public void update(SBook book, SSheet sheet, CellRegion cellRegion, String value, String formula) {
-        //System.out.println("Computed " + cellRegion + " " + formula);
         if (testStarted) {
+            //System.out.println("Computed " + cellRegion + " " + formula);
             updatedCells++;
             if (updatedCells == cellsToUpdate)
                 synchronized (this) {

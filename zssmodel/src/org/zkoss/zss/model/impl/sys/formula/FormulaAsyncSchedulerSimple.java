@@ -12,10 +12,7 @@ import org.zkoss.zss.model.sys.formula.DirtyManager;
 import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -70,7 +67,13 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
                 //logger.info("Processing " + dirtyRecord.region);
                 SSheet sheet = BookBindings.getSheetByRef(dirtyRecord.region);
                 Collection<SCell> cells = sheet.getCells(new CellRegion(dirtyRecord.region));
-                for (SCell sCell : cells) {
+                // Order of computation
+                List<SCell> cellsList = new ArrayList<>(cells);
+                cellsList.sort(Comparator.comparingInt(SCell::getComputeCost));
+
+
+                /// Order of computation
+                for (SCell sCell : cellsList) {
                     if (computedCells.contains(sCell))
                         continue;
                     if (sCell.getType() == SCell.CellType.FORMULA) {
