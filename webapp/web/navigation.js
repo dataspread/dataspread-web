@@ -1355,6 +1355,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
             return;
         } else {
             let targetCell = cumulativeData[currLevel][row];
+
             if (targetCell.clickable) {
                 tempString += " (Rows: " + targetCell.value+")";
                 tempString += "<i class=\"fa fa-angle-right fa-2x zoomInPlus\" style=\"color: #51cf66;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
@@ -1410,8 +1411,16 @@ function removeHierarchiCol(colIdx) {
     if(hierarchicalColAttr.length==1)
         hierarchicalColAttr = [];
     else{
-        let index = hierarchicalColAttr.indexOf(colIdx);
-        if (index !== -1) hierarchicalColAttr.splice(index, 1);
+       // let index = hierarchicalColAttr.indexOf(colIdx);
+       // console.log(index);
+       // console.log(hierarchicalColAttr);
+       // if (index !== -1) {
+        //    console.log("entered");
+        if(currLevel == 0){
+            hierarchicalColAttr.splice(colIdx - 1, 1);
+        }else{
+            hierarchicalColAttr.splice(colIdx - 2, 1);
+        }
     }
     // nav.alter('remove_col', colIdx);
     colHeader.splice(
@@ -1444,8 +1453,9 @@ function removeHierarchiCol(colIdx) {
         nav.updateSettings({width: wrapperWidth * 0.19,});
     } else {
         nav.alter('remove_col', colIdx);
+        nav.updateSettings({width: wrapperWidth*(0.15 + aggregateData.formula_ls.length * 0.15),});
     }
-
+    hot.updateSettings({width: wrapperWidth - $("#navChart").width()});
     updataHighlight();
 }
 
@@ -1548,8 +1558,8 @@ $("#hierarchi-form").submit(function (e) {
                 };
         }
     }
-    //console.log("hierarchicalColAttr");
-    //console.log(hierarchicalColAttr);
+    // console.log("hierarchicalColAttr");
+    // console.log(hierarchicalColAttr);
     getAggregateValue();
 });
 
@@ -1637,12 +1647,13 @@ function addHierarchiCol(aggregateValue) {
             ,
         ];
     }
+
     for (let j = 0; j < aggregateValue.length; j++) {
-        columWidth.push(wrapperWidth * 0.14);
+        columWidth.push(wrapperWidth * 0.15);
     }
 
     let numChild = cumulativeData[currLevel].length;
-    let newWidth = wrapperWidth*(0.15 + aggregateValue.length * 0.13);
+    let newWidth = wrapperWidth*(0.18 + aggregateValue.length * 0.15);
     nav.updateSettings({
         width: newWidth,
         manualColumnResize: columWidth,
@@ -1653,6 +1664,8 @@ function addHierarchiCol(aggregateValue) {
             : 90,
         mergeCells: mergeCellInfo,
     });
+    wrapperWidth = $(".wrapper").width();
+    console.log(wrapperWidth)
     hot.updateSettings({width: wrapperWidth - $("#navChart").width()});
     if (zoomming) {
         zoomming = false;
@@ -2163,6 +2176,9 @@ $("#sort-form").submit(function (e) {
 
 function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
     let colOffset = (currLevel == 0) ? 1 : 2;
+    console.log(row);
+    console.log(navAggRawData)
+    console.log(navAggRawData[col - colOffset][row]);
     if (navAggRawData[col - colOffset][row].chartType == 0) {
         let tempString = "chartdiv" + row + col;
         td.innerHTML = "<div id=" + tempString + " ></div>";
