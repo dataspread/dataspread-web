@@ -71,6 +71,7 @@ public class DBHandler {
             createTableOrders(dbContext);
             createDependencyTable(dbContext);
             createFullDependencyTable(dbContext);
+            createTypeConversionTable(dbContext);
             connection.commit();
             //dbListener = new DBListener();
             //dbListener.start();
@@ -141,10 +142,26 @@ public class DBHandler {
     }
 
 
-    private void createUserBooksTable(DBContext dbContext) {
+    private void createTypeConversionTable(DBContext dbContext) {
         AutoRollbackConnection connection = dbContext.getConnection();
         try (Statement stmt = connection.createStatement()) {
             String createTable = "CREATE TABLE IF NOT EXISTS user_books (" +
+                    "bookid  TEXT NOT NULL," +
+                    "sheetname  TEXT NOT NULL," +
+                    "columns   TEXT NOT NULL" +
+                    ");";
+            stmt.execute(createTable);
+        }
+        catch (SQLException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    private void createUserBooksTable(DBContext dbContext) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement()) {
+            String createTable = "CREATE TABLE IF NOT EXISTS type_converted_books (" +
                     "authtoken  TEXT NOT NULL," +
                     "booktable  TEXT NOT NULL," +
                     "role   TEXT NOT NULL" +
