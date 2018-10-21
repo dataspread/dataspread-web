@@ -355,18 +355,45 @@
                     <form id="bucket-form">
                         <span class="formClose">x</span>
                         <legend class="form-label m-1" style="font-size:1rem">Redefine Bucket Boundaries</legend>
-                        <fieldset class="form-group m-3" >
-                            <input class="form-check-input ml-2" type="checkbox" value="" id="bucketAll">
-                            <label class="form-check-label ml-5" for="bucketAll">
-                                Merge All Buckets
-                            </label>
-                        </fieldset>
-                        <fieldset class="form-group m-3" style="display: none" id="textBucket" >
-                            <input class="form-check-input ml-2" type="checkbox" value="" id="displayAll">
-                            <label class="form-check-label ml-5" for="displayAll">
-                                Collapse All Buckets
-                            </label>
-                        </fieldset>
+                        <div class="row" >
+                            <div class="btn-group col-3">
+                                <button type="button" class="btn btn-merge" id="bucket-merge"><img src="merge.jpg" alt="merge" width="22" height="22"></button>
+                                <button type="button" class="btn btn-merge dropdown-toggle dropdown-toggle-split" data-reference="parent" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <span class="sr-only">Toggle Dropdown</span>
+                                </button>
+                                <div class="dropdown-menu ">
+                                    <a  class="dropdown-item" href="#" id="bucketAll">Merge All Buckets</a>
+                                </div>
+                            </div>
+                        <div class="input-group col-9">
+                            <select class="custom-select" id="inputGroupSelect04">
+                                <option selected># of Buckets</option>
+
+                            </select>
+                            <div class="input-group-append">
+                                <button class="btn btn-split" type="button" id="bucket-split"><img src="split.jpg" alt="split" width="22" height="22"></button>
+                                <button type="button" class="btn btn-split dropdown-toggle dropdown-toggle-split" id="textBucket" style="display: none" data-reference="parent" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <span class="sr-only">Toggle Dropdown</span>
+                                </button>
+                                <div class="dropdown-menu ">
+                                    <a  class="dropdown-item" href="#" id="displayAll">Split All Buckets</a>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+
+                        <!--<fieldset class="form-group m-3" >-->
+                            <!--<input class="form-check-input ml-2" type="checkbox" value="" id="bucketAll">-->
+                            <!--<label class="form-check-label ml-5" for="bucketAll">-->
+                                <!--Merge All Buckets-->
+                            <!--</label>-->
+                        <!--</fieldset>-->
+                        <!--<fieldset class="form-group m-3" style="display: none" id="textBucket" >-->
+                            <!--<input class="form-check-input ml-2" type="checkbox" value="" id="displayAll">-->
+                            <!--<label class="form-check-label ml-5" for="displayAll">-->
+                                <!--Collapse All Buckets-->
+                            <!--</label>-->
+                        <!--</fieldset>-->
                         <fieldset class="form-group m-3" id="bucketOpt">
                         </fieldset>
                         <div class="form-group m-3">

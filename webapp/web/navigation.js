@@ -399,7 +399,7 @@ $("#Bucket").click(function () {
                 $buckets.append(tempString);
             } else {
                 // fot text based data
-                $("#bucketAll").prop("checked", false);
+                //$("#bucketAll").prop("checked", false);
                 $("#textBucket").css("display", "block");
                 dataBucket = [];
                 dataBucket = e.data.bucketArray;
@@ -686,7 +686,8 @@ $(document).on("input", ".custom-bucket", function (e) {
 });
 
 $("#bucketAll").click(function (e) {
-    if ($(this).prop("checked")) {
+    console.log(e)
+   // if ($(this).prop("checked")) {
         if (isBucketNumeric) {
             var $buckets = $("#bucketOpt");
             $buckets.empty();
@@ -701,7 +702,7 @@ $("#bucketAll").click(function (e) {
                 + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
             $buckets.append(tempString);
         } else {
-            $("#displayAll").prop("checked", false);
+          //  $("#displayAll").prop("checked", false);
             var $buckets = $("#bucketOpt");
             $buckets.empty();
             let temp = [];
@@ -720,11 +721,11 @@ $("#bucketAll").click(function (e) {
             $buckets.append(tempString);
         }
 
-    }
+   // }
 });
 
 $("#displayAll").click(function (e) {
-    if ($(this).prop("checked")) {
+    //if ($(this).prop("checked")) {
         $("#bucketAll").prop("checked", false);
         let temp = [];
         for (let i = 0; i < dataBucket.length; i++) {
@@ -749,7 +750,7 @@ $("#displayAll").click(function (e) {
                 + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
         }
         $buckets.append(tempString);
-    }
+   // }
 });
 
 // $('#bucket-form').on('keyup keypress', function(e) {
