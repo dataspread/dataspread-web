@@ -37,6 +37,7 @@ var pointFunc =
         "MIN", "MAX", "MEDIAN", "MODE", "RANK", "SMALL", "LARGE", "COUNTIF", "SUMIF"
     ];
 var currData;
+var alltext;
 var zoomming = false;
 var zoomouting = false;
 var targetChild;
@@ -845,7 +846,6 @@ function Explore(e) {
     $("#history-option").empty();
 
     sortChild_ls = [];
-
     $.get(baseUrl + 'startNav/' + bId + '/' + sName + '/' + e, function (data) {
 
         selectedChild = [];
@@ -863,6 +863,7 @@ function Explore(e) {
         levelList = [];
         spanList = [];
         cumulativeData = [];
+        alltext = false;
 
         mergeCellInfo = [];
         colHeader = [options[e - 1]];
@@ -927,7 +928,9 @@ function Explore(e) {
                 } else {
                     if (col == 0) {
                         return wrapperWidth * 0.04;
-                    } else {
+                    } else if(col == 1 && alltext){
+                        return wrapperWidth * 0.08;
+                    }else{
                         return wrapperWidth * 0.15;
                     }
                 }
@@ -1653,7 +1656,8 @@ function addHierarchiCol(aggregateValue) {
     }
 
     let numChild = cumulativeData[currLevel].length;
-    let newWidth = wrapperWidth*(0.18 + aggregateValue.length * 0.15);
+    let percentage = alltext? 0.12:0.18;
+    let newWidth = wrapperWidth*(percentage + aggregateValue.length * 0.15);
     nav.updateSettings({
         width: newWidth,
         manualColumnResize: columWidth,
@@ -1728,8 +1732,10 @@ function zoomIn(child, nav) {
             //console.log(result);
             currLevel += 1;
             currData = result.buckets;
+            alltext = true;
             for(let i=0;i<currData.length;i++)
             {
+                if(currData[i].clickable) alltext = false;
                 childHash.set(i,currData[i].children);
             }
             prevPath = result.prev.path;
@@ -1931,6 +1937,7 @@ function zoomOut(nav) {
 }
 
 function zoomOutHist(nav) {
+    alltext = false;
     console.log("In Zoom Out");
     childHash = new Map();
     clickable = true;
