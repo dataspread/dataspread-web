@@ -201,6 +201,37 @@ public class NavigationStructure {
             return false;
         typeCheckedColumns.add(col);
         System.out.println("Type converting column " + col);
+
+//        StringBuffer select = null;
+//        select = new StringBuffer("SELECT *");
+//        select.append(" FROM ")
+//                .append("type_converted_books")
+//                .append(" WHERE bookid = ? AND sheetname = ?");
+//
+//        String columns = "";
+//        try (
+//
+//            PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+//            DBContext context = new DBContext(connection);
+//            ResultSet rs = stmt.executeQuery();
+//            int i=2;
+//            ResultSetMetaData meta = rs.getMetaData();
+//            int columnCount = meta.getColumnCount();
+//
+//            while (rs.next()) {
+//                columns = new String(rs.getBytes(2),"UTF-8");
+//            }
+//            rs.close();
+//            stmt.close();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//
+//        Set<String> colSet = new HashSet<String>(Arrays.asList(columns.split(",")));
+//
+//        if(colSet.contains(Integer.toString(col)))
+//            return true;
+
         CellRegion tableRegion = new CellRegion(0, col, totalRows - 1, col);
         ArrayList<SCell> result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
         result.forEach(x -> x.updateCellTypeFromString(connection, false));

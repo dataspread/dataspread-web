@@ -1,10 +1,10 @@
 package Navigation;
 
+import com.google.common.cache.CacheBuilder;
 import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import org.zkoss.poi.ss.formula.functions.Na;
+import sun.security.util.Cache;
+
 
 import javax.swing.event.TableModelListener;
 import javax.swing.table.TableModel;
@@ -23,7 +23,7 @@ public class DBTableModel implements TableModel {
     ArrayList<String> columnNames;
     final int cacheSize = 1000; // Keep this small as possible, to allow loading or newer data.
 
-    Cache<Integer, ArrayList<String>> cache;
+    com.google.common.cache.Cache<Object, Object> cache;
 
 
     public DBTableModel(NavIndex navIndex, String tableName)
@@ -125,13 +125,13 @@ public class DBTableModel implements TableModel {
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
         try {
-            ArrayList<String> row = cache.get(rowIndex, () -> getDataFromDB(rowIndex));
-            ArrayList<String> prev_row = cache.getIfPresent(rowIndex-1);
-            if (prev_row==null  || !row.get(0).equals(prev_row.get(0)))
-                return row.get(columnIndex);
-            else
-                return "";
-        } catch (ExecutionException e) {
+//            ArrayList<String> row = cache.get(rowIndex, () -> getDataFromDB(rowIndex));
+//            ArrayList<String> prev_row = cache.getIfPresent(rowIndex-1);
+//            if (prev_row==null  || !row.get(0).equals(prev_row.get(0)))
+//                return row.get(columnIndex);
+//            else
+//                return "";
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return "";
