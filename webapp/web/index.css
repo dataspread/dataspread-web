@@ -99,13 +99,13 @@
 }
 
 .custom-bucket{
-    width: 33%;
+    width: 40%;
     border: 1px solid #9dbbdd;
     margin: 6px;
 }
-#bucketlower0{
-    margin-left: 9%;
-}
+/*#bucketlower0{*/
+    /*margin-left: 9%;*/
+/*}*/
 
 .multibuck{
     width: 20%;
@@ -114,6 +114,12 @@
 
 .wrap {
     word-wrap: normal;
+}
+
+.split-group{
+    border-left: 2px solid black;
+    height:100%;
+    margin-left: 25px;
 }
 
 .btn-merge{

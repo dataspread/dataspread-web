@@ -355,9 +355,12 @@
                     <form id="bucket-form">
                         <span class="formClose">x</span>
                         <legend class="form-label m-1" style="font-size:1rem">Redefine Bucket Boundaries</legend>
-                        <div class="row" >
-                            <div class="btn-group col-3">
-                                <button type="button" class="btn btn-merge" id="bucket-merge"><img src="merge.jpg" alt="merge" width="22" height="22"></button>
+                        <div class="row " >
+                            <div class="btn-group col-lg-3 ">
+                                <button type="button" class="btn btn-merge" id="bucket-merge">
+                                    Merge
+                                    <!--<img src="merge.jpg" alt="merge" width="22" height="22">-->
+                                </button>
                                 <button type="button" class="btn btn-merge dropdown-toggle dropdown-toggle-split" data-reference="parent" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     <span class="sr-only">Toggle Dropdown</span>
                                 </button>
@@ -365,13 +368,12 @@
                                     <a  class="dropdown-item" href="#" id="bucketAll">Merge All Buckets</a>
                                 </div>
                             </div>
-                        <div class="input-group col-9">
-                            <select class="custom-select" id="inputGroupSelect04">
-                                <option selected># of Buckets</option>
-
-                            </select>
-                            <div class="input-group-append">
-                                <button class="btn btn-split" type="button" id="bucket-split"><img src="split.jpg" alt="split" width="22" height="22"></button>
+                        <div class="input-group col-lg-8 split-group">
+                            <div class="input-group-prepend">
+                                <button class="btn btn-split" type="button" id="bucket-split">
+                                    Split
+                                    <!--<img src="split.jpg" alt="split" width="22" height="22">-->
+                                </button>
                                 <button type="button" class="btn btn-split dropdown-toggle dropdown-toggle-split" id="textBucket" style="display: none" data-reference="parent" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     <span class="sr-only">Toggle Dropdown</span>
                                 </button>
@@ -379,6 +381,11 @@
                                     <a  class="dropdown-item" href="#" id="displayAll">Split All Buckets</a>
                                 </div>
                             </div>
+                            <select class="custom-select" id="multibuck-text" style="display: none">
+                                <option selected># of Buckets</option>
+                            </select>
+                            <input type="text" class="form-control" id="multibuck-numeric" style="display: none" placeholder="# of Buckets"/>
+
                         </div>
                         </div>
 

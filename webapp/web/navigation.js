@@ -387,16 +387,19 @@ $("#Bucket").click(function () {
                 $buckets.empty();
                 console.log(dataBucket)
                 let tempString = "<div id='bucket" + 0 + "'>"
+                    + "<input class=\"ml-2\" type=\"checkbox\" value=\"\" id='bucketNum" + 0 + "' >"
                     + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value =" + dataBucket[0][0] + " readonly>"
-                    + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][1] + " >"
-                    + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-                    + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+                    + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][1] + " >";
+                    // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+                    // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
                 for (let i = 1; i < dataBucket.length; i++) {
-                    tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+                    tempString += "<div id='bucket" + i + "'>"
+                        //+ "<i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+                        + "<input class=\"ml-2\" type=\"checkbox\" value=\"\" id='bucketNum" + i + "' >"
                         + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value =" + dataBucket[i][0] + " >"
-                        + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value =" + dataBucket[i][1] + " >"
-                        + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
-                        + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+                        + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value =" + dataBucket[i][1] + " > </div>";
+                        // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
+                        // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
                 }
                 $buckets.append(tempString);
             } else {
@@ -412,16 +415,19 @@ $("#Bucket").click(function () {
                 $buckets.empty();
                 console.log(dataBucket)
                 let tempString = "<div id='bucket" + 0 + "'>"
+                    + "<input class=\"ml-2 text-checkbox\" type=\"checkbox\" value=\"\" id='bucketNum" + 0 + "' >"
                     + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
-                    + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][dataBucket[0].length - 1] + "' readonly>"
-                    + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-                    + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+                    + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][dataBucket[0].length - 1] + "' readonly> </div>";
+                    // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+                    // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
                 for (let i = 1; i < dataBucket.length; i++) {
-                    tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+                    tempString += "<div id='bucket" + i + "'>"
+                        // + "<i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+                        + "<input class=\"ml-2 text-checkbox\" type=\"checkbox\" value=\"\" id='bucketNum" + i + "' >"
                         + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value ='" + dataBucket[i][0] + "' readonly>"
-                        + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value ='" + dataBucket[i][dataBucket[i].length - 1] + "' readonly>"
-                        + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
-                        + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+                        + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value ='" + dataBucket[i][dataBucket[i].length - 1] + "' readonly>";
+                        // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
+                        // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
                 }
                 $buckets.append(tempString);
 
@@ -430,217 +436,307 @@ $("#Bucket").click(function () {
         }
     })
 });
+//
+// $(document).on("click", ".bucket-add", function (e) {
+//     //$("#bucketAll").prop("checked", false);
+//     let line = Number(e.target.id.substring(9));
+//     if (isBucketNumeric) {
+//         let newupp = dataBucket[line][1];
+//         let oldlower = isNaN(dataBucket[line][0]) ? parseFloat(dataBucket[line][0].slice(0, -1)) : +dataBucket[line][0];
+//         if (newupp - oldlower < 1) {
+//             alert("You cannot split further");
+//             return;
+//         }
+//         dataBucket[line][1] = parseFloat(((newupp - oldlower) / 2 + oldlower).toFixed(2));
+//         let newBucket = [dataBucket[line][1] + "+", newupp];
+//         dataBucket.splice(line + 1, 0, newBucket);
+//
+//         var $buckets = $("#bucketOpt");
+//         $buckets.empty();
+//         console.log(dataBucket)
+//         let tempString = "<div id='bucket" + 0 + "'>"
+//             + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value =" + dataBucket[0][0] + " readonly>"
+//             + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][1] + " >"
+//             + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+//             + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+//         for (let i = 1; i < dataBucket.length; i++) {
+//             tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+//                 + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value =" + dataBucket[i][0] + " >"
+//                 + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value =" + dataBucket[i][1] + " >"
+//                 + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
+//                 + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+//         }
+//         $buckets.append(tempString);
+//     } else {
+//         let len = dataBucket[line].length;
+//         if (len == 1) {
+//             alert("You cannot split further");
+//             return;
+//         }
+//         len = Math.ceil(len / 2);
+//         let newBucket = dataBucket[line].splice(len);
+//         dataBucket.splice(line + 1, 0, newBucket);
+//         var $buckets = $("#bucketOpt");
+//         $buckets.empty();
+//         console.log(dataBucket)
+//         let tempString = "<div id='bucket" + 0 + "'>"
+//             + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
+//             + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][dataBucket[0].length - 1] + "' readonly>"
+//             + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+//             + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+//         for (let i = 1; i < dataBucket.length; i++) {
+//             tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+//                 + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value ='" + dataBucket[i][0] + "' readonly>"
+//                 + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value ='" + dataBucket[i][dataBucket[i].length - 1] + "' readonly>"
+//                 + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
+//                 + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+//         }
+//         $buckets.append(tempString);
+//
+//     }
+//
+// });
 
-$(document).on("click", ".bucket-add", function (e) {
-    $("#bucketAll").prop("checked", false);
-    let line = Number(e.target.id.substring(9));
-    if (isBucketNumeric) {
-        let newupp = dataBucket[line][1];
-        let oldlower = isNaN(dataBucket[line][0]) ? parseFloat(dataBucket[line][0].slice(0, -1)) : +dataBucket[line][0];
-        if (newupp - oldlower < 1) {
-            alert("You cannot split further");
-            return;
+$(document).on("click", "#bucket-merge", function (e) {
+    let valid = true;
+    let start = null;
+    let end = null;
+    for(let i = 0; i < dataBucket.length; i ++){
+        console.log(start);
+        console.log(end);
+        if($("#bucketNum" + i).prop("checked")){
+            console.log(i);
+            if(start == null){
+                start = i;
+            }else if (end == null && i == start + 1){
+                end = i;
+            }else if(i == end + 1){
+                end = i;
+            }else{
+                valid = false;
+            }
         }
-        dataBucket[line][1] = parseFloat(((newupp - oldlower) / 2 + oldlower).toFixed(2));
-        let newBucket = [dataBucket[line][1] + "+", newupp];
-        dataBucket.splice(line + 1, 0, newBucket);
-
-        var $buckets = $("#bucketOpt");
-        $buckets.empty();
-        console.log(dataBucket)
-        let tempString = "<div id='bucket" + 0 + "'>"
-            + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value =" + dataBucket[0][0] + " readonly>"
-            + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][1] + " >"
-            + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-            + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
-        for (let i = 1; i < dataBucket.length; i++) {
-            tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
-                + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value =" + dataBucket[i][0] + " >"
-                + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value =" + dataBucket[i][1] + " >"
-                + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
-                + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
-        }
-        $buckets.append(tempString);
-    } else {
-        let len = dataBucket[line].length;
-        if (len == 1) {
-            alert("You cannot split further");
-            return;
-        }
-        len = Math.ceil(len / 2);
-        let newBucket = dataBucket[line].splice(len);
-        dataBucket.splice(line + 1, 0, newBucket);
-        var $buckets = $("#bucketOpt");
-        $buckets.empty();
-        console.log(dataBucket)
-        let tempString = "<div id='bucket" + 0 + "'>"
-            + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
-            + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][dataBucket[0].length - 1] + "' readonly>"
-            + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-            + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
-        for (let i = 1; i < dataBucket.length; i++) {
-            tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
-                + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value ='" + dataBucket[i][0] + "' readonly>"
-                + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value ='" + dataBucket[i][dataBucket[i].length - 1] + "' readonly>"
-                + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
-                + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
-        }
-        $buckets.append(tempString);
-
     }
-
-});
-
-$(document).on("click", ".bucket-rm", function (e) {
-    let line = Number(e.target.id.substring(8));
-    if (isBucketNumeric) {
-        let newupp = dataBucket[line][1];
-        dataBucket[line - 1][1] = newupp;
-        dataBucket.splice(line, 1,);
-
-        var $buckets = $("#bucketOpt");
-        $buckets.empty();
-        console.log(dataBucket)
-        let tempString = "<div id='bucket" + 0 + "'>"
-            + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value =" + dataBucket[0][0] + " readonly>"
-            + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][1] + " >"
-            + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-            + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
-        for (let i = 1; i < dataBucket.length; i++) {
-            tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
-                + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value =" + dataBucket[i][0] + " >"
-                + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value =" + dataBucket[i][1] + " >"
-                + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
-                + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
-        }
-        $buckets.append(tempString);
-    } else {
-        let temp = dataBucket[line];
-        for (let i = 0; i < temp.length; i++) {
-            dataBucket[line - 1].push(temp[i]);
-        }
-        dataBucket.splice(line, 1,);
-        var $buckets = $("#bucketOpt");
-        $buckets.empty();
-        console.log(dataBucket)
-        let tempString = "<div id='bucket" + 0 + "'>"
-            + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
-            + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][dataBucket[0].length - 1] + "' readonly>"
-            + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-            + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
-        for (let i = 1; i < dataBucket.length; i++) {
-            tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
-                + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value ='" + dataBucket[i][0] + "' readonly>"
-                + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value ='" + dataBucket[i][dataBucket[i].length - 1] + "' readonly>"
-                + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
-                + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
-        }
-        $buckets.append(tempString);
-    }
-
-
-});
-
-$(document).on("click", ".bucket-multiAdd", function (e) {
-    let line = Number(e.target.id.substring(12));
-    let len = dataBucket[line].length;
-    if (len == 1) {
-        alert("You cannot split further!");
+    if(start == null || end == null || valid == false){
+        alert("Invalid merge, you may choose non-continuous bucket or only one bucket");
         return;
     }
-    $(this).nextAll().remove();
-    let tempString = "";
+
+
     if (isBucketNumeric) {
-        tempString += "<br><span style=\"margin-left:2em;\">No. of Buckets&nbsp</span><input class='multibuck' type='text' name='' id='multibuck" + line + "' >";
+        let newupp = dataBucket[end][1];
+        dataBucket[start][1] = newupp;
+        dataBucket.splice(start + 1, end - start,);
+
+        var $buckets = $("#bucketOpt");
+        $buckets.empty();
+        console.log(dataBucket)
+        let tempString = "<div id='bucket" + 0 + "'>"
+            + "<input class=\"ml-2\" type=\"checkbox\" value=\"\" id='bucketNum" + 0 + "' >"
+            + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value =" + dataBucket[0][0] + " readonly>"
+            + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][1] + " ></div>";
+        // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+        // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+        for (let i = 1; i < dataBucket.length; i++) {
+            tempString += "<div id='bucket" + i + "'>"
+                //+ "<i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+                + "<input class=\"ml-2\" type=\"checkbox\" value=\"\" id='bucketNum" + i + "' >"
+                + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value =" + dataBucket[i][0] + " >"
+                + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value =" + dataBucket[i][1] + " > </div>";
+            // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
+            // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+        }
+        $buckets.append(tempString);
     } else {
-        tempString += "<br><span style=\"margin-left:2em;\">No. of Buckets&nbsp</span><input class='multibuck' placeholder='Max"
-            + len + "' type='text' name='' id='multibuck" + line + "' >";
+
+        for (let i = start + 1; i < end + 1; i++) {
+            let temp = dataBucket[i];
+            for(let j = 0; j < temp.length; j++){
+                dataBucket[start].push(temp[j]);
+            }
+        }
+        dataBucket.splice(start + 1, end - start,);
+        var $buckets = $("#bucketOpt");
+        $buckets.empty();
+        console.log(dataBucket)
+        let tempString = "<div id='bucket" + 0 + "'>"
+            + "<input class=\"ml-2 text-checkbox\" type=\"checkbox\" value=\"\" id='bucketNum" + 0 + "' >"
+            + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
+            + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][dataBucket[0].length - 1] + "' readonly> </div>";
+        // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+        // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+        for (let i = 1; i < dataBucket.length; i++) {
+            tempString += "<div id='bucket" + i + "'>"
+                // + "<i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+                + "<input class=\"ml-2 text-checkbox\" type=\"checkbox\" value=\"\" id='bucketNum" + i + "' >"
+                + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value ='" + dataBucket[i][0] + "' readonly>"
+                + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value ='" + dataBucket[i][dataBucket[i].length - 1] + "' readonly>";
+            // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
+            // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+        }
+        $buckets.append(tempString);
     }
-    tempString += "<i class=\"fa fa-check fa-1x bucket-multiAddSub\" style=\"color: #33fa24;\" id='multibuckSub" + line + "' aria-hidden=\"true\"></i></div>"
-        + "<i class=\"fa fa-times fa-1x bucket-multiAddCan\" style=\"color: #fa1426;\" id='multibuckCancel" + line + "' aria-hidden=\"true\"></i></div>";
-    $(this).parent().append(tempString);
+
+
 });
 
-$(document).on("click", ".bucket-multiAddSub", function (e) {
-    let line = Number(e.target.id.substring(12));
-    let targetValue = $("#multibuck" + line).val();
-    if (targetValue == '') {
-        alert("You have to input the number of buckets");
+// $(document).on("click", ".bucket-multiAdd", function (e) {
+//     let line = Number(e.target.id.substring(12));
+//     let len = dataBucket[line].length;
+//     if (len == 1) {
+//         alert("You cannot split further!");
+//         return;
+//     }
+//     $(this).nextAll().remove();
+//     let tempString = "";
+//     if (isBucketNumeric) {
+//         tempString += "<br><span style=\"margin-left:2em;\">No. of Buckets&nbsp</span><input class='multibuck' type='text' name='' id='multibuck" + line + "' >";
+//     } else {
+//         tempString += "<br><span style=\"margin-left:2em;\">No. of Buckets&nbsp</span><input class='multibuck' placeholder='Max"
+//             + len + "' type='text' name='' id='multibuck" + line + "' >";
+//     }
+//     tempString += "<i class=\"fa fa-check fa-1x bucket-multiAddSub\" style=\"color: #33fa24;\" id='multibuckSub" + line + "' aria-hidden=\"true\"></i></div>"
+//         + "<i class=\"fa fa-times fa-1x bucket-multiAddCan\" style=\"color: #fa1426;\" id='multibuckCancel" + line + "' aria-hidden=\"true\"></i></div>";
+//     $(this).parent().append(tempString);
+// });
+$(document).on("click",".text-checkbox",function(e){
+    console.log(e)
+
+    let valid = false;
+    let curr = -1;
+    for(let i = 0; i < dataBucket.length; i++){
+        if($("#bucketNum" + i).prop("checked")){
+            if(curr == -1){
+                curr = i;
+                valid = true;
+            }else{
+                valid = false;
+            }
+        }
+    }
+    if(valid == false) {
+        $("#multibuck-text").empty();
+        $("#multibuck-text").append("<option selected># of Buckets</option>");
+    }else{
+        $("#multibuck-text").empty();
+       // $("#multibuck-text").append("<option selected># of Buckets</option>");
+        for(let i = 1; i < dataBucket[curr].length + 1; i ++){
+            $("#multibuck-text").append("<option>"+ i +"</option>");
+        }
+    }
+})
+
+
+$(document).on("click", "#bucket-split", function (e) {
+    let valid = false;
+    let curr = -1;
+    for(let i = 0; i < dataBucket.length; i++){
+        if($("#bucketNum" + i).prop("checked")){
+            if(curr == -1){
+                curr = i;
+                valid = true;
+            }else{
+                valid = false;
+            }
+        }
+    }
+    if(valid == false){
+        alert("You must only pick one row at a time!");
         return;
     }
+
     if (isBucketNumeric) {
-        let oldlower = isNaN(dataBucket[line][0]) ? parseFloat(dataBucket[line][0].slice(0, -1)) : +dataBucket[line][0];
-        if (targetValue >= 15 || targetValue >= (dataBucket[line][1] - oldlower)) {
+        let targetValue = $("#multibuck-numeric").val();
+        if (targetValue == '') {
+            alert("You have to input the number of buckets");
+            return;
+        }
+        let oldlower = isNaN(dataBucket[curr][0]) ? parseFloat(dataBucket[curr][0].slice(0, -1)) : +dataBucket[curr][0];
+        if (targetValue >= 15 || targetValue >= (dataBucket[curr][1] - oldlower)) {
             alert("The number of buckets specified is too many");
         } else {
-            $("#bucketAll").prop("checked", false);
-            let indivisualSize = parseFloat(((dataBucket[line][1] - oldlower) / targetValue).toFixed(2));
-            let last = dataBucket[line][1];
-            let front = dataBucket[line][0];
-            dataBucket.splice(line, 1,);
-            dataBucket.splice(line, 0, [front, parseFloat((oldlower + indivisualSize).toFixed(2))]);
+           // $("#bucketAll").prop("checked", false);
+            let indivisualSize = parseFloat(((dataBucket[curr][1] - oldlower) / targetValue).toFixed(2));
+            let last = dataBucket[curr][1];
+            let front = dataBucket[curr][0];
+            dataBucket.splice(curr, 1,);
+            dataBucket.splice(curr, 0, [front, parseFloat((oldlower + indivisualSize).toFixed(2))]);
             front = oldlower + indivisualSize;
             for (let i = 1; i < targetValue - 1; i++) {
-                dataBucket.splice(line + i, 0, [front.toFixed(2) + "+", parseFloat((front + indivisualSize).toFixed(2))]);
+                dataBucket.splice(curr + i, 0, [front.toFixed(2) + "+", parseFloat((front + indivisualSize).toFixed(2))]);
                 front += indivisualSize;
                 console.log(front);
             }
 
-            dataBucket.splice(line + Number(targetValue) - 1, 0, [front.toFixed(2) + "+", last]);
+            dataBucket.splice(curr + Number(targetValue) - 1, 0, [front.toFixed(2) + "+", last]);
             console.log(dataBucket)
             var $buckets = $("#bucketOpt");
             $buckets.empty();
-            console.log(dataBucket)
             let tempString = "<div id='bucket" + 0 + "'>"
+                + "<input class=\"ml-2\" type=\"checkbox\" value=\"\" id='bucketNum" + 0 + "' >"
                 + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value =" + dataBucket[0][0] + " readonly>"
-                + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][1] + " >"
-                + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-                + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+                + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][1] + " ></div>";
+            // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+            // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
             for (let i = 1; i < dataBucket.length; i++) {
-                tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+                tempString += "<div id='bucket" + i + "'>"
+                    //+ "<i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+                    + "<input class=\"ml-2\" type=\"checkbox\" value=\"\" id='bucketNum" + i + "' >"
                     + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value =" + dataBucket[i][0] + " >"
-                    + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value =" + dataBucket[i][1] + " >"
-                    + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
-                    + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+                    + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value =" + dataBucket[i][1] + " > </div>";
+                // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
+                // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
             }
             $buckets.append(tempString);
         }
     } else {
-        if (targetValue > dataBucket[line].length) {
+        let targetValue = $("#multibuck-text")[0].value;
+
+        if(targetValue == "# of Buckets"){
+            alert("You have not choose the number of buckets to split");
+            return;
+        }
+        targetValue = Number(targetValue);
+        if(targetValue > dataBucket[curr].length){
             alert("The number of buckets specified is too many");
-        } else {
-            $("#bucketAll").prop("checked", false);
-            let size = Math.floor(dataBucket[line].length / targetValue);
+        }else {
+            //$("#bucketAll").prop("checked", false);
+            let size = Math.floor(dataBucket[curr].length / targetValue);
             for (let i = 0; i < targetValue - 1; i++) {
-                let temp = dataBucket[line + i].splice(size);
-                dataBucket.splice(line + i + 1, 0, temp);
+                let temp = dataBucket[curr + i].splice(size);
+                console.log(temp)
+                dataBucket.splice(curr + i + 1, 0, temp);
             }
-            console.log(dataBucket);
+
             var $buckets = $("#bucketOpt");
             $buckets.empty();
-            console.log(dataBucket)
             let tempString = "<div id='bucket" + 0 + "'>"
+                + "<input class=\"ml-2 text-checkbox\" type=\"checkbox\" value=\"\" id='bucketNum" + 0 + "' >"
                 + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
-                + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][dataBucket[0].length - 1] + "' readonly>"
-                + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-                + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+                + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][dataBucket[0].length - 1] + "' readonly> </div>";
+            // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+            // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
             for (let i = 1; i < dataBucket.length; i++) {
-                tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+                tempString += "<div id='bucket" + i + "'>"
+                    // + "<i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
+                    + "<input class=\"ml-2 text-checkbox\" type=\"checkbox\" value=\"\" id='bucketNum" + i + "' >"
                     + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value ='" + dataBucket[i][0] + "' readonly>"
-                    + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value ='" + dataBucket[i][dataBucket[i].length - 1] + "' readonly>"
-                    + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
-                    + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+                    + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value ='" + dataBucket[i][dataBucket[i].length - 1] + "' readonly>";
+                // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
+                // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
             }
             $buckets.append(tempString);
+            $("#multibuck-text").empty();
+            $("#multibuck-text").append("<option selected># of Buckets</option>");
         }
     }
 
 });
 
-$(document).on("click", ".bucket-multiAddCan", function (e) {
-    let line = Number(e.target.id.substring(15));
-    $("#bucketMulAdd" + line).nextAll().remove();
-});
+// $(document).on("click", ".bucket-multiAddCan", function (e) {
+//     let line = Number(e.target.id.substring(15));
+//     $("#bucketMulAdd" + line).nextAll().remove();
+// });
 
 $(document).on("change", ".custom-bucket", function (e) {
     if (e.target.id.includes("bucketlower")) {
@@ -701,10 +797,9 @@ $("#bucketAll").click(function (e) {
             dataBucket = [[lower, upper]];
             let tempString = "";
             tempString += "<div id='bucket" + 0 + "'>"
+                + "<input class=\"ml-2\" type=\"checkbox\" value=\"\" id='bucketNum" + 0 + "' >"
                 + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value =" + dataBucket[0][0] + " readonly>"
-                + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][1] + " readonly>"
-                + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-                + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+                + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][1] + " ></div>";
             $buckets.append(tempString);
         } else {
           //  $("#displayAll").prop("checked", false);
@@ -719,10 +814,9 @@ $("#bucketAll").click(function (e) {
             dataBucket = [temp];
             let tempString = "";
             tempString += "<div id='bucket" + 0 + "'>"
-                + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value =" + dataBucket[0][0] + " readonly>"
-                + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][dataBucket[0].length - 1] + " readonly>"
-                + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-                + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+                + "<input class=\"ml-2 text-checkbox\" type=\"checkbox\" value=\"\" id='bucketNum" + 0 + "' >"
+                + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
+                + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][dataBucket[0].length - 1] + "' readonly> </div>";
             $buckets.append(tempString);
         }
 
@@ -743,16 +837,14 @@ $("#displayAll").click(function (e) {
         $buckets.empty();
         console.log(dataBucket)
         let tempString = "<div id='bucket" + 0 + "'>"
-            + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
-            //+ "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
-            + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-            + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+            + "<input class=\"ml-2 text-checkbox\" type=\"checkbox\" value=\"\" id='bucketNum" + 0 + "' >"
+            + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly></div>"
+
         for (let i = 1; i < dataBucket.length; i++) {
-            tempString += "<div id='bucket" + i + "'><i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
-                + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value ='" + dataBucket[i][0] + "' readonly>"
-                //+ "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value ='" + dataBucket[i][0] + "' readonly>"
-                + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
-                + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+            tempString += "<div id='bucket" + i + "'>"
+                + "<input class=\"ml-2 text-checkbox\" type=\"checkbox\" value=\"\" id='bucketNum" + i + "' >"
+                + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value ='" + dataBucket[i][0] + "' readonly></div>"
+
         }
         $buckets.append(tempString);
    // }
