@@ -41,8 +41,8 @@ var alltext;
 var zoomming = false;
 var zoomouting = false;
 var targetChild;
-var currentFirstRow=0;
-var currentLastRow=40;
+var currentFirstRow = 0;
+var currentLastRow = 40;
 
 var sortOptionString = "";
 var sortTotalNum = 0;
@@ -390,16 +390,16 @@ $("#Bucket").click(function () {
                     + "<input class=\"ml-2\" type=\"checkbox\" value=\"\" id='bucketNum" + 0 + "' >"
                     + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value =" + dataBucket[0][0] + " readonly>"
                     + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][1] + " >";
-                    // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-                    // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+                // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+                // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
                 for (let i = 1; i < dataBucket.length; i++) {
                     tempString += "<div id='bucket" + i + "'>"
                         //+ "<i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
                         + "<input class=\"ml-2\" type=\"checkbox\" value=\"\" id='bucketNum" + i + "' >"
                         + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value =" + dataBucket[i][0] + " >"
                         + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value =" + dataBucket[i][1] + " > </div>";
-                        // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
-                        // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+                    // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
+                    // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
                 }
                 $buckets.append(tempString);
             } else {
@@ -418,16 +418,16 @@ $("#Bucket").click(function () {
                     + "<input class=\"ml-2 text-checkbox\" type=\"checkbox\" value=\"\" id='bucketNum" + 0 + "' >"
                     + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
                     + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][dataBucket[0].length - 1] + "' readonly> </div>";
-                    // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-                    // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+                // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
+                // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
                 for (let i = 1; i < dataBucket.length; i++) {
                     tempString += "<div id='bucket" + i + "'>"
                         // + "<i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
                         + "<input class=\"ml-2 text-checkbox\" type=\"checkbox\" value=\"\" id='bucketNum" + i + "' >"
                         + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value ='" + dataBucket[i][0] + "' readonly>"
                         + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value ='" + dataBucket[i][dataBucket[i].length - 1] + "' readonly>";
-                        // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
-                        // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+                    // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
+                    // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
                 }
                 $buckets.append(tempString);
 
@@ -501,23 +501,23 @@ $(document).on("click", "#bucket-merge", function (e) {
     let valid = true;
     let start = null;
     let end = null;
-    for(let i = 0; i < dataBucket.length; i ++){
+    for (let i = 0; i < dataBucket.length; i++) {
         console.log(start);
         console.log(end);
-        if($("#bucketNum" + i).prop("checked")){
+        if ($("#bucketNum" + i).prop("checked")) {
             console.log(i);
-            if(start == null){
+            if (start == null) {
                 start = i;
-            }else if (end == null && i == start + 1){
+            } else if (end == null && i == start + 1) {
                 end = i;
-            }else if(i == end + 1){
+            } else if (i == end + 1) {
                 end = i;
-            }else{
+            } else {
                 valid = false;
             }
         }
     }
-    if(start == null || end == null || valid == false){
+    if (start == null || end == null || valid == false) {
         alert("Invalid merge, you may choose non-continuous bucket or only one bucket");
         return;
     }
@@ -535,23 +535,20 @@ $(document).on("click", "#bucket-merge", function (e) {
             + "<input class=\"ml-2\" type=\"checkbox\" value=\"\" id='bucketNum" + 0 + "' >"
             + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value =" + dataBucket[0][0] + " readonly>"
             + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][1] + " ></div>";
-        // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-        // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+
         for (let i = 1; i < dataBucket.length; i++) {
             tempString += "<div id='bucket" + i + "'>"
-                //+ "<i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
                 + "<input class=\"ml-2\" type=\"checkbox\" value=\"\" id='bucketNum" + i + "' >"
                 + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value =" + dataBucket[i][0] + " >"
                 + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value =" + dataBucket[i][1] + " > </div>";
-            // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
-            // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+
         }
         $buckets.append(tempString);
     } else {
 
         for (let i = start + 1; i < end + 1; i++) {
             let temp = dataBucket[i];
-            for(let j = 0; j < temp.length; j++){
+            for (let j = 0; j < temp.length; j++) {
                 dataBucket[start].push(temp[j]);
             }
         }
@@ -563,16 +560,14 @@ $(document).on("click", "#bucket-merge", function (e) {
             + "<input class=\"ml-2 text-checkbox\" type=\"checkbox\" value=\"\" id='bucketNum" + 0 + "' >"
             + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
             + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][dataBucket[0].length - 1] + "' readonly> </div>";
-        // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-        // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+
         for (let i = 1; i < dataBucket.length; i++) {
             tempString += "<div id='bucket" + i + "'>"
                 // + "<i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
                 + "<input class=\"ml-2 text-checkbox\" type=\"checkbox\" value=\"\" id='bucketNum" + i + "' >"
                 + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value ='" + dataBucket[i][0] + "' readonly>"
                 + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value ='" + dataBucket[i][dataBucket[i].length - 1] + "' readonly>";
-            // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
-            // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+
         }
         $buckets.append(tempString);
     }
@@ -599,29 +594,28 @@ $(document).on("click", "#bucket-merge", function (e) {
 //         + "<i class=\"fa fa-times fa-1x bucket-multiAddCan\" style=\"color: #fa1426;\" id='multibuckCancel" + line + "' aria-hidden=\"true\"></i></div>";
 //     $(this).parent().append(tempString);
 // });
-$(document).on("click",".text-checkbox",function(e){
+$(document).on("click", ".text-checkbox", function (e) {
     console.log(e)
 
     let valid = false;
     let curr = -1;
-    for(let i = 0; i < dataBucket.length; i++){
-        if($("#bucketNum" + i).prop("checked")){
-            if(curr == -1){
+    for (let i = 0; i < dataBucket.length; i++) {
+        if ($("#bucketNum" + i).prop("checked")) {
+            if (curr == -1) {
                 curr = i;
                 valid = true;
-            }else{
+            } else {
                 valid = false;
             }
         }
     }
-    if(valid == false) {
+    if (valid == false) {
         $("#multibuck-text").empty();
         $("#multibuck-text").append("<option selected># of Buckets</option>");
-    }else{
+    } else {
         $("#multibuck-text").empty();
-       // $("#multibuck-text").append("<option selected># of Buckets</option>");
-        for(let i = 1; i < dataBucket[curr].length + 1; i ++){
-            $("#multibuck-text").append("<option>"+ i +"</option>");
+        for (let i = 1; i < dataBucket[curr].length + 1; i++) {
+            $("#multibuck-text").append("<option>" + i + "</option>");
         }
     }
 })
@@ -630,17 +624,17 @@ $(document).on("click",".text-checkbox",function(e){
 $(document).on("click", "#bucket-split", function (e) {
     let valid = false;
     let curr = -1;
-    for(let i = 0; i < dataBucket.length; i++){
-        if($("#bucketNum" + i).prop("checked")){
-            if(curr == -1){
+    for (let i = 0; i < dataBucket.length; i++) {
+        if ($("#bucketNum" + i).prop("checked")) {
+            if (curr == -1) {
                 curr = i;
                 valid = true;
-            }else{
+            } else {
                 valid = false;
             }
         }
     }
-    if(valid == false){
+    if (valid == false) {
         alert("You must only pick one row at a time!");
         return;
     }
@@ -655,7 +649,7 @@ $(document).on("click", "#bucket-split", function (e) {
         if (targetValue >= 15 || targetValue >= (dataBucket[curr][1] - oldlower)) {
             alert("The number of buckets specified is too many");
         } else {
-           // $("#bucketAll").prop("checked", false);
+            // $("#bucketAll").prop("checked", false);
             let indivisualSize = parseFloat(((dataBucket[curr][1] - oldlower) / targetValue).toFixed(2));
             let last = dataBucket[curr][1];
             let front = dataBucket[curr][0];
@@ -676,30 +670,26 @@ $(document).on("click", "#bucket-split", function (e) {
                 + "<input class=\"ml-2\" type=\"checkbox\" value=\"\" id='bucketNum" + 0 + "' >"
                 + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value =" + dataBucket[0][0] + " readonly>"
                 + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][1] + " ></div>";
-            // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-            // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
             for (let i = 1; i < dataBucket.length; i++) {
                 tempString += "<div id='bucket" + i + "'>"
-                    //+ "<i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
                     + "<input class=\"ml-2\" type=\"checkbox\" value=\"\" id='bucketNum" + i + "' >"
                     + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value =" + dataBucket[i][0] + " >"
                     + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value =" + dataBucket[i][1] + " > </div>";
-                // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
-                // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
+
             }
             $buckets.append(tempString);
         }
     } else {
         let targetValue = $("#multibuck-text")[0].value;
 
-        if(targetValue == "# of Buckets"){
+        if (targetValue == "# of Buckets") {
             alert("You have not choose the number of buckets to split");
             return;
         }
         targetValue = Number(targetValue);
-        if(targetValue > dataBucket[curr].length){
+        if (targetValue > dataBucket[curr].length) {
             alert("The number of buckets specified is too many");
-        }else {
+        } else {
             //$("#bucketAll").prop("checked", false);
             let size = Math.floor(dataBucket[curr].length / targetValue);
             for (let i = 0; i < targetValue - 1; i++) {
@@ -714,16 +704,12 @@ $(document).on("click", "#bucket-split", function (e) {
                 + "<input class=\"ml-2 text-checkbox\" type=\"checkbox\" value=\"\" id='bucketNum" + 0 + "' >"
                 + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
                 + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][dataBucket[0].length - 1] + "' readonly> </div>";
-            // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + 0 + "' aria-hidden=\"true\"></i>"
-            // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd0' aria-hidden=\"true\"></i></div>";
+
             for (let i = 1; i < dataBucket.length; i++) {
                 tempString += "<div id='bucket" + i + "'>"
-                    // + "<i class=\"fa fa-minus-circle fa-1x bucket-rm\" style=\"color: #74a7fa;\" id='bucketRm" + i + "' aria-hidden=\"true\"></i>"
                     + "<input class=\"ml-2 text-checkbox\" type=\"checkbox\" value=\"\" id='bucketNum" + i + "' >"
                     + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value ='" + dataBucket[i][0] + "' readonly>"
                     + "<input type='text' class='custom-bucket ' id='bucketupper" + i + "' value ='" + dataBucket[i][dataBucket[i].length - 1] + "' readonly>";
-                // + "<i class=\"fa fa-plus-circle fa-1x bucket-add\" style=\"color: #74a7fa;\" id='bucketAdd" + i + "' aria-hidden=\"true\"></i>"
-                // + "\<i class=\"fa fa-angle-double-down fa-1x bucket-multiAdd\" style=\"color: #74a7fa;\" id='bucketMulAdd" + i + "' aria-hidden=\"true\"></i></div>";
             }
             $buckets.append(tempString);
             $("#multibuck-text").empty();
@@ -788,66 +774,64 @@ $(document).on("input", ".custom-bucket", function (e) {
 
 $("#bucketAll").click(function (e) {
     console.log(e)
-   // if ($(this).prop("checked")) {
-        if (isBucketNumeric) {
-            var $buckets = $("#bucketOpt");
-            $buckets.empty();
-            let lower = dataBucket[0][0];
-            let upper = dataBucket[dataBucket.length - 1][1]
-            dataBucket = [[lower, upper]];
-            let tempString = "";
-            tempString += "<div id='bucket" + 0 + "'>"
-                + "<input class=\"ml-2\" type=\"checkbox\" value=\"\" id='bucketNum" + 0 + "' >"
-                + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value =" + dataBucket[0][0] + " readonly>"
-                + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][1] + " ></div>";
-            $buckets.append(tempString);
-        } else {
-          //  $("#displayAll").prop("checked", false);
-            var $buckets = $("#bucketOpt");
-            $buckets.empty();
-            let temp = [];
-            for (let i = 0; i < dataBucket.length; i++) {
-                for (let j = 0; j < dataBucket[i].length; j++) {
-                    temp.push(dataBucket[i][j]);
-                }
-            }
-            dataBucket = [temp];
-            let tempString = "";
-            tempString += "<div id='bucket" + 0 + "'>"
-                + "<input class=\"ml-2 text-checkbox\" type=\"checkbox\" value=\"\" id='bucketNum" + 0 + "' >"
-                + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
-                + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][dataBucket[0].length - 1] + "' readonly> </div>";
-            $buckets.append(tempString);
-        }
 
-   // }
-});
+    if (isBucketNumeric) {
+        var $buckets = $("#bucketOpt");
+        $buckets.empty();
+        let lower = dataBucket[0][0];
+        let upper = dataBucket[dataBucket.length - 1][1]
+        dataBucket = [[lower, upper]];
+        let tempString = "";
+        tempString += "<div id='bucket" + 0 + "'>"
+            + "<input class=\"ml-2\" type=\"checkbox\" value=\"\" id='bucketNum" + 0 + "' >"
+            + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value =" + dataBucket[0][0] + " readonly>"
+            + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][1] + " ></div>";
+        $buckets.append(tempString);
+    } else {
 
-$("#displayAll").click(function (e) {
-    //if ($(this).prop("checked")) {
-        $("#bucketAll").prop("checked", false);
+        var $buckets = $("#bucketOpt");
+        $buckets.empty();
         let temp = [];
         for (let i = 0; i < dataBucket.length; i++) {
             for (let j = 0; j < dataBucket[i].length; j++) {
-                temp.push([dataBucket[i][j]]);
+                temp.push(dataBucket[i][j]);
             }
         }
-        dataBucket = temp;
-        var $buckets = $("#bucketOpt");
-        $buckets.empty();
-        console.log(dataBucket)
-        let tempString = "<div id='bucket" + 0 + "'>"
+        dataBucket = [temp];
+        let tempString = "";
+        tempString += "<div id='bucket" + 0 + "'>"
             + "<input class=\"ml-2 text-checkbox\" type=\"checkbox\" value=\"\" id='bucketNum" + 0 + "' >"
-            + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly></div>"
-
-        for (let i = 1; i < dataBucket.length; i++) {
-            tempString += "<div id='bucket" + i + "'>"
-                + "<input class=\"ml-2 text-checkbox\" type=\"checkbox\" value=\"\" id='bucketNum" + i + "' >"
-                + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value ='" + dataBucket[i][0] + "' readonly></div>"
-
-        }
+            + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
+            + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][dataBucket[0].length - 1] + "' readonly> </div>";
         $buckets.append(tempString);
-   // }
+    }
+
+});
+
+$("#displayAll").click(function (e) {
+    $("#bucketAll").prop("checked", false);
+    let temp = [];
+    for (let i = 0; i < dataBucket.length; i++) {
+        for (let j = 0; j < dataBucket[i].length; j++) {
+            temp.push([dataBucket[i][j]]);
+        }
+    }
+    dataBucket = temp;
+    var $buckets = $("#bucketOpt");
+    $buckets.empty();
+    console.log(dataBucket)
+    let tempString = "<div id='bucket" + 0 + "'>"
+        + "<input class=\"ml-2 text-checkbox\" type=\"checkbox\" value=\"\" id='bucketNum" + 0 + "' >"
+        + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly></div>"
+
+    for (let i = 1; i < dataBucket.length; i++) {
+        tempString += "<div id='bucket" + i + "'>"
+            + "<input class=\"ml-2 text-checkbox\" type=\"checkbox\" value=\"\" id='bucketNum" + i + "' >"
+            + "<input type='text' class='custom-bucket ' id='bucketlower" + i + "' value ='" + dataBucket[i][0] + "' readonly></div>"
+
+    }
+    $buckets.append(tempString);
+
 });
 
 // $('#bucket-form').on('keyup keypress', function(e) {
@@ -968,9 +952,8 @@ function Explore(e) {
         cumulativeDataSize = 0;
 
         currData = data.data;
-        for(let i=0;i<currData.length;i++)
-        {
-            childHash.set(i,currData[i].children);
+        for (let i = 0; i < currData.length; i++) {
+            childHash.set(i, currData[i].children);
         }
         //console.log("startNav currdata");
         //console.log(currData);
@@ -1026,9 +1009,9 @@ function Explore(e) {
                 } else {
                     if (col == 0) {
                         return wrapperWidth * 0.04;
-                    } else if(col == 1 && alltext){
+                    } else if (col == 1 && alltext) {
                         return wrapperWidth * 0.08;
-                    }else{
+                    } else {
                         return wrapperWidth * 0.15;
                     }
                 }
@@ -1304,15 +1287,13 @@ function computeCellChart(chartString, row,) {
         })
         .attr("height", y.bandwidth())
         .attr("x", 0)
-        .attr('fill', function (d,i) {
+        .attr('fill', function (d, i) {
             //console.log("selectedBars");
             //console.log(selectedBars);
             //console.log(row,i);
-            for(let ind=0;ind<selectedBars.length;ind++)
-            {
-                if(selectedBars[ind].cell == row)
-                {
-                    if(selectedBars[ind].bars.includes(i))
+            for (let ind = 0; ind < selectedBars.length; ind++) {
+                if (selectedBars[ind].cell == row) {
+                    if (selectedBars[ind].bars.includes(i))
                         return "#32CC99";//'#ff4500';
                     else
                         return "#70DCB8";//'#ffA500';
@@ -1365,7 +1346,7 @@ function computeCellChart(chartString, row,) {
 function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
     let tempString = "<div><span>" + value + "</span>";
 
-   // console.log("currLevel in navcellRenderer: "+currLevel);
+    // console.log("currLevel in navcellRenderer: "+currLevel);
     // differentiate single layer to double layer
     if (currLevel == 0) {
 
@@ -1376,11 +1357,11 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
             td.style.background = '#F5F5DC';
         }
         //console.log("curr0");
-       // console.log(cumulativeData[currLevel]);
+        // console.log(cumulativeData[currLevel]);
         let targetCell = cumulativeData[currLevel][row];
 
         if (targetCell.clickable) {
-            tempString += " (Rows: " + targetCell.value+")";
+            tempString += " (Rows: " + targetCell.value + ")";
             tempString += "<i class=\"fa fa-angle-right fa-2x zoomInPlus\" style=\"color: #51cf66;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
 
             if (childHash.has(row)) {
@@ -1425,7 +1406,6 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
     } else {
 
 
-
         if (col == 1 && selectedChild.includes(row)) {
             td.style.background = '#D3D3D3';
             td.style.color = '#4e81d3';
@@ -1440,32 +1420,32 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
             let chartString = "parentCol" + row + col;
             tempString += "<div id=" + chartString + " ></div>";
             td.innerHTML = tempString + "</div>";
-            let holder = d3.select("#"+chartString)
+            let holder = d3.select("#" + chartString)
                 .append("svg")
                 .attr("width", wrapperWidth * 0.02)
                 .attr("height", wrapperHeight * 0.7);
-            let yoffset = wrapperHeight* 0.4;
+            let yoffset = wrapperHeight * 0.4;
             // draw the text
             holder.append("text")
                 .style("fill", "black")
                 .style("font-size", "20px")
                 .attr("dy", ".35em")
                 .attr("text-anchor", "middle")
-                .attr("transform", "translate(8,"+yoffset +") rotate(270)")
+                .attr("transform", "translate(8," + yoffset + ") rotate(270)")
                 .text(value);
             return;
         } else {
             let targetCell = cumulativeData[currLevel][row];
 
             if (targetCell.clickable) {
-                tempString += " (Rows: " + targetCell.value+")";
+                tempString += " (Rows: " + targetCell.value + ")";
                 tempString += "<i class=\"fa fa-angle-right fa-2x zoomInPlus\" style=\"color: #51cf66;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
 
                 if (childHash.has(row)) {
                     let chartString = "navchartdiv" + row + col;
                     tempString += "<div id=" + chartString + " ></div>";
                     td.innerHTML = tempString + "</div>";
-                   // console.log("rerender");
+                    // console.log("rerender");
                     computeCellChart(chartString, row);
                     return;
                 }
@@ -1509,17 +1489,17 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
 
 
 function removeHierarchiCol(colIdx) {
-    if(hierarchicalColAttr.length==1)
+    if (hierarchicalColAttr.length == 1)
         hierarchicalColAttr = [];
-    else{
-       // let index = hierarchicalColAttr.indexOf(colIdx);
-       // console.log(index);
-       // console.log(hierarchicalColAttr);
-       // if (index !== -1) {
+    else {
+        // let index = hierarchicalColAttr.indexOf(colIdx);
+        // console.log(index);
+        // console.log(hierarchicalColAttr);
+        // if (index !== -1) {
         //    console.log("entered");
-        if(currLevel == 0){
+        if (currLevel == 0) {
             hierarchicalColAttr.splice(colIdx - 1, 1);
-        }else{
+        } else {
             hierarchicalColAttr.splice(colIdx - 2, 1);
         }
     }
@@ -1554,7 +1534,7 @@ function removeHierarchiCol(colIdx) {
         nav.updateSettings({width: wrapperWidth * 0.19,});
     } else {
         nav.alter('remove_col', colIdx);
-        nav.updateSettings({width: wrapperWidth*(0.15 + aggregateData.formula_ls.length * 0.15),});
+        nav.updateSettings({width: wrapperWidth * (0.15 + aggregateData.formula_ls.length * 0.15),});
     }
     hot.updateSettings({width: wrapperWidth - $("#navChart").width()});
     updataHighlight();
@@ -1572,7 +1552,7 @@ $("#hierarchi-form").submit(function (e) {
     let getChart = ($("#chartOpt").val() == 2);
     for (let i = 0; i < aggregateTotalNum; i++) {
         let attrIdx = $("#aggregateCol" + i).val();
-        hierarchicalColAttr.push(parseInt(attrIdx)-1);
+        hierarchicalColAttr.push(parseInt(attrIdx) - 1);
         let funct = $("#aggregateOpt" + i).val();
         let paras = [];
         let para;
@@ -1586,7 +1566,7 @@ $("#hierarchi-form").submit(function (e) {
                 return;
             case "COUNTIF":
             case "SUMIF":
-                para = "\""+$("#aggrePara" + i).val()+"\"";
+                para = "\"" + $("#aggrePara" + i).val() + "\"";
                 if (para == "") {
                     alert("Predicate is empty");
                     return;
@@ -1603,7 +1583,7 @@ $("#hierarchi-form").submit(function (e) {
                 break;
             case "LARGE":
             case "SMALL":
-                para = "\""+$("#aggrePara" + i).val()+"\"";
+                para = "\"" + $("#aggrePara" + i).val() + "\"";
                 if (para == "") {
                     alert("int value is empty");
                     return;
@@ -1619,7 +1599,7 @@ $("#hierarchi-form").submit(function (e) {
                 ;
                 break;
             case "SUBTOTAL":
-                para = "\""+$("#aggrePara" + i).val()+"\"";
+                para = "\"" + $("#aggrePara" + i).val() + "\"";
                 if (para == null) {
                     alert("function ID is empty");
                     return;
@@ -1635,7 +1615,7 @@ $("#hierarchi-form").submit(function (e) {
                 ;
                 break;
             case "RANK":
-                para = "\""+$("#aggrePara" + i).val()+"\"";
+                para = "\"" + $("#aggrePara" + i).val() + "\"";
                 if (para == "") {
                     alert("Rank value is empty");
                     return;
@@ -1668,7 +1648,7 @@ function getAggregateValue() {
     let childlist = computePath();
     aggregateData.path = " " + childlist;
     //console.log("hierarchical col");
-   // console.log(aggregateData);
+    // console.log(aggregateData);
     $.ajax({
         url: baseUrl + "getHierarchicalAggregateFormula",
         method: "POST",
@@ -1754,8 +1734,8 @@ function addHierarchiCol(aggregateValue) {
     }
 
     let numChild = cumulativeData[currLevel].length;
-    let percentage = alltext? 0.12:0.18;
-    let newWidth = wrapperWidth*(percentage + aggregateValue.length * 0.15);
+    let percentage = alltext ? 0.12 : 0.18;
+    let newWidth = wrapperWidth * (percentage + aggregateValue.length * 0.15);
     nav.updateSettings({
         width: newWidth,
         manualColumnResize: columWidth,
@@ -1797,10 +1777,10 @@ function computePath() {
 function zoomIn(child, nav) {
     nav.deselectCell();
     var selectFirstChild = false;
-    console.log("In zoom in:"+child);
+    console.log("In zoom in:" + child);
     //console.log(selectedChild);
     childHash = new Map();
-    if(!selectedChild.includes(child) || selectedChild.length==0)
+    if (!selectedChild.includes(child) || selectedChild.length == 0)
         selectFirstChild = true;
     selectedChild = [];
     selectedBars = [];
@@ -1831,10 +1811,9 @@ function zoomIn(child, nav) {
             currLevel += 1;
             currData = result.buckets;
             alltext = true;
-            for(let i=0;i<currData.length;i++)
-            {
-                if(currData[i].clickable) alltext = false;
-                childHash.set(i,currData[i].children);
+            for (let i = 0; i < currData.length; i++) {
+                if (currData[i].clickable) alltext = false;
+                childHash.set(i, currData[i].children);
             }
             prevPath = result.prev.path;
             nextPath = result.later.path;
@@ -1886,8 +1865,8 @@ function zoomIn(child, nav) {
                 //nav.selectCell(0, 1)
             }
             updateNavPath(breadcrum_ls); // calculate breadcrumb
-            updateNavCellFocus(currentFirstRow,currentLastRow);
-            if(selectFirstChild)
+            updateNavCellFocus(currentFirstRow, currentLastRow);
+            if (selectFirstChild)
                 nav.selectCell(0, 1);
         }
     })
@@ -2071,9 +2050,8 @@ function zoomOutHist(nav) {
             // clickable = result.clickable;
             currLevel = breadcrum_ls.length;
             currData = result.buckets;
-            for(let i=0;i<currData.length;i++)
-            {
-                childHash.set(i,currData[i].children);
+            for (let i = 0; i < currData.length; i++) {
+                childHash.set(i, currData[i].children);
             }
             prevPath = result.prev.path;
             nextPath = result.later.path;
@@ -2131,7 +2109,7 @@ function zoomOutHist(nav) {
             }
 
             updateNavPath(breadcrum_ls);
-            updateNavCellFocus(currentFirstRow,currentLastRow);
+            updateNavCellFocus(currentFirstRow, currentLastRow);
         }
     })
 }
@@ -2173,9 +2151,8 @@ function jumpToHistorialView(childlist) {
             // clickable = result.clickable;
             currLevel = breadcrumb_ls.length;
             currData = result.buckets;
-            for(let i=0;i<currData.length;i++)
-            {
-                childHash.set(i,currData[i].children);
+            for (let i = 0; i < currData.length; i++) {
+                childHash.set(i, currData[i].children);
             }
             prevPath = result.prev.path;
             nextPath = result.later.path;
@@ -2231,9 +2208,9 @@ function jumpToHistorialView(childlist) {
             }
 
             updateNavPath(breadcrumb_ls);
-            if(currLevel==0) {
-                updateNavCellFocus(currentFirstRow,currentLastRow);
-            }else
+            if (currLevel == 0) {
+                updateNavCellFocus(currentFirstRow, currentLastRow);
+            } else
                 nav.selectCell(0, 1);
         }
     });
@@ -2923,10 +2900,9 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
             .style("font-size", "10px")
             .style("font-weight", "bold")
             .text(function () {
-                if(navAggRawData[col - colOffset][row].formula.includes("COUNTIF"))
-                {
-                    let percent = (value*100.0)/cumulativeData[currLevel][row].value;
-                    return value+ " ("+percent.toFixed(2)+"%)";
+                if (navAggRawData[col - colOffset][row].formula.includes("COUNTIF")) {
+                    let percent = (value * 100.0) / cumulativeData[currLevel][row].value;
+                    return value + " (" + percent.toFixed(2) + "%)";
                 }
 
                 return value;
@@ -3066,7 +3042,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
         var margin = {top: 20, right: 30, bottom: 0, left: -20};
         var fullHeight = (wrapperHeight * 0.95 / cumulativeData[currLevel].length > 90)
             ? wrapperHeight * 0.95 / cumulativeData[currLevel].length - 10 : 80;
-        if(childHash.has(row)){
+        if (childHash.has(row)) {
             let result = childHash.get(row);
             let number = result.length;
             fullHeight += 10;
@@ -3098,22 +3074,21 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
                 ((value - min) / (max - min)) * 0.85 + 0.15));*/
         svg.append("rect")
             .attr("x", 0)
-            .attr("y", 0-margin.top)
-            .attr("width", fullWidth*(value)/max)
+            .attr("y", 0 - margin.top)
+            .attr("width", fullWidth * (value) / max)
             .attr("height", fullHeight)
             .attr("fill", '#B2EEB4');
 
         svg.append("text")
             .attr("x", (width / 2))
-            .attr("y", height/2 + margin.top/2)
+            .attr("y", height / 2 + margin.top / 2)
             .attr("text-anchor", "middle")
             .style("font-size", "20px")
             .style("font-weight", "bold")
             .text(function () {
-                if(navAggRawData[col - colOffset][row].formula.includes("COUNTIF"))
-                {
-                    let percent = (value*100.0)/cumulativeData[currLevel][row].value;
-                    return value+ " ("+percent.toFixed(2)+"%)";
+                if (navAggRawData[col - colOffset][row].formula.includes("COUNTIF")) {
+                    let percent = (value * 100.0) / cumulativeData[currLevel][row].value;
+                    return value + " (" + percent.toFixed(2) + "%)";
                 }
                 return value;
             });
@@ -3124,11 +3099,11 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
     return td;
 }
 
-var colors = ['#c799cc','#eba6ee', '#ea7beb', '#fa1aec']
+var colors = ['#c799cc', '#eba6ee', '#ea7beb', '#fa1aec']
 
 function updataHighlight() {
     let brushNLinkRows = [];
-    if(navAggRawData.length == 1 && isPointFormula(navAggRawData[0][0].formula)) {
+    if (navAggRawData.length == 1 && isPointFormula(navAggRawData[0][0].formula)) {
         let data = navAggRawData[0];
         let queryObj = {}
         let cond = [];
@@ -3143,13 +3118,11 @@ function updataHighlight() {
             if (formula.includes("COUNTIF") || formula.includes("SUMIF")) {
                 let ls = formula.split(",")[1].split(")")[0];
                 let str = ls.substring(1, 3);
-                if(str.includes(">=") || str.includes("<=") || str.includes("<>"))
-                {
+                if (str.includes(">=") || str.includes("<=") || str.includes("<>")) {
                     cond.push(ls.substring(1, 3));
                     value.push(ls.substring(3, ls.length - 1));
                 }
-                else if(str.includes(">") || str.includes("<") || str.includes("="))
-                {
+                else if (str.includes(">") || str.includes("<") || str.includes("=")) {
                     cond.push(ls.substring(1, 2));
                     value.push(ls.substring(2, ls.length - 1));
                 }
@@ -3173,8 +3146,8 @@ function updataHighlight() {
                 lastR.push(currentLastRow);
             else
                 lastR.push(last);*/
-            if(lowerRange==0)
-                firstR.push(lowerRange+1);
+            if (lowerRange == 0)
+                firstR.push(lowerRange + 1);
             else
                 firstR.push(lowerRange);
             lastR.push(upperRange);
@@ -3203,7 +3176,6 @@ function updataHighlight() {
             }
 
 
-
         });
 
     }
@@ -3219,14 +3191,12 @@ function updataHighlight() {
                 }
             }
 
-            if(hierarchicalColAttr.includes(column))
-            {
+            if (hierarchicalColAttr.includes(column)) {
                 cellMeta.renderer = function (hotInstance, td, row, col, prop, value,
                                               cellProperties) {
                     Handsontable.renderers.TextRenderer.apply(this, arguments);
-                    if(brushNLinkRows.length!=0)
-                    {
-                        if(brushNLinkRows.includes(row))
+                    if (brushNLinkRows.length != 0) {
+                        if (brushNLinkRows.includes(row))
                             td.style.background = '#d4eafc';
                         else
                             td.style.background = '#f5e9e1';
@@ -3237,7 +3207,7 @@ function updataHighlight() {
                 }
             }
 
-            if (sortChild_ls.length>0) {
+            if (sortChild_ls.length > 0) {
                 let lower = cumulativeData[currLevel][sortChild_ls[0]].rowRange[0];
                 let upper = cumulativeData[currLevel][sortChild_ls[0]].rowRange[1];
                 for (let i = 0; i < sortAttrIndices.length; i++) {
@@ -3267,11 +3237,10 @@ function updataHighlight() {
 }
 
 
-function updateBarChartFocus(firstRow, lastRow)
-{
+function updateBarChartFocus(firstRow, lastRow) {
     //console.log(childHash);
     let newSelectedBars = [];
-    for(let selI=0;selI<cumulativeData[currLevel].length;selI++) {
+    for (let selI = 0; selI < cumulativeData[currLevel].length; selI++) {
         if (childHash.get(selI) == undefined)
             continue;
 
@@ -3299,11 +3268,9 @@ function updateBarChartFocus(firstRow, lastRow)
 
     //console.log("newselectedBars");
     //console.log(newSelectedBars);
-    if(newSelectedBars.length==1 && selectedBars.length==1 && newSelectedBars[0].cell == selectedBars[0].cell && newSelectedBars[0].bars.length == selectedBars[0].bars.length)
-    {
-        for(let selI=0; selI < newSelectedBars[0].bars.length;selI++)
-        {
-            if(newSelectedBars[0].bars[selI]!=selectedBars[0].bars[selI]) {
+    if (newSelectedBars.length == 1 && selectedBars.length == 1 && newSelectedBars[0].cell == selectedBars[0].cell && newSelectedBars[0].bars.length == selectedBars[0].bars.length) {
+        for (let selI = 0; selI < newSelectedBars[0].bars.length; selI++) {
+            if (newSelectedBars[0].bars[selI] != selectedBars[0].bars[selI]) {
                 selectedBars = [];
                 selectedBars = newSelectedBars;
                 return false;
@@ -3318,10 +3285,9 @@ function updateBarChartFocus(firstRow, lastRow)
 
 }
 
-function updateNavCellFocus(firstRow, lastRow)
-{
+function updateNavCellFocus(firstRow, lastRow) {
 
-    console.log("firstRow,lastRow:",firstRow,lastRow);
+    console.log("firstRow,lastRow:", firstRow, lastRow);
     //console.log(cumulativeData[currLevel]);
 
     //console.log("lowerRange,upperRange",lowerRange,upperRange);
@@ -3329,54 +3295,47 @@ function updateNavCellFocus(firstRow, lastRow)
     currentLastRow = lastRow;
 
     let newSelectedChild = [];
-    for(let selI=0;selI<cumulativeData[currLevel].length;selI++)
-    {
+    for (let selI = 0; selI < cumulativeData[currLevel].length; selI++) {
         let lower = cumulativeData[currLevel][selI].rowRange[0];
         let upper = cumulativeData[currLevel][selI].rowRange[1];
 
         //console.log("lowerRange,upperRange",lower,upper);
-        if(firstRow > upper)
+        if (firstRow > upper)
             continue;
-        if(lastRow < lower)
+        if (lastRow < lower)
             break;
         newSelectedChild.push(selI);
     }
 
-    if(newSelectedChild.length==1)
-    {
-        if(selectedChild.length==0)
-        {
+    if (newSelectedChild.length == 1) {
+        if (selectedChild.length == 0) {
             nav.deselectCell();
             selectedChild = [];
             selectedChild = newSelectedChild;
             updateBarChartFocus(firstRow, lastRow);
             nav.render();
         }
-        else if(selectedChild.length> 1)
-        {
+        else if (selectedChild.length > 1) {
             nav.deselectCell();
             selectedChild = [];
             selectedChild = newSelectedChild;
             updateBarChartFocus(firstRow, lastRow);
             nav.render();
         }
-        else if(selectedChild[0]!=newSelectedChild[0])
-        {
+        else if (selectedChild[0] != newSelectedChild[0]) {
             nav.deselectCell();
             selectedChild = [];
             selectedChild = newSelectedChild;
             updateBarChartFocus(firstRow, lastRow);
             nav.render();
         }
-        else
-        {
+        else {
             updateBarChartFocus(firstRow, lastRow);
             nav.render();
         }
 
     }
-    else if(newSelectedChild.length > 1)
-    {
+    else if (newSelectedChild.length > 1) {
         nav.deselectCell();
         selectedChild = [];
         selectedChild = newSelectedChild;
@@ -3390,35 +3349,32 @@ function brushNlink(firstRow, lastRow) {
 
     let path = computePath();
 
-   // console.log("path: "+path);
+    // console.log("path: "+path);
 
 
     let currentFocus = cumulativeData[currLevel];
-    if(currentFocus==undefined)
+    if (currentFocus == undefined)
         return;
 
     //console.log(currentFocus);
-    let lastElement = currentFocus[currentFocus.length-1];
+    let lastElement = currentFocus[currentFocus.length - 1];
     let firstElement = currentFocus[0];
-   // console.log(lastElement)
+    // console.log(lastElement)
     let endRow = lastElement.rowRange[1];
     let startRow = firstElement.rowRange[0];
 
-    console.log("endRow: "+endRow+", firstRow: "+firstRow);
-    console.log("startRow: "+startRow+", lastRow: "+lastRow);
+    console.log("endRow: " + endRow + ", firstRow: " + firstRow);
+    console.log("startRow: " + startRow + ", lastRow: " + lastRow);
 
-    if(startRow > lastRow)
-    {
-        jumpToFocus(prevPath,nav);
+    if (startRow > lastRow) {
+        jumpToFocus(prevPath, nav);
         updateNavCellFocus(firstRow, lastRow);
     }
-    else if(endRow < firstRow)
-    {
-        jumpToFocus(nextPath,nav);
+    else if (endRow < firstRow) {
+        jumpToFocus(nextPath, nav);
         updateNavCellFocus(firstRow, lastRow);
     }
-    else
-    {
+    else {
         updateNavCellFocus(firstRow, lastRow);
     }
 
@@ -3428,7 +3384,7 @@ function brushNlink(firstRow, lastRow) {
 
 function isPointFormula(formula) {
     let str = formula.split("(")[0];
-    if(pointFunc.includes(str))
+    if (pointFunc.includes(str))
         return true;
     return false;
 }
@@ -3437,16 +3393,16 @@ function jumpToFocus(path, nav) {
     nav.deselectCell();
 
     childHash = new Map();
-    console.log("nextPath:"+path);
+    console.log("nextPath:" + path);
     let path_str = "";
     levelList = [];
     for (let i = 0; i < path.length; i++) {
         if (path.length != 0) {
             levelList[i] = parseInt(path[i]);
-            if(i==0)
+            if (i == 0)
                 path_str += path[i];
-            else if(i<path.length-1)
-                path_str += ","+path[i];
+            else if (i < path.length - 1)
+                path_str += "," + path[i];
         }
     }
     selectedChild = [];
@@ -3487,17 +3443,16 @@ function jumpToFocus(path, nav) {
             console.log(result);
             console.log("currLevel: " + currLevel);
             mergeCellInfo = [];
-            if (currData.length != 0 && breadcrumb_ls.length!=0) {
-                for(let i=0;i<currData.length;i++)
-                {
-                    childHash.set(i,currData[i].children);
+            if (currData.length != 0 && breadcrumb_ls.length != 0) {
+                for (let i = 0; i < currData.length; i++) {
+                    childHash.set(i, currData[i].children);
                 }
                 mergeCellInfo.push({row: 0, col: 0, rowspan: currData.length, colspan: 1});
 
                 viewData = new Array(currData.length);
                 for (let i = 0; i < currData.length; i++) {
                     if (i == 0) {
-                        viewData[i] = [breadcrumb_ls[breadcrumb_ls.length-1]];
+                        viewData[i] = [breadcrumb_ls[breadcrumb_ls.length - 1]];
                     } else {
                         viewData[i] = [""];
                     }
@@ -3517,11 +3472,9 @@ function jumpToFocus(path, nav) {
 
                 cumulativeDataSize += currData.length;
             }
-            else if (currData.length != 0 && breadcrumb_ls.length==0)
-            {
-                for(let i=0;i<currData.length;i++)
-                {
-                    childHash.set(i,currData[i].children);
+            else if (currData.length != 0 && breadcrumb_ls.length == 0) {
+                for (let i = 0; i < currData.length; i++) {
+                    childHash.set(i, currData[i].children);
                 }
                 //colHeader.splice(1, 1);
                 cumulativeData = [];
@@ -3533,8 +3486,8 @@ function jumpToFocus(path, nav) {
             }
             else {
 
-                path.splice(-1,1);
-                jumpToFocus(path,nav);
+                path.splice(-1, 1);
+                jumpToFocus(path, nav);
                 return;
             }
 
@@ -3560,7 +3513,7 @@ function jumpToFocus(path, nav) {
                 //nav.selectCell(0, 1)
             }
             updateNavPath(breadcrumb_ls); //calculate breadcrumb
-            updateNavCellFocus(currentLastRow,currentLastRow);
+            updateNavCellFocus(currentLastRow, currentLastRow);
             // zoomming = false;
             //  nav.selectCell(0, 1)
             nav.render();
