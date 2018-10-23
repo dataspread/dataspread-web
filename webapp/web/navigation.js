@@ -749,7 +749,8 @@ $(document).on("change", ".custom-bucket", function (e) {
             return;
         }
         let currLow = isNaN(dataBucket[line][0]) ? parseFloat(dataBucket[line][0].slice(0, -1)) : +dataBucket[line][0];
-        if (e.target.value < dataBucket[line + 1][1] && e.target.value > currLow) {
+        let nextUpp = isNaN(dataBucket[line + 1][1]) ? parseFloat(dataBucket[line+1][1].slice(0, -1)) : +dataBucket[line+1][1];
+        if (e.target.value < nextUpp && e.target.value > currLow) {
             dataBucket[line + 1][0] = e.target.value + "+";
             $("#bucketlower" + (line + 1)).val(dataBucket[line + 1][0]);
             dataBucket[line][1] = e.target.value;
