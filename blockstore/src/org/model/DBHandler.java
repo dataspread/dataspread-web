@@ -143,12 +143,14 @@ public class DBHandler {
 
 
     private void createTypeConversionTable(DBContext dbContext) {
+
+
         AutoRollbackConnection connection = dbContext.getConnection();
         try (Statement stmt = connection.createStatement()) {
-            String createTable = "CREATE TABLE IF NOT EXISTS user_books (" +
+            String createTable = "CREATE TABLE IF NOT EXISTS type_converted_books (" +
                     "bookid  TEXT NOT NULL," +
                     "sheetname  TEXT NOT NULL," +
-                    "columns   TEXT NOT NULL" +
+                    "cols   TEXT NOT NULL" +
                     ");";
             stmt.execute(createTable);
         }
@@ -161,7 +163,7 @@ public class DBHandler {
     private void createUserBooksTable(DBContext dbContext) {
         AutoRollbackConnection connection = dbContext.getConnection();
         try (Statement stmt = connection.createStatement()) {
-            String createTable = "CREATE TABLE IF NOT EXISTS type_converted_books (" +
+            String createTable = "CREATE TABLE IF NOT EXISTS user_books (" +
                     "authtoken  TEXT NOT NULL," +
                     "booktable  TEXT NOT NULL," +
                     "role   TEXT NOT NULL" +
