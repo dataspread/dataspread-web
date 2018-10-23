@@ -932,6 +932,8 @@ function Explore(e) {
 
     $("#history-option").empty();
 
+    if(exploreAttr !== e)
+        navAggRawData = [];
     sortChild_ls = [];
     $.get(baseUrl + 'startNav/' + bId + '/' + sName + '/' + e, function (data) {
 
@@ -1403,7 +1405,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                 }
             })*/
         } else {
-            tempString += "<p>Rows: " + targetCell.value + "<br> Start: " + targetCell.rowRange[0] + "<br> End: " + targetCell.rowRange[1] + "</p>";
+            tempString += "<p>Total Rows: " + targetCell.value + "<br> Start Row No: " + targetCell.rowRange[0] + "<br> End Row No: " + targetCell.rowRange[1] + "</p>";
             td.innerHTML = tempString + "</div>";
             return;
         }
@@ -1482,7 +1484,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                     }
                 })*/
             } else {
-                tempString += "<p>Rows: " + targetCell.value + "<br> Start: " + targetCell.rowRange[0] + "<br> End: " + targetCell.rowRange[1] + "</p>";
+                tempString += "<p>Total Rows: " + targetCell.value + "<br> Start Row No: " + targetCell.rowRange[0] + "<br> End Row No: " + targetCell.rowRange[1] + "</p>";
                 td.innerHTML = tempString + "</div>";
             }
         }
