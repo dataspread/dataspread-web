@@ -345,6 +345,7 @@ var dataBucket = [[0, 50], [51, 100], [101, 150], [151, 200], [201, 300], [301, 
 $("#Bucket").click(function () {
     $("#exploration-bar").css("display", "none");
     $("#hierarchical-col").css("display", "none");
+    $("#bucketSub").css({"display": "none"});
     let originalWidth = wrapperWidth - $("#navChart").width();
     let newWidth = originalWidth - wrapperWidth * 0.19;
     if (newWidth < 0) newWidth = 0;
