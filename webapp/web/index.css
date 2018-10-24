@@ -117,13 +117,13 @@
 }
 
 .split-group{
-    border-left: 2px solid black;
+    border-left: 1px solid black;
     height:100%;
     margin-left: 10px;
     padding-left: 5px;
     padding-right: 4px;
     margin-right: 5px;
-    border-right: 2px solid black;
+    border-right: 1px solid black;
 
 }
 

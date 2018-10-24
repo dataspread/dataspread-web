@@ -544,6 +544,7 @@ $(document).on("click", "#bucket-merge", function (e) {
 
         }
         $buckets.append(tempString);
+        $("#bucketSub").css({"display": "block"});
     } else {
 
         for (let i = start + 1; i < end + 1; i++) {
@@ -570,6 +571,7 @@ $(document).on("click", "#bucket-merge", function (e) {
 
         }
         $buckets.append(tempString);
+        $("#bucketSub").css({"display": "block"});
     }
 
 
@@ -678,6 +680,7 @@ $(document).on("click", "#bucket-split", function (e) {
 
             }
             $buckets.append(tempString);
+            $("#bucketSub").css({"display": "block"});
         }
     } else {
         let targetValue = $("#multibuck-text")[0].value;
@@ -714,6 +717,7 @@ $(document).on("click", "#bucket-split", function (e) {
             $buckets.append(tempString);
             $("#multibuck-text").empty();
             $("#multibuck-text").append("<option selected># of Buckets</option>");
+            $("#bucketSub").css({"display": "block"});
         }
     }
 
@@ -733,7 +737,7 @@ $(document).on("change", ".custom-bucket", function (e) {
             $("#bucketupper" + (line - 1)).val(dataBucket[line - 1][1]);
             dataBucket[line][0] = e.target.value + "+";
             $("#bucketlower" + line).val(dataBucket[line][0]);
-
+            $("#bucketSub").css({"display": "block"});
         } else {
             alert("The modified lower range is too high or too low");
             $("#bucketlower" + line).val(dataBucket[line][0]);
@@ -754,6 +758,7 @@ $(document).on("change", ".custom-bucket", function (e) {
             dataBucket[line + 1][0] = e.target.value + "+";
             $("#bucketlower" + (line + 1)).val(dataBucket[line + 1][0]);
             dataBucket[line][1] = e.target.value;
+            $("#bucketSub").css({"display": "block"});
         } else {
             alert("The modified upper range is too high");
             $("#bucketupper" + line).val(dataBucket[line][1]);
@@ -788,6 +793,7 @@ $("#bucketAll").click(function (e) {
             + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value =" + dataBucket[0][0] + " readonly>"
             + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value =" + dataBucket[0][1] + " ></div>";
         $buckets.append(tempString);
+        $("#bucketSub").css({"display": "block"});
     } else {
 
         var $buckets = $("#bucketOpt");
@@ -805,6 +811,7 @@ $("#bucketAll").click(function (e) {
             + "<input type='text' class='custom-bucket ' id='bucketlower" + 0 + "' value ='" + dataBucket[0][0] + "' readonly>"
             + "<input type='text' class='custom-bucket ' id='bucketupper" + 0 + "' value ='" + dataBucket[0][dataBucket[0].length - 1] + "' readonly> </div>";
         $buckets.append(tempString);
+        $("#bucketSub").css({"display": "block"});
     }
 
 });
@@ -832,6 +839,7 @@ $("#displayAll").click(function (e) {
 
     }
     $buckets.append(tempString);
+    $("#bucketSub").css({"display": "block"});
 
 });
 
@@ -869,6 +877,7 @@ $("#bucket-form").submit(function (e) {
         data: JSON.stringify(queryData),
     }).done(function (e) {
         if (e.status == "success") {
+            $("#bucketSub").css("display", "none");
             $("#bucket-col").css("display", "none");
             hot.updateSettings({width: wrapperWidth * 0.79});
             if (currLevel > 0) {
