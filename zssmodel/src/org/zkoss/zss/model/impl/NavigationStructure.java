@@ -9,8 +9,10 @@ import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.sys.BookBindings;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -129,6 +131,27 @@ public class NavigationStructure {
                     return true;
                 break;
             default:
+                if(currValue==queryValue)
+                    return true;
+                break;
+        }
+
+        return false;
+    }
+
+    public boolean isConditionSatisfiedStr(String currValue, String condition,String queryValue)
+    {
+        int conditionCode = getConditionCode(condition);
+
+        switch (conditionCode)
+        {
+            case 0:
+                if(currValue.equals(queryValue))
+                    return true;
+                break;
+            default:
+                if(currValue.equals(queryValue))
+                    return true;
                 break;
         }
 
@@ -197,48 +220,69 @@ public class NavigationStructure {
      * @return true: performance conversion; false: nothing was done.
      */
     public boolean typeConvertColumnIfHavent(AutoRollbackConnection connection, int col) {
-        if (typeCheckedColumns.contains(col))
-            return false;
-        typeCheckedColumns.add(col);
         System.out.println("Type converting column " + col);
 
-//        StringBuffer select = null;
-//        select = new StringBuffer("SELECT *");
-//        select.append(" FROM ")
-//                .append("type_converted_books")
-//                .append(" WHERE bookid = ? AND sheetname = ?");
-//
-//        String columns = "";
-//        try (
-//
-//            PreparedStatement stmt = connection.prepareStatement(select.toString())) {
-//            DBContext context = new DBContext(connection);
-//            ResultSet rs = stmt.executeQuery();
-//            int i=2;
-//            ResultSetMetaData meta = rs.getMetaData();
-//            int columnCount = meta.getColumnCount();
-//
-//            while (rs.next()) {
-//                columns = new String(rs.getBytes(2),"UTF-8");
-//            }
-//            rs.close();
-//            stmt.close();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//
-//        Set<String> colSet = new HashSet<String>(Arrays.asList(columns.split(",")));
-//
-//        if(colSet.contains(Integer.toString(col)))
-//            return true;
+        StringBuffer select = null;
+        select = new StringBuffer("SELECT cols");
+        select.append(" FROM ")
+                .append("type_converted_books")
+                .append(" WHERE bookid = \'"+currentSheet.getBook().getId()+"\' AND sheetname = \'"+currentSheet.getSheetName()+"\'");
 
-        CellRegion tableRegion = new CellRegion(0, col, totalRows - 1, col);
-        ArrayList<SCell> result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
-        result.forEach(x -> x.updateCellTypeFromString(connection, false));
-        Collection<AbstractCellAdv> castCells = new ArrayList<>();
-        result.forEach(x -> castCells.add((AbstractCellAdv) x));
-        currentSheet.getDataModel().updateCells(new DBContext(connection), castCells);
-        connection.commit();
+        String columns = "";
+        try (
+
+            PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            ResultSet rs = stmt.executeQuery();
+            ResultSetMetaData meta = rs.getMetaData();
+            int colCount = meta.getColumnCount();
+
+            while (rs.next()) {
+                columns = new String(rs.getBytes(1),"UTF-8");
+            }
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        Set<String> colSet = new HashSet<String>(Arrays.asList(columns.split("-")));
+
+        if(colSet.contains(Integer.toString(col)))
+            return true;
+
+        String tableName = "type_converted_books";
+        try{
+            String col_list = "";
+
+            StringBuffer sbSS = new StringBuffer();
+            PreparedStatement pstSS = null;
+
+            CellRegion tableRegion = new CellRegion(0, col, currentSheet.getEndRowIndex() - 1, col);
+            ArrayList<SCell> result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
+            result.forEach(x -> x.updateCellTypeFromString(connection, false));
+            Collection<AbstractCellAdv> castCells = new ArrayList<>();
+            result.forEach(x -> castCells.add((AbstractCellAdv) x));
+            currentSheet.getDataModel().updateCells(new DBContext(connection), castCells);
+            connection.commit();
+
+            if(colSet.size()!=0) {
+                col_list = columns+"-"+Integer.toString(col);
+                sbSS.append("Update "+tableName+" set cols =\'"+col_list+"\' WHERE bookid =\'"+currentSheet.getBook().getId()+"\' AND sheetname = \'"+currentSheet.getSheetName()+"\'");
+            }
+            else
+            {
+                col_list = Integer.toString(col);
+                sbSS.append("INSERT into "+tableName+" (bookid, sheetname, cols) values(\'"+currentSheet.getBook().getId()+"\',\'"+currentSheet.getSheetName()+"\',\'"+col_list+"\')");
+            }
+            pstSS = connection.prepareStatement(sbSS.toString());
+
+            pstSS.executeUpdate();
+            connection.commit();
+        }catch (Exception e)
+        {
+
+        }
+
         return true;
     }
 

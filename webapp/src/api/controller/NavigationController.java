@@ -265,17 +265,28 @@ public class NavigationController {
                     indices.add(j);
             }
         }*/
+
+        System.out.println("Calling brush color list");
         int first = (Integer) first_ls.get(0);
         int last = (Integer) last_ls.get(0);
         for(int j=first;j<=last;j++)
         {
             SCell sCell = currentSheet.getCell(j, attrIndex);
 
-            double currvalue = Double.parseDouble(String.valueOf(sCell.getValue()));
-            double queryValue = Double.parseDouble((String) val_ls.get(0));
+            try {
+                double currvalue = Double.parseDouble(String.valueOf(sCell.getValue()));
+                double queryValue = Double.parseDouble((String) val_ls.get(0));
 
-            if(model.navS.isConditionSatisfied(currvalue,(String) cond_ls.get(0),queryValue))
-                indices.add(j);
+                if (model.navS.isConditionSatisfied(currvalue, (String) cond_ls.get(0), queryValue))
+                    indices.add(j);
+            }catch (Exception e)
+            {
+                String currvalue = String.valueOf(sCell.getValue());
+                String queryValue = (String) val_ls.get(0);
+
+                if (model.navS.isConditionSatisfiedStr(currvalue, (String) cond_ls.get(0), queryValue))
+                    indices.add(j);
+            }
         }
 
 

@@ -380,7 +380,7 @@ $("#Bucket").click(function () {
                 for (let i = 0; i < e.data.bucketArray.length; i++) {
                     let temp = [];
                     temp.push(e.data.bucketArray[i][0]);
-                    temp.push(parseFloat(e.data.bucketArray[i][1]));
+                    temp.push(e.data.bucketArray[i][1]);
                     dataBucket.push(temp);
                 }
                 var $buckets = $("#bucketOpt");
@@ -749,7 +749,8 @@ $(document).on("change", ".custom-bucket", function (e) {
             return;
         }
         let currLow = isNaN(dataBucket[line][0]) ? parseFloat(dataBucket[line][0].slice(0, -1)) : +dataBucket[line][0];
-        if (e.target.value < dataBucket[line + 1][1] && e.target.value > currLow) {
+        let nextUpp = isNaN(dataBucket[line + 1][1]) ? parseFloat(dataBucket[line+1][1].slice(0, -1)) : +dataBucket[line+1][1];
+        if (e.target.value < nextUpp && e.target.value > currLow) {
             dataBucket[line + 1][0] = e.target.value + "+";
             $("#bucketlower" + (line + 1)).val(dataBucket[line + 1][0]);
             dataBucket[line][1] = e.target.value;
@@ -878,6 +879,10 @@ $("#bucket-form").submit(function (e) {
             } else {
                 Explore(exploreAttr);
                 $("#history-option").empty();
+                if (hieraOpen) {
+                    getAggregateValue();
+
+                }
             }
 
         }
@@ -927,6 +932,8 @@ function Explore(e) {
 
     $("#history-option").empty();
 
+    if(exploreAttr !== e)
+        navAggRawData = [];
     sortChild_ls = [];
     $.get(baseUrl + 'startNav/' + bId + '/' + sName + '/' + e, function (data) {
 
@@ -1398,7 +1405,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                 }
             })*/
         } else {
-            tempString += "<p>Rows: " + targetCell.value + "<br> Start: " + targetCell.rowRange[0] + "<br> End: " + targetCell.rowRange[1] + "</p>";
+            tempString += "<p>Total Rows: " + targetCell.value + "<br> Start Row No: " + targetCell.rowRange[0] + "<br> End Row No: " + targetCell.rowRange[1] + "</p>";
             td.innerHTML = tempString + "</div>";
             return;
         }
@@ -1477,7 +1484,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                     }
                 })*/
             } else {
-                tempString += "<p>Rows: " + targetCell.value + "<br> Start: " + targetCell.rowRange[0] + "<br> End: " + targetCell.rowRange[1] + "</p>";
+                tempString += "<p>Total Rows: " + targetCell.value + "<br> Start Row No: " + targetCell.rowRange[0] + "<br> End Row No: " + targetCell.rowRange[1] + "</p>";
                 td.innerHTML = tempString + "</div>";
             }
         }
@@ -2258,9 +2265,9 @@ $("#sort-form").submit(function (e) {
 
 function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
     let colOffset = (currLevel == 0) ? 1 : 2;
-    console.log(row);
-    console.log(navAggRawData)
-    console.log(navAggRawData[col - colOffset][row]);
+    //console.log(row);
+    //console.log(navAggRawData)
+    //console.log(navAggRawData[col - colOffset][row]);
     if (navAggRawData[col - colOffset][row].chartType == 0) {
         let tempString = "chartdiv" + row + col;
         td.innerHTML = "<div id=" + tempString + " ></div>";
@@ -3104,6 +3111,9 @@ var colors = ['#c799cc', '#eba6ee', '#ea7beb', '#fa1aec']
 function updataHighlight() {
     let brushNLinkRows = [];
     if (navAggRawData.length == 1 && isPointFormula(navAggRawData[0][0].formula)) {
+        console.log("Brush color list satisfied");
+        //console.log(navAggRawData);
+        //console.log(navAggRawData);
         let data = navAggRawData[0];
         let queryObj = {}
         let cond = [];
@@ -3126,9 +3136,10 @@ function updataHighlight() {
                     cond.push(ls.substring(1, 2));
                     value.push(ls.substring(2, ls.length - 1));
                 }
-                else
+                else {
+                    cond.push("=");
                     value.push(ls.substring(1, ls.length - 1));
-
+                }
             }
             else if (formula.includes("MIN") || formula.includes("MAX") || formula.includes("MEDIAN") || formula.includes("MODE") || formula.includes("RANK") || formula.includes("SMALL") || formula.includes("LARGE")) {
                 value.push(data[selectedChild[i]].value);

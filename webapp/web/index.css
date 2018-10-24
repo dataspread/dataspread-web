@@ -119,19 +119,23 @@
 .split-group{
     border-left: 2px solid black;
     height:100%;
-    margin-left: 25px;
+    //margin-left: 25px;
 }
 
 .btn-merge{
-     background-color: #e2e6ea;
+     background-color: white;
      border-color: #dae0e5;
  }
-
+.btn-merge:hover {
+    background: #e2e6ea;
+}
 .btn-split{
-    background-color: #e2e6ea;
+    background-color: white;
     border-color: #dae0e5;
 }
-
+.btn-split:hover {
+    background: #e2e6ea;
+}
 .bucket-multiAddSub{
     cursor: pointer;
     width:8%;
