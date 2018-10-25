@@ -362,7 +362,7 @@ $("#Bucket").click(function () {
     hot.updateSettings({width: newWidth});
     $("#bucket-col").css({
         "float": "left",
-        "width": wrapperWidth * 0.19,
+        "width": wrapperWidth * 0.18,
         "height": wrapperHeight * 0.95,
         "display": "inline"
     });
