@@ -15,7 +15,7 @@ var prevPath = "";
 var navHistroyTable = {};
 var navHistoryPathIndex = [];
 var breadCrumbHistoryPathIndex = [];
-
+var brushNLinkRows = [];
 var sortChild_ls = [];
 var options = [];
 var hieraOpen = false;
@@ -318,10 +318,20 @@ $("#sortRemove").click(function () {
 // handle exploration form submit
 $("#explore-form").submit(function (e) {
     e.preventDefault();
+    let oldExploreAttr = exploreAttr;
     exploreAttr = $('input[name=exploreValue]:checked').val();
     if (exploreAttr !== undefined) {
         $("#exploration-bar").css("display", "none");
         exploreOpen = true;
+        if(oldExploreAttr!==undefined)
+        {
+            if(exploreAttr !== oldExploreAttr) {
+                navAggRawData = [];
+                brushNLinkRows = [];
+                hierarchicalColAttr = [];
+                navRawFormula = [];
+            }
+        }
         Explore(exploreAttr);
     }
 });
@@ -617,8 +627,8 @@ $(document).on("click", ".text-checkbox", function (e) {
         $("#multibuck-text").append("<option selected># of Buckets</option>");
     } else {
         $("#multibuck-text").empty();
-        for (let i = 1; i < dataBucket[curr].length + 1; i++) {
-            $("#multibuck-text").append("<option>" + i + "</option>");
+        for (let i = 1; i < dataBucket[curr].length; i++) {
+            $("#multibuck-text").append("<option>" + (i+1) + "</option>");
         }
     }
 })
@@ -941,10 +951,8 @@ function Explore(e) {
     $("#navChart").css({"display": "inline", "float": "left"});
 
     $("#history-option").empty();
-
-    if(exploreAttr !== e)
-        navAggRawData = [];
     sortChild_ls = [];
+
     $.get(baseUrl + 'startNav/' + bId + '/' + sName + '/' + e, function (data) {
 
         selectedChild = [];
@@ -1415,7 +1423,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                 }
             })*/
         } else {
-            tempString += "<p>Total Rows: " + targetCell.value + "<br> Start Row No: " + targetCell.rowRange[0] + "<br> End Row No: " + targetCell.rowRange[1] + "</p>";
+            tempString += "<p>Total Rows: " + targetCell.value + "<br> Start Row No: " + (targetCell.rowRange[0]+1) + "<br> End Row No: " + (targetCell.rowRange[1]+1) + "</p>";
             td.innerHTML = tempString + "</div>";
             return;
         }
@@ -1494,7 +1502,7 @@ function navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
                     }
                 })*/
             } else {
-                tempString += "<p>Total Rows: " + targetCell.value + "<br> Start Row No: " + targetCell.rowRange[0] + "<br> End Row No: " + targetCell.rowRange[1] + "</p>";
+                tempString += "<p>Total Rows: " + targetCell.value + "<br> Start Row No: " + (targetCell.rowRange[0]+1) + "<br> End Row No: " + (targetCell.rowRange[1]+1) + "</p>";
                 td.innerHTML = tempString + "</div>";
             }
         }
@@ -1707,8 +1715,92 @@ function getAggregateValue() {
 
             addHierarchiCol(e.data);
 
-            //higlight hierarchical col
-            updataHighlight();
+            brushNLinkRows = [];
+            if (navAggRawData.length == 1 && isPointFormula(navAggRawData[0][0].formula)) {
+                console.log("Brush color list satisfied");
+
+                //console.log(navAggRawData);
+                //console.log(navAggRawData);
+                let data = navAggRawData[0];
+                let queryObj = {}
+                let cond = [];
+                let value = [];
+                let firstR = [];
+                let lastR = [];
+
+                for (let i = 0; i < selectedChild.length; i++) {
+
+                    let formula = data[selectedChild[i]].formula;
+
+                    if (formula.includes("COUNTIF") || formula.includes("SUMIF")) {
+                        let ls = formula.split(",")[1].split(")")[0];
+                        let str = ls.substring(1, 3);
+                        if (str.includes(">=") || str.includes("<=") || str.includes("<>")) {
+                            cond.push(ls.substring(1, 3));
+                            value.push(ls.substring(3, ls.length - 1));
+                        }
+                        else if (str.includes(">") || str.includes("<") || str.includes("=")) {
+                            cond.push(ls.substring(1, 2));
+                            value.push(ls.substring(2, ls.length - 1));
+                        }
+                        else {
+                            cond.push("=");
+                            value.push(ls.substring(1, ls.length - 1));
+                        }
+                    }
+                    else if (formula.includes("MIN") || formula.includes("MAX") || formula.includes("MEDIAN") || formula.includes("MODE") || formula.includes("RANK") || formula.includes("SMALL") || formula.includes("LARGE")) {
+                        value.push(data[selectedChild[i]].value);
+                    }
+
+                    //TODO: when ondemand loading of data available
+                    /*let first = cumulativeData[currLevel][selectedChild[i]].rowRange[0];
+                    let last = cumulativeData[currLevel][selectedChild[i]].rowRange[1];
+
+                    if (first < currentFirstRow)
+                        firstR.push(currentFirstRow)
+                    else
+                        firstR.push(first);
+                    if (last > currentLastRow)
+                        lastR.push(currentLastRow);
+                    else
+                        lastR.push(last);*/
+                    if (lowerRange == 0)
+                        firstR.push(lowerRange + 1);
+                    else
+                        firstR.push(lowerRange);
+                    lastR.push(upperRange);
+                }
+
+                queryObj.bookId = bId;
+                queryObj.sheetName = sName;
+                queryObj.index = hierarchicalColAttr[0];
+                queryObj.first = firstR;
+                queryObj.last = lastR;
+                queryObj.conditions = cond;
+                queryObj.values = value;
+
+                $.ajax({
+                    url: baseUrl + "getBrushColorList",
+                    method: "POST",
+                    // dataType: 'json',
+                    contentType: 'text/plain',
+                    data: JSON.stringify(queryObj),
+                }).done(function (e) {
+                    if (e.status == "success") {
+                        console.log(e.data);//#d4eafc
+
+                        brushNLinkRows = e.data;
+
+                    }
+
+                    updataHighlight();
+
+                });
+
+            }
+
+            else //higlight hierarchical col
+                updataHighlight();
 
         } else {
             alert("There is some problem with the formula: " + e.message);
@@ -3119,87 +3211,7 @@ function chartRenderer(instance, td, row, col, prop, value, cellProperties) {
 var colors = ['#c799cc', '#eba6ee', '#ea7beb', '#fa1aec']
 
 function updataHighlight() {
-    let brushNLinkRows = [];
-    if (navAggRawData.length == 1 && isPointFormula(navAggRawData[0][0].formula)) {
-        console.log("Brush color list satisfied");
-        //console.log(navAggRawData);
-        //console.log(navAggRawData);
-        let data = navAggRawData[0];
-        let queryObj = {}
-        let cond = [];
-        let value = [];
-        let firstR = [];
-        let lastR = [];
 
-        for (let i = 0; i < selectedChild.length; i++) {
-
-            let formula = data[selectedChild[i]].formula;
-
-            if (formula.includes("COUNTIF") || formula.includes("SUMIF")) {
-                let ls = formula.split(",")[1].split(")")[0];
-                let str = ls.substring(1, 3);
-                if (str.includes(">=") || str.includes("<=") || str.includes("<>")) {
-                    cond.push(ls.substring(1, 3));
-                    value.push(ls.substring(3, ls.length - 1));
-                }
-                else if (str.includes(">") || str.includes("<") || str.includes("=")) {
-                    cond.push(ls.substring(1, 2));
-                    value.push(ls.substring(2, ls.length - 1));
-                }
-                else {
-                    cond.push("=");
-                    value.push(ls.substring(1, ls.length - 1));
-                }
-            }
-            else if (formula.includes("MIN") || formula.includes("MAX") || formula.includes("MEDIAN") || formula.includes("MODE") || formula.includes("RANK") || formula.includes("SMALL") || formula.includes("LARGE")) {
-                value.push(data[selectedChild[i]].value);
-            }
-
-            //TODO: when ondemand loading of data available
-            /*let first = cumulativeData[currLevel][selectedChild[i]].rowRange[0];
-            let last = cumulativeData[currLevel][selectedChild[i]].rowRange[1];
-
-            if (first < currentFirstRow)
-                firstR.push(currentFirstRow)
-            else
-                firstR.push(first);
-            if (last > currentLastRow)
-                lastR.push(currentLastRow);
-            else
-                lastR.push(last);*/
-            if (lowerRange == 0)
-                firstR.push(lowerRange + 1);
-            else
-                firstR.push(lowerRange);
-            lastR.push(upperRange);
-        }
-
-        queryObj.bookId = bId;
-        queryObj.sheetName = sName;
-        queryObj.index = hierarchicalColAttr[0];
-        queryObj.first = firstR;
-        queryObj.last = lastR;
-        queryObj.conditions = cond;
-        queryObj.values = value;
-
-        $.ajax({
-            url: baseUrl + "getBrushColorList",
-            method: "POST",
-            // dataType: 'json',
-            contentType: 'text/plain',
-            data: JSON.stringify(queryObj),
-        }).done(function (e) {
-            if (e.status == "success") {
-                console.log(e.data);//#d4eafc
-
-                brushNLinkRows = e.data;
-
-            }
-
-
-        });
-
-    }
     hot.updateSettings({
         cells: function (row, column, prop) {
             let cellMeta = {}
@@ -3220,11 +3232,18 @@ function updataHighlight() {
                         if (brushNLinkRows.includes(row))
                             td.style.background = '#d4eafc';
                         else
+                        {
+                            console.log("else satisfied");
                             td.style.background = '#f5e9e1';
+                        }
 
                     }
                     else
+                    {
+                        console.log("else satisfied");
                         td.style.background = '#f5e9e1';
+                    }
+
                 }
             }
 
