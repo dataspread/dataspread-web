@@ -28,7 +28,7 @@ public class Bucket<T> implements Serializable {
     public String toString() {
         if (minValue == null || maxValue == null)
             return null;
-        return minValue.toString().equals(maxValue.toString()) ? minValue.toString() : minValue.toString() + " to " + maxValue.toString();
+        return minValue.toString().equals(maxValue.toString()) ? minValue.toString() : minValue.toString() + " - " + maxValue.toString();
     }
 
     public T getMaxValue() {
