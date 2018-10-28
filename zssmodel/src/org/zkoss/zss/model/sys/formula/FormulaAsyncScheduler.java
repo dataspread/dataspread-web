@@ -7,9 +7,11 @@ import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncListener;
 
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 public abstract class FormulaAsyncScheduler implements Runnable {
+    public static ReentrantLock formulaUpdateLock = new ReentrantLock();
     private static FormulaAsyncScheduler _schedulerInstance;
     private static FormulaAsyncListener formulaAsyncListener;
     // sheet->session-> start,end row

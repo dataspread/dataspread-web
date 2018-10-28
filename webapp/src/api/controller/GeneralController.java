@@ -90,6 +90,16 @@ public class GeneralController implements FormulaAsyncListener {
         return headerAccessor.getMessageHeaders();
     }
 
+    private synchronized void refreshFormulas(UISessionManager.UISession uiSession,
+                                                    ArrayList<SCell> formulaCells){
+        FormulaAsyncScheduler.formulaUpdateLock.lock();
+        for (SCell cell:formulaCells){
+            updateCellWithNotfication(uiSession,cell.getRowIndex(),
+                    cell.getColumnIndex(),"=" + cell.getFormulaValue());
+        }
+        FormulaAsyncScheduler.formulaUpdateLock.unlock();
+    }
+
     public void pushCells(UISessionManager.UISession uiSession, int blockNumber) {
         //TODO: Update to directly call the data model.
         // TODO: Improve efficiency.
@@ -99,6 +109,7 @@ public class GeneralController implements FormulaAsyncListener {
         int row1 = blockNumber * uiSession.getFetchSize();
         Map<String, Object> ret = new HashMap<>();
         List<List<String[]>> data = new ArrayList<>();
+        ArrayList<SCell> formulaCells = new ArrayList<>();
         for (int row = row1; row < row1 + uiSession.getFetchSize(); row++) {
             List<String[]> cellsRow = new ArrayList<>();
             data.add(cellsRow);
@@ -107,12 +118,15 @@ public class GeneralController implements FormulaAsyncListener {
                 SCell sCell = sheet.getCell(row, col);
                 if (sCell.isNull()) {
                     cellsRow.add(new String[]{""});
-                } else if (sCell.getType() == SCell.CellType.FORMULA)
+                } else if (sCell.getType() == SCell.CellType.FORMULA) {
                     cellsRow.add(new String[]{sCell.getValue().toString(), sCell.getFormulaValue()});
+                    formulaCells.add(sCell);
+                }
                 else
                     cellsRow.add(new String[]{sCell.getValue().toString()});
             }
         }
+        refreshFormulas(uiSession,formulaCells);
 
         ret.put("message", "getCellsResponse");
         ret.put("blockNumber", blockNumber);

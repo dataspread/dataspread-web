@@ -4,6 +4,7 @@ import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
+import org.zkoss.zss.model.impl.GraphCompressor;
 import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.formula.DirtyManager;
 import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
@@ -31,8 +32,9 @@ public class FormulaAsyncSchedulerOptimized extends FormulaAsyncScheduler {
     @Override
     public void run() {
         while (keepRunning) {
+            formulaUpdateLock.lock();
+            formulaUpdateLock.unlock();
             List<DirtyManager.DirtyRecord> dirtyRecordSet = DirtyManager.dirtyManagerInstance.getAllDirtyRegions();
-
             List<SCell> computedCells = new ArrayList<>();
 
             // Compute the remaining
