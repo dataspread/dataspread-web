@@ -2,6 +2,9 @@ import React, {Component} from 'react';
 import {Dropdown, Menu, Modal} from 'semantic-ui-react'
 import './App.css';
 import DSGrid from './dsgrid';
+import ModalAboutUs from './Components/Menu/Help/about'
+import ModalOpenFile from './Components/Menu/File/file'
+import ModalImportFile from './Components/Menu/File/import'
 
 
 class App extends Component {
@@ -23,8 +26,8 @@ class App extends Component {
 
                     <Dropdown item text='File'>
                         <Dropdown.Menu>
-                            <Dropdown.Item>Open</Dropdown.Item>
-                            <Dropdown.Item>Import</Dropdown.Item>
+                            <ModalOpenFile></ModalOpenFile>
+                            <ModalImportFile></ModalImportFile>
                         </Dropdown.Menu>
                     </Dropdown>
 
@@ -37,7 +40,7 @@ class App extends Component {
 
                     <Dropdown item text='Help'>
                         <Dropdown.Menu>
-                            <Dropdown.Item>About</Dropdown.Item>
+                            <ModalAboutUs></ModalAboutUs>
                         </Dropdown.Menu>
                     </Dropdown>
 
