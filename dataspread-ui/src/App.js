@@ -29,7 +29,10 @@ class App extends Component {
                     </Dropdown>
 
                     <Dropdown item text='Edit'>
-
+                        <Dropdown.Menu>
+                            <Dropdown.Item>Copy</Dropdown.Item>
+                            <Dropdown.Item>Paste</Dropdown.Item>
+                        </Dropdown.Menu>
                     </Dropdown>
 
                     <Dropdown item text='Help'>
