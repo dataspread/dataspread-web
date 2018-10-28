@@ -1,12 +1,10 @@
 package org.zkoss.zss.model.sys.formula.Primitives;
 
+import org.zkoss.zss.model.sys.formula.Primitives.Datastructure.DataWrapper;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
-
-import java.util.List;
 
 public class AggregateOperator extends PhysicalOperator {
     private BinaryFunction binaryFunction;
-    private Double result = null;
     public AggregateOperator(BinaryFunction f){
         super();
         binaryFunction = f;
@@ -14,20 +12,13 @@ public class AggregateOperator extends PhysicalOperator {
 
     @Override
     public void evaluate(FormulaExecutor context) {
-        List data = (List)((PhysicalOperator)inOp.get(0)).getOutput(this);
-        result = binaryFunction.groupEvaluate(data);
+        assert inEdges.get(0).resultIsReady();
+        DataWrapper<Double> data = (DataWrapper<Double>)inEdges.get(0).popResult();
+        DataWrapper<Double> result = new DataWrapper<Double>(binaryFunction.groupEvaluate(data));
+        for (Edge o:outEdges){
+            o.setResult(result);
+        }
         _evaluated = true;
     }
 
-    @Override
-    public void clean() {
-        super.clean();
-        result = null;
-    }
-
-    @Override
-    Object getOutput(PhysicalOperator op) {
-        super.getOutput(op);
-        return result;
-    }
 }

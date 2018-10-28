@@ -69,7 +69,6 @@ public class FormulaAsyncSchedulerOptimized extends FormulaAsyncScheduler {
             QueryPlanGraph optimizedGraph = QueryOptimizer.getOptimizer().optimize(graphs);
             try {
                 FormulaExecutor.getExecutor().execute(optimizedGraph,this);
-                optimizedGraph.clean();
             } catch (OptimizationError optimizationError) {
                 optimizationError.printStackTrace();
             }

@@ -6,6 +6,7 @@ import org.zkoss.zss.model.sys.formula.Primitives.LogicalOperator;
 import org.zkoss.zss.model.sys.formula.Primitives.PhysicalOperator;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class QueryPlanGraph {
@@ -26,7 +27,7 @@ public class QueryPlanGraph {
         if (!p.isEvaluated())
             return;
         p.clean();
-        for (LogicalOperator l :p.getOutputNodes())
-            recursiveClean(l);
+        for (Iterator<LogicalOperator> it = p.getOutputNodes(); it.hasNext();)
+            recursiveClean(it.next());
     }
 }

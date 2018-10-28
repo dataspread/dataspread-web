@@ -1,29 +1,43 @@
 package org.zkoss.zss.model.sys.formula.Primitives;
 
+import java.util.Iterator;
 import java.util.Vector;
 
 public class LogicalOperator {
-    Vector<LogicalOperator> inOp,outOp;
+    Vector<Edge> inEdges, outEdges;
 
     LogicalOperator(){
-        inOp = new Vector<>();
-        outOp = new Vector<>();
+        inEdges = new Vector<>();
+        outEdges = new Vector<>();
     }
 
     public static void connect(LogicalOperator in, LogicalOperator out){
-        in.addOutput(out);
-        out.addInput(in);
+        Edge edge = new Edge(in,out);
+        in.addOutput(edge);
+        out.addInput(edge);
     }
 
-    public void addInput(LogicalOperator op){
-        inOp.add(op);
+    private void addInput(Edge op){
+        inEdges.add(op);
     }
 
-    public void addOutput(LogicalOperator op){
-        outOp.add(op);
+    private void addOutput(Edge op){
+        outEdges.add(op);
     }
 
-    public Vector<LogicalOperator> getOutputNodes(){
-        return outOp;
+    public Iterator<LogicalOperator> getOutputNodes(){
+        return new Iterator<LogicalOperator>() {
+            int i = -1;
+            @Override
+            public boolean hasNext() {
+                return i < outEdges.size() - 1;
+            }
+
+            @Override
+            public LogicalOperator next() {
+                i += 1;
+                return outEdges.get(i).getOutVertex();
+            }
+        };
     }
 }

@@ -1,14 +1,13 @@
 package org.zkoss.zss.model.sys.formula.QueryOptimization;
 
-import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
+import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 import org.zkoss.zss.model.sys.formula.Primitives.LogicalOperator;
 import org.zkoss.zss.model.sys.formula.Primitives.PhysicalOperator;
-import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 
-import static org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler.getScheduler;
+import java.util.Iterator;
 
 public class FormulaExecutor {
     static FormulaExecutor uniqueExecutor = new FormulaExecutor();
@@ -21,6 +20,7 @@ public class FormulaExecutor {
         this.scheduler = scheduler;
         for (LogicalOperator op:graph.dataNodes)
             recursiveEvaluate(op);
+        graph.clean();
     }
 
     public void update(SSheet sheet, AbstractCellAdv sCell){
@@ -37,8 +37,8 @@ public class FormulaExecutor {
             return;
         p.evaluate(this);
         if (p.isEvaluated()){
-            for (LogicalOperator l :p.getOutputNodes())
-                recursiveEvaluate(l);
+            for (Iterator<LogicalOperator> it = p.getOutputNodes();it.hasNext();)
+                recursiveEvaluate(it.next());
         }
     }
 }

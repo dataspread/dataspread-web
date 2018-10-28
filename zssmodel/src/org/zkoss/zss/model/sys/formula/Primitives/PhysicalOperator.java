@@ -6,7 +6,6 @@ import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
 public abstract class PhysicalOperator extends LogicalOperator {
     protected boolean _evaluated = false;
     abstract public void evaluate(FormulaExecutor context) throws OptimizationError;
-    Object getOutput(PhysicalOperator op){ return null;}
     public void clean(){
         _evaluated = false;
     }
