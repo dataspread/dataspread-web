@@ -8,6 +8,12 @@ import ModalImportFile from './Components/Menu/File/import'
 
 
 class App extends Component {
+
+    constructor(props){
+        super(props);
+        this.filename = 'hello.txt'
+    }
+
     render () {
         return (
             <div>
@@ -53,7 +59,8 @@ class App extends Component {
                 </Menu>
 
 
-                <DSGrid/>
+                <DSGrid filename={this.filename}/>
+                
             </div>
         )
     }

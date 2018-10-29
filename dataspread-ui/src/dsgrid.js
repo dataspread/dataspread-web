@@ -127,6 +127,7 @@ export default class DSGrid extends Component {
     render() {
         return (
             <div>
+                <h1>{this.filename}</h1>
                 <Input
                     placeholder='Book Name...'
                     name="bookName"
