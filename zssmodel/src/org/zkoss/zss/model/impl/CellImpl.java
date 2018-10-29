@@ -166,7 +166,11 @@ public class CellImpl extends AbstractCellAdv {
 
 	public int getComputeCost()
 	{
-		return getReferredCells().stream().map(e->new CellRegion(e))
+        Collection<Ref> referredCells = getReferredCells();
+        if (referredCells == null)
+            return 0;
+        else
+            return referredCells.stream().map(e -> new CellRegion(e))
 				.mapToInt(CellRegion::getCellCount)
 				.sum();
 	}
@@ -493,7 +497,8 @@ public class CellImpl extends AbstractCellAdv {
 		//clear the dependent's formula result cache
 		SBook book = getSheet().getBook();
 		SBookSeries bookSeries = book.getBookSeries();
-		ModelUpdateUtil.handlePrecedentUpdate(bookSeries, _sheet, getRef());
+        if (!getSheet().isDelayComputation())
+            ModelUpdateUtil.handlePrecedentUpdate(bookSeries, _sheet, getRef());
 		// TODO Check if we need add cell update.
 
 		//ZSS-985: if it is not destroying this cell

@@ -51,6 +51,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @since 3.5.0
  */
 public class SheetImpl extends AbstractSheetAdv {
+    boolean delayComputation;
+
 	private static final long serialVersionUID = 1L;
 	private static final Log _logger = Log.lookup(SheetImpl.class);
     static private int PreFetchRows = Library.getIntProperty("PreFetchRows", 100);
@@ -127,7 +129,7 @@ public class SheetImpl extends AbstractSheetAdv {
 		this._book = book;
 		this._id = id;
 		sheetDataCache = CacheBuilder.newBuilder()
-				.maximumSize(CACHE_SIZE)
+                // TODO Revert this .maximumSize(CACHE_SIZE)
 				.build();
     }
 	
@@ -486,7 +488,8 @@ public class SheetImpl extends AbstractSheetAdv {
 		if (getBook().hasSchema()) {
 			AbstractCellAdv cell = null;
 			try {
-				cell = sheetDataCache.get(cellRegion, () -> preFetchCells(cellRegion));
+
+                cell = sheetDataCache.get(cellRegion, () -> preFetchCells(cellRegion));
 			} catch (ExecutionException e) {
 				e.printStackTrace();
 			}
@@ -2345,6 +2348,16 @@ public class SheetImpl extends AbstractSheetAdv {
 	public int getNewTrxId() {
 		return trxId.getAndIncrement();
 	}
+
+    @Override
+    public boolean isDelayComputation() {
+        return delayComputation;
+    }
+
+    @Override
+    public void setDelayComputation(boolean value) {
+        delayComputation = value;
+    }
 
 	@Override
 	public boolean isSyncCalc() {

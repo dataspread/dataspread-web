@@ -1148,7 +1148,7 @@ public class BookImpl extends AbstractBookAdv{
 	@Override
 	public boolean setNameAndLoad(String _bookName, String _bookId){
 		this._bookName = _bookName;
-        this._bookId = _bookId;
+		this._bookId = _bookName;
 		this._sheets.clear();
 
 		// Load Schema
@@ -1163,7 +1163,7 @@ public class BookImpl extends AbstractBookAdv{
 			 PreparedStatement sheetsStmt = connection.prepareStatement(sheetsQuery)) {
 
 
-			bookStmt.setString(1, _bookId);
+			bookStmt.setString(1, _bookName);
 			ResultSet rs = bookStmt.executeQuery();
 			if (!rs.next()) {
 			    logger.info(getBookName() + "does not exist");
