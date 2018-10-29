@@ -1,16 +1,16 @@
 package org.zkoss.zss.model.sys.formula.Primitives;
 
-import org.zkoss.zss.model.sys.formula.Primitives.Datastructure.DataWrapper;
+import java.util.List;
 
-public class Edge {
-    LogicalOperator in,out;
+class Edge {
+    private LogicalOperator in,out;
 
     Edge(LogicalOperator in, LogicalOperator out){
         this.in = in;
         this.out = out;
     }
 
-    private DataWrapper result = null;
+    private List result = null;
 
     LogicalOperator getInVertex(){
         return in;
@@ -20,7 +20,7 @@ public class Edge {
         return out;
     }
 
-    void setResult(DataWrapper result){
+    void setResult(List result){
         this.result = result;
     }
 
@@ -28,8 +28,8 @@ public class Edge {
         return result != null;
     }
 
-    DataWrapper popResult(){
-        DataWrapper ret = result;
+    List popResult(){
+        List ret = result;
         result = null;
         return ret;
     }

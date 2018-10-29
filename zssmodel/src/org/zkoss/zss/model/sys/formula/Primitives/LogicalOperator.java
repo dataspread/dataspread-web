@@ -1,14 +1,16 @@
 package org.zkoss.zss.model.sys.formula.Primitives;
 
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Vector;
+import java.util.List;
+import java.util.ArrayList;
 
 public class LogicalOperator {
-    Vector<Edge> inEdges, outEdges;
+    List<Edge> inEdges, outEdges;
 
     LogicalOperator(){
-        inEdges = new Vector<>();
-        outEdges = new Vector<>();
+        inEdges = new ArrayList<>();
+        outEdges = new ArrayList<>();
     }
 
     public static void connect(LogicalOperator in, LogicalOperator out){

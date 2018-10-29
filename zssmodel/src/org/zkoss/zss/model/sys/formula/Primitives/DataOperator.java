@@ -6,7 +6,6 @@ import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
-import org.zkoss.zss.model.sys.formula.Primitives.Datastructure.DataWrapper;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
 import org.zkoss.zss.range.SRange;
 
@@ -26,19 +25,17 @@ public class DataOperator extends PhysicalOperator{
     @Override
     public void evaluate(FormulaExecutor context) throws OptimizationError {
         SSheet sheet = _range.getSheet();
-        DataWrapper results;
+        List results;
         if (inEdges.size() == 0){
-            List data = new ArrayList<>();
+            results = new ArrayList<>();
 
             for (int i = _range.getRow(); i <= _range.getLastRow(); i++)
                 for (int j = _range.getColumn(); j <= _range.getLastColumn(); j++) {
                     SCell cell = sheet.getCell(i, j);
                     if (cell.getType() != SCell.CellType.NUMBER)
                         throw new OptimizationError("Unexpected cell type");
-                    data.add(cell.getValue());
+                    results.add(cell.getValue());
                 }
-
-            results = new DataWrapper(data);
             _evaluated = true;
         }
         else{

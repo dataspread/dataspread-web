@@ -4,7 +4,6 @@ import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
-import org.zkoss.zss.model.impl.GraphCompressor;
 import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.formula.DirtyManager;
 import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
