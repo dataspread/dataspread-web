@@ -62,6 +62,7 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
                 }
             }
 
+
             // Compute the remaining
             for (DirtyManager.DirtyRecord dirtyRecord : dirtyRecordSet) {
                 //logger.info("Processing " + dirtyRecord.region);
@@ -98,6 +99,7 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
             //logger.info("Done computing " + dirtyRecord.region );
         }
     }
+
 
     @Override
     public void shutdown() {

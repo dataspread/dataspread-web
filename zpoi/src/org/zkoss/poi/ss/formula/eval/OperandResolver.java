@@ -234,7 +234,9 @@ public final class OperandResolver {
 			return dd.doubleValue();
 		}
 		//ZSS-269 error evaluating some financial formulas, hawk, it should throw EvaluationException
-		throw new EvaluationException(ErrorEval.VALUE_INVALID,"Unexpected arg eval type (" + ev.getClass().getName() + ")");
+        //Mangesh - Temp fix for invalid sheets
+        return 0.0;
+        //throw new EvaluationException(ErrorEval.VALUE_INVALID,"Unexpected arg eval type (" + ev.getClass().getName() + ")");
 	}
 
 	/**

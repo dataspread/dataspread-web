@@ -11,6 +11,7 @@ import org.zkoss.zss.model.impl.FormulaCacheCleaner;
 import org.zkoss.zss.model.impl.GraphCompressor;
 import org.zkoss.zss.model.impl.SheetImpl;
 import org.zkoss.zss.model.impl.sys.DependencyTableImplV2;
+import org.zkoss.zss.model.impl.sys.DependencyTablePGImpl;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncListener;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerSimple;
 import org.zkoss.zss.model.sys.BookBindings;
@@ -19,10 +20,7 @@ import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Types;
+import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -32,7 +30,10 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
     boolean testStarted = false;
     final boolean sync=false;
     final boolean graphCompression = true;
-    static int graphCompressionSize = 1;
+    final static boolean graphInDB = false;
+    private static Connection conn;
+
+    static int graphCompressionSize = 20;
     final CellRegion window = null;
     //final CellRegion window = new CellRegion(0, 0, 50, 10);
     private long controlReturnedTime;
@@ -47,7 +48,17 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         String driver = "org.postgresql.Driver";
         String userName = "mangesh";
         String password = "mangesh";
-        EngineFactory.dependencyTableClazz = DependencyTableImplV2.class;
+
+        String url2 = "jdbc:postgresql://127.0.0.1:5432/XLAnalysis";
+        Properties props = new Properties();
+        props.setProperty("user", userName);
+        props.setProperty("password", password);
+        conn = DriverManager.getConnection(url2, props);
+
+        if (graphInDB)
+            EngineFactory.dependencyTableClazz = DependencyTablePGImpl.class;
+        else
+            EngineFactory.dependencyTableClazz = DependencyTableImplV2.class;
 
         DBHandler.connectToDB(url, driver, userName, password);
 
@@ -102,7 +113,94 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
 
     }
 
-    private static void compressGraphNode(String bookName, String sheetname, CellRegion cellRegion) {
+    public static void loadSheet(SSheet sheet,
+                                 String ds, String bookName, String sheetName) throws SQLException {
+        //Connection connection = pgs_db.getConnection();
+        Map<CellRegion, String> sheetData = new HashMap<>();
+
+        String stmt = "SELECT * FROM " + ds + "_sheetdata WHERE filename = ? and sheetname = ?";
+        PreparedStatement preparedStatement = conn.prepareStatement(stmt);
+        preparedStatement.setString(1, bookName);
+        preparedStatement.setString(2, sheetName);
+        ResultSet rs = preparedStatement.executeQuery();
+
+        int i = 0;
+        // Update in two pass
+        try (AutoRollbackConnection autoRollbackConnection = DBHandler.instance.getConnection()) {
+            while (rs.next()) {
+                int row = rs.getInt("row");
+                int col = rs.getInt("col");
+                String value = rs.getString("formula");
+                if (rs.wasNull()) {
+                    value = rs.getString("value");
+                    sheet.getCell(row, col).setStringValue(value,
+                            autoRollbackConnection, true);
+
+                } else {
+                    value = "=" + value;
+                    sheet.getCell(row, col).setNumberValue(1.0,
+                            autoRollbackConnection, true);
+                }
+                // System.out.println("Updating value:" + value);
+                // sheetData.put(new CellRegion(row,col), value);
+                i++;
+                if (i % 1000 == 0)
+                    System.out.println("Pass 1 " + i);
+            }
+            autoRollbackConnection.commit();
+        }
+        rs.close();
+
+
+        i = 0;
+
+        sheet.setDelayComputation(true);
+
+        // Pass 2
+        rs = preparedStatement.executeQuery();
+        try (AutoRollbackConnection autoRollbackConnection = DBHandler.instance.getConnection()) {
+            while (rs.next()) {
+                int row = rs.getInt("row");
+                int col = rs.getInt("col");
+                String value = rs.getString("formula");
+                if (rs.wasNull()) {
+                } else {
+                    sheet.getCell(row, col).setFormulaValue(value,
+                            autoRollbackConnection, true);
+                }
+                // System.out.println("Updating value:" + value);
+                // sheetData.put(new CellRegion(row,col), value);
+                i++;
+                if (i % 1000 == 0)
+                    System.out.println("Pass 2 " + i);
+
+            }
+
+            autoRollbackConnection.commit();
+        }
+        rs.close();
+
+
+        preparedStatement.close();
+
+        // Fix the formula
+        /*
+        try(AutoRollbackConnection autoRollbackConnection = DBHandler.instance.getConnection()) {
+            sheet.getCells()
+                    .stream()
+                    .filter(e -> e.getStringValue().startsWith("="))
+                    .forEach(e -> e
+                            .setValueParse(e.getStringValue().replaceAll("\\$",""),
+                                    autoRollbackConnection, 0, true));
+            autoRollbackConnection.commit();
+        } */
+        sheet.setDelayComputation(false);
+        System.out.println("Sheet loaded");
+
+    }
+
+
+    private static void compressPGGraphNode(String bookName, String sheetname, CellRegion cellRegion) {
         System.out.println("compressGraphNode " + cellRegion);
         String selectSql = "WITH RECURSIVE deps AS (  SELECT " +
                 "bookname::text, sheetname::text, range::text, " +
@@ -265,6 +363,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
 
     public void simpleTest() {
         SBook book = BookBindings.getBookByName("testBook" + System.currentTimeMillis());
+        //SBook book = BookBindings.getBookByName("ejnnyuhp8");
         /* Cleaner for sync computation */
         if (sync)
             FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(book.getBookSeries()));
@@ -308,12 +407,18 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
 
         System.out.println("Dependencies " + cellsToUpdate);
         if (graphCompression) {
-            compressDependencies1(dependencies1);
-            sheet.getDependencyTable().addPreDep(updatedCell, new HashSet<>(dependencies1));
+            // For PG graph
+            if (graphInDB) {
+                compressPGGraphNode(sheet.getBook().getBookName(),
+                        sheet.getSheetName(), new CellRegion(0, 0));
+            } else {
+                compressDependencies1(dependencies1);
+                sheet.getDependencyTable().addPreDep(updatedCell, new HashSet<>(dependencies1));
+            }
         }
         cellsToUpdate= dependencies1.stream().mapToInt(Ref::getCellCount).sum();
         System.out.println("After Compression Dependencies " + cellsToUpdate);
-
+        sheet.clearCache();
 
         DirtyManagerLog.instance.init();
         CellImpl.disableDBUpdates = true;
@@ -377,6 +482,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
 
     }
 
+    // Exp 1
     private void Test1_CreateSheet(SSheet sheet) {
         for (int i = 1; i <= cellCount; i++)
             sheet.getCell(i, 2).setValue(System.currentTimeMillis());
@@ -386,6 +492,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
             sheet.getCell(i, 0).setFormulaValue("A1" + "+" + (System.currentTimeMillis() % 5000) + "+" + i);
     }
 
+    // exp 2
     private void Test2_CreateSheet(SSheet sheet) {
         for (int i = 1; i <= cellCount; i++)
             sheet.getCell(i, 2).setValue(System.currentTimeMillis());
@@ -414,15 +521,115 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
     private void Test4_CreateSheet(SSheet sheet) {
         Random random = new Random(7);
 
-        int tableRows = 10000;
+        sheet.setDelayComputation(true);
+        int tableRows = 17689;
         for (int i = 0; i < tableRows; i++) {
             sheet.getCell(i, 0).setValue(i);
             sheet.getCell(i, 1).setValue(System.currentTimeMillis());
+            if (i % 1000 == 0)
+                System.out.println(i);
         }
 
-        for (int i = 1; i <= tableRows; i++)
+        for (int i = 1; i <= tableRows / 2.6; i++) {
             sheet.getCell(i, 3).setFormulaValue("VLOOKUP(" + random.nextInt(tableRows) + ",A1:B"
                     + tableRows + ",2,FALSE)");
+            if (i % 1000 == 0)
+                System.out.println(i);
+
+        }
+        sheet.setDelayComputation(false);
+    }
+
+    // Real test with a sheet
+    private void Test5_CreateSheet(SSheet sheet) {
+        try {
+            loadSheet(sheet, "survey", "Escalating OSA with Cost Share.xlsx", "Cost Share");
+            //loadSheet(sheet, "survey", "3.17.17_1985-2015_industrials_pull.v7.xlsx",
+            //        "Inflows and Outflows");
+
+            //loadSheet(sheet, "survey","Mario.xlsx","Sheet1");
+            //   SBook book= BookBindings.getBookByNameDontLoad("ejnnyuhp8");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        //ArrayList<CellRegion> badCells = getBadCells("testBook1540434363055", "Sheet1");
+        //ArrayList<CellRegion> badCells = getBadCells(sheet.getBook().getBookName(), sheet.getSheetName());
+        //sheet.getCell(0,0).setValue(0.0);
+        sheet.getCell("J7").setFormulaValue("A1+100");
+    }
+
+    private void Test6_CreateSheet(SSheet sheet) {
+        try {
+            loadSheet(sheet, "survey", "harvestdata.jun172015.c046.xlsx", "harvestdata.jun172015.c046");
+            //loadSheet(sheet, "survey", "3.17.17_1985-2015_industrials_pull.v7.xlsx",
+            //        "Inflows and Outflows");
+
+            //loadSheet(sheet, "survey","Mario.xlsx","Sheet1");
+            //   SBook book= BookBindings.getBookByNameDontLoad("ejnnyuhp8");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        ArrayList<CellRegion> badCells = getBadCells(sheet.getBook().getBookName(), sheet.getSheetName());
+        System.out.println(" Bad cells " + badCells);
+        //sheet.getCell(0,0).setValue(0.0);
+        sheet.getCell("J7").setFormulaValue("A1+100");
+    }
+
+    public static ArrayList<CellRegion> getBadCells(String bookName, String sheetname) {
+        ArrayList<CellRegion> badCells = new ArrayList<>();
+        ArrayList<Integer> impactedCells = new ArrayList<>();
+        String sql = "WITH RECURSIVE deps AS (  SELECT  " +
+                "bookname::text, sheetname::text, range::text, " +
+                "dep_bookname, dep_sheetname, dep_range::text, " +
+                "must_expand FROM dependency " +
+                "WHERE bookname = ? " +
+                "AND sheetname = ? " +
+                "UNION   SELECT " +
+                "t.bookname, t.sheetname, t.range, " +
+                "d.dep_bookname, d.dep_sheetname, d.dep_range::text, d.must_expand " +
+                "FROM dependency d    INNER JOIN deps t    ON " +
+                "d.bookname   =  t.dep_bookname    AND t.must_expand " +
+                "AND d.sheetname =  t.dep_sheetname    AND d.range " +
+                "&& t.dep_range::box) " +
+                "SELECT " +
+                "bookname, sheetname, range::box, " +
+                "sum(area(dep_range::box) + height(dep_range::box) + width(dep_range::box) + 1) " +
+                "FROM deps " +
+                "group by bookname, sheetname, range " +
+                "order by 4 desc " +
+                "LIMIT 1;";
+
+
+        try (AutoRollbackConnection autoRollbackConnection = DBHandler.instance.getConnection();
+             PreparedStatement statement = autoRollbackConnection.prepareStatement(sql)) {
+            statement.setString(1, bookName);
+            statement.setString(2, sheetname);
+            ResultSet rs = statement.executeQuery();
+            while (rs.next()) {
+                if (rs.getInt(4) < 100)
+                    break;
+                PGbox range = (PGbox) rs.getObject(3);
+                // The order of points is based on how postgres stores them
+                badCells.add(new CellRegion((int) range.point[1].x,
+                        (int) range.point[1].y,
+                        (int) range.point[0].x,
+                        (int) range.point[0].y));
+                impactedCells.add(rs.getInt(4));
+
+            }
+            rs.close();
+
+            // System.out.println("Bad cellls");
+            //  for (int i =0; i<badCells.size();i++)
+            //  {
+            //      System.out.println(badCells.get(i) + " " + impactedCells.get(i));
+            //  }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return badCells;
     }
 
     @Override
