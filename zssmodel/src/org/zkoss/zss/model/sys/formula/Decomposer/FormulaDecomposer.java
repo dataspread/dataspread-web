@@ -81,7 +81,7 @@ public class FormulaDecomposer {
             } else if (ptg instanceof AreaPtg){
                 CellRegion region = new CellRegion(((AreaPtg)ptg).getFirstRow(), ((AreaPtg)ptg).getFirstColumn(),
                         ((AreaPtg)ptg).getLastRow(), ((AreaPtg)ptg).getLastColumn());
-                opResult = new DataOperator(new RangeImpl(target.getSheet(),region));
+                opResult = new SingleDataOperator(new RangeImpl(target.getSheet(),region));
                 result.addData((DataOperator) opResult);
 
             } else {
@@ -95,7 +95,7 @@ public class FormulaDecomposer {
         }
 
         LogicalOperator value = stack.pop();
-        DataOperator targetCell = new DataOperator(
+        DataOperator targetCell = new SingleDataOperator(
                 new RangeImpl(target.getSheet(),target.getRowIndex(),target.getColumnIndex()));
         connect(value,targetCell);
         result.addData(targetCell);
