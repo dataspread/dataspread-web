@@ -379,11 +379,15 @@ public class SheetImpl extends AbstractSheetAdv {
 		//System.out.println("Fetching cell:" + cellRegion);
 
 		AbstractCellAdv ret=null;
-		int minRow = Math.max(0,cellRegion.getRow()- PreFetchRows);
-		int maxRow = minRow + PreFetchRows * 2;
+		int additionalHeight = Math.max(0,PreFetchRows * 2 - cellRegion.getHeight() + 1) / 2;
+		int fixedPreFetchColumns = (PreFetchColumns * PreFetchRows * 2 - 1)
+				/ (Math.max(PreFetchRows * 2,cellRegion.getHeight())) + 1;
+		int additionalWidth = Math.max(0,fixedPreFetchColumns * 2 - cellRegion.getLength() + 1) / 2;
+		int minRow = Math.max(0,cellRegion.getRow()- additionalHeight);
+		int maxRow = minRow + additionalHeight * 2 + cellRegion.getHeight() - 1;
 
-		int minColumn = Math.max(0,cellRegion.getColumn()- PreFetchColumns);
-		int maxColumn = minColumn + PreFetchColumns * 2;
+		int minColumn = Math.max(0,cellRegion.getColumn()- additionalWidth);
+		int maxColumn = minColumn + additionalWidth * 2 + cellRegion.getLength() - 1;
 
 		CellRegion fetchRange = new CellRegion(minRow, minColumn, maxRow, maxColumn);
 
@@ -448,6 +452,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	@Override
 	public Collection<SCell> getCells(CellRegion region) {
 		Collection<SCell> cells = new ArrayList<>();
+		preFetchCells(region);
 		for (int row = region.getRow(); row <= region.getLastRow(); row++)
 			for (int col = region.getColumn(); col <= region.getLastColumn(); col++) {
 				SCell cell = getCell(row, col, false);

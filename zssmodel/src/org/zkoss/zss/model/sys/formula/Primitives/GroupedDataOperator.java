@@ -1,5 +1,6 @@
 package org.zkoss.zss.model.sys.formula.Primitives;
 
+import javafx.util.Pair;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
 import org.zkoss.zss.range.SRange;
@@ -9,8 +10,10 @@ import java.util.List;
 
 public class GroupedDataOperator extends DataOperator{
 
+    List<Pair<Integer, Integer>> inEdgesRange, outEdgesRange;
+
     public GroupedDataOperator(List<DataOperator> dataOperators){
-        super(null);
+        super();
         int row = Integer.MAX_VALUE,column = Integer.MAX_VALUE,maxRow = 0,maxColumn = 0;
         for (int i = 0,isize = dataOperators.size();i < isize;i++){
             DataOperator data = dataOperators.get(i);
@@ -20,10 +23,19 @@ public class GroupedDataOperator extends DataOperator{
             maxColumn = Math.max(data.getRange().getLastColumn(),maxColumn);
         }
         _range = new RangeImpl(dataOperators.get(0).getRange().getSheet(),row,column,maxRow,maxColumn);
+        for (int i = 0,isize = dataOperators.size();i < isize;i++) {
+            DataOperator data = dataOperators.get(i);
+
+        }
     }
 
     @Override
-    public void evaluate(FormulaExecutor context) throws OptimizationError {
+    public void evaluate(FormulaExecutor context) {
 
+    }
+
+    @Override
+    public void merge(DataOperator dataOperator) throws OptimizationError {
+        throw new OptimizationError("Unspport functionality");
     }
 }

@@ -2,11 +2,13 @@ package org.zkoss.zss.model.sys.formula.Primitives;
 
 import org.zkoss.poi.ss.formula.eval.NumberEval;
 import org.zkoss.poi.ss.formula.eval.ValueEval;
+import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
+import org.zkoss.zss.model.sys.formula.QueryOptimization.QueryOptimizer;
 import org.zkoss.zss.range.SRange;
 
 import java.util.ArrayList;
@@ -24,14 +26,14 @@ public class SingleDataOperator extends DataOperator{
         List results;
         if (inEdges.size() == 0){
             results = new ArrayList<>();
+            ;
 
-            for (int i = _range.getRow(); i <= _range.getLastRow(); i++)
-                for (int j = _range.getColumn(); j <= _range.getLastColumn(); j++) {
-                    SCell cell = sheet.getCell(i, j);
-                    if (cell.getType() != SCell.CellType.NUMBER)
-                        throw new OptimizationError("Unexpected cell type");
-                    results.add(cell.getValue());
-                }
+            for (SCell cell : sheet.getCells(
+                    new CellRegion(_range.getRow(),_range.getColumn(),_range.getLastRow(),_range.getLastColumn()))){
+                if (cell.getType() != SCell.CellType.NUMBER)
+                    throw new OptimizationError("Unexpected cell type");
+                results.add(cell.getValue());
+            }
             _evaluated = true;
         }
         else{
@@ -51,6 +53,14 @@ public class SingleDataOperator extends DataOperator{
             o.setResult(results);
         }
         _evaluated = true;
+    }
+
+    @Override
+    public void merge(DataOperator dataOperator) throws OptimizationError {
+        if (!(dataOperator instanceof SingleDataOperator))
+            throw new OptimizationError("Unspport functionality");
+        inEdges.addAll(dataOperator.inEdges);
+        outEdges.addAll(dataOperator.outEdges);
     }
 
     private void setFormulaValue(int row, int column, Object result, SSheet sheet,FormulaExecutor context) throws OptimizationError {

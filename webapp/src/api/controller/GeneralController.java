@@ -126,7 +126,6 @@ public class GeneralController implements FormulaAsyncListener {
                     cellsRow.add(new String[]{sCell.getValue().toString()});
             }
         }
-        refreshFormulas(uiSession,formulaCells);
 
         ret.put("message", "getCellsResponse");
         ret.put("blockNumber", blockNumber);
@@ -138,6 +137,8 @@ public class GeneralController implements FormulaAsyncListener {
         simpMessagingTemplate.convertAndSendToUser(uiSession.getSessionId(),
                 "/push/updates", ret,
                 createHeaders(uiSession.getSessionId()));
+
+        new Thread(() -> refreshFormulas(uiSession,formulaCells)).start();
 
     }
 

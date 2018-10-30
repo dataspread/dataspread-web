@@ -31,4 +31,6 @@ public abstract class DataOperator extends PhysicalOperator{
 
     @Override
     public abstract void evaluate(FormulaExecutor context) throws OptimizationError ;
+
+    public abstract void merge(DataOperator dataOperator) throws OptimizationError;
 }
