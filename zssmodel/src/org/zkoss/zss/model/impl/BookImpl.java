@@ -19,6 +19,7 @@ package org.zkoss.zss.model.impl;
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
+import org.zkoss.lang.Library;
 import org.zkoss.lang.Objects;
 import org.zkoss.zk.ui.Executions;
 import org.zkoss.zss.model.*;
@@ -30,6 +31,7 @@ import org.zkoss.zss.model.sys.dependency.DependencyTable;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.dependency.Ref.RefType;
 import org.zkoss.zss.model.sys.formula.EvaluationContributor;
+import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 import org.zkoss.zss.model.sys.formula.FormulaClearContext;
 import org.zkoss.zss.model.util.CellStyleMatcher;
 import org.zkoss.zss.model.util.FontMatcher;
@@ -119,7 +121,24 @@ public class BookImpl extends AbstractBookAdv{
         //BookBindings.put(bookName, this);
     }
 
+    private static FormulaAsyncScheduler formulaAsyncScheduler = null;
+
 	public static SBook getBookById(String bookId){
+
+		if (formulaAsyncScheduler == null){
+			String FormulaAsyncSchedulerName = "org.zkoss.zss.model.impl.sys.formula." +
+					Library.getProperty("FormulaAsyncScheduler",
+							"FormulaAsyncSchedulerSimple");
+			try {
+				formulaAsyncScheduler = (FormulaAsyncScheduler) Class.forName(FormulaAsyncSchedulerName).newInstance();
+				Thread thread = new Thread(formulaAsyncScheduler);
+				thread.start();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+
 		String getBookEntry;
 		if (bookId.equals("undefined"))
 			getBookEntry = "SELECT bookname,booktable FROM books ORDER BY lastmodified DESC";

@@ -62,7 +62,7 @@ public class QueryOptimizer {
                     temp = new ArrayList<>();
                 }
                 else {
-                    int size = temp.size() - 1;
+                    int size = temp.size();
                     if (size > 0 && row == temp.get(size - 1).getRange().getRow()
                             && lastRow == temp.get(size - 1).getRange().getLastRow())
                         temp.get(size - 1).merge(data);

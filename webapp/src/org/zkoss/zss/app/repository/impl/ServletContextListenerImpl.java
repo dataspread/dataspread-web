@@ -27,19 +27,6 @@ public class ServletContextListenerImpl implements ServletContextListener, Seria
 		}
 		DBHandler.instance.initApplication();
 
-        String FormulaAsyncSchedulerName = "org.zkoss.zss.model.impl.sys.formula." +
-                Library.getProperty("FormulaAsyncScheduler",
-                        "FormulaAsyncSchedulerOptimized");
-
-        FormulaAsyncScheduler formulaAsyncScheduler;
-        try {
-            formulaAsyncScheduler = (FormulaAsyncScheduler) Class.forName(FormulaAsyncSchedulerName).newInstance();
-            Thread thread = new Thread(formulaAsyncScheduler);
-            thread.start();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
         graphCompressor = new GraphCompressor();
         Thread graphCompressorThread = new Thread(graphCompressor);
         graphCompressorThread.start();

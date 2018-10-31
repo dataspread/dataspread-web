@@ -23,7 +23,7 @@
 
     <library-property>
         <name>ds.model.CacheSize</name>
-        <value>500000</value>
+        <value>1000000000</value>
     </library-property>
 
     <library-property>
@@ -39,6 +39,6 @@
 
 	<library-property>
 		<name>FormulaAsyncScheduler</name>
-		<value>FormulaAsyncSchedulerSimple</value>
+		<value>FormulaAsyncSchedulerOptimized</value>
 	</library-property>
 </zk>

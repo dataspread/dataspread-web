@@ -73,7 +73,7 @@ public class SheetImpl extends AbstractSheetAdv {
     }
 
     /* Shoud be more then prefetch region */
-    final int CACHE_SIZE = Library.getIntProperty("CacheSize", 500000);
+    final int CACHE_SIZE = Library.getIntProperty("ds.model.CacheSize", 500000);
     ;
     private final String _id;
 	private final IndexPool<AbstractRowAdv> _rows = new IndexPool<AbstractRowAdv>(){
@@ -380,8 +380,8 @@ public class SheetImpl extends AbstractSheetAdv {
 
 		AbstractCellAdv ret=null;
 		int additionalHeight = Math.max(0,PreFetchRows * 2 - cellRegion.getHeight() + 1) / 2;
-		int fixedPreFetchColumns = (PreFetchColumns * PreFetchRows * 2 - 1)
-				/ (Math.max(PreFetchRows * 2,cellRegion.getHeight())) + 1;
+		int fixedPreFetchColumns = PreFetchColumns * PreFetchRows * 2
+				/ (Math.max(PreFetchRows * 2,cellRegion.getHeight())) ;
 		int additionalWidth = Math.max(0,fixedPreFetchColumns * 2 - cellRegion.getLength() + 1) / 2;
 		int minRow = Math.max(0,cellRegion.getRow()- additionalHeight);
 		int maxRow = minRow + additionalHeight * 2 + cellRegion.getHeight() - 1;
@@ -449,17 +449,45 @@ public class SheetImpl extends AbstractSheetAdv {
 		}
 	}
 
+	boolean usingChacheforGetCells = true;
+
 	@Override
 	public Collection<SCell> getCells(CellRegion region) {
+		if (!usingChacheforGetCells) {
+			try (AutoRollbackConnection connection = DBHandler.instance.getConnection())
+			{
+				DBContext dbContext = new DBContext(connection);
+				return Collections.unmodifiableCollection(dataModel.getCells(dbContext, region));
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace();
+			}
+
+		}
 		Collection<SCell> cells = new ArrayList<>();
-		preFetchCells(region);
 		for (int row = region.getRow(); row <= region.getLastRow(); row++)
 			for (int col = region.getColumn(); col <= region.getLastColumn(); col++) {
-				SCell cell = getCell(row, col, false);
-				if (cell != null)
-					cells.add(cell);
+				CellRegion cellRegion = new CellRegion(row, col);
+				if (getBook().hasSchema()) {
+					AbstractCellAdv cell = null;
+					try {
+						cell = sheetDataCache.get(cellRegion, () -> preFetchCells(region));
+					} catch (ExecutionException e) {
+						e.printStackTrace();
+					}
+					if (cell != null)
+						cells.add(cell);
+				}
+				else
+				{
+					CellProxy cellProxy = new CellProxy(this, row, col);
+					sheetDataCache.put(cellRegion, cellProxy);
+					cells.add(cellProxy);
+				}
 			}
 		return cells;
+
 	}
 
 	@Override
