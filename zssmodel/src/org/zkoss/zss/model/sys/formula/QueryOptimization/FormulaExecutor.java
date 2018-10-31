@@ -2,12 +2,15 @@ package org.zkoss.zss.model.sys.formula.QueryOptimization;
 
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
+import org.zkoss.zss.model.impl.RefImpl;
+import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 import org.zkoss.zss.model.sys.formula.Primitives.LogicalOperator;
 import org.zkoss.zss.model.sys.formula.Primitives.PhysicalOperator;
 
 import java.util.Iterator;
+import java.util.Map;
 
 public class FormulaExecutor {
     static FormulaExecutor uniqueExecutor = new FormulaExecutor();
@@ -24,6 +27,21 @@ public class FormulaExecutor {
     }
 
     public void update(SSheet sheet, AbstractCellAdv sCell){
+        Map<String, int[]> visibleRange = FormulaAsyncScheduler.getVisibleMap().get(sheet);
+        boolean hasOverlap = false;
+        if (visibleRange != null && !visibleRange.isEmpty()) {
+            for (int[] rows : visibleRange.values()) {
+                Ref overlap = sCell.getRef()
+                        .getOverlap(new RefImpl(null, null,
+                                rows[0], 0, rows[1], Integer.MAX_VALUE));
+                if (overlap.getCellCount()>0){
+                    hasOverlap = true;
+                    break;
+                }
+            }
+        }
+        if (!hasOverlap)
+            return;
         scheduler.update(sheet.getBook(), sheet, sCell.getCellRegion(),
                 sCell.getValue(true, false).toString(),
                 sCell.getFormulaValue());

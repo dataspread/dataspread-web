@@ -33,28 +33,28 @@ public class QueryOptimizer {
         for (QueryPlanGraph graph:graphs){
             for (DataOperator data:graph.dataNodes){
                 assert data instanceof SingleDataOperator;
-                String key = data.getRange().getSheet().getId() +
+                String key = data.getSheet().getId() +
                         ":" +
-                        data.getRange().getColumn() +
+                        data.getRegion().getColumn() +
                         "-" +
-                        data.getRange().getLastColumn();
+                        data.getRegion().getLastColumn();
                 dataOperators.computeIfAbsent(key, k -> new ArrayList<>()).add(data);
             }
         }
 
         for (List<DataOperator> value:dataOperators.values()){
-            int maxRow =  value.get(0).getRange().getSheet().getEndRowIndex();
+            int maxRow =  value.get(0).getSheet().getEndRowIndex();
             assert value.size() * Math.log(value.size()) < maxRow;
-            value.sort((o1, o2) -> o2.getRange().getRow() == o1.getRange().getRow() ?
-                    o2.getRange().getLastRow() - o1.getRange().getLastRow()
-                    :o2.getRange().getRow() - o1.getRange().getRow());
+            value.sort((o1, o2) -> o1.getRegion().getRow() == o2.getRegion().getRow() ?
+                    o1.getRegion().getLastRow() - o2.getRegion().getLastRow()
+                    :o1.getRegion().getRow() - o2.getRegion().getRow());
             List<DataOperator> temp = new ArrayList<>();
             temp.add(value.get(0));
-            int currentMaxRow = value.get(0).getRange().getLastRow();
+            int currentMaxRow = value.get(0).getRegion().getLastRow();
             DataOperator data;
             for (int i = 1, isize = value.size(); i < isize; i++){
                 data = value.get(i);
-                int row = data.getRange().getRow(), lastRow = data.getRange().getLastRow();
+                int row = data.getRegion().getRow(), lastRow = data.getRegion().getLastRow();
                 if (row > currentMaxRow){
                     if (temp.size() > 1){
                         groupedDataNodes.add(new GroupedDataOperator(temp));
@@ -63,11 +63,12 @@ public class QueryOptimizer {
                         groupedDataNodes.add(temp.get(0));
                     }
                     temp = new ArrayList<>();
+                    temp.add(data);
                 }
                 else {
                     int size = temp.size();
-                    if (size > 0 && row == temp.get(size - 1).getRange().getRow()
-                            && lastRow == temp.get(size - 1).getRange().getLastRow())
+                    if (size > 0 && row == temp.get(size - 1).getRegion().getRow()
+                            && lastRow == temp.get(size - 1).getRegion().getLastRow())
                         temp.get(size - 1).merge(data);
                     else
                         temp.add(data);

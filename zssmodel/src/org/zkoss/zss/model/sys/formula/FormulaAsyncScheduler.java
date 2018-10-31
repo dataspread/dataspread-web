@@ -33,6 +33,10 @@ public abstract class FormulaAsyncScheduler implements Runnable {
         FormulaAsyncScheduler.uiVisibleMap = uiVisibleMap;
     }
 
+    public static Map<Object, Map<String, int[]>> getVisibleMap() {
+        return uiVisibleMap;
+    }
+
 
     public void update(SBook book, SSheet sheet, CellRegion cellRegion, String value, String formula) {
         if (formulaAsyncListener != null) {

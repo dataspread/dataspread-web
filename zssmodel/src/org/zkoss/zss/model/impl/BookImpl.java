@@ -123,8 +123,7 @@ public class BookImpl extends AbstractBookAdv{
 
     private static FormulaAsyncScheduler formulaAsyncScheduler = null;
 
-	public static SBook getBookById(String bookId){
-
+	private static void setUpFormulaAsyncScheduler(){
 		if (formulaAsyncScheduler == null){
 			String FormulaAsyncSchedulerName = "org.zkoss.zss.model.impl.sys.formula." +
 					Library.getProperty("FormulaAsyncScheduler",
@@ -137,7 +136,9 @@ public class BookImpl extends AbstractBookAdv{
 				e.printStackTrace();
 			}
 		}
+	}
 
+	public static SBook getBookById(String bookId){
 
 		String getBookEntry;
 		if (bookId.equals("undefined"))
@@ -154,6 +155,7 @@ public class BookImpl extends AbstractBookAdv{
                 if (BookBindings.contains(bookName))
                     return BookBindings.get(bookName);
                 else {
+					setUpFormulaAsyncScheduler();
                     SBook book = new BookImpl(bookName, bookId);
                     if (!book.setNameAndLoad(bookName, bookId)){
                         return null;

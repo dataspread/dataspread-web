@@ -2,6 +2,7 @@ package org.zkoss.zss.model.sys.formula.Primitives;
 
 import org.zkoss.poi.ss.formula.eval.NumberEval;
 import org.zkoss.poi.ss.formula.eval.ValueEval;
+import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
@@ -14,18 +15,25 @@ import java.util.Iterator;
 import java.util.List;
 
 public abstract class DataOperator extends PhysicalOperator{
-    SRange _range;
+    SSheet _sheet = null;
+    CellRegion _region = null;
     public DataOperator(SRange range){
         super();
-        _range = range;
+        _sheet = range.getSheet();
+        _region = range.getRegion().getOverlap(
+                new CellRegion(0,0,_sheet.getEndRowIndex(),_sheet.getEndColumnIndex()));
     }
 
     public DataOperator(){
         super();
     }
 
-    public SRange getRange(){
-        return _range;
+    public CellRegion getRegion(){
+        return _region;
+    }
+
+    public SSheet getSheet() {
+        return _sheet;
     }
 
 
