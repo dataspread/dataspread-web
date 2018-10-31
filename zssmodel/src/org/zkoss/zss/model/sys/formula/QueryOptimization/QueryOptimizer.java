@@ -1,5 +1,6 @@
 package org.zkoss.zss.model.sys.formula.QueryOptimization;
 
+import org.zkoss.lang.Library;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.Primitives.DataOperator;
 import org.zkoss.zss.model.sys.formula.Primitives.GroupedDataOperator;
@@ -12,11 +13,13 @@ import java.util.Map;
 
 public class QueryOptimizer {
     private QueryOptimizer(){}
-    private static QueryOptimizer queryOptimizer = new QueryOptimizer();
+    private static QueryOptimizer queryOptimizer = null ;
     public static QueryOptimizer getOptimizer(){
+        if (queryOptimizer == null)
+            queryOptimizer = new QueryOptimizer();
         return queryOptimizer;
     }
-    private final static boolean doOptimization = false;
+    private final static boolean doOptimization = Boolean.valueOf(Library.getProperty("QueryOptimizer.doOptimization"));
     private List<DataOperator> mergeDataOperators(List<QueryPlanGraph> graphs) throws OptimizationError {
         Map<String, List<DataOperator>> dataOperators = new HashMap<>();
         List<DataOperator> groupedDataNodes = new ArrayList<>();

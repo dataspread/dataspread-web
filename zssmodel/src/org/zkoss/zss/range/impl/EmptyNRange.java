@@ -273,6 +273,11 @@ import org.zkoss.zss.range.*;
 	}
 
 	@Override
+	public CellRegion getRegion() {
+		return null;
+	}
+
+	@Override
 	public void setValue(Object value) {
 		
 

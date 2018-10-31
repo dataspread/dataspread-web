@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class LogicalOperator {
-    List<Edge> inEdges, outEdges;
+    protected List<Edge> inEdges, outEdges;
 
     LogicalOperator(){
         inEdges = new ArrayList<>();
@@ -25,6 +25,14 @@ public class LogicalOperator {
 
     private void addOutput(Edge op){
         outEdges.add(op);
+    }
+
+    List<Edge> getInEdges(){
+        return inEdges;
+    }
+
+    List<Edge> getOutEdges(){
+        return outEdges;
     }
 
     public Iterator<LogicalOperator> getOutputNodes(){

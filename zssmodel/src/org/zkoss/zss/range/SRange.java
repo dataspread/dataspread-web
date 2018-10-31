@@ -527,6 +527,8 @@ public interface SRange {
 	 * @return the number of the last column of the 1st area in this Range(0-based; i.e. Column A return 0)
 	 */
 	public int getLastColumn();
+
+	public CellRegion getRegion();
 	
 //	/**
 //	 * Returns the number of contained objects in this Range.

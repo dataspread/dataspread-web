@@ -41,4 +41,9 @@
 		<name>FormulaAsyncScheduler</name>
 		<value>FormulaAsyncSchedulerOptimized</value>
 	</library-property>
+
+	<library-property>
+		<name>QueryOptimizer.doOptimization</name>
+		<value>true</value>
+	</library-property>
 </zk>

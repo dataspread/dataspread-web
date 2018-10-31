@@ -194,6 +194,11 @@ public class RangeImpl implements SRange {
 		return _lastColumn;
 	}
 
+	@Override
+	public CellRegion getRegion() {
+		return new CellRegion(_row,_column,_lastRow,_lastColumn);
+	}
+
 	private abstract class  CellVisitor {
 		/**
 		 * @param cell
