@@ -26,6 +26,16 @@
         <value>1000000000</value>
     </library-property>
 
+	<library-property>
+		<name>PreFetchRows</name>
+		<value>100</value>
+	</library-property>
+
+	<library-property>
+		<name>PreFetchColumns</name>
+		<value>15</value>
+	</library-property>
+
     <library-property>
 		<name>ds.model.syncComputation</name>
         <value>false</value>

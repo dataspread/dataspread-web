@@ -53,8 +53,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SheetImpl extends AbstractSheetAdv {
 	private static final long serialVersionUID = 1L;
 	private static final Log _logger = Log.lookup(SheetImpl.class);
-    static private int PreFetchRows = Library.getIntProperty("PreFetchRows", 100);
-    static private int PreFetchColumns = Library.getIntProperty("PreFetchColumns", 30);
+    private int PreFetchRows = Library.getIntProperty("PreFetchRows", 100);
+    private int PreFetchColumns = Library.getIntProperty("PreFetchColumns", 30);
     /**
      * internal use only for developing/test state, should remove when stable
      */
@@ -114,7 +114,7 @@ public class SheetImpl extends AbstractSheetAdv {
 	private int _defaultRowHeight = 20;//in pixel
 	private AtomicInteger trxId;
 
-	static public void disablePrefetch()
+	public void disablePrefetch()
 	{
 		PreFetchRows = 0;
 		PreFetchColumns = 0;
@@ -374,20 +374,20 @@ public class SheetImpl extends AbstractSheetAdv {
 	}
 
 
-	private AbstractCellAdv  preFetchCells(CellRegion cellRegion)
+	private AbstractCellAdv  preFetchCells(CellRegion targetCell,CellRegion region)
 	{
 		//System.out.println("Fetching cell:" + cellRegion);
 
 		AbstractCellAdv ret=null;
-		int additionalHeight = Math.max(0,PreFetchRows * 2 - cellRegion.getHeight() + 1) / 2;
+		int additionalHeight = Math.max(0,PreFetchRows * 2 - region.getHeight() + 1) / 2;
 		int fixedPreFetchColumns = PreFetchColumns * PreFetchRows * 2
-				/ (Math.max(PreFetchRows * 2,cellRegion.getHeight())) ;
-		int additionalWidth = Math.max(0,fixedPreFetchColumns * 2 - cellRegion.getLength() + 1) / 2;
-		int minRow = Math.max(0,cellRegion.getRow()- additionalHeight);
-		int maxRow = minRow + additionalHeight * 2 + cellRegion.getHeight() - 1;
+				/ (Math.max(PreFetchRows * 2,region.getHeight())) ;
+		int additionalWidth = Math.max(0,fixedPreFetchColumns * 2 - region.getLength() + 1) / 2;
+		int minRow = Math.max(0,region.getRow()- additionalHeight);
+		int maxRow = minRow + additionalHeight * 2 + region.getHeight() - 1;
 
-		int minColumn = Math.max(0,cellRegion.getColumn()- additionalWidth);
-		int maxColumn = minColumn + additionalWidth * 2 + cellRegion.getLength() - 1;
+		int minColumn = Math.max(0,region.getColumn()- additionalWidth);
+		int maxColumn = minColumn + additionalWidth * 2 + region.getLength() - 1;
 
 		CellRegion fetchRange = new CellRegion(minRow, minColumn, maxRow, maxColumn);
 
@@ -401,7 +401,7 @@ public class SheetImpl extends AbstractSheetAdv {
 			for(AbstractCellAdv e:cells)
 			{
 				CellRegion newCellRegion = new CellRegion(e.getRowIndex(), e.getColumnIndex());
-				if (newCellRegion.equals(cellRegion))
+				if (newCellRegion.equals(targetCell))
 					ret = e;
 				sheetDataCache.put(newCellRegion, e);
 			}
@@ -418,7 +418,7 @@ public class SheetImpl extends AbstractSheetAdv {
 					AbstractCellAdv proxyCell = new CellProxy(this, row, col);
 
 					sheetDataCache.put(newCellRegion, proxyCell);
-					if (newCellRegion.equals(cellRegion))
+					if (newCellRegion.equals(targetCell))
 						ret = proxyCell;
                 }
 			}
@@ -426,9 +426,9 @@ public class SheetImpl extends AbstractSheetAdv {
         if (ret==null)
 		{
 			AbstractCellAdv proxyCell = new CellProxy(this,
-					cellRegion.getRow(), cellRegion.getColumn());
+					targetCell.getRow(), targetCell.getColumn());
 
-			sheetDataCache.put(cellRegion, proxyCell);
+			sheetDataCache.put(targetCell, proxyCell);
 			ret = proxyCell;
 		}
         return ret;
@@ -472,7 +472,7 @@ public class SheetImpl extends AbstractSheetAdv {
 				if (getBook().hasSchema()) {
 					AbstractCellAdv cell = null;
 					try {
-						cell = sheetDataCache.get(cellRegion, () -> preFetchCells(region));
+						cell = sheetDataCache.get(cellRegion, () -> preFetchCells(cellRegion,region));
 					} catch (ExecutionException e) {
 						e.printStackTrace();
 					}
@@ -519,7 +519,7 @@ public class SheetImpl extends AbstractSheetAdv {
 		if (getBook().hasSchema()) {
 			AbstractCellAdv cell = null;
 			try {
-				cell = sheetDataCache.get(cellRegion, () -> preFetchCells(cellRegion));
+				cell = sheetDataCache.get(cellRegion, () -> preFetchCells(cellRegion,cellRegion));
 			} catch (ExecutionException e) {
 				e.printStackTrace();
 			}

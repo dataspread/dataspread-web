@@ -53,13 +53,12 @@ public class GroupedDataOperator extends DataOperator{
 
     @Override
     public void evaluate(FormulaExecutor context) throws OptimizationError {
-        Object[] data = new Object[_region.getCellCount()];
-        Collection<SCell> cells = _sheet.getCells(_region);
-        Iterator<SCell> cellIterator = cells.iterator();
-
         for (Edge e: inEdges)
             if (!e.resultIsReady())
                 return;
+
+        Object[] data = new Object[_region.getCellCount()];
+        Collection<SCell> cells = _sheet.getCells(_region);
 
         int inEdgeCursor = 0;
 
@@ -70,10 +69,9 @@ public class GroupedDataOperator extends DataOperator{
             currentResultIterator = inEdges.get(inEdgeCursor).popResult().iterator();
         }
 
-
         for (SCell cell : cells){
             if (cell.getType() != SCell.CellType.NUMBER)
-                throw new OptimizationError("Unexpected cell type:" + cell.getValue());
+                throw new OptimizationError("Unexpected cell type(" + cell + "):" + cell.getValue());
             int i = getIndex(cell);
             if (inEdgeCursor < inEdgesRange.size() && i >= currentRange.getValue()) {
                 inEdgeCursor++;
