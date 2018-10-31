@@ -73,7 +73,7 @@ public class GroupedDataOperator extends DataOperator{
 
         for (SCell cell : cells){
             if (cell.getType() != SCell.CellType.NUMBER)
-                throw new OptimizationError("Unexpected cell type");
+                throw new OptimizationError("Unexpected cell type:" + cell.getValue());
             int i = getIndex(cell);
             if (inEdgeCursor < inEdgesRange.size() && i >= currentRange.getValue()) {
                 inEdgeCursor++;
@@ -98,8 +98,8 @@ public class GroupedDataOperator extends DataOperator{
                 data[i] = cell.getValue();
         }
         List results = Arrays.asList(data);
-        for (Edge o:outEdges){
-            o.setResult(results);
+        for (int i =0,isize = outEdges.size(); i < isize;i++){
+            outEdges.get(i).setResult(results.subList(outEdgesRange.get(i).getKey(),outEdgesRange.get(i).getValue()));
         }
         _evaluated = true;
     }
