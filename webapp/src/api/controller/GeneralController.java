@@ -49,7 +49,9 @@ public class GeneralController implements FormulaAsyncListener {
 
             for (UISessionManager.UISession uiSession : uiSessionSet) {
                 simpMessagingTemplate.convertAndSendToUser(uiSession.getSessionId(),
-                        "/push/updates", ImmutableMap.of("message", "asyncStatus",
+                        "" +
+                                "" +
+                                "", ImmutableMap.of("message", "asyncStatus",
                                 "data", new Integer[]{status.row, status.column,
                                         (status.currentCells * 100 / status.totalCells)}),
                         createHeaders(uiSession.getSessionId()));

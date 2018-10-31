@@ -174,7 +174,7 @@ public class ParsingBook implements FormulaParsingWorkbook, FormulaRenderingWork
 	@Override
 	public SpreadsheetVersion getSpreadsheetVersion() {
 		// TODO zss 3.5
-		return SpreadsheetVersion.EXCEL2007;
+		return SpreadsheetVersion.DATASPREAD2018;
 	}
 
 	@Override

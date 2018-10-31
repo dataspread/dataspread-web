@@ -62,18 +62,27 @@ public class GroupedDataOperator extends DataOperator{
                 return;
 
         int inEdgeCursor = 0;
-        Pair<Integer, Integer> currentRange = inEdgesRange.get(inEdgeCursor);
-        Iterator currentResultIterator = inEdges.get(inEdgeCursor).popResult().iterator();
+
+        Pair<Integer, Integer> currentRange = null;
+        Iterator currentResultIterator = null;
+        if (inEdgeCursor < inEdgesRange.size()){
+            currentRange = inEdgesRange.get(inEdgeCursor);
+            currentResultIterator = inEdges.get(inEdgeCursor).popResult().iterator();
+        }
+
 
         for (SCell cell : cells){
             if (cell.getType() != SCell.CellType.NUMBER)
                 throw new OptimizationError("Unexpected cell type");
             int i = getIndex(cell);
-            if (currentRange != null && i >= currentRange.getValue()) {
-                currentRange = inEdgesRange.get(++inEdgeCursor);
-                currentResultIterator = inEdges.get(inEdgeCursor).popResult().iterator();
+            if (inEdgeCursor < inEdgesRange.size() && i >= currentRange.getValue()) {
+                inEdgeCursor++;
+                if (inEdgeCursor < inEdgesRange.size()){
+                    currentRange = inEdgesRange.get(inEdgeCursor);
+                    currentResultIterator = inEdges.get(inEdgeCursor).popResult().iterator();
+                }
             }
-            if (currentRange != null && i >= currentRange.getKey()){
+            if (inEdgeCursor < inEdgesRange.size() && i >= currentRange.getKey()){
                 Object value = currentResultIterator.next();
                 ValueEval resultValue;
                 if (value instanceof Double){

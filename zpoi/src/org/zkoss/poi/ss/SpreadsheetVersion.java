@@ -53,7 +53,22 @@ public enum SpreadsheetVersion {
      * <li>Length of text cell contents is 32767</li>
 	 * <ul>
 	 */
-	EXCEL2007(0x100000, 0x4000, 255, Integer.MAX_VALUE, 32767);
+	EXCEL2007(0x100000, 0x4000, 255, Integer.MAX_VALUE, 32767),
+
+	/**
+	 * DATASPREAD2018
+	 *
+	 * <ul>
+	 * <li>The total number of available columns is unlimited</li>
+	 * <li>The total number of available rows is unlimited</li>
+	 * <li>The maximum number of arguments to a function is 255</li>
+	 * <li>Number of conditional format conditions on a cell is unlimited
+	 * (actually limited by available memory in Excel)</li>
+	 * <li>Length of text cell contents is 32767</li>
+	 * <ul>
+	 */
+
+	DATASPREAD2018(Integer.MAX_VALUE, Integer.MAX_VALUE, 255, Integer.MAX_VALUE, 32767);
 
 	private final int _maxRows;
 	private final int _maxColumns;
