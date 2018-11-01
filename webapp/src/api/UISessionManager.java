@@ -130,12 +130,14 @@ public class UISessionManager  {
     public void deleteSession(String sessionId)
     {
         UISession session = uiSessionMap.remove(sessionId);
-        if (session.sheet != null) {
+        if (session!=null && session.sheet != null) {
             uiSheetSessionMap.get(session.sheet).remove(session);
             Map uiVisibleSession = uiVisibleMap.get(session.getSheet());
-            uiVisibleSession.remove(sessionId);
-            if (uiVisibleSession.isEmpty())
-                uiVisibleMap.remove(session.getSheet());
+            if (uiVisibleSession!=null) {
+                uiVisibleSession.remove(sessionId);
+                if (uiVisibleSession.isEmpty())
+                    uiVisibleMap.remove(session.getSheet());
+            }
         }
     }
 }
