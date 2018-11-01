@@ -8,24 +8,41 @@ class App extends Component {
 
     constructor(props){
         super(props);
-        this.filename = 'hello.txt'
-        this.hasFileOpened = false
+        // this.setFileId = ''
+        // this.filename = ''
+        // this.hasFileOpened = false
+        this.state = {
+            fileId:"",
+            filename:"",
+            hasFileOpened: false,
+            username:""
+
+        }
+        this.onSelectFile = this.onSelectFile.bind(this)
+
+    }
+
+    onSelectFile (fileId) {
+        this.setState({
+            fileId: fileId,
+            hasFileOpened: true
+        })
     }
 
     render () {
-
-        if (!this.hasFileOpened) {
+        
+        if (!this.state.hasFileOpened) {
             return (
                 <div>
-                    <Toolbar username={this.username}/>
+                    <Toolbar username={this.state.username} onSelectFile={this.onSelectFile}/>
                     <StartupBox></StartupBox>
                 </div>
             )
         } else {
             return (
                 <div>
-                    <Toolbar username={this.username}/>
-                    <DSGrid filename={this.filename}/>
+                    <Toolbar username={this.state.username}/>
+                    <DSGrid filename={this.state.filename} />
                 </div>
             )
         }

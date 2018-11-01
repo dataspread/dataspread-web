@@ -12,7 +12,8 @@ export default class ModalOpenFile extends Component {
 	  	data: null,
 	  	BooksOptions: [],
 		BooksSelected: ""
-    };
+	};
+	this._handleEvent = this._handleEvent.bind(this);
   }
 
 	handleOpen = () => this.setState({ modalOpen: true })
@@ -48,8 +49,8 @@ export default class ModalOpenFile extends Component {
 		this.setState({ BooksSelected: data.value });
 	}
 
-	_handleEvent = () =>{
-		//
+	_handleEvent () {
+		this.props.onSelectFile(this.state.BooksSelected)
 	}
 
 	render() {
