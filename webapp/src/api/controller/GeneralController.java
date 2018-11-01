@@ -16,7 +16,6 @@ import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.RestController;
-import org.zkoss.lang.Library;
 import org.zkoss.poi.ss.formula.FormulaComputationStatusManager;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
@@ -50,9 +49,7 @@ public class GeneralController implements FormulaAsyncListener {
 
             for (UISessionManager.UISession uiSession : uiSessionSet) {
                 simpMessagingTemplate.convertAndSendToUser(uiSession.getSessionId(),
-                        "" +
-                                "" +
-                                "", ImmutableMap.of("message", "asyncStatus",
+                        "/push/updates", ImmutableMap.of("message", "asyncStatus",
                                 "data", new Integer[]{status.row, status.column,
                                         (status.currentCells * 100 / status.totalCells)}),
                         createHeaders(uiSession.getSessionId()));
@@ -93,20 +90,6 @@ public class GeneralController implements FormulaAsyncListener {
         return headerAccessor.getMessageHeaders();
     }
 
-    private boolean refreshFormulasonLoad = false;
-
-    private synchronized void refreshFormulas(UISessionManager.UISession uiSession,
-                                                    ArrayList<SCell> formulaCells){
-        if (!refreshFormulasonLoad)
-            return;
-        FormulaAsyncScheduler.formulaUpdateLock.lock();
-        for (SCell cell:formulaCells){
-            updateCellWithNotfication(uiSession,cell.getRowIndex(),
-                    cell.getColumnIndex(),"=" + cell.getFormulaValue());
-        }
-        FormulaAsyncScheduler.formulaUpdateLock.unlock();
-    }
-
     public void pushCells(UISessionManager.UISession uiSession, int blockNumber) {
         //TODO: Update to directly call the data model.
         // TODO: Improve efficiency.
@@ -116,7 +99,6 @@ public class GeneralController implements FormulaAsyncListener {
         int row1 = blockNumber * uiSession.getFetchSize();
         Map<String, Object> ret = new HashMap<>();
         List<List<String[]>> data = new ArrayList<>();
-        ArrayList<SCell> formulaCells = new ArrayList<>();
         for (int row = row1; row < row1 + uiSession.getFetchSize(); row++) {
             List<String[]> cellsRow = new ArrayList<>();
             data.add(cellsRow);
@@ -125,10 +107,8 @@ public class GeneralController implements FormulaAsyncListener {
                 SCell sCell = sheet.getCell(row, col);
                 if (sCell.isNull()) {
                     cellsRow.add(new String[]{""});
-                } else if (sCell.getType() == SCell.CellType.FORMULA) {
+                } else if (sCell.getType() == SCell.CellType.FORMULA)
                     cellsRow.add(new String[]{sCell.getValue().toString(), sCell.getFormulaValue()});
-                    formulaCells.add(sCell);
-                }
                 else
                     cellsRow.add(new String[]{sCell.getValue().toString()});
             }
@@ -144,8 +124,6 @@ public class GeneralController implements FormulaAsyncListener {
         simpMessagingTemplate.convertAndSendToUser(uiSession.getSessionId(),
                 "/push/updates", ret,
                 createHeaders(uiSession.getSessionId()));
-
-        new Thread(() -> refreshFormulas(uiSession,formulaCells)).start();
 
     }
 

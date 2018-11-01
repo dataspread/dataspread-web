@@ -162,7 +162,6 @@ public class BookImpl extends AbstractBookAdv{
                         return null;
                     }
                     BookBindings.put(bookName, book);
-                    TestCode.testCodeinBookLoading(book);
                     return book;
                 }
 
