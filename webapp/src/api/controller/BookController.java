@@ -55,10 +55,13 @@ public class BookController {
                 String bookId = rs.getString("booktable");
                 Date lastModified = rs.getTimestamp("lastmodified");
                 Date createdTime = rs.getTimestamp("createdtime");
-                books.add(ImmutableMap.of("name", bookName,
-                        "id", bookId,
-                        "lastModified", lastModified,
-                        "createdTime", createdTime));
+                books.add(ImmutableMap.of("text", bookName,
+                        "value", bookId,
+                        "content", "Last Modified:" + lastModified,
+                        "description",
+                        ImmutableMap.of(
+                                "createdTime", createdTime,
+                                "lastModified", lastModified)));
             }
         } catch (SQLException e) {
             e.printStackTrace();
