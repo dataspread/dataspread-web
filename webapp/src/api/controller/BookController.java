@@ -2,13 +2,13 @@ package api.controller;
 
 import api.Authorization;
 import api.JsonWrapper;
+import com.google.common.collect.ImmutableMap;
+import org.json.JSONObject;
 import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import org.zkoss.json.JSONArray;
 import org.zkoss.poi.util.IOUtils;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.impl.BookImpl;
@@ -19,9 +19,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import org.json.JSONObject;
-
-import javax.servlet.annotation.MultipartConfig;
 
 import static api.WebSocketConfig.MESSAGE_PREFIX;
 
@@ -47,36 +44,29 @@ public class BookController {
     // Books API
     @RequestMapping(value = "/api/getBooks",
             method = RequestMethod.GET)
-    public HashMap<String, Object> getBooks(@RequestHeader("auth-token") String authToken) {
-        List<HashMap<String, Object>> books = new ArrayList<>();
-        String query = "SELECT * FROM books Where booktable in (SELECT booktable FROM user_books WHERE authtoken = ?)";
+    public List<Map<String, Object>> getBooks() {
+        List<Map<String, Object>> books = new ArrayList<>();
+        String query = "SELECT * FROM books";
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, authToken);
             ResultSet rs = statement.executeQuery();
             while (rs.next()) {
                 String bookName = rs.getString("bookname");
                 String bookId = rs.getString("booktable");
                 Date lastModified = rs.getTimestamp("lastmodified");
                 Date createdTime = rs.getTimestamp("createdtime");
-                String link = JsonWrapper.encode(bookId);
-                HashMap<String, Object> book = new HashMap<>();
-                book.put("name", bookName);
-                book.put("id", bookId);
-                book.put("link", link);
-                book.put("lastModified", lastModified);
-                book.put("createdTime", createdTime);
-                books.add(book);
+                books.add(ImmutableMap.of("text", bookName,
+                        "value", bookId,
+                        "content", "Last Modified:" + lastModified,
+                        "description",
+                        ImmutableMap.of(
+                                "createdTime", createdTime,
+                                "lastModified", lastModified)));
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        if (!books.isEmpty()) {
-            HashMap<String, Object> data = new HashMap<>();
-            data.put("books", books);
-            return JsonWrapper.generateJson(data);
-        }
-        return JsonWrapper.generateJson(null);
+        return books;
     }
 
 
