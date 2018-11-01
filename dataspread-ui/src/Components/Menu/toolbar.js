@@ -4,12 +4,17 @@ import ModalAboutUs from './Help/about'
 import ModalOpenFile from './File/load'
 import ModalImportFile from './File/import'
 
+const favstyle = {
+    height: '1.5em',
+    width: '1.5em',
+  };
+  
 export default class Toolbar extends Component {
     render() {
       return (
-        <Menu size='tiny'>
+        <Menu size='mini'>
             <Menu.Item>
-                <img src='favicon.ico' alt='DS'/>
+                <img src='favicon.ico' style={favstyle} alt='DS'/>
             </Menu.Item>
 
             <Dropdown item text='File'>

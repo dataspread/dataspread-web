@@ -131,11 +131,11 @@ export default class ModalOpenFile extends Component {
 
   handleClose = () => this.setState({ modalOpen: false })
 
-  componentDidMount() {
-    fetch('https://crossorigin.me/http://kite.cs.illinois.edu:8080/api/getBooks')
-      .then(response => response.json())
-      .then(data => this.setState({ data }));
-  }
+//   componentDidMount() {
+//     fetch('https://crossorigin.me/http://kite.cs.illinois.edu:8080/api/getBooks')
+//       .then(response => response.json())
+//       .then(data => this.setState({ data }));
+//   }
 
   render() {
     // console.log("hi")

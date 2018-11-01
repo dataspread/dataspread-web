@@ -1,39 +1,35 @@
 import React, {Component} from 'react';
-import {Dropdown, Menu, Modal} from 'semantic-ui-react'
 import './App.css';
 import DSGrid from './dsgrid';
 import Toolbar from './Components/Menu/toolbar'
-// import ModalAboutUs from './Components/Menu/Help/about'
-// import ModalOpenFile from './Components/Menu/File/load'
-// import ModalImportFile from './Components/Menu/File/import'
+import StartupBox from './Components/StatupBox'
 
-function WorkingArea(props) {
-    const hasFileOpened = props.hasFileOpened;
-    if (hasFileOpened) {
-      return <DSGrid filename={this.props.filename}/>
-    }
-    return (
-        <div>Hello You</div>
-    );
-  }
-  
 class App extends Component {
 
     constructor(props){
         super(props);
         this.filename = 'hello.txt'
-        this.hasFileOpened = true
+        this.hasFileOpened = false
     }
 
-    
     render () {
-        return (
 
-            <div>
-                <Toolbar username={this.username}/>
-                <WorkingArea hasFileOpened={this} />
-            </div>
-        )
+        if (!this.hasFileOpened) {
+            return (
+                <div>
+                    <Toolbar username={this.username}/>
+                    <StartupBox></StartupBox>
+                </div>
+            )
+        } else {
+            return (
+                <div>
+                    <Toolbar username={this.username}/>
+                    <DSGrid filename={this.filename}/>
+                </div>
+            )
+        }
+        
     }
 }
 
