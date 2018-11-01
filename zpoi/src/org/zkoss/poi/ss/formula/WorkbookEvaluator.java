@@ -704,7 +704,7 @@ public final class WorkbookEvaluator {
 				ValueEval[] ops = new ValueEval[numops];
 
 				// storing the ops in reverse order since they are popping
-   				for (int j = numops - 1; j >= 0; j--) {
+				for (int j = numops - 1; j >= 0; j--) {
 					ValueEval p = stack.pop();
 					//20101115, henrichen@zkoss.org: add dependency before operation
 					//FuncVarPtg, the NamePtg(functionname) should be as is
