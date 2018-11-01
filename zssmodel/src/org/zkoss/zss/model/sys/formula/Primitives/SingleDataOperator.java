@@ -2,7 +2,9 @@ package org.zkoss.zss.model.sys.formula.Primitives;
 
 import org.zkoss.poi.ss.formula.eval.NumberEval;
 import org.zkoss.poi.ss.formula.eval.ValueEval;
+import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
+import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
@@ -13,8 +15,8 @@ import java.util.Iterator;
 import java.util.List;
 
 public class SingleDataOperator extends DataOperator{
-    public SingleDataOperator(SRange range){
-        super(range);
+    public SingleDataOperator(SSheet sheet, CellRegion region){
+        super(sheet, region);
     }
 
     @Override

@@ -1,14 +1,16 @@
 package org.zkoss.zss.model.sys.formula.Decomposer;
 
+import org.zkoss.poi.ss.formula.ptg.*;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.Primitives.*;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.QueryPlanGraph;
-import org.zkoss.poi.ss.formula.ptg.*;
 import org.zkoss.zss.range.impl.RangeImpl;
 
+import java.util.Map;
 import java.util.Stack;
+import java.util.TreeMap;
 
 import static org.zkoss.zss.model.sys.formula.Primitives.LogicalOperator.connect;
 
@@ -19,6 +21,29 @@ public class FormulaDecomposer {
     public static QueryPlanGraph decomposeFormula(Ptg[] ptgs, SCell target) throws OptimizationError {
         QueryPlanGraph result = new QueryPlanGraph();
         Stack<LogicalOperator> stack = new Stack<>();
+
+        Map<String, DataOperator> dataOperatorMap = new TreeMap<>();
+
+        for (Ptg ptg:ptgs){
+            if((ptg instanceof RefPtgBase || ptg instanceof AreaPtgBase)
+                    && !dataOperatorMap.containsKey(ptg.toString())){
+                DataOperator data;
+                if (ptg instanceof RefPtgBase){
+                    RefPtgBase rptg = (RefPtgBase)ptg;
+                    data = new SingleDataOperator(target.getSheet(),
+                            new CellRegion(rptg.getRow(),rptg.getColumn()));
+                }
+                else{
+                    AreaPtgBase rptg = (AreaPtgBase)ptg;
+                    data = new SingleDataOperator(target.getSheet(),
+                            new CellRegion(rptg.getFirstRow(),rptg.getFirstColumn(),
+                                    rptg.getLastRow(),rptg.getLastColumn()));
+                }
+                dataOperatorMap.put(ptg.toString(),data);
+                result.addData(data);
+            }
+        }
+
         for (int i = 0, iSize = ptgs.length; i < iSize; i++) {
             Ptg ptg = ptgs[i];
 
@@ -56,7 +81,7 @@ public class FormulaDecomposer {
             LogicalOperator opResult = null;
             if (ptg instanceof OperationPtg) {
                 OperationPtg optg = (OperationPtg) ptg;
-                if (!(ptg instanceof AbstractFunctionPtg)){
+                if (!(ptg instanceof AbstractFunctionPtg || ptg instanceof ValueOperatorPtg)){
                     throw OptimizationError.UNSUPPORTED_CASE;
                 }
                 AbstractFunctionPtg fptg = (AbstractFunctionPtg)ptg;
@@ -65,26 +90,30 @@ public class FormulaDecomposer {
                 int numops = optg.getNumberOfOperands();
                 LogicalOperator[] ops = new LogicalOperator[numops];
 
+                boolean constantFormula = true;
+
                 // storing the ops in reverse order since they are popping
                 for (int j = numops - 1; j >= 0; j--) {
                     LogicalOperator p = stack.pop();
-                    if (optg instanceof FuncVarPtg && ((FuncVarPtg) optg).isExternal()) {
-                    } else {
-
-                    }
                     ops[j] = p;
+                    if (p instanceof DataOperator && ((DataOperator)p).getRegion().getCellCount() > 1)
+                        constantFormula = false;
                 }
 //				logDebug("invoke " + operation + " (nAgs=" + numops + ")");
-                opResult = logicalOpDict[fptg.getFunctionIndex()].decompose(ops);
+                if (!constantFormula)
+                    opResult = logicalOpDict[fptg.getFunctionIndex()].decompose(ops);
+                else
+                    opResult = new SingleTransformOperator(ops, ptg);
+
             } else if (ptg instanceof RelTableAttrPtg) {
                 throw OptimizationError.UNSUPPORTED_CASE;
-            } else if (ptg instanceof AreaPtg){
-                CellRegion region = new CellRegion(((AreaPtg)ptg).getFirstRow(), ((AreaPtg)ptg).getFirstColumn(),
-                        ((AreaPtg)ptg).getLastRow(), ((AreaPtg)ptg).getLastColumn());
-                opResult = new SingleDataOperator(new RangeImpl(target.getSheet(),region));
-                result.addData((DataOperator) opResult);
+            } else if (ptg instanceof AreaPtgBase || ptg instanceof RefPtgBase){
+                opResult = dataOperatorMap.get(ptg.toString());
 
-            } else {
+            } else if (ptg instanceof ScalarConstantPtg){
+                opResult = new SingleTransformOperator(ptg);
+            }
+            else {
                 throw OptimizationError.UNSUPPORTED_CASE;
             }
             if (opResult == null) {
@@ -95,8 +124,7 @@ public class FormulaDecomposer {
         }
 
         LogicalOperator value = stack.pop();
-        DataOperator targetCell = new SingleDataOperator(
-                new RangeImpl(target.getSheet(),target.getRowIndex(),target.getColumnIndex()));
+        DataOperator targetCell = new SingleDataOperator(target.getSheet(), target.getCellRegion());
         connect(value,targetCell);
         result.addData(targetCell);
         if (!stack.isEmpty()) {
@@ -113,6 +141,7 @@ public class FormulaDecomposer {
 
             @Override
             public LogicalOperator decompose(LogicalOperator[] ops) {
+                assert ops.length == 1;
                 LogicalOperator ret = new AggregateOperator(BinaryFunction.PLUS);
                 connect(ops[0],ret);
                 return ret;

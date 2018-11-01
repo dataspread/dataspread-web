@@ -36,20 +36,14 @@ public class FormulaAsyncSchedulerOptimized extends FormulaAsyncScheduler {
             List<DirtyManager.DirtyRecord> dirtyRecordSet = DirtyManager.dirtyManagerInstance.getAllDirtyRegions();
             List<SCell> computedCells = new ArrayList<>();
 
-            // Compute the remaining
             ArrayList<QueryPlanGraph> graphs = new ArrayList<>();
             for (DirtyManager.DirtyRecord dirtyRecord : dirtyRecordSet) {
-                //logger.info("Processing " + dirtyRecord.region);
                 SSheet sheet = BookBindings.getSheetByRef(dirtyRecord.region);
                 Collection<SCell> cells = sheet.getCells(new CellRegion(dirtyRecord.region));
                 for (SCell sCell : cells) {
                     if (computedCells.contains(sCell))
                         continue;
                     if (sCell.getType() == SCell.CellType.FORMULA) {
-//                        FormulaComputationStatusManager.getInstance().updateFormulaCell(
-//                                sCell.getRowIndex(),
-//                                sCell.getColumnIndex(),
-//                                sCell, sheet, 10);
                         DirtyManagerLog.instance.markClean(sCell.getCellRegion());
                         try {
                             graphs.add(decomposeFormula(((FormulaExpression) ((AbstractCellAdv) sCell)
@@ -59,7 +53,6 @@ public class FormulaAsyncSchedulerOptimized extends FormulaAsyncScheduler {
                         }
 
                     }
-//                    FormulaComputationStatusManager.getInstance().doneComputation();
                 }
 
                 DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,

@@ -799,6 +799,7 @@ public class CellImpl extends AbstractCellAdv {
 	public synchronized void setFormulaResultValue(ValueEval value) {
 		try {
 			_formulaResultValue=new FormulaResultCellValue(FormulaEngineImpl.convertToEvaluationResult(value));
+			updateCelltoDB();
 		} catch (EvaluationException e) {
 			// ignore it!
 		}

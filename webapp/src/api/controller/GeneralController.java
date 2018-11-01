@@ -16,6 +16,7 @@ import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.RestController;
+import org.zkoss.lang.Library;
 import org.zkoss.poi.ss.formula.FormulaComputationStatusManager;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
@@ -92,8 +93,12 @@ public class GeneralController implements FormulaAsyncListener {
         return headerAccessor.getMessageHeaders();
     }
 
+    private boolean refreshFormulasonLoad = false;
+
     private synchronized void refreshFormulas(UISessionManager.UISession uiSession,
                                                     ArrayList<SCell> formulaCells){
+        if (!refreshFormulasonLoad)
+            return;
         FormulaAsyncScheduler.formulaUpdateLock.lock();
         for (SCell cell:formulaCells){
             updateCellWithNotfication(uiSession,cell.getRowIndex(),
