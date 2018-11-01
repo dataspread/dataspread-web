@@ -25,7 +25,7 @@ public class SingleDataOperator extends DataOperator{
 
             for (SCell cell : _sheet.getCells(_region)){
                 if (cell.getType() != SCell.CellType.NUMBER)
-                    throw new OptimizationError("Unexpected cell type");
+                    throw OptimizationError.UNSUPPORTED_TYPE;
                 results.add(cell.getValue());
             }
             _evaluated = true;
@@ -52,7 +52,7 @@ public class SingleDataOperator extends DataOperator{
     @Override
     public void merge(DataOperator dataOperator) throws OptimizationError {
         if (!(dataOperator instanceof SingleDataOperator))
-            throw new OptimizationError("Unspport functionality");
+            throw OptimizationError.UNSUPPORTED_FUNCTION;
         inEdges.addAll(dataOperator.inEdges);
         outEdges.addAll(dataOperator.outEdges);
     }
@@ -63,7 +63,7 @@ public class SingleDataOperator extends DataOperator{
             resultValue = new NumberEval((Double)result);
         }
         else
-            throw new OptimizationError("Unsupported result type");
+            throw OptimizationError.UNSUPPORTED_TYPE;
         AbstractCellAdv sCell = ((AbstractCellAdv)_sheet.getCell(row,column));
         sCell.setFormulaResultValue(resultValue);
         context.update(_sheet,sCell);

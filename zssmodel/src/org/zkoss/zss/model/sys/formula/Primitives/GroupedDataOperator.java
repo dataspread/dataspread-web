@@ -71,7 +71,7 @@ public class GroupedDataOperator extends DataOperator{
 
         for (SCell cell : cells){
             if (cell.getType() != SCell.CellType.NUMBER)
-                throw new OptimizationError("Unexpected cell type(" + cell + "):" + cell.getValue());
+                throw OptimizationError.UNSUPPORTED_TYPE;
             int i = getIndex(cell);
             if (inEdgeCursor < inEdgesRange.size() && i >= currentRange.getValue()) {
                 inEdgeCursor++;
@@ -87,7 +87,7 @@ public class GroupedDataOperator extends DataOperator{
                     resultValue = new NumberEval((Double)value);
                 }
                 else
-                    throw new OptimizationError("Unsupported result type");
+                    throw OptimizationError.UNSUPPORTED_TYPE;
                 ((AbstractCellAdv)cell).setFormulaResultValue(resultValue);
                 context.update(_sheet, (AbstractCellAdv) cell);
                 data[i] = value;
@@ -104,6 +104,6 @@ public class GroupedDataOperator extends DataOperator{
 
     @Override
     public void merge(DataOperator dataOperator) throws OptimizationError {
-        throw new OptimizationError("Unspport functionality");
+        throw OptimizationError.UNSUPPORTED_FUNCTION;
     }
 }

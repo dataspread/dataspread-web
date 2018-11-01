@@ -28,13 +28,13 @@ public class FormulaDecomposer {
                     ptg = FuncVarPtg.SUM;
                 }
                 if (attrPtg.isOptimizedChoose()) {
-                    throw new OptimizationError("Unsupported case:attrPtg.isOptimizedChoose()");
+                    throw OptimizationError.UNSUPPORTED_CASE;
                 }
                 if (attrPtg.isOptimizedIf()){
-                    throw new OptimizationError("Unsupported case:attrPtg.isOptimizedIf()");
+                    throw OptimizationError.UNSUPPORTED_CASE;
                 }
                 if (attrPtg.isSkip()) {
-                    throw new OptimizationError("Unsupported case:attrPtg.isSkip()");
+                    throw OptimizationError.UNSUPPORTED_CASE;
                 }
             }
             if (ptg instanceof ControlPtg) {
@@ -50,14 +50,14 @@ public class FormulaDecomposer {
             }
 
             if (ptg instanceof FilterHelperPtg) {
-                throw new OptimizationError("Unsupported case:(ptg instanceof FilterHelperPtg");
+                throw OptimizationError.UNSUPPORTED_CASE;
             }
 
             LogicalOperator opResult = null;
             if (ptg instanceof OperationPtg) {
                 OperationPtg optg = (OperationPtg) ptg;
                 if (!(ptg instanceof AbstractFunctionPtg)){
-                    throw new OptimizationError("Unsupported case");
+                    throw OptimizationError.UNSUPPORTED_CASE;
                 }
                 AbstractFunctionPtg fptg = (AbstractFunctionPtg)ptg;
                 if (optg.getInstance() != null)
@@ -77,7 +77,7 @@ public class FormulaDecomposer {
 //				logDebug("invoke " + operation + " (nAgs=" + numops + ")");
                 opResult = logicalOpDict[fptg.getFunctionIndex()].decompose(ops);
             } else if (ptg instanceof RelTableAttrPtg) {
-                throw new OptimizationError("Unsupported case:((ptg instanceof RelTableAttrPtg)");
+                throw OptimizationError.UNSUPPORTED_CASE;
             } else if (ptg instanceof AreaPtg){
                 CellRegion region = new CellRegion(((AreaPtg)ptg).getFirstRow(), ((AreaPtg)ptg).getFirstColumn(),
                         ((AreaPtg)ptg).getLastRow(), ((AreaPtg)ptg).getLastColumn());
@@ -85,7 +85,7 @@ public class FormulaDecomposer {
                 result.addData((DataOperator) opResult);
 
             } else {
-                throw new OptimizationError("Unsupported case");
+                throw OptimizationError.UNSUPPORTED_CASE;
             }
             if (opResult == null) {
                 throw new RuntimeException("Evaluation result must not be null");
