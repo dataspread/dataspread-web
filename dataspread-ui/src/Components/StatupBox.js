@@ -1,6 +1,7 @@
 import React, {Component} from 'react'
-import { Button, Divider, Grid, Header, Icon, Search, Segment } from 'semantic-ui-react'
-
+import { Button, Divider, Segment } from 'semantic-ui-react'
+import ModalOpenFile from './Menu/File/load'
+import ModalImportFile from './Menu/File/import'
 
 
 export default class StartupBox extends Component {
@@ -9,40 +10,31 @@ export default class StartupBox extends Component {
       return (
         <div style={center_screen}>
             <Segment padded>
-                <Button primary fluid>
-                    Login
-                </Button>
-                <Divider horizontal>Or</Divider>
                 <Button secondary fluid>
-                    Sign Up Now
+                    <div>
+                        New File
+                    </div>
                 </Button>
-            </Segment>
-{/*             
-            <Segment vertical>
-                <Grid.Column>
-                <Header icon>
-                    <Icon name='search' />
-                    Find Country
-                </Header>
-                <Search placeholder='Search countries...' />
-                </Grid.Column>
 
                 <Divider horizontal>Or</Divider>
-
-                <Grid.Column>
-                <Header icon>
-                    <Icon name='search' />
-                    Find Country
-                </Header>
-                <Search placeholder='Search countries...' />
-                </Grid.Column>
-
-            </Segment> */}
+                
+                <Button secondary fluid>
+                    <ModalOpenFile></ModalOpenFile>
+                </Button>
+            
+                <Divider horizontal>Or</Divider>
+            
+                <Button secondary fluid>
+                    <ModalImportFile></ModalImportFile>
+                </Button>
+            
+            </Segment>
         </div>
     )
   }
 }
 
+//TODO: console log errors here
 const center_screen = {
     'display': 'flex',
     'flex-direction': 'column',
