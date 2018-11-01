@@ -624,7 +624,7 @@ $(document).on("click", ".text-checkbox", function (e) {
     }
     if (valid == false) {
         $("#multibuck-text").empty();
-        $("#multibuck-text").append("<option selected># of Buckets</option>");
+        $("#multibuck-text").append("<option selected># of Bins</option>");
     } else {
         $("#multibuck-text").empty();
         for (let i = 1; i < dataBucket[curr].length; i++) {
@@ -696,8 +696,8 @@ $(document).on("click", "#bucket-split", function (e) {
     } else {
         let targetValue = $("#multibuck-text")[0].value;
 
-        if (targetValue == "# of Buckets") {
-            alert("You have not choose the number of buckets to split");
+        if (targetValue == "# of Bins") {
+            alert("You have not choose the number of bins to split");
             return;
         }
         targetValue = Number(targetValue);
@@ -727,7 +727,7 @@ $(document).on("click", "#bucket-split", function (e) {
             }
             $buckets.append(tempString);
             $("#multibuck-text").empty();
-            $("#multibuck-text").append("<option selected># of Buckets</option>");
+            $("#multibuck-text").append("<option selected># of Bins</option>");
             $("#bucketSub").css({"display": "block"});
         }
     }
