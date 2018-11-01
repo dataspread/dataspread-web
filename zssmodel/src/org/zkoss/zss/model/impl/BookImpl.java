@@ -33,6 +33,7 @@ import org.zkoss.zss.model.sys.dependency.Ref.RefType;
 import org.zkoss.zss.model.sys.formula.EvaluationContributor;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 import org.zkoss.zss.model.sys.formula.FormulaClearContext;
+import org.zkoss.zss.model.sys.formula.Test.TestCode;
 import org.zkoss.zss.model.util.CellStyleMatcher;
 import org.zkoss.zss.model.util.FontMatcher;
 import org.zkoss.zss.model.util.Strings;
@@ -161,6 +162,7 @@ public class BookImpl extends AbstractBookAdv{
                         return null;
                     }
                     BookBindings.put(bookName, book);
+                    TestCode.testCodeinBookLoading(book);
                     return book;
                 }
 
