@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Dropdown, Menu, Modal} from 'semantic-ui-react'
+import {Dropdown, Menu} from 'semantic-ui-react'
 import ModalAboutUs from './Help/about'
 import ModalOpenFile from './File/load'
 import ModalImportFile from './File/import'
@@ -21,6 +21,8 @@ export default class Toolbar extends Component {
                 <Dropdown.Menu>
                     <ModalOpenFile></ModalOpenFile>
                     <ModalImportFile></ModalImportFile>
+                    <Dropdown.Item>Copy</Dropdown.Item>
+                    <Dropdown.Item>Paste</Dropdown.Item>
                 </Dropdown.Menu>
             </Dropdown>
 

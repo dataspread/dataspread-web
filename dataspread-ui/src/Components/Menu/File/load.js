@@ -7,178 +7,82 @@ export default class ModalOpenFile extends Component {
   constructor(props) {
     super(props);
 
-	//content: <Header icon='table' content='Mobile' subheader='The smallest size' />
-
-    this.state = {
-      modalOpen: false,
-	  data: null,
-	  BooksOptions: [
-		{
-			"text": "book6540",
-			"value": "pjmzvqw7k",
-			"content":<Header icon='table' content='book6540' 
-				subheader='Last Modified: 2018-10-08	|	Created: 2018-10-08' />
-		},
-		{
-			"text": "book2117",
-			"value": "qjmzy9as8",
-			"content":<Header icon='table' content='book2117' 
-				subheader='Last Modified: 2018-10-08	|	Created: 2018-10-08' />
-		},
-		{
-			"text": "book3098",
-			"value": "mjn4n6vv5",
-			"content":<Header icon='table' content='book3098' 
-				subheader='Last Modified: 2018-10-11	|	Created: 2018-10-11' />
-		},
-		{
-			"text": "book5195",
-			"value": "jjn4n7653",
-			"content":<Header icon='table' content='book5195' 
-				subheader='Last Modified: 2018-10-11	|	Created: 2018-10-11' />
-		},
-		{
-			"text": "book5740",
-			"value": "fjn4n83ao",
-			"content":<Header icon='table' content='book5740' 
-				subheader='Last Modified: 2018-10-11	|	Created: 2018-10-11' />
-		},
-		{
-			"text": "book5379",
-			"value": "bjnc4ncu9",
-			"content":<Header icon='table' content='book5379' 
-				subheader='Last Modified: 2018-10-16	|	Created: 2018-10-16' />
-		},
-		{
-			"text": "book1852",
-			"value": "ojnc4nh47",
-			"content":<Header icon='table' content='book1852' 
-				subheader='Last Modified: 2018-10-16	|	Created: 2018-10-16' />
-		},
-		{
-			"text": "book3757",
-			"value": "jjnc4nn82",
-			"content":<Header icon='table' content='book3757' 
-				subheader='Last Modified: 2018-10-16	|	Created: 2018-10-16' />
-		},
-		{
-			"text": "book4937",
-			"value": "gjnc4nuzn",
-			"content":<Header icon='table' content='book4937' 
-				subheader='Last Modified: 2018-10-16	|	Created: 2018-10-16' />
-		},
-		{
-			"text": "book3487",
-			"value": "mjnvesevn",
-			"content":<Header icon='table' content='book3487' 
-				subheader='Last Modified: 2018-10-30	|	Created: 2018-10-30' />
-		},
-		{
-			"text": "book8236",
-			"value": "cjnvesjlc",
-			"content":<Header icon='table' content='book8236' 
-				subheader='Last Modified: 2018-10-30	|	Created: 2018-10-30' />
-		},
-		{
-			"text": "book6707",
-			"value": "ajnvesp0i",
-			"content":<Header icon='table' content='book6707' 
-				subheader='Last Modified: 2018-10-30	|	Created: 2018-10-30' />
-		},
-		{
-			"text": "book5196",
-			"value": "yjnvet5ek",
-			"content":<Header icon='table' content='book5196' 
-				subheader='Last Modified: 2018-10-30	|	Created: 2018-10-30' />
-		},
-		{
-			"text": "book4734",
-			"value": "jjnxg8n3k",
-			"content":<Header icon='table' content='book4734' 
-				subheader='Last Modified: 2018-10-31	|	Created: 2018-10-31' />
-		}
-	]
+	this.state = {
+      	modalOpen: false,
+	  	data: null,
+	  	BooksOptions: [],
+		BooksSelected: ""
     };
   }
 
-  handleOpen = () => this.setState({ modalOpen: true })
+	handleOpen = () => this.setState({ modalOpen: true })
 
-  handleClose = () => this.setState({ modalOpen: false })
+	handleClose = () => this.setState({ modalOpen: false })
 
-  componentDidMount() {
-    fetch('http://kite.cs.illinois.edu:8080/api/getBooks')
-	  .then(response => response.json())
-	  .then(data => this.transform(data))
-      .then(data => this.setState({ data }));
-  }
-
-  transform = (raw_data) => {
-	console.log(raw_data)
-	if (!raw_data){
-		console.log("ＮＵＬＬＬＬＬ")
-		return undefined
+	// fetch data from api
+	componentDidMount() {
+		fetch('http://kite.cs.illinois.edu:8080/api/getBooks')
+		.then(response => response.json())
+		.then(data => this.transform(data))
+		.then(data => this.setState({ BooksOptions: data }));
 	}
-	var data = []
-	for (var book in raw_data) {
-		//subh = 'Last Modified: ' + raw_data[book].lastModified + ' | Created: ' + raw_data[book].createdTime
-		//console.log(subh)
-		var d = {
-			"text": raw_data[book].name,
-			"value": raw_data[book].id,
-			"description": {
-				"name": raw_data[book].name,
-        		"id": raw_data[book].id,
-        		"lastModified": raw_data[book].lastModified,
-        		"createdTime": raw_data[book].createdTime
-			},
-			// "content": <Header icon='table' content={raw_data[book].name} subheader={subh} />
+
+  	//transform data
+  	transform = (raw_data) => {
+		var data = []
+		for (var book in raw_data) {
+			var d = {
+				"text": raw_data[book].text,
+				"value": raw_data[book].value,
+				"description": raw_data[book].description,
+				"content": <Header icon='table' content={raw_data[book].text} subheader={raw_data[book].content} />
+			}
+			data.push(d)
 		}
-		data.push(d)
-		console.log(raw_data[book])
+		return data
 	}
-	console.log(data)
-	return data
-  }
 
-  render() {
-    console.log("hi")
-    console.log(this.state.data)
-    return (
-      <Modal
-        trigger={<Dropdown.Item onClick={this.handleOpen}>Open File</Dropdown.Item>}
-        open={this.state.modalOpen}
-        onClose={this.handleClose}
-      >
-        <Header icon='folder open outline' content='Open File' />
+	onChange = (e, data) => {
+		console.log(data)
+		console.log(data.value);
+		this.setState({ BooksSelected: data.value });
+	}
 
-        <Modal.Content>
+	_handleEvent = () =>{
+		//
+	}
 
-          <div>
-				<div>
-					<Dropdown placeholder='Select File' fluid search selection options={this.state.BooksOptions} />
+	render() {
+		console.log(this.state)
+		return (
+		<Modal
+			trigger={<Dropdown.Item onClick={this.handleOpen}>Open File</Dropdown.Item>}
+			open={this.state.modalOpen}
+			onClose={this.handleClose}
+		>
+			<Header icon='folder open outline' content='Open File' />
+
+			<Modal.Content>
+
+			<div>
+					<div>
+						<Dropdown placeholder='Select File' fluid search selection 
+						options={this.state.BooksOptions} onChange={this.onChange}  />
+					</div>
 				</div>
-				<div>
-					<Button
-                      name="bookLoadButton"
-                      onClick={this._handleEvent}>
-                      Load
-                     </Button>
-				</div>
+			</Modal.Content>
 
-			</div>
-        </Modal.Content>
-
-        <Modal.Actions>
-			<Button name="bookLoadButton" onClick={this._handleEvent}>
-			<Icon name='checkmark' /> Load
-            </Button>
-          	<Button color='blue' onClick={this.handleClose} inverted>
-            <Icon name='close' /> Close
-          </Button>
-        </Modal.Actions>
-      </Modal>
-    )
-  }
+			<Modal.Actions>
+				<Button name="bookLoadButton" onClick={this._handleEvent}>
+				<Icon name='checkmark' /> Load
+				</Button>
+				<Button color='blue' onClick={this.handleClose} inverted>
+				<Icon name='close' /> Close
+			</Button>
+			</Modal.Actions>
+		</Modal>
+		)
+	}
 
   // Todo: resove the passing of this
 
