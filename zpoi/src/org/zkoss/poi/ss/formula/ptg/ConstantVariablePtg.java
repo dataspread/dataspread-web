@@ -1,7 +1,7 @@
 package org.zkoss.poi.ss.formula.ptg;
 
 public class ConstantVariablePtg extends VariablePtg {
-    ConstantVariablePtg(int index) {
+    public ConstantVariablePtg(int index) {
         super(index);
     }
 }
