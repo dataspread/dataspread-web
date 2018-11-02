@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.function.Consumer;
 
 public class LogicalOperator {
     private List<Edge> inEdges, outEdges;
@@ -47,12 +48,28 @@ public class LogicalOperator {
             transferOutEdge(e);
     }
 
+    int inEdgesSize(){
+        return inEdges.size();
+    }
+
+    int outEdgesSize(){
+        return outEdges.size();
+    }
+
     List<Edge> getInEdges(){
         return inEdges;
     }
 
     List<Edge> getOutEdges(){
         return outEdges;
+    }
+
+    void forEachInEdge(Consumer<? super Edge> action){
+        inEdges.forEach(action);
+    }
+
+    void forEachOutEdge(Consumer<? super Edge> action){
+        outEdges.forEach(action);
     }
 
     public Iterator<LogicalOperator> getOutputNodes(){

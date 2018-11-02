@@ -18,9 +18,9 @@ public class AggregateOperator extends PhysicalOperator {
         assert getInEdges().get(0).resultIsReady();
         List<Double> data = (List<Double>)getInEdges().get(0).popResult();
         List<Double> result = Collections.singletonList(binaryFunction.groupEvaluate(data));
-        for (Edge o:getOutEdges()){
-            o.setResult(result);
-        }
+
+        forEachOutEdge((o)-> o.setResult(result));
+
         _evaluated = true;
     }
 
