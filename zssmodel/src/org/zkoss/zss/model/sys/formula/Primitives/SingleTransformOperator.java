@@ -15,7 +15,7 @@ public class SingleTransformOperator extends TransformOperator {
         if (!(ptg instanceof ScalarConstantPtg)){
             throw OptimizationError.UNSUPPORTED_CASE;
         }
-        literials = Arrays.asList(new ScalarConstantPtg[]{(ScalarConstantPtg)ptg});
+        literials = Collections.singletonList((ScalarConstantPtg) ptg);
         ptgs = new Ptg[] {new ConstantVariablePtg(0)};
 
 
@@ -120,7 +120,7 @@ public class SingleTransformOperator extends TransformOperator {
             }
         }
 
-        List result = Arrays.asList(new Object[]{evaluate(ptgs)});
+        List result = Collections.singletonList(evaluate(ptgs));
 
         for (Edge o:getOutEdges()){
             o.setResult(result);

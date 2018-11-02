@@ -3,6 +3,7 @@ package org.zkoss.zss.model.sys.formula.Primitives;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class AggregateOperator extends PhysicalOperator {
@@ -16,8 +17,7 @@ public class AggregateOperator extends PhysicalOperator {
     public void evaluate(FormulaExecutor context) {
         assert getInEdges().get(0).resultIsReady();
         List<Double> data = (List<Double>)getInEdges().get(0).popResult();
-        List<Double> result = new ArrayList<>();
-        result.add(binaryFunction.groupEvaluate(data));
+        List<Double> result = Collections.singletonList(binaryFunction.groupEvaluate(data));
         for (Edge o:getOutEdges()){
             o.setResult(result);
         }
