@@ -41,7 +41,7 @@ class App extends Component {
         } else {
             return (
                 <div>
-                    <Toolbar username={this.state.username}/>
+                    <Toolbar username={this.state.username} onSelectFile={this.onSelectFile}/>
                     <DSGrid filename={this.state.fileId} />
                 </div>
             )
