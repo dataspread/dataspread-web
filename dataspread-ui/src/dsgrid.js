@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Button, Dimmer, Input, Loader} from 'semantic-ui-react'
+import {Dimmer, Loader} from 'semantic-ui-react'
 import ReactResumableJs from 'react-resumable-js'
 import {ArrowKeyStepper, AutoSizer, defaultCellRangeRenderer, Grid, ScrollSync} from './react-virtualized'
 
@@ -43,16 +43,15 @@ export default class DSGrid extends Component {
 
         this._onSectionRendered = this._onSectionRendered.bind(this);
         this._cellRenderer = this._cellRenderer.bind(this);
-        this._handleEvent = this._handleEvent.bind(this);
         this._updateCell = this._updateCell.bind(this);
         this._processUpdates = this._processUpdates.bind(this);
         this._cellRangeRenderer = this._cellRangeRenderer.bind(this);
 
         this.urlPrefix = ""; // Only for testing.
-        this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket")
+        this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
 
         //this.urlPrefix = "http://localhost:8080"; // Only for testing.
-        //this.stompClient = Stomp.client("ws://localhost:8080/ds-push/websocket")
+        //this.stompClient = Stomp.client("ws://localhost:8080/ds-push/websocket");
 
         this.stompClient.connect({}, null, null, () => {
             alert("Lost connection to server. Please reload.")
@@ -61,6 +60,9 @@ export default class DSGrid extends Component {
 
         this.stompClient.debug = () => {
         };
+
+        this.bookName = this.props.filename;
+        this._loadBook();
     }
 
     _disposeFromLRU(key)
@@ -127,40 +129,6 @@ export default class DSGrid extends Component {
     render() {
         return (
             <div>
-                <h1>{this.props.filename}</h1>
-                <Input
-                    placeholder='Book Name...'
-                    name="bookName"
-                    onChange={this._handleEvent}/>
-
-                <Button
-                    name="bookLoadButton"
-                    onClick={this._handleEvent}>
-                    Load
-                </Button>
-
-                <ReactResumableJs
-                    uploaderID="importBook"
-                    filetypes={["csv"]}
-                    fileAccept="text/csv"
-                    maxFileSize={100000000000}
-                    simultaneousUploads={4}
-                    fileAddedMessage="Started!"
-                    completedMessage="Complete!"
-                    service="/api/importFile"
-                    disableDragAndDrop={true}
-                    showFileList={false}
-                    onFileSuccess={(file, message) => {
-                        console.log(file, message);
-                    }}
-                    onFileAdded={(file, resumable) => {
-                        resumable.upload();
-                    }}
-                    maxFiles={1}
-                    onStartUpload={() => {
-                        console.log("Start upload");
-                    }}
-                />
                 <div style={{display: 'flex'}}>
                     <div style={{flex: 'auto', height: '90vh'}}>
                         <Dimmer active={this.state.isProcessing}>
@@ -258,43 +226,34 @@ export default class DSGrid extends Component {
 
     }
 
-    _handleEvent(event) {
-        const target = event.target;
-        const name = target.name;
-        if (name === "bookName") {
-            this.bookName = target.value;
-            console.log(this.bookName);
-        }
-        else if (name === "bookLoadButton") {
-            fetch(this.urlPrefix + "/api/getSheets/" + this.bookName)
-                .then(res => res.json())
-                .then(
-                    (result) => {
-                        this.dataCache.reset();
-                        this.setState({
-                            bookName: this.bookName,
-                            sheetName: 'Sheet1',
-                            rows: result['data']['sheets'][0]['numRow'],
-                            columns: result['data']['sheets'][0]['numCol']
-                        });
-                        this.subscribed = false;
-                        this.grid.scrollToCell ({ columnIndex: 0, rowIndex: 0 });
-                        if (this.stompSubscription!=null)
-                            this.stompSubscription.unsubscribe();
-                        this.stompSubscription = this.stompClient
-                            .subscribe('/user/push/updates',
-                                this._processUpdates, {bookName: this.state.bookName,
-                                        sheetName: this.state.sheetName,
-                                        fetchSize: this.fetchSize});
-                        console.log("book loaded rows:" + result['data']['sheets'][0]['numRow']);
-                    }
-                )
-                .catch((error) => {
-                    console.error(error);
-                });
-
-
-        }
+    _loadBook()
+    {
+        fetch(this.urlPrefix + "/api/getSheets/" + this.bookName)
+            .then(res => res.json())
+            .then(
+                (result) => {
+                    this.dataCache.reset();
+                    this.setState({
+                        bookName: this.bookName,
+                        sheetName: 'Sheet1',
+                        rows: result['data']['sheets'][0]['numRow'],
+                        columns: result['data']['sheets'][0]['numCol']
+                    });
+                    this.subscribed = false;
+                    this.grid.scrollToCell ({ columnIndex: 0, rowIndex: 0 });
+                    if (this.stompSubscription!=null)
+                        this.stompSubscription.unsubscribe();
+                    this.stompSubscription = this.stompClient
+                        .subscribe('/user/push/updates',
+                            this._processUpdates, {bookName: this.state.bookName,
+                                sheetName: this.state.sheetName,
+                                fetchSize: this.fetchSize});
+                    console.log("book loaded rows:" + result['data']['sheets'][0]['numRow']);
+                }
+            )
+            .catch((error) => {
+                console.error(error);
+            });
     }
 
 

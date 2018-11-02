@@ -19,10 +19,9 @@ export default class Toolbar extends Component {
 
             <Dropdown item text='File'>
                 <Dropdown.Menu>
-                    <ModalOpenFile></ModalOpenFile>
-                    <ModalImportFile></ModalImportFile>
-                    <Dropdown.Item>Copy</Dropdown.Item>
-                    <Dropdown.Item>Paste</Dropdown.Item>
+                    <Dropdown.Item>New</Dropdown.Item>
+                    <ModalOpenFile {...this.props} />
+                    <ModalImportFile/>
                 </Dropdown.Menu>
             </Dropdown>
 
@@ -35,7 +34,7 @@ export default class Toolbar extends Component {
 
             <Dropdown item text='Help'>
                 <Dropdown.Menu>
-                    <ModalAboutUs></ModalAboutUs>
+                    <ModalAboutUs/>
                 </Dropdown.Menu>
             </Dropdown>
 

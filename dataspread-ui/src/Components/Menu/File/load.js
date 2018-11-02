@@ -1,12 +1,11 @@
 import React, {Component} from 'react'
-import {Dropdown, Button, Header, Icon, Modal, Input, Loader } from 'semantic-ui-react'
+import {Dropdown, Button, Header, Icon, Modal} from 'semantic-ui-react'
 
 
 
 export default class ModalOpenFile extends Component {
   constructor(props) {
     super(props);
-
 	this.state = {
       	modalOpen: false,
 	  	data: null,
@@ -22,7 +21,8 @@ export default class ModalOpenFile extends Component {
 
 	// fetch data from api
 	componentDidMount() {
-		fetch('http://kite.cs.illinois.edu:8080/api/getBooks')
+		//fetch('http://kite.cs.illinois.edu:8080/api/getBooks')
+        fetch('/api/getBooks')
 		.then(response => response.json())
 		.then(data => this.transform(data))
 		.then(data => this.setState({ BooksOptions: data }));
@@ -30,31 +30,30 @@ export default class ModalOpenFile extends Component {
 
   	//transform data
   	transform = (raw_data) => {
-		var data = []
-		for (var book in raw_data) {
-			var d = {
-				"text": raw_data[book].text,
-				"value": raw_data[book].value,
-				"description": raw_data[book].description,
-				"content": <Header icon='table' content={raw_data[book].text} subheader={raw_data[book].content} />
-			}
-			data.push(d)
+        let data = [];
+        for (let book in raw_data) {
+            let d = {
+                "text": raw_data[book].text,
+                "value": raw_data[book].value,
+                "description": raw_data[book].description,
+                "content": <Header icon='table' content={raw_data[book].text} subheader={raw_data[book].content}/>
+            };
+            data.push(d)
 		}
 		return data
 	}
 
 	onChange = (e, data) => {
-		console.log(data)
+		console.log(data);
 		console.log(data.value);
 		this.setState({ BooksSelected: data.value });
 	}
 
 	_handleEvent () {
-		this.props.onSelectFile(this.state.BooksSelected)
+		this.props.onSelectFile(this.state.BooksSelected);
 	}
 
 	render() {
-		console.log(this.state)
 		return (
 		<Modal
 			trigger={<Dropdown.Item onClick={this.handleOpen}>Open File</Dropdown.Item>}

@@ -35,14 +35,14 @@ class App extends Component {
             return (
                 <div>
                     <Toolbar username={this.state.username} onSelectFile={this.onSelectFile}/>
-                    <StartupBox></StartupBox>
+                    <StartupBox username={this.state.username} onSelectFile={this.onSelectFile}/>
                 </div>
             )
         } else {
             return (
                 <div>
                     <Toolbar username={this.state.username}/>
-                    <DSGrid filename={this.state.filename} />
+                    <DSGrid filename={this.state.fileId} />
                 </div>
             )
         }

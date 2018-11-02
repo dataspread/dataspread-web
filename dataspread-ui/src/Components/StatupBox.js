@@ -19,7 +19,7 @@ export default class StartupBox extends Component {
                 <Divider horizontal>Or</Divider>
                 
                 <Button secondary fluid>
-                    <ModalOpenFile></ModalOpenFile>
+                    <ModalOpenFile {...this.props}/>
                 </Button>
             
                 <Divider horizontal>Or</Divider>
@@ -37,10 +37,10 @@ export default class StartupBox extends Component {
 //TODO: console log errors here
 const center_screen = {
     'display': 'flex',
-    'flex-direction': 'column',
-    'justify-content': 'center',
-    'align-items': 'center',
-    'text-align': 'center',
-    'min-height': '100vh',
+    'flexDirection': 'column',
+    'justifyContent': 'center',
+    'alignItems': 'center',
+    'textAlign': 'center',
+    'minHeight': '100vh',
 };
   

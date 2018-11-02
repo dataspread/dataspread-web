@@ -33,7 +33,7 @@ export default class Cell extends Component {
     }
 
     handleBlur(e) {
-        if (this.props.value != e.target.value)
+        if (this.props.value !== e.target.value)
             this.props.onUpdate({
                 rowIndex: this.props.rowIndex,
                 columnIndex: this.props.columnIndex,
