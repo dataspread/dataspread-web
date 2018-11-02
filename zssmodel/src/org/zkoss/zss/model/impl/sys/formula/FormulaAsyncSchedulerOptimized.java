@@ -13,13 +13,17 @@ import org.zkoss.zss.model.sys.formula.FormulaExpression;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.QueryOptimizer;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.QueryPlanGraph;
+import org.zkoss.zss.model.sys.formula.Test.Timer;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 import static org.zkoss.zss.model.sys.formula.Decomposer.FormulaDecomposer.decomposeFormula;
+import static org.zkoss.zss.model.sys.formula.Test.Timer.time;
 
 /**
  * Execute formulae in a single thread.
@@ -33,42 +37,65 @@ public class FormulaAsyncSchedulerOptimized extends FormulaAsyncScheduler {
         while (keepRunning) {
             formulaUpdateLock.lock();
             formulaUpdateLock.unlock();
+
             List<DirtyManager.DirtyRecord> dirtyRecordSet = DirtyManager.dirtyManagerInstance.getAllDirtyRegions();
-            List<SCell> computedCells = new ArrayList<>();
 
-            ArrayList<QueryPlanGraph> graphs = new ArrayList<>();
-            for (DirtyManager.DirtyRecord dirtyRecord : dirtyRecordSet) {
-                SSheet sheet = BookBindings.getSheetByRef(dirtyRecord.region);
-                Collection<SCell> cells = sheet.getCells(new CellRegion(dirtyRecord.region));
-                for (SCell sCell : cells) {
-                    if (computedCells.contains(sCell))
-                        continue;
-                    if (sCell.getType() == SCell.CellType.FORMULA) {
-                        DirtyManagerLog.instance.markClean(sCell.getCellRegion());
-                        try {
-                            graphs.add(decomposeFormula(((FormulaExpression) ((AbstractCellAdv) sCell)
-                                    .getValue(false)).getPtgs(),sCell));
-                        } catch (OptimizationError optimizationError) {
-                            optimizationError.printStackTrace();
+            if (dirtyRecordSet.size() == 0)
+                continue;
+
+            final FormulaAsyncScheduler scheduler = this;
+
+            AtomicReference<Boolean> noException = new AtomicReference<>(true);
+
+            time("Whole running cycle", ()->{
+                final ArrayList<QueryPlanGraph> graphs = new ArrayList<>();
+                for (DirtyManager.DirtyRecord dirtyRecord : dirtyRecordSet) {
+                    SSheet sheet = BookBindings.getSheetByRef(dirtyRecord.region);
+                    Collection<SCell> cells = sheet.getCells(new CellRegion(dirtyRecord.region));
+                    for (SCell sCell : cells) {
+                        if (sCell.getType() == SCell.CellType.FORMULA) {
+                            DirtyManagerLog.instance.markClean(sCell.getCellRegion());
+                            time("Decomposition",()->{
+                                try {
+                                    graphs.add(decomposeFormula(((FormulaExpression) ((AbstractCellAdv) sCell)
+                                            .getValue(false)).getPtgs(),sCell));
+                                } catch (OptimizationError optimizationError) {
+                                    optimizationError.printStackTrace();
+                                    noException.set(false);
+                                }
+                            });
+
+
                         }
-
                     }
+                    DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,
+                            dirtyRecord.trxId);
                 }
 
-                DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,
-                        dirtyRecord.trxId);
-            }
-            if (graphs.size() == 0)
-                continue;
-            try {
-                QueryPlanGraph optimizedGraph = QueryOptimizer.getOptimizer().optimize(graphs);
-                graphs = null;
-                FormulaExecutor.getExecutor().execute(optimizedGraph,this);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+                if (graphs.size() == 0)
+                    return;
+                AtomicReference<QueryPlanGraph> optimizedGraph = new AtomicReference<>(null);
+                time("Optimization",()->{
+                    try {
+                        optimizedGraph.set(QueryOptimizer.getOptimizer().optimize(graphs));
+                    } catch (OptimizationError optimizationError) {
+                        optimizationError.printStackTrace();
+                        noException.set(false);
+                    }
+                });
+                if (noException.get())
+                    try {
+                        FormulaExecutor.getExecutor().execute(optimizedGraph.get(),scheduler);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        noException.set(false);
+                    }
+            });
+            if (noException.get())
+                Timer.outputTime(Collections.singleton("Whole running cycle"));
+            else
+                Timer.clear();
 
-            //logger.info("Done computing " + dirtyRecord.region );
         }
     }
 

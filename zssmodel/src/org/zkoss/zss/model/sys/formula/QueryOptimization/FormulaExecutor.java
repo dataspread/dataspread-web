@@ -12,6 +12,8 @@ import org.zkoss.zss.model.sys.formula.Primitives.PhysicalOperator;
 import java.util.Iterator;
 import java.util.Map;
 
+import static org.zkoss.zss.model.sys.formula.Test.Timer.time;
+
 public class FormulaExecutor {
     static FormulaExecutor uniqueExecutor = new FormulaExecutor();
     FormulaAsyncScheduler scheduler = null;
@@ -24,6 +26,16 @@ public class FormulaExecutor {
         for (LogicalOperator op:graph.dataNodes)
             recursiveEvaluate(op);
         graph.clean();
+    }
+
+    private void evaluate(PhysicalOperator operator){
+        time(operator.getClass().getSimpleName(), ()-> {
+            try {
+                operator.evaluate(this);
+            } catch (OptimizationError optimizationError) {
+                optimizationError.printStackTrace();
+            }
+        });
     }
 
     public void update(SSheet sheet, AbstractCellAdv sCell){
@@ -53,7 +65,8 @@ public class FormulaExecutor {
         PhysicalOperator p = (PhysicalOperator)op;
         if (p.isEvaluated())
             return;
-        p.evaluate(this);
+
+        evaluate(p);
         if (p.isEvaluated()){
             for (Iterator<LogicalOperator> it = p.getOutputNodes();it.hasNext();)
                 recursiveEvaluate(it.next());
