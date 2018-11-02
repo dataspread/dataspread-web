@@ -20,6 +20,14 @@ class Edge {
         return out;
     }
 
+    void setInVertex(LogicalOperator op){
+        in = op;
+    }
+
+    void setOutVertex(LogicalOperator op){
+        out = op;
+    }
+
     void setResult(List result){
         this.result = result;
     }

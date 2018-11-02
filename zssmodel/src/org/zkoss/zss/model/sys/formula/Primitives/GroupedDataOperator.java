@@ -40,20 +40,20 @@ public class GroupedDataOperator extends DataOperator{
         _sheet = dataOperators.get(0).getSheet();
         for (int i = 0,isize = dataOperators.size();i < isize;i++) {
             DataOperator data = dataOperators.get(i);
-            int current = inEdges.size();
-            inEdges.addAll(data.inEdges);
-            for (;current < inEdges.size();current++)
+            int current = getInEdges().size();
+            transferInEdges(data.getInEdges());
+            for (int insize = getInEdges().size();current < insize;current++)
                 inEdgesRange.add(getIndexRange(data.getRegion()));
-            current = outEdges.size();
-            outEdges.addAll(data.outEdges);
-            for (;current < outEdges.size();current++)
+            current = getOutEdges().size();
+            transferInEdges(data.getOutEdges());
+            for (int outsize = getOutEdges().size();current < outsize;current++)
                 outEdgesRange.add(getIndexRange(data.getRegion()));
         }
     }
 
     @Override
     public void evaluate(FormulaExecutor context) throws OptimizationError {
-        for (Edge e: inEdges)
+        for (Edge e: getInEdges())
             if (!e.resultIsReady())
                 return;
 
@@ -66,7 +66,7 @@ public class GroupedDataOperator extends DataOperator{
         Iterator currentResultIterator = null;
         if (inEdgeCursor < inEdgesRange.size()){
             currentRange = inEdgesRange.get(inEdgeCursor);
-            currentResultIterator = inEdges.get(inEdgeCursor).popResult().iterator();
+            currentResultIterator = getInEdges().get(inEdgeCursor).popResult().iterator();
         }
 
         for (SCell cell : cells){
@@ -77,7 +77,7 @@ public class GroupedDataOperator extends DataOperator{
                 inEdgeCursor++;
                 if (inEdgeCursor < inEdgesRange.size()){
                     currentRange = inEdgesRange.get(inEdgeCursor);
-                    currentResultIterator = inEdges.get(inEdgeCursor).popResult().iterator();
+                    currentResultIterator = getInEdges().get(inEdgeCursor).popResult().iterator();
                 }
             }
             if (inEdgeCursor < inEdgesRange.size() && i >= currentRange.getKey()){
@@ -96,8 +96,8 @@ public class GroupedDataOperator extends DataOperator{
                 data[i] = cell.getValue();
         }
         List results = Arrays.asList(data);
-        for (int i =0,isize = outEdges.size(); i < isize;i++){
-            outEdges.get(i).setResult(results.subList(outEdgesRange.get(i).getKey(),outEdgesRange.get(i).getValue()));
+        for (int i =0,isize = getOutEdges().size(); i < isize;i++){
+            getOutEdges().get(i).setResult(results.subList(outEdgesRange.get(i).getKey(),outEdgesRange.get(i).getValue()));
         }
         _evaluated = true;
     }

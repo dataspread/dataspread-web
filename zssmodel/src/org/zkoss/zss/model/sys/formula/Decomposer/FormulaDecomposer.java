@@ -84,7 +84,6 @@ public class FormulaDecomposer {
                 if (!(ptg instanceof AbstractFunctionPtg || ptg instanceof ValueOperatorPtg)){
                     throw OptimizationError.UNSUPPORTED_CASE;
                 }
-                AbstractFunctionPtg fptg = (AbstractFunctionPtg)ptg;
                 if (optg.getInstance() != null)
                     optg = optg.getInstance();
                 int numops = optg.getNumberOfOperands();
@@ -100,8 +99,10 @@ public class FormulaDecomposer {
                         constantFormula = false;
                 }
 //				logDebug("invoke " + operation + " (nAgs=" + numops + ")");
-                if (!constantFormula)
+                if (!constantFormula){
+                    AbstractFunctionPtg fptg = (AbstractFunctionPtg)ptg;
                     opResult = logicalOpDict[fptg.getFunctionIndex()].decompose(ops);
+                }
                 else
                     opResult = new SingleTransformOperator(ops, ptg);
 

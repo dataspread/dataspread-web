@@ -14,11 +14,11 @@ public class AggregateOperator extends PhysicalOperator {
 
     @Override
     public void evaluate(FormulaExecutor context) {
-        assert inEdges.get(0).resultIsReady();
-        List<Double> data = (List<Double>)inEdges.get(0).popResult();
+        assert getInEdges().get(0).resultIsReady();
+        List<Double> data = (List<Double>)getInEdges().get(0).popResult();
         List<Double> result = new ArrayList<>();
         result.add(binaryFunction.groupEvaluate(data));
-        for (Edge o:outEdges){
+        for (Edge o:getOutEdges()){
             o.setResult(result);
         }
         _evaluated = true;

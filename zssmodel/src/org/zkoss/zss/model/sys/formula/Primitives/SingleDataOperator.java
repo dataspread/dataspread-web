@@ -22,22 +22,22 @@ public class SingleDataOperator extends DataOperator{
     @Override
     public void evaluate(FormulaExecutor context) throws OptimizationError {
         List results;
-        if (inEdges.size() == 0){
+        if (getInEdges().size() == 0){
             results = new ArrayList<>();
 
             for (SCell cell : _sheet.getCells(_region)){
-                if (cell.getType() != SCell.CellType.NUMBER || cell.getType() != SCell.CellType.FORMULA)
+                if (cell.getType() != SCell.CellType.NUMBER && cell.getType() != SCell.CellType.FORMULA)
                     throw OptimizationError.UNSUPPORTED_TYPE;
                 results.add(cell.getValue());
             }
             _evaluated = true;
         }
         else{
-            for (Edge e: inEdges)
+            for (Edge e: getInEdges())
                 if (!e.resultIsReady())
                     return;
 
-            results = inEdges.get(0).popResult();
+            results = getInEdges().get(0).popResult();
             Iterator it= results.iterator();
             for (int i = _region.getRow(); i <= _region.getLastRow(); i++)
                 for (int j = _region.getColumn(); j <= _region.getLastColumn(); j++) {
@@ -45,7 +45,7 @@ public class SingleDataOperator extends DataOperator{
                     setFormulaValue(i,j,result,context);
                 }
         }
-        for (Edge o:outEdges){
+        for (Edge o:getOutEdges()){
             o.setResult(results);
         }
         _evaluated = true;
@@ -55,8 +55,8 @@ public class SingleDataOperator extends DataOperator{
     public void merge(DataOperator dataOperator) throws OptimizationError {
         if (!(dataOperator instanceof SingleDataOperator))
             throw OptimizationError.UNSUPPORTED_FUNCTION;
-        inEdges.addAll(dataOperator.inEdges);
-        outEdges.addAll(dataOperator.outEdges);
+        transferInEdges(dataOperator.getInEdges());
+        transferOutEdges(dataOperator.getOutEdges());
     }
 
     private void setFormulaValue(int row, int column, Object result,FormulaExecutor context) throws OptimizationError {

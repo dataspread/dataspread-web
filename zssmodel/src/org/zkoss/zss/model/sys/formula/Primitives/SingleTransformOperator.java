@@ -25,12 +25,24 @@ public class SingleTransformOperator extends TransformOperator {
         super();
         ptgs = new Ptg[getPtgSize(operators) + 1];
         literials = new ArrayList<>();
-        Map<LogicalOperator,Integer> operatorId = new TreeMap<>();
+        Map<LogicalOperator,Integer> operatorId = new TreeMap<>((o1, o2) -> {
+            if (o1.hashCode() == o2.hashCode()){
+                if (o1 == o2)
+                    return 0;
+                else {
+                    int cmp = (o1.toString() + o1.getInEdges().hashCode() + o1.getOutEdges().hashCode())
+                            .compareTo(o1.toString() + o2.getInEdges().hashCode() + o2.getOutEdges().hashCode());
+                    assert cmp != 0;
+                    return cmp;
+                }
+            }
+            return o1.hashCode() - o2.hashCode();
+        });
         int cursor = 0;
         for (LogicalOperator op:operators){
             if (op instanceof DataOperator || op instanceof AggregateOperator){
                 if (!operatorId.containsKey(op)){
-                    operatorId.put(op,inEdges.size());
+                    operatorId.put(op,getInEdges().size());
                     connect(op,this);
                 }
                 ptgs[cursor++] = new RefVariablePtg(operatorId.get(op));
@@ -44,11 +56,12 @@ public class SingleTransformOperator extends TransformOperator {
                     LogicalOperator o = transform.getInEdges().get(i).getInVertex();
                     if (operatorId.containsKey(o)){
                         newRefId[i] = operatorId.get(o);
+                        transform.getInEdges().get(i).setOutVertex(this); // todo: fix it;
                     }
                     else {
-                        operatorId.put(o,inEdges.size());
-                        newRefId[i] = inEdges.size();
-                        connect(o,this);
+                        operatorId.put(o,getInEdges().size());
+                        newRefId[i] = getInEdges().size();
+                        transferInEdge(transform.getInEdges().get(i));
                     }
                 }
 
@@ -72,6 +85,8 @@ public class SingleTransformOperator extends TransformOperator {
             }
             throw OptimizationError.UNSUPPORTED_CASE;
         }
+        assert ptgs.length == cursor + 1;
+        ptgs[cursor] = ptg;
 
 
 
@@ -79,14 +94,14 @@ public class SingleTransformOperator extends TransformOperator {
 
     @Override
     public void evaluate(FormulaExecutor context) throws OptimizationError {
-        for (Edge e: inEdges)
+        for (Edge e: getInEdges())
             if (!e.resultIsReady())
                 return;
 
-        Ptg[] data = new Ptg[inEdges.size()];
+        Ptg[] data = new Ptg[getInEdges().size()];
 
-        for (int i = 0, isize = inEdges.size(); i < isize;i++){
-            Object result = inEdges.get(i).popResult().get(0);
+        for (int i = 0, isize = getInEdges().size(); i < isize;i++){
+            Object result = getInEdges().get(i).popResult().get(0);
             if (result instanceof Double)
                 data[i] = new NumberPtg((Double)result);
             else if (result instanceof String)
@@ -107,7 +122,7 @@ public class SingleTransformOperator extends TransformOperator {
 
         List result = Arrays.asList(new Object[]{evaluate(ptgs)});
 
-        for (Edge o:outEdges){
+        for (Edge o:getOutEdges()){
             o.setResult(result);
         }
 
