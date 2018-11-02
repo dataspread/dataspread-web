@@ -26,7 +26,7 @@ public class SingleDataOperator extends DataOperator{
             results = new ArrayList<>();
 
             for (SCell cell : _sheet.getCells(_region)){
-                if (cell.getType() != SCell.CellType.NUMBER)
+                if (cell.getType() != SCell.CellType.NUMBER || cell.getType() != SCell.CellType.FORMULA)
                     throw OptimizationError.UNSUPPORTED_TYPE;
                 results.add(cell.getValue());
             }

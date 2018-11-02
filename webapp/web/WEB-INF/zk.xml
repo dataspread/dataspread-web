@@ -49,7 +49,7 @@
 
 	<library-property>
 		<name>FormulaAsyncScheduler</name>
-		<value>FormulaAsyncSchedulerSimple</value>
+		<value>FormulaAsyncSchedulerOptimized</value>
 	</library-property>
 
 	<library-property>
