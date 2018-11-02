@@ -25,7 +25,7 @@ export default class StartupBox extends Component {
                 <Divider horizontal>Or</Divider>
             
                 <Button secondary fluid>
-                    <ModalImportFile></ModalImportFile>
+                    <ModalImportFile/>
                 </Button>
             
             </Segment>

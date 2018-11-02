@@ -1,6 +1,5 @@
 import React, {Component} from 'react';
 import {Dimmer, Loader} from 'semantic-ui-react'
-import ReactResumableJs from 'react-resumable-js'
 import {ArrowKeyStepper, AutoSizer, defaultCellRangeRenderer, Grid, ScrollSync} from './react-virtualized'
 
 import Cell from './cell';
@@ -27,7 +26,8 @@ export default class DSGrid extends Component {
             version: 0,
             focusCellRow: -1,
             focusCellColumn: -1,
-            isProcessing: false
+            isProcessing: false,
+            initialLoadDone:false,
         }
         this.subscribed = false;
         this.rowHeight = 32;
@@ -92,6 +92,7 @@ export default class DSGrid extends Component {
         {
             this.dataCache.set(parseInt(jsonMessage['blockNumber'], 10),
                 jsonMessage['data']);
+            this.setState({initialLoadDone: true});
             this.grid.forceUpdate();
         }
         else if (jsonMessage['message'] === 'asyncStatus') {
@@ -131,7 +132,7 @@ export default class DSGrid extends Component {
             <div>
                 <div style={{display: 'flex'}}>
                     <div style={{flex: 'auto', height: '90vh'}}>
-                        <Dimmer active={this.state.isProcessing}>
+                        <Dimmer active={this.state.isProcessing || !this.state.initialLoadDone}>
                             <Loader>Processing</Loader>
                         </Dimmer>
                         <AutoSizer>
