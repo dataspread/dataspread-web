@@ -1,55 +1,52 @@
 import React, {Component} from 'react';
-import {Dropdown, Menu, Modal} from 'semantic-ui-react'
 import './App.css';
 import DSGrid from './dsgrid';
-
+import Toolbar from './Components/Menu/toolbar'
+import StartupBox from './Components/StatupBox'
 
 class App extends Component {
+
+    constructor(props){
+        super(props);
+        // this.setFileId = ''
+        // this.filename = ''
+        // this.hasFileOpened = false
+        this.state = {
+            fileId:"",
+            filename:"",
+            hasFileOpened: false,
+            username:""
+
+        }
+        this.onSelectFile = this.onSelectFile.bind(this)
+
+    }
+
+    onSelectFile (fileId) {
+        this.setState({
+            fileId: fileId,
+            hasFileOpened: true
+        })
+    }
+
     render () {
-        return (
-            <div>
-                <Modal>
-                    <Modal.Header>Select a Spreadsheet</Modal.Header>
-                    <Modal.Content>
-                        <Dropdown placeholder='Select Country' fluid search selection options={['a', 'b']}/>
-                    </Modal.Content>
-                </Modal>
-
-
-                <Menu size='tiny'>
-                    <Menu.Item>
-                        <img src='favicon.ico' alt='DS'/>
-                    </Menu.Item>
-
-                    <Dropdown item text='File'>
-                        <Dropdown.Menu>
-                            <Dropdown.Item>Open</Dropdown.Item>
-                            <Dropdown.Item>Import</Dropdown.Item>
-                        </Dropdown.Menu>
-                    </Dropdown>
-
-                    <Dropdown item text='Edit'>
-
-                    </Dropdown>
-
-                    <Dropdown item text='Help'>
-                        <Dropdown.Menu>
-                            <Dropdown.Item>About</Dropdown.Item>
-                        </Dropdown.Menu>
-                    </Dropdown>
-
-
-                    <Menu.Menu position='right'>
-                        <Menu.Item>
-                            Sign In
-                        </Menu.Item>
-                    </Menu.Menu>
-                </Menu>
-
-
-                <DSGrid/>
-            </div>
-        )
+        
+        if (!this.state.hasFileOpened) {
+            return (
+                <div>
+                    <Toolbar username={this.state.username} onSelectFile={this.onSelectFile}/>
+                    <StartupBox username={this.state.username} onSelectFile={this.onSelectFile}/>
+                </div>
+            )
+        } else {
+            return (
+                <div>
+                    <Toolbar username={this.state.username}/>
+                    <DSGrid filename={this.state.fileId} />
+                </div>
+            )
+        }
+        
     }
 }
 
