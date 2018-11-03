@@ -45,7 +45,7 @@ public class GroupedDataOperator extends DataOperator{
             for (int insize = getInEdges().size();current < insize;current++)
                 inEdgesRange.add(getIndexRange(data.getRegion()));
             current = getOutEdges().size();
-            transferInEdges(data.getOutEdges());
+            transferOutEdges(data.getOutEdges());
             for (int outsize = getOutEdges().size();current < outsize;current++)
                 outEdgesRange.add(getIndexRange(data.getRegion()));
         }

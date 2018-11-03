@@ -9,13 +9,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Timer {
 
     private Timer(){}
-
-    private static final Logger logger = Logger.getLogger(Timer.class.getName());
 
     private static Map<String, Long> labledDuration = new TreeMap<>();
 
@@ -29,32 +28,40 @@ public class Timer {
     }
 
     public static void outputTime(Set<String> exclude){
-        logger.info("**************************************************");
+        StringBuilder output = new StringBuilder();
+        output.append("**************************************************").append("\n");
         Long totalDuration = 0L;
         for (Map.Entry<String,Long> entry:labledDuration.entrySet()){
             String label = entry.getKey();
             Long duration = entry.getValue();
             if (exclude.contains(label)){
-                logger.info(label + ":\t" + duration);
+                output.append(label).append(":\t").append((double) duration / 1000000).append("ms\n");
             }
             else {
                 totalDuration += duration;
             }
         }
 
-        logger.info("**************************************************");
+        output.append("**************************************************").append("\n");
 
-        logger.info("Total duration" + ":\t" + totalDuration);
+        output.append("Total duration" + ":\t").append(totalDuration / (double) 1000000).append("ms\n");
 
         for (Map.Entry<String,Long> entry:labledDuration.entrySet()){
             String label = entry.getKey();
             Long duration = entry.getValue();
             if (!exclude.contains(label)){
-                logger.info(label + ":\t" + duration + "\t" + duration / (double) totalDuration + "%");
+                output.append(label)
+                        .append(":\t")
+                        .append((double) duration / 1000000)
+                        .append("ms\t")
+                        .append(duration / (double) totalDuration * 100)
+                        .append("%")
+                        .append("\n");
             }
         }
 
-        logger.info("**************************************************");
+        output.append("**************************************************").append("\n");
+        System.out.println(output.toString());
         labledDuration.clear();
     }
 

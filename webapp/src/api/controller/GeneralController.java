@@ -148,11 +148,11 @@ public class GeneralController implements FormulaAsyncListener {
             int row = (int) payload.get("row");
             int column = (int) payload.get("column");
             String value = (String) payload.get("value");
-            updateCellWithNotfication(uiSession, row, column, value);
+            updateCellWithNotification(uiSession, row, column, value);
         }
     }
 
-    private void updateCellWithNotfication(UISessionManager.UISession uiSession, int row, int column, String value) {
+    private void updateCellWithNotification(UISessionManager.UISession uiSession, int row, int column, String value) {
         SSheet sheet = uiSession.getSheet();
         ModelUpdateCollector modelUpdateCollector = new ModelUpdateCollector();
         ModelUpdateCollector oldCollector = ModelUpdateCollector.setCurrent(modelUpdateCollector);
