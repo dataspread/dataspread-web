@@ -5,6 +5,7 @@ import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 public class SingleTransformOperator extends TransformOperator {
 
@@ -25,13 +26,21 @@ public class SingleTransformOperator extends TransformOperator {
         super();
         ptgs = new Ptg[getPtgSize(operators) + 1];
         literials = new ArrayList<>();
-        Map<LogicalOperator,Integer> operatorId = new TreeMap<>((o1, o2) -> {
+        final Map<LogicalOperator,Integer> operatorId = new TreeMap<>((o1, o2) -> {
             if (o1.hashCode() == o2.hashCode()){
                 if (o1 == o2)
                     return 0;
                 else {
-                    int cmp = (o1.toString() + o1.getInEdges().hashCode() + o1.getOutEdges().hashCode())
-                            .compareTo(o1.toString() + o2.getInEdges().hashCode() + o2.getOutEdges().hashCode());
+                    StringBuilder inEdge1 = new StringBuilder();
+                    o1.forEachInEdge((e)->inEdge1.append(e.hashCode()));
+                    StringBuilder inEdge2 = new StringBuilder();
+                    o2.forEachInEdge((e)->inEdge2.append(e.hashCode()));
+                    StringBuilder outEdge1 = new StringBuilder();
+                    o1.forEachOutEdge((e)->outEdge1.append(e.hashCode()));
+                    StringBuilder outEdge2 = new StringBuilder();
+                    o2.forEachOutEdge((e)->outEdge2.append(e.hashCode()));
+                    int cmp = (o1.toString() + inEdge1 + outEdge1)
+                            .compareTo(o2.toString() + inEdge2 + outEdge2);
                     assert cmp != 0;
                     return cmp;
                 }
@@ -52,18 +61,23 @@ public class SingleTransformOperator extends TransformOperator {
                 SingleTransformOperator transform = (SingleTransformOperator)op;
                 int[] newRefId = new int[transform.inDegree()];
 
-                for (int i = 0,isize = transform.inDegree(); i < isize; i++){
-                    LogicalOperator o = transform.getInEdges().get(i).getInVertex();
-                    if (operatorId.containsKey(o)){
-                        newRefId[i] = operatorId.get(o);
-                        transform.getInEdges().get(i).setOutVertex(this); // todo: fix it;
+                transform.forEachInEdge(new Consumer<Edge>() {
+                    int i = 0;
+                    @Override
+                    public void accept(Edge edge) {
+                        LogicalOperator o = edge.getInVertex();
+                        if (operatorId.containsKey(o)){
+                            newRefId[i] = operatorId.get(o);
+                            edge.remove();
+                        }
+                        else {
+                            operatorId.put(o,inDegree());
+                            newRefId[i] = inDegree();
+                            transferInEdge(edge);
+                        }
+                        i++;
                     }
-                    else {
-                        operatorId.put(o,inDegree());
-                        newRefId[i] = inDegree();
-                        transferInEdge(transform.getInEdges().get(i));
-                    }
-                }
+                });
 
                 for (int i = 0; i < transform.ptgs.length; i++){
                     Ptg p =transform.ptgs[i];
@@ -94,21 +108,28 @@ public class SingleTransformOperator extends TransformOperator {
 
     @Override
     public void evaluate(FormulaExecutor context) throws OptimizationError {
-        for (Edge e: getInEdges())
-            if (!e.resultIsReady())
-                return;
 
         Ptg[] data = new Ptg[inDegree()];
 
-        for (int i = 0, isize = inDegree(); i < isize;i++){
-            Object result = getInEdges().get(i).popResult().get(0);
-            if (result instanceof Double)
-                data[i] = new NumberPtg((Double)result);
-            else if (result instanceof String)
-                data[i] = new StringPtg((String) result);
-            else
-                throw OptimizationError.UNSUPPORTED_TYPE;
+        try {
+            forEachInEdge(new Consumer<Edge>() {
+                int i = 0;
+                @Override
+                public void accept(Edge edge) {
+                    Object result = edge.popResult().get(0);
+                    if (result instanceof Double)
+                        data[i++] = new NumberPtg((Double)result);
+                    else if (result instanceof String)
+                        data[i++] = new StringPtg((String) result);
+                    else
+                        throw new RuntimeException(OptimizationError.UNSUPPORTED_TYPE);
+                }
+            });
         }
+        catch (RuntimeException e){
+            throw (OptimizationError)e.getCause();
+        }
+
 
         Ptg[] ptgs = Arrays.copyOf(this.ptgs, this.ptgs.length);
         for (int i = 0, isize = ptgs.length; i < isize;i++){
@@ -122,9 +143,7 @@ public class SingleTransformOperator extends TransformOperator {
 
         List result = Collections.singletonList(evaluate(ptgs));
 
-        for (Edge o:getOutEdges()){
-            o.setResult(result);
-        }
+        forEachOutEdge((e)->e.setResult(result));
     }
 
     @Override

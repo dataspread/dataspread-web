@@ -10,6 +10,7 @@ import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 public class GroupedDataOperator extends DataOperator{
 
@@ -62,7 +63,7 @@ public class GroupedDataOperator extends DataOperator{
         Iterator currentResultIterator = null;
         if (inEdgeCursor < inEdgesRange.size()){
             currentRange = inEdgesRange.get(inEdgeCursor);
-            currentResultIterator = getInEdges().get(inEdgeCursor).popResult().iterator();
+            currentResultIterator = getInEdge(inEdgeCursor).popResult().iterator();
         }
 
         for (SCell cell : cells){
@@ -73,7 +74,7 @@ public class GroupedDataOperator extends DataOperator{
                 inEdgeCursor++;
                 if (inEdgeCursor < inEdgesRange.size()){
                     currentRange = inEdgesRange.get(inEdgeCursor);
-                    currentResultIterator = getInEdges().get(inEdgeCursor).popResult().iterator();
+                    currentResultIterator = getInEdge(inEdgeCursor).popResult().iterator();
                 }
             }
             if (inEdgeCursor < inEdgesRange.size() && i >= currentRange.getKey()){
@@ -92,9 +93,14 @@ public class GroupedDataOperator extends DataOperator{
                 data[i] = cell.getValue();
         }
         List results = Arrays.asList(data);
-        for (int i =0,isize = outDegree(); i < isize;i++){
-            getOutEdges().get(i).setResult(results.subList(outEdgesRange.get(i).getKey(),outEdgesRange.get(i).getValue()));
-        }
+        forEachOutEdge(new Consumer<Edge>() {
+            int i = 0;
+            @Override
+            public void accept(Edge edge) {
+                edge.setResult(results.subList(outEdgesRange.get(i).getKey(),outEdgesRange.get(i).getValue()));
+                i++;
+            }
+        });
     }
 
     @Override

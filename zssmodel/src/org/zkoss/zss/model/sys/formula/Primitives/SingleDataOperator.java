@@ -32,7 +32,7 @@ public class SingleDataOperator extends DataOperator{
             }
         }
         else{
-            results = getInEdges().get(0).popResult();
+            results = getInEdge(0).popResult();
             Iterator it= results.iterator();
             for (int i = _region.getRow(); i <= _region.getLastRow(); i++)
                 for (int j = _region.getColumn(); j <= _region.getLastColumn(); j++) {
@@ -40,9 +40,8 @@ public class SingleDataOperator extends DataOperator{
                     setFormulaValue(i,j,result,context);
                 }
         }
-        for (Edge o:getOutEdges()){
-            o.setResult(results);
-        }
+
+        forEachOutEdge((e)->e.setResult(results));
     }
 
     @Override

@@ -7,12 +7,9 @@ import java.util.ArrayList;
 import java.util.function.Consumer;
 
 public class LogicalOperator {
-    private List<Edge> inEdges, outEdges;
+    final private List<Edge> inEdges= new ArrayList<>(), outEdges = new ArrayList<>();
 
-    LogicalOperator(){
-        inEdges = new ArrayList<>();
-        outEdges = new ArrayList<>();
-    }
+    LogicalOperator(){}
 
     public static void connect(LogicalOperator in, LogicalOperator out){
         Edge edge = new Edge(in,out);
@@ -46,21 +43,10 @@ public class LogicalOperator {
         return outEdges.size();
     }
 
-    Edge getInEdge(int i){
+    Edge getInEdge(int i){ // todo: change to get first
         return inEdges.get(i);
     }
 
-    Edge getOutEdge(int i){
-        return outEdges.get(i);
-    }
-
-    List<Edge> getInEdges(){
-        return inEdges;
-    }
-
-    List<Edge> getOutEdges(){
-        return outEdges;
-    }
 
     void forEachInEdge(Consumer<? super Edge> action){
         inEdges.forEach(action);
