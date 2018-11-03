@@ -46,6 +46,14 @@ public class LogicalOperator {
         return outEdges.size();
     }
 
+    Edge getInEdge(int i){
+        return inEdges.get(i);
+    }
+
+    Edge getOutEdge(int i){
+        return outEdges.get(i);
+    }
+
     List<Edge> getInEdges(){
         return inEdges;
     }

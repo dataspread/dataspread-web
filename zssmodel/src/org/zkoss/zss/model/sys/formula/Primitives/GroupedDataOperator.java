@@ -53,10 +53,6 @@ public class GroupedDataOperator extends DataOperator{
 
     @Override
     public void evaluate(FormulaExecutor context) throws OptimizationError {
-        for (Edge e: getInEdges())
-            if (!e.resultIsReady())
-                return;
-
         Object[] data = new Object[_region.getCellCount()];
         Collection<SCell> cells = _sheet.getCells(_region);
 
@@ -99,7 +95,6 @@ public class GroupedDataOperator extends DataOperator{
         for (int i =0,isize = outDegree(); i < isize;i++){
             getOutEdges().get(i).setResult(results.subList(outEdgesRange.get(i).getKey(),outEdgesRange.get(i).getValue()));
         }
-        _evaluated = true;
     }
 
     @Override

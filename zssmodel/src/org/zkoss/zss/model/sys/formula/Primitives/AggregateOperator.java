@@ -15,13 +15,11 @@ public class AggregateOperator extends PhysicalOperator {
 
     @Override
     public void evaluate(FormulaExecutor context) {
-        assert getInEdges().get(0).resultIsReady();
         List<Double> data = (List<Double>)getInEdges().get(0).popResult();
         List<Double> result = Collections.singletonList(binaryFunction.groupEvaluate(data));
 
         forEachOutEdge((o)-> o.setResult(result));
 
-        _evaluated = true;
     }
 
 }

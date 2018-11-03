@@ -125,9 +125,6 @@ public class SingleTransformOperator extends TransformOperator {
         for (Edge o:getOutEdges()){
             o.setResult(result);
         }
-
-
-        _evaluated = true;
     }
 
     @Override

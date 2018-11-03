@@ -25,7 +25,6 @@ public class FormulaExecutor {
         this.scheduler = scheduler;
         for (LogicalOperator op:graph.dataNodes)
             recursiveEvaluate(op);
-        graph.clean();
     }
 
     private void evaluate(PhysicalOperator operator){
@@ -63,13 +62,11 @@ public class FormulaExecutor {
         if (!(op instanceof PhysicalOperator))
             throw new OptimizationError("Logical Operator not converted");
         PhysicalOperator p = (PhysicalOperator)op;
-        if (p.isEvaluated())
+        if (!p.readyToEvaluate())
             return;
 
         evaluate(p);
-        if (p.isEvaluated()){
-            for (Iterator<LogicalOperator> it = p.getOutputNodes();it.hasNext();)
-                recursiveEvaluate(it.next());
-        }
+        for (Iterator<LogicalOperator> it = p.getOutputNodes();it.hasNext();)
+            recursiveEvaluate(it.next());
     }
 }

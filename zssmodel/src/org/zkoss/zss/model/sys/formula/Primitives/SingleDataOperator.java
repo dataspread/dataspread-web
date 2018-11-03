@@ -30,13 +30,8 @@ public class SingleDataOperator extends DataOperator{
                     throw OptimizationError.UNSUPPORTED_TYPE;
                 results.add(cell.getValue());
             }
-            _evaluated = true;
         }
         else{
-            for (Edge e: getInEdges())
-                if (!e.resultIsReady())
-                    return;
-
             results = getInEdges().get(0).popResult();
             Iterator it= results.iterator();
             for (int i = _region.getRow(); i <= _region.getLastRow(); i++)
@@ -48,7 +43,6 @@ public class SingleDataOperator extends DataOperator{
         for (Edge o:getOutEdges()){
             o.setResult(results);
         }
-        _evaluated = true;
     }
 
     @Override
