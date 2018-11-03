@@ -78,8 +78,10 @@ import java.util.Set;
 				dependents.forEach(v -> sheet.getCell(v.getRow(), v.getColumn()).getValueSync());
 			}
 			else {
-				dependents.forEach(v ->
-						DirtyManager.dirtyManagerInstance.addDirtyRegion(v, trxId));
+				synchronized (DirtyManager.dirtyManagerInstance) {
+					dependents.forEach(v ->
+							DirtyManager.dirtyManagerInstance.addDirtyRegion(v, trxId));
+				}
 			}
 		}
 	}
