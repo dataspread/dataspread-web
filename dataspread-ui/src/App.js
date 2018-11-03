@@ -28,7 +28,7 @@ class App extends Component {
     }
 
     render () {
-        console.log(this)
+        // console.log(this)
         if (!this.state.hasFileOpened) {
             return (
                 <div>
@@ -37,10 +37,11 @@ class App extends Component {
                 </div>
             )
         } else {
+            console.log("Apps.js: " + this.state.fileId)
             return (
                 <div>
                     <Toolbar username={this.state.username} onSelectFile={this.onSelectFile}/>
-                    <DSGrid filename={this.state.fileId} />
+                    <DSGrid fileId={this.state.fileId} />
                 </div>
             )
         }

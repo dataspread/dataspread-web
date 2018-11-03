@@ -19,6 +19,7 @@ export default class DSGrid extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            bookId: '',
             rows: 100000000,
             bookName: '',
             sheetName: '',
@@ -61,8 +62,7 @@ export default class DSGrid extends Component {
 
         this.stompClient.debug = () => {
         };
-
-        this.bookName = this.props.filename;
+        this.bookName = this.props.fileId;
         this._loadBook();
     }
 
@@ -78,7 +78,7 @@ export default class DSGrid extends Component {
 
 
     componentDidMount() {
-
+        this.setState({bookId: this.props.fileId})
     }
 
     componentWillUnmount() {
@@ -129,6 +129,8 @@ export default class DSGrid extends Component {
     }
 
     render() {
+        console.log('DS Grid in Bookname: ' + this.props.fileId)
+        console.log('DS Grid Bookname: ' + this.state.bookId);
         return (
             <div>
                 <div style={{display: 'flex'}}>
@@ -234,6 +236,7 @@ export default class DSGrid extends Component {
             .then(res => res.json())
             .then(
                 (result) => {
+                    console.log(result)
                     this.dataCache.reset();
                     this.setState({
                         bookName: this.bookName,

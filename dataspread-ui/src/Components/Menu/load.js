@@ -7,7 +7,7 @@ export default class ModalOpenFile extends Component {
   constructor(props) {
     super(props);
 	this.state = {
-      	modalOpen: false,
+      	loadmodalOpen: false,
 	  	data: null,
 	  	BooksOptions: [],
 		BooksSelected: ""
@@ -15,9 +15,9 @@ export default class ModalOpenFile extends Component {
 	this._handleEvent = this._handleEvent.bind(this);
   }
 
-	handleOpen = () => this.setState({ modalOpen: true })
+	handleOpen = () => this.setState({ loadmodalOpen: true })
 
-	handleClose = () => this.setState({ modalOpen: false })
+	handleClose = () => this.setState({ loadmodalOpen: false })
 
 	// fetch data from api
 	componentDidMount() {
@@ -58,7 +58,7 @@ export default class ModalOpenFile extends Component {
 		return (
 		<Modal
 			trigger={<Dropdown.Item onClick={this.handleOpen}>Open File</Dropdown.Item>}
-			open={this.state.modalOpen}
+			open={this.state.loadmodalOpen}
 			onClose={this.handleClose}
 		>
 			<Header icon='folder open outline' content='Open File' />
