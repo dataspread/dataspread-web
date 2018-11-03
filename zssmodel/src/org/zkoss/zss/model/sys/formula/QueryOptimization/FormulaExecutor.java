@@ -23,8 +23,11 @@ public class FormulaExecutor {
     }
     public void execute(QueryPlanGraph graph, FormulaAsyncScheduler scheduler) throws OptimizationError {
         this.scheduler = scheduler;
-        for (LogicalOperator op:graph.dataNodes)
-            recursiveEvaluate(op);
+        synchronized (graph){
+            for (LogicalOperator op:graph.dataNodes)
+                recursiveEvaluate(op);
+        }
+
     }
 
     private void evaluate(PhysicalOperator operator){

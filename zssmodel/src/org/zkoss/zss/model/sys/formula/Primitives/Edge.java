@@ -5,7 +5,7 @@ import java.util.List;
 class Edge {
     private LogicalOperator in,out;
 
-    boolean valid = true;
+    private boolean valid = true;
 
     Edge(LogicalOperator in, LogicalOperator out){
         this.in = in;
