@@ -47,10 +47,11 @@ export default class DSGrid extends Component {
         this._processUpdates = this._processUpdates.bind(this);
         this._cellRangeRenderer = this._cellRangeRenderer.bind(this);
 
-        this.urlPrefix = ""; // Only for testing.
-        this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
+        // this.urlPrefix = ""; // Only for testing.
+        // this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
 
-        //this.urlPrefix = "http://localhost:8080"; // Only for testing.
+        this.urlPrefix = process.env.REACT_APP_BASE_URL ; // Only for testing.
+        this.stompClient = Stomp.client("ws://kite.cs.illinois.edu:8080/ds-push/websocket");
         //this.stompClient = Stomp.client("ws://localhost:8080/ds-push/websocket");
 
         this.stompClient.connect({}, null, null, () => {

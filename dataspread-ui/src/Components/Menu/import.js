@@ -32,7 +32,7 @@ export default class ModalImportFile extends Component {
 			simultaneousUploads={4}
 			fileAddedMessage="Started!"
 			completedMessage="Complete!"
-			service="/api/importFile"
+			service= {process.env.REACT_APP_BASE_URL + "/api/importFile"}
 			disableDragAndDrop={true}
 			showFileList={false}
 			onFileSuccess={(file, message) => {

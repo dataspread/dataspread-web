@@ -21,8 +21,7 @@ export default class ModalOpenFile extends Component {
 
 	// fetch data from api
 	componentDidMount() {
-		//fetch('http://kite.cs.illinois.edu:8080/api/getBooks')
-        fetch('/api/getBooks')
+        fetch(process.env.REACT_APP_BASE_URL + '/api/getBooks')
 		.then(response => response.json())
 		.then(data => this.transform(data))
 		.then(data => this.setState({ BooksOptions: data }));
@@ -37,7 +36,8 @@ export default class ModalOpenFile extends Component {
                 "value": raw_data[book].value,
                 "description": raw_data[book].description,
                 "content": <Header icon='table' content={raw_data[book].text} subheader={raw_data[book].content}/>
-            };
+			};
+			delete d["description"];
             data.push(d)
 		}
 		return data
@@ -54,6 +54,7 @@ export default class ModalOpenFile extends Component {
 	}
 
 	render() {
+		console.log(process.env.REACT_APP_BASE_URL + '/api/getBooks')
 		return (
 		<Modal
 			trigger={<Dropdown.Item onClick={this.handleOpen}>Open File</Dropdown.Item>}

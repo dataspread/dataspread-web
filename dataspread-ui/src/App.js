@@ -8,9 +8,7 @@ class App extends Component {
 
     constructor(props){
         super(props);
-        // this.setFileId = ''
-        // this.filename = ''
-        // this.hasFileOpened = false
+
         this.state = {
             fileId:"",
             filename:"",
@@ -30,7 +28,7 @@ class App extends Component {
     }
 
     render () {
-        
+        console.log(this)
         if (!this.state.hasFileOpened) {
             return (
                 <div>

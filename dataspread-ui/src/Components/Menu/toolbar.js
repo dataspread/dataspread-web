@@ -1,8 +1,8 @@
 import React, {Component} from 'react';
 import {Dropdown, Menu} from 'semantic-ui-react'
-import ModalAboutUs from './Help/about'
-import ModalOpenFile from './File/load'
-import ModalImportFile from './File/import'
+import ModalAboutUs from './about'
+import ModalOpenFile from './load'
+import ModalImportFile from './import'
 
 const favstyle = {
     height: '1.5em',
