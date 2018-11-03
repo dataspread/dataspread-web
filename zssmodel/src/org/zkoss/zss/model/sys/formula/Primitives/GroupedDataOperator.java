@@ -40,13 +40,13 @@ public class GroupedDataOperator extends DataOperator{
         _sheet = dataOperators.get(0).getSheet();
         for (int i = 0,isize = dataOperators.size();i < isize;i++) {
             DataOperator data = dataOperators.get(i);
-            int current = getInEdges().size();
-            transferInEdges(data.getInEdges());
-            for (int insize = getInEdges().size();current < insize;current++)
+            int current = inDegree();
+            data.forEachInEdge(this::transferInEdge);
+            for (int insize = inDegree();current < insize;current++)
                 inEdgesRange.add(getIndexRange(data.getRegion()));
-            current = getOutEdges().size();
-            transferOutEdges(data.getOutEdges());
-            for (int outsize = getOutEdges().size();current < outsize;current++)
+            current = outDegree();
+            data.forEachOutEdge(this::transferOutEdge);
+            for (int outsize = outDegree();current < outsize;current++)
                 outEdgesRange.add(getIndexRange(data.getRegion()));
         }
     }
@@ -96,7 +96,7 @@ public class GroupedDataOperator extends DataOperator{
                 data[i] = cell.getValue();
         }
         List results = Arrays.asList(data);
-        for (int i =0,isize = getOutEdges().size(); i < isize;i++){
+        for (int i =0,isize = outDegree(); i < isize;i++){
             getOutEdges().get(i).setResult(results.subList(outEdgesRange.get(i).getKey(),outEdgesRange.get(i).getValue()));
         }
         _evaluated = true;

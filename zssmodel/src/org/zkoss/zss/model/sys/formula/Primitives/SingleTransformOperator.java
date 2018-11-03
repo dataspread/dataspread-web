@@ -42,7 +42,7 @@ public class SingleTransformOperator extends TransformOperator {
         for (LogicalOperator op:operators){
             if (op instanceof DataOperator || op instanceof AggregateOperator){
                 if (!operatorId.containsKey(op)){
-                    operatorId.put(op,getInEdges().size());
+                    operatorId.put(op,inDegree());
                     connect(op,this);
                 }
                 ptgs[cursor++] = new RefVariablePtg(operatorId.get(op));
@@ -50,17 +50,17 @@ public class SingleTransformOperator extends TransformOperator {
             }
             if (op instanceof SingleTransformOperator){
                 SingleTransformOperator transform = (SingleTransformOperator)op;
-                int[] newRefId = new int[transform.getInEdges().size()];
+                int[] newRefId = new int[transform.inDegree()];
 
-                for (int i = 0,isize = transform.getInEdges().size(); i < isize; i++){
+                for (int i = 0,isize = transform.inDegree(); i < isize; i++){
                     LogicalOperator o = transform.getInEdges().get(i).getInVertex();
                     if (operatorId.containsKey(o)){
                         newRefId[i] = operatorId.get(o);
                         transform.getInEdges().get(i).setOutVertex(this); // todo: fix it;
                     }
                     else {
-                        operatorId.put(o,getInEdges().size());
-                        newRefId[i] = getInEdges().size();
+                        operatorId.put(o,inDegree());
+                        newRefId[i] = inDegree();
                         transferInEdge(transform.getInEdges().get(i));
                     }
                 }
@@ -98,9 +98,9 @@ public class SingleTransformOperator extends TransformOperator {
             if (!e.resultIsReady())
                 return;
 
-        Ptg[] data = new Ptg[getInEdges().size()];
+        Ptg[] data = new Ptg[inDegree()];
 
-        for (int i = 0, isize = getInEdges().size(); i < isize;i++){
+        for (int i = 0, isize = inDegree(); i < isize;i++){
             Object result = getInEdges().get(i).popResult().get(0);
             if (result instanceof Double)
                 data[i] = new NumberPtg((Double)result);

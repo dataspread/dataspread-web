@@ -22,7 +22,7 @@ public class SingleDataOperator extends DataOperator{
     @Override
     public void evaluate(FormulaExecutor context) throws OptimizationError {
         List results;
-        if (getInEdges().size() == 0){
+        if (inDegree() == 0){
             results = new ArrayList<>();
 
             for (SCell cell : _sheet.getCells(_region)){
@@ -55,8 +55,8 @@ public class SingleDataOperator extends DataOperator{
     public void merge(DataOperator dataOperator) throws OptimizationError {
         if (!(dataOperator instanceof SingleDataOperator))
             throw OptimizationError.UNSUPPORTED_FUNCTION;
-        transferInEdges(dataOperator.getInEdges());
-        transferOutEdges(dataOperator.getOutEdges());
+        dataOperator.forEachInEdge(this::transferInEdge);
+        dataOperator.forEachOutEdge(this::transferOutEdge);
     }
 
     private void setFormulaValue(int row, int column, Object result,FormulaExecutor context) throws OptimizationError {

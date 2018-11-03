@@ -38,21 +38,11 @@ public class LogicalOperator {
         e.setInVertex(this);
     }
 
-    void transferInEdges(List<Edge> edges){
-        for (Edge e:edges)
-            transferInEdge(e);
-    }
-
-    void transferOutEdges(List<Edge> edges){
-        for (Edge e:edges)
-            transferOutEdge(e);
-    }
-
-    int inEdgesSize(){
+    int inDegree(){
         return inEdges.size();
     }
 
-    int outEdgesSize(){
+    int outDegree(){
         return outEdges.size();
     }
 
