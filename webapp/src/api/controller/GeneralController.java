@@ -3,6 +3,7 @@ package api.controller;
 import api.UISessionManager;
 import com.google.common.collect.ImmutableMap;
 import org.model.AutoRollbackConnection;
+import org.model.DBContext;
 import org.model.DBHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.MessageHeaders;
@@ -21,6 +22,7 @@ import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.impl.AbstractCellAdv;
 import org.zkoss.zss.model.impl.FormulaCacheCleaner;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncListener;
 import org.zkoss.zss.model.sys.BookBindings;
@@ -164,18 +166,22 @@ public class GeneralController implements FormulaAsyncListener {
                 updateNumber = Integer.valueOf(value.substring(value.indexOf('@') + 1));
                 value = value.substring(0, value.indexOf('@'));
             }
-            for (int i = 0; i < updateNumber;i++) {
-                SCell cell = sheet.getCell(row + i, column);
-                if (value.startsWith("=")) {
-                    cell.setFormulaValue(value.substring(1), connection, true);
 
+            Collection<AbstractCellAdv> cells = new ArrayList<>();
+            sheet.getCells(new CellRegion(row,column,row + updateNumber - 1,column))
+                    .forEach((c)->cells.add((AbstractCellAdv)c));
+
+            for (SCell cell:cells) {
+                if (value.startsWith("=")) {
+                    cell.setFormulaValue(value.substring(1), connection, false);
                 } else
                     try {
-                        cell.setNumberValue(Double.parseDouble(value), connection, true);
+                        cell.setNumberValue(Double.parseDouble(value), connection, false);
                     } catch (Exception e) {
-                        cell.setStringValue(value, connection, true);
+                        cell.setStringValue(value, connection, false);
                     }
             }
+            sheet.getDataModel().updateCells(new DBContext(connection), cells);
             connection.commit();
         } catch (Exception e) {
             e.printStackTrace();

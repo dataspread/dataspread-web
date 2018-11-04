@@ -16,6 +16,8 @@ public class DirtyManagerMemImpl extends DirtyManager {
         dirtyRecords = new ConcurrentSkipListSet<>();
     }
 
+    long lastModified;
+
     private boolean overlaps(Ref region1, Ref region2)
     {
         if (!region1.getBookName().equals(region2.getBookName()))
@@ -49,6 +51,7 @@ public class DirtyManagerMemImpl extends DirtyManager {
         }
         notifyAll();
         DirtyManagerLog.instance.markDirty(region);
+        lastModified = System.nanoTime();
     }
 
     @Override
@@ -66,6 +69,13 @@ public class DirtyManagerMemImpl extends DirtyManager {
 
     // Call in a single thread.
     public synchronized List<DirtyRecord> getAllDirtyRegions() {
+        while (System.nanoTime() - lastModified < 50 * 1000000) {
+            try {
+                wait(25);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
         List<DirtyRecord> ret = new ArrayList<>(dirtyRecords);
         if (ret.isEmpty()) {
             try {
