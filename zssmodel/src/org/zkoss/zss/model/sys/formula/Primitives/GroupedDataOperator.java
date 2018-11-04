@@ -30,25 +30,17 @@ public class GroupedDataOperator extends DataOperator{
     public GroupedDataOperator(List<DataOperator> dataOperators){
         super();
         int row = Integer.MAX_VALUE,column = Integer.MAX_VALUE,maxRow = 0,maxColumn = 0;
-        for (int i = 0,isize = dataOperators.size();i < isize;i++){
-            DataOperator data = dataOperators.get(i);
-            row  = Math.min(data.getRegion().getRow(),row);
-            column  = Math.min(data.getRegion().getColumn(),column);
-            maxRow = Math.max(data.getRegion().getLastRow(),maxRow);
-            maxColumn = Math.max(data.getRegion().getLastColumn(),maxColumn);
+        for (DataOperator data : dataOperators) {
+            row = Math.min(data.getRegion().getRow(), row);
+            column = Math.min(data.getRegion().getColumn(), column);
+            maxRow = Math.max(data.getRegion().getLastRow(), maxRow);
+            maxColumn = Math.max(data.getRegion().getLastColumn(), maxColumn);
         }
         _region = new CellRegion(row,column,maxRow,maxColumn);
         _sheet = dataOperators.get(0).getSheet();
-        for (int i = 0,isize = dataOperators.size();i < isize;i++) {
-            DataOperator data = dataOperators.get(i);
-            int current = inDegree();
+        for (DataOperator data : dataOperators) {
             data.forEachInEdge(this::transferInEdge);
-            for (int insize = inDegree();current < insize;current++)
-                inEdgesRange.add(getIndexRange(data.getRegion()));
-            current = outDegree();
             data.forEachOutEdge(this::transferOutEdge);
-            for (int outsize = outDegree();current < outsize;current++)
-                outEdgesRange.add(getIndexRange(data.getRegion()));
         }
     }
 
@@ -120,5 +112,17 @@ public class GroupedDataOperator extends DataOperator{
         List<Pair<Integer,Integer>> cleanRange = new ArrayList<>();
         super.cleanOutEdges((i)->cleanRange.add(outEdgesRange.get(i)));
         outEdgesRange = cleanRange;
+    }
+
+    @Override
+    void transferInEdge(Edge e){
+        inEdgesRange.add(getIndexRange(((DataOperator)e.getOutVertex()).getRegion()));
+        super.transferInEdge(e);
+    }
+
+    @Override
+    void transferOutEdge(Edge e){
+        outEdgesRange.add(getIndexRange(((DataOperator)e.getInVertex()).getRegion()));
+        super.transferOutEdge(e);
     }
 }
