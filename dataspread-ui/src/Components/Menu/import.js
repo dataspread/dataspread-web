@@ -1,8 +1,22 @@
 import React, {Component} from 'react'
 import ReactResumableJs from 'react-resumable-js'
 import {Dropdown, Button, Header, Icon, Modal} from 'semantic-ui-react'
+import Stomp from "stompjs";
 
 export default class ModalImportFile extends Component {
+    constructor(props) {
+        super(props);
+
+        if (typeof process.env.REACT_APP_BASE_HOST === 'undefined') {
+            this.urlPrefix = "";
+            this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
+        }
+        else {
+            this.urlPrefix = "http://" + process.env.REACT_APP_BASE_HOST;
+            this.stompClient = Stomp.client("ws://" + process.env.REACT_APP_BASE_HOST + "/ds-push/websocket");
+        }
+    }
+
   state = { modalOpen: false }
 
   handleOpen = () => this.setState({ modalOpen: true })
@@ -32,7 +46,7 @@ export default class ModalImportFile extends Component {
 			simultaneousUploads={4}
 			fileAddedMessage="Started!"
 			completedMessage="Complete!"
-			service="/api/importFile"
+			service= {this.urlPrefix + "/api/importFile"}
 			disableDragAndDrop={true}
 			showFileList={false}
 			onFileSuccess={(file, message) => {

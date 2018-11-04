@@ -8,11 +8,9 @@ class App extends Component {
 
     constructor(props){
         super(props);
-        // this.setFileId = ''
-        // this.filename = ''
-        // this.hasFileOpened = false
+
         this.state = {
-            fileId:"",
+            bookId:"",
             filename:"",
             hasFileOpened: false,
             username:""
@@ -22,27 +20,35 @@ class App extends Component {
 
     }
 
-    onSelectFile (fileId) {
+    onSelectFile (bookId) {
         this.setState({
-            fileId: fileId,
+            bookId: bookId,
             hasFileOpened: true
         })
     }
 
+    componentDidUpdate() {
+        if (this.grid!==null)
+        {
+            this.grid.loadBook();
+        }
+    }
+
     render () {
-        
+        // console.log(this)
+        this.grid = null;
         if (!this.state.hasFileOpened) {
             return (
                 <div>
-                    <Toolbar username={this.state.username} onSelectFile={this.onSelectFile}/>
+                    <Toolbar username={this.state.username} onSelectFile={this.onSelectFile} />
                     <StartupBox username={this.state.username} onSelectFile={this.onSelectFile}/>
                 </div>
             )
         } else {
             return (
                 <div>
-                    <Toolbar username={this.state.username} onSelectFile={this.onSelectFile}/>
-                    <DSGrid filename={this.state.fileId} />
+                    <Toolbar username={this.state.username} onSelectFile={this.onSelectFile} />
+                    <DSGrid bookId={this.state.bookId} ref={ref => this.grid = ref} />
                 </div>
             )
         }

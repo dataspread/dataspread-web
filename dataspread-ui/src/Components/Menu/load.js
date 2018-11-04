@@ -1,5 +1,6 @@
 import React, {Component} from 'react'
 import {Dropdown, Button, Header, Icon, Modal} from 'semantic-ui-react'
+import Stomp from "stompjs";
 
 
 
@@ -7,22 +8,33 @@ export default class ModalOpenFile extends Component {
   constructor(props) {
     super(props);
 	this.state = {
-      	modalOpen: false,
+      	loadModalOpen: false,
 	  	data: null,
 	  	BooksOptions: [],
 		BooksSelected: ""
 	};
-	this._handleEvent = this._handleEvent.bind(this);
+	this._handleLoad = this._handleLoad.bind(this);
+
+      if (typeof process.env.REACT_APP_BASE_HOST === 'undefined') {
+          this.urlPrefix = "";
+          this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
+      }
+      else
+      {
+          this.urlPrefix = "http://" + process.env.REACT_APP_BASE_HOST;
+          this.stompClient = Stomp.client("ws://" + process.env.REACT_APP_BASE_HOST + "/ds-push/websocket");
+      }
+
+
   }
 
-	handleOpen = () => this.setState({ modalOpen: true })
+	handleOpen = () => this.setState({ loadModalOpen: true })
 
-	handleClose = () => this.setState({ modalOpen: false })
+	handleClose = () => this.setState({ loadModalOpen: false })
 
 	// fetch data from api
 	componentDidMount() {
-		//fetch('http://kite.cs.illinois.edu:8080/api/getBooks')
-        fetch('/api/getBooks')
+        fetch(this.urlPrefix + '/api/getBooks')
 		.then(response => response.json())
 		.then(data => this.transform(data))
 		.then(data => this.setState({ BooksOptions: data }));
@@ -37,7 +49,8 @@ export default class ModalOpenFile extends Component {
                 "value": raw_data[book].value,
                 "description": raw_data[book].description,
                 "content": <Header icon='table' content={raw_data[book].text} subheader={raw_data[book].content}/>
-            };
+			};
+			delete d["description"];
             data.push(d)
 		}
 		return data
@@ -49,17 +62,18 @@ export default class ModalOpenFile extends Component {
 		this.setState({ BooksSelected: data.value });
 	}
 
-	_handleEvent () {
+    _handleLoad () {
+        this.setState({ loadModalOpen: false });
 		this.props.onSelectFile(this.state.BooksSelected);
 	}
 
 	render() {
+		console.log(this.urlPrefix + '/api/getBooks')
 		return (
 		<Modal
 			trigger={<Dropdown.Item onClick={this.handleOpen}>Open File</Dropdown.Item>}
-			open={this.state.modalOpen}
-			onClose={this.handleClose}
-		>
+			open={this.state.loadModalOpen}
+			onClose={this.handleClose}>
 			<Header icon='folder open outline' content='Open File' />
 
 			<Modal.Content>
@@ -73,7 +87,7 @@ export default class ModalOpenFile extends Component {
 			</Modal.Content>
 
 			<Modal.Actions>
-				<Button name="bookLoadButton" onClick={this._handleEvent}>
+				<Button name="bookLoadButton" onClick={this._handleLoad}>
 				<Icon name='checkmark' /> Load
 				</Button>
 				<Button color='blue' onClick={this.handleClose} inverted>

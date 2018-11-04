@@ -1,7 +1,7 @@
 import React, {Component} from 'react'
 import { Button, Divider, Segment } from 'semantic-ui-react'
-import ModalOpenFile from './Menu/File/load'
-import ModalImportFile from './Menu/File/import'
+import ModalOpenFile from './Menu/load'
+import ModalImportFile from './Menu/import'
 
 
 export default class StartupBox extends Component {
