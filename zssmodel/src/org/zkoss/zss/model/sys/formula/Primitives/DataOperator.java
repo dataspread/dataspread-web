@@ -12,8 +12,9 @@ public abstract class DataOperator extends PhysicalOperator{
     public DataOperator(SSheet sheet, CellRegion region){
         super();
         _sheet = sheet;
-        _region = region.getOverlap(
-                new CellRegion(0,0,_sheet.getEndRowIndex(),_sheet.getEndColumnIndex()));
+        _region = region; // todo: add it somewhere else
+//                region.getOverlap(
+//                new CellRegion(0,0,_sheet.getEndRowIndex(),_sheet.getEndColumnIndex()));
     }
 
     public DataOperator(){

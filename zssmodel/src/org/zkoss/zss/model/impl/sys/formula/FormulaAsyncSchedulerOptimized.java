@@ -16,10 +16,7 @@ import org.zkoss.zss.model.sys.formula.QueryOptimization.QueryOptimizer;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.QueryPlanGraph;
 import org.zkoss.zss.model.sys.formula.Test.Timer;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
@@ -93,7 +90,7 @@ public class FormulaAsyncSchedulerOptimized extends FormulaAsyncScheduler {
                     }
             });
             if (noException.get())
-                Timer.outputTime(Collections.singleton("Whole running cycle"));
+                Timer.outputTime(new TreeSet<>(Arrays.asList("Whole running cycle")));
             else
                 Timer.clear();
 

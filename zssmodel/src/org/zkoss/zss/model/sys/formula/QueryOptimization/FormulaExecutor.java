@@ -48,7 +48,7 @@ public class FormulaExecutor {
                 Ref overlap = sCell.getRef()
                         .getOverlap(new RefImpl(null, null,
                                 rows[0], 0, rows[1], Integer.MAX_VALUE));
-                if (overlap.getCellCount()>0){
+                if (overlap != null){
                     hasOverlap = true;
                     break;
                 }

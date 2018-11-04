@@ -1,16 +1,8 @@
 package org.zkoss.zss.model.sys.formula.Test;
 
-import org.apache.xmlbeans.impl.xb.xsdschema.Public;
-import org.zkoss.zss.model.impl.GraphCompressor;
-import org.zkoss.zss.model.sys.formula.Primitives.DataOperator;
-import org.zkoss.zss.model.sys.formula.Primitives.PhysicalOperator;
-
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Timer {
 
