@@ -6,8 +6,8 @@ import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.Primitives.*;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.QueryPlanGraph;
-import org.zkoss.zss.range.impl.RangeImpl;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Stack;
 import java.util.TreeMap;
@@ -16,9 +16,15 @@ import static org.zkoss.zss.model.sys.formula.Primitives.LogicalOperator.connect
 
 public class FormulaDecomposer {
 
-    static FunctionDecomposer[] logicalOpDict = produceLogicalOperatorDictionary();
+    private FunctionDecomposer[] logicalOpDict = produceLogicalOperatorDictionary();
 
-    public static QueryPlanGraph decomposeFormula(Ptg[] ptgs, SCell target) throws OptimizationError {
+    private static FormulaDecomposer instance = new FormulaDecomposer();
+
+    public static FormulaDecomposer getInstance(){
+        return instance;
+    }
+
+    public QueryPlanGraph decomposeFormula(Ptg[] ptgs, SCell target) throws OptimizationError {
         QueryPlanGraph result = new QueryPlanGraph();
         Stack<LogicalOperator> stack = new Stack<>();
 
@@ -44,8 +50,8 @@ public class FormulaDecomposer {
             }
         }
 
-        for (int i = 0, iSize = ptgs.length; i < iSize; i++) {
-            Ptg ptg = ptgs[i];
+        for (Ptg ptg1 : ptgs) {
+            Ptg ptg = ptg1;
 
             if (ptg instanceof AttrPtg) {
                 AttrPtg attrPtg = (AttrPtg) ptg;
@@ -55,7 +61,7 @@ public class FormulaDecomposer {
                 if (attrPtg.isOptimizedChoose()) {
                     throw OptimizationError.UNSUPPORTED_CASE;
                 }
-                if (attrPtg.isOptimizedIf()){
+                if (attrPtg.isOptimizedIf()) {
                     throw OptimizationError.UNSUPPORTED_CASE;
                 }
                 if (attrPtg.isSkip()) {
@@ -78,10 +84,10 @@ public class FormulaDecomposer {
                 throw OptimizationError.UNSUPPORTED_CASE;
             }
 
-            LogicalOperator opResult = null;
+            LogicalOperator opResult;
             if (ptg instanceof OperationPtg) {
                 OperationPtg optg = (OperationPtg) ptg;
-                if (!(ptg instanceof AbstractFunctionPtg || ptg instanceof ValueOperatorPtg)){
+                if (!(ptg instanceof AbstractFunctionPtg || ptg instanceof ValueOperatorPtg)) {
                     throw OptimizationError.UNSUPPORTED_CASE;
                 }
                 if (optg.getInstance() != null)
@@ -89,32 +95,18 @@ public class FormulaDecomposer {
                 int numops = optg.getNumberOfOperands();
                 LogicalOperator[] ops = new LogicalOperator[numops];
 
-                boolean constantFormula = true;
+                for (int j = numops - 1; j >= 0; j--)
+                    ops[j] = stack.pop();
 
-                // storing the ops in reverse order since they are popping
-                for (int j = numops - 1; j >= 0; j--) {
-                    LogicalOperator p = stack.pop();
-                    ops[j] = p;
-                    if (p instanceof DataOperator && ((DataOperator)p).getRegion().getCellCount() > 1)
-                        constantFormula = false;
-                }
-//				logDebug("invoke " + operation + " (nAgs=" + numops + ")");
-                if (!constantFormula){
-                    AbstractFunctionPtg fptg = (AbstractFunctionPtg)ptg;
-                    opResult = logicalOpDict[fptg.getFunctionIndex()].decompose(ops);
-                }
-                else
-                    opResult = new SingleTransformOperator(ops, ptg);
-
+                opResult = getOperationOperator(ops,ptg);
             } else if (ptg instanceof RelTableAttrPtg) {
                 throw OptimizationError.UNSUPPORTED_CASE;
-            } else if (ptg instanceof AreaPtgBase || ptg instanceof RefPtgBase){
+            } else if (ptg instanceof AreaPtgBase || ptg instanceof RefPtgBase) {
                 opResult = dataOperatorMap.get(ptg.toString());
 
-            } else if (ptg instanceof ScalarConstantPtg){
+            } else if (ptg instanceof ScalarConstantPtg) {
                 opResult = new SingleTransformOperator(ptg);
-            }
-            else {
+            } else {
                 throw OptimizationError.UNSUPPORTED_CASE;
             }
             if (opResult == null) {
@@ -135,25 +127,41 @@ public class FormulaDecomposer {
 
     }
 
-    private static FunctionDecomposer[] produceLogicalOperatorDictionary() {
+    private  FunctionDecomposer[] produceLogicalOperatorDictionary() {
         FunctionDecomposer[] retval = new FunctionDecomposer[378];
 
         retval[4] = new FunctionDecomposer(){
 
             @Override
-            public LogicalOperator decompose(LogicalOperator[] ops) {
-                assert ops.length == 1;
-                LogicalOperator ret = new AggregateOperator(BinaryFunction.PLUS);
-                connect(ops[0],ret);
-                return ret;
+            public LogicalOperator decompose(LogicalOperator[] ops) throws OptimizationError {
+                for (int i = 0; i < ops.length; i++){
+                    if (ops[i] instanceof DataOperator && ((DataOperator) ops[i]).getRegion().getCellCount() > 1){
+                        LogicalOperator op = new AggregateOperator(BinaryFunction.PLUS);
+                        connect(ops[0],op);
+                        ops[i] = op;
+                    }
+
+                    if (i > 0)
+                        ops[i] = new SingleTransformOperator(
+                                new LogicalOperator[]{ops[i-1],ops[i]}, AddPtg.instance);
+
+                }
+                return ops[ops.length - 1];
             }
         };
-
-
-
-
-
-
         return retval;
+    }
+
+    private LogicalOperator getOperationOperator(LogicalOperator[] operators, Ptg ptg) throws OptimizationError {
+        boolean constantFormula = true;
+        for (LogicalOperator op:operators) {
+            if (op instanceof DataOperator && ((DataOperator) op).getRegion().getCellCount() > 1)
+                constantFormula = false;
+        }
+        if (!constantFormula) {
+            AbstractFunctionPtg fptg = (AbstractFunctionPtg) ptg;
+            return logicalOpDict[fptg.getFunctionIndex()].decompose(operators);
+        } else
+            return new SingleTransformOperator(operators, ptg);
     }
 }

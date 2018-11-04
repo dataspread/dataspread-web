@@ -5,6 +5,7 @@ import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
 import org.zkoss.zss.model.sys.BookBindings;
+import org.zkoss.zss.model.sys.formula.Decomposer.FormulaDecomposer;
 import org.zkoss.zss.model.sys.formula.DirtyManager;
 import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
@@ -22,7 +23,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
-import static org.zkoss.zss.model.sys.formula.Decomposer.FormulaDecomposer.decomposeFormula;
 import static org.zkoss.zss.model.sys.formula.Test.Timer.time;
 
 /**
@@ -57,7 +57,8 @@ public class FormulaAsyncSchedulerOptimized extends FormulaAsyncScheduler {
                             DirtyManagerLog.instance.markClean(sCell.getCellRegion());
                             time("Decomposition",()->{
                                 try {
-                                    graphs.add(decomposeFormula(((FormulaExpression) ((AbstractCellAdv) sCell)
+                                    graphs.add(FormulaDecomposer.getInstance()
+                                            .decomposeFormula(((FormulaExpression) ((AbstractCellAdv) sCell)
                                             .getValue(false)).getPtgs(),sCell));
                                 } catch (OptimizationError optimizationError) {
                                     optimizationError.printStackTrace();
