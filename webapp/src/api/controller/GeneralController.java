@@ -159,15 +159,23 @@ public class GeneralController implements FormulaAsyncListener {
         FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(sheet.getBook().getBookSeries()));
 
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
-            SCell cell = sheet.getCell(row, column);
-            if (value.startsWith("="))
-                cell.setFormulaValue(value.substring(1), connection, true);
-            else
-                try {
-                    cell.setNumberValue(Double.parseDouble(value), connection, true);
-                } catch (Exception e) {
-                    cell.setStringValue(value, connection, true);
-                }
+            int updateNumber = 1;
+            if (value.contains("@") && value.substring(value.indexOf('@') + 1).matches("\\d+")) {
+                updateNumber = Integer.valueOf(value.substring(value.indexOf('@') + 1));
+                value = value.substring(0, value.indexOf('@'));
+            }
+            for (int i = 0; i < updateNumber;i++) {
+                SCell cell = sheet.getCell(row + i, column);
+                if (value.startsWith("=")) {
+                    cell.setFormulaValue(value.substring(1), connection, true);
+
+                } else
+                    try {
+                        cell.setNumberValue(Double.parseDouble(value), connection, true);
+                    } catch (Exception e) {
+                        cell.setStringValue(value, connection, true);
+                    }
+            }
             connection.commit();
         } catch (Exception e) {
             e.printStackTrace();

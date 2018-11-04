@@ -76,7 +76,7 @@ public class FormulaAsyncSchedulerOptimized extends FormulaAsyncScheduler {
                 if (graphs.size() == 0)
                     return;
                 AtomicReference<QueryPlanGraph> optimizedGraph = new AtomicReference<>(null);
-                time("Optimization",()->{
+                time("Optimization on " + graphs.size() + " formulas",()->{
                     try {
                         optimizedGraph.set(QueryOptimizer.getOptimizer().optimize(graphs));
                     } catch (OptimizationError optimizationError) {
