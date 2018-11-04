@@ -1,5 +1,6 @@
 import React, {Component} from 'react'
 import {Dropdown, Button, Header, Icon, Modal} from 'semantic-ui-react'
+import Stomp from "stompjs";
 
 
 
@@ -7,21 +8,33 @@ export default class ModalOpenFile extends Component {
   constructor(props) {
     super(props);
 	this.state = {
-      	loadmodalOpen: false,
+      	loadModalOpen: false,
 	  	data: null,
 	  	BooksOptions: [],
 		BooksSelected: ""
 	};
-	this._handleEvent = this._handleEvent.bind(this);
+	this._handleLoad = this._handleLoad.bind(this);
+
+      if (typeof process.env.REACT_APP_BASE_HOST === 'undefined') {
+          this.urlPrefix = "";
+          this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
+      }
+      else
+      {
+          this.urlPrefix = "http://" + process.env.REACT_APP_BASE_HOST;
+          this.stompClient = Stomp.client("ws://" + process.env.REACT_APP_BASE_HOST + "/ds-push/websocket");
+      }
+
+
   }
 
-	handleOpen = () => this.setState({ loadmodalOpen: true })
+	handleOpen = () => this.setState({ loadModalOpen: true })
 
-	handleClose = () => this.setState({ loadmodalOpen: false })
+	handleClose = () => this.setState({ loadModalOpen: false })
 
 	// fetch data from api
 	componentDidMount() {
-        fetch(process.env.REACT_APP_BASE_URL + '/api/getBooks')
+        fetch(this.urlPrefix + '/api/getBooks')
 		.then(response => response.json())
 		.then(data => this.transform(data))
 		.then(data => this.setState({ BooksOptions: data }));
@@ -49,18 +62,18 @@ export default class ModalOpenFile extends Component {
 		this.setState({ BooksSelected: data.value });
 	}
 
-	_handleEvent () {
+    _handleLoad () {
+        this.setState({ loadModalOpen: false });
 		this.props.onSelectFile(this.state.BooksSelected);
 	}
 
 	render() {
-		console.log(process.env.REACT_APP_BASE_URL + '/api/getBooks')
+		console.log(this.urlPrefix + '/api/getBooks')
 		return (
 		<Modal
 			trigger={<Dropdown.Item onClick={this.handleOpen}>Open File</Dropdown.Item>}
-			open={this.state.loadmodalOpen}
-			onClose={this.handleClose}
-		>
+			open={this.state.loadModalOpen}
+			onClose={this.handleClose}>
 			<Header icon='folder open outline' content='Open File' />
 
 			<Modal.Content>
@@ -74,7 +87,7 @@ export default class ModalOpenFile extends Component {
 			</Modal.Content>
 
 			<Modal.Actions>
-				<Button name="bookLoadButton" onClick={this._handleEvent}>
+				<Button name="bookLoadButton" onClick={this._handleLoad}>
 				<Icon name='checkmark' /> Load
 				</Button>
 				<Button color='blue' onClick={this.handleClose} inverted>

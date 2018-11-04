@@ -19,9 +19,7 @@ export default class DSGrid extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            bookId: '',
             rows: 100000000,
-            bookName: '',
             sheetName: '',
             columns: 500,
             version: 0,
@@ -51,9 +49,20 @@ export default class DSGrid extends Component {
         // this.urlPrefix = ""; // Only for testing.
         // this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
 
-        this.urlPrefix = process.env.REACT_APP_BASE_URL ; // Only for testing.
-        this.stompClient = Stomp.client("ws://kite.cs.illinois.edu:8080/ds-push/websocket");
+        if (typeof process.env.REACT_APP_BASE_HOST === 'undefined') {
+            this.urlPrefix = "";
+            this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
+        }
+        else
+        {
+            this.urlPrefix = "http://" + process.env.REACT_APP_BASE_HOST;
+            this.stompClient = Stomp.client("ws://" + process.env.REACT_APP_BASE_HOST + "/ds-push/websocket");
+        }
+
+        //this.urlPrefix = process.env.REACT_APP_BASE_URL ; // Only for testing.
+        //this.stompClient = Stomp.client("ws://kite.cs.illinois.edu:8080/ds-push/websocket");
         //this.stompClient = Stomp.client("ws://localhost:8080/ds-push/websocket");
+        console.log("urlPrefix:" +  this.urlPrefix);
 
         this.stompClient.connect({}, null, null, () => {
             alert("Lost connection to server. Please reload.")
@@ -62,8 +71,6 @@ export default class DSGrid extends Component {
 
         this.stompClient.debug = () => {
         };
-        this.bookName = this.props.fileId;
-        this._loadBook();
     }
 
     _disposeFromLRU(key)
@@ -78,7 +85,8 @@ export default class DSGrid extends Component {
 
 
     componentDidMount() {
-        this.setState({bookId: this.props.fileId})
+        //onsole.log("Grid mounted passed file id " + this.props.fileId);
+        //this.setState({bookId: this.props.fileId})
     }
 
     componentWillUnmount() {
@@ -122,15 +130,13 @@ export default class DSGrid extends Component {
         }
         else if (jsonMessage['message'] === 'subscribed') {
             this.subscribed = true;
-
+            this.rowStartIndex = -1; // Force reload.
             this.grid.forceUpdate();
 
         }
     }
 
     render() {
-        console.log('DS Grid in Bookname: ' + this.props.fileId)
-        console.log('DS Grid Bookname: ' + this.state.bookId);
         return (
             <div>
                 <div style={{display: 'flex'}}>
@@ -230,27 +236,27 @@ export default class DSGrid extends Component {
 
     }
 
-    _loadBook()
+    loadBook()
     {
-        fetch(this.urlPrefix + "/api/getSheets/" + this.bookName)
+        this.subscribed = false;
+        fetch(this.urlPrefix + "/api/getSheets/" +  this.props.bookId)
             .then(res => res.json())
             .then(
                 (result) => {
-                    console.log(result)
+                    console.log(result);
                     this.dataCache.reset();
                     this.setState({
-                        bookName: this.bookName,
                         sheetName: 'Sheet1',
                         rows: result['data']['sheets'][0]['numRow'],
                         columns: result['data']['sheets'][0]['numCol']
                     });
-                    this.subscribed = false;
+
                     this.grid.scrollToCell ({ columnIndex: 0, rowIndex: 0 });
                     if (this.stompSubscription!=null)
                         this.stompSubscription.unsubscribe();
                     this.stompSubscription = this.stompClient
                         .subscribe('/user/push/updates',
-                            this._processUpdates, {bookName: this.state.bookName,
+                            this._processUpdates, {bookId:  this.props.bookId,
                                 sheetName: this.state.sheetName,
                                 fetchSize: this.fetchSize});
                     console.log("book loaded rows:" + result['data']['sheets'][0]['numRow']);
@@ -343,7 +349,6 @@ export default class DSGrid extends Component {
 
 
     _cellRangeRenderer (props) {
-
         if (this.subscribed) {
             if (!props.isScrolling) {
                 if (this.rowStartIndex!==props.rowStartIndex || this.rowStopIndex!==props.rowStopIndex) {
