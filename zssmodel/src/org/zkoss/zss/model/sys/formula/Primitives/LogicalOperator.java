@@ -48,11 +48,19 @@ public class LogicalOperator {
     }
 
     void cleanInEdge(){
-
+        ArrayList cleanEdges = new ArrayList();
+        for (Edge e:inEdges)
+            if (e.isValid())
+                cleanEdges.add(e);
+        inEdges = cleanEdges;
     }
 
     void cleanOutEdge(){
-
+        ArrayList cleanEdges = new ArrayList();
+        for (Edge e:outEdges)
+            if (e.isValid())
+                cleanEdges.add(e);
+        outEdges = cleanEdges;
     }
 
     void forEachInEdge(Consumer<? super Edge> action){

@@ -107,4 +107,13 @@ public class GroupedDataOperator extends DataOperator{
     public void merge(DataOperator dataOperator) throws OptimizationError {
         throw OptimizationError.UNSUPPORTED_FUNCTION;
     }
+
+    @Override
+    void cleanInEdge(){
+    }
+
+    @Override
+    void cleanOutEdge(){
+
+    }
 }
