@@ -3,7 +3,6 @@ package org.zkoss.zss.model.sys.formula.Primitives;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.function.Consumer;
 
 public class LogicalOperator {
@@ -47,51 +46,54 @@ public class LogicalOperator {
         return inEdges.get(i);
     }
 
-    void cleanInEdge(){
-        ArrayList cleanEdges = new ArrayList();
-        for (Edge e:inEdges)
-            if (e.isValid())
-                cleanEdges.add(e);
-        inEdges = cleanEdges;
+    void cleanInEdges(Consumer<Integer> action){
+        inEdges = cleanEdges(action, inEdges);;
     }
 
-    void cleanOutEdge(){
-        ArrayList cleanEdges = new ArrayList();
-        for (Edge e:outEdges)
-            if (e.isValid())
-                cleanEdges.add(e);
-        outEdges = cleanEdges;
+    void cleanOutEdges(Consumer<Integer> action){
+        outEdges = cleanEdges(action, outEdges);
     }
 
-    void forEachInEdge(Consumer<? super Edge> action){
+    private List<Edge> cleanEdges(Consumer<Integer> action, List<Edge> edges) {
+        ArrayList<Edge> cleanEdges = new ArrayList<>();
+        for (int i = 0, isize = edges.size(); i < isize; i++){
+            Edge edge = edges.get(i);
+            if (edge.isValid()) {
+                cleanEdges.add(edge);
+                if (action != null)
+                    action.accept(i);
+            }
+        }
+        return cleanEdges;
+    }
+
+    private int forEachEdge(Consumer<? super Edge> action, List<Edge> edges){
         int validSize = 0;
-        for (Edge e:inEdges){
+        for (Edge e:edges){
             if (e.isValid()){
                 action.accept(e);
                 validSize++;
             }
 
         }
+        return validSize;
+    }
+
+    void forEachInEdge(Consumer<? super Edge> action){
+        int validSize = forEachEdge(action,inEdges);
         if (validSize < inEdges.size())
             synchronized (this) {
                 if (validSize < inEdges.size())
-                    cleanInEdge();
+                    cleanInEdges(null);
             }
     }
 
     void forEachOutEdge(Consumer<? super Edge> action){
-        int validSize = 0;
-        for (Edge e:outEdges){
-            if (e.isValid()){
-                action.accept(e);
-                validSize++;
-            }
-
-        }
+        int validSize = forEachEdge(action,outEdges);
         if (validSize < outEdges.size())
             synchronized (this) {
                 if (validSize < outEdges.size())
-                    cleanOutEdge();
+                    cleanOutEdges(null);
             }
     }
 

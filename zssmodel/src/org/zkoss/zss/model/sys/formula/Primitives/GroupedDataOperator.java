@@ -109,11 +109,16 @@ public class GroupedDataOperator extends DataOperator{
     }
 
     @Override
-    void cleanInEdge(){
+    void cleanInEdges(Consumer<Integer> action){
+        List<Pair<Integer,Integer>> cleanRange = new ArrayList<>();
+        super.cleanInEdges((i)->cleanRange.add(inEdgesRange.get(i)));
+        inEdgesRange = cleanRange;
     }
 
     @Override
-    void cleanOutEdge(){
-
+    void cleanOutEdges(Consumer<Integer> action){
+        List<Pair<Integer,Integer>> cleanRange = new ArrayList<>();
+        super.cleanOutEdges((i)->cleanRange.add(outEdgesRange.get(i)));
+        outEdgesRange = cleanRange;
     }
 }
