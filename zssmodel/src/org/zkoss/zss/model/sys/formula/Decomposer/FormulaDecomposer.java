@@ -137,7 +137,7 @@ public class FormulaDecomposer {
                 for (int i = 0; i < ops.length; i++){
                     if (ops[i] instanceof DataOperator && ((DataOperator) ops[i]).getRegion().getCellCount() > 1){
                         LogicalOperator op = new AggregateOperator(BinaryFunction.PLUS);
-                        connect(ops[0],op);
+                        connect(ops[i],op);
                         ops[i] = op;
                     }
 

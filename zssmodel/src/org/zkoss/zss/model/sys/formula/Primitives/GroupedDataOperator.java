@@ -59,7 +59,7 @@ public class GroupedDataOperator extends DataOperator{
         }
 
         for (SCell cell : cells){
-            if (cell.getType() != SCell.CellType.NUMBER)
+            if (cell.getType() != SCell.CellType.NUMBER && cell.getType() != SCell.CellType.FORMULA)
                 throw OptimizationError.UNSUPPORTED_TYPE;
             int i = getIndex(cell);
             if (inEdgeCursor < inEdgesRange.size() && i >= currentRange.getValue()) {
