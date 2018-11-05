@@ -78,7 +78,7 @@ public class GroupedDataOperator extends DataOperator{
                 else
                     throw OptimizationError.UNSUPPORTED_TYPE;
                 ((AbstractCellAdv)cell).setFormulaResultValue(resultValue);
-                context.update(_sheet, (AbstractCellAdv) cell);
+                context.addToUpdateQueue(_sheet, (AbstractCellAdv) cell);
                 data[i] = value;
             }
             else

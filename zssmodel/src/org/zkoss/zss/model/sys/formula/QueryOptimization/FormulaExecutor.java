@@ -1,5 +1,6 @@
 package org.zkoss.zss.model.sys.formula.QueryOptimization;
 
+import javafx.util.Pair;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
 import org.zkoss.zss.model.impl.RefImpl;
@@ -11,13 +12,30 @@ import org.zkoss.zss.model.sys.formula.Primitives.PhysicalOperator;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import static org.zkoss.zss.model.sys.formula.Test.Timer.time;
 
 public class FormulaExecutor {
     static FormulaExecutor uniqueExecutor = new FormulaExecutor();
     FormulaAsyncScheduler scheduler = null;
-    private FormulaExecutor(){}
+    Thread frontEndUpdateThread;
+    LinkedBlockingQueue<Pair<SSheet, AbstractCellAdv>> frontEndUpdateQueue;
+    private FormulaExecutor(){
+        frontEndUpdateQueue = new LinkedBlockingQueue<>();
+        frontEndUpdateThread = new Thread(()->{
+            try {
+                while (true){
+                    Pair<SSheet, AbstractCellAdv> parameter = frontEndUpdateQueue.take();
+                    update(parameter.getKey(),parameter.getValue());
+                }
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+        frontEndUpdateThread.start();
+    }
     public static FormulaExecutor getExecutor(){
         return uniqueExecutor;
     }
@@ -40,7 +58,11 @@ public class FormulaExecutor {
         });
     }
 
-    public void update(SSheet sheet, AbstractCellAdv sCell){
+    public void addToUpdateQueue(SSheet sheet, AbstractCellAdv sCell){
+        frontEndUpdateQueue.offer(new Pair<>(sheet,sCell));
+    }
+
+    private void update(SSheet sheet, AbstractCellAdv sCell){
         Map<String, int[]> visibleRange = FormulaAsyncScheduler.getVisibleMap().get(sheet);
         boolean hasOverlap = false;
         if (visibleRange != null && !visibleRange.isEmpty()) {

@@ -40,7 +40,7 @@ public class FormulaAsyncSchedulerOptimized extends FormulaAsyncScheduler {
             if (dirtyRecordSet.size() == 0)
                 continue;
 
-            final FormulaAsyncScheduler scheduler = this;
+            final FormulaAsyncScheduler scheduler = this; // todo: move it up
 
             AtomicReference<Boolean> noException = new AtomicReference<>(true);
 
@@ -62,8 +62,6 @@ public class FormulaAsyncSchedulerOptimized extends FormulaAsyncScheduler {
                                     noException.set(false);
                                 }
                             });
-
-
                         }
                     }
                     DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,

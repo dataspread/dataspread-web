@@ -162,9 +162,18 @@ public class GeneralController implements FormulaAsyncListener {
 
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             int updateNumber = 1;
+
+            boolean updateToDB = true;
+
+            if (value.endsWith("*")){
+                updateToDB = false;
+                value = value.substring(0,value.length() - 1);
+            }
+
             if (value.contains("@") && value.substring(value.indexOf('@') + 1).matches("\\d+")) {
                 updateNumber = Integer.valueOf(value.substring(value.indexOf('@') + 1));
                 value = value.substring(0, value.indexOf('@'));
+
             }
 
             Collection<AbstractCellAdv> cells = new ArrayList<>();
@@ -181,7 +190,8 @@ public class GeneralController implements FormulaAsyncListener {
                         cell.setStringValue(value, connection, false);
                     }
             }
-            sheet.getDataModel().updateCells(new DBContext(connection), cells);
+            if (updateToDB && updateNumber <= 10000)
+                sheet.getDataModel().updateCells(new DBContext(connection), cells);
             connection.commit();
         } catch (Exception e) {
             e.printStackTrace();

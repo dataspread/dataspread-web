@@ -61,6 +61,6 @@ public class SingleDataOperator extends DataOperator{
             throw OptimizationError.UNSUPPORTED_TYPE;
         AbstractCellAdv sCell = ((AbstractCellAdv)_sheet.getCell(row,column));
         sCell.setFormulaResultValue(resultValue);
-        context.update(_sheet,sCell);
+        context.addToUpdateQueue(_sheet,sCell);
     }
 }
