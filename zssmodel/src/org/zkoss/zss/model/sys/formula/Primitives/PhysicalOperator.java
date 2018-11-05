@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class PhysicalOperator extends LogicalOperator {
     PhysicalOperator(){super();}
     abstract public void evaluate(FormulaExecutor context) throws OptimizationError;
-    public boolean readyToEvaluate(){
+    public boolean readyToEvaluate(){ // todo: remove it and add topsort
         AtomicBoolean readyToEvaluate = new AtomicBoolean(true);
         forEachInEdge((e)-> readyToEvaluate.set(readyToEvaluate.get() & e.resultIsReady()));
         return readyToEvaluate.get();

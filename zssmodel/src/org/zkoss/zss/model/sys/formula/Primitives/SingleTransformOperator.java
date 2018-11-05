@@ -9,15 +9,12 @@ import java.util.function.Consumer;
 
 public class SingleTransformOperator extends TransformOperator {
 
-    private List<ScalarConstantPtg> literials;
-
     public SingleTransformOperator(Ptg ptg) throws OptimizationError {
         super();
         if (!(ptg instanceof ScalarConstantPtg)){
             throw OptimizationError.UNSUPPORTED_CASE;
         }
-        literials = Collections.singletonList((ScalarConstantPtg) ptg);
-        ptgs = new Ptg[] {new ConstantVariablePtg(0)};
+        ptgs = new Ptg[] {ptg};
 
 
     }
@@ -25,7 +22,6 @@ public class SingleTransformOperator extends TransformOperator {
     public SingleTransformOperator(LogicalOperator[] operators, Ptg ptg) throws OptimizationError {
         super();
         ptgs = new Ptg[getPtgSize(operators) + 1];
-        literials = new ArrayList<>();
         final Map<LogicalOperator,Integer> operatorId = new TreeMap<>((o1, o2) -> {
             if (o1.hashCode() == o2.hashCode()){
                 if (o1 == o2)
@@ -85,15 +81,8 @@ public class SingleTransformOperator extends TransformOperator {
                     if (!(p instanceof VariablePtg))
                         continue;
                     VariablePtg var = (VariablePtg)p;
-                    if (var instanceof ConstantVariablePtg){
-                        var.setIndex(var.getIndex() + literials.size());
-                    }
-                    else {
-                        var.setIndex(newRefId[var.getIndex()]);
-                    }
+                    var.setIndex(newRefId[var.getIndex()]);
                 }
-
-                literials.addAll(transform.literials);
 
                 continue;
             }
@@ -132,14 +121,10 @@ public class SingleTransformOperator extends TransformOperator {
 
 
         Ptg[] ptgs = Arrays.copyOf(this.ptgs, this.ptgs.length);
-        for (int i = 0, isize = ptgs.length; i < isize;i++){
-            if (ptgs[i] instanceof ConstantVariablePtg){
-                ptgs[i] = literials.get(((VariablePtg)ptgs[i]).getIndex());
-            }
-            else if (ptgs[i] instanceof  RefVariablePtg){
+        for (int i = 0, isize = ptgs.length; i < isize;i++)
+            if (ptgs[i] instanceof  RefVariablePtg){
                 ptgs[i] = data[((VariablePtg)ptgs[i]).getIndex()];
             }
-        }
 
         List result = Collections.singletonList(evaluate(ptgs));
 
