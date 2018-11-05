@@ -115,11 +115,15 @@ public class FormulaDecomposer {
 //			logDebug("push " + opResult);
             stack.push(opResult);
         }
-
         LogicalOperator value = stack.pop();
         DataOperator targetCell = new SingleDataOperator(target.getSheet(), target.getCellRegion());
         connect(value,targetCell);
         result.addData(targetCell);
+        if (dataOperatorMap.size() == 0){
+            assert value instanceof SingleTransformOperator;
+            ((SingleTransformOperator) value).evaluate(null);
+        }
+
         if (!stack.isEmpty()) {
             throw new OptimizationError("evaluation stack not empty");
         }
