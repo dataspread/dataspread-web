@@ -35,27 +35,8 @@ public abstract class DataOperator extends PhysicalOperator{
                 cell.getColumnIndex() - _region.getColumn();
     }
 
-    public static DataOperator getFatherOfConstant(){
-        return fatherOfConstant;
-    }
-
     @Override
     public abstract void evaluate(FormulaExecutor context) throws OptimizationError ;
 
     public abstract void merge(DataOperator dataOperator) throws OptimizationError;
-
-    private final static DataOperator fatherOfConstant = new DataOperator() {
-        @Override
-        public void evaluate(FormulaExecutor context) {
-            forEachOutEdge((e)->{
-                e.setResult(null);
-                e.remove();
-            });
-        }
-
-        @Override
-        public void merge(DataOperator dataOperator) throws OptimizationError {
-            throw OptimizationError.UNSUPPORTED_CASE;
-        }
-    };
 }

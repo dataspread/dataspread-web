@@ -120,8 +120,7 @@ public class FormulaDecomposer {
         connect(value,targetCell);
         result.addData(targetCell);
         if (dataOperatorMap.size() == 0){
-            assert value instanceof SingleTransformOperator;
-            connect(DataOperator.getFatherOfConstant(),value);
+            result.getConstants().add((SingleTransformOperator)value);
         }
 
         if (!stack.isEmpty()) {

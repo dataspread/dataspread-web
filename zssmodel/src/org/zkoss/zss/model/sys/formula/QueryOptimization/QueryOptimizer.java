@@ -90,6 +90,9 @@ public class QueryOptimizer {
     public QueryPlanGraph optimize(List<QueryPlanGraph> graphs) throws OptimizationError {
         QueryPlanGraph ret = new QueryPlanGraph();
 
+        for (QueryPlanGraph graph:graphs)
+            ret.getConstants().addAll(graph.getConstants());
+
         ret.dataNodes = mergeDataOperators(graphs);
 
         return ret;

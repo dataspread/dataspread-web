@@ -10,9 +10,11 @@ import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 import org.zkoss.zss.model.sys.formula.Primitives.DataOperator;
 import org.zkoss.zss.model.sys.formula.Primitives.LogicalOperator;
 import org.zkoss.zss.model.sys.formula.Primitives.PhysicalOperator;
+import org.zkoss.zss.model.sys.formula.Primitives.SingleTransformOperator;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Stack;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -44,7 +46,7 @@ public class FormulaExecutor {
     public void execute(QueryPlanGraph graph, FormulaAsyncScheduler scheduler) throws OptimizationError {
         this.scheduler = scheduler;
         Stack<PhysicalOperator> executionStack = new Stack<>();
-        executionStack.push(DataOperator.getFatherOfConstant());
+        executionStack.addAll(graph.getConstants());
         for (DataOperator data:graph.dataNodes)
             if (data.readyToEvaluate())
                 executionStack.push(data);
