@@ -11,6 +11,7 @@ import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
 import org.zkoss.zss.range.SRange;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -23,13 +24,14 @@ public class SingleDataOperator extends DataOperator{
     public void evaluate(FormulaExecutor context) throws OptimizationError {
         List results;
         if (inDegree() == 0){
-            results = new ArrayList<>();
+            Object[] resultObject = new Object[_region.getCellCount()];
 
             for (SCell cell : _sheet.getCells(_region)){
                 if (cell.getType() != SCell.CellType.NUMBER && cell.getType() != SCell.CellType.FORMULA)
                     throw OptimizationError.UNSUPPORTED_TYPE;
-                results.add(cell.getValue());
+                resultObject[getIndex(cell)] = cell.getValue();
             }
+            results = Arrays.asList(resultObject);
         }
         else{
             results = getInEdge(0).popResult();

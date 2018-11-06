@@ -22,10 +22,6 @@ public class GroupedDataOperator extends DataOperator{
         return new Pair<>(left,right);
     }
 
-    private int getIndex(SCell cell){
-        return  (cell.getRowIndex() - _region.getRow()) * _region.getColumnCount() +
-                cell.getColumnIndex() - _region.getColumn();
-    }
 
     public GroupedDataOperator(List<DataOperator> dataOperators){
         super();
@@ -47,43 +43,40 @@ public class GroupedDataOperator extends DataOperator{
     @Override
     public void evaluate(FormulaExecutor context) throws OptimizationError {
         Object[] data = new Object[_region.getCellCount()];
-        Collection<SCell> cells = _sheet.getCells(_region);
-
-        int inEdgeCursor = 0;
-
-        Pair<Integer, Integer> currentRange = null;
-        Iterator currentResultIterator = null;
-        if (inEdgeCursor < inEdgesRange.size()){
-            currentRange = inEdgesRange.get(inEdgeCursor);
-            currentResultIterator = getInEdge(inEdgeCursor).popResult().iterator();
+        AbstractCellAdv[] cells = new AbstractCellAdv[_region.getCellCount()];
+        for (SCell cell:_sheet.getCells(_region)){
+            cells[getIndex(cell)] = (AbstractCellAdv)cell;
         }
 
-        for (SCell cell : cells){
-            if (cell.getType() != SCell.CellType.NUMBER && cell.getType() != SCell.CellType.FORMULA)
-                throw OptimizationError.UNSUPPORTED_TYPE;
-            int i = getIndex(cell);
-            if (inEdgeCursor < inEdgesRange.size() && i >= currentRange.getValue()) {
-                inEdgeCursor++;
-                if (inEdgeCursor < inEdgesRange.size()){
-                    currentRange = inEdgesRange.get(inEdgeCursor);
-                    currentResultIterator = getInEdge(inEdgeCursor).popResult().iterator();
+        try {
+            forEachInEdge(new Consumer<Edge>() {
+                int i = 0;
+                @Override
+                public void accept(Edge edge) {
+                    List result = edge.popResult();
+                    int offset = inEdgesRange.get(i).getKey();
+                    for (int j = offset, jsize = inEdgesRange.get(i).getValue();j < jsize; j++) {
+                        Object value = result.get(j - offset);
+
+                        context.addToUpdateQueue(_sheet, cells[j]);
+                        ValueEval resultValue;
+                        if (value instanceof Double){
+                            resultValue = new NumberEval((Double)value);
+                        }
+                        else
+                            throw new RuntimeException(OptimizationError.UNSUPPORTED_TYPE);
+                        cells[j].setFormulaResultValue(resultValue);
+                    }
+                    i++;
                 }
-            }
-            if (inEdgeCursor < inEdgesRange.size() && i >= currentRange.getKey()){
-                Object value = currentResultIterator.next();
-                ValueEval resultValue;
-                if (value instanceof Double){
-                    resultValue = new NumberEval((Double)value);
-                }
-                else
-                    throw OptimizationError.UNSUPPORTED_TYPE;
-                ((AbstractCellAdv)cell).setFormulaResultValue(resultValue);
-                context.addToUpdateQueue(_sheet, (AbstractCellAdv) cell);
-                data[i] = value;
-            }
-            else
-                data[i] = cell.getValue();
+            });
+        } catch (RuntimeException e){
+            throw (OptimizationError)e.getCause();
         }
+
+        for (int i = 0; i < data.length; i++)
+            data[i] = cells[i] == null? null : cells[i].getValue();
+
         List results = Arrays.asList(data);
         forEachOutEdge(new Consumer<Edge>() {
             int i = 0;

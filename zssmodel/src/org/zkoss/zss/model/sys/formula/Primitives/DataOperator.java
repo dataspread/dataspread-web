@@ -1,6 +1,7 @@
 package org.zkoss.zss.model.sys.formula.Primitives;
 
 import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
@@ -29,7 +30,10 @@ public abstract class DataOperator extends PhysicalOperator{
         return _sheet;
     }
 
-
+    int getIndex(SCell cell){
+        return  (cell.getRowIndex() - _region.getRow()) * _region.getColumnCount() +
+                cell.getColumnIndex() - _region.getColumn();
+    }
 
     public static DataOperator getFatherOfConstant(){
         return fatherOfConstant;
