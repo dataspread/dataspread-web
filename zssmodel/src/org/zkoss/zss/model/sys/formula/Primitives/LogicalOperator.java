@@ -98,11 +98,11 @@ public class LogicalOperator {
         forEachOutEdge((e)->action.accept(e.getOutVertex()));
     }
 
-    public void removeInEdge(){
+    void removeInEdge(){
         removeIn = true;
     }
 
-    public void removeOutEdge(){
+    void removeOutEdge(){
         removeOut = true;
     }
 
