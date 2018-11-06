@@ -8,6 +8,8 @@ import java.util.function.Consumer;
 public class LogicalOperator {
     private List<Edge> inEdges= new ArrayList<>(), outEdges = new ArrayList<>();
 
+    private boolean removeIn = false,removeOut = false;
+
     LogicalOperator(){}
 
     public static void connect(LogicalOperator in, LogicalOperator out){
@@ -47,7 +49,7 @@ public class LogicalOperator {
     }
 
     void cleanInEdges(Consumer<Integer> action){
-        inEdges = cleanEdges(action, inEdges);;
+        inEdges = cleanEdges(action, inEdges);
     }
 
     void cleanOutEdges(Consumer<Integer> action){
@@ -67,53 +69,41 @@ public class LogicalOperator {
         return cleanEdges;
     }
 
-    private int forEachEdge(Consumer<? super Edge> action, List<Edge> edges){
-        int validSize = 0;
-        for (Edge e:edges){
-            if (e.isValid()){
-                action.accept(e);
-                validSize++;
-            }
-
-        }
-        return validSize;
+    private void forEachEdge(Consumer<? super Edge> action, List<Edge> edges){
+        for (Edge e:edges)
+            action.accept(e);
     }
 
     void forEachInEdge(Consumer<? super Edge> action){
-        int validSize = forEachEdge(action,inEdges);
-        if (validSize < inEdges.size())
-            synchronized (this) {
-                if (validSize < inEdges.size())
-                    cleanInEdges(null);
+        synchronized (this){
+            if (removeIn) {
+                cleanInEdges(null);
+                removeIn = false;
             }
+        }
+        forEachEdge(action,inEdges);
     }
 
     void forEachOutEdge(Consumer<? super Edge> action){
-        int validSize = forEachEdge(action,outEdges);
-        if (validSize < outEdges.size())
-            synchronized (this) {
-                if (validSize < outEdges.size())
-                    cleanOutEdges(null);
+        synchronized (this){
+            if (removeOut) {
+                cleanOutEdges(null);
+                removeOut = false;
             }
+        }
+        forEachEdge(action,outEdges);
     }
 
     public void forEachOutVertex(Consumer<LogicalOperator> action){
         forEachOutEdge((e)->action.accept(e.getOutVertex()));
     }
 
-    public Iterator<LogicalOperator> getOutputNodes(){
-        return new Iterator<LogicalOperator>() {
-            int i = -1;
-            @Override
-            public boolean hasNext() {
-                return i < outEdges.size() - 1;
-            }
-
-            @Override
-            public LogicalOperator next() {
-                i += 1;
-                return outEdges.get(i).getOutVertex();
-            }
-        };
+    public void removeInEdge(){
+        removeIn = true;
     }
+
+    public void removeOutEdge(){
+        removeOut = true;
+    }
+
 }

@@ -14,6 +14,8 @@ class Edge {
 
     void remove(){
         valid = false;
+        in.removeOutEdge();
+        out.removeInEdge();
     }
 
     boolean isValid(){

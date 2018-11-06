@@ -121,7 +121,7 @@ public class FormulaDecomposer {
         result.addData(targetCell);
         if (dataOperatorMap.size() == 0){
             assert value instanceof SingleTransformOperator;
-            ((SingleTransformOperator) value).evaluate(null);
+            connect(DataOperator.getFatherOfConstant(),value);
         }
 
         if (!stack.isEmpty()) {
@@ -132,10 +132,9 @@ public class FormulaDecomposer {
     }
 
     private  FunctionDecomposer[] produceLogicalOperatorDictionary() {
-        FunctionDecomposer[] retval = new FunctionDecomposer[378];
+        FunctionDecomposer[] funcDict = new FunctionDecomposer[378];
 
-        retval[4] = new FunctionDecomposer(){
-
+        funcDict[4] = new FunctionDecomposer(){
             @Override
             public LogicalOperator decompose(LogicalOperator[] ops) throws OptimizationError {
                 for (int i = 0; i < ops.length; i++){
@@ -148,12 +147,11 @@ public class FormulaDecomposer {
                     if (i > 0)
                         ops[i] = new SingleTransformOperator(
                                 new LogicalOperator[]{ops[i-1],ops[i]}, AddPtg.instance);
-
                 }
                 return ops[ops.length - 1];
             }
         };
-        return retval;
+        return funcDict;
     }
 
     private LogicalOperator getOperationOperator(LogicalOperator[] operators, Ptg ptg) throws OptimizationError {
