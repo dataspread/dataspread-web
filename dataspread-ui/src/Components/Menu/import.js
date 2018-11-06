@@ -5,6 +5,18 @@ import Stomp from "stompjs";
 
 export default class ModalImportFile extends Component {
     constructor(props) {
+    	super(props);
+
+    	if (typeof process.env.REACT_APP_BASE_HOST === 'undefined') {
+    		this.urlPrefix = "";
+    		this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
+    	} else {
+    		this.urlPrefix = "http://" + process.env.REACT_APP_BASE_HOST;
+    		this.stompClient = Stomp.client("ws://" + process.env.REACT_APP_BASE_HOST + "/ds-push/websocket");
+    	}
+    }
+
+    constructor(props) {
         super(props);
 
         if (typeof process.env.REACT_APP_BASE_HOST === 'undefined') {
