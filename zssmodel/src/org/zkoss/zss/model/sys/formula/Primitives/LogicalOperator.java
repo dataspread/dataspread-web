@@ -97,6 +97,10 @@ public class LogicalOperator {
             }
     }
 
+    public void forEachOutVertex(Consumer<LogicalOperator> action){
+        forEachOutEdge((e)->action.accept(e.getOutVertex()));
+    }
+
     public Iterator<LogicalOperator> getOutputNodes(){
         return new Iterator<LogicalOperator>() {
             int i = -1;

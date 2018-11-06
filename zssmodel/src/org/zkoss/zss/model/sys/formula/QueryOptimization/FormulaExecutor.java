@@ -7,11 +7,13 @@ import org.zkoss.zss.model.impl.RefImpl;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
+import org.zkoss.zss.model.sys.formula.Primitives.DataOperator;
 import org.zkoss.zss.model.sys.formula.Primitives.LogicalOperator;
 import org.zkoss.zss.model.sys.formula.Primitives.PhysicalOperator;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Stack;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static org.zkoss.zss.model.sys.formula.Test.Timer.time;
@@ -41,11 +43,20 @@ public class FormulaExecutor {
     }
     public void execute(QueryPlanGraph graph, FormulaAsyncScheduler scheduler) throws OptimizationError {
         this.scheduler = scheduler;
-        synchronized (graph){
-            for (LogicalOperator op:graph.dataNodes)
-                recursiveEvaluate(op);
+        Stack<PhysicalOperator> executionStack = new Stack<>();
+        executionStack.push(DataOperator.getFatherOfConstant());
+        for (DataOperator data:graph.dataNodes)
+            if (data.readyToEvaluate())
+                executionStack.push(data);
+        while (!executionStack.empty()){
+            PhysicalOperator p = executionStack.pop();
+            evaluate(p);
+            p.forEachOutVertex((lo)->{
+                PhysicalOperator po = (PhysicalOperator)lo;
+                if (po.readyToEvaluate())
+                    executionStack.push(po);
+            });
         }
-
     }
 
     private void evaluate(PhysicalOperator operator){
@@ -83,15 +94,4 @@ public class FormulaExecutor {
                 sCell.getFormulaValue());
     }
 
-    private void recursiveEvaluate(LogicalOperator op) throws OptimizationError {
-        if (!(op instanceof PhysicalOperator))
-            throw new OptimizationError("Logical Operator not converted");
-        PhysicalOperator p = (PhysicalOperator)op;
-        if (!p.readyToEvaluate())
-            return;
-
-        evaluate(p);
-        for (Iterator<LogicalOperator> it = p.getOutputNodes();it.hasNext();)
-            recursiveEvaluate(it.next());
-    }
 }

@@ -40,15 +40,13 @@ class Edge {
 
     void setResult(List result){
         this.result = result;
-    }
-
-    boolean resultIsReady(){
-        return result != null;
+        ((PhysicalOperator)out).incInputCount();
     }
 
     List popResult(){
         List ret = result;
         result = null;
+        ((PhysicalOperator)out).decInputCount();
         return ret;
     }
 

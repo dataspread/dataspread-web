@@ -9,14 +9,9 @@ import java.util.function.Consumer;
 
 public class SingleTransformOperator extends TransformOperator {
 
-    public SingleTransformOperator(Ptg ptg) throws OptimizationError {
+    public SingleTransformOperator(Ptg ptg) {
         super();
-        if (!(ptg instanceof ScalarConstantPtg)){
-            throw OptimizationError.UNSUPPORTED_CASE;
-        }
         ptgs = new Ptg[] {ptg};
-
-
     }
 
     public SingleTransformOperator(LogicalOperator[] operators, Ptg ptg) throws OptimizationError {
