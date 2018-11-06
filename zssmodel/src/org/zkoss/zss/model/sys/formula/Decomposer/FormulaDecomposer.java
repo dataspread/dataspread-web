@@ -16,8 +16,8 @@ import static org.zkoss.zss.model.sys.formula.Primitives.LogicalOperator.connect
 
 public class FormulaDecomposer {
 
-    private final int SUM = 4;
-    private final int SUMPRODUCT = 228;
+//    private final int SUM = 4;
+//    private final int SUMPRODUCT = 228;
 
     private FunctionDecomposer[] logicalOpDict = produceLogicalOperatorDictionary();
 
@@ -136,25 +136,9 @@ public class FormulaDecomposer {
     private  FunctionDecomposer[] produceLogicalOperatorDictionary() {
         FunctionDecomposer[] funcDict = new FunctionDecomposer[378];
 
-        funcDict[SUM] = new FunctionDecomposer(){
-            @Override
-            public LogicalOperator decompose(LogicalOperator[] ops) throws OptimizationError {
-                for (int i = 0; i < ops.length; i++){
-                    if (ops[i] instanceof DataOperator && ((DataOperator) ops[i]).getRegion().getCellCount() > 1){
-                        LogicalOperator op = new AggregateOperator(BinaryFunction.PLUS);
-                        connect(ops[i],op);
-                        ops[i] = op;
-                    }
+        funcDict[FunctionDecomposer.SUM] = new AggregateDecomposer(BinaryFunction.PLUS, AddPtg.instance);
 
-                    if (i > 0)
-                        ops[i] = new SingleTransformOperator(
-                                new LogicalOperator[]{ops[i-1],ops[i]}, AddPtg.instance);
-                }
-                return ops[ops.length - 1];
-            }
-        };
-
-        funcDict[SUMPRODUCT] = new FunctionDecomposer() {
+        funcDict[FunctionDecomposer.SUMPRODUCT] = new FunctionDecomposer() {
             @Override
             public LogicalOperator decompose(LogicalOperator[] ops) throws OptimizationError {
                 Ptg[] ptgs = new Ptg[ops.length * 2 - 1];
@@ -169,6 +153,14 @@ public class FormulaDecomposer {
                 return aggregate;
             }
         };
+
+        funcDict[FunctionDecomposer.COUNT] = new AggregateDecomposer(BinaryFunction.COUNTPLUS, AddPtg.instance);
+
+        funcDict[FunctionDecomposer.AVERAGE] = new TransformDecomposer(funcDict[FunctionDecomposer.SUM],
+                funcDict[FunctionDecomposer.COUNT],DividePtg.instance);
+
+//        funcDict[FunctionDecomposer.STDEV] = new TransformDecomposer(funcDict[FunctionDecomposer.SUM],
+//                funcDict[FunctionDecomposer.COUNT],DividePtg.instance); // TODO : CHECK IF IT IS N-1
 
         return funcDict;
     }
