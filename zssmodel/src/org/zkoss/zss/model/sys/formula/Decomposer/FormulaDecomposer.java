@@ -16,6 +16,9 @@ import static org.zkoss.zss.model.sys.formula.Primitives.LogicalOperator.connect
 
 public class FormulaDecomposer {
 
+    private final int SUM = 4;
+    private final int SUMPRODUCT = 228;
+
     private FunctionDecomposer[] logicalOpDict = produceLogicalOperatorDictionary();
 
     private static FormulaDecomposer instance = new FormulaDecomposer();
@@ -133,7 +136,7 @@ public class FormulaDecomposer {
     private  FunctionDecomposer[] produceLogicalOperatorDictionary() {
         FunctionDecomposer[] funcDict = new FunctionDecomposer[378];
 
-        funcDict[4] = new FunctionDecomposer(){
+        funcDict[SUM] = new FunctionDecomposer(){
             @Override
             public LogicalOperator decompose(LogicalOperator[] ops) throws OptimizationError {
                 for (int i = 0; i < ops.length; i++){
@@ -150,6 +153,23 @@ public class FormulaDecomposer {
                 return ops[ops.length - 1];
             }
         };
+
+        funcDict[SUMPRODUCT] = new FunctionDecomposer() {
+            @Override
+            public LogicalOperator decompose(LogicalOperator[] ops) throws OptimizationError {
+                Ptg[] ptgs = new Ptg[ops.length * 2 - 1];
+                ptgs[0] = new RefVariablePtg(0);
+                for (int i = 1; i < ops.length;i++){
+                    ptgs[2 * i - 1] = new RefVariablePtg(i);
+                    ptgs[2 * i] = MultiplyPtg.nonOperatorInstance;
+                }
+                GroupedTransformOperator transform = new GroupedTransformOperator(ops,ptgs);
+                LogicalOperator aggregate = new AggregateOperator(BinaryFunction.PLUS);
+                connect(transform,aggregate);
+                return aggregate;
+            }
+        };
+
         return funcDict;
     }
 

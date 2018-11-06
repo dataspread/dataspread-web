@@ -5,7 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class LogicalOperator {
+public class LogicalOperator implements Comparable<LogicalOperator> {
     private List<Edge> inEdges= new ArrayList<>(), outEdges = new ArrayList<>();
 
     private boolean removeIn = false,removeOut = false;
@@ -106,4 +106,26 @@ public class LogicalOperator {
         removeOut = true;
     }
 
+    @Override
+    public int compareTo(LogicalOperator o) {
+        if (hashCode() == o.hashCode()){
+            if (this == o)
+                return 0;
+            else {
+                StringBuilder inEdge1 = new StringBuilder();
+                forEachInEdge((e)->inEdge1.append(e.hashCode()));
+                StringBuilder inEdge2 = new StringBuilder();
+                o.forEachInEdge((e)->inEdge2.append(e.hashCode()));
+                StringBuilder outEdge1 = new StringBuilder();
+                forEachOutEdge((e)->outEdge1.append(e.hashCode()));
+                StringBuilder outEdge2 = new StringBuilder();
+                o.forEachOutEdge((e)->outEdge2.append(e.hashCode()));
+                int cmp = (toString() + inEdge1 + outEdge1)
+                        .compareTo(o.toString() + inEdge2 + outEdge2);
+                assert cmp != 0;
+                return cmp;
+            }
+        }
+        return hashCode() - o.hashCode();
+    }
 }

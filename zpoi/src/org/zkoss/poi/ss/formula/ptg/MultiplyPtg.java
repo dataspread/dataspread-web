@@ -26,13 +26,18 @@ public final class MultiplyPtg extends ValueOperatorPtg {
     public final static byte sid  = 0x05;
 
 //ZSS-852
-//    public static final ValueOperatorPtg instance = new MultiplyPtg();
+    public static final ValueOperatorPtg nonOperatorInstance = new MultiplyPtg();
+    public static final ValueOperatorPtg OperatorInstance = new MultiplyPtg(true);
 //
 //    private MultiplyPtg() {
 //    	// enforce singleton
 //    }  
     public MultiplyPtg() {
         /* For seralization */
+    }
+
+    private MultiplyPtg(boolean isOperator) {
+        _operator = isOperator;
     }
 
     @Override

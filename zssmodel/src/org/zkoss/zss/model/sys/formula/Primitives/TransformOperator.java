@@ -4,10 +4,15 @@ import org.zkoss.poi.ss.formula.OperationEvaluationContext;
 import org.zkoss.poi.ss.formula.WorkbookEvaluator;
 import org.zkoss.poi.ss.formula.eval.EvaluationException;
 import org.zkoss.poi.ss.formula.eval.ValueEval;
+import org.zkoss.poi.ss.formula.ptg.NumberPtg;
 import org.zkoss.poi.ss.formula.ptg.Ptg;
+import org.zkoss.poi.ss.formula.ptg.StringPtg;
 import org.zkoss.zss.model.impl.sys.formula.FormulaEngineImpl;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
+
+import java.util.Map;
+import java.util.TreeMap;
 
 public abstract class TransformOperator extends PhysicalOperator{
     Ptg[] ptgs = null;
@@ -38,5 +43,14 @@ public abstract class TransformOperator extends PhysicalOperator{
 
 
         return null;
+    }
+
+    Ptg valueToPtg(Object value) throws OptimizationError {
+        if (value instanceof Double)
+            return  new NumberPtg((Double)value);
+        else if (value instanceof String)
+            return new StringPtg((String) value);
+        else
+            throw OptimizationError.UNSUPPORTED_TYPE;
     }
 }

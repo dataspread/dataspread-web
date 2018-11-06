@@ -17,27 +17,7 @@ public class SingleTransformOperator extends TransformOperator {
     public SingleTransformOperator(LogicalOperator[] operators, Ptg ptg) throws OptimizationError {
         super();
         ptgs = new Ptg[getPtgSize(operators) + 1];
-        final Map<LogicalOperator,Integer> operatorId = new TreeMap<>((o1, o2) -> {
-            if (o1.hashCode() == o2.hashCode()){
-                if (o1 == o2)
-                    return 0;
-                else {
-                    StringBuilder inEdge1 = new StringBuilder();
-                    o1.forEachInEdge((e)->inEdge1.append(e.hashCode()));
-                    StringBuilder inEdge2 = new StringBuilder();
-                    o2.forEachInEdge((e)->inEdge2.append(e.hashCode()));
-                    StringBuilder outEdge1 = new StringBuilder();
-                    o1.forEachOutEdge((e)->outEdge1.append(e.hashCode()));
-                    StringBuilder outEdge2 = new StringBuilder();
-                    o2.forEachOutEdge((e)->outEdge2.append(e.hashCode()));
-                    int cmp = (o1.toString() + inEdge1 + outEdge1)
-                            .compareTo(o2.toString() + inEdge2 + outEdge2);
-                    assert cmp != 0;
-                    return cmp;
-                }
-            }
-            return o1.hashCode() - o2.hashCode();
-        });
+        final Map<LogicalOperator,Integer> operatorId = new TreeMap<>();
         int cursor = 0;
         for (LogicalOperator op:operators){
             if (op instanceof DataOperator || op instanceof AggregateOperator){
@@ -85,28 +65,19 @@ public class SingleTransformOperator extends TransformOperator {
         }
         assert ptgs.length == cursor + 1;
         ptgs[cursor] = ptg;
-
-
-
     }
 
     @Override
     public void evaluate(FormulaExecutor context) throws OptimizationError {
 
-        Ptg[] data = new Ptg[inDegree()];
+        List<Ptg> data = new ArrayList<>(inDegree());
 
         try {
-            forEachInEdge(new Consumer<Edge>() {
-                int i = 0;
-                @Override
-                public void accept(Edge edge) {
-                    Object result = edge.popResult().get(0);
-                    if (result instanceof Double)
-                        data[i++] = new NumberPtg((Double)result);
-                    else if (result instanceof String)
-                        data[i++] = new StringPtg((String) result);
-                    else
-                        throw new RuntimeException(OptimizationError.UNSUPPORTED_TYPE);
+            forEachInEdge(edge -> {
+                try {
+                    data.add(valueToPtg(edge.popResult().get(0)));
+                } catch (OptimizationError optimizationError) {
+                    throw new RuntimeException(optimizationError);
                 }
             });
         }
@@ -118,7 +89,7 @@ public class SingleTransformOperator extends TransformOperator {
         Ptg[] ptgs = Arrays.copyOf(this.ptgs, this.ptgs.length);
         for (int i = 0, isize = ptgs.length; i < isize;i++)
             if (ptgs[i] instanceof  RefVariablePtg){
-                ptgs[i] = data[((VariablePtg)ptgs[i]).getIndex()];
+                ptgs[i] = data.get(((VariablePtg)ptgs[i]).getIndex());
             }
 
         List result = Collections.singletonList(evaluate(ptgs));
