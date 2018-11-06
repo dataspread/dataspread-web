@@ -43,11 +43,7 @@ public class GroupedDataOperator extends DataOperator{
     @Override
     public void evaluate(FormulaExecutor context) throws OptimizationError {
         Object[] data = new Object[_region.getCellCount()];
-        AbstractCellAdv[] cells = new AbstractCellAdv[_region.getCellCount()];
-        for (SCell cell:_sheet.getCells(_region)){
-            cells[getIndex(cell)] = (AbstractCellAdv)cell;
-        }
-
+        AbstractCellAdv[] cells = getCells();
         try {
             forEachInEdge(new Consumer<Edge>() {
                 int i = 0;
@@ -55,18 +51,12 @@ public class GroupedDataOperator extends DataOperator{
                 public void accept(Edge edge) {
                     List result = edge.popResult();
                     int offset = inEdgesRange.get(i).getKey();
-                    for (int j = offset, jsize = inEdgesRange.get(i).getValue();j < jsize; j++) {
-                        Object value = result.get(j - offset);
-
-                        context.addToUpdateQueue(_sheet, cells[j]);
-                        ValueEval resultValue;
-                        if (value instanceof Double){
-                            resultValue = new NumberEval((Double)value);
+                    for (int j = offset, jsize = inEdgesRange.get(i).getValue();j < jsize; j++)
+                        try {
+                            setFormulaValue(cells[j],result.get(j - offset),context);
+                        } catch (OptimizationError optimizationError) {
+                            throw new RuntimeException(optimizationError);
                         }
-                        else
-                            throw new RuntimeException(OptimizationError.UNSUPPORTED_TYPE);
-                        cells[j].setFormulaResultValue(resultValue);
-                    }
                     i++;
                 }
             });

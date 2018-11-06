@@ -21,17 +21,17 @@ import java.util.concurrent.LinkedBlockingQueue;
 import static org.zkoss.zss.model.sys.formula.Test.Timer.time;
 
 public class FormulaExecutor {
-    static FormulaExecutor uniqueExecutor = new FormulaExecutor();
-    FormulaAsyncScheduler scheduler = null;
-    Thread frontEndUpdateThread;
-    LinkedBlockingQueue<Pair<SSheet, AbstractCellAdv>> frontEndUpdateQueue;
+    private static FormulaExecutor uniqueExecutor = new FormulaExecutor();
+    private FormulaAsyncScheduler scheduler = null;
+    private LinkedBlockingQueue<Pair<SSheet, AbstractCellAdv>> frontEndUpdateQueue;
+//    private LinkedBlockingQueue<Object[]> dataBaseUpdateQueue;
     private FormulaExecutor(){
         frontEndUpdateQueue = new LinkedBlockingQueue<>();
-        frontEndUpdateThread = new Thread(()->{
+        Thread frontEndUpdateThread = new Thread(() -> {
             try {
-                while (true){
+                while (true) {
                     Pair<SSheet, AbstractCellAdv> parameter = frontEndUpdateQueue.take();
-                    update(parameter.getKey(),parameter.getValue());
+                    update(parameter.getKey(), parameter.getValue());
                 }
 
             } catch (InterruptedException e) {
@@ -39,6 +39,18 @@ public class FormulaExecutor {
             }
         });
         frontEndUpdateThread.start();
+//        Thread dataBaseThread = new Thread(() -> {
+//            try {
+//                while (true) {
+//                    Pair<SSheet, AbstractCellAdv> parameter = frontEndUpdateQueue.take();
+//                    update(parameter.getKey(), parameter.getValue());
+//                }
+//
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//        });
+//        dataBaseThread.start();
     }
     public static FormulaExecutor getExecutor(){
         return uniqueExecutor;

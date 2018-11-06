@@ -1,18 +1,13 @@
 package org.zkoss.zss.model.sys.formula.Primitives;
 
-import org.zkoss.poi.ss.formula.eval.NumberEval;
-import org.zkoss.poi.ss.formula.eval.ValueEval;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
-import org.zkoss.zss.range.SRange;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 
 public class SingleDataOperator extends DataOperator{
@@ -23,24 +18,21 @@ public class SingleDataOperator extends DataOperator{
     @Override
     public void evaluate(FormulaExecutor context) throws OptimizationError {
         List results;
+        AbstractCellAdv[] cells = getCells();
         if (inDegree() == 0){
             Object[] resultObject = new Object[_region.getCellCount()];
-
-            for (SCell cell : _sheet.getCells(_region)){
+            for (int i = 0; i < cells.length;i++){
+                AbstractCellAdv cell = cells[i];
                 if (cell.getType() != SCell.CellType.NUMBER && cell.getType() != SCell.CellType.FORMULA)
                     throw OptimizationError.UNSUPPORTED_TYPE;
-                resultObject[getIndex(cell)] = cell.getValue();
+                resultObject[i] = cell.getValue();
             }
             results = Arrays.asList(resultObject);
         }
         else{
             results = getInEdge(0).popResult();
-            Iterator it= results.iterator();
-            for (int i = _region.getRow(); i <= _region.getLastRow(); i++)
-                for (int j = _region.getColumn(); j <= _region.getLastColumn(); j++) {
-                    Object result = it.next();
-                    setFormulaValue(i,j,result,context);
-                }
+            for (int i = 0; i < cells.length;i++)
+                setFormulaValue(cells[i],results.get(i),context);
         }
 
         forEachOutEdge((e)->e.setResult(results));
@@ -52,17 +44,5 @@ public class SingleDataOperator extends DataOperator{
             throw OptimizationError.UNSUPPORTED_FUNCTION;
         dataOperator.forEachInEdge(this::transferInEdge);
         dataOperator.forEachOutEdge(this::transferOutEdge);
-    }
-
-    private void setFormulaValue(int row, int column, Object result,FormulaExecutor context) throws OptimizationError {
-        ValueEval resultValue;
-        if (result instanceof Double){
-            resultValue = new NumberEval((Double)result);
-        }
-        else
-            throw OptimizationError.UNSUPPORTED_TYPE;
-        AbstractCellAdv sCell = ((AbstractCellAdv)_sheet.getCell(row,column));
-        sCell.setFormulaResultValue(resultValue);
-        context.addToUpdateQueue(_sheet,sCell);
     }
 }
