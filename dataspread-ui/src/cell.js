@@ -55,6 +55,7 @@ export default class Cell extends Component {
                         defaultValue={this.props.formula == null ? this.props.value : this.props.formula}/>
                 )
             }
+            // selection code goes here
             else if (this.props.isProcessing) {
                 return (
                     <div
