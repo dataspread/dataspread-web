@@ -230,6 +230,10 @@ export default class DSGrid extends Component {
                                                                 onSectionRendered={onSectionRendered}
                                                                 //onSectionRendered={this._onSectionRendered}
                                                                 ref={(ref) => this.grid = ref}
+                                                                focusCellColumn={this.state.focusCellColumn}
+                                                                focusCellRow={this.state.focusCellRow}
+                                                                selectOppositeCellColumn={this.state.selectOppositeCellColumn}
+                                                                selectOppositeCellRow={this.state.selectOppositeCellRow}
                                                             />
                                                         </div>)}
                                                 </ArrowKeyStepper>
