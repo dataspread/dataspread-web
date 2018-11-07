@@ -14,8 +14,6 @@ import java.util.function.Consumer;
 
 public class GroupedDataOperator extends DataOperator{
 
-    private List<Pair<Integer, Integer>> inEdgesRange = new ArrayList<>(), outEdgesRange = new ArrayList<>();
-
     private Pair<Integer, Integer> getIndexRange(CellRegion region){
         int left = (region.getRow() - _region.getRow()) * _region.getColumnCount();
         int right = (region.getLastRow() - _region.getRow() + 1) * _region.getColumnCount();
@@ -50,8 +48,8 @@ public class GroupedDataOperator extends DataOperator{
                 @Override
                 public void accept(Edge edge) {
                     List result = edge.popResult();
-                    int offset = inEdgesRange.get(i).getKey();
-                    for (int j = offset, jsize = inEdgesRange.get(i).getValue();j < jsize; j++)
+                    int offset = edge.outRange.getKey();
+                    for (int j = offset, jsize = edge.outRange.getValue();j < jsize; j++)
                         try {
                             setFormulaValue(cells[j],result.get(j - offset),context);
                         } catch (OptimizationError optimizationError) {
@@ -68,14 +66,7 @@ public class GroupedDataOperator extends DataOperator{
             data[i] = cells[i] == null? null : cells[i].getValue();
 
         List results = Arrays.asList(data);
-        forEachOutEdge(new Consumer<Edge>() {
-            int i = 0;
-            @Override
-            public void accept(Edge edge) {
-                edge.setResult(results.subList(outEdgesRange.get(i).getKey(),outEdgesRange.get(i).getValue()));
-                i++;
-            }
-        });
+        forEachOutEdge(edge -> edge.setResult(results));
     }
 
     @Override
@@ -83,29 +74,29 @@ public class GroupedDataOperator extends DataOperator{
         throw OptimizationError.UNSUPPORTED_FUNCTION;
     }
 
-    @Override
-    void cleanInEdges(Consumer<Integer> action){
-        List<Pair<Integer,Integer>> cleanRange = new ArrayList<>();
-        super.cleanInEdges((i)->cleanRange.add(inEdgesRange.get(i)));
-        inEdgesRange = cleanRange;
-    }
-
-    @Override
-    void cleanOutEdges(Consumer<Integer> action){
-        List<Pair<Integer,Integer>> cleanRange = new ArrayList<>();
-        super.cleanOutEdges((i)->cleanRange.add(outEdgesRange.get(i)));
-        outEdgesRange = cleanRange;
-    }
+//    @Override
+//    void cleanInEdges(Consumer<Integer> action){
+//        List<Pair<Integer,Integer>> cleanRange = new ArrayList<>();
+//        super.cleanInEdges((i)->cleanRange.add(inEdgesRange.get(i)));
+//        inEdgesRange = cleanRange;
+//    }
+//
+//    @Override
+//    void cleanOutEdges(Consumer<Integer> action){
+//        List<Pair<Integer,Integer>> cleanRange = new ArrayList<>();
+//        super.cleanOutEdges((i)->cleanRange.add(outEdgesRange.get(i)));
+//        outEdgesRange = cleanRange;
+//    }
 
     @Override
     void transferInEdge(Edge e){
-        inEdgesRange.add(getIndexRange(((DataOperator)e.getOutVertex()).getRegion()));
+        e.outRange = getIndexRange(((SingleDataOperator)e.getOutVertex()).getRegion());
         super.transferInEdge(e);
     }
 
     @Override
     void transferOutEdge(Edge e){
-        outEdgesRange.add(getIndexRange(((DataOperator)e.getInVertex()).getRegion()));
+        e.inRange = getIndexRange(((DataOperator)e.getInVertex()).getRegion());
         super.transferOutEdge(e);
     }
 }

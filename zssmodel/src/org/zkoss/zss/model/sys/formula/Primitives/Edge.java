@@ -1,11 +1,17 @@
 package org.zkoss.zss.model.sys.formula.Primitives;
 
+import javafx.util.Pair;
+
 import java.util.List;
 
 class Edge {
     private LogicalOperator in,out;
 
     private boolean valid = true;
+
+    private List result = null;
+
+    Pair<Integer,Integer> inRange,outRange;
 
     Edge(LogicalOperator in, LogicalOperator out){
         this.in = in;
@@ -22,7 +28,6 @@ class Edge {
         return valid;
     }
 
-    private List result = null;
 
     LogicalOperator getInVertex(){
         return in;
@@ -41,7 +46,10 @@ class Edge {
     }
 
     void setResult(List result){
-        this.result = result;
+        if (inRange == null)
+            this.result = result;
+        else
+            this.result = result.subList(inRange.getKey(),inRange.getValue());
         ((PhysicalOperator)out).incInputCount();
     }
 

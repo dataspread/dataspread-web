@@ -48,23 +48,20 @@ public class LogicalOperator implements Comparable<LogicalOperator> {
         return inEdges.get(i);
     }
 
-    void cleanInEdges(Consumer<Integer> action){
-        inEdges = cleanEdges(action, inEdges);
+    private void cleanInEdges(){
+        inEdges = cleanEdges(inEdges);
     }
 
-    void cleanOutEdges(Consumer<Integer> action){
-        outEdges = cleanEdges(action, outEdges);
+    private void cleanOutEdges(){
+        outEdges = cleanEdges(outEdges);
     }
 
-    private List<Edge> cleanEdges(Consumer<Integer> action, List<Edge> edges) {
+    private List<Edge> cleanEdges(List<Edge> edges) {
         ArrayList<Edge> cleanEdges = new ArrayList<>();
         for (int i = 0, isize = edges.size(); i < isize; i++){
             Edge edge = edges.get(i);
-            if (edge.isValid()) {
+            if (edge.isValid())
                 cleanEdges.add(edge);
-                if (action != null)
-                    action.accept(i);
-            }
         }
         return cleanEdges;
     }
@@ -77,7 +74,7 @@ public class LogicalOperator implements Comparable<LogicalOperator> {
     void forEachInEdge(Consumer<? super Edge> action){
         synchronized (this){
             if (removeIn) {
-                cleanInEdges(null);
+                cleanInEdges();
                 removeIn = false;
             }
         }
@@ -87,7 +84,7 @@ public class LogicalOperator implements Comparable<LogicalOperator> {
     void forEachOutEdge(Consumer<? super Edge> action){
         synchronized (this){
             if (removeOut) {
-                cleanOutEdges(null);
+                cleanOutEdges();
                 removeOut = false;
             }
         }
