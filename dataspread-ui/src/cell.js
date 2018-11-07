@@ -10,6 +10,7 @@ export default class Cell extends Component {
             editing: false,
         }
         this.handleClick = this.handleClick.bind(this);
+        this.handleDoubleClick = this.handleDoubleClick.bind(this);
         this.handleBlur = this.handleBlur.bind(this);
         this._handleKeyPress = this._handleKeyPress.bind(this);
     }
@@ -25,8 +26,14 @@ export default class Cell extends Component {
         }
     }
 
-
     handleClick() {
+        this.props.onCellClick({
+            rowIndex: this.props.rowIndex,
+            columnIndex: this.props.columnIndex
+        });
+    }
+
+    handleDoubleClick() {
         this.setState({
             editing: true
         });
@@ -61,7 +68,7 @@ export default class Cell extends Component {
                     <div
                         style={this.props.style}
                         className={this.props.className}
-                        onDoubleClick={this.handleClick}>
+                        onDoubleClick={this.handleDoubleClick}>
                         <Progress
                             style={{
                                 height: '32px',
@@ -80,7 +87,8 @@ export default class Cell extends Component {
                     <div
                         style={this.props.style}
                         className={this.props.className}
-                        onDoubleClick={this.handleClick}>
+                        onClick={this.handleClick}
+                        onDoubleClick={this.handleDoubleClick}>
                         {this.props.value}
                     </div>);
             }

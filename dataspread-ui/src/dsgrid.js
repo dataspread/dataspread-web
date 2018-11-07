@@ -25,9 +25,12 @@ export default class DSGrid extends Component {
             version: 0,
             focusCellRow: -1,
             focusCellColumn: -1,
+            selectOppositeCellRow: -1,
+            selectOppositeCellColumn: -1,
             isProcessing: false,
             initialLoadDone:false,
         }
+        this.shiftOn = false;
         this.subscribed = false;
         this.rowHeight = 32;
         this.columnWidth = 150;
@@ -43,8 +46,11 @@ export default class DSGrid extends Component {
         this._onSectionRendered = this._onSectionRendered.bind(this);
         this._cellRenderer = this._cellRenderer.bind(this);
         this._updateCell = this._updateCell.bind(this);
+        this._clickCell = this._clickCell.bind(this);
         this._processUpdates = this._processUpdates.bind(this);
         this._cellRangeRenderer = this._cellRangeRenderer.bind(this);
+        this._handleKeyDown = this._handleKeyDown.bind(this);
+        this._handleKeyUp = this._handleKeyUp.bind(this);
 
         // this.urlPrefix = ""; // Only for testing.
         // this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
@@ -138,7 +144,11 @@ export default class DSGrid extends Component {
 
     render() {
         return (
-            <div>
+            <div onKeyDown={this._handleKeyDown} onKeyUp={this._handleKeyUp}>
+                <div>
+                    <div>FOCUS: col {this.state.focusCellColumn} row {this.state.focusCellRow}</div>
+                    <div>SLOPP: col {this.state.selectOppositeCellColumn} row {this.state.selectOppositeCellRow}</div>
+                </div>
                 <div style={{display: 'flex'}}>
                     <div style={{flex: 'auto', height: '90vh'}}>
                         <Dimmer active={this.state.isProcessing || !this.state.initialLoadDone}>
@@ -347,6 +357,19 @@ export default class DSGrid extends Component {
         //TODO: send update to backend.
     }
 
+    _clickCell (
+        {   rowIndex,
+            columnIndex
+        }
+    ) {
+        if (!this.shiftOn) {
+            this.setState({focusCellRow: rowIndex, focusCellColumn: columnIndex});
+        }
+        this.setState({selectOppositeCellRow: rowIndex, selectOppositeCellColumn: columnIndex});
+
+        //TODO: send selection to backend.
+    }
+
 
     _cellRangeRenderer (props) {
         if (this.subscribed) {
@@ -366,6 +389,10 @@ export default class DSGrid extends Component {
         return children;
     }
 
+    inclusiveBetween (num, num1, num2) {
+        return (num1 <= num && num <= num2) || (num2 <= num && num <= num1);
+    }
+
     _cellRenderer ({
                          columnIndex, // Horizontal (column) index of cell
                          isScrolling, // The Grid is currently being scrolled
@@ -383,6 +410,12 @@ export default class DSGrid extends Component {
         if (typeof fromCache === "object") {
             cellContent = this.dataCache
                 .get(Math.trunc((rowIndex) / this.fetchSize))[(rowIndex) % this.fetchSize][columnIndex];
+            if (rowIndex === this.state.focusCellRow && columnIndex === this.state.focusCellColumn) {
+                cellClass = 'cellFocus';
+            } else if (this.inclusiveBetween(rowIndex, this.state.focusCellRow, this.state.selectOppositeCellRow)
+            && this.inclusiveBetween(columnIndex, this.state.focusCellColumn, this.state.selectOppositeCellColumn)) {
+                cellClass = 'cellSelected';
+            }
         }
         else {
             cellClass = 'isScrollingPlaceholder'
@@ -400,9 +433,25 @@ export default class DSGrid extends Component {
                     columnIndex={columnIndex}
                     isProcessing={cellContent[0] === '...'}
                     pctProgress={cellContent[2]}
+                    onCellClick={this._clickCell}
                     onUpdate={this._updateCell}
                 />
         )
     }
+
+    _handleKeyDown(e) {
+        console.log(e.key+' down');
+        if (e.key === 'Shift') {
+            this.shiftOn = true;
+        }
+    }
+
+    _handleKeyUp(e) {
+        console.log(e.key+' up');
+        if (e.key === 'Shift') {
+            this.shiftOn = false;
+        }
+    }
+
 
 }
