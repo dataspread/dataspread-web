@@ -247,7 +247,7 @@ export default class DSGrid extends Component {
                     this.dataCache.reset();
                     this.setState({
                         sheetName: 'Sheet1',
-                        rows: result['data']['sheets'][0]['numRow'],
+                        rows: result['data']['sheets'][0]['numRow']+100,
                         columns: result['data']['sheets'][0]['numCol']
                     });
 
