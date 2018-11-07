@@ -1,15 +1,13 @@
 package org.zkoss.zss.model.sys.formula.Primitives;
 
 import javafx.util.Pair;
-import org.zkoss.poi.ss.formula.eval.NumberEval;
-import org.zkoss.poi.ss.formula.eval.ValueEval;
 import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Consumer;
 
 public class GroupedDataOperator extends DataOperator{

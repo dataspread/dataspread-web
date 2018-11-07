@@ -8,10 +8,6 @@ import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
-import org.zkoss.zss.range.SRange;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public abstract class DataOperator extends PhysicalOperator{
     SSheet _sheet = null;
@@ -61,8 +57,10 @@ public abstract class DataOperator extends PhysicalOperator{
         if (result instanceof Double){
             resultValue = new NumberEval((Double)result);
         }
-        else
+        else {
+            System.out.println(result.toString() + result.hashCode());
             throw new RuntimeException(OptimizationError.UNSUPPORTED_TYPE);
+        }
         cell.setFormulaResultValue(resultValue);
         context.addToUpdateQueue(_sheet, cell);
     }
