@@ -4,14 +4,17 @@ import org.zkoss.poi.ss.formula.ptg.*;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
-import org.zkoss.zss.model.sys.formula.Primitives.*;
+import org.zkoss.zss.model.sys.formula.Primitives.DataOperator;
+import org.zkoss.zss.model.sys.formula.Primitives.LogicalOperator;
+import org.zkoss.zss.model.sys.formula.Primitives.SingleDataOperator;
+import org.zkoss.zss.model.sys.formula.Primitives.SingleTransformOperator;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.QueryPlanGraph;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Stack;
 import java.util.TreeMap;
 
+import static org.zkoss.zss.model.sys.formula.Decomposer.FunctionDecomposer.produceLogicalOperatorDictionary;
 import static org.zkoss.zss.model.sys.formula.Primitives.LogicalOperator.connect;
 
 public class FormulaDecomposer {
@@ -133,37 +136,7 @@ public class FormulaDecomposer {
 
     }
 
-    private  FunctionDecomposer[] produceLogicalOperatorDictionary() {
-        FunctionDecomposer[] funcDict = new FunctionDecomposer[378];
 
-        funcDict[FunctionDecomposer.SUM] = new AggregateDecomposer(BinaryFunction.PLUS, AddPtg.instance);
-
-        funcDict[FunctionDecomposer.SUMPRODUCT] = new FunctionDecomposer() {
-            @Override
-            public LogicalOperator decompose(LogicalOperator[] ops) throws OptimizationError {
-                Ptg[] ptgs = new Ptg[ops.length * 2 - 1];
-                ptgs[0] = new RefVariablePtg(0);
-                for (int i = 1; i < ops.length;i++){
-                    ptgs[2 * i - 1] = new RefVariablePtg(i);
-                    ptgs[2 * i] = MultiplyPtg.nonOperatorInstance;
-                }
-                GroupedTransformOperator transform = new GroupedTransformOperator(ops,ptgs);
-                LogicalOperator aggregate = new AggregateOperator(BinaryFunction.PLUS);
-                connect(transform,aggregate);
-                return aggregate;
-            }
-        };
-
-        funcDict[FunctionDecomposer.COUNT] = new AggregateDecomposer(BinaryFunction.COUNTPLUS, AddPtg.instance);
-
-        funcDict[FunctionDecomposer.AVERAGE] = new TransformDecomposer(funcDict[FunctionDecomposer.SUM],
-                funcDict[FunctionDecomposer.COUNT],DividePtg.instance);
-
-//        funcDict[FunctionDecomposer.STDEV] = new TransformDecomposer(funcDict[FunctionDecomposer.SUM],
-//                funcDict[FunctionDecomposer.COUNT],DividePtg.instance); // TODO : CHECK IF IT IS N-1
-
-        return funcDict;
-    }
 
     private LogicalOperator getOperationOperator(LogicalOperator[] operators, Ptg ptg) throws OptimizationError {
         boolean constantFormula = true;

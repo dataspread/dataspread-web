@@ -1,9 +1,22 @@
 package org.zkoss.zss.model.sys.formula.Decomposer;
 
+import org.zkoss.poi.ss.formula.ptg.AddPtg;
+import org.zkoss.poi.ss.formula.ptg.MultiplyPtg;
+import org.zkoss.poi.ss.formula.ptg.Ptg;
+import org.zkoss.poi.ss.formula.ptg.RefVariablePtg;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
+import org.zkoss.zss.model.sys.formula.Primitives.AggregateOperator;
+import org.zkoss.zss.model.sys.formula.Primitives.BinaryFunction;
+import org.zkoss.zss.model.sys.formula.Primitives.GroupedTransformOperator;
 import org.zkoss.zss.model.sys.formula.Primitives.LogicalOperator;
 
+import java.util.Arrays;
+
+import static org.zkoss.zss.model.sys.formula.Decomposer.TransformDecomposer.divide;
+import static org.zkoss.zss.model.sys.formula.Primitives.LogicalOperator.connect;
+
 public abstract class FunctionDecomposer {
+
     static final int COUNT = 0;
     static final int ISNA = 2;
     static final int ISERROR = 3;
@@ -140,5 +153,49 @@ public abstract class FunctionDecomposer {
     static final int JOIN = 375;
     static final int MULTIPLEAREA = 376;
     static final int SQLFUNCTION = 377;
+
+    static   FunctionDecomposer[] produceLogicalOperatorDictionary() {
+        FunctionDecomposer[] funcDict = new FunctionDecomposer[378];
+
+        funcDict[SUM] = new AggregateDecomposer(BinaryFunction.PLUS, AddPtg.instance);
+
+        funcDict[SUMPRODUCT] = new FunctionDecomposer() {
+            @Override
+            public LogicalOperator decompose(LogicalOperator[] ops) throws OptimizationError {
+                Ptg[] ptgs = new Ptg[ops.length * 2 - 1];
+                ptgs[0] = new RefVariablePtg(0);
+                for (int i = 1; i < ops.length;i++){
+                    ptgs[2 * i - 1] = new RefVariablePtg(i);
+                    ptgs[2 * i] = MultiplyPtg.nonOperatorInstance;
+                }
+                GroupedTransformOperator transform = new GroupedTransformOperator(ops,ptgs);
+                LogicalOperator aggregate = new AggregateOperator(BinaryFunction.PLUS);
+                connect(transform,aggregate);
+                return aggregate;
+            }
+        };
+
+        FunctionDecomposer SUMSQAURE = new FunctionDecomposer() {
+            @Override
+            public LogicalOperator decompose(LogicalOperator[] ops) throws OptimizationError {
+                return funcDict[SUM].decompose(
+                        Arrays.stream(ops)
+                        .map(op->funcDict[SUMPRODUCT].decompose(new LogicalOperator[]{op,op}))
+                        .toArray(LogicalOperator[]::new));
+            }
+        };
+
+        funcDict[COUNT] = new AggregateDecomposer(BinaryFunction.COUNTPLUS, AddPtg.instance);
+
+        funcDict[AVERAGE] = divide(funcDict[SUM],funcDict[COUNT]);
+
+
+
+//        funcDict[FunctionDecomposer.STDEV] = new TransformDecomposer(funcDict[FunctionDecomposer.SUM],
+//                funcDict[FunctionDecomposer.COUNT],DividePtg.instance); // TODO : CHECK IF IT IS N-1
+
+        return funcDict;
+    }
+
     public abstract LogicalOperator decompose(LogicalOperator[] ops) throws OptimizationError;
 }

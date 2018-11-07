@@ -1,25 +1,34 @@
 package org.zkoss.zss.model.sys.formula.Decomposer;
 
-import org.zkoss.poi.ss.formula.functions.Function;
+import org.zkoss.poi.ss.formula.ptg.DividePtg;
 import org.zkoss.poi.ss.formula.ptg.Ptg;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.Primitives.LogicalOperator;
 import org.zkoss.zss.model.sys.formula.Primitives.SingleTransformOperator;
 
+import java.util.Arrays;
+
 public class TransformDecomposer extends FunctionDecomposer {
 
-    FunctionDecomposer f1,f2;
+    FunctionDecomposer[] functions;
     Ptg ptg;
 
-    TransformDecomposer(FunctionDecomposer function1, FunctionDecomposer function2, Ptg transformPtg){
+    static TransformDecomposer divide(FunctionDecomposer function1, FunctionDecomposer function2){
+        return new TransformDecomposer(new FunctionDecomposer[]{function1,
+                function2}, DividePtg.instance);
+    }
+
+    private TransformDecomposer(FunctionDecomposer[] functions, Ptg transformPtg){
         ptg = transformPtg;
-        f1 = function1;
-        f2 = function2;
+        this.functions = functions;
 
     }
 
     @Override
     public LogicalOperator decompose(LogicalOperator[] ops) throws OptimizationError {
-        return new SingleTransformOperator(new LogicalOperator[]{f1.decompose(ops),f2.decompose(ops)},ptg);
+        return new SingleTransformOperator(
+                Arrays.stream(functions)
+                .map(f -> f.decompose(ops))
+                .toArray(LogicalOperator[]::new), ptg);
     }
 }
