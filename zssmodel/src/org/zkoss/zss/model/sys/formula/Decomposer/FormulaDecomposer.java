@@ -4,10 +4,7 @@ import org.zkoss.poi.ss.formula.ptg.*;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
-import org.zkoss.zss.model.sys.formula.Primitives.DataOperator;
-import org.zkoss.zss.model.sys.formula.Primitives.LogicalOperator;
-import org.zkoss.zss.model.sys.formula.Primitives.SingleDataOperator;
-import org.zkoss.zss.model.sys.formula.Primitives.SingleTransformOperator;
+import org.zkoss.zss.model.sys.formula.Primitives.*;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.QueryPlanGraph;
 
 import java.util.Map;
@@ -141,7 +138,7 @@ public class FormulaDecomposer {
     private LogicalOperator getOperationOperator(LogicalOperator[] operators, Ptg ptg) throws OptimizationError {
         boolean constantFormula = true;
         for (LogicalOperator op:operators) {
-            if (op instanceof DataOperator && ((DataOperator) op).getRegion().getCellCount() > 1)
+            if (op instanceof MultiOutputOperator && ((MultiOutputOperator) op).outputSize() > 1)
                 constantFormula = false;
         }
         if (!constantFormula) {

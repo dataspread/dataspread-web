@@ -102,16 +102,11 @@ public class SingleTransformOperator extends TransformOperator {
         throw OptimizationError.UNSUPPORTED_FUNCTION;
     }
 
-    @Override
-    public int returnSize() {
-        return 1;
-    }
-
     private int getPtgSize(LogicalOperator[] operators) throws OptimizationError {
         int size = 0;
         for (LogicalOperator op:operators){
-            if (op instanceof DataOperator){
-                if (((DataOperator) op).getRegion().getCellCount() > 1)
+            if (op instanceof MultiOutputOperator){
+                if (((MultiOutputOperator) op).outputSize() > 1)
                     throw new OptimizationError("Multiple Values in Single Operator");
                 size++;
                 continue;

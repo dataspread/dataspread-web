@@ -9,7 +9,7 @@ import org.zkoss.zss.model.impl.AbstractCellAdv;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
 
-public abstract class DataOperator extends PhysicalOperator{
+public abstract class DataOperator extends PhysicalOperator implements MultiOutputOperator{
     SSheet _sheet = null;
     CellRegion _region = null;
 //    List<SCell> updateCells = new ArrayList<>(); todo:add it when bulk writing fixed
@@ -63,5 +63,10 @@ public abstract class DataOperator extends PhysicalOperator{
         }
         cell.setFormulaResultValue(resultValue);
         context.addToUpdateQueue(_sheet, cell);
+    }
+
+    @Override
+    public int outputSize(){
+        return _region.getCellCount();
     }
 }

@@ -9,11 +9,11 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-public class GroupedTransformOperator extends TransformOperator {
+public class GroupedTransformOperator extends TransformOperator implements MultiOutputOperator {
 
     private int size;
 
-    List<Integer>[] variablePositionMap;
+    private List<Integer>[] variablePositionMap;
 
     public GroupedTransformOperator(LogicalOperator[] operators, Ptg ptgs[]) throws OptimizationError {
         assert operators.length > 0;
@@ -23,9 +23,9 @@ public class GroupedTransformOperator extends TransformOperator {
             if (!(op instanceof DataOperator))
                 throw OptimizationError.UNSUPPORTED_CASE;
             if (size == -1)
-                size = ((DataOperator)op).getRegion().getCellCount();
+                size = ((DataOperator)op).outputSize();
             else
-                assert ((DataOperator)op).getRegion().getCellCount() == size;
+                assert ((DataOperator)op).outputSize() == size;
         }
         int[] ids = addInputOperators(operators);
         variablePositionMap = Stream.generate((Supplier<ArrayList>) ArrayList<Integer>::new)
@@ -100,7 +100,7 @@ public class GroupedTransformOperator extends TransformOperator {
     }
 
     @Override
-    public int returnSize() {
+    public int outputSize() {
         return size;
     }
 }

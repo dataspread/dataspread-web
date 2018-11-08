@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class GroupedDataOperator extends DataOperator{
+public class GroupedDataOperator extends DataOperator {
 
     private Pair<Integer, Integer> getIndexRange(CellRegion region){
         int left = (region.getRow() - _region.getRow()) * _region.getColumnCount();

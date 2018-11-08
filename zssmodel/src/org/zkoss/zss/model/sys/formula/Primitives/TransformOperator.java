@@ -30,9 +30,7 @@ public abstract class TransformOperator extends PhysicalOperator{
 
     public abstract void merge(DataOperator TransformOperator) throws OptimizationError;
 
-    public abstract int returnSize();
-
-    static Object evaluate(Ptg[] ptgs){
+    static Object evaluate(final Ptg[] ptgs){
         try {
             ValueEval result = evaluator.evaluateFormula(context,ptgs,true,true,null);
             return FormulaEngineImpl.convertToEvaluationResult(result).getValue();

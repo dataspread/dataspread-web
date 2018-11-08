@@ -20,17 +20,22 @@ public class AggregateDecomposer extends FunctionDecomposer {
 
     @Override
     public LogicalOperator decompose(LogicalOperator[] ops) throws OptimizationError {
+        LogicalOperator lastOp = null;
+        LogicalOperator op = null;
         for (int i = 0; i < ops.length; i++){
-            if (ops[i] instanceof DataOperator && ((DataOperator) ops[i]).getRegion().getCellCount() > 1){
-                LogicalOperator op = new AggregateOperator(function);
+            if (ops[i] instanceof MultiOutputOperator && ((MultiOutputOperator) ops[i]).outputSize() > 1){
+                op = new AggregateOperator(function);
                 connect(ops[i],op);
-                ops[i] = op;
             }
+            else
+                op = ops[i];
 
-            if (i > 0)
-                ops[i] = new SingleTransformOperator(
-                        new LogicalOperator[]{ops[i-1],ops[i]}, aggregatePtg);
+            if (lastOp != null)
+                op = new SingleTransformOperator(
+                        new LogicalOperator[]{lastOp,op}, aggregatePtg);
+
+            lastOp = op;
         }
-        return ops[ops.length - 1];
+        return op;
     }
 }
