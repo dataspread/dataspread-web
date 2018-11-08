@@ -64,6 +64,8 @@ public class FormulaExecutor {
                 executionStack.push(data);
         while (!executionStack.empty()){
             PhysicalOperator p = executionStack.pop();
+            if (!p.readyToEvaluate())
+                continue;
             evaluate(p);
             p.forEachOutVertex((lo)->{
                 PhysicalOperator po = (PhysicalOperator)lo;
