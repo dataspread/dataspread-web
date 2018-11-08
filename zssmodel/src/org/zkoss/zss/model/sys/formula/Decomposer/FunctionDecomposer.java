@@ -12,7 +12,7 @@ import org.zkoss.zss.model.sys.formula.Primitives.LogicalOperator;
 
 import java.util.Arrays;
 
-import static org.zkoss.zss.model.sys.formula.Decomposer.TransformDecomposer.divide;
+import static org.zkoss.zss.model.sys.formula.Decomposer.TransformDecomposer.*;
 import static org.zkoss.zss.model.sys.formula.Primitives.LogicalOperator.connect;
 
 public abstract class FunctionDecomposer {
@@ -191,8 +191,10 @@ public abstract class FunctionDecomposer {
 
 
 
-//        funcDict[FunctionDecomposer.STDEV] = new TransformDecomposer(funcDict[FunctionDecomposer.SUM],
-//                funcDict[FunctionDecomposer.COUNT],DividePtg.instance); // TODO : CHECK IF IT IS N-1
+        funcDict[FunctionDecomposer.STDEV] = sqrt(divide(
+                subtract(SUMSQAURE,multiply(funcDict[SUM],funcDict[AVERAGE])),
+                subtract(funcDict[COUNT],ONE)));
+        // TODO : CHECK IF IT IS N-1
 
         return funcDict;
     }
