@@ -11,6 +11,7 @@ import org.zkoss.zss.model.impl.sys.formula.FormulaEngineImpl;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
 
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -26,7 +27,7 @@ public abstract class TransformOperator extends PhysicalOperator{
     }
 
     @Override
-    public abstract void evaluate(FormulaExecutor context) throws OptimizationError ;
+    public abstract List getEvaluationResult(FormulaExecutor context) throws OptimizationError ;
 
     public abstract void merge(DataOperator TransformOperator) throws OptimizationError;
 

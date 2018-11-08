@@ -16,7 +16,7 @@ public class SingleDataOperator extends DataOperator{
     }
 
     @Override
-    public void evaluate(FormulaExecutor context) throws OptimizationError {
+    public List getEvaluationResult(FormulaExecutor context) throws OptimizationError {
         List results;
         AbstractCellAdv[] cells = getCells();
         if (inDegree() == 0){
@@ -35,7 +35,7 @@ public class SingleDataOperator extends DataOperator{
                 setFormulaValue(cells[i],results.get(i),context);
         }
 
-        forEachOutEdge((e)->e.setResult(results));
+        return results;
     }
 
     @Override

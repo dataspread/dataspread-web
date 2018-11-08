@@ -37,7 +37,7 @@ public class GroupedDataOperator extends DataOperator {
     }
 
     @Override
-    public void evaluate(FormulaExecutor context) throws OptimizationError {
+    public List getEvaluationResult(FormulaExecutor context) throws OptimizationError {
         Object[] data = new Object[_region.getCellCount()];
         AbstractCellAdv[] cells = getCells();
         try {
@@ -64,7 +64,7 @@ public class GroupedDataOperator extends DataOperator {
             data[i] = cells[i] == null? null : cells[i].getValue();
 
         List results = Arrays.asList(data);
-        forEachOutEdge(edge -> edge.setResult(results));
+        return results;
     }
 
     @Override

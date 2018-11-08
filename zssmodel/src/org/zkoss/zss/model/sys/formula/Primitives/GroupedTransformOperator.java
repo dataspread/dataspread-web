@@ -58,7 +58,7 @@ public class GroupedTransformOperator extends TransformOperator implements Multi
     }
 
     @Override
-    public void evaluate(FormulaExecutor context) throws OptimizationError {
+    public List getEvaluationResult(FormulaExecutor context) throws OptimizationError {
         List<Queue<Ptg>> data = new ArrayList<>(inDegree());
 
         try {
@@ -91,7 +91,7 @@ public class GroupedTransformOperator extends TransformOperator implements Multi
             result.add(evaluate(ptgs));
         }
 
-        forEachOutEdge((e)->e.setResult(result));
+        return result;
     }
 
     @Override

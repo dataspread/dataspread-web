@@ -68,7 +68,7 @@ public class SingleTransformOperator extends TransformOperator {
     }
 
     @Override
-    public void evaluate(FormulaExecutor context) throws OptimizationError {
+    public List getEvaluationResult(FormulaExecutor context) throws OptimizationError {
 
         List<Ptg> data = new ArrayList<>(inDegree());
 
@@ -94,7 +94,7 @@ public class SingleTransformOperator extends TransformOperator {
 
         List result = Collections.singletonList(evaluate(ptgs));
 
-        forEachOutEdge((e)->e.setResult(result));
+        return result;
     }
 
     @Override

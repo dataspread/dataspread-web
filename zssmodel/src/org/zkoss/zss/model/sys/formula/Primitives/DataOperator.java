@@ -9,6 +9,8 @@ import org.zkoss.zss.model.impl.AbstractCellAdv;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
 
+import java.util.List;
+
 public abstract class DataOperator extends PhysicalOperator implements MultiOutputOperator{
     SSheet _sheet = null;
     CellRegion _region = null;
@@ -41,7 +43,7 @@ public abstract class DataOperator extends PhysicalOperator implements MultiOutp
     }
 
     @Override
-    public abstract void evaluate(FormulaExecutor context) throws OptimizationError ;
+    public abstract List getEvaluationResult(FormulaExecutor context) throws OptimizationError ;
 
     public abstract void merge(DataOperator dataOperator) throws OptimizationError;
 
