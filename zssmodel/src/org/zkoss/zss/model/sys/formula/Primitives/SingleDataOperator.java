@@ -30,7 +30,7 @@ public class SingleDataOperator extends DataOperator{
             results = Arrays.asList(resultObject);
         }
         else{
-            results = getInEdge(0).popResult();
+            results = getFirstInEdge().popResult();
             for (int i = 0; i < cells.length;i++)
                 setFormulaValue(cells[i],results.get(i),context);
         }

@@ -41,20 +41,15 @@ public class GroupedDataOperator extends DataOperator {
         Object[] data = new Object[_region.getCellCount()];
         AbstractCellAdv[] cells = getCells();
         try {
-            forEachInEdge(new Consumer<Edge>() {
-                int i = 0;
-                @Override
-                public void accept(Edge edge) {
-                    List result = edge.popResult();
-                    int offset = edge.outRange.getKey();
-                    for (int j = offset, jsize = edge.outRange.getValue();j < jsize; j++)
-                        try {
-                            setFormulaValue(cells[j],result.get(j - offset),context);
-                        } catch (OptimizationError optimizationError) {
-                            throw new RuntimeException(optimizationError);
-                        }
-                    i++;
-                }
+            forEachInEdge(edge -> {
+                List result = edge.popResult();
+                int offset = edge.outRange.getKey();
+                for (int j = offset, jsize = edge.outRange.getValue();j < jsize; j++)
+                    try {
+                        setFormulaValue(cells[j],result.get(j - offset),context);
+                    } catch (OptimizationError optimizationError) {
+                        throw new RuntimeException(optimizationError);
+                    }
             });
         } catch (RuntimeException e){
             throw (OptimizationError)e.getCause();

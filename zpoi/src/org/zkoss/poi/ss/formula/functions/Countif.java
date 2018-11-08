@@ -48,7 +48,7 @@ import org.zkoss.poi.ss.usermodel.ErrorConstants;
  */
 public final class Countif extends Fixed2ArgFunction {
 
-	private static final class CmpOp {
+	public static final class CmpOp {
 		public static final int NONE = 0;
 		public static final int EQ = 1;
 		public static final int NE = 2;

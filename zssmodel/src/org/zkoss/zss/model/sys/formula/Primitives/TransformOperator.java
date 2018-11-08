@@ -52,4 +52,14 @@ public abstract class TransformOperator extends PhysicalOperator{
         else
             throw OptimizationError.UNSUPPORTED_TYPE;
     }
+
+    @Override
+    void cleanInEdges(){// todo:remove edges in Transform Operator
+        throw OptimizationError.UNSUPPORTED_CASE;
+    }
+
+    @Override
+    void cleanOutEdges(){
+        throw OptimizationError.UNSUPPORTED_CASE;
+    }
 }
