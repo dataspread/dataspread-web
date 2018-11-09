@@ -2,11 +2,14 @@ import React, {Component} from 'react';
 import {Button, Dimmer, Input, Loader} from 'semantic-ui-react'
 import ReactResumableJs from 'react-resumable-js'
 import {ArrowKeyStepper, AutoSizer, defaultCellRangeRenderer, Grid, ScrollSync} from './react-virtualized'
+import Draggable from "react-draggable";
 
 import Cell from './cell';
 import 'react-datasheet/lib/react-datasheet.css';
 import LRUCache from "lru-cache";
 import Stomp from 'stompjs';
+
+const COLUMN_WIDTH = 500*150;
 
 export default class DSGrid extends Component {
     toColumnName(num) {
@@ -32,6 +35,9 @@ export default class DSGrid extends Component {
         this.subscribed = false;
         this.rowHeight = 32;
         this.columnWidth = 150;
+
+        this.widths = Array(500).fill(150);
+
         this._disposeFromLRU = this._disposeFromLRU.bind(this);
         this.dataCache = new LRUCache({
             max: 100,
@@ -176,6 +182,7 @@ export default class DSGrid extends Component {
                                                      left: 0,
                                                      top: this.rowHeight,
                                                  }}>
+
                                                 <Grid
                                                     height={height}
                                                     width={this.columnWidth}
@@ -189,6 +196,8 @@ export default class DSGrid extends Component {
                                                     rowCount={this.state.rows}
                                                     rowHeight={this.rowHeight}
                                                 />
+
+
                                             </div>
 
                                             <div className='LeftSideGridContainer'
@@ -198,6 +207,7 @@ export default class DSGrid extends Component {
                                                      top: 0,
                                                      height:this.rowHeight
                                                  }}>
+
                                                 <Grid
                                                     height={height}
                                                     width={width - this.columnWidth}
@@ -211,6 +221,7 @@ export default class DSGrid extends Component {
                                                     rowCount={1}
                                                     rowHeight={this.rowHeight}
                                                 />
+
                                             </div>
 
 
@@ -320,14 +331,32 @@ export default class DSGrid extends Component {
                                style
                            }) {
         return (
-            <div
-                key={key}
-                style={style}
-                className='rowHeaderCell'>
-                {rowIndex + 1}
-            </div>
+                <div
+                    key={key}
+                    style={style}
+                    className='rowHeaderCell'>
+                    {rowIndex + 1}
+                </div>
         )
     }
+
+    // resizeRow = ({ dataKey, deltaX }) =>
+    //     this.setState(prevState => {
+    //         const prevWidths = prevState.widths;
+    //         const percentDelta = deltaX / TOTAL_WIDTH;
+    //
+    //         // This is me being lazy :)
+    //         const nextDataKey = dataKey === "name" ? "location" : "description";
+    //
+    //         return {
+    //             widths: {
+    //                 ...prevWidths,
+    //                 [dataKey]: prevWidths[dataKey] + percentDelta,
+    //                 [nextDataKey]: prevWidths[nextDataKey] - percentDelta
+    //             }
+    //         };
+    //     });
+
 
     _columnHeaderCellRenderer = ({
                                columnIndex, // Horizontal (column) index of cell
@@ -335,12 +364,30 @@ export default class DSGrid extends Component {
                                style
                            }) => {
         return (
-            <div
-                key={key}
-                style={style}
-                className='rowHeaderCell'>
-                {this.toColumnName(columnIndex + 1)}
-            </div>
+            <React.Fragment key={key}>
+                <div
+                    key={key}
+                    style={style}
+                    className='rowHeaderCell'>
+                    {this.toColumnName(columnIndex + 1)}
+                    <Draggable
+                        axis="x"
+                        defaultClassName="DragHandle"
+                        defaultClassNameDragging="DragHandleActive"
+                        onDrag={
+                            (event, {deltaX}) =>
+                                this.scrollToChangeColumnWidth({
+                                    key,
+                                    deltaX
+                                })
+                        }
+                        position={{x:0}}
+                        zIndex={999}
+                    >
+                        <span className="drag-icon">{key}</span>
+                    </Draggable>
+                </div>
+            </React.Fragment>
         )
     }
 
