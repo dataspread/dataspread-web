@@ -17,6 +17,7 @@ import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.RestController;
+import org.zkoss.lang.Library;
 import org.zkoss.poi.ss.formula.FormulaComputationStatusManager;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
@@ -180,17 +181,22 @@ public class GeneralController implements FormulaAsyncListener {
             sheet.getCells(new CellRegion(row,column,row + updateNumber - 1,column))
                     .forEach((c)->cells.add((AbstractCellAdv)c));
 
-            for (SCell cell:cells) {
-                if (value.startsWith("=")) {
-                    cell.setFormulaValue(value.substring(1), connection, false);
-                } else
+            int i = 0;
+
+            if (value.startsWith("=")) {
+                value = value.substring(1);
+                for (SCell cell : cells) {
+                    i++;
+                    cell.setFormulaValue(value.replaceAll("\\?", String.valueOf(i)), connection, false);
+                }
+            }else
+                for (SCell cell:cells)
                     try {
                         cell.setNumberValue(Double.parseDouble(value), connection, false);
                     } catch (Exception e) {
                         cell.setStringValue(value, connection, false);
                     }
-            }
-            if (updateToDB && updateNumber <= 10000)
+            if (Boolean.valueOf(Library.getProperty("SynchronizeFormula")) && updateToDB && updateNumber <= 10000)
                 sheet.getDataModel().updateCells(new DBContext(connection), cells);
             connection.commit();
         } catch (Exception e) {

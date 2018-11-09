@@ -56,4 +56,10 @@
 		<name>QueryOptimizer.doOptimization</name>
 		<value>true</value>
 	</library-property>
+
+	<library-property>
+		<name>SynchronizeFormula</name>
+		<value>false</value>
+	</library-property>
+
 </zk>

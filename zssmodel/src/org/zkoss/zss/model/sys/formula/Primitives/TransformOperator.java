@@ -12,8 +12,6 @@ import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
 
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 public abstract class TransformOperator extends PhysicalOperator{
     Ptg[] ptgs = null;

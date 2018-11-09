@@ -78,12 +78,14 @@ public class GroupedAggregateOperator extends AggregateOperator {
 
         for (int i = uniqueEndPoints.size() - 2; i >= 0; i--){
             int left = uniqueEndPoints.get(i);
-            partialAggregate[i] = binaryFunction.groupEvaluate(data.subList(left,right)) + partialAggregate[i + 1];
+            partialAggregate[i] = binaryFunction.evaluate(
+                    binaryFunction.groupEvaluate(data.subList(left,right)), partialAggregate[i + 1]);
             right = left;
         }
 
         for (int i = 0; i < operatorRanges.length;i++){
-            results[i] = partialAggregate[operatorRanges[i].left] - partialAggregate[operatorRanges[i].right];
+            results[i] = binaryFunction.invertedEvaluate(
+                    partialAggregate[operatorRanges[i].left], partialAggregate[operatorRanges[i].right]);
         }
 
         return Arrays.asList(results);
