@@ -88,4 +88,9 @@ public class GroupedAggregateOperator extends AggregateOperator {
 
         return Arrays.asList(results);
     }
+
+    @Override
+    public void merge(AggregateOperator aggregate) throws OptimizationError {
+        throw OptimizationError.UNSUPPORTED_FUNCTION;
+    }
 }
