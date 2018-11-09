@@ -70,7 +70,7 @@ public class GroupedAggregateOperator extends AggregateOperator {
         List<Double> data = (List<Double>)getFirstInEdge().popResult();
 
         double partialAggregate[] = new double[uniqueEndPoints.size()];
-        double results[] = new double[operatorRanges.length];
+        Double results[] = new Double[operatorRanges.length];
 
         partialAggregate[0] = 0;
 

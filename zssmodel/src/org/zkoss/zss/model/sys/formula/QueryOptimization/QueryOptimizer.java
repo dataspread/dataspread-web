@@ -4,6 +4,7 @@ import org.zkoss.lang.Library;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.Primitives.DataOperator;
 import org.zkoss.zss.model.sys.formula.Primitives.GroupedDataOperator;
+import org.zkoss.zss.model.sys.formula.Primitives.LogicalOperator;
 import org.zkoss.zss.model.sys.formula.Primitives.SingleDataOperator;
 
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ public class QueryOptimizer {
         return queryOptimizer;
     }
     private final static boolean doOptimization = Boolean.valueOf(Library.getProperty("QueryOptimizer.doOptimization"));
+    private final static boolean mergeOperation = true;
     private List<DataOperator> mergeDataOperators(List<QueryPlanGraph> graphs) throws OptimizationError {
         Map<String, List<DataOperator>> dataOperators = new HashMap<>();
         List<DataOperator> groupedDataNodes = new ArrayList<>();
@@ -95,6 +97,11 @@ public class QueryOptimizer {
             ret.getConstants().addAll(graph.getConstants());
 
         ret.dataNodes = mergeDataOperators(graphs);
+
+        if (mergeOperation)
+            for (DataOperator data:ret.dataNodes)
+                if (data instanceof GroupedDataOperator)
+                    data.mergeChildren();
 
         return ret;
     }
