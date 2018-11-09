@@ -30,6 +30,7 @@ export default class DSGrid extends Component {
             isProcessing: false,
             initialLoadDone:false,
         }
+        this.mouseDown = false;
         this.shiftOn = false;
         this.subscribed = false;
         this.rowHeight = 32;
@@ -46,7 +47,9 @@ export default class DSGrid extends Component {
         this._onSectionRendered = this._onSectionRendered.bind(this);
         this._cellRenderer = this._cellRenderer.bind(this);
         this._updateCell = this._updateCell.bind(this);
-        this._clickCell = this._clickCell.bind(this);
+        this._mouseOverCell = this._mouseOverCell.bind(this);
+        this._mouseDownCell = this._mouseDownCell.bind(this);
+        this._mouseUpCell = this._mouseUpCell.bind(this);
         this._processUpdates = this._processUpdates.bind(this);
         this._cellRangeRenderer = this._cellRangeRenderer.bind(this);
         this._handleKeyDown = this._handleKeyDown.bind(this);
@@ -145,10 +148,6 @@ export default class DSGrid extends Component {
     render() {
         return (
             <div onKeyDown={this._handleKeyDown} onKeyUp={this._handleKeyUp}>
-                <div>
-                    <div>FOCUS: col {this.state.focusCellColumn} row {this.state.focusCellRow}</div>
-                    <div>SLOPP: col {this.state.selectOppositeCellColumn} row {this.state.selectOppositeCellRow}</div>
-                </div>
                 <div style={{display: 'flex'}}>
                     <div style={{flex: 'auto', height: '90vh'}}>
                         <Dimmer active={this.state.isProcessing || !this.state.initialLoadDone}>
@@ -361,16 +360,72 @@ export default class DSGrid extends Component {
         //TODO: send update to backend.
     }
 
-    _clickCell (
+    _setFocusCell(rowIndex, columnIndex) {
+        if (this.inclusiveBetween(rowIndex, 0, this.state.rows-1) &&
+            this.inclusiveBetween(columnIndex, 0, this.state.columns-1)) {
+            this.setState({
+                focusCellRow: rowIndex,
+                focusCellColumn: columnIndex,
+                selectOppositeCellRow: rowIndex,
+                selectOppositeCellColumn: columnIndex
+            });
+        }
+    }
+
+    _setSelectOppositeCell(rowIndex, columnIndex, setFocusCell) {
+        if (this.inclusiveBetween(rowIndex, 0, this.state.rows-1) &&
+            this.inclusiveBetween(columnIndex, 0, this.state.columns-1)) {
+            this.setState({
+                selectOppositeCellRow: rowIndex,
+                selectOppositeCellColumn: columnIndex
+            });
+        }
+    }
+
+    _keyMoveCell(rowIndexOffset, columnIndexOffset) {
+        if (this.shiftOn) {
+            this._setSelectOppositeCell(
+                this.state.selectOppositeCellRow+rowIndexOffset,
+                this.state.selectOppositeCellColumn+columnIndexOffset
+            );
+        } else {
+            this._setFocusCell(
+                this.state.focusCellRow+rowIndexOffset,
+                this.state.focusCellColumn+columnIndexOffset
+            );
+        }
+    }
+
+    _mouseOverCell (
+        {   rowIndex,
+            columnIndex
+        }
+    ) {
+        if (this.mouseDown) {
+            this._setSelectOppositeCell(rowIndex, columnIndex);
+        }
+    }
+
+    _mouseDownCell (
         {   rowIndex,
             columnIndex
         }
     ) {
         if (!this.shiftOn) {
-            this.setState({focusCellRow: rowIndex, focusCellColumn: columnIndex});
+            this._setFocusCell(rowIndex, columnIndex);
+        } else {
+            this._setSelectOppositeCell(rowIndex, columnIndex);
         }
-        this.setState({selectOppositeCellRow: rowIndex, selectOppositeCellColumn: columnIndex});
+        this.mouseDown = true;
+        //TODO: send selection to backend.
+    }
 
+    _mouseUpCell (
+        {   rowIndex,
+            columnIndex
+        }
+    ) {
+        this.mouseDown = false;
         //TODO: send selection to backend.
     }
 
@@ -437,21 +492,29 @@ export default class DSGrid extends Component {
                     columnIndex={columnIndex}
                     isProcessing={cellContent[0] === '...'}
                     pctProgress={cellContent[2]}
-                    onCellClick={this._clickCell}
+                    onCellMouseOver={this._mouseOverCell}
+                    onCellMouseDown={this._mouseDownCell}
+                    onCellMouseUp={this._mouseUpCell}
                     onUpdate={this._updateCell}
                 />
         )
     }
 
     _handleKeyDown(e) {
-        console.log(e.key+' down');
         if (e.key === 'Shift') {
             this.shiftOn = true;
+        } else if (e.key === 'ArrowLeft') {
+            this._keyMoveCell(0, -1);
+        } else if (e.key === 'ArrowRight') {
+            this._keyMoveCell(0, 1);
+        } else if (e.key === 'ArrowUp') {
+            this._keyMoveCell(-1, 0);
+        } else if (e.key === 'ArrowDown') {
+            this._keyMoveCell(1, 0);
         }
     }
 
     _handleKeyUp(e) {
-        console.log(e.key+' up');
         if (e.key === 'Shift') {
             this.shiftOn = false;
         }
