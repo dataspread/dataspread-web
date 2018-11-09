@@ -44,9 +44,9 @@ public class LogicalOperator implements Comparable<LogicalOperator> {
         return outEdges.size();
     }
 
-    int firstInEdge = 0;
+    private int firstInEdge = 0;
 
-    Edge getFirstInEdge(){ // todo: change to get first
+    Edge getFirstInEdge(){
         while (!inEdges.get(firstInEdge).isValid())
             firstInEdge++;
 

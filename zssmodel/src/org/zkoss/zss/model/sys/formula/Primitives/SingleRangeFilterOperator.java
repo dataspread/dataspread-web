@@ -5,21 +5,24 @@ import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
 
 import java.util.List;
 
-public class SingleEqualFilterOperator extends FilterOperator {
+public class SingleRangeFilterOperator extends FilterOperator {
     private String literal;
-    SingleEqualFilterOperator(String value){
+
+    SingleRangeFilterOperator(String value){
         super();
         literal = value;
+        throw OptimizationError.UNSUPPORTED_FUNCTION;
     }
 
-    SingleEqualFilterOperator(LogicalOperator criteria){
+    SingleRangeFilterOperator(LogicalOperator criteria){
         super();
         connect(criteria,this);
         literal = null;
+        throw OptimizationError.UNSUPPORTED_FUNCTION;
     }
 
     @Override
-    public List getEvaluationResult(FormulaExecutor context) throws OptimizationError {
+    List getEvaluationResult(FormulaExecutor context) throws OptimizationError {
         throw OptimizationError.UNSUPPORTED_FUNCTION;
     }
 }

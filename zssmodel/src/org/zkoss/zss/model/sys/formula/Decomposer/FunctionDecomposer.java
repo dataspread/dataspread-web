@@ -13,6 +13,7 @@ import org.zkoss.zss.model.sys.formula.Primitives.LogicalOperator;
 import java.util.Arrays;
 
 import static org.zkoss.zss.model.sys.formula.Decomposer.TransformDecomposer.*;
+import static org.zkoss.zss.model.sys.formula.Primitives.FilterOperator.buildSingleFilter;
 import static org.zkoss.zss.model.sys.formula.Primitives.LogicalOperator.connect;
 
 public abstract class FunctionDecomposer {
@@ -191,10 +192,18 @@ public abstract class FunctionDecomposer {
 
 
 
-        funcDict[FunctionDecomposer.STDEV] = sqrt(divide(
+        funcDict[STDEV] = sqrt(divide(
                 subtract(SUMSQAURE,multiply(funcDict[SUM],funcDict[AVERAGE])),
                 subtract(funcDict[COUNT],ONE)));
         // TODO : CHECK IF IT IS N-1
+
+        funcDict[COUNTIF] = new FunctionDecomposer() {
+            @Override
+            public LogicalOperator decompose(LogicalOperator[] ops) throws OptimizationError {
+                return funcDict[COUNT].decompose(new LogicalOperator[]{
+                        buildSingleFilter(new LogicalOperator[]{ops[1],ops[0]})});
+            }
+        };
 
         return funcDict;
     }
