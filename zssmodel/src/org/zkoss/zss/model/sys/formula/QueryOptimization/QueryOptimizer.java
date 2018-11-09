@@ -44,7 +44,8 @@ public class QueryOptimizer {
 
         for (List<DataOperator> value:dataOperators.values()){
             int maxRow =  value.get(0).getSheet().getEndRowIndex();
-            assert value.size() * Math.log(value.size()) < maxRow;
+            if (value.size() * Math.log(value.size()) > maxRow)
+                throw OptimizationError.BUCKETSORT;
             value.sort((o1, o2) -> o1.getRegion().getRow() == o2.getRegion().getRow() ?
                     o1.getRegion().getLastRow() - o2.getRegion().getLastRow()
                     :o1.getRegion().getRow() - o2.getRegion().getRow());

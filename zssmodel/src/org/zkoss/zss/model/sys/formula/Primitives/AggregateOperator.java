@@ -1,23 +1,17 @@
 package org.zkoss.zss.model.sys.formula.Primitives;
 
-import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
+import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 
-import java.util.Collections;
-import java.util.List;
-
-public class AggregateOperator extends PhysicalOperator {
-    private BinaryFunction binaryFunction;
+public abstract class AggregateOperator extends PhysicalOperator {
+    BinaryFunction binaryFunction;
     public AggregateOperator(BinaryFunction f){
         super();
         binaryFunction = f;
     }
 
-    @Override
-    public List getEvaluationResult(FormulaExecutor context) {
-        List<Double> data = (List<Double>) getFirstInEdge().popResult();
-        List<Double> result = Collections.singletonList(binaryFunction.groupEvaluate(data));
-
-        return result;
+    BinaryFunction getBinaryFunction(){
+        return binaryFunction;
     }
 
+    public abstract void merge(AggregateOperator aggregate) throws OptimizationError;
 }

@@ -1,6 +1,6 @@
 package org.zkoss.zss.model.sys.formula.Primitives;
 
-import javafx.util.Pair;
+import org.zkoss.zss.model.sys.formula.DataStructure.Range;
 
 import java.util.List;
 
@@ -11,7 +11,7 @@ class Edge {
 
     private List result = null;
 
-    Pair<Integer,Integer> inRange,outRange;
+    Range inRange,outRange;
 
     Edge(LogicalOperator in, LogicalOperator out){
         this.in = in;
@@ -49,7 +49,7 @@ class Edge {
         if (inRange == null)
             this.result = result;
         else
-            this.result = result.subList(inRange.getKey(),inRange.getValue());
+            this.result = result.subList(inRange.left,inRange.right);
         ((PhysicalOperator)out).incInputCount();
     }
 

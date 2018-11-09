@@ -71,4 +71,6 @@ public abstract class DataOperator extends PhysicalOperator implements MultiOutp
     public int outputSize(){
         return _region.getCellCount();
     }
+
+    abstract public void mergeChildren();
 }

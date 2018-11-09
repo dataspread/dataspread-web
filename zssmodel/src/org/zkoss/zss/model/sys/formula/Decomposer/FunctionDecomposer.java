@@ -5,7 +5,7 @@ import org.zkoss.poi.ss.formula.ptg.MultiplyPtg;
 import org.zkoss.poi.ss.formula.ptg.Ptg;
 import org.zkoss.poi.ss.formula.ptg.RefVariablePtg;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
-import org.zkoss.zss.model.sys.formula.Primitives.AggregateOperator;
+import org.zkoss.zss.model.sys.formula.Primitives.SingleAggregateOperator;
 import org.zkoss.zss.model.sys.formula.Primitives.BinaryFunction;
 import org.zkoss.zss.model.sys.formula.Primitives.GroupedTransformOperator;
 import org.zkoss.zss.model.sys.formula.Primitives.LogicalOperator;
@@ -170,7 +170,7 @@ public abstract class FunctionDecomposer {
                     ptgs[2 * i] = MultiplyPtg.nonOperatorInstance;
                 }
                 GroupedTransformOperator transform = new GroupedTransformOperator(ops,ptgs);
-                LogicalOperator aggregate = new AggregateOperator(BinaryFunction.PLUS);
+                LogicalOperator aggregate = new SingleAggregateOperator(BinaryFunction.PLUS);
                 connect(transform,aggregate);
                 return aggregate;
             }

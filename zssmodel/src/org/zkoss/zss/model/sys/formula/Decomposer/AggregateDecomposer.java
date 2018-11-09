@@ -1,6 +1,5 @@
 package org.zkoss.zss.model.sys.formula.Decomposer;
 
-import org.zkoss.poi.ss.formula.ptg.AddPtg;
 import org.zkoss.poi.ss.formula.ptg.Ptg;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.Primitives.*;
@@ -24,7 +23,7 @@ public class AggregateDecomposer extends FunctionDecomposer {
         LogicalOperator op = null;
         for (int i = 0; i < ops.length; i++){
             if (ops[i] instanceof MultiOutputOperator && ((MultiOutputOperator) ops[i]).outputSize() > 1){
-                op = new AggregateOperator(function);
+                op = new SingleAggregateOperator(function);
                 connect(ops[i],op);
             }
             else

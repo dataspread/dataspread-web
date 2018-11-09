@@ -1,21 +1,21 @@
 package org.zkoss.zss.model.sys.formula.Primitives;
 
-import javafx.util.Pair;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
+import org.zkoss.zss.model.sys.formula.DataStructure.Range;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 
 public class GroupedDataOperator extends DataOperator {
 
-    private Pair<Integer, Integer> getIndexRange(CellRegion region){
+    private Range getIndexRange(CellRegion region){
         int left = (region.getRow() - _region.getRow()) * _region.getColumnCount();
         int right = (region.getLastRow() - _region.getRow() + 1) * _region.getColumnCount();
-        return new Pair<>(left,right);
+        return new Range(left,right);
     }
 
 
@@ -43,8 +43,8 @@ public class GroupedDataOperator extends DataOperator {
         try {
             forEachInEdge(edge -> {
                 List result = edge.popResult();
-                int offset = edge.outRange.getKey();
-                for (int j = offset, jsize = edge.outRange.getValue();j < jsize; j++)
+                int offset = edge.outRange.left;
+                for (int j = offset, jsize = edge.outRange.right;j < jsize; j++)
                     try {
                         setFormulaValue(cells[j],result.get(j - offset),context);
                     } catch (OptimizationError optimizationError) {
@@ -58,7 +58,7 @@ public class GroupedDataOperator extends DataOperator {
         for (int i = 0; i < data.length; i++)
             data[i] = cells[i] == null? null : cells[i].getValue();
 
-        List results = Arrays.asList(data);
+        List<Object> results = Arrays.asList(data);
         return results;
     }
 
@@ -67,19 +67,57 @@ public class GroupedDataOperator extends DataOperator {
         throw OptimizationError.UNSUPPORTED_FUNCTION;
     }
 
-//    @Override
-//    void cleanInEdges(Consumer<Integer> action){
-//        List<Pair<Integer,Integer>> cleanRange = new ArrayList<>();
-//        super.cleanInEdges((i)->cleanRange.add(inEdgesRange.get(i)));
-//        inEdgesRange = cleanRange;
-//    }
-//
-//    @Override
-//    void cleanOutEdges(Consumer<Integer> action){
-//        List<Pair<Integer,Integer>> cleanRange = new ArrayList<>();
-//        super.cleanOutEdges((i)->cleanRange.add(outEdgesRange.get(i)));
-//        outEdgesRange = cleanRange;
-//    }
+    @Override
+    public void mergeChildren() {
+        ArrayList<Edge>[] aggregateEdges = new ArrayList[BinaryFunction.getMaxId()];
+        for (int i = 0; i < aggregateEdges.length; i++)
+            aggregateEdges[i] = new ArrayList<>();
+        forEachOutEdge(edge -> {
+            LogicalOperator out = edge.getOutVertex();
+            if (out instanceof SingleAggregateOperator)
+                aggregateEdges[((AggregateOperator)out).getBinaryFunction().getId()].add(edge);
+        });
+
+        for (ArrayList<Edge> edges:aggregateEdges)
+            if (edges.size() > 0){
+                if (edges.size() * Math.log(edges.size()) > _region.getRowCount())
+                    throw OptimizationError.BUCKETSORT;
+                edges.sort((e1, e2) -> e1.inRange.left == e2.inRange.left ?
+                        e1.inRange.right - e2.inRange.right
+                        :e1.inRange.left - e2.inRange.left);
+                List<SingleAggregateOperator> temp = new ArrayList<>();
+                temp.add((SingleAggregateOperator) edges.get(0).getOutVertex());
+                int currentMax = edges.get(0).inRange.right;
+                Edge edge;
+                for (int i = 1, isize = edges.size(); i < isize; i++){
+                    edge = edges.get(i);
+                    int left = edge.inRange.left, right = edge.inRange.right;
+                    if (left > currentMax){
+                        if (temp.size() > 1){
+                            new GroupedAggregateOperator(temp,
+                                    new Range(temp.get(0).getFirstInEdge().inRange.left,currentMax));
+                        }
+                        temp = new ArrayList<>();
+                        temp.add((SingleAggregateOperator)edge.getOutVertex());
+                    }
+                    else {
+                        int size = temp.size();
+                        if (size > 0 && left == temp.get(size - 1).getFirstInEdge().inRange.left
+                                && right == temp.get(size - 1).getFirstInEdge().inRange.right)
+                            temp.get(size - 1).merge((AggregateOperator) edge.getOutVertex());
+                        else
+                            temp.add((SingleAggregateOperator)edge.getOutVertex());
+                    }
+                    currentMax = Math.max(currentMax, right);
+
+                }
+
+                if (temp.size() > 1){
+                    new GroupedAggregateOperator(temp,
+                            new Range(temp.get(0).getFirstInEdge().inRange.left,currentMax));
+                }
+            }
+    }
 
     @Override
     void transferInEdge(Edge e){
@@ -92,4 +130,7 @@ public class GroupedDataOperator extends DataOperator {
         e.inRange = getIndexRange(((DataOperator)e.getInVertex()).getRegion());
         super.transferOutEdge(e);
     }
+
+
+
 }

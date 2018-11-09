@@ -45,4 +45,9 @@ public class SingleDataOperator extends DataOperator{
         dataOperator.forEachInEdge(this::transferInEdge);
         dataOperator.forEachOutEdge(this::transferOutEdge);
     }
+
+    @Override
+    public void mergeChildren() {
+        throw OptimizationError.UNSUPPORTED_FUNCTION;
+    }
 }

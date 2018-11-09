@@ -20,7 +20,7 @@ public class SingleTransformOperator extends TransformOperator {
         final Map<LogicalOperator,Integer> operatorId = new TreeMap<>();
         int cursor = 0;
         for (LogicalOperator op:operators){
-            if (op instanceof DataOperator || op instanceof AggregateOperator){
+            if (op instanceof DataOperator || op instanceof SingleAggregateOperator){
                 if (!operatorId.containsKey(op)){
                     operatorId.put(op,inDegree());
                     connect(op,this);
@@ -111,7 +111,7 @@ public class SingleTransformOperator extends TransformOperator {
                 size++;
                 continue;
             }
-            if (op instanceof AggregateOperator){
+            if (op instanceof SingleAggregateOperator){
                 size++;
                 continue;
             }
