@@ -9,7 +9,7 @@ import 'react-datasheet/lib/react-datasheet.css';
 import LRUCache from "lru-cache";
 import Stomp from 'stompjs';
 
-const COLUMN_WIDTH = 500*150;
+const TOTAL_WIDTH = 500*150;
 
 export default class DSGrid extends Component {
     toColumnName(num) {
@@ -30,13 +30,15 @@ export default class DSGrid extends Component {
             version: 0,
             focusCellRow: -1,
             focusCellColumn: -1,
-            isProcessing: false
+            isProcessing: false,
+            widths: Array(500).fill(150)
         }
         this.subscribed = false;
         this.rowHeight = 32;
         this.columnWidth = 150;
 
-        this.widths = Array(500).fill(150);
+        // this.widths = Array(500).fill(150);
+        // debugger
 
         this._disposeFromLRU = this._disposeFromLRU.bind(this);
         this.dataCache = new LRUCache({
@@ -54,6 +56,7 @@ export default class DSGrid extends Component {
         this._processUpdates = this._processUpdates.bind(this);
         this._cellRangeRenderer = this._cellRangeRenderer.bind(this);
 
+
         this.urlPrefix = ""; // Only for testing.
         this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket")
 
@@ -67,6 +70,9 @@ export default class DSGrid extends Component {
 
         this.stompClient.debug = () => {
         };
+
+        this.columnWidthHelper = this.columnWidthHelper.bind(this);
+
     }
 
     _disposeFromLRU(key)
@@ -79,6 +85,16 @@ export default class DSGrid extends Component {
         }
     }
 
+
+    columnWidthHelper(params){
+        // console.log();
+        // console.log("this is column width"+params.index+"\t"+this.state.counter);
+        // return params.index*this.state.counter;
+
+        console.log(params.index+'\t'+this.state.widths);
+        // return 150;
+        return this.state.widths[params.index]
+    }
 
     componentDidMount() {
 
@@ -213,13 +229,13 @@ export default class DSGrid extends Component {
                                                     ref={(ref) => this.columnHeader = ref}
                                                     // ref={this.columnHeader}
                                                     height={height}
-                                                    width={width - this.columnWidth}
+                                                    width={TOTAL_WIDTH}
                                                     style={{
                                                         overflow: 'hidden'
                                                     }}
                                                     scrollLeft={scrollLeft}
                                                     cellRenderer={this._columnHeaderCellRenderer}
-                                                    columnWidth={this.columnWidth}
+                                                    columnWidth={this.columnWidthHelper}
                                                     columnCount={this.state.columns}
                                                     rowCount={1}
                                                     rowHeight={this.rowHeight}
@@ -245,7 +261,7 @@ export default class DSGrid extends Component {
                                                                 width={width - this.columnWidth}
                                                                 cellRenderer={this._cellRenderer}
                                                                 columnCount={this.state.columns}
-                                                                columnWidth={this.columnWidth}
+                                                                columnWidth={this.columnWidthHelper}
                                                                 rowCount={this.state.rows}
                                                                 rowHeight={this.rowHeight}
                                                                 onScroll={onScroll}
