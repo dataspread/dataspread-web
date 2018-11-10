@@ -25,9 +25,13 @@ export default class DSGrid extends Component {
             version: 0,
             focusCellRow: -1,
             focusCellColumn: -1,
+            selectOppositeCellRow: -1,
+            selectOppositeCellColumn: -1,
             isProcessing: false,
             initialLoadDone:false,
         }
+        this.mouseDown = false;
+        this.shiftOn = false;
         this.subscribed = false;
         this.rowHeight = 32;
         this.columnWidth = 150;
@@ -43,8 +47,13 @@ export default class DSGrid extends Component {
         this._onSectionRendered = this._onSectionRendered.bind(this);
         this._cellRenderer = this._cellRenderer.bind(this);
         this._updateCell = this._updateCell.bind(this);
+        this._mouseOverCell = this._mouseOverCell.bind(this);
+        this._mouseDownCell = this._mouseDownCell.bind(this);
+        this._mouseUpCell = this._mouseUpCell.bind(this);
         this._processUpdates = this._processUpdates.bind(this);
         this._cellRangeRenderer = this._cellRangeRenderer.bind(this);
+        this._handleKeyDown = this._handleKeyDown.bind(this);
+        this._handleKeyUp = this._handleKeyUp.bind(this);
 
         // this.urlPrefix = ""; // Only for testing.
         // this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
@@ -138,7 +147,7 @@ export default class DSGrid extends Component {
 
     render() {
         return (
-            <div>
+            <div onKeyDown={this._handleKeyDown} onKeyUp={this._handleKeyUp}>
                 <div style={{display: 'flex'}}>
                     <div style={{flex: 'auto', height: '90vh'}}>
                         <Dimmer active={this.state.isProcessing || !this.state.initialLoadDone}>
@@ -220,6 +229,10 @@ export default class DSGrid extends Component {
                                                                 onSectionRendered={onSectionRendered}
                                                                 //onSectionRendered={this._onSectionRendered}
                                                                 ref={(ref) => this.grid = ref}
+                                                                focusCellColumn={this.state.focusCellColumn}
+                                                                focusCellRow={this.state.focusCellRow}
+                                                                selectOppositeCellColumn={this.state.selectOppositeCellColumn}
+                                                                selectOppositeCellRow={this.state.selectOppositeCellRow}
                                                             />
                                                         </div>)}
                                                 </ArrowKeyStepper>
@@ -347,6 +360,75 @@ export default class DSGrid extends Component {
         //TODO: send update to backend.
     }
 
+    _setFocusCell(rowIndex, columnIndex) {
+        if (this.inclusiveBetween(rowIndex, 0, this.state.rows-1) &&
+            this.inclusiveBetween(columnIndex, 0, this.state.columns-1)) {
+            this.setState({
+                focusCellRow: rowIndex,
+                focusCellColumn: columnIndex,
+                selectOppositeCellRow: rowIndex,
+                selectOppositeCellColumn: columnIndex
+            });
+        }
+    }
+
+    _setSelectOppositeCell(rowIndex, columnIndex, setFocusCell) {
+        if (this.inclusiveBetween(rowIndex, 0, this.state.rows-1) &&
+            this.inclusiveBetween(columnIndex, 0, this.state.columns-1)) {
+            this.setState({
+                selectOppositeCellRow: rowIndex,
+                selectOppositeCellColumn: columnIndex
+            });
+        }
+    }
+
+    _keyMoveCell(rowIndexOffset, columnIndexOffset) {
+        if (this.shiftOn) {
+            this._setSelectOppositeCell(
+                this.state.selectOppositeCellRow+rowIndexOffset,
+                this.state.selectOppositeCellColumn+columnIndexOffset
+            );
+        } else {
+            this._setFocusCell(
+                this.state.focusCellRow+rowIndexOffset,
+                this.state.focusCellColumn+columnIndexOffset
+            );
+        }
+    }
+
+    _mouseOverCell (
+        {   rowIndex,
+            columnIndex
+        }
+    ) {
+        if (this.mouseDown) {
+            this._setSelectOppositeCell(rowIndex, columnIndex);
+        }
+    }
+
+    _mouseDownCell (
+        {   rowIndex,
+            columnIndex
+        }
+    ) {
+        if (!this.shiftOn) {
+            this._setFocusCell(rowIndex, columnIndex);
+        } else {
+            this._setSelectOppositeCell(rowIndex, columnIndex);
+        }
+        this.mouseDown = true;
+        //TODO: send selection to backend.
+    }
+
+    _mouseUpCell (
+        {   rowIndex,
+            columnIndex
+        }
+    ) {
+        this.mouseDown = false;
+        //TODO: send selection to backend.
+    }
+
 
     _cellRangeRenderer (props) {
         if (this.subscribed) {
@@ -366,6 +448,10 @@ export default class DSGrid extends Component {
         return children;
     }
 
+    inclusiveBetween (num, num1, num2) {
+        return (num1 <= num && num <= num2) || (num2 <= num && num <= num1);
+    }
+
     _cellRenderer ({
                          columnIndex, // Horizontal (column) index of cell
                          isScrolling, // The Grid is currently being scrolled
@@ -383,6 +469,12 @@ export default class DSGrid extends Component {
         if (typeof fromCache === "object") {
             cellContent = this.dataCache
                 .get(Math.trunc((rowIndex) / this.fetchSize))[(rowIndex) % this.fetchSize][columnIndex];
+            if (rowIndex === this.state.focusCellRow && columnIndex === this.state.focusCellColumn) {
+                cellClass = 'cellFocus';
+            } else if (this.inclusiveBetween(rowIndex, this.state.focusCellRow, this.state.selectOppositeCellRow)
+            && this.inclusiveBetween(columnIndex, this.state.focusCellColumn, this.state.selectOppositeCellColumn)) {
+                cellClass = 'cellSelected';
+            }
         }
         else {
             cellClass = 'isScrollingPlaceholder'
@@ -400,9 +492,33 @@ export default class DSGrid extends Component {
                     columnIndex={columnIndex}
                     isProcessing={cellContent[0] === '...'}
                     pctProgress={cellContent[2]}
+                    onCellMouseOver={this._mouseOverCell}
+                    onCellMouseDown={this._mouseDownCell}
+                    onCellMouseUp={this._mouseUpCell}
                     onUpdate={this._updateCell}
                 />
         )
     }
+
+    _handleKeyDown(e) {
+        if (e.key === 'Shift') {
+            this.shiftOn = true;
+        } else if (e.key === 'ArrowLeft') {
+            this._keyMoveCell(0, -1);
+        } else if (e.key === 'ArrowRight') {
+            this._keyMoveCell(0, 1);
+        } else if (e.key === 'ArrowUp') {
+            this._keyMoveCell(-1, 0);
+        } else if (e.key === 'ArrowDown') {
+            this._keyMoveCell(1, 0);
+        }
+    }
+
+    _handleKeyUp(e) {
+        if (e.key === 'Shift') {
+            this.shiftOn = false;
+        }
+    }
+
 
 }
