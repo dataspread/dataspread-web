@@ -176,6 +176,7 @@ export default class DSGrid extends Component {
                                 <ScrollSync>
                                     {({clientHeight, clientWidth, onScroll, scrollHeight, scrollLeft, scrollTop, scrollWidth}) => (
                                         <div className='GridRow'>
+{/*row header row*/}
                                             <div className='LeftSideGridContainer'
                                                  style={{
                                                      position: 'absolute',
@@ -199,7 +200,7 @@ export default class DSGrid extends Component {
 
 
                                             </div>
-
+{/*column header row*/}
                                             <div className='LeftSideGridContainer'
                                                  style={{
                                                      position: 'absolute',
@@ -209,6 +210,8 @@ export default class DSGrid extends Component {
                                                  }}>
 
                                                 <Grid
+                                                    ref={(ref) => this.columnHeader = ref}
+                                                    // ref={this.columnHeader}
                                                     height={height}
                                                     width={width - this.columnWidth}
                                                     style={{
@@ -224,7 +227,7 @@ export default class DSGrid extends Component {
 
                                             </div>
 
-
+{/*main area*/}
                                             <div className='RightColumn'
                                                  style={{
                                                      position: 'absolute',
@@ -339,24 +342,6 @@ export default class DSGrid extends Component {
                 </div>
         )
     }
-
-    // resizeRow = ({ dataKey, deltaX }) =>
-    //     this.setState(prevState => {
-    //         const prevWidths = prevState.widths;
-    //         const percentDelta = deltaX / TOTAL_WIDTH;
-    //
-    //         // This is me being lazy :)
-    //         const nextDataKey = dataKey === "name" ? "location" : "description";
-    //
-    //         return {
-    //             widths: {
-    //                 ...prevWidths,
-    //                 [dataKey]: prevWidths[dataKey] + percentDelta,
-    //                 [nextDataKey]: prevWidths[nextDataKey] - percentDelta
-    //             }
-    //         };
-    //     });
-
 
     _columnHeaderCellRenderer = ({
                                columnIndex, // Horizontal (column) index of cell
