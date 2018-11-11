@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Button, Dimmer, Input, Loader} from 'semantic-ui-react'
+import {Button, Dimmer, Input, Loader, Icon} from 'semantic-ui-react'
 import ReactResumableJs from 'react-resumable-js'
 import {ArrowKeyStepper, AutoSizer, defaultCellRangeRenderer, Grid, ScrollSync} from './react-virtualized'
 import Draggable from "react-draggable";
@@ -72,7 +72,11 @@ export default class DSGrid extends Component {
         };
 
         this.columnWidthHelper = this.columnWidthHelper.bind(this);
+        // this.columnHeader = this.columnHeader.bind(this);
+        // this.main = this.main.bind(this);
 
+        this.columnHeader = React.createRef();
+        this.main = React.createRef();
     }
 
     _disposeFromLRU(key)
@@ -87,14 +91,29 @@ export default class DSGrid extends Component {
 
 
     columnWidthHelper(params){
-        // console.log();
-        // console.log("this is column width"+params.index+"\t"+this.state.counter);
-        // return params.index*this.state.counter;
 
-        console.log(params.index+'\t'+this.state.widths);
-        // return 150;
         return this.state.widths[params.index]
     }
+
+    scrollToChangeColumnWidth({key, deltaX}){
+        this.setState(prevState => {
+            // console.log(prevState);
+            let widths = prevState.widths
+
+            const index = parseInt(key.split('-')[1], 10);
+            const nextKey = index + 1;
+
+            widths[index] = widths[index] + deltaX;
+            widths[nextKey] = widths[nextKey] - deltaX;
+            // console.log(widths);
+            return (widths)
+        })
+
+        this.main.current.recomputeGridSize();
+        this.columnHeader.current.recomputeGridSize();
+        // this.grid.recomputeGridSize();
+    }
+
 
     componentDidMount() {
 
@@ -226,8 +245,8 @@ export default class DSGrid extends Component {
                                                  }}>
 
                                                 <Grid
-                                                    ref={(ref) => this.columnHeader = ref}
-                                                    // ref={this.columnHeader}
+                                                    // ref={(ref) => this.columnHeader = ref}
+                                                    ref={this.columnHeader}
                                                     height={height}
                                                     width={TOTAL_WIDTH}
                                                     style={{
@@ -258,7 +277,8 @@ export default class DSGrid extends Component {
                                                         <div>
                                                             <Grid
                                                                 height={height}
-                                                                width={width - this.columnWidth}
+                                                                width={TOTAL_WIDTH}
+                                                                // width={width - this.columnWidth}
                                                                 cellRenderer={this._cellRenderer}
                                                                 columnCount={this.state.columns}
                                                                 columnWidth={this.columnWidthHelper}
@@ -270,7 +290,8 @@ export default class DSGrid extends Component {
                                                                 scrollToColumn={scrollToColumn}
                                                                 onSectionRendered={onSectionRendered}
                                                                 //onSectionRendered={this._onSectionRendered}
-                                                                ref={(ref) => this.grid = ref}
+                                                                // ref={(ref) => this.grid = ref}
+                                                                ref={this.main}
                                                             />
                                                         </div>)}
                                                 </ArrowKeyStepper>
@@ -285,6 +306,16 @@ export default class DSGrid extends Component {
             </div>
         )
 
+
+
+    }
+
+    columnHeader(ref) {
+        this.grid = ref;
+    }
+
+    main(ref) {
+        this.grid = ref;
     }
 
     _handleEvent(event) {
@@ -385,7 +416,8 @@ export default class DSGrid extends Component {
                         position={{x:0}}
                         zIndex={999}
                     >
-                        <span className="drag-icon">{key}</span>
+                        <Icon className="drag-icon" name="exchange" />
+                        {/*<span className="drag-icon">{key}</span>*/}
                     </Draggable>
                 </div>
             </React.Fragment>
