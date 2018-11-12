@@ -131,14 +131,14 @@ export default class DSGrid extends Component {
         {
             this.dataCache.set(parseInt(jsonMessage['blockNumber'], 10),
                 jsonMessage['data']);
-            this.grid.forceUpdate();
+            this.main.currenr.grid.forceUpdate();
         }
         else if (jsonMessage['message'] === 'asyncStatus') {
             let cell = jsonMessage['data']
             let fromCache = this.dataCache.get(Math.trunc(cell[0] / this.fetchSize));
             if (typeof fromCache === "object") {
                 fromCache[cell[0] % this.fetchSize][cell[1]][2] = cell[2];
-                this.grid.forceUpdate();
+                this.main.current.grid.forceUpdate();
             }
         }
         else if (jsonMessage['message'] === 'pushCells') {
@@ -152,7 +152,7 @@ export default class DSGrid extends Component {
                         fromCache[cell[0] % this.fetchSize][cell[1]] = [cell[2], cell[3]];
                 }
             }
-            this.grid.forceUpdate();
+            this.main.current.grid.forceUpdate();
         }
         else if (jsonMessage['message'] === 'processingDone') {
             this.setState({isProcessing: false});
@@ -160,7 +160,7 @@ export default class DSGrid extends Component {
         else if (jsonMessage['message'] === 'subscribed') {
             this.subscribed = true;
 
-            this.grid.forceUpdate();
+            this.main.current.grid.forceUpdate();
 
         }
     }
@@ -338,7 +338,7 @@ export default class DSGrid extends Component {
                             columns: result['data']['sheets'][0]['numCol']
                         });
                         this.subscribed = false;
-                        this.grid.scrollToCell ({ columnIndex: 0, rowIndex: 0 });
+                        this.main.current.grid.scrollToCell ({ columnIndex: 0, rowIndex: 0 });
                         if (this.stompSubscription!=null)
                             this.stompSubscription.unsubscribe();
                         this.stompSubscription = this.stompClient
@@ -443,7 +443,7 @@ export default class DSGrid extends Component {
                 fromCache[(rowIndex) % this.fetchSize][columnIndex] = [value];
             }
 
-            this.grid.forceUpdate();
+            this.main.current.grid.forceUpdate();
         }
         this.stompClient.send('/push/status', {}, JSON.stringify({
             message: 'updateCell',
