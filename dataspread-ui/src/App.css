@@ -30,3 +30,33 @@
 div.ui.mini.menu{
   margin:0;
 }
+
+button.ui.mini.basic.icon.button.no-border{
+  border: none !important;
+  background: none !important;
+  box-shadow: none !important;
+  -webkit-box-shadow:none !important;
+  color: #222 !important;
+
+}
+
+button.ui.mini.basic.icon.button.no-border:hover{
+  border: none !important;
+  background: rgba(0,0,0,.10) !important;
+  box-shadow: none !important;
+  -webkit-box-shadow:none !important;
+}
+
+div.item.stylebar-padding{
+  padding: 0px !important;
+  border-right: 0.3px solid grey;
+
+}
+
+/* div.separator{
+  border-left:1px solid #38546d !important; 
+  border-right:1px solid #16222c !important; 
+  height:inherit !important;
+  right:249px !important;
+  top:10px !important; 
+} */

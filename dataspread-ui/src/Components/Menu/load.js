@@ -25,14 +25,17 @@ export default class ModalOpenFile extends Component {
 
 	handleOpen = () => this.setState({ loadModalOpen: true })
 
-	handleClose = () => this.setState({ loadModalOpen: false })
+	handleClose = () => this.setState({ loadModalOpen: false})
 
 	// fetch data from api
 	componentDidMount() {
         fetch(this.urlPrefix + '/api/getBooks')
 		.then(response => response.json())
 		.then(data => this.transform(data))
-		.then(data => this.setState({ BooksOptions: data }));
+        .then(data => this.setState({
+            BooksOptions: data,
+            loadModalOpen: false
+        }));
 	}
 
   	//transform data
@@ -72,8 +75,7 @@ export default class ModalOpenFile extends Component {
 			<Header icon='folder open outline' content='Open File' />
 
 			<Modal.Content>
-
-			<div>
+			    <div>
 					<div>
 						<Dropdown placeholder='Select File' fluid search selection 
 						options={this.state.BooksOptions} onChange={this.onChange}  />

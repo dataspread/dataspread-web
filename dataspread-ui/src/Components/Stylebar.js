@@ -1,15 +1,12 @@
 import React, {Component} from 'react';
-import {Dropdown, Menu} from 'semantic-ui-react'
-import ModalAboutUs from './about'
-import ModalOpenFile from './load'
-import ModalImportFile from './import'
+import {Dropdown, Menu, Button} from 'semantic-ui-react'
 
 const favstyle = {
     height: '1.5em',
     width: '1.5em',
   };
   
-export default class Toolbar extends Component {
+export default class Stylebar extends Component {
     constructor(props) {
         super(props)
         this.handler = this.handler.bind(this)
@@ -25,19 +22,18 @@ export default class Toolbar extends Component {
 
     render() {
       return (
-        <Menu size='mini'>
-            <Menu.Item>
-                <img src='favicon.ico' style={favstyle} alt='DS'/>
-            </Menu.Item>
+        <Menu size='mini' borderless='true' attached='bottom'>
 
-            <Dropdown item text='File'>
-                <Dropdown.Menu>
-                    <Dropdown.Item>New</Dropdown.Item>
-                    <ModalOpenFile {...this.props} handler = {this.handler} />
-                    <ModalImportFile/>
-                </Dropdown.Menu>
-            </Dropdown>
+            <div class='item stylebar-padding'>
+                <Button size='mini' className='no-border' basic='true' icon='undo'/>
+                <Button size='mini' className='no-border' basic='true' icon='redo' />
+                <Button size='mini' className='no-border' basic='true' icon='print' />
+            </div>
 
+            <Button size='mini' className='no-border' basic='true' icon='redo' />
+        
+            
+            
             <Dropdown item text='Edit'>
                 <Dropdown.Menu>
                     <Dropdown.Item>Copy</Dropdown.Item>
@@ -47,7 +43,6 @@ export default class Toolbar extends Component {
 
             <Dropdown item text='Help'>
                 <Dropdown.Menu>
-                    <ModalAboutUs/>
                 </Dropdown.Menu>
             </Dropdown>
 
