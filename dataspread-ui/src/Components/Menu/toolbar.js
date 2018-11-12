@@ -25,7 +25,7 @@ export default class Toolbar extends Component {
 
     render() {
       return (
-        <Menu size='mini'>
+        <Menu size='mini' className='toolbar'>
             <Menu.Item>
                 <img src='favicon.ico' style={favstyle} alt='DS'/>
             </Menu.Item>

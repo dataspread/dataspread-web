@@ -29,6 +29,12 @@
 
 div.ui.mini.menu{
   margin:0;
+  height:0.7em;
+}
+
+div.ui.mini.toolbar.menu{
+  border-radius: 0px;
+  border-bottom: 0px !important;
 }
 
 button.ui.mini.basic.icon.button.no-border{
@@ -49,8 +55,7 @@ button.ui.mini.basic.icon.button.no-border:hover{
 
 div.item.stylebar-padding{
   padding: 0px !important;
-  border-right: 0.3px solid grey;
-
+  border-right: 1px solid rgba(34,36,38,.1);
 }
 
 /* div.separator{
