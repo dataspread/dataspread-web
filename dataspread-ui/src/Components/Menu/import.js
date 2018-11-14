@@ -19,7 +19,7 @@ export default class ModalImportFile extends Component {
 
   handleOpen = () => this.setState({ modalOpen: true })
 
-  handleClose = () => this.setState({ modalOpen: false })
+  handleClose = () => this.setState({ modalOpen: false})
 
   render() {
     return (
@@ -27,6 +27,7 @@ export default class ModalImportFile extends Component {
 		trigger={<Dropdown.Item onClick={this.handleOpen}>Import File</Dropdown.Item>}
 		open={this.state.modalOpen}
 		onClose={this.handleClose}>
+
 
         <Header icon='upload' content='Import File' />
 		

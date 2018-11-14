@@ -10,9 +10,22 @@ const favstyle = {
   };
   
 export default class Toolbar extends Component {
+    constructor(props) {
+        super(props)
+        this.handler = this.handler.bind(this)
+    }
+
+    handler(e) {
+        e.preventDefault()
+        this.setState({
+            open: false
+        })
+    }
+
+
     render() {
       return (
-        <Menu size='mini'>
+        <Menu size='mini' className='toolbar'>
             <Menu.Item>
                 <img src='favicon.ico' style={favstyle} alt='DS'/>
             </Menu.Item>
@@ -20,7 +33,7 @@ export default class Toolbar extends Component {
             <Dropdown item text='File'>
                 <Dropdown.Menu>
                     <Dropdown.Item>New</Dropdown.Item>
-                    <ModalOpenFile {...this.props} />
+                    <ModalOpenFile {...this.props} handler = {this.handler} />
                     <ModalImportFile/>
                 </Dropdown.Menu>
             </Dropdown>
