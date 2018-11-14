@@ -160,6 +160,8 @@ body {
 
 
 .cell,
+.cellFocus,
+.cellSelected,
 .rowHeaderCell,
 .columnHeaderCell {
   width: 100%;
@@ -167,20 +169,26 @@ body {
   padding:  .5em;
   box-sizing: border-box;
   vertical-align: middle;
+  user-select: none;
 }
 
 .cell,
-.cellFocus {
-  width: 100%;
-  height: 100%;
+.cellFocus,
+.cellSelected {
   border-right: 1px solid #e0e0e0;
   border-bottom: 1px solid #e0e0e0;
   display: flex;
   flex-direction: column;
 }
 
+.cellFocus,
+.cellSelected {
+  background-color: #abc6ce;
+}
+
 .cellFocus {
-    background-color: #3ac0ff;
+  box-shadow: 0 0 0 2px #235360 !important;
+  z-index: 1;
 }
 
 .columnHeaderCell {
