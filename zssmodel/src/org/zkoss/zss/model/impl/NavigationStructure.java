@@ -8,10 +8,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
-import org.zkoss.poi.hslf.model.Sheet;
 import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.sys.BookBindings;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -30,6 +31,9 @@ public class NavigationStructure {
      * Temporarily store the computed bucket for user call. To be serialized by calling {@link #getSerializedBuckets}.
      */
     private ReturnBuffer returnBuffer;
+    public int isNumericNavAttr;
+
+
 
     class ReturnBuffer {
         ArrayList<Bucket> buckets;
@@ -57,6 +61,12 @@ public class NavigationStructure {
      * Must be set externally for the bucket generator to work.
      */
     private ArrayList<Object> recordList;
+    public HashMap<String,Integer> uniqueKeyCount;
+    public HashMap<String,Integer> uniqueKeyStart;
+
+    public ArrayList<String> uniqueKeyArr;
+    public ArrayList<Integer> uniqueKeyArrIndex;
+
     private int kHist;
     private String tableName;
     private Kryo kryo;
@@ -69,6 +79,83 @@ public class NavigationStructure {
         this.useKryo = true;
         returnBuffer = new ReturnBuffer();
         typeCheckedColumns = new HashSet<>();
+    }
+
+    public int getConditionCode(String condition)
+    {
+        if(condition.equals("="))
+            return 0;
+        else if(condition.equals("<>"))
+            return 1;
+        else if(condition.equals(">"))
+            return 2;
+        else if(condition.equals(">="))
+            return 3;
+        else if(condition.equals("<"))
+            return 4;
+        else if(condition.equals("<="))
+            return 5;
+
+        return -1;
+
+    }
+
+    public boolean isConditionSatisfied(double currValue, String condition,double queryValue)
+    {
+        int conditionCode = getConditionCode(condition);
+
+        switch (conditionCode)
+        {
+            case 0:
+                if(currValue==queryValue)
+                    return true;
+                break;
+            case 1:
+                if(currValue!=queryValue)
+                    return true;
+                break;
+            case 2:
+                if(currValue>queryValue)
+                    return true;
+                break;
+            case 3:
+                if(currValue>=queryValue)
+                    return true;
+                break;
+            case 4:
+                if(currValue<queryValue)
+                    return true;
+                break;
+            case 5:
+                if(currValue<=queryValue)
+                    return true;
+                break;
+            default:
+                if(currValue==queryValue)
+                    return true;
+                break;
+        }
+
+        return false;
+    }
+
+    public boolean isConditionSatisfiedStr(String currValue, String condition,String queryValue)
+    {
+        int conditionCode = getConditionCode(condition);
+
+        switch (conditionCode)
+        {
+            case 0:
+                if(currValue.equals(queryValue))
+                    return true;
+                break;
+            default:
+                if(currValue.equals(queryValue))
+                    return true;
+                break;
+        }
+
+        return false;
     }
 
     public Object createNavS(SSheet currentSheet) {
@@ -114,6 +201,12 @@ public class NavigationStructure {
         setCurrentSheet(currentSheet);
         setTotalRows(currentSheet.getEndRowIndex() + 1);
         ArrayList<Object> recordList = new ArrayList<>();
+        this.uniqueKeyCount = new HashMap<String,Integer>();
+        this.uniqueKeyStart = new HashMap<String,Integer>();
+        this.uniqueKeyArr = new ArrayList<String>();
+        this.uniqueKeyArrIndex = new ArrayList<Integer>();
+
+
         ((RCV_Model) model).navigationSortRangeByAttribute(currentSheet, 1, currentSheet.getEndRowIndex(), new int[]{columnIndex}, 0, recordList);
         setRecordList(recordList);
         initIndexedBucket(currentSheet.getEndRowIndex() + 1);
@@ -127,17 +220,69 @@ public class NavigationStructure {
      * @return true: performance conversion; false: nothing was done.
      */
     public boolean typeConvertColumnIfHavent(AutoRollbackConnection connection, int col) {
-        if (typeCheckedColumns.contains(col))
-            return false;
-        typeCheckedColumns.add(col);
         System.out.println("Type converting column " + col);
-        CellRegion tableRegion = new CellRegion(0, col, totalRows - 1, col);
-        ArrayList<SCell> result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
-        result.forEach(x -> x.updateCellTypeFromString(connection, false));
-        Collection<AbstractCellAdv> castCells = new ArrayList<>();
-        result.forEach(x -> castCells.add((AbstractCellAdv) x));
-        currentSheet.getDataModel().updateCells(new DBContext(connection), castCells);
-        connection.commit();
+
+        StringBuffer select = null;
+        select = new StringBuffer("SELECT cols");
+        select.append(" FROM ")
+                .append("type_converted_books")
+                .append(" WHERE bookid = \'"+currentSheet.getBook().getId()+"\' AND sheetname = \'"+currentSheet.getSheetName()+"\'");
+
+        String columns = "";
+        try (
+
+            PreparedStatement stmt = connection.prepareStatement(select.toString())) {
+            ResultSet rs = stmt.executeQuery();
+            ResultSetMetaData meta = rs.getMetaData();
+            int colCount = meta.getColumnCount();
+
+            while (rs.next()) {
+                columns = new String(rs.getBytes(1),"UTF-8");
+            }
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        Set<String> colSet = new HashSet<String>(Arrays.asList(columns.split("-")));
+
+        if(colSet.contains(Integer.toString(col)))
+            return true;
+
+        String tableName = "type_converted_books";
+        try{
+            String col_list = "";
+
+            StringBuffer sbSS = new StringBuffer();
+            PreparedStatement pstSS = null;
+
+            CellRegion tableRegion = new CellRegion(0, col, currentSheet.getEndRowIndex() - 1, col);
+            ArrayList<SCell> result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
+            result.forEach(x -> x.updateCellTypeFromString(connection, false));
+            Collection<AbstractCellAdv> castCells = new ArrayList<>();
+            result.forEach(x -> castCells.add((AbstractCellAdv) x));
+            currentSheet.getDataModel().updateCells(new DBContext(connection), castCells);
+            connection.commit();
+
+            if(colSet.size()!=0) {
+                col_list = columns+"-"+Integer.toString(col);
+                sbSS.append("Update "+tableName+" set cols =\'"+col_list+"\' WHERE bookid =\'"+currentSheet.getBook().getId()+"\' AND sheetname = \'"+currentSheet.getSheetName()+"\'");
+            }
+            else
+            {
+                col_list = Integer.toString(col);
+                sbSS.append("INSERT into "+tableName+" (bookid, sheetname, cols) values(\'"+currentSheet.getBook().getId()+"\',\'"+currentSheet.getSheetName()+"\',\'"+col_list+"\')");
+            }
+            pstSS = connection.prepareStatement(sbSS.toString());
+
+            pstSS.executeUpdate();
+            connection.commit();
+        }catch (Exception e)
+        {
+
+        }
+
         return true;
     }
 
@@ -230,21 +375,22 @@ public class NavigationStructure {
         return ret;
     }
 
-    /**
-     * Serialize the newly created buckets to JSON format.
-     *
-     * @return
-     */
+
     public Object getSerializedBuckets() {
         class ScrollingProtocol {
             public ArrayList<BucketGroup> data;
-
+            /**
+             * Serialize the newly created buckets to JSON format.
+             *
+             * @return
+             */
             class BucketGroup {
                 public String name;
                 public int[] rowRange;
                 public int value;
                 public int rate;
                 public boolean clickable;
+                public ArrayList<BucketGroup> children;
 
                 /**
                  * Needed for serialization
@@ -257,10 +403,23 @@ public class NavigationStructure {
                     rowRange = new int[]{item.startPos, item.endPos};
                     value = item.size;
                     clickable = !item.isSingleton();
+                    //System.out.println("Print item");
+                    //System.out.println(item.name);
+
                     rate = 10;
+                    if(clickable && item.getChildren()!=null)
+                    {
+                        children = new ArrayList<BucketGroup>();
+
+                        for(Bucket b:item.getChildren())
+                        {
+                            children.add(new BucketGroup(b));
+                        }
+                    }
+                    else
+                        children = new ArrayList<BucketGroup>();
                 }
             }
-
             /**
              * Needed for serialization
              */
@@ -269,6 +428,8 @@ public class NavigationStructure {
 
             public ScrollingProtocol(ReturnBuffer ret) {
                 data = new ArrayList<>();
+                if(ret.buckets == null )
+                    return;
                 for (int i = 0; i < ret.buckets.size(); i++) {
                     data.add(new BucketGroup(ret.buckets.get(i)));
                 }
@@ -291,6 +452,12 @@ public class NavigationStructure {
     public void initIndexedBucket(int totalRows) {
         //this.totalRows = totalRows;
         navBucketTree = getNonOverlappingBuckets(1, this.totalRows - 1);
+
+        for(Bucket subRoot:navBucketTree)
+        {
+            expandChild(subRoot);
+        }
+
         returnBuffer.buckets = navBucketTree;
     }
 
@@ -354,7 +521,14 @@ public class NavigationStructure {
         subRoot = getSubRootBucket(paths);
         if (subRoot != null) {
             expandChild(subRoot);
-            returnBuffer.buckets = subRoot.getChildren();
+            ArrayList<Bucket> buckets = new ArrayList<Bucket>();
+            if(subRoot.getChildren()!=null) {
+                buckets = subRoot.getChildren();
+                for (Bucket b : buckets) {
+                    expandChild(b);
+                }
+            }
+            returnBuffer.buckets = buckets;
             if (right != null && expandChild(right))
                 later.add(0);
             if (left != null && expandChild(left))
@@ -369,6 +543,10 @@ public class NavigationStructure {
         if (paths.length == 0) {
             if (navBucketTree.size() == 0) {
                 navBucketTree = getNonOverlappingBuckets(1, this.totalRows - 1);
+                for(Bucket subRoot:navBucketTree)
+                {
+                    expandChild(subRoot);
+                }
                 returnBuffer.buckets = navBucketTree;
             } else
                 resetToRoot();
@@ -481,6 +659,8 @@ public class NavigationStructure {
                 bucket.size = bucket.endPos - bucket.startPos + 1;
                 startIndex += bucket.size;
                 bucket.setName(false);
+
+
                 bucket.setId();
                 bucketList.add(bucket);
             }
@@ -498,6 +678,24 @@ public class NavigationStructure {
             bucketList.add(bucket);
         }
         return bucketList;
+    }
+
+    private LinkedHashSet generateBucketKeys(Bucket bucket) {
+        LinkedHashSet<String> lhs = new LinkedHashSet<String>();;
+
+        int keyIndex = bucket.startPos;
+        int keyCount = uniqueKeyCount.get(recordList.get(keyIndex));
+        lhs.add((String) recordList.get(keyIndex));
+        keyIndex +=keyCount;
+
+        while(keyIndex <= bucket.endPos)
+        {
+            keyCount = uniqueKeyCount.get(recordList.get(keyIndex));
+            lhs.add((String) recordList.get(keyIndex));
+            keyIndex +=keyCount;
+
+        }
+        return lhs;
     }
 
     /**
@@ -599,6 +797,233 @@ public class NavigationStructure {
             aggMemMap.put(formula, obj.get("value"));
         }
         return obj;
+    }
+
+    public void setBucketAggWithMemoization(Model model,Bucket<String> subGroup, int attrIndex, String agg_id, List<String> paras,double value) {
+        int startRow = subGroup.getStartPos();
+        int endRow = subGroup.getEndPos();
+        Map<String, Object> obj = model.getColumnAggregate(currentSheet, startRow, endRow, attrIndex, agg_id, paras, true);
+        String formula = (String) obj.get("formula");
+        Map<String, Object> aggMemMap = subGroup.aggMem;
+        if (!aggMemMap.containsKey(formula)) {
+            aggMemMap.put(formula, value);
+        }
+
+    }
+
+    /**
+     * Update bucket boundaries based on the FE push
+     *
+     * @param paths
+     * @param bkt_arr
+     */
+    public void updateNavBucketTree(int[] paths, ArrayList<String> bkt_arr) {
+
+
+        if (paths.length == 0) //construct new navBucketTree
+        {
+            navBucketTree.clear();
+            navBucketTree = createRedefinedBuckets(bkt_arr);
+
+            for(Bucket subRoot:navBucketTree)
+            {
+                expandChild(subRoot);
+            }
+        }
+        else
+        {
+            Bucket<String> subRoot = this.navBucketTree.get(paths[0]);
+            for (int i = 1; i < paths.length; i++) {
+                subRoot = subRoot.getChildren().get(paths[i]);
+            }
+            subRoot.setChildren(createRedefinedBuckets(bkt_arr));
+            for(Bucket b:subRoot.getChildren())
+            {
+                expandChild(b);
+            }
+        }
+
+    }
+
+    private ArrayList<Bucket> createRedefinedBuckets(ArrayList<String> bkt_arr) {
+        ArrayList<Bucket> bkt_ls = new ArrayList<Bucket>();
+        Bucket bkt;
+
+        int keyIndex = 0;
+
+        for(int i=0;i<bkt_arr.size();i++)
+        {
+            String[] start_end = bkt_arr.get(i).split("#");
+
+            bkt = new Bucket();
+
+            bkt.minValue = start_end[0];
+            bkt.maxValue = start_end[1];
+
+            //for numeric data we need to see if the actual max or min value exists in data. otherwise get the min and max pos for the nearest data
+            if(isNumericNavAttr==1)
+            {
+                //determine startPos: for numeric---> minVal is exlusive of exact value
+                // first handle the first bucket separately
+                if(uniqueKeyStart.containsKey(bkt.minValue)) //exists in SS
+                {
+                    bkt.startPos = uniqueKeyStart.get(bkt.minValue);
+
+                }
+                else if(i==0) //does not exist in SS, frist bucket
+                {
+                    bkt.startPos = uniqueKeyStart.get(uniqueKeyArr.get(keyIndex));
+                    //TODO: what happens if the start of the bucket defined by the user (100) is greater than the actual start (50). We can make the start Uneditable in FE
+                }
+                else  //does not exist in SS, other bucket
+                {
+                    double start_user = Double.parseDouble(start_end[0].split("\\+")[0]);
+                    if(keyIndex<=uniqueKeyArr.size()-1)
+                    {
+                        keyIndex = approxSearch(start_user, keyIndex, true);
+                        if(start_end[0].contains("+"))
+                            keyIndex++;
+                    }
+                    /*else //add the last bucket even if it doesn't contain any value in ss
+                    {
+                        keyIndex = approxSearch(start_user, keyIndex-1, true);
+                    }*/
+                    bkt.startPos = uniqueKeyStart.get(uniqueKeyArr.get(keyIndex));
+                }
+
+
+                //determine endPos: for numeric---> maxVal is exlusive of exact value
+                if(uniqueKeyStart.containsKey(bkt.maxValue)) //exists in SS
+                {
+                    bkt.endPos = uniqueKeyStart.get(bkt.maxValue) + uniqueKeyCount.get(bkt.maxValue) - 1;
+
+                    //find start val for next bucket
+                    for(int ki=keyIndex;ki<uniqueKeyArr.size();ki++)
+                    {
+                        if(uniqueKeyArr.get(keyIndex).equals(bkt.maxValue.toString()))
+                        {
+                            keyIndex = ki+1; //this should be the start val of next bucket
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    double end_user = Double.parseDouble(start_end[1]);
+                    if(keyIndex<=uniqueKeyArr.size()-1)
+                    {
+                       keyIndex = approxSearch(end_user, keyIndex, false);
+
+                    }
+                    else //add the last bucket even if it doesn't contain any value in ss
+                    {
+                        keyIndex = approxSearch(end_user, keyIndex-1, false);
+
+                    }
+                    bkt.endPos = uniqueKeyStart.get(uniqueKeyArr.get(keyIndex))+ uniqueKeyCount.get(uniqueKeyArr.get(keyIndex)) - 1;
+                }
+
+            }
+            else {
+                bkt.startPos = uniqueKeyStart.get(bkt.minValue);
+                bkt.endPos = uniqueKeyStart.get(bkt.maxValue) + uniqueKeyCount.get(bkt.maxValue) - 1;
+            }
+            bkt.size = bkt.endPos - bkt.startPos + 1;
+
+            bkt.setName(false);
+            bkt.setId();
+
+            bkt_ls.add(bkt);
+
+        }
+
+        return bkt_ls;
+    }
+
+    public int approxSearch(double value, int lowStart, boolean isStartVal) {
+
+        if(value < Double.parseDouble(this.uniqueKeyArr.get(lowStart))) {
+            return lowStart;
+        }
+        if(value > Double.parseDouble(this.uniqueKeyArr.get(this.uniqueKeyArr.size()-1))) {
+            return this.uniqueKeyArr.size()-1;
+        }
+
+        int lo = lowStart;
+        int hi = this.uniqueKeyArr.size()-1;
+
+        while (lo < hi) {
+            int mid = (hi + lo) / 2;
+
+            if (value < Double.parseDouble(this.uniqueKeyArr.get(mid))) {
+                if(hi==mid)
+                    break;//value is between lo and high and doesn't exist
+                hi = mid - 1;
+            } else if (value > Double.parseDouble(this.uniqueKeyArr.get(mid))) {
+                if(lo==mid)
+                    break; //value is between lo and high and doesn't exist
+                lo = mid + 1;
+            } else {
+                return mid;
+            }
+        }
+        if(lo==hi)
+            return isStartVal ? (lo< uniqueKeyArr.size()-1 ? lo+1 : lo) : lo; //start is exclusive and end is inclusive
+        // lo == hi + 1
+        return isStartVal ? hi : lo; //start is exclusive and end is inclusive
+    }
+
+    /**
+     * Return the leaves of  each bucket in the current path
+     *
+     * @param paths
+     * @return
+     */
+    public Object getBucketsWithLeaves(int[] paths) {
+        Bucket<String> subroot = getSubRootBucket(paths);
+        List<Bucket> subgroups = subroot == null ? navBucketTree : subroot.getChildren();
+
+        HashMap<String, Object> ret = new HashMap<>();
+
+        ret.put("isNumeric",this.isNumericNavAttr);
+
+        ArrayList<ArrayList<Object>> bucket_leaves_ls =  new ArrayList<ArrayList<Object>>();
+
+        for(int i=0;i<subgroups.size();i++)
+        {
+            if(this.isNumericNavAttr==1)
+            {
+                ArrayList<Object> ls = new ArrayList<Object>();
+                ls.add(subgroups.get(i).minValue.toString());
+                ls.add(subgroups.get(i).maxValue.toString());
+                bucket_leaves_ls.add(ls); //[[start,end]]
+            }
+            else
+            {
+                ArrayList<Object> ls = new ArrayList<Object>();
+
+                //generate the leaves of a bucket
+                if(subgroups.get(i).getLeaves()==null)
+                    subgroups.get(i).setLeaves(generateBucketKeys(subgroups.get(i)));
+
+                //if list of leaves is still null, that means the bucket itself is a leave
+                if(subgroups.get(i).getLeaves()==null)
+                {
+                    ls.add(subgroups.get(i).minValue);
+                }
+                else
+                {
+                    for(Object o:subgroups.get(i).getLeaves())
+                    {
+                        ls.add(o);
+                    }
+                }
+                bucket_leaves_ls.add(ls);
+
+            }
+        }
+        ret.put("bucketArray",bucket_leaves_ls);
+        return ret;
     }
 
     /**

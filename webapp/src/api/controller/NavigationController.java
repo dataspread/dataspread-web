@@ -1,10 +1,12 @@
 package api.controller;
 
+import api.Cell;
 import api.JsonWrapper;
 import org.springframework.web.bind.annotation.*;
 import org.zkoss.json.JSONArray;
 import org.zkoss.json.JSONObject;
 import org.zkoss.json.parser.JSONParser;
+import org.zkoss.util.Pair;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
@@ -104,6 +106,63 @@ public class NavigationController {
         return JsonWrapper.generateJson(((RCV_Model) currentSheet.getDataModel()).navS.getNavChildrenWithContext(indices));
     }
 
+    @RequestMapping(value = "/api/redefineBoundaries", method = RequestMethod.POST)
+    public HashMap<String, Object> redefineBoundaries(@RequestBody String value) {
+
+        JSONParser parser = new JSONParser();
+        JSONObject dict = (JSONObject) parser.parse(value);
+        SBook book = BookBindings.getBookById((String) dict.get("bookId"));
+        SSheet currentSheet = book.getSheetByName((String) dict.get("sheetName"));
+
+        String pathString = (String) dict.get("path");
+        String[] tokens;
+        if (pathString.isEmpty()) {
+            tokens = new String[0];
+        } else {
+            tokens = pathString.split(",");
+        }
+        int[] indices = new int[tokens.length];
+        for (int i = 0; i < tokens.length; i++) {
+            indices[i] = Integer.parseInt(tokens[i]);
+        }
+        return JsonWrapper.generateJson(((RCV_Model) currentSheet.getDataModel()).navS.getBucketsWithLeaves(indices));
+    }
+
+    @RequestMapping(value = "/api/updateBoundaries", method = RequestMethod.POST)
+    public HashMap<String, Object> updateBoundaries(@RequestBody String value) {
+
+        JSONParser parser = new JSONParser();
+        JSONObject dict = (JSONObject) parser.parse(value);
+        SBook book = BookBindings.getBookById((String) dict.get("bookId"));
+        SSheet currentSheet = book.getSheetByName((String) dict.get("sheetName"));
+        JSONArray bucket_ls = (JSONArray) dict.get("bucketArray");
+
+        String pathString = (String) dict.get("path");
+        String[] tokens;
+        if (pathString.isEmpty()) {
+            tokens = new String[0];
+        } else {
+            tokens = pathString.split(",");
+        }
+        int[] indices = new int[tokens.length];
+        for (int i = 0; i < tokens.length; i++) {
+            indices[i] = Integer.parseInt(tokens[i]);
+        }
+
+        ArrayList<String> bkt_arr = new ArrayList<String>();
+
+        for(int i=0;i<bucket_ls.size();i++)
+        {
+            JSONArray ls = (JSONArray) bucket_ls.get(i);
+            String start = ls.get(0).toString();
+            String end = ls.get(1).toString();
+            bkt_arr.add(start+"#"+end);
+        }
+
+        ((RCV_Model) currentSheet.getDataModel()).navS.updateNavBucketTree(indices,bkt_arr);
+        return JsonWrapper.generateJson(null);
+    }
+
     ///api/sortBlock/{bookId}/{sheetName}/{path}/{attr_indices}/{order}
 //    http://localhost:8080/api/sortBlock/gji5fi8vh/airbnb_small/%201/9,6,7/0  (sort by price/longitude/latitude)
     @RequestMapping(value = "/api/sortBlock/{bookId}/{sheetName}/{path}/{attr_indices}/{order}",
@@ -171,6 +230,67 @@ public class NavigationController {
             return JsonWrapper.generateError(e.getMessage());
         }
         return JsonWrapper.generateJson(agg);
+    }
+
+    @RequestMapping(value = "/api/getBrushColorList",
+            method = RequestMethod.POST)
+    public HashMap<String, Object> getBrushColorList(@RequestBody String value) {
+        JSONParser parser = new JSONParser();
+        JSONObject dict = (JSONObject) parser.parse(value);
+        String bookId = (String) dict.get("bookId");
+        String sheetName = (String) dict.get("sheetName");
+        JSONArray first_ls = (JSONArray) dict.get("first");
+        JSONArray last_ls = (JSONArray) dict.get("last");
+        JSONArray cond_ls = (JSONArray) dict.get("conditions");
+        JSONArray val_ls = (JSONArray) dict.get("values");
+        int attrIndex = (Integer) dict.get("index");
+        SBook book = BookBindings.getBookById(bookId);
+        SSheet currentSheet = book.getSheetByName(sheetName);
+
+        ArrayList<Integer> indices = new ArrayList<Integer>();
+        Model model = currentSheet.getDataModel();
+        //Todo: when on demand loading available
+        /*for(int i=0;i<first_ls.size();i++)
+        {
+            int first = (Integer) first_ls.get(i);
+            int last = (Integer) last_ls.get(i);
+            for(int j=first;j<=last;j++)
+            {
+                SCell sCell = currentSheet.getCell(j, attrIndex);
+
+                double currvalue = Double.parseDouble(String.valueOf(sCell.getValue()));
+                double queryValue = Double.parseDouble((String) val_ls.get(i));
+
+                if(model.navS.isConditionSatisfied(currvalue,(String) cond_ls.get(i),queryValue))
+                    indices.add(j);
+            }
+        }*/
+
+        System.out.println("Calling brush color list");
+        int first = (Integer) first_ls.get(0);
+        int last = (Integer) last_ls.get(0);
+        for(int j=first;j<=last;j++)
+        {
+            SCell sCell = currentSheet.getCell(j, attrIndex);
+
+            try {
+                double currvalue = Double.parseDouble(String.valueOf(sCell.getValue()));
+                double queryValue = Double.parseDouble((String) val_ls.get(0));
+
+                if (model.navS.isConditionSatisfied(currvalue, (String) cond_ls.get(0), queryValue))
+                    indices.add(j);
+            }catch (Exception e)
+            {
+                String currvalue = String.valueOf(sCell.getValue());
+                String queryValue = (String) val_ls.get(0);
+
+                if (model.navS.isConditionSatisfiedStr(currvalue, (String) cond_ls.get(0), queryValue))
+                    indices.add(j);
+            }
+        }
+
+
+        return JsonWrapper.generateJson(indices);
     }
 
     private int[] getIndices(String path) {
