@@ -3,6 +3,7 @@ import './App.css';
 import DSGrid from './dsgrid';
 import Toolbar from './Components/Menu/toolbar'
 import StartupBox from './Components/StatupBox'
+import Navigation from "./Components/Navigation";
 
 class App extends Component {
 
@@ -48,6 +49,7 @@ class App extends Component {
             return (
                 <div>
                     <Toolbar username={this.state.username} onSelectFile={this.onSelectFile} />
+                    <Navigation bookId={this.state.bookId} ref={ref => this.grid = ref} />
                     <DSGrid bookId={this.state.bookId} ref={ref => this.grid = ref} />
                 </div>
             )
