@@ -98,3 +98,6 @@ dataspread-ui/.env.production.local
 dataspread-ui/npm-debug.log*
 dataspread-ui/yarn-debug.log*
 dataspread-ui/yarn-error.log*
+
+#js .env file
+dataspread-ui/.env

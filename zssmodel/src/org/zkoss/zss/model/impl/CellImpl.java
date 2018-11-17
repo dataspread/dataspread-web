@@ -322,6 +322,13 @@ public class CellImpl extends AbstractCellAdv {
 		else if (sync)
 		{
 		    synchronized (this) {
+                // Recheck if the value is already computed
+                if (trxId == _sheet.getTrxId() && _formulaResultValue != null
+                        && _formulaResultValue != DirtyManager.getDirtyValue()) {
+                    // Computation not required. _formulaResultValue should have correct value.
+                    return;
+                }
+
                 // Compute the value
                 FormulaEvaluationContext evalContext = new FormulaEvaluationContext(this, getRef());
                 FormulaExpression expr = getFormulaExpression();
@@ -468,7 +475,7 @@ public class CellImpl extends AbstractCellAdv {
 	}
 
 	@Override
-	public synchronized Object getValue(boolean evaluatedVal, boolean sync) {
+    public Object getValue(boolean evaluatedVal, boolean sync) {
 		CellValue val = getCellValue();
 		if (evaluatedVal && val.getType() == CellType.FORMULA) {
 			evalFormula(sync);

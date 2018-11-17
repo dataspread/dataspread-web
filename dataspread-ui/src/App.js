@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Dropdown, Menu, Modal} from 'semantic-ui-react';
+import {Dropdown, Menu, Modal} from 'semantic-ui-react'
 import './App.css';
 import DSGrid from './dsgrid';
 
