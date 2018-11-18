@@ -4,6 +4,7 @@ import 'handsontable/dist/handsontable.full.css';
 import './Navigation.css';
 import * as d3 from "d3";
 
+
 export default class Navigation extends Component {
 
     constructor(props) {
@@ -24,12 +25,14 @@ export default class Navigation extends Component {
             aggregateData: {},
             mergeCellInfo: [],
             selectedChild: [0],
+            selectedBars:[],
             childHash: new Map(),
         }
 
         this.hotTableComponent = React.createRef();
         this.navCellRenderer = this.navCellRenderer.bind(this);
         this.afterSelectionHandleer = this.afterSelectionHandleer.bind(this);
+        //this.computeCellChart = this.computeCellChart.bind(this);
 
     }
 
@@ -65,11 +68,11 @@ export default class Navigation extends Component {
                     data: currentState.viewData,
                     minCols: 1,
                     readOnly: true,
-                    rowHeights: (currentState.wrapperHeight * 0.90 / currentState.currData.length > 90)
-                        ? currentState.wrapperHeight * 0.90 / currentState.currData.length
+                    rowHeights: (currentState.wrapperHeight * 0.93 / currentState.currData.length > 90)
+                        ? currentState.wrapperHeight * 0.93 / currentState.currData.length
                         : 90,
                     width: currentState.wrapperWidth * 0.19,
-                    height: currentState.wrapperHeight * 0.90,
+                    height: currentState.wrapperHeight * 0.93,
                     rowHeaderWidth: 0,
                     rowHeaders: true,
                     colWidths: function (col) {
@@ -197,22 +200,16 @@ export default class Navigation extends Component {
     afterSelectionHandleer (r, c, r2, c2, preventScrolling,
               selectionLayerLevel) {
         // setting if prevent scrolling after selection
-        console.log(this);
-        console.log(this.props.grid)
-        console.log(r)
-        console.log(c)
-        console.log(r2)
-        console.log(c2)
-        console.log(selectionLayerLevel)
         if (this.state.cumulativeData[this.state.currLevel][r] != undefined) {
             let selectedChild = [];
             selectedChild.push(r);
-            this.setState({selectedChild:selectedChild});
-            // selectedBars = [];
-            // let barObj = {};
-            // barObj.cell = r;
-            // barObj.bars = [0];
-            // selectedBars.push(barObj);
+            let selectedBars = [];
+            let barObj = {};
+            barObj.cell = r;
+            barObj.bars = [0];
+            selectedBars.push(barObj);
+            this.setState({selectedChild:selectedChild,
+                              selectedBars:selectedBars});
 
             let lowerRange = this.state.cumulativeData[this.state.currLevel][r].rowRange[0];
             this.props.grid.grid.scrollToCell ({ columnIndex: 0, rowIndex: lowerRange + 27});
@@ -246,7 +243,7 @@ export default class Navigation extends Component {
                     let chartString = "navchartdiv" + row + col;
                     tempString += "<div id=" + chartString + " ></div>";
                     td.innerHTML = tempString + "</div>";
-                    //computeCellChart(chartString, row);
+                    //this.computeCellChart(chartString, row);
                     return;
                 }
             } else {
@@ -308,6 +305,153 @@ export default class Navigation extends Component {
 
 
     }
+
+    // computeCellChart(chartString, row,) {
+    //     let self = this.state;
+    //     let result = self.childHash.get(row);
+    //     let number = result.length;
+    //     let maxLen = 0;
+    //     let hash = new Map();
+    //     let chartData = [];
+    //
+    //     for (let i = 0; i < number; i++) {
+    //         if (result[i].name.length > maxLen) {
+    //             maxLen = result[i].name.length;
+    //         }
+    //         let value;
+    //         if (result[i].name.length > 12) {
+    //             value = result[i].name.substring(0, 13) + "...";
+    //             hash.set(value, {name: result[i].name, range: result[i].rowRange[0]})
+    //         } else {
+    //             value = result[i].name;
+    //             hash.set(value, {name: result[i].name, range: result[i].rowRange[0]});
+    //         }
+    //         chartData.push({name: value, count: result[i].value});
+    //     }
+    //
+    //     let maxleft = 75;
+    //
+    //     let margin = {top: 0, right: 40, bottom: 5, left: maxleft};
+    //     var fullWidth = currLevel == 0 ? wrapperWidth * 0.18 : wrapperWidth * 0.15;
+    //     var fullHeight = (wrapperHeight * 0.95 / cumulativeData[currLevel].length > 90)
+    //         ? wrapperHeight * 0.95 / cumulativeData[currLevel].length - 10 : 80;
+    //     if (number > 6) {
+    //         fullHeight += (number - 6) * 5;
+    //     }
+    //     var width = fullWidth - margin.right - margin.left;
+    //     var height = fullHeight - margin.top - margin.bottom;
+    //     var svg = d3.select("#" + chartString)
+    //         .append("svg")
+    //         .attr("width", width + margin.left + margin.right)
+    //         .attr("height", height + margin.top + margin.bottom)
+    //         .append("g")
+    //         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    //
+    //     var x = d3.scaleLinear()
+    //         .range([0, width])
+    //         .domain([0, d3.max(chartData, function (d) {
+    //             return d.count;
+    //         })]);
+    //
+    //     var y = d3.scaleBand()
+    //         .rangeRound([0, height])
+    //         .padding(0.1)
+    //         .domain(chartData.map(function (d) {
+    //             return d.name;
+    //         }));
+    //
+    //     // //make y axis to show bar names
+    //     var yAxis = d3.axisLeft(y)
+    //         .tickSize(0);
+    //
+    //     var tooltip =
+    //         d3.select('#' + chartString).append("div").attr("class", "toolTip");
+    //     var gy = svg.append("g")
+    //         .attr("class", "y axis")
+    //         .call(yAxis)
+    //         .selectAll(".tick text")
+    //         .data(chartData)
+    //         .on("mouseover",
+    //             function (d) {
+    //                 //           console.log(d)
+    //                 tooltip.style("left", d3.event.pageX - 20 + "px")
+    //                     .style("top", d3.event.pageY - 30 + "px")
+    //                     .style("display", "inline-block")
+    //                     .style("font", "10px")
+    //                     .html(hash.get(d.name).name);
+    //             })
+    //         .on("mouseout", function (d) {
+    //             tooltip.style("display", "none");
+    //         });
+    //
+    //     var bars = svg.selectAll(".bar")
+    //         .data(chartData)
+    //         .enter()
+    //         .append("g")
+    //
+    //     //append rects
+    //     bars.append("rect")
+    //         .attr("class", "bar")
+    //         .attr("y", function (d) {
+    //             return y(d.name);
+    //         })
+    //         .attr("height", y.bandwidth())
+    //         .attr("x", 0)
+    //         .attr('fill', function (d, i) {
+    //             //console.log("selectedBars");
+    //             //console.log(selectedBars);
+    //             //console.log(row,i);
+    //             for (let ind = 0; ind < selectedBars.length; ind++) {
+    //                 if (selectedBars[ind].cell == row) {
+    //                     if (selectedBars[ind].bars.includes(i))
+    //                         return "#32CC99";//'#ff4500';
+    //                     else
+    //                         return "#70DCB8";//'#ffA500';
+    //                 }
+    //             }
+    //             return "#70DCB8";//'#ffA500';
+    //         })
+    //         .attr("width", function (d) {
+    //             return x(d.count);
+    //         })
+    //         .style("stroke-width", 1)
+    //         .on("mouseover",
+    //             function (d) {
+    //                 //           console.log(d)
+    //                 tooltip.style("left", d3.event.pageX - 20 + "px")
+    //                     .style("top", d3.event.pageY - 30 + "px")
+    //                     .style("display", "inline-block")
+    //                     .style("font", "10px")
+    //                     .html(hash.get(d.name).name);
+    //             })
+    //         .on("mouseout", function (d) {
+    //             tooltip.style("display", "none");
+    //         })
+    //         .on("click", function (d) {
+    //             lowerRange = hash.get(d.name).range;
+    //             upperRange = lowerRange + 500;
+    //             updateData(lowerRange, 0, upperRange, 15, true);
+    //             updataHighlight();
+    //         });
+    //     //   .on("dblclick",function(d){ alert("node was double clicked"); });
+    //
+    //     //add a value label to the right of each bar
+    //     bars.append("text")
+    //         .attr("class", "label")
+    //         //y position of the label is halfway down the bar
+    //         .attr("y", function (d) {
+    //             return y(d.name) + y.bandwidth() / 2 + 4;
+    //         })
+    //         .style("font-size", "10px")
+    //         //x position is 3 pixels to the right of the bar
+    //         .attr("x", function (d) {
+    //             return x(d.count) + 3;
+    //         })
+    //         .text(function (d) {
+    //             return d.count;
+    //         });
+    //
+    // }
 
     render() {
         return (
