@@ -7,6 +7,8 @@ import 'react-datasheet/lib/react-datasheet.css';
 import LRUCache from "lru-cache";
 import Stomp from 'stompjs';
 
+import Navigation from "./Components/Navigation";
+
 export default class DSGrid extends Component {
     toColumnName(num) {
         let ret, a, b;
@@ -147,6 +149,7 @@ export default class DSGrid extends Component {
 
     render() {
         return (
+            <div><Navigation bookId={this.props.bookId} grid = {this} />
             <div onKeyDown={this._handleKeyDown} onKeyUp={this._handleKeyUp}>
                 <div style={{display: 'flex'}}>
                     <div style={{flex: 'auto', height: '90vh'}}>
@@ -244,6 +247,7 @@ export default class DSGrid extends Component {
                         </AutoSizer>
                     </div>
                 </div>
+            </div>
             </div>
         )
 

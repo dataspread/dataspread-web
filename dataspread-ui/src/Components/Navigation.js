@@ -1,6 +1,7 @@
 import React, {Component} from 'react'
 import {HotTable} from '@handsontable/react';
 import 'handsontable/dist/handsontable.full.css';
+import './Navigation.css';
 import * as d3 from "d3";
 
 export default class Navigation extends Component {
@@ -28,6 +29,7 @@ export default class Navigation extends Component {
 
         this.hotTableComponent = React.createRef();
         this.navCellRenderer = this.navCellRenderer.bind(this);
+        this.afterSelectionHandleer = this.afterSelectionHandleer.bind(this);
 
     }
 
@@ -63,11 +65,11 @@ export default class Navigation extends Component {
                     data: currentState.viewData,
                     minCols: 1,
                     readOnly: true,
-                    rowHeights: (currentState.wrapperHeight * 0.95 / currentState.currData.length > 90)
-                        ? currentState.wrapperHeight * 0.95 / currentState.currData.length
+                    rowHeights: (currentState.wrapperHeight * 0.90 / currentState.currData.length > 90)
+                        ? currentState.wrapperHeight * 0.90 / currentState.currData.length
                         : 90,
                     width: currentState.wrapperWidth * 0.19,
-                    height: currentState.wrapperHeight * 0.95,
+                    height: currentState.wrapperHeight * 0.90,
                     rowHeaderWidth: 0,
                     rowHeaders: true,
                     colWidths: function (col) {
@@ -185,11 +187,41 @@ export default class Navigation extends Component {
                             }
                         }
                         return cellMeta;
-                    }
+                    },
+                    afterSelection: self.afterSelectionHandleer,
                 })
                 // })
             })
 
+    }
+    afterSelectionHandleer (r, c, r2, c2, preventScrolling,
+              selectionLayerLevel) {
+        // setting if prevent scrolling after selection
+        console.log(this);
+        console.log(this.props.grid)
+        console.log(r)
+        console.log(c)
+        console.log(r2)
+        console.log(c2)
+        console.log(selectionLayerLevel)
+        if (this.state.cumulativeData[this.state.currLevel][r] != undefined) {
+            let selectedChild = [];
+            selectedChild.push(r);
+            this.setState({selectedChild:selectedChild});
+            // selectedBars = [];
+            // let barObj = {};
+            // barObj.cell = r;
+            // barObj.bars = [0];
+            // selectedBars.push(barObj);
+
+            let lowerRange = this.state.cumulativeData[this.state.currLevel][r].rowRange[0];
+            this.props.grid.grid.scrollToCell ({ columnIndex: 0, rowIndex: lowerRange + 27});
+            // let upperRange = cumulativeData[currLevel][r].rowRange[1];
+            // updateData(cumulativeData[currLevel][r].rowRange[0], 0,
+            //     cumulativeData[currLevel][r].rowRange[1], 15, true);
+            // updataHighlight();
+            // nav.render();
+        }
     }
     navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
         console.log(this);
