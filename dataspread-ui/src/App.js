@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import './App.css';
 import DSGrid from './dsgrid';
 import Toolbar from './Components/Menu/toolbar'
+import Stylebar from './Components/Stylebar'
 import StartupBox from './Components/StatupBox'
 
 
@@ -43,6 +44,7 @@ class App extends Component {
             return (
                 <div>
                     <Toolbar username={this.state.username} onSelectFile={this.onSelectFile} />
+                    <Stylebar />
                     <StartupBox username={this.state.username} onSelectFile={this.onSelectFile}/>
                 </div>
             )
@@ -50,6 +52,7 @@ class App extends Component {
             return (
                 <div>
                     <Toolbar username={this.state.username} onSelectFile={this.onSelectFile} />
+                    <Stylebar />
                     <DSGrid bookId={this.state.bookId} ref={ref => this.grid = ref} />
                 </div>
             )
