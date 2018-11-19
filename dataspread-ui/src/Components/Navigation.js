@@ -27,13 +27,17 @@ export default class Navigation extends Component {
             selectedChild: [0],
             selectedBars:[],
             childHash: new Map(),
+            levelList:[],
         }
 
         this.hotTableComponent = React.createRef();
         this.navCellRenderer = this.navCellRenderer.bind(this);
-        this.afterSelectionHandleer = this.afterSelectionHandleer.bind(this);
+        this.afterSelectionHandler = this.afterSelectionHandler.bind(this);
         this.computeCellChart = this.computeCellChart.bind(this);
-
+        this.zoomIn = this.zoomIn.bind(this);
+        this.computePath = this.computePath.bind(this);
+        this.colHeaderRenderer = this.colHeaderRenderer.bind(this);
+        this.cellRenderer = this.cellRenderer.bind(this);
     }
 
     componentDidMount() {
@@ -45,7 +49,7 @@ export default class Navigation extends Component {
                     currData: data.data,
                     cumulativeData: [...this.state.cumulativeData, data.data]
                 });
-                console.log(this.state.cumulativeData);
+                console.log(this.state.cumulativeData[0][0]);
 
                 let length = data.data.length;
                 let viewData = new Array(data.data.length);
@@ -93,39 +97,7 @@ export default class Navigation extends Component {
                         }
 
                     },
-                    colHeaders: function (col) {
-                        if (col < currentState.colHeader.length) {
-                            if (currentState.currLevel == 0) {
-                                switch (col) {
-                                    case 0:
-                                        return currentState.colHeader[0];
-                                    default:
-                                        let check =
-                                            currentState.aggregateData.formula_ls[col - 1].getChart ? "checked" : "";
-                                        return currentState.colHeader[col] + "<span id='colClose' >x</span>" +
-                                            "<label class=\"switch\">" +
-                                            "  <input type=\"checkbox\"" + check + ">" +
-                                            "  <span class=\"slider round\"></span>" +
-                                            "</label>";
-                                }
-                            } else {
-                                switch (col) {
-                                    case 0:
-                                        return currentState.colHeader[0];
-                                    case 1:
-                                        return currentState.colHeader[1];
-                                    default:
-                                        let check =
-                                            currentState.aggregateData.formula_ls[col - 2].getChart ? "checked" : "";
-                                        return currentState.colHeader[col] + "<span id='colClose'>x</span>" +
-                                            "<label class=\"switch\">" +
-                                            "  <input type=\"checkbox\"" + check + ">" +
-                                            "  <span class=\"slider round\"></span>" +
-                                            "</label>";
-                                }
-                            }
-                        }
-                    },
+                    colHeaders: self.colHeaderRenderer,
                     stretchH: 'all',
                     contextMenu: false,
                     outsideClickDeselects: false,
@@ -173,31 +145,90 @@ export default class Navigation extends Component {
                             self.getAggregateValue();
                         }
                     },
-                    cells: function (row, column, prop) {
-                        let cellMeta = {}
-                        if (currentState.currLevel == 0) {
-                            if (column == 0) {
-                                cellMeta.renderer = self.navCellRenderer;
-                            } else {
-                                cellMeta.renderer = self.chartRenderer;
-                            }
-                        }
-                        else {
-                            if (column <= 1) {
-                                cellMeta.renderer = self.navCellRenderer;
-                            } else {
-                                cellMeta.renderer = self.chartRenderer;
-                            }
-                        }
-                        return cellMeta;
-                    },
-                    afterSelection: self.afterSelectionHandleer,
+                    cells: self.cellRenderer,
+                    afterSelection: self.afterSelectionHandler,
                 })
-                // })
+                this.hotTableComponent.current.hotInstance.view.wt.update('onCellDblClick', function (e, cell) {
+                    if (cell.row >= 0) {
+                        if (currentState.currLevel == 0) {
+                            if (cell.col == 0 && currentState.cumulativeData[currentState.currLevel][cell.row].clickable) {
+                                //        var child = cell.row/spanList[currLevel];
+                                let child = cell.row;
+                                //nav.deselectCell();
+                                //zoomming = true;
+                                self.zoomIn(child);
+                            }
+                        } else {
+                            if (cell.col == 1 && currentState.cumulativeData[currentState.currLevel][cell.row].clickable) {
+                                //  var child = cell.row/spanList[currLevel];
+                                var child = cell.row;
+                                //nav.deselectCell();
+                                //zoomming = true;
+                                self.zoomIn(child);
+                            } else if (cell.col == 0) {
+                                //zoomouting = true;
+                                //zoomOutHist(nav);
+                            }
+                        }
+                    }
+                });
             })
 
     }
-    afterSelectionHandleer (r, c, r2, c2, preventScrolling,
+    cellRenderer (row, column, prop) {
+        let currState = this.state;
+        let cellMeta = {}
+        if (currState.currLevel == 0) {
+            if (column == 0) {
+                cellMeta.renderer = this.navCellRenderer;
+            } else {
+                cellMeta.renderer = this.chartRenderer;
+            }
+        }
+        else {
+            if (column <= 1) {
+                cellMeta.renderer = this.navCellRenderer;
+            } else {
+                cellMeta.renderer = this.chartRenderer;
+            }
+        }
+        return cellMeta;
+    }
+    colHeaderRenderer (col) {
+        let currState = this.state;
+        if (col < currState.colHeader.length) {
+            if (currState.currLevel == 0) {
+                switch (col) {
+                    case 0:
+                        return currState.colHeader[0];
+                    default:
+                        let check =
+                            currState.aggregateData.formula_ls[col - 1].getChart ? "checked" : "";
+                        return currState.colHeader[col] + "<span id='colClose' >x</span>" +
+                            "<label class=\"switch\">" +
+                            "  <input type=\"checkbox\"" + check + ">" +
+                            "  <span class=\"slider round\"></span>" +
+                            "</label>";
+                }
+            } else {
+                switch (col) {
+                    case 0:
+                        return currState.colHeader[0];
+                    case 1:
+                        return currState.colHeader[1];
+                    default:
+                        let check =
+                            currState.aggregateData.formula_ls[col - 2].getChart ? "checked" : "";
+                        return currState.colHeader[col] + "<span id='colClose'>x</span>" +
+                            "<label class=\"switch\">" +
+                            "  <input type=\"checkbox\"" + check + ">" +
+                            "  <span class=\"slider round\"></span>" +
+                            "</label>";
+                }
+            }
+        }
+    }
+    afterSelectionHandler (r, c, r2, c2, preventScrolling,
               selectionLayerLevel) {
         // setting if prevent scrolling after selection
         if (this.state.cumulativeData[this.state.currLevel][r] != undefined) {
@@ -221,7 +252,7 @@ export default class Navigation extends Component {
         }
     }
     navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
-        console.log(this);
+        //console.log(this);
         let tempString = "<div><span>" + value + "</span>";
         let currentState = this.state;
 
@@ -451,6 +482,150 @@ export default class Navigation extends Component {
                 return d.count;
             });
 
+    }
+
+    zoomIn(child) {
+        let currState = this.state;
+        this.hotTableComponent.current.hotInstance.deselectCell();
+        let selectFirstChild = false;
+        console.log("In zoom in:" + child);
+        console.log(currState.selectedChild);
+        let childHash = new Map();
+        if (!currState.selectedChild.includes(child) || currState.selectedChild.length == 0)
+             selectFirstChild = true;
+        let selectedChild = [];
+        let selectedBars = [];
+        let sortChild_ls = [];
+        let colHeader = currState.colHeader;
+        if (currState.currLevel == 0) {
+            colHeader.splice(1, 0, "")
+        }
+        let levelList = currState.levelList;
+        levelList.push(child);
+        this.setState({
+            selectedChild: [],
+            selectedBars:[],
+            sortChild_ls:[],
+            levelList:levelList,
+            colHeader:colHeader,
+        });
+        let childlist = this.computePath(); // get the list of children
+
+        let queryData = {};
+        console.log(this)
+        queryData.bookId = this.props.bookId;
+        queryData.sheetName = this.props.grid.state.sheetName;
+        queryData.path = childlist;
+        fetch('http://localhost:9999/api/' + 'getChildren',{
+            method: "POST",
+            body:JSON.stringify(queryData),
+            headers:{
+                'Content-Type': 'text/plain'
+            }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+            if (data.status == "success") {
+                var result = data.data;
+                console.log(result);
+                this.setState({
+                              currData: result.buckets,
+                       })
+                console.log(this)
+                let currData = result.buckets;
+                let cumulativeData =  currState.cumulativeData;
+                let currLevel = currState.currLevel + 1;
+                let alltext = true;
+                for (let i = 0; i < currData.length; i++) {
+                    if (currData[i].clickable) alltext = false;
+                    childHash.set(i, currData[i].children);
+                }
+                // prevPath = result.prev.path;
+                // nextPath = result.later.path;
+                // let breadcrum_ls = result.breadCrumb;
+             let  mergeCellInfo = [];
+                mergeCellInfo.push(
+                    {row: 0, col: 0, rowspan: currData.length, colspan: 1});
+              let  viewData = [];
+              console.log(currState);
+
+               for (let i = 0; i < currData.length; i++) {
+                    if (i == 0) {
+                        console.log(cumulativeData);
+
+                        viewData.push([cumulativeData[parseInt(currLevel - 1)][child].name]);
+                    } else {
+                        viewData.push ( [""]);
+                    }
+                }
+
+               console.log(viewData);
+                cumulativeData.splice(currLevel);
+                cumulativeData.push(currData);
+
+                for (let i = 0; i < currData.length; i++) {
+                    viewData[i][1] = cumulativeData[currLevel][i].name;
+                }
+                this.setState({
+                    childHash: childHash,
+                    viewData:viewData,
+                    cumulativeData:cumulativeData,
+                    currLevel:currLevel,
+                    mergeCellInfo:mergeCellInfo,
+                });
+                currState = this.state;
+                this.hotTableComponent.current.hotInstance.updateSettings({
+                    data: currState.viewData,
+                    rowHeights: (currState.wrapperHeight * 0.95 / currState.currData.length > 90)
+                        ? currState.wrapperHeight * 0.95 / currState.currData.length
+                        : 90,
+                    mergeCells: mergeCellInfo,
+                })
+        //
+        //         cumulativeDataSize += currData.length;
+        //
+        //         let columWidth = [];
+        //         if (currLevel >= 1) {
+        //             // columWidth = [50];
+        //         } else {
+        //             columWidth = 200;
+        //         }
+        //         // nav.render();
+        //
+        //         if (hieraOpen) {
+        //             getAggregateValue();
+        //
+        //         } else {
+        //             nav.updateSettings({
+        //                 // minRows: currData.length,
+        //                 data: viewData,
+        //                 rowHeights: (wrapperHeight * 0.95 / currData.length > 90)
+        //                     ? wrapperHeight * 0.95 / currData.length
+        //                     : 90,
+        //                 mergeCells: mergeCellInfo,
+        //             });
+        //             zoomming = false;
+        //             //nav.selectCell(0, 1)
+        //         }
+        //         updateNavPath(breadcrum_ls); // calculate breadcrumb
+        //         updateNavCellFocus(currentFirstRow, currentLastRow);
+        //         if (selectFirstChild)
+        //             nav.selectCell(0, 1);
+              }
+            })
+    }
+
+    computePath() {
+        let childlist = "";
+        let currState = this.state;
+        for (let i = 0; i < currState.levelList.length - 1; i++) {
+            childlist += currState.levelList[i] + ",";
+        }
+        if (currState.levelList.length > 0) {
+            childlist += currState.levelList[currState.levelList.length - 1];
+        }
+        return childlist;
     }
 
     render() {
