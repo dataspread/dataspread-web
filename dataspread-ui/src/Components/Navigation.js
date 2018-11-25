@@ -28,6 +28,10 @@ export default class Navigation extends Component {
             selectedBars:[],
             childHash: new Map(),
             levelList:[],
+            hieraOpen:false,
+            sortChild_ls:[],
+            prevPath:'',
+            nextPath:'',
         }
 
         this.hotTableComponent = React.createRef();
@@ -38,6 +42,8 @@ export default class Navigation extends Component {
         this.computePath = this.computePath.bind(this);
         this.colHeaderRenderer = this.colHeaderRenderer.bind(this);
         this.cellRenderer = this.cellRenderer.bind(this);
+        this.colWidthsComputer = this.colWidthsComputer.bind(this);
+        this.zoomOutHist = this.zoomOutHist.bind(this);
     }
 
     componentDidMount() {
@@ -79,24 +85,7 @@ export default class Navigation extends Component {
                     height: currentState.wrapperHeight * 0.93,
                     rowHeaderWidth: 0,
                     rowHeaders: true,
-                    colWidths: function (col) {
-                        if (currentState.currLevel == 0) {
-                            if (col == 0) {
-                                return currentState.wrapperWidth * 0.18;
-                            } else {
-                                return currentState.wrapperWidth * 0.15;
-                            }
-                        } else {
-                            if (col == 0) {
-                                return currentState.wrapperWidth * 0.04;
-                            } else if (col == 1 && currentState.alltext) {
-                                return currentState.wrapperWidth * 0.08;
-                            } else {
-                                return currentState.wrapperWidth * 0.15;
-                            }
-                        }
-
-                    },
+                    colWidths: self.colWidthsComputer,
                     colHeaders: self.colHeaderRenderer,
                     stretchH: 'all',
                     contextMenu: false,
@@ -173,6 +162,25 @@ export default class Navigation extends Component {
                     }
                 });
             })
+
+    }
+    colWidthsComputer(col) {
+        let currState = this.state;
+        if (currState.currLevel == 0) {
+            if (col == 0) {
+                return currState.wrapperWidth * 0.18;
+            } else {
+                return currState.wrapperWidth * 0.15;
+            }
+        } else {
+            if (col == 0) {
+                return currState.wrapperWidth * 0.04;
+            } else if (col == 1 && currState.alltext) {
+                return currState.wrapperWidth * 0.08;
+            } else {
+                return currState.wrapperWidth * 0.15;
+            }
+        }
 
     }
     cellRenderer (row, column, prop) {
@@ -493,9 +501,7 @@ export default class Navigation extends Component {
         let childHash = new Map();
         if (!currState.selectedChild.includes(child) || currState.selectedChild.length == 0)
              selectFirstChild = true;
-        let selectedChild = [];
-        let selectedBars = [];
-        let sortChild_ls = [];
+
         let colHeader = currState.colHeader;
         if (currState.currLevel == 0) {
             colHeader.splice(1, 0, "")
@@ -575,45 +581,140 @@ export default class Navigation extends Component {
                     mergeCellInfo:mergeCellInfo,
                 });
                 currState = this.state;
-                this.hotTableComponent.current.hotInstance.updateSettings({
-                    data: currState.viewData,
-                    rowHeights: (currState.wrapperHeight * 0.95 / currState.currData.length > 90)
-                        ? currState.wrapperHeight * 0.95 / currState.currData.length
-                        : 90,
-                    mergeCells: mergeCellInfo,
-                })
+
+                if(currState.hieraOpen) {
+                    //getAggregateValue();
+                } else {
+                    this.hotTableComponent.current.hotInstance.updateSettings({
+                        data: currState.viewData,
+                        rowHeights: (currState.wrapperHeight * 0.95 / currState.currData.length > 90)
+                            ? currState.wrapperHeight * 0.95 / currState.currData.length
+                            : 90,
+                        mergeCells: mergeCellInfo,
+                    })
+                }
+
         //
         //         cumulativeDataSize += currData.length;
         //
-        //         let columWidth = [];
-        //         if (currLevel >= 1) {
-        //             // columWidth = [50];
-        //         } else {
-        //             columWidth = 200;
-        //         }
-        //         // nav.render();
         //
-        //         if (hieraOpen) {
-        //             getAggregateValue();
-        //
-        //         } else {
-        //             nav.updateSettings({
-        //                 // minRows: currData.length,
-        //                 data: viewData,
-        //                 rowHeights: (wrapperHeight * 0.95 / currData.length > 90)
-        //                     ? wrapperHeight * 0.95 / currData.length
-        //                     : 90,
-        //                 mergeCells: mergeCellInfo,
-        //             });
         //             zoomming = false;
         //             //nav.selectCell(0, 1)
         //         }
         //         updateNavPath(breadcrum_ls); // calculate breadcrumb
         //         updateNavCellFocus(currentFirstRow, currentLastRow);
-        //         if (selectFirstChild)
-        //             nav.selectCell(0, 1);
+                if (selectFirstChild)
+                    this.hotTableComponent.current.hotInstance.selectCell(0, 1);
               }
             })
+    }
+
+    zoomOutHist() {
+        let currState = this.state;
+        let childHash = new Map();
+        let colHeader = currState.colHeader;
+        //nav.deselectCell();
+        if (currState.currLevel == 0) {
+            colHeader.splice(1, 0, "")
+        }
+        let targetChild = currState.levelList[currState.levelList.length - 1];
+        let levelList = currState.levelList;
+        levelList.pop();
+        this.setState({
+            selectedChild: [],
+            selectedBars:[],
+            sortChild_ls:[],
+            levelList:levelList,
+            colHeader:colHeader,
+            alltext:false,
+        });
+        let childlist = this.computePath(); // get the list of children
+        // api call to /levelList + '.' + child to get currData
+        let queryData = {};
+
+        queryData.bookId = this.props.bookId;
+        queryData.sheetName = this.props.grid.state.sheetName;
+        queryData.path = childlist;
+
+        fetch('http://localhost:9999/api/' + 'getChildren',{
+            method: "POST",
+            body:JSON.stringify(queryData),
+            headers:{
+                'Content-Type': 'text/plain'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status == "success") {
+                    let result = data.data;
+                    //console.log(result);
+                    let breadcrum_ls = result.breadCrumb;
+                    // clickable = result.clickable;
+                    let currLevel = breadcrum_ls.length;
+                    let currData = result.buckets;
+                    for (let i = 0; i < currData.length; i++) {
+                        childHash.set(i, currData[i].children);
+                    }
+                    let prevPath = result.prev.path;
+                    let nextPath = result.later.path;
+                    let numChild = currData.length;
+                    let viewData = new Array(numChild);
+                    let cumulativeData = currState.cumulativeData;
+                    cumulativeData[currLevel] = currData;
+                    let mergeCellInfo = [];
+                    if (currLevel > 0) {
+                        mergeCellInfo.push({row: 0, col: 0, rowspan: numChild, colspan: 1});
+
+                        let parentName = breadcrum_ls[breadcrum_ls.length - 1];
+
+                        for (let i = 0; i < numChild; i++) {
+                            if (i == 0) {
+                                viewData[i] = [parentName];
+                            } else {
+                                viewData[i] = [""];
+                            }
+                            viewData[i][1] = currData[i].name;
+                        }
+                    } else {
+                        colHeader.splice(1, 1);
+                        for (let i = 0; i < numChild; i++) {
+                            viewData[i] = [currData[i].name];
+                        }
+                    }
+                    this.setState({
+                        viewData: viewData,
+                        currLevel:currLevel,
+                        currData:currData,
+                        cumulativeData:cumulativeData,
+                        childHash:childHash,
+                        colHeader:colHeader,
+                        mergeCellInfo:mergeCellInfo,
+                        prevPath:prevPath,
+                        nextPath:nextPath,
+                    });
+                    currState = this.state;
+                    if (currState.hieraOpen) {
+                       // getAggregateValue();
+
+                    } else {
+                        this.hotTableComponent.current.hotInstance.updateSettings({
+                            data: currState.viewData,
+                            rowHeights: (currState.wrapperHeight * 0.95 / currState.currData.length > 90)
+                                ? currState.wrapperHeight * 0.95 / numChild
+                                : 90,
+                            mergeCells: mergeCellInfo,
+                        })
+                 //       zoomouting = false;
+               //         nav.render();
+
+                    }
+
+                    // updateNavPath(breadcrum_ls);
+                    // updateNavCellFocus(currentFirstRow, currentLastRow);
+                }
+            })
+
+
     }
 
     computePath() {
