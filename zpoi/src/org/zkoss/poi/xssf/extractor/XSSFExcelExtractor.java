@@ -49,7 +49,7 @@ public class XSSFExcelExtractor extends POIXMLTextExtractor implements org.zkoss
    private Locale locale;
 	private XSSFWorkbook workbook;
 	private boolean includeSheetNames = true;
-	private boolean formulasNotResults = false;
+	private boolean formulasNotResults = true;
 	private boolean includeCellComments = false;
 	private boolean includeHeadersFooters = true;
 
@@ -152,7 +152,8 @@ public class XSSFExcelExtractor extends POIXMLTextExtractor implements org.zkoss
 					// Is it a formula one?
 					if(cell.getCellType() == Cell.CELL_TYPE_FORMULA) {
 					   if (formulasNotResults) {
-					      text.append(cell.getCellFormula());
+					      text.append('=')
+							  .append(cell.getCellFormula());
 					   } else {
 					      if (cell.getCachedFormulaResultType() == Cell.CELL_TYPE_STRING) {
 					         handleStringCell(text, cell);
