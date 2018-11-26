@@ -9,7 +9,10 @@ export default class Cell extends Component {
         this.state = {
             editing: false,
         }
-        this.handleClick = this.handleClick.bind(this);
+        this.handleMouseOver = this.handleMouseOver.bind(this);
+        this.handleMouseDown = this.handleMouseDown.bind(this);
+        this.handleMouseUp = this.handleMouseUp.bind(this);
+        this.handleDoubleClick = this.handleDoubleClick.bind(this);
         this.handleBlur = this.handleBlur.bind(this);
         this._handleKeyPress = this._handleKeyPress.bind(this);
     }
@@ -25,15 +28,35 @@ export default class Cell extends Component {
         }
     }
 
+    handleMouseOver() {
+        this.props.onCellMouseOver({
+            rowIndex: this.props.rowIndex,
+            columnIndex: this.props.columnIndex
+        });
+    }
 
-    handleClick() {
+    handleMouseDown() {
+        this.props.onCellMouseDown({
+            rowIndex: this.props.rowIndex,
+            columnIndex: this.props.columnIndex
+        });
+    }
+
+    handleMouseUp() {
+        this.props.onCellMouseUp({
+            rowIndex: this.props.rowIndex,
+            columnIndex: this.props.columnIndex
+        });
+    }
+
+    handleDoubleClick() {
         this.setState({
             editing: true
         });
     }
 
     handleBlur(e) {
-        if (this.props.value != e.target.value)
+        if (this.props.value !== e.target.value)
             this.props.onUpdate({
                 rowIndex: this.props.rowIndex,
                 columnIndex: this.props.columnIndex,
@@ -55,12 +78,13 @@ export default class Cell extends Component {
                         defaultValue={this.props.formula == null ? this.props.value : this.props.formula}/>
                 )
             }
+            // selection code goes here
             else if (this.props.isProcessing) {
                 return (
                     <div
                         style={this.props.style}
                         className={this.props.className}
-                        onDoubleClick={this.handleClick}>
+                        onDoubleClick={this.handleDoubleClick}>
                         <Progress
                             style={{
                                 height: '32px',
@@ -79,7 +103,10 @@ export default class Cell extends Component {
                     <div
                         style={this.props.style}
                         className={this.props.className}
-                        onDoubleClick={this.handleClick}>
+                        onMouseOver={this.handleMouseOver}
+                        onMouseDown={this.handleMouseDown}
+                        onMouseUp={this.handleMouseUp}
+                        onDoubleClick={this.handleDoubleClick}>
                         {this.props.value}
                     </div>);
             }

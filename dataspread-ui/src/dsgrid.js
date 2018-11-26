@@ -1,6 +1,5 @@
 import React, {Component} from 'react';
-import {Button, Dimmer, Input, Loader} from 'semantic-ui-react'
-import ReactResumableJs from 'react-resumable-js'
+import {Dimmer, Loader} from 'semantic-ui-react'
 import {ArrowKeyStepper, AutoSizer, defaultCellRangeRenderer, Grid, ScrollSync} from './react-virtualized'
 
 import Cell from './cell';
@@ -21,14 +20,18 @@ export default class DSGrid extends Component {
         super(props);
         this.state = {
             rows: 100000000,
-            bookName: '',
             sheetName: '',
             columns: 500,
             version: 0,
             focusCellRow: -1,
             focusCellColumn: -1,
-            isProcessing: false
+            selectOppositeCellRow: -1,
+            selectOppositeCellColumn: -1,
+            isProcessing: false,
+            initialLoadDone:false,
         }
+        this.mouseDown = false;
+        this.shiftOn = false;
         this.subscribed = false;
         this.rowHeight = 32;
         this.columnWidth = 150;
@@ -43,16 +46,32 @@ export default class DSGrid extends Component {
 
         this._onSectionRendered = this._onSectionRendered.bind(this);
         this._cellRenderer = this._cellRenderer.bind(this);
-        this._handleEvent = this._handleEvent.bind(this);
         this._updateCell = this._updateCell.bind(this);
+        this._mouseOverCell = this._mouseOverCell.bind(this);
+        this._mouseDownCell = this._mouseDownCell.bind(this);
+        this._mouseUpCell = this._mouseUpCell.bind(this);
         this._processUpdates = this._processUpdates.bind(this);
         this._cellRangeRenderer = this._cellRangeRenderer.bind(this);
+        this._handleKeyDown = this._handleKeyDown.bind(this);
+        this._handleKeyUp = this._handleKeyUp.bind(this);
 
-        this.urlPrefix = ""; // Only for testing.
-        this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket")
+        // this.urlPrefix = ""; // Only for testing.
+        // this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
 
-        //this.urlPrefix = "http://localhost:8080"; // Only for testing.
-        //this.stompClient = Stomp.client("ws://localhost:8080/ds-push/websocket")
+        if (typeof process.env.REACT_APP_BASE_HOST === 'undefined') {
+            this.urlPrefix = "";
+            this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
+        }
+        else
+        {
+            this.urlPrefix = "http://" + process.env.REACT_APP_BASE_HOST;
+            this.stompClient = Stomp.client("ws://" + process.env.REACT_APP_BASE_HOST + "/ds-push/websocket");
+        }
+
+        //this.urlPrefix = process.env.REACT_APP_BASE_URL ; // Only for testing.
+        //this.stompClient = Stomp.client("ws://kite.cs.illinois.edu:8080/ds-push/websocket");
+        //this.stompClient = Stomp.client("ws://localhost:8080/ds-push/websocket");
+        console.log("urlPrefix:" +  this.urlPrefix);
 
         this.stompClient.connect({}, null, null, () => {
             alert("Lost connection to server. Please reload.")
@@ -75,7 +94,8 @@ export default class DSGrid extends Component {
 
 
     componentDidMount() {
-
+        //onsole.log("Grid mounted passed file id " + this.props.fileId);
+        //this.setState({bookId: this.props.fileId})
     }
 
     componentWillUnmount() {
@@ -90,6 +110,7 @@ export default class DSGrid extends Component {
         {
             this.dataCache.set(parseInt(jsonMessage['blockNumber'], 10),
                 jsonMessage['data']);
+            this.setState({initialLoadDone: true});
             this.grid.forceUpdate();
         }
         else if (jsonMessage['message'] === 'asyncStatus') {
@@ -118,7 +139,7 @@ export default class DSGrid extends Component {
         }
         else if (jsonMessage['message'] === 'subscribed') {
             this.subscribed = true;
-
+            this.rowStartIndex = -1; // Force reload.
             this.grid.forceUpdate();
 
         }
@@ -126,43 +147,10 @@ export default class DSGrid extends Component {
 
     render() {
         return (
-            <div>
-                <Input
-                    placeholder='Book Name...'
-                    name="bookName"
-                    onChange={this._handleEvent}/>
-
-                <Button
-                    name="bookLoadButton"
-                    onClick={this._handleEvent}>
-                    Load
-                </Button>
-
-                <ReactResumableJs
-                    uploaderID="importBook"
-                    filetypes={["csv"]}
-                    fileAccept="text/csv"
-                    maxFileSize={100000000000}
-                    simultaneousUploads={4}
-                    fileAddedMessage="Started!"
-                    completedMessage="Complete!"
-                    service="/api/importFile"
-                    disableDragAndDrop={true}
-                    showFileList={false}
-                    onFileSuccess={(file, message) => {
-                        console.log(file, message);
-                    }}
-                    onFileAdded={(file, resumable) => {
-                        resumable.upload();
-                    }}
-                    maxFiles={1}
-                    onStartUpload={() => {
-                        console.log("Start upload");
-                    }}
-                />
+            <div onKeyDown={this._handleKeyDown} onKeyUp={this._handleKeyUp}>
                 <div style={{display: 'flex'}}>
                     <div style={{flex: 'auto', height: '90vh'}}>
-                        <Dimmer active={this.state.isProcessing}>
+                        <Dimmer active={this.state.isProcessing || !this.state.initialLoadDone}>
                             <Loader>Processing</Loader>
                         </Dimmer>
                         <AutoSizer>
@@ -241,6 +229,10 @@ export default class DSGrid extends Component {
                                                                 onSectionRendered={onSectionRendered}
                                                                 //onSectionRendered={this._onSectionRendered}
                                                                 ref={(ref) => this.grid = ref}
+                                                                focusCellColumn={this.state.focusCellColumn}
+                                                                focusCellRow={this.state.focusCellRow}
+                                                                selectOppositeCellColumn={this.state.selectOppositeCellColumn}
+                                                                selectOppositeCellRow={this.state.selectOppositeCellRow}
                                                             />
                                                         </div>)}
                                                 </ArrowKeyStepper>
@@ -257,43 +249,35 @@ export default class DSGrid extends Component {
 
     }
 
-    _handleEvent(event) {
-        const target = event.target;
-        const name = target.name;
-        if (name === "bookName") {
-            this.bookName = target.value;
-            console.log(this.bookName);
-        }
-        else if (name === "bookLoadButton") {
-            fetch(this.urlPrefix + "/api/getSheets/" + this.bookName)
-                .then(res => res.json())
-                .then(
-                    (result) => {
-                        this.dataCache.reset();
-                        this.setState({
-                            bookName: this.bookName,
-                            sheetName: 'Sheet1',
-                            rows: result['data']['sheets'][0]['numRow'],
-                            columns: result['data']['sheets'][0]['numCol']
-                        });
-                        this.subscribed = false;
-                        this.grid.scrollToCell ({ columnIndex: 0, rowIndex: 0 });
-                        if (this.stompSubscription!=null)
-                            this.stompSubscription.unsubscribe();
-                        this.stompSubscription = this.stompClient
-                            .subscribe('/user/push/updates',
-                                this._processUpdates, {bookName: this.state.bookName,
-                                        sheetName: this.state.sheetName,
-                                        fetchSize: this.fetchSize});
-                        console.log("book loaded rows:" + result['data']['sheets'][0]['numRow']);
-                    }
-                )
-                .catch((error) => {
-                    console.error(error);
-                });
+    loadBook()
+    {
+        this.subscribed = false;
+        fetch(this.urlPrefix + "/api/getSheets/" +  this.props.bookId)
+            .then(res => res.json())
+            .then(
+                (result) => {
+                    console.log(result);
+                    this.dataCache.reset();
+                    this.setState({
+                        sheetName: 'Sheet1',
+                        rows: result['data']['sheets'][0]['numRow']+100,
+                        columns: result['data']['sheets'][0]['numCol']
+                    });
 
-
-        }
+                    this.grid.scrollToCell ({ columnIndex: 0, rowIndex: 0 });
+                    if (this.stompSubscription!=null)
+                        this.stompSubscription.unsubscribe();
+                    this.stompSubscription = this.stompClient
+                        .subscribe('/user/push/updates',
+                            this._processUpdates, {bookId:  this.props.bookId,
+                                sheetName: this.state.sheetName,
+                                fetchSize: this.fetchSize});
+                    console.log("book loaded rows:" + result['data']['sheets'][0]['numRow']);
+                }
+            )
+            .catch((error) => {
+                console.error(error);
+            });
     }
 
 
@@ -376,9 +360,77 @@ export default class DSGrid extends Component {
         //TODO: send update to backend.
     }
 
+    _setFocusCell(rowIndex, columnIndex) {
+        if (this.inclusiveBetween(rowIndex, 0, this.state.rows-1) &&
+            this.inclusiveBetween(columnIndex, 0, this.state.columns-1)) {
+            this.setState({
+                focusCellRow: rowIndex,
+                focusCellColumn: columnIndex,
+                selectOppositeCellRow: rowIndex,
+                selectOppositeCellColumn: columnIndex
+            });
+        }
+    }
+
+    _setSelectOppositeCell(rowIndex, columnIndex, setFocusCell) {
+        if (this.inclusiveBetween(rowIndex, 0, this.state.rows-1) &&
+            this.inclusiveBetween(columnIndex, 0, this.state.columns-1)) {
+            this.setState({
+                selectOppositeCellRow: rowIndex,
+                selectOppositeCellColumn: columnIndex
+            });
+        }
+    }
+
+    _keyMoveCell(rowIndexOffset, columnIndexOffset) {
+        if (this.shiftOn) {
+            this._setSelectOppositeCell(
+                this.state.selectOppositeCellRow+rowIndexOffset,
+                this.state.selectOppositeCellColumn+columnIndexOffset
+            );
+        } else {
+            this._setFocusCell(
+                this.state.focusCellRow+rowIndexOffset,
+                this.state.focusCellColumn+columnIndexOffset
+            );
+        }
+    }
+
+    _mouseOverCell (
+        {   rowIndex,
+            columnIndex
+        }
+    ) {
+        if (this.mouseDown) {
+            this._setSelectOppositeCell(rowIndex, columnIndex);
+        }
+    }
+
+    _mouseDownCell (
+        {   rowIndex,
+            columnIndex
+        }
+    ) {
+        if (!this.shiftOn) {
+            this._setFocusCell(rowIndex, columnIndex);
+        } else {
+            this._setSelectOppositeCell(rowIndex, columnIndex);
+        }
+        this.mouseDown = true;
+        //TODO: send selection to backend.
+    }
+
+    _mouseUpCell (
+        {   rowIndex,
+            columnIndex
+        }
+    ) {
+        this.mouseDown = false;
+        //TODO: send selection to backend.
+    }
+
 
     _cellRangeRenderer (props) {
-
         if (this.subscribed) {
             if (!props.isScrolling) {
                 if (this.rowStartIndex!==props.rowStartIndex || this.rowStopIndex!==props.rowStopIndex) {
@@ -394,6 +446,10 @@ export default class DSGrid extends Component {
         }
         const children = defaultCellRangeRenderer(props);
         return children;
+    }
+
+    inclusiveBetween (num, num1, num2) {
+        return (num1 <= num && num <= num2) || (num2 <= num && num <= num1);
     }
 
     _cellRenderer ({
@@ -413,6 +469,12 @@ export default class DSGrid extends Component {
         if (typeof fromCache === "object") {
             cellContent = this.dataCache
                 .get(Math.trunc((rowIndex) / this.fetchSize))[(rowIndex) % this.fetchSize][columnIndex];
+            if (rowIndex === this.state.focusCellRow && columnIndex === this.state.focusCellColumn) {
+                cellClass = 'cellFocus';
+            } else if (this.inclusiveBetween(rowIndex, this.state.focusCellRow, this.state.selectOppositeCellRow)
+            && this.inclusiveBetween(columnIndex, this.state.focusCellColumn, this.state.selectOppositeCellColumn)) {
+                cellClass = 'cellSelected';
+            }
         }
         else {
             cellClass = 'isScrollingPlaceholder'
@@ -430,9 +492,33 @@ export default class DSGrid extends Component {
                     columnIndex={columnIndex}
                     isProcessing={cellContent[0] === '...'}
                     pctProgress={cellContent[2]}
+                    onCellMouseOver={this._mouseOverCell}
+                    onCellMouseDown={this._mouseDownCell}
+                    onCellMouseUp={this._mouseUpCell}
                     onUpdate={this._updateCell}
                 />
         )
     }
+
+    _handleKeyDown(e) {
+        if (e.key === 'Shift') {
+            this.shiftOn = true;
+        } else if (e.key === 'ArrowLeft') {
+            this._keyMoveCell(0, -1);
+        } else if (e.key === 'ArrowRight') {
+            this._keyMoveCell(0, 1);
+        } else if (e.key === 'ArrowUp') {
+            this._keyMoveCell(-1, 0);
+        } else if (e.key === 'ArrowDown') {
+            this._keyMoveCell(1, 0);
+        }
+    }
+
+    _handleKeyUp(e) {
+        if (e.key === 'Shift') {
+            this.shiftOn = false;
+        }
+    }
+
 
 }

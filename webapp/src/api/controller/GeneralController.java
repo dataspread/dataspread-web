@@ -255,12 +255,12 @@ public class GeneralController implements FormulaAsyncListener {
     }
 
     @SubscribeMapping("/user/push/updates")
-    void subscribe(@Header String bookName,
+    void subscribe(@Header String bookId,
                    @Header String sheetName,
                    @Header int fetchSize,
                    SimpMessageHeaderAccessor accessor) {
 
-        SSheet sheet = BookBindings.getBookById(bookName).getSheetByName(sheetName);
+        SSheet sheet = BookBindings.getBookById(bookId).getSheetByName(sheetName);
         UISessionManager.getInstance()
                 .getUISession(accessor.getSessionId())
                 .assignSheet(sheet, fetchSize);
