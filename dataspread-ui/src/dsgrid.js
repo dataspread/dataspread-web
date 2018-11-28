@@ -8,6 +8,7 @@ import LRUCache from "lru-cache";
 import Stomp from 'stompjs';
 
 import Navigation from "./Components/Navigation";
+import ExplorationForm from "./Components/ExplorationForm";
 
 export default class DSGrid extends Component {
     toColumnName(num) {
@@ -150,6 +151,7 @@ export default class DSGrid extends Component {
     render() {
         return (
             <div><Navigation bookId={this.props.bookId} grid = {this} />
+                <ExplorationForm grid = {this}/>
             <div onKeyDown={this._handleKeyDown} onKeyUp={this._handleKeyUp}>
                 <div style={{display: 'flex'}}>
                     <div style={{flex: 'auto', height: '90vh'}}>
