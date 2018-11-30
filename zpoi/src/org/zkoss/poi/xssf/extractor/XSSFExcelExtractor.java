@@ -194,6 +194,7 @@ public class XSSFExcelExtractor extends POIXMLTextExtractor implements org.zkoss
 						extractHeaderFooter(sheet.getEvenFooter())
 				);
 			}
+			text.append("\n=============================================================================\n");
 		}
 
 		return text.toString();
