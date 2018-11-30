@@ -1,9 +1,14 @@
 package org.zkoss.zss.model.sys.formula.Decomposer;
 
+import org.zkoss.poi.ss.formula.ExternSheetReferenceToken;
 import org.zkoss.poi.ss.formula.ptg.*;
 import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
+import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.impl.sys.formula.ParsingBook;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
+import org.zkoss.zss.model.sys.formula.FormulaEngine;
 import org.zkoss.zss.model.sys.formula.Primitives.*;
 import org.zkoss.zss.model.sys.formula.QueryOptimization.QueryPlanGraph;
 
@@ -33,21 +38,40 @@ public class FormulaDecomposer {
 
         Map<String, DataOperator> dataOperatorMap = new TreeMap<>();
 
+        ParsingBook parsingBook = null;
+        SBook book = null;
+
         for (Ptg ptg:ptgs){
             if((ptg instanceof RefPtgBase || ptg instanceof AreaPtgBase)
                     && !dataOperatorMap.containsKey(ptg.toString())){
                 DataOperator data;
+
+                SSheet sheet;
+
+                if (ptg instanceof ExternSheetReferenceToken){
+                    int externSheetIndex = ((ExternSheetReferenceToken)ptg).getExternSheetIndex();
+                    if (parsingBook == null) {
+                        parsingBook = new ParsingBook(target.getSheet().getBook());
+                        book = target.getSheet().getBook();
+                    }
+                    sheet = book.getSheetByName(parsingBook.getSheetNameByExternSheet(externSheetIndex));
+                }
+                else {
+                    sheet = target.getSheet();
+                }
+
                 if (ptg instanceof RefPtgBase){
                     RefPtgBase rptg = (RefPtgBase)ptg;
-                    data = new SingleDataOperator(target.getSheet(),
+                    data = new SingleDataOperator(sheet,
                             new CellRegion(rptg.getRow(),rptg.getColumn()));
                 }
                 else{
                     AreaPtgBase rptg = (AreaPtgBase)ptg;
-                    data = new SingleDataOperator(target.getSheet(),
+                    data = new SingleDataOperator(sheet,
                             new CellRegion(rptg.getFirstRow(),rptg.getFirstColumn(),
                                     rptg.getLastRow(),rptg.getLastColumn()));
                 }
+
                 dataOperatorMap.put(ptg.toString(),data);
                 result.addData(data);
             }

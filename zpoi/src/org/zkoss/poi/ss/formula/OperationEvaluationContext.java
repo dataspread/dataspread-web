@@ -87,7 +87,7 @@ public final class OperationEvaluationContext {
 		ExternalSheet externalSheet = _workbook.getExternalSheet(externSheetIndex);
 		WorkbookEvaluator targetEvaluator;
 		int otherSheetIndex, otherLastSheetIndex;
-		if (externalSheet == null) {
+  		if (externalSheet == null) {
 			// sheet is in same workbook
 			otherSheetIndex = _workbook.convertFromExternSheetIndex(externSheetIndex);
 			otherLastSheetIndex = _workbook.convertLastIndexFromExternSheetIndex(externSheetIndex);

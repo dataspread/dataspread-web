@@ -26,6 +26,8 @@ import java.sql.Types;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static testformula.AsyncPerformance.realTest;
+
 public class AsyncPerformance2 implements FormulaAsyncListener {
     int cellCount = 5000;
     long initTime;
@@ -64,7 +66,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         //graphThread.start();
 
         //simpleTest(formulaAsyncScheduler);
-        //realTest("survey", "Escalating OSA with Cost Share.xlsx", "Cost Share", formulaAsyncScheduler);
+        realTest("survey", "Escalating OSA with Cost Share.xlsx", "Cost Share", formulaAsyncScheduler);
 
         //graphCompressor.shutdown();
         //graphThread.join();

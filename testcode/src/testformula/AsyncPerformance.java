@@ -48,8 +48,7 @@ public class AsyncPerformance implements FormulaAsyncListener {
         DBHandler.connectToDB(url, driver, userName, password);
 
         SheetImpl.simpleModel = true;
-        SheetImpl.disablePrefetch();
-        //FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerPriority();
+        //FormulaAsyncSchedule   r formulaAsyncScheduler = new FormulaAsyncSchedulerPriority();
         FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerThreaded();
         Thread asyncThread = new Thread(formulaAsyncScheduler);
         asyncThread.start();
