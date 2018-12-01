@@ -141,7 +141,7 @@ public class GeneralController implements FormulaAsyncListener {
             uiSession.updateViewPort((int) payload.get("rowStartIndex"), (int) payload.get("rowStopIndex"));
             // If viewport not cached, push to FE
             int blockNumber = uiSession.getViewPortBlockNumber();
-            for (int i = 0; i < 5; i++) {
+              for (int i = 0; i < 5; i++) {
                 if (!uiSession.isBlockCached(uiSession.getViewPortBlockNumber() + i))
                     pushCells(uiSession, blockNumber + i);
             }

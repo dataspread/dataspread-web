@@ -21,7 +21,6 @@ public class XlsxLoader {
     }
 
     private static SBook importBook(String bookName) throws Exception {
-
         String query = "SELECT COUNT(*) FROM books WHERE bookname = ?";
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
