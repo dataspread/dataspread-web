@@ -1,6 +1,7 @@
 package org.zkoss.zss.model.sys.formula.Primitives;
 
 import org.zkoss.poi.ss.formula.eval.NumberEval;
+import org.zkoss.poi.ss.formula.eval.StringEval;
 import org.zkoss.poi.ss.formula.eval.ValueEval;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
@@ -58,6 +59,9 @@ public abstract class DataOperator extends PhysicalOperator implements MultiOutp
         ValueEval resultValue;
         if (result instanceof Double){
             resultValue = new NumberEval((Double)result);
+        }
+        else if (result instanceof String){
+            resultValue = new StringEval((String) result);
         }
         else {
             System.out.println(result.toString() + result.hashCode());

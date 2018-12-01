@@ -23,7 +23,8 @@ public class SingleDataOperator extends DataOperator{
             Object[] resultObject = new Object[_region.getCellCount()];
             for (int i = 0; i < cells.length;i++){
                 AbstractCellAdv cell = cells[i];
-                if (cell.getType() != SCell.CellType.NUMBER && cell.getType() != SCell.CellType.FORMULA)
+                if (cell.getType() != SCell.CellType.NUMBER && cell.getType() != SCell.CellType.FORMULA
+                        && cell.getType() != SCell.CellType.STRING)
                     throw OptimizationError.UNSUPPORTED_TYPE;
                 resultObject[i] = cell.getValue();
             }
