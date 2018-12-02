@@ -238,7 +238,15 @@ public class GeneralController implements FormulaAsyncListener {
                    @Header int fetchSize,
                    SimpMessageHeaderAccessor accessor) {
 
-        SSheet sheet = BookBindings.getBookById(bookName).getSheetByName(sheetName);
+        SSheet sheet;
+
+        try {
+            sheet = BookBindings.getBookById(bookName).getSheet(2);
+        }
+        catch (Exception ignored){
+            sheet = BookBindings.getBookById(bookName).getSheetByName(sheetName);
+        }
+
         UISessionManager.getInstance()
                 .getUISession(accessor.getSessionId())
                 .assignSheet(sheet, fetchSize);

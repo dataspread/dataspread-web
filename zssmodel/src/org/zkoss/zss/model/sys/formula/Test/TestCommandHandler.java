@@ -10,6 +10,7 @@ import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.AbstractCellAdv;
+import org.zkoss.zss.model.impl.AbstractSheetAdv;
 import org.zkoss.zss.model.sys.BookBindings;
 
 import java.io.IOException;
@@ -25,8 +26,12 @@ public class TestCommandHandler {
 
     public void handleCommand(String command, SSheet sheet, int row, int column){
 
-        if (command.equals("load")){
-            loadXlsxSpreadsheets();
+        if (command.startsWith("load")){
+            String[] commands = command.split(":");
+            if (commands.length == 1)
+                loadXlsxSpreadsheets();
+            else
+                loadXlsxSpreadsheets(_prefix,commands[1].split(","));
             return;
         }
 
@@ -131,14 +136,17 @@ public class TestCommandHandler {
         book.getSheetByName(sheetName).getDataModel()
                 .importSheet(new StringReader(text),'\t',true);
         //send message
-        System.out.println("Imported sheet" + sheetName);
+        System.out.println("Imported sheet:" + sheetName);
     }
+
+//    cmd:load:smallFormula\CIQ_301_DCF-Student_Model_Spring_2017_DIS.xlsx
 
     String _prefix = "L:\\Project\\DataSpread\\We_want_your_spreadsheets__70684530474156\\" +
         "We_want_your_spreadsheets__70684530474156\\";
 //    String _prefix = "/Users/yulu/Desktop/home/Project/DataSpread/We_want_your_spreadsheets__70684530474156/";
     String[] _files = {
-                "smallFormula\\CS_465_User_Evaulations.xlsx"
+//                "smallFormula\\CS_465_User_Evaulations.xlsx"
+        "smallFormula\\CIQ_301_DCF-Student_Model_Spring_2017_DIS.xlsx"
 //            "uploads_3696634124225598172/CS465UserEvaulations.xlsx"
 //                "smallFormula\\CIQ_301_DCF-Student_Model_Spring_2017_DIS.xlsx"
     };
@@ -158,7 +166,7 @@ public class TestCommandHandler {
 
     private String formatContent(String content){
         StringBuilder sb = new StringBuilder();
-        String[] rows = content.split("\n");
+        String[] rows = content.split("\n",-1);
         int maxColumn = 0;
         int count;
         for (String row:rows){
@@ -171,11 +179,6 @@ public class TestCommandHandler {
                 sb.append("\t");
             sb.append("\n");
         }
-
-        for (int i = 0; i < maxColumn; i++)
-            sb.append("\t");
-        sb.append("\n");
-
         return sb.toString();
     }
 
@@ -190,15 +193,36 @@ public class TestCommandHandler {
                                 "================================\n");
                 SBook book = importBookWithMultipleTry(bookName);
 
+                boolean containsSheet1 = false;
+                int row = -1;
+                int col = -1;
                 for (String text:sheets){
                     String sheetName = text.substring(0,text.indexOf("\n"));
+                    if (sheetName.toLowerCase().equals("sheet1"))
+                        containsSheet1 = true;
                     String content = formatContent(text.substring(text.indexOf("\n") + 1));
-
+                    if (row == -1){
+                        row = 1 + countChar(content,'\n');
+                        col = 1 + countChar(content,'\t') / row;
+                    }
                     importSheet(book,sheetName,content);
 
                     System.out.println("Sheet name:\n" + sheetName);
                     System.out.println("Content: \n" + content.replaceAll("\t",","));
                 }
+
+                if (!containsSheet1) {
+                    importSheet(book, "sheet1",
+                            "empty sheet for dataspread in 12/2/2018");
+                    try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+                        book.getSheet(0).getCell(row,col).setStringValue(
+                                "empty sheet for dataspread in 12/2/2018",connection,true);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                }
+//                            );
 
                 System.out.println("Import successful");
             }
