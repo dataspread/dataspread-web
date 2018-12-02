@@ -13,7 +13,7 @@ public class BookBindings {
     }
 
     /* Book Name -> Book object */
-    static private Map<String, SBook> _bindings = new ConcurrentHashMap<>();
+    static private ConcurrentHashMap<String, SBook> _bindings = new ConcurrentHashMap<>();
 
     static public void put(String key, SBook value) {
         _bindings.put(key, value);

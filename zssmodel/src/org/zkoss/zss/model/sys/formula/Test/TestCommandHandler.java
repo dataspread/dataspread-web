@@ -24,11 +24,14 @@ public class TestCommandHandler {
     public static TestCommandHandler instance = new TestCommandHandler();
 
     public void handleCommand(String command, SSheet sheet, int row, int column){
+
         if (command.equals("load")){
             loadXlsxSpreadsheets();
             return;
         }
+
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+
             int updateNumber = 1;
 
             boolean updateToDB = true;
@@ -95,7 +98,28 @@ public class TestCommandHandler {
             connection.commit();
         }
 
-        System.out.println("Imported book" + book.getBookName());
+        System.out.println("Imported book:" + book.getBookName());
+
+        return book;
+    }
+
+    private SBook importBookWithMultipleTry(String originalBookName){
+        String bookName = originalBookName;
+        boolean success = false;
+        SBook book = null;
+        int id = 0;
+        while (!success){
+            try {
+                book = importBook(bookName);
+                success = true;
+            }
+            catch (Exception e){
+                bookName = originalBookName + "(" + (++id) + ")";
+            }
+
+        }
+
+        System.out.println("Created Book :\n" + bookName);
 
         return book;
     }
@@ -148,26 +172,30 @@ public class TestCommandHandler {
             sb.append("\n");
         }
 
+        for (int i = 0; i < maxColumn; i++)
+            sb.append("\t");
+        sb.append("\n");
+
         return sb.toString();
     }
 
     private void loadXlsxSpreadsheets(String prefix, String[] files){
         try {
             for (String file: files) {
-                String bookName = file.split("\\\\")[1] + "1";
+                String bookName = file.split("\\\\")[1];
                 XSSFExcelExtractor extractor =
                         new XSSFExcelExtractor(prefix + file);
                 String[] sheets = extractor.getText()
-                        .split("=============================================" +
+                        .split("\n=============================================" +
                                 "================================\n");
-                System.out.println("Book name:\n" + bookName);
-                SBook book = importBook(bookName);
+                SBook book = importBookWithMultipleTry(bookName);
+
                 for (String text:sheets){
                     String sheetName = text.substring(0,text.indexOf("\n"));
                     String content = formatContent(text.substring(text.indexOf("\n") + 1));
 
-
                     importSheet(book,sheetName,content);
+
                     System.out.println("Sheet name:\n" + sheetName);
                     System.out.println("Content: \n" + content.replaceAll("\t",","));
                 }
