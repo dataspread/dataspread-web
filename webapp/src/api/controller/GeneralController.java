@@ -29,6 +29,7 @@ import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncListener;
 import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
+import org.zkoss.zss.model.sys.formula.Test.TestCommandHandler;
 import org.zkoss.zss.range.impl.ModelUpdate;
 import org.zkoss.zss.range.impl.ModelUpdateCollector;
 
@@ -141,7 +142,7 @@ public class GeneralController implements FormulaAsyncListener {
             uiSession.updateViewPort((int) payload.get("rowStartIndex"), (int) payload.get("rowStopIndex"));
             // If viewport not cached, push to FE
             int blockNumber = uiSession.getViewPortBlockNumber();
-              for (int i = 0; i < 5; i++) {
+            for (int i = 0; i < 5; i++) {
                 if (!uiSession.isBlockCached(uiSession.getViewPortBlockNumber() + i))
                     pushCells(uiSession, blockNumber + i);
             }
@@ -161,46 +162,23 @@ public class GeneralController implements FormulaAsyncListener {
         ModelUpdateCollector oldCollector = ModelUpdateCollector.setCurrent(modelUpdateCollector);
         FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(sheet.getBook().getBookSeries()));
 
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
-            int updateNumber = 1;
-
-            boolean updateToDB = true;
-
-            if (value.endsWith("*")){
-                updateToDB = false;
-                value = value.substring(0,value.length() - 1);
-            }
-
-            if (value.contains("@") && value.substring(value.indexOf('@') + 1).matches("\\d+")) {
-                updateNumber = Integer.valueOf(value.substring(value.indexOf('@') + 1));
-                value = value.substring(0, value.indexOf('@'));
-
-            }
-
-            Collection<AbstractCellAdv> cells = new ArrayList<>();
-            sheet.getCells(new CellRegion(row,column,row + updateNumber - 1,column))
-                    .forEach((c)->cells.add((AbstractCellAdv)c));
-
-            int i = 0;
-
-            if (value.startsWith("=")) {
-                value = value.substring(1);
-                for (SCell cell : cells) {
-                    i++;
-                    cell.setFormulaValue(value.replaceAll("\\?", String.valueOf(i)), connection, false);
-                }
-            }else
-                for (SCell cell:cells)
+        if (value.startsWith("cmd:"))
+            TestCommandHandler.instance.handleCommand(value.substring(4),sheet,row,column);
+        else {
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+                SCell cell = sheet.getCell(row, column);
+                if (value.startsWith("="))
+                    cell.setFormulaValue(value.substring(1), connection, true);
+                else
                     try {
-                        cell.setNumberValue(Double.parseDouble(value), connection, false);
+                        cell.setNumberValue(Double.parseDouble(value), connection, true);
                     } catch (Exception e) {
-                        cell.setStringValue(value, connection, false);
+                        cell.setStringValue(value, connection, true);
                     }
-            if (Boolean.valueOf(Library.getProperty("SynchronizeFormula")) && updateToDB && updateNumber <= 10000)
-                sheet.getDataModel().updateCells(new DBContext(connection), cells);
-            connection.commit();
-        } catch (Exception e) {
-            e.printStackTrace();
+                connection.commit();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         List<ModelUpdate> modelUpdates = modelUpdateCollector.getModelUpdates();
