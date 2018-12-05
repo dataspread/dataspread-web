@@ -426,6 +426,8 @@ public final class WorkbookEvaluator {
 				result = new NumberEval((double) val);
 			} else if (val instanceof Boolean) {
 				result = BoolEval.valueOf((boolean) val);
+			} else if (val instanceof RelTableEval) {
+				result = ((RelTableEval) val);
 			}
 			return result;
 		}

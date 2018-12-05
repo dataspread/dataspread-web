@@ -6,6 +6,11 @@ import Stomp from "stompjs";
 export default class ModalImportFile extends Component {
   constructor(props) {
    	super(props);
+      if (props.inMenu) {
+          this.triggerObject = (<Dropdown.Item onClick={this.handleOpen}>Import</Dropdown.Item>);
+      } else {
+          this.triggerObject = (<Button secondary fluid onClick={this.handleOpen}>Import File</Button>);
+      }
    	if (typeof process.env.REACT_APP_BASE_HOST === 'undefined') {
    		this.urlPrefix = "";
    		this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
@@ -24,7 +29,7 @@ export default class ModalImportFile extends Component {
   render() {
     return (
 		<Modal
-		trigger={<Dropdown.Item onClick={this.handleOpen}>Import File</Dropdown.Item>}
+		trigger={this.triggerObject}
 		open={this.state.modalOpen}
 		onClose={this.handleClose}>
 

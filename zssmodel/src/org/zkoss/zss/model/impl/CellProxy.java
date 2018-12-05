@@ -248,9 +248,10 @@ class CellProxy extends AbstractCellAdv {
 	}
 
 	@Override
-	protected void evalFormula(boolean sync) {
+	protected boolean evalFormula(boolean sync) {
 		if (_proxy != null)
-			_proxy.evalFormula(sync);
+			return  _proxy.evalFormula(sync);
+		return false;
 	}
 
 	@Override
