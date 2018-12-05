@@ -7,49 +7,64 @@ export default class ExplorationForm extends Component {
         super(props);
         console.log(this);
         this.state = {
-            options:["city","price","availability","longitude","latitude"],
-            attribute:2
+            options:[],
+            attribute:0,
         }
         this.handleChange = this.handleChange.bind(this);
-        fetch('http://localhost:9999' + '/api/getSortAttrs/'+ this.props.grid.props.bookId+'/Sheet1')
-            .then(response => response.json())
-            .then(data => {
-                console.log(data);
-                this.setState({options:data.data});
-            })
-
-
+        this.handleSubmit = this.handleSubmit.bind(this);
+        this.handleClose = this.handleClose.bind(this);
 
     }
+
+    componentDidMount() {
+        console.log( "componentmoutn explore form")
+        console.log(this.props.grid.state.sheetName)
+    }
+
     handleChange = (e, { value }) => {
         this.setState({ attribute: value });
         console.log(value);
     }
 
+    handleSubmit = () =>{
+        console.log("submit")
+        this.props.submitNavForm(this.state.attribute);
+    }
 
+    handleClose = () =>{
+        console.log("close")
+        this.props.closeNavForm();
+    }
     render(){
-        var optionList = this.state.options;
-        return(
-            <Form id = "explore-form">
-            <Button icon='close' />
-                {optionList.map((opt, index) =>{
-                    let idx = index + 1;
-                    return(
-                        <Form.Field key = {idx}>
-                            <Radio
-                                label = {opt}
-                                name='radioGroup'
-                                value= {idx}
-                                checked={this.state.attribute === idx}
-                                onChange={this.handleChange}
-                            />
-                        </Form.Field>
-                    );
+        if(this.props.grid.state.navFormOpen){
+            var optionList = this.state.options;
+            return(<div id = "explore-form">
 
-                })}
-                <Button type='submit'>Submit</Button>
-            </Form>
-    );
+                <Form >
+                    <Button icon='close' id="formClose" onClick = {this.handleClose}/>
+                    {optionList.map((opt, index) =>{
+                        let idx = index + 1;
+                        return(
+                            <Form.Field key = {idx}>
+                                <Radio
+                                    label = {opt}
+                                    name='radioGroup'
+                                    value= {idx}
+                                    checked={this.state.attribute === idx}
+                                    onChange={this.handleChange}
+                                />
+                            </Form.Field>
+                        );
+
+                    })}
+                    <Form.Button onClick={this.handleSubmit}>Submit</Form.Button>
+                </Form>
+            </div>
+            );
+        } else {
+            return null;
+        }
+
     }
 }
 

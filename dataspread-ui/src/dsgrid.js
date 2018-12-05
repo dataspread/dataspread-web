@@ -58,6 +58,10 @@ export default class DSGrid extends Component {
         this._handleKeyDown = this._handleKeyDown.bind(this);
         this._handleKeyUp = this._handleKeyUp.bind(this);
 
+        this.submitNavForm = this.submitNavForm.bind(this);
+        this.closeNavForm = this.closeNavForm.bind(this);
+        this.openNavForm = this.openNavForm.bind(this);
+
         // this.urlPrefix = ""; // Only for testing.
         // this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
 
@@ -148,10 +152,35 @@ export default class DSGrid extends Component {
         }
     }
 
+    submitNavForm(attribute){
+        if(attribute) {
+        fetch('http://localhost:9999' + '/api/startNav/djjrorgnt/Sheet1/' + attribute)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                this.setState({navFormOpen:false});
+            })
+        }
+    }
+    openNavForm() {
+        fetch('http://localhost:9999' + '/api/getSortAttrs/'+ this.props.bookId+'/' + this.state.sheetName)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                this.navForm.setState({options:data.data});
+                this.setState({navFormOpen: true})
+            })
+
+    }
+    closeNavForm() {
+        console.log("close");
+        this.setState({navFormOpen:false});
+    }
+
     render() {
         return (
             <div><Navigation bookId={this.props.bookId} grid = {this} />
-                <ExplorationForm grid = {this}/>
+                <ExplorationForm grid = {this} submitNavForm = {this.submitNavForm} closeNavForm={this.closeNavForm} ref={ref => this.navForm = ref}/>
             <div onKeyDown={this._handleKeyDown} onKeyUp={this._handleKeyUp}>
                 <div style={{display: 'flex'}}>
                     <div style={{flex: 'auto', height: '90vh'}}>

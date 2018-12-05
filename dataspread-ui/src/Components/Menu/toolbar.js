@@ -13,6 +13,7 @@ export default class Toolbar extends Component {
     constructor(props) {
         super(props)
         this.handler = this.handler.bind(this)
+        this.handleNav = this.handleNav.bind(this)
     }
 
     handler(e) {
@@ -20,6 +21,10 @@ export default class Toolbar extends Component {
         this.setState({
             open: false
         })
+    }
+
+    handleNav (e) {
+        this.props.onNavFormOpen();
     }
 
 
@@ -45,6 +50,12 @@ export default class Toolbar extends Component {
                 </Dropdown.Menu>
             </Dropdown>
 
+            <Dropdown item text='Nav'>
+                <Dropdown.Menu>
+                    <Dropdown.Item onClick={this.handleNav}>Explore</Dropdown.Item>
+                    <Dropdown.Item>Add Hierarchical Column</Dropdown.Item>
+                </Dropdown.Menu>
+            </Dropdown>
             <Dropdown item text='Help'>
                 <Dropdown.Menu>
                     <ModalAboutUs/>

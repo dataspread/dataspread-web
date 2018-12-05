@@ -16,10 +16,10 @@ class App extends Component {
             filename:"",
             hasFileOpened: false,
             username:"",
-            navopen: false,
 
         }
         this.onSelectFile = this.onSelectFile.bind(this)
+        this.onNavFormOpen = this.onNavFormOpen.bind(this)
 
     }
 
@@ -37,6 +37,14 @@ class App extends Component {
         }
     }
 
+    onNavFormOpen(){
+        if(this.grid !== null) {
+            this.grid.openNavForm();
+        }
+    }
+
+
+
     render () {
         // console.log(this)
         this.grid = null;
@@ -51,7 +59,7 @@ class App extends Component {
         } else {
             return (
                 <div>
-                    <Toolbar username={this.state.username} onSelectFile={this.onSelectFile} />
+                    <Toolbar username={this.state.username} onSelectFile={this.onSelectFile} onNavFormOpen={this.onNavFormOpen}/>
                     <Stylebar />
                     <DSGrid bookId={this.state.bookId} ref={ref => this.grid = ref} />
                 </div>

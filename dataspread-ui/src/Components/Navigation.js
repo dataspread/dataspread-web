@@ -47,122 +47,124 @@ export default class Navigation extends Component {
     }
 
     componentDidMount() {
-        fetch('http://localhost:9999' + '/api/startNav/djjrorgnt/Sheet1/1')
-            .then(response => response.json())
-            .then(data => {
-                console.log(data);
-                this.setState({
-                    currData: data.data,
-                    cumulativeData: [...this.state.cumulativeData, data.data]
-                });
-                console.log(this.state.cumulativeData[0][0]);
+        console.log(this)
+        if(this.hotTableComponent.current) {
+            fetch('http://localhost:9999' + '/api/startNav/djjrorgnt/Sheet1/1')
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    this.setState({
+                        currData: data.data,
+                        cumulativeData: [...this.state.cumulativeData, data.data]
+                    });
+                    console.log(this.state.cumulativeData[0][0]);
 
-                let length = data.data.length;
-                let viewData = new Array(data.data.length);
-                for (let i = 0; i <length; i++) {
-                    viewData[i] = [""];
-                    viewData[i][0] = this.state.cumulativeData[0][i].name;
-                }
-                let childHash = new Map();
-                for (let i = 0; i < length; i++) {
-                    childHash.set(i, data.data[i].children);
-                }
-                console.log(viewData);
-                this.setState({
-                    viewData: viewData,
-                    childHash: childHash,
-                })
-                var currentState = this.state;
-                let self = this;
-                this.hotTableComponent.current.hotInstance.updateSettings({
-                    data: currentState.viewData,
-                    minCols: 1,
-                    readOnly: true,
-                    rowHeights: (currentState.wrapperHeight * 0.93 / currentState.currData.length > 90)
-                        ? currentState.wrapperHeight * 0.93 / currentState.currData.length
-                        : 90,
-                    width: currentState.wrapperWidth * 0.19,
-                    height: currentState.wrapperHeight * 0.93,
-                    rowHeaderWidth: 0,
-                    rowHeaders: true,
-                    colWidths: self.colWidthsComputer,
-                    colHeaders: self.colHeaderRenderer,
-                    stretchH: 'all',
-                    contextMenu: false,
-                    outsideClickDeselects: false,
-                    className: "wrap",
-                    search: true,
-                    sortIndicator: true,
-                    manualColumnResize: true,
-                    mergeCells: currentState.mergeCellInfo,
-                    beforeOnCellMouseDown: function (e, coords, element) {
-                        // $("#formulaBar").val("");
-
-                        let topLevel = (currentState.currLevel == 0 && coords.col != 0)
-                        let otherLevel = (currentState.currLevel > 0 && coords.col != 1)
-                        // if (topLevel && coords.row >= 0) {
-                        //     $("#formulaBar").val("=" + navRawFormula[coords.row][coords.col - 1]);
-                        // }
-                        // else if (currLevel > 0 && coords.row >= 0 && coords.col >= 2) {
-                        //     $("#formulaBar").val("=" + navRawFormula[coords.row][coords.col - 2]);
-                        // }
-                        console.log(e);
-                        //|| zoomming
-                        if (topLevel || otherLevel  ||
-                            e.realTarget.className == "colHeader" ||
-                            e.realTarget.className == "relative" || e.realTarget.className.baseVal == "bar") {
-                            e.stopImmediatePropagation();
-                        }
-                        if (e.realTarget.classList['3'] == "zoomInPlus") {
-                            e.stopImmediatePropagation();
-                            self.zoomIn(coords.row);
-                        }
-                        if (e.realTarget.classList['3'] == "zoomOutM") {
-                            e.stopImmediatePropagation();
-                            self.zoomOutHist();
-                            return;
-                        }
-                        if (e.realTarget.id == "colClose") {
-                            self.removeHierarchiCol(coords.col)
-                        }
-                        if (e.realTarget.classList['0'] == "slider") {
-                            let level = coords.col - 1;
-                            if (currentState.currLevel > 0)
-                                level = coords.col - 2;
-                            currentState.aggregateData.formula_ls[level].getChart =
-                                !currentState.aggregateData.formula_ls[level].getChart;
-                            self.getAggregateValue();
-                        }
-                    },
-                    cells: self.cellRenderer,
-                    afterSelection: self.afterSelectionHandler,
-                })
-                this.hotTableComponent.current.hotInstance.view.wt.update('onCellDblClick', function (e, cell) {
-                    if (cell.row >= 0) {
-                        if (currentState.currLevel == 0) {
-                            if (cell.col == 0 && currentState.cumulativeData[currentState.currLevel][cell.row].clickable) {
-                                //        var child = cell.row/spanList[currLevel];
-                                let child = cell.row;
-                                //nav.deselectCell();
-                                //zoomming = true;
-                                self.zoomIn(child);
-                            }
-                        } else {
-                            if (cell.col == 1 && currentState.cumulativeData[currentState.currLevel][cell.row].clickable) {
-                                //  var child = cell.row/spanList[currLevel];
-                                var child = cell.row;
-                                //nav.deselectCell();
-                                //zoomming = true;
-                                self.zoomIn(child);
-                            } else if (cell.col == 0) {
-                                //zoomouting = true;
-                                //zoomOutHist(nav);
-                            }
-                        }
+                    let length = data.data.length;
+                    let viewData = new Array(data.data.length);
+                    for (let i = 0; i < length; i++) {
+                        viewData[i] = [""];
+                        viewData[i][0] = this.state.cumulativeData[0][i].name;
                     }
-                });
-            })
+                    let childHash = new Map();
+                    for (let i = 0; i < length; i++) {
+                        childHash.set(i, data.data[i].children);
+                    }
+                    console.log(viewData);
+                    this.setState({
+                        viewData: viewData,
+                        childHash: childHash,
+                    })
+                    var currentState = this.state;
+                    let self = this;
+                    this.hotTableComponent.current.hotInstance.updateSettings({
+                        data: currentState.viewData,
+                        minCols: 1,
+                        readOnly: true,
+                        rowHeights: (currentState.wrapperHeight * 0.93 / currentState.currData.length > 90)
+                            ? currentState.wrapperHeight * 0.93 / currentState.currData.length
+                            : 90,
+                        width: currentState.wrapperWidth * 0.19,
+                        height: currentState.wrapperHeight * 0.93,
+                        rowHeaderWidth: 0,
+                        rowHeaders: true,
+                        colWidths: self.colWidthsComputer,
+                        colHeaders: self.colHeaderRenderer,
+                        stretchH: 'all',
+                        contextMenu: false,
+                        outsideClickDeselects: false,
+                        className: "wrap",
+                        search: true,
+                        sortIndicator: true,
+                        manualColumnResize: true,
+                        mergeCells: currentState.mergeCellInfo,
+                        beforeOnCellMouseDown: function (e, coords, element) {
+                            // $("#formulaBar").val("");
 
+                            let topLevel = (currentState.currLevel == 0 && coords.col != 0)
+                            let otherLevel = (currentState.currLevel > 0 && coords.col != 1)
+                            // if (topLevel && coords.row >= 0) {
+                            //     $("#formulaBar").val("=" + navRawFormula[coords.row][coords.col - 1]);
+                            // }
+                            // else if (currLevel > 0 && coords.row >= 0 && coords.col >= 2) {
+                            //     $("#formulaBar").val("=" + navRawFormula[coords.row][coords.col - 2]);
+                            // }
+                            console.log(e);
+                            //|| zoomming
+                            if (topLevel || otherLevel ||
+                                e.realTarget.className == "colHeader" ||
+                                e.realTarget.className == "relative" || e.realTarget.className.baseVal == "bar") {
+                                e.stopImmediatePropagation();
+                            }
+                            if (e.realTarget.classList['3'] == "zoomInPlus") {
+                                e.stopImmediatePropagation();
+                                self.zoomIn(coords.row);
+                            }
+                            if (e.realTarget.classList['3'] == "zoomOutM") {
+                                e.stopImmediatePropagation();
+                                self.zoomOutHist();
+                                return;
+                            }
+                            if (e.realTarget.id == "colClose") {
+                                self.removeHierarchiCol(coords.col)
+                            }
+                            if (e.realTarget.classList['0'] == "slider") {
+                                let level = coords.col - 1;
+                                if (currentState.currLevel > 0)
+                                    level = coords.col - 2;
+                                currentState.aggregateData.formula_ls[level].getChart =
+                                    !currentState.aggregateData.formula_ls[level].getChart;
+                                self.getAggregateValue();
+                            }
+                        },
+                        cells: self.cellRenderer,
+                        afterSelection: self.afterSelectionHandler,
+                    })
+                    this.hotTableComponent.current.hotInstance.view.wt.update('onCellDblClick', function (e, cell) {
+                        if (cell.row >= 0) {
+                            if (currentState.currLevel == 0) {
+                                if (cell.col == 0 && currentState.cumulativeData[currentState.currLevel][cell.row].clickable) {
+                                    //        var child = cell.row/spanList[currLevel];
+                                    let child = cell.row;
+                                    //nav.deselectCell();
+                                    //zoomming = true;
+                                    self.zoomIn(child);
+                                }
+                            } else {
+                                if (cell.col == 1 && currentState.cumulativeData[currentState.currLevel][cell.row].clickable) {
+                                    //  var child = cell.row/spanList[currLevel];
+                                    var child = cell.row;
+                                    //nav.deselectCell();
+                                    //zoomming = true;
+                                    self.zoomIn(child);
+                                } else if (cell.col == 0) {
+                                    //zoomouting = true;
+                                    //zoomOutHist(nav);
+                                }
+                            }
+                        }
+                    });
+                })
+        }
     }
     colWidthsComputer(col) {
         let currState = this.state;
@@ -730,6 +732,7 @@ export default class Navigation extends Component {
     }
 
     render() {
+        return null;
         return (
             <div id="hot-app">
                 <HotTable ref={this.hotTableComponent}/>
