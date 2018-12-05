@@ -158,7 +158,8 @@ export default class DSGrid extends Component {
             .then(response => response.json())
             .then(data => {
                 console.log(data);
-                this.setState({navFormOpen:false});
+                this.setState({navFormOpen:false, navOpen:true});
+                this.nav.startNav(data);
             })
         }
     }
@@ -179,7 +180,7 @@ export default class DSGrid extends Component {
 
     render() {
         return (
-            <div><Navigation bookId={this.props.bookId} grid = {this} />
+            <div><Navigation bookId={this.props.bookId} grid = {this} ref={ref => this.nav = ref} />
                 <ExplorationForm grid = {this} submitNavForm = {this.submitNavForm} closeNavForm={this.closeNavForm} ref={ref => this.navForm = ref}/>
             <div onKeyDown={this._handleKeyDown} onKeyUp={this._handleKeyUp}>
                 <div style={{display: 'flex'}}>

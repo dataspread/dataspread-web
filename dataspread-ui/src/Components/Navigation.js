@@ -35,6 +35,8 @@ export default class Navigation extends Component {
         }
 
         this.hotTableComponent = React.createRef();
+
+        this.startNav = this.startNav.bind(this);
         this.navCellRenderer = this.navCellRenderer.bind(this);
         this.afterSelectionHandler = this.afterSelectionHandler.bind(this);
         this.computeCellChart = this.computeCellChart.bind(this);
@@ -46,16 +48,27 @@ export default class Navigation extends Component {
         this.zoomOutHist = this.zoomOutHist.bind(this);
     }
 
-    componentDidMount() {
-        console.log(this)
-        if(this.hotTableComponent.current) {
-            fetch('http://localhost:9999' + '/api/startNav/djjrorgnt/Sheet1/1')
-                .then(response => response.json())
-                .then(data => {
+    startNav(data) {
                     console.log(data);
                     this.setState({
+                        alltext: true,
+                        currLevel: 0,
+                        viewData: [],
+                        wrapperWidth: window.innerWidth,
+                        wrapperHeight: window.innerHeight,
+                        colHeader: ["City"],
+                        aggregateData: {},
+                        mergeCellInfo: [],
+                        selectedChild: [0],
+                        selectedBars:[],
+                        childHash: new Map(),
+                        levelList:[],
+                        hieraOpen:false,
+                        sortChild_ls:[],
+                        prevPath:'',
+                        nextPath:'',
                         currData: data.data,
-                        cumulativeData: [...this.state.cumulativeData, data.data]
+                        cumulativeData: [data.data]
                     });
                     console.log(this.state.cumulativeData[0][0]);
 
@@ -163,8 +176,6 @@ export default class Navigation extends Component {
                             }
                         }
                     });
-                })
-        }
     }
     colWidthsComputer(col) {
         let currState = this.state;
@@ -732,12 +743,15 @@ export default class Navigation extends Component {
     }
 
     render() {
-        return null;
-        return (
-            <div id="hot-app">
-                <HotTable ref={this.hotTableComponent}/>
-                {/*settings={this.hotSettings}*/}
-            </div>
-        );
+        if(this.props.grid.state.navOpen){
+            return (
+                <div id="hot-app">
+                    <HotTable ref={this.hotTableComponent}/>
+                    {/*settings={this.hotSettings}*/}
+                </div>
+            );
+        } else {
+            return null;
+        }
     }
 }
