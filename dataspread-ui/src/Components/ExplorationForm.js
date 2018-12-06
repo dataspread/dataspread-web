@@ -57,7 +57,7 @@ export default class ExplorationForm extends Component {
                         );
 
                     })}
-                    <Form.Button onClick={this.handleSubmit}>Submit</Form.Button>
+                    <Form.Button onClick={this.handleSubmit}>Start Explore!</Form.Button>
                 </Form>
             </div>
             );
