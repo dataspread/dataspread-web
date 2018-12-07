@@ -1,5 +1,5 @@
 import React, {Component} from 'react'
-import {Form, Button, Select} from 'semantic-ui-react'
+import {Form, Button, Select, Input} from 'semantic-ui-react'
 import './Navigation.css';
 
 export default class HierarchiForm extends Component {
@@ -21,7 +21,6 @@ export default class HierarchiForm extends Component {
                 param_ls: [],
             }]
         }
-
     }
 
     handleSubmit = (e) => {
@@ -36,10 +35,57 @@ export default class HierarchiForm extends Component {
 
     handleFuncChange = (e,data) => {
         console.log(e);
-        console.log(e.target.name)
         console.log(data)
+        let formula = this.state.formula_ls;
+        formula[data.id].function = data.value;
+        this.setState({
+            formula_ls:formula,
+        })
+    }
+    handleAttrChange = (e,data) =>{
+        console.log(data)
+        let formula = this.state.formula_ls;
+        formula[data.id].attr_index = data.value;
+        this.setState({
+            formula_ls:formula,
+        })
     }
 
+    handleAdd = e => {
+        console.log(e)
+        let formula = this.state.formula_ls;
+        let temp = {
+            attr_index: 0,
+            function: "AVEDEV",
+            param_ls: [],
+        }
+        formula.splice(e + 1, 0,temp );
+        this.setState({
+            formula_ls:formula,
+        })
+    }
+
+    handleRemove = e => {
+        console.log(e)
+        let formula = this.state.formula_ls;
+        if(formula.length == 1) {
+            alert("You cannot remove all Options");
+            return;
+        }
+        formula.splice(e, 1 );
+        this.setState({
+            formula_ls:formula,
+        })
+
+    }
+    renderPara(index) {
+        console.log("renderpar");
+        return(
+            <Form.Field inline>
+                <label>Predicate:</label>
+                <Input placeholder=''  size="mini"/>
+            </Form.Field>);
+    }
     render() {
         const chartOpt = [
             {key: 'r', text: 'Raw Value', value: '1'},
@@ -88,20 +134,20 @@ export default class HierarchiForm extends Component {
                     {formula_ls.map((line, index) => {
                         console.log(line)
                         console.log(selected)
-                        return (
-                            <Form.Group>
+                        return (<div>
+                            <Form.Group stackable>
                                 <i class="fa fa-minus-circle hierRemove"  id="rm1"
-                                   aria-hidden="true"></i>
+                                   aria-hidden="true" onClick={this.handleRemove.bind(this,index)}/>
                                 <Form.Dropdown id = {index}
                                                width={7}
-                                    style={{"minWidth": "6em", "maxWidth": "8em",}}
+                                    style={{"minWidth": "6em", "maxWidth": "8.5em",}}
                                     options={this.state.options}
                                                selection
                                             value={this.state.options[line.attr_index].value}
-                                    onChange={this.handleFuncChange}
+                                    onChange={this.handleAttrChange}
                                 />
                                 <Form.Dropdown id = {index}
-                                    style={{"minWidth": "6em", "maxWidth": "8em"}}
+                                    style={{"minWidth": "6em", "maxWidth": "8.em"}}
                                                width={7}
                                     // inline
                                     // control={Select}
@@ -109,8 +155,11 @@ export default class HierarchiForm extends Component {
                                     value={line.function}
                                     onChange={this.handleFuncChange}
                                 />
-                                <i class="fa fa-plus-circle fa-1x hierAdd" id='add" + targetId + "' aria-hidden="true"></i>
+                                <i class="fa fa-plus-circle fa-1x hierAdd" id='add" + targetId + "' aria-hidden="true"
+                                   onClick={this.handleAdd.bind(this,index)}/>
                             </Form.Group>
+                                {this.renderPara(index)}
+                            </div>
                         );
 
                     })}
