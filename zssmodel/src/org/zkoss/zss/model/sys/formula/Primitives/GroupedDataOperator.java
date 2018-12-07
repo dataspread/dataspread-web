@@ -80,7 +80,7 @@ public class GroupedDataOperator extends DataOperator {
 
         for (ArrayList<Edge> edges:aggregateEdges)
             if (edges.size() > 0){
-                if (edges.size() * Math.log(edges.size()) > _region.getRowCount())
+                if (OptimizationError.detectBucketSort && edges.size() * Math.log(edges.size()) > _region.getRowCount())
                     throw OptimizationError.BUCKETSORT;
                 edges.sort((e1, e2) -> e1.inRange.left == e2.inRange.left ?
                         e1.inRange.right - e2.inRange.right

@@ -26,11 +26,12 @@ public abstract class BinaryFunction {
         }
 
         @Override
-        Double groupEvaluate(List<Double> values) {
+        Double groupEvaluate(List values) {
             double sum = 0;
-            for (int i=0, iSize=values.size(); i<iSize; i++) {
-                sum += values.get(i);
-            }
+            for (Object v:values)
+                if (v instanceof Double){
+                    sum += (Double)v;
+                }
             return sum;
         }
 
@@ -53,12 +54,12 @@ public abstract class BinaryFunction {
         }
 
         @Override
-        Double groupEvaluate(List<Double> values) {
+        Double groupEvaluate(List values) {
             double count = 0;
-            for (int i=0, iSize=values.size(); i<iSize; i++) {
-                if (values.get(i) != null)
+            for (Object v:values)
+                if (v instanceof Double){
                     count += 1;
-            }
+                }
             return count;
         }
     }
@@ -75,10 +76,20 @@ public abstract class BinaryFunction {
 
     abstract Double invertedEvaluate(Double a, Double b);
 
-    Double groupEvaluate(List<Double> values) throws OptimizationError {
-        Double sum = values.get(0);
-        for (int i=1, iSize=values.size(); i<iSize; i++)
-            sum = evaluate(sum, values.get(i));
+    Double groupEvaluate(List values) throws OptimizationError {
+        Double sum=null;
+        boolean firstValue = true;
+        for (Object v:values)
+            if (v instanceof Double){
+                Double value = (Double)v;
+                if (firstValue){
+                    sum = value;
+                    firstValue = false;
+                }
+                else
+                    sum = evaluate(sum, value);
+            }
+
         return sum;
     }
 

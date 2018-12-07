@@ -21,7 +21,7 @@ public class GroupedAggregateOperator extends AggregateOperator {
         int oSize = operators.size();
         uniqueEndPoints = new ArrayList<>(oSize*2);
         operatorRanges = new Range[oSize];
-        if (oSize * Math.log(oSize*2) > inputRange.size())
+        if (OptimizationError.detectBucketSort && oSize * Math.log(oSize*2) > inputRange.size())
             throw OptimizationError.BUCKETSORT;
         Pair<Integer,Range>[] endPoints = new Pair[oSize * 2];
         for (int i = 0;i < oSize;i++){

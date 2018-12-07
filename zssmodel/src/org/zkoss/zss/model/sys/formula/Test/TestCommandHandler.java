@@ -4,6 +4,7 @@ import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
 import org.zkoss.lang.Library;
+import org.zkoss.poi.hslf.model.Sheet;
 import org.zkoss.poi.xssf.extractor.XSSFExcelExtractor;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
@@ -24,14 +25,39 @@ public class TestCommandHandler {
 
     public static TestCommandHandler instance = new TestCommandHandler();
 
-    public void handleCommand(String command, SSheet sheet, int row, int column){
+    String lastCommand = "";
 
+    public void handleCommand(String command, SSheet sheet, int row, int column){
+        if (command.length() == 0)
+            command = lastCommand;
+        lastCommand = command;
         if (command.startsWith("load")){
             String[] commands = command.split(":");
             if (commands.length == 1)
                 loadXlsxSpreadsheets();
             else
                 loadXlsxSpreadsheets(_prefix,commands[1].split(","));
+            return;
+        }
+
+        if (command.startsWith("rerun")){
+            SBook book = sheet.getBook();
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+                for (SSheet s : book.getSheets()) {
+                    for (SCell cell : s.getCells()) {
+                        if (cell.getType().equals(SCell.CellType.FORMULA)) {
+                            cell.setFormulaValue(cell.getFormulaValue(), connection, false);
+                        } else if (cell.getType().equals(SCell.CellType.STRING)
+                                && ((String) cell.getValue()).startsWith("=")) {
+                            cell.setFormulaValue(((String) cell.getValue()).substring(1), connection, false);
+                        }
+
+                    }
+                }
+//                if (Boolean.valueOf(Library.getProperty("SynchronizeFormula")))
+//                    sheet.getDataModel().updateCells(new DBContext(connection), cells);
+                connection.commit();
+            }
             return;
         }
 
@@ -130,6 +156,8 @@ public class TestCommandHandler {
     }
 
     private void importSheet(SBook book, String sheetName, String text) throws IOException {
+        byte[] bytes = text.getBytes("UTF-8");
+        text = new String(bytes,"UTF-8");
         if (book.getSheetByName(sheetName) == null)
             book.createSheet(sheetName);
         //import into sheet
@@ -146,7 +174,8 @@ public class TestCommandHandler {
 //    String _prefix = "/Users/yulu/Desktop/home/Project/DataSpread/We_want_your_spreadsheets__70684530474156/";
     String[] _files = {
 //                "smallFormula\\CS_465_User_Evaulations.xlsx"
-        "smallFormula\\CIQ_301_DCF-Student_Model_Spring_2017_DIS.xlsx"
+        "smallFormulaArbitraryOverlapping\\harvestdata.jun172015.c046.xlsx"
+//        "smallFormula\\CIQ_301_DCF-Student_Model_Spring_2017_DIS.xlsx"
 //            "uploads_3696634124225598172/CS465UserEvaulations.xlsx"
 //                "smallFormula\\CIQ_301_DCF-Student_Model_Spring_2017_DIS.xlsx"
     };
@@ -164,7 +193,17 @@ public class TestCommandHandler {
         return ans;
     }
 
+    private String removeRedundantChar(String s){
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < s.length();i++)
+//            if ((s.charAt(i) >=32 && s.charAt(i) <=126) || s.charAt(i) == '\t')
+            if (s.charAt(i) <=126)
+                sb.append(s.charAt(i));
+        return sb.toString();
+    }
+
     private String formatContent(String content){
+        content = removeRedundantChar(content);
         StringBuilder sb = new StringBuilder();
         String[] rows = content.split("\n",-1);
         int maxColumn = 0;
@@ -188,7 +227,7 @@ public class TestCommandHandler {
                 String bookName = file.split("\\\\")[1];
                 XSSFExcelExtractor extractor =
                         new XSSFExcelExtractor(prefix + file);
-                String[] sheets = extractor.getText()
+                String[] sheets = extractor.getTextForImport()
                         .split("\n=============================================" +
                                 "================================\n");
                 SBook book = importBookWithMultipleTry(bookName);

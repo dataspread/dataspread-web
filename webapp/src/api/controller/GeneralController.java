@@ -184,7 +184,7 @@ public class GeneralController implements FormulaAsyncListener {
         List<ModelUpdate> modelUpdates = modelUpdateCollector.getModelUpdates();
         Set<Ref> refSet = new HashSet<>();
         for (ModelUpdate update : modelUpdates) {
-            System.out.println("Model Update " + update);
+//            System.out.println("Model Update " + update);
             //TODO: refs can be regions
 
             switch (update.getType()) {

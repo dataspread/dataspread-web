@@ -49,7 +49,7 @@ public class XSSFExcelExtractor extends POIXMLTextExtractor implements org.zkoss
    private Locale locale;
 	private XSSFWorkbook workbook;
 	private boolean includeSheetNames = true;
-	private boolean formulasNotResults = true;
+	private boolean formulasNotResults = false;
 	private boolean includeCellComments = false;
 	private boolean includeHeadersFooters = true;
 
@@ -110,7 +110,7 @@ public class XSSFExcelExtractor extends POIXMLTextExtractor implements org.zkoss
     public void setLocale(Locale locale) {
        this.locale = locale;
     }
-    
+
 
    /**
     * Retreives the text contents of the file
@@ -122,7 +122,7 @@ public class XSSFExcelExtractor extends POIXMLTextExtractor implements org.zkoss
       } else  {
          formatter = new DataFormatter(locale);
       }
-      
+
       StringBuffer text = new StringBuffer();
       for(int i=0; i<workbook.getNumberOfSheets(); i++) {
 			XSSFSheet sheet = workbook.getSheetAt(i);
@@ -152,8 +152,7 @@ public class XSSFExcelExtractor extends POIXMLTextExtractor implements org.zkoss
 					// Is it a formula one?
 					if(cell.getCellType() == Cell.CELL_TYPE_FORMULA) {
 					   if (formulasNotResults) {
-					      text.append('=')
-							  .append(cell.getCellFormula());
+					      text.append(cell.getCellFormula());
 					   } else {
 					      if (cell.getCachedFormulaResultType() == Cell.CELL_TYPE_STRING) {
 					         handleStringCell(text, cell);
@@ -180,6 +179,86 @@ public class XSSFExcelExtractor extends POIXMLTextExtractor implements org.zkoss
 						text.append("\t");
 				}
 				text.append("\n");
+			}
+
+			// Finally footer(s), if present
+			if(includeHeadersFooters) {
+				text.append(
+						extractHeaderFooter(sheet.getFirstFooter())
+				);
+				text.append(
+						extractHeaderFooter(sheet.getOddFooter())
+				);
+				text.append(
+						extractHeaderFooter(sheet.getEvenFooter())
+				);
+			}
+		}
+
+		return text.toString();
+	}
+
+	public String getTextForImport() {
+		DataFormatter formatter;
+		if(locale == null) {
+			formatter = new DataFormatter();
+		} else  {
+			formatter = new DataFormatter(locale);
+		}
+
+		StringBuffer text = new StringBuffer();
+		for(int i=0; i<workbook.getNumberOfSheets(); i++) {
+			XSSFSheet sheet = workbook.getSheetAt(i);
+			if(includeSheetNames) {
+				text.append(workbook.getSheetName(i)).append("\n");
+			}
+
+			// Header(s), if present
+			if(includeHeadersFooters) {
+				text.append(
+						extractHeaderFooter(sheet.getFirstHeader())
+				);
+				text.append(
+						extractHeaderFooter(sheet.getOddHeader())
+				);
+				text.append(
+						extractHeaderFooter(sheet.getEvenHeader())
+				);
+			}
+			int lastRow = 0;
+			int lastColumn;
+			int r,c;
+			// Rows and cells
+			for (Object rawR : sheet) {
+				Row row = (Row)rawR;
+				for (r = lastRow; r < row.getRowNum(); r++)
+					text.append("\n");
+				lastRow = row.getRowNum();
+				lastColumn = 0;
+				for(Iterator<Cell> ri = row.cellIterator(); ri.hasNext();) {
+					Cell cell = ri.next();
+					for (c = lastColumn; c < cell.getColumnIndex();c++)
+						text.append("\t");
+					lastColumn = cell.getColumnIndex();
+					// Is it a formula one?
+					if(cell.getCellType() == Cell.CELL_TYPE_FORMULA) {
+						text.append('=')
+								.append(cell.getCellFormula());
+					} else if(cell.getCellType() == Cell.CELL_TYPE_STRING) {
+						handleStringCell(text, cell);
+					} else {
+						handleNonStringCell(text, cell, formatter);
+					}
+
+					// Output the comment, if requested and exists
+					Comment comment = cell.getCellComment();
+					if(includeCellComments && comment != null) {
+						// Replace any newlines with spaces, otherwise it
+						//  breaks the output
+						String commentText = comment.getString().getString().replace('\n', ' ');
+						text.append(" Comment by ").append(comment.getAuthor()).append(": ").append(commentText);
+					}
+				}
 			}
 
 			// Finally footer(s), if present

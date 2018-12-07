@@ -4,7 +4,6 @@ import org.zkoss.lang.Library;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
 import org.zkoss.zss.model.sys.formula.Primitives.DataOperator;
 import org.zkoss.zss.model.sys.formula.Primitives.GroupedDataOperator;
-import org.zkoss.zss.model.sys.formula.Primitives.LogicalOperator;
 import org.zkoss.zss.model.sys.formula.Primitives.SingleDataOperator;
 
 import java.util.ArrayList;
@@ -20,13 +19,13 @@ public class QueryOptimizer {
             queryOptimizer = new QueryOptimizer();
         return queryOptimizer;
     }
-    private final static boolean doOptimization = Boolean.valueOf(Library.getProperty("QueryOptimizer.doOptimization"));
-    private final static boolean mergeOperation = true;
+    private final static boolean mergeDataNodes = true;
+    private final static boolean mergeOperation = Boolean.valueOf(Library.getProperty("QueryOptimizer.mergeDataNodes"));
     private List<DataOperator> mergeDataOperators(List<QueryPlanGraph> graphs) throws OptimizationError {
         Map<String, List<DataOperator>> dataOperators = new HashMap<>();
         List<DataOperator> groupedDataNodes = new ArrayList<>();
 
-        if (!doOptimization){
+        if (!mergeDataNodes){
             for (QueryPlanGraph graph:graphs)
                 groupedDataNodes.addAll(graph.dataNodes);
             return groupedDataNodes;
@@ -46,7 +45,7 @@ public class QueryOptimizer {
 
         for (List<DataOperator> value:dataOperators.values()){
             int maxRow =  value.get(0).getSheet().getEndRowIndex();
-            if (value.size() * Math.log(value.size()) > maxRow)
+            if (OptimizationError.detectBucketSort && value.size() * Math.log(value.size()) > maxRow)
                 throw OptimizationError.BUCKETSORT;
             value.sort((o1, o2) -> o1.getRegion().getRow() == o2.getRegion().getRow() ?
                     o1.getRegion().getLastRow() - o2.getRegion().getLastRow()
