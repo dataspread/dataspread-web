@@ -77,4 +77,8 @@ public abstract class DataOperator extends PhysicalOperator implements MultiOutp
     }
 
     abstract public void mergeChildren();
+
+    abstract public void mergeIndex();
+
+    abstract public void splitFilters();
 }

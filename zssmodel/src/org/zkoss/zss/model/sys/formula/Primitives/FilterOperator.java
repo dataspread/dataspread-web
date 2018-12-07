@@ -3,6 +3,10 @@ package org.zkoss.zss.model.sys.formula.Primitives;
 import org.zkoss.poi.ss.formula.functions.Countif.CmpOp;
 import org.zkoss.poi.ss.formula.ptg.*;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
+import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
+
+import java.util.List;
+import java.util.function.Consumer;
 
 public abstract class FilterOperator extends PhysicalOperator implements MultiOutputOperator {
 
@@ -76,6 +80,8 @@ public abstract class FilterOperator extends PhysicalOperator implements MultiOu
 
     public static FilterOperator buildSingleFilter(LogicalOperator[] ops){
 
+        //todo:supprot ifs
+
         if (ops.length != 2)
             throw OptimizationError.UNSUPPORTED_CASE;
 
@@ -84,6 +90,37 @@ public abstract class FilterOperator extends PhysicalOperator implements MultiOu
         connect(ops[FILTERRANGE],filter);
 
         return filter;
+
+    }
+
+    public void split(){
+        if (this instanceof EqualFilterOperator){
+            SingleIndexOperator index = new SingleEqualIndexOperator();
+            ScanOperator scan = new ScanOperator();
+            connect(index,scan);
+            forEachInEdge(new Consumer<Edge>() {
+                int i = 0;
+                @Override
+                public void accept(Edge edge) {
+                    if (i == inDegree() - 1){ // todo: check if there is remove
+                        return;
+                    }
+
+                    if (i % 2 != CRITERIA){
+                        index.transferInEdge(edge);
+                    }
+                    else{
+                        scan.transferInEdge(edge);
+                    }
+
+                    i++;
+                }
+            });
+            forEachOutEdge(scan::transferOutEdge);
+        }
+        else{
+            throw OptimizationError.UNSUPPORTED_FUNCTION;
+        }
 
     }
 

@@ -51,4 +51,16 @@ public class SingleDataOperator extends DataOperator{
     public void mergeChildren() {
         throw OptimizationError.UNSUPPORTED_FUNCTION;
     }
+
+    @Override
+    public void mergeIndex(){
+        throw OptimizationError.UNSUPPORTED_FUNCTION;
+    }
+
+    @Override
+    public void splitFilters() {
+        throw OptimizationError.UNSUPPORTED_FUNCTION;
+    }
+
+
 }

@@ -5,7 +5,7 @@ import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
 
 import java.util.List;
 
-public class SingleEqualFilterOperator extends FilterOperator {
+public class SingleEqualFilterOperator extends FilterOperator implements EqualFilterOperator{
     private String literal;
     SingleEqualFilterOperator(String value){
         super();

@@ -20,7 +20,9 @@ public class QueryOptimizer {
         return queryOptimizer;
     }
     private final static boolean mergeDataNodes = true;
-    private final static boolean mergeOperation = Boolean.valueOf(Library.getProperty("QueryOptimizer.mergeDataNodes"));
+    private final static boolean mergeOperation =
+            true;
+//            Boolean.valueOf(Library.getProperty("QueryOptimizer.doOptimization"));
     private List<DataOperator> mergeDataOperators(List<QueryPlanGraph> graphs) throws OptimizationError {
         Map<String, List<DataOperator>> dataOperators = new HashMap<>();
         List<DataOperator> groupedDataNodes = new ArrayList<>();
@@ -101,6 +103,10 @@ public class QueryOptimizer {
             for (DataOperator data:ret.dataNodes)
                 if (data instanceof GroupedDataOperator)
                     data.mergeChildren();
+
+        if (mergeOperation)
+            for (DataOperator data:ret.dataNodes)
+                data.splitFilters();
 
         return ret;
     }

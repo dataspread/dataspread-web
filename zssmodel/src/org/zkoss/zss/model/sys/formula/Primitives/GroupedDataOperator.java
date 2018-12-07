@@ -131,6 +131,14 @@ public class GroupedDataOperator extends DataOperator {
         super.transferOutEdge(e);
     }
 
+    @Override
+    public void mergeIndex(){
+        throw OptimizationError.UNSUPPORTED_FUNCTION;
+    }
 
+    @Override
+    public void splitFilters() {
+        throw OptimizationError.UNSUPPORTED_FUNCTION;
+    }
 
 }

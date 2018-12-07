@@ -42,22 +42,39 @@ public class TestCommandHandler {
 
         if (command.startsWith("rerun")){
             SBook book = sheet.getBook();
-            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
-                for (SSheet s : book.getSheets()) {
-                    for (SCell cell : s.getCells()) {
-                        if (cell.getType().equals(SCell.CellType.FORMULA)) {
-                            cell.setFormulaValue(cell.getFormulaValue(), connection, false);
-                        } else if (cell.getType().equals(SCell.CellType.STRING)
-                                && ((String) cell.getValue()).startsWith("=")) {
-                            cell.setFormulaValue(((String) cell.getValue()).substring(1), connection, false);
-                        }
 
+            int rounds = 1;
+
+            String[] commands = command.split("-");
+
+            if (commands.length > 1)
+                rounds = Integer.valueOf(commands[1]);
+
+            for (int i = 0; i < rounds;i++){
+                try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+                    for (SSheet s : book.getSheets()) {
+                        for (SCell cell : s.getCells()) {
+                            if (cell.getType().equals(SCell.CellType.FORMULA)) {
+                                cell.setFormulaValue(cell.getFormulaValue(), connection, false);
+                            } else if (cell.getType().equals(SCell.CellType.STRING)
+                                    && ((String) cell.getValue()).startsWith("=")) {
+                                cell.setFormulaValue(((String) cell.getValue()).substring(1), connection, false);
+                            }
+
+                        }
                     }
-                }
 //                if (Boolean.valueOf(Library.getProperty("SynchronizeFormula")))
 //                    sheet.getDataModel().updateCells(new DBContext(connection), cells);
-                connection.commit();
+                }
+                if (i > 1)
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
             }
+
+
             return;
         }
 

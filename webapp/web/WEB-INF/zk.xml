@@ -54,7 +54,7 @@
 
 	<library-property>
 		<name>QueryOptimizer.doOptimization</name>
-		<value>false</value>
+		<value>true</value>
 	</library-property>
 
 	<library-property>
