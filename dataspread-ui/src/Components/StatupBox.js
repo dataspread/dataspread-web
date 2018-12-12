@@ -17,16 +17,12 @@ export default class StartupBox extends Component {
                 </Button>
 
                 <Divider horizontal>Or</Divider>
-                
-                <Button secondary fluid>
-                    <ModalOpenFile {...this.props}/>
-                </Button>
+
+                <ModalOpenFile inMenu={false} onSelectFile={this.props.onSelectFile}/>
             
                 <Divider horizontal>Or</Divider>
-            
-                <Button secondary fluid>
-                    <ModalImportFile/>
-                </Button>
+
+                <ModalImportFile inMenu={false}/>
             
             </Segment>
         </div>

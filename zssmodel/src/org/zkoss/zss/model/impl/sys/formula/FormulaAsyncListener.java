@@ -5,5 +5,5 @@ import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SSheet;
 
 public interface FormulaAsyncListener {
-    void update(SBook book, SSheet sheet, CellRegion cellRegion, String value, String formula);
+    void update(SBook book, SSheet sheet, CellRegion cellRegion, Object value, String formula);
 }
