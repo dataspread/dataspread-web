@@ -34,7 +34,7 @@ export default class StartupBox extends Component {
   }
 }
 
-//TODO: console log errors here
+
 const center_screen = {
     'display': 'flex',
     'flexDirection': 'column',
