@@ -3,7 +3,7 @@ import {Dropdown, Menu} from 'semantic-ui-react'
 import ModalAboutUs from './about'
 import ModalOpenFile from './load'
 import ModalImportFile from './import'
-
+import HierarchiForm from ".././HierarchiForm";
 const favstyle = {
     height: '1.5em',
     width: '1.5em',
@@ -14,6 +14,7 @@ export default class Toolbar extends Component {
         super(props)
         this.handler = this.handler.bind(this)
         this.handleNav = this.handleNav.bind(this)
+        this.handleHier = this.handleHier.bind(this)
     }
 
     handler(e) {
@@ -25,6 +26,10 @@ export default class Toolbar extends Component {
 
     handleNav (e) {
         this.props.onNavFormOpen();
+    }
+
+    handleHier(e) {
+        this.props.onHierFormSub();
     }
 
 
@@ -53,7 +58,7 @@ export default class Toolbar extends Component {
             <Dropdown item text='Nav'>
                 <Dropdown.Menu>
                     <Dropdown.Item onClick={this.handleNav}>Explore</Dropdown.Item>
-                    <Dropdown.Item>Add Hierarchical Column</Dropdown.Item>
+                    <HierarchiForm grid = {this.props.grid}/>
                 </Dropdown.Menu>
             </Dropdown>
             <Dropdown item text='Help'>

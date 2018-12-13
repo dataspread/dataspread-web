@@ -1,5 +1,5 @@
 import React, {Component} from 'react'
-import {Form, Button, Select, Input} from 'semantic-ui-react'
+import {Form, Button, Select, Input,Modal,Dropdown} from 'semantic-ui-react'
 import './Navigation.css';
 
 export default class HierarchiForm extends Component {
@@ -7,6 +7,7 @@ export default class HierarchiForm extends Component {
         super(props);
         console.log(this);
         this.state = {
+            modalOpen:false,
             getChart: false,
             options: [{text: 'city', value: '0'},
                 {text: 'id', value: '1'},
@@ -15,29 +16,34 @@ export default class HierarchiForm extends Component {
                 attr_index: 0,
                 function: "AVEDEV",
                 param_ls: [""],
-            }, {
-                attr_index: 0,
-                function: "AVEDEV",
-                param_ls: [""],
-            }]
-        }
+            },]
+        };
         this.handleRankOrder = this.handleRankOrder.bind(this);
         this.handleSubTotalFunc = this.handleSubTotalFunc.bind(this);
     }
+    handleOpen = () => {
+        if(this.props.grid == null || this.props.grid.state.navOpen !== true){
+            alert("There is no navigation panel.")
+            return;
+        }else{
+            this.setState({ modalOpen: true });
+        }
+    }
+    handleClose = () => this.setState({ modalOpen: false })
 
     handleSubmit = (e) => {
-        console.log(e)
-        console.log("submit")
+        console.log(e);
+        console.log("submit");
         console.log(this.state.getChart)
 
-    }
+    };
     handleChartChange = (e, {value}) => {
         this.setState({getChart: value == 2});
-    }
+    };
 
     handleFuncChange = (e, data) => {
         console.log(e);
-        console.log(data)
+        console.log(data);
         let formula = this.state.formula_ls;
         formula[data.id].function = data.value;
         let paraList = [""];
@@ -49,7 +55,7 @@ export default class HierarchiForm extends Component {
                 paraList.push("");
                 break;
             case "SUBTOTAL":
-                paraList.splice(0,0,"1");
+                paraList.splice(0, 0, "1");
                 break;
             case "RANK":
                 paraList.push("");
@@ -59,32 +65,32 @@ export default class HierarchiForm extends Component {
         this.setState({
             formula_ls: formula,
         })
-    }
+    };
     handleAttrChange = (e, data) => {
-        console.log(data)
+        console.log(data);
         let formula = this.state.formula_ls;
         formula[data.id].attr_index = data.value;
         this.setState({
             formula_ls: formula,
         })
-    }
+    };
 
     handleAdd = e => {
-        console.log(e)
+        console.log(e);
         let formula = this.state.formula_ls;
         let temp = {
             attr_index: 0,
             function: "AVEDEV",
             param_ls: [],
-        }
+        };
         formula.splice(e + 1, 0, temp);
         this.setState({
             formula_ls: formula,
         })
-    }
+    };
 
     handleRemove = e => {
-        console.log(e)
+        console.log(e);
         let formula = this.state.formula_ls;
         if (formula.length == 1) {
             alert("You cannot remove all Options");
@@ -95,9 +101,9 @@ export default class HierarchiForm extends Component {
             formula_ls: formula,
         })
 
-    }
-    handleRankInput = (e, data) =>{
-        console.log(data)
+    };
+    handleRankInput = (e, data) => {
+        console.log(data);
         let index = data.name.substring(4);
         console.log(index);
         let formula_ls = this.state.formula_ls;
@@ -105,9 +111,9 @@ export default class HierarchiForm extends Component {
         this.setState({
             formula_ls: formula_ls,
         })
-    }
-    handleRankOrder = (e,data) =>{
-        console.log(data)
+    };
+    handleRankOrder = (e, data) => {
+        console.log(data);
         let index = data.id.substring(4);
         console.log(index);
         let formula_ls = this.state.formula_ls;
@@ -115,9 +121,9 @@ export default class HierarchiForm extends Component {
         this.setState({
             formula_ls: formula_ls,
         })
-    }
-    handleSubTotalFunc = (e, data) =>{
-        console.log(e.target.value)
+    };
+    handleSubTotalFunc = (e, data) => {
+        console.log(e.target.value);
         let index = data.id.substring(4);
         console.log(index);
         let formula_ls = this.state.formula_ls;
@@ -125,10 +131,10 @@ export default class HierarchiForm extends Component {
         this.setState({
             formula_ls: formula_ls,
         })
-    }
+    };
 
     handleManualInput = (e, data) => {
-        console.log(data)
+        console.log(data);
         let index = data.id.substring(4);
         console.log(index);
         let formula_ls = this.state.formula_ls;
@@ -136,7 +142,8 @@ export default class HierarchiForm extends Component {
         this.setState({
             formula_ls: formula_ls,
         })
-    }
+    };
+
     renderPara(index) {
         const subtotalFunc = [
             {text: 'AVERAGE', value: '1'},
@@ -148,9 +155,9 @@ export default class HierarchiForm extends Component {
             {text: 'STDEV', value: '7'},
             {text: 'SUM', value: '8'},
             {text: 'VAR', value: '9'},
-            {text: 'VARP', value: '10'}]
+            {text: 'VARP', value: '10'}];
         const orderOpt = [{text: 'ascending', value: '1'},
-            {text: 'descending', value: '0'},]
+            {text: 'descending', value: '0'},];
 
         console.log("renderpar");
         console.log(index);
@@ -161,25 +168,30 @@ export default class HierarchiForm extends Component {
                 return (
                     <Form.Field inline>
                         <label>Predicate: </label>
-                        <Input placeholder='' size="mini" value={formula_ls[index].param_ls[1]} id = {"para" + index} onChange={this.handleManualInput}/>
+                        <Input placeholder='' size="mini" value={formula_ls[index].param_ls[1]} id={"para" + index}
+                               onChange={this.handleManualInput}/>
                     </Form.Field>);
             case "LARGE":
             case "SMALL":
                 return (<Form.Field inline>
                     <label>Int: </label>
-                    <Input placeholder='' size="mini" value={formula_ls[index].param_ls[1]} id = {"para" + index} onChange={this.handleManualInput}/>
+                    <Input placeholder='' size="mini" value={formula_ls[index].param_ls[1]} id={"para" + index}
+                           onChange={this.handleManualInput}/>
                 </Form.Field>);
             case "SUBTOTAL":
                 return (<Form.Field inline>
                     <label>Function_num </label>
-                    <Select value={formula_ls[index].param_ls[0]} options={subtotalFunc} size="mini" id = {"para" + index} onChange={this.handleSubTotalFunc}/>
+                    <Select value={formula_ls[index].param_ls[0]} options={subtotalFunc} size="mini" id={"para" + index}
+                            onChange={this.handleSubTotalFunc}/>
                 </Form.Field>);
             case "RANK":
                 return (<Form.Field inline>
                     <label> Value: </label>
-                    <Input value={formula_ls[index].param_ls[0]} size="mini" style={{"maxWidth": "8em",}} name={"para" + index} onChange={this.handleRankInput}/>
-                    <Select value={formula_ls[index].param_ls[2]} options={orderOpt} size="mini" id = {"para" + index}
-                            style={{"minWidth": "6em", "maxWidth": "8em", "marginLeft": "2em"}} onChange = {this.handleRankOrder}/>
+                    <Input value={formula_ls[index].param_ls[0]} size="mini" style={{"maxWidth": "8em",}}
+                           name={"para" + index} onChange={this.handleRankInput}/>
+                    <Select value={formula_ls[index].param_ls[2]} options={orderOpt} size="mini" id={"para" + index}
+                            style={{"minWidth": "6em", "maxWidth": "8em", "marginLeft": "2em"}}
+                            onChange={this.handleRankOrder}/>
                 </Form.Field>);
         }
         return null;
@@ -189,7 +201,7 @@ export default class HierarchiForm extends Component {
         const chartOpt = [
             {key: 'r', text: 'Raw Value', value: '1'},
             {key: 'c', text: 'Chart', value: '2'},
-        ]
+        ];
         const funcOptions = [
             {text: 'AVEDEV', value: 'AVEDEV'},
             {text: 'AVERAGE', value: 'AVERAGE'},
@@ -213,36 +225,36 @@ export default class HierarchiForm extends Component {
             {text: 'SUMIF', value: 'SUMIF'},
             {text: 'SUMSQ', value: 'SUMSQ'},
             {text: 'VAR', value: 'VAR'},
-            {text: 'VARP', value: 'VARP'}]
+            {text: 'VARP', value: 'VARP'}];
 
         var formula_ls = this.state.formula_ls;
-        const selected = ['1']
+        const selected = ['1'];
         return (
-            <div style={{"width": "20%"}} id="hierarchi-form">
+            <Modal
+                closeIcon
+                onClose={this.handleClose}
+                trigger={<Dropdown.Item onClick={this.handleOpen}>Add Hierarchical Column</Dropdown.Item>}
+                open = {this.state.modalOpen} >
+                <Modal.Header>Hierarchical form</Modal.Header>
+                <Modal.Content>
                 <Form onSubmit={this.handleSubmit}>
-                    <Form.Group>
-                        <legend id="hierarchi-title">Hierarchical
-                            form
-                        </legend>
-                        <Button icon='close' id="formClose" onClick={this.handleClose}/>
-                    </Form.Group>
                     {formula_ls.map((line, index) => {
-                        console.log(line)
-                        console.log(selected)
+                        console.log(line);
+                        console.log(selected);
                         return (<div>
                                 <Form.Group stackable>
                                     <i class="fa fa-minus-circle hierRemove" id="rm1"
                                        aria-hidden="true" onClick={this.handleRemove.bind(this, index)}/>
                                     <Form.Dropdown id={index}
                                                    width={7}
-                                                   style={{"minWidth": "6em", "maxWidth": "8.5em",}}
+                                                   // style={{"minWidth": "6em", "maxWidth": "8.5em",}}
                                                    options={this.state.options}
                                                    selection
                                                    value={this.state.options[line.attr_index].value}
                                                    onChange={this.handleAttrChange}
                                     />
                                     <Form.Dropdown id={index}
-                                                   style={{"minWidth": "6em", "maxWidth": "8.em"}}
+                                                   // style={{"minWidth": "6em", "maxWidth": "8.em"}}
                                                    width={7}
                                         // inline
                                         // control={Select}
@@ -272,7 +284,8 @@ export default class HierarchiForm extends Component {
                     />
                     <Form.Button>Done</Form.Button>
                 </Form>
-            </div>
+                </Modal.Content>
+            </Modal>
         );
     }
 

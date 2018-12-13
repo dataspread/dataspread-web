@@ -9,6 +9,7 @@ import Stomp from 'stompjs';
 
 import Navigation from "./Components/Navigation";
 import ExplorationForm from "./Components/ExplorationForm";
+import HierarchiForm from "./Components/HierarchiForm";
 
 export default class DSGrid extends Component {
     toColumnName(num) {
@@ -61,6 +62,7 @@ export default class DSGrid extends Component {
         this.submitNavForm = this.submitNavForm.bind(this);
         this.closeNavForm = this.closeNavForm.bind(this);
         this.openNavForm = this.openNavForm.bind(this);
+        this.openHierForm = this.openNavForm.bind(this);
 
         // this.urlPrefix = ""; // Only for testing.
         // this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
@@ -176,6 +178,12 @@ export default class DSGrid extends Component {
     closeNavForm() {
         console.log("close");
         this.setState({navFormOpen:false});
+    }
+
+    openHierForm() {
+        if(this.state.navFormOpen == true){
+            this.setState({hierFormOpen:true})
+        }
     }
 
     render() {

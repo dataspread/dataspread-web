@@ -25,13 +25,13 @@ export default class Navigation extends Component {
             aggregateData: {},
             mergeCellInfo: [],
             selectedChild: [0],
-            selectedBars:[],
+            selectedBars: [],
             childHash: new Map(),
-            levelList:[],
-            hieraOpen:false,
-            sortChild_ls:[],
-            prevPath:'',
-            nextPath:'',
+            levelList: [],
+            hieraOpen: false,
+            sortChild_ls: [],
+            prevPath: '',
+            nextPath: '',
         }
 
         this.hotTableComponent = React.createRef();
@@ -49,134 +49,132 @@ export default class Navigation extends Component {
     }
 
     startNav(data) {
-                    console.log(data);
-                    this.setState({
-                        alltext: true,
-                        currLevel: 0,
-                        viewData: [],
-                        wrapperWidth: window.innerWidth,
-                        wrapperHeight: window.innerHeight,
-                        colHeader: ["City"],
-                        aggregateData: {},
-                        mergeCellInfo: [],
-                        selectedChild: [0],
-                        selectedBars:[],
-                        childHash: new Map(),
-                        levelList:[],
-                        hieraOpen:false,
-                        sortChild_ls:[],
-                        prevPath:'',
-                        nextPath:'',
-                        currData: data.data,
-                        cumulativeData: [data.data]
-                    });
-                    console.log(this.state.cumulativeData[0][0]);
+        console.log(data);
+        let length = data.data.length;
+        let viewData = new Array(data.data.length);
+        for (let i = 0; i < length; i++) {
+            viewData[i] = [""];
+            viewData[i][0] = data.data[i].name;
+        }
+        let childHash = new Map();
+        for (let i = 0; i < length; i++) {
+            childHash.set(i, data.data[i].children);
+        }
 
-                    let length = data.data.length;
-                    let viewData = new Array(data.data.length);
-                    for (let i = 0; i < length; i++) {
-                        viewData[i] = [""];
-                        viewData[i][0] = this.state.cumulativeData[0][i].name;
-                    }
-                    let childHash = new Map();
-                    for (let i = 0; i < length; i++) {
-                        childHash.set(i, data.data[i].children);
-                    }
-                    console.log(viewData);
-                    this.setState({
-                        viewData: viewData,
-                        childHash: childHash,
-                    })
-                    var currentState = this.state;
-                    let self = this;
-                    this.hotTableComponent.current.hotInstance.updateSettings({
-                        data: currentState.viewData,
-                        minCols: 1,
-                        readOnly: true,
-                        rowHeights: (currentState.wrapperHeight * 0.93 / currentState.currData.length > 90)
-                            ? currentState.wrapperHeight * 0.93 / currentState.currData.length
-                            : 90,
-                        width: currentState.wrapperWidth * 0.19,
-                        height: currentState.wrapperHeight * 0.93,
-                        rowHeaderWidth: 0,
-                        rowHeaders: true,
-                        colWidths: self.colWidthsComputer,
-                        colHeaders: self.colHeaderRenderer,
-                        stretchH: 'all',
-                        contextMenu: false,
-                        outsideClickDeselects: false,
-                        className: "wrap",
-                        search: true,
-                        sortIndicator: true,
-                        manualColumnResize: true,
-                        mergeCells: currentState.mergeCellInfo,
-                        beforeOnCellMouseDown: function (e, coords, element) {
-                            // $("#formulaBar").val("");
+        this.setState({
+            alltext: true,
+            currLevel: 0,
+            viewData: viewData,
+            wrapperWidth: window.innerWidth,
+            wrapperHeight: window.innerHeight,
+            colHeader: ["City"],
+            aggregateData: {},
+            mergeCellInfo: [],
+            selectedChild: [0],
+            selectedBars: [],
+            childHash: childHash,
+            levelList: [],
+            hieraOpen: false,
+            sortChild_ls: [],
+            prevPath: '',
+            nextPath: '',
+            currData: data.data,
+            cumulativeData: [data.data]
+        });
+        console.log(this.state.cumulativeData[0][0]);
 
-                            let topLevel = (currentState.currLevel == 0 && coords.col != 0)
-                            let otherLevel = (currentState.currLevel > 0 && coords.col != 1)
-                            // if (topLevel && coords.row >= 0) {
-                            //     $("#formulaBar").val("=" + navRawFormula[coords.row][coords.col - 1]);
-                            // }
-                            // else if (currLevel > 0 && coords.row >= 0 && coords.col >= 2) {
-                            //     $("#formulaBar").val("=" + navRawFormula[coords.row][coords.col - 2]);
-                            // }
-                            console.log(e);
-                            //|| zoomming
-                            if (topLevel || otherLevel ||
-                                e.realTarget.className == "colHeader" ||
-                                e.realTarget.className == "relative" || e.realTarget.className.baseVal == "bar") {
-                                e.stopImmediatePropagation();
-                            }
-                            if (e.realTarget.classList['3'] == "zoomInPlus") {
-                                e.stopImmediatePropagation();
-                                self.zoomIn(coords.row);
-                            }
-                            if (e.realTarget.classList['3'] == "zoomOutM") {
-                                e.stopImmediatePropagation();
-                                self.zoomOutHist();
-                                return;
-                            }
-                            if (e.realTarget.id == "colClose") {
-                                self.removeHierarchiCol(coords.col)
-                            }
-                            if (e.realTarget.classList['0'] == "slider") {
-                                let level = coords.col - 1;
-                                if (currentState.currLevel > 0)
-                                    level = coords.col - 2;
-                                currentState.aggregateData.formula_ls[level].getChart =
-                                    !currentState.aggregateData.formula_ls[level].getChart;
-                                self.getAggregateValue();
-                            }
-                        },
-                        cells: self.cellRenderer,
-                        afterSelection: self.afterSelectionHandler,
-                    })
-                    this.hotTableComponent.current.hotInstance.view.wt.update('onCellDblClick', function (e, cell) {
-                        if (cell.row >= 0) {
-                            if (currentState.currLevel == 0) {
-                                if (cell.col == 0 && currentState.cumulativeData[currentState.currLevel][cell.row].clickable) {
-                                    //        var child = cell.row/spanList[currLevel];
-                                    let child = cell.row;
-                                    //nav.deselectCell();
-                                    //zoomming = true;
-                                    self.zoomIn(child);
-                                }
-                            } else {
-                                if (cell.col == 1 && currentState.cumulativeData[currentState.currLevel][cell.row].clickable) {
-                                    //  var child = cell.row/spanList[currLevel];
-                                    var child = cell.row;
-                                    //nav.deselectCell();
-                                    //zoomming = true;
-                                    self.zoomIn(child);
-                                } else if (cell.col == 0) {
-                                    //zoomouting = true;
-                                    //zoomOutHist(nav);
-                                }
-                            }
-                        }
-                    });
+
+        var currentState = this.state;
+        let self = this;
+        this.hotTableComponent.current.hotInstance.updateSettings({
+            data: currentState.viewData,
+            minCols: 1,
+            readOnly: true,
+            rowHeights: (currentState.wrapperHeight * 0.93 / currentState.currData.length > 90)
+                ? currentState.wrapperHeight * 0.93 / currentState.currData.length
+                : 90,
+            width: currentState.wrapperWidth * 0.19,
+            height: currentState.wrapperHeight * 0.93,
+            rowHeaderWidth: 0,
+            rowHeaders: true,
+            colWidths: self.colWidthsComputer,
+            colHeaders: self.colHeaderRenderer,
+            stretchH: 'all',
+            contextMenu: false,
+            outsideClickDeselects: false,
+            className: "wrap",
+            search: true,
+            sortIndicator: true,
+            manualColumnResize: true,
+            mergeCells: currentState.mergeCellInfo,
+            beforeOnCellMouseDown: function (e, coords, element) {
+                // $("#formulaBar").val("");
+
+                let topLevel = (currentState.currLevel == 0 && coords.col != 0)
+                let otherLevel = (currentState.currLevel > 0 && coords.col != 1)
+                // if (topLevel && coords.row >= 0) {
+                //     $("#formulaBar").val("=" + navRawFormula[coords.row][coords.col - 1]);
+                // }
+                // else if (currLevel > 0 && coords.row >= 0 && coords.col >= 2) {
+                //     $("#formulaBar").val("=" + navRawFormula[coords.row][coords.col - 2]);
+                // }
+                console.log(e);
+                //|| zoomming
+                if (topLevel || otherLevel ||
+                    e.realTarget.className == "colHeader" ||
+                    e.realTarget.className == "relative" || e.realTarget.className.baseVal == "bar") {
+                    e.stopImmediatePropagation();
+                }
+                if (e.realTarget.classList['3'] == "zoomInPlus") {
+                    e.stopImmediatePropagation();
+                    self.zoomIn(coords.row);
+                }
+                if (e.realTarget.classList['3'] == "zoomOutM") {
+                    e.stopImmediatePropagation();
+                    self.zoomOutHist();
+                    return;
+                }
+                if (e.realTarget.id == "colClose") {
+                    self.removeHierarchiCol(coords.col)
+                }
+                if (e.realTarget.classList['0'] == "slider") {
+                    let level = coords.col - 1;
+                    if (currentState.currLevel > 0)
+                        level = coords.col - 2;
+                    currentState.aggregateData.formula_ls[level].getChart =
+                        !currentState.aggregateData.formula_ls[level].getChart;
+                    self.getAggregateValue();
+                }
+            },
+            cells: self.cellRenderer,
+            afterSelection: self.afterSelectionHandler,
+        })
+        this.hotTableComponent.current.hotInstance.view.wt.update('onCellDblClick', function (e, cell) {
+            if (cell.row >= 0) {
+                if (currentState.currLevel == 0) {
+                    if (cell.col == 0 && currentState.cumulativeData[currentState.currLevel][cell.row].clickable) {
+                        //        var child = cell.row/spanList[currLevel];
+                        let child = cell.row;
+                        //nav.deselectCell();
+                        //zoomming = true;
+                        self.zoomIn(child);
+                    }
+                } else {
+                    if (cell.col == 1 && currentState.cumulativeData[currentState.currLevel][cell.row].clickable) {
+                        //  var child = cell.row/spanList[currLevel];
+                        var child = cell.row;
+                        //nav.deselectCell();
+                        //zoomming = true;
+                        self.zoomIn(child);
+                    } else if (cell.col == 0) {
+                        //zoomouting = true;
+                        //zoomOutHist(nav);
+                    }
+                }
+            }
+        });
     }
+
     colWidthsComputer(col) {
         let currState = this.state;
         if (currState.currLevel == 0) {
@@ -196,7 +194,8 @@ export default class Navigation extends Component {
         }
 
     }
-    cellRenderer (row, column, prop) {
+
+    cellRenderer(row, column, prop) {
         let currState = this.state;
         let cellMeta = {}
         if (currState.currLevel == 0) {
@@ -215,7 +214,8 @@ export default class Navigation extends Component {
         }
         return cellMeta;
     }
-    colHeaderRenderer (col) {
+
+    colHeaderRenderer(col) {
         let currState = this.state;
         if (col < currState.colHeader.length) {
             if (currState.currLevel == 0) {
@@ -249,8 +249,9 @@ export default class Navigation extends Component {
             }
         }
     }
-    afterSelectionHandler (r, c, r2, c2, preventScrolling,
-              selectionLayerLevel) {
+
+    afterSelectionHandler(r, c, r2, c2, preventScrolling,
+                          selectionLayerLevel) {
         // setting if prevent scrolling after selection
         if (this.state.cumulativeData[this.state.currLevel][r] != undefined) {
             let selectedChild = [];
@@ -260,11 +261,13 @@ export default class Navigation extends Component {
             barObj.cell = r;
             barObj.bars = [0];
             selectedBars.push(barObj);
-            this.setState({selectedChild:selectedChild,
-                              selectedBars:selectedBars});
+            this.setState({
+                selectedChild: selectedChild,
+                selectedBars: selectedBars
+            });
 
             let lowerRange = this.state.cumulativeData[this.state.currLevel][r].rowRange[0];
-            this.props.grid.grid.scrollToCell ({ columnIndex: 0, rowIndex: lowerRange + 26});
+            this.props.grid.grid.scrollToCell({columnIndex: 0, rowIndex: lowerRange + 26});
             // let upperRange = cumulativeData[currLevel][r].rowRange[1];
             // updateData(cumulativeData[currLevel][r].rowRange[0], 0,
             //     cumulativeData[currLevel][r].rowRange[1], 15, true);
@@ -272,11 +275,12 @@ export default class Navigation extends Component {
             // nav.render();
         }
     }
+
     navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
         //console.log(this);
         let tempString = "<div><span>" + value + "</span>";
-        let currentState = this.state;
-
+        const currentState = this.state;
+        if(row >= currentState.cumulativeData[currentState.currLevel].length) return;
         if (currentState.currLevel == 0) {
 
             if (currentState.selectedChild.includes(row)) {
@@ -286,7 +290,6 @@ export default class Navigation extends Component {
                 td.style.background = '#F5F5DC';
             }
             let targetCell = currentState.cumulativeData[currentState.currLevel][row];
-
             if (targetCell.clickable) {
                 tempString += " (Rows: " + targetCell.value + ")";
                 tempString += "<i class=\"fa fa-angle-right fa-2x zoomInPlus\" style=\"color: #51cf66;\" id='zm" + row + "' aria-hidden=\"true\"></i>";
@@ -299,7 +302,7 @@ export default class Navigation extends Component {
                     return;
                 }
             } else {
-                tempString += "<p>Total Rows: " + targetCell.value + "<br> Start Row No: " + (targetCell.rowRange[0]+1) + "<br> End Row No: " + (targetCell.rowRange[1]+1) + "</p>";
+                tempString += "<p>Total Rows: " + targetCell.value + "<br> Start Row No: " + (targetCell.rowRange[0] + 1) + "<br> End Row No: " + (targetCell.rowRange[1] + 1) + "</p>";
                 td.innerHTML = tempString + "</div>";
                 return;
             }
@@ -348,7 +351,7 @@ export default class Navigation extends Component {
                         return;
                     }
                 } else {
-                    tempString += "<p>Total Rows: " + targetCell.value + "<br> Start Row No: " + (targetCell.rowRange[0]+1) + "<br> End Row No: " + (targetCell.rowRange[1]+1) + "</p>";
+                    tempString += "<p>Total Rows: " + targetCell.value + "<br> Start Row No: " + (targetCell.rowRange[0] + 1) + "<br> End Row No: " + (targetCell.rowRange[1] + 1) + "</p>";
                     td.innerHTML = tempString + "</div>";
                 }
             }
@@ -482,7 +485,7 @@ export default class Navigation extends Component {
             })
             .on("click", function (d) {
                 let lowerRange = hash.get(d.name).range;
-                grid.scrollToCell ({ columnIndex: 0, rowIndex: lowerRange + 26});
+                grid.scrollToCell({columnIndex: 0, rowIndex: lowerRange + 26});
                 //updataHighlight();
             });
         //   .on("dblclick",function(d){ alert("node was double clicked"); });
@@ -513,7 +516,7 @@ export default class Navigation extends Component {
         console.log(currState.selectedChild);
         let childHash = new Map();
         if (!currState.selectedChild.includes(child) || currState.selectedChild.length == 0)
-             selectFirstChild = true;
+            selectFirstChild = true;
 
         let colHeader = currState.colHeader;
         if (currState.currLevel == 0) {
@@ -523,10 +526,10 @@ export default class Navigation extends Component {
         levelList.push(child);
         this.setState({
             selectedChild: [],
-            selectedBars:[],
-            sortChild_ls:[],
-            levelList:levelList,
-            colHeader:colHeader,
+            selectedBars: [],
+            sortChild_ls: [],
+            levelList: levelList,
+            colHeader: colHeader,
         });
         let childlist = this.computePath(); // get the list of children
 
@@ -535,90 +538,90 @@ export default class Navigation extends Component {
         queryData.bookId = this.props.bookId;
         queryData.sheetName = this.props.grid.state.sheetName;
         queryData.path = childlist;
-        fetch('http://localhost:9999/api/' + 'getChildren',{
+        fetch('http://localhost:9999/api/' + 'getChildren', {
             method: "POST",
-            body:JSON.stringify(queryData),
-            headers:{
+            body: JSON.stringify(queryData),
+            headers: {
                 'Content-Type': 'text/plain'
             }
-            })
+        })
             .then(response => response.json())
             .then(data => {
                 console.log(data);
-            if (data.status == "success") {
-                var result = data.data;
-                console.log(result);
-                this.setState({
-                              currData: result.buckets,
-                       })
-                console.log(this)
-                let currData = result.buckets;
-                let cumulativeData =  currState.cumulativeData;
-                let currLevel = currState.currLevel + 1;
-                let alltext = true;
-                for (let i = 0; i < currData.length; i++) {
-                    if (currData[i].clickable) alltext = false;
-                    childHash.set(i, currData[i].children);
-                }
-                // prevPath = result.prev.path;
-                // nextPath = result.later.path;
-                // let breadcrum_ls = result.breadCrumb;
-             let  mergeCellInfo = [];
-                mergeCellInfo.push(
-                    {row: 0, col: 0, rowspan: currData.length, colspan: 1});
-              let  viewData = [];
-              console.log(currState);
-
-               for (let i = 0; i < currData.length; i++) {
-                    if (i == 0) {
-                        console.log(cumulativeData);
-
-                        viewData.push([cumulativeData[parseInt(currLevel - 1)][child].name]);
-                    } else {
-                        viewData.push ( [""]);
-                    }
-                }
-
-               console.log(viewData);
-                cumulativeData.splice(currLevel);
-                cumulativeData.push(currData);
-
-                for (let i = 0; i < currData.length; i++) {
-                    viewData[i][1] = cumulativeData[currLevel][i].name;
-                }
-                this.setState({
-                    childHash: childHash,
-                    viewData:viewData,
-                    cumulativeData:cumulativeData,
-                    currLevel:currLevel,
-                    mergeCellInfo:mergeCellInfo,
-                });
-                currState = this.state;
-
-                if(currState.hieraOpen) {
-                    //getAggregateValue();
-                } else {
-                    this.hotTableComponent.current.hotInstance.updateSettings({
-                        data: currState.viewData,
-                        rowHeights: (currState.wrapperHeight * 0.95 / currState.currData.length > 90)
-                            ? currState.wrapperHeight * 0.95 / currState.currData.length
-                            : 90,
-                        mergeCells: mergeCellInfo,
+                if (data.status == "success") {
+                    var result = data.data;
+                    console.log(result);
+                    this.setState({
+                        currData: result.buckets,
                     })
-                }
+                    console.log(this)
+                    let currData = result.buckets;
+                    let cumulativeData = currState.cumulativeData;
+                    let currLevel = currState.currLevel + 1;
+                    let alltext = true;
+                    for (let i = 0; i < currData.length; i++) {
+                        if (currData[i].clickable) alltext = false;
+                        childHash.set(i, currData[i].children);
+                    }
+                    // prevPath = result.prev.path;
+                    // nextPath = result.later.path;
+                    // let breadcrum_ls = result.breadCrumb;
+                    let mergeCellInfo = [];
+                    mergeCellInfo.push(
+                        {row: 0, col: 0, rowspan: currData.length, colspan: 1});
+                    let viewData = [];
+                    console.log(currState);
 
-        //
-        //         cumulativeDataSize += currData.length;
-        //
-        //
-        //             zoomming = false;
-        //             //nav.selectCell(0, 1)
-        //         }
-        //         updateNavPath(breadcrum_ls); // calculate breadcrumb
-        //         updateNavCellFocus(currentFirstRow, currentLastRow);
-                if (selectFirstChild)
-                    this.hotTableComponent.current.hotInstance.selectCell(0, 1);
-              }
+                    for (let i = 0; i < currData.length; i++) {
+                        if (i == 0) {
+                            console.log(cumulativeData);
+
+                            viewData.push([cumulativeData[parseInt(currLevel - 1)][child].name]);
+                        } else {
+                            viewData.push([""]);
+                        }
+                    }
+
+                    console.log(viewData);
+                    cumulativeData.splice(currLevel);
+                    cumulativeData.push(currData);
+
+                    for (let i = 0; i < currData.length; i++) {
+                        viewData[i][1] = cumulativeData[currLevel][i].name;
+                    }
+                    this.setState({
+                        childHash: childHash,
+                        viewData: viewData,
+                        cumulativeData: cumulativeData,
+                        currLevel: currLevel,
+                        mergeCellInfo: mergeCellInfo,
+                    });
+                    currState = this.state;
+
+                    if (currState.hieraOpen) {
+                        //getAggregateValue();
+                    } else {
+                        this.hotTableComponent.current.hotInstance.updateSettings({
+                            data: currState.viewData,
+                            rowHeights: (currState.wrapperHeight * 0.95 / currState.currData.length > 90)
+                                ? currState.wrapperHeight * 0.95 / currState.currData.length
+                                : 90,
+                            mergeCells: mergeCellInfo,
+                        })
+                    }
+
+                    //
+                    //         cumulativeDataSize += currData.length;
+                    //
+                    //
+                    //             zoomming = false;
+                    //             //nav.selectCell(0, 1)
+                    //         }
+                    //         updateNavPath(breadcrum_ls); // calculate breadcrumb
+                    //         updateNavCellFocus(currentFirstRow, currentLastRow);
+                    if (selectFirstChild)
+                        this.hotTableComponent.current.hotInstance.selectCell(0, 1);
+                }
             })
     }
 
@@ -635,11 +638,11 @@ export default class Navigation extends Component {
         levelList.pop();
         this.setState({
             selectedChild: [],
-            selectedBars:[],
-            sortChild_ls:[],
-            levelList:levelList,
-            colHeader:colHeader,
-            alltext:false,
+            selectedBars: [],
+            sortChild_ls: [],
+            levelList: levelList,
+            colHeader: colHeader,
+            alltext: false,
         });
         let childlist = this.computePath(); // get the list of children
         // api call to /levelList + '.' + child to get currData
@@ -649,10 +652,10 @@ export default class Navigation extends Component {
         queryData.sheetName = this.props.grid.state.sheetName;
         queryData.path = childlist;
 
-        fetch('http://localhost:9999/api/' + 'getChildren',{
+        fetch('http://localhost:9999/api/' + 'getChildren', {
             method: "POST",
-            body:JSON.stringify(queryData),
-            headers:{
+            body: JSON.stringify(queryData),
+            headers: {
                 'Content-Type': 'text/plain'
             }
         })
@@ -696,18 +699,18 @@ export default class Navigation extends Component {
                     }
                     this.setState({
                         viewData: viewData,
-                        currLevel:currLevel,
-                        currData:currData,
-                        cumulativeData:cumulativeData,
-                        childHash:childHash,
-                        colHeader:colHeader,
-                        mergeCellInfo:mergeCellInfo,
-                        prevPath:prevPath,
-                        nextPath:nextPath,
+                        currLevel: currLevel,
+                        currData: currData,
+                        cumulativeData: cumulativeData,
+                        childHash: childHash,
+                        colHeader: colHeader,
+                        mergeCellInfo: mergeCellInfo,
+                        prevPath: prevPath,
+                        nextPath: nextPath,
                     });
                     currState = this.state;
                     if (currState.hieraOpen) {
-                       // getAggregateValue();
+                        // getAggregateValue();
 
                     } else {
                         this.hotTableComponent.current.hotInstance.updateSettings({
@@ -717,8 +720,8 @@ export default class Navigation extends Component {
                                 : 90,
                             mergeCells: mergeCellInfo,
                         })
-                 //       zoomouting = false;
-               //         nav.render();
+                        //       zoomouting = false;
+                        //         nav.render();
 
                     }
 
@@ -743,7 +746,7 @@ export default class Navigation extends Component {
     }
 
     render() {
-        if(this.props.grid.state.navOpen){
+        if (this.props.grid.state.navOpen) {
             return (
                 <div id="hot-app">
                     <HotTable ref={this.hotTableComponent}/>

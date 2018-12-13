@@ -4,7 +4,7 @@ import DSGrid from './dsgrid';
 import Toolbar from './Components/Menu/toolbar'
 import Stylebar from './Components/Stylebar'
 import StartupBox from './Components/StatupBox'
-
+import HierarchiForm from "./Components/HierarchiForm";
 
 class App extends Component {
 
@@ -20,6 +20,7 @@ class App extends Component {
         }
         this.onSelectFile = this.onSelectFile.bind(this)
         this.onNavFormOpen = this.onNavFormOpen.bind(this)
+        // this.onHierFormOpen = this.onHierFormOpen.bind(this)
 
     }
 
@@ -42,6 +43,11 @@ class App extends Component {
             this.grid.openNavForm();
         }
     }
+    // onHierFormOpen(){
+    //     if(this.grid !== null) {
+    //         this.grid.openHierForm();
+    //     }
+    // }
 
 
 
@@ -51,7 +57,7 @@ class App extends Component {
         if (!this.state.hasFileOpened) {
             return (
                 <div>
-                    <Toolbar username={this.state.username} onSelectFile={this.onSelectFile} />
+                    <Toolbar username={this.state.username} onSelectFile={this.onSelectFile} onNavFormOpen={this.onNavFormOpen} grid = {this.grid}/>
                     <Stylebar />
                     <StartupBox username={this.state.username} onSelectFile={this.onSelectFile}/>
                 </div>
@@ -59,13 +65,13 @@ class App extends Component {
         } else {
             return (
                 <div>
-                    <Toolbar username={this.state.username} onSelectFile={this.onSelectFile} onNavFormOpen={this.onNavFormOpen}/>
+                    <Toolbar username={this.state.username} onSelectFile={this.onSelectFile} onNavFormOpen={this.onNavFormOpen} grid = {this.grid}/>
                     <Stylebar />
                     <DSGrid bookId={this.state.bookId} ref={ref => this.grid = ref} />
                 </div>
             )
         }
-        
+
     }
 }
 
