@@ -178,6 +178,29 @@ public class GeneralController implements FormulaAsyncListener {
             int column = (int) payload.get("column");
             String value = (String) payload.get("value");
             updateCellWithNotfication(uiSession, row, column, value);
+        } else if (message.equals("updateCopyDimension")) {
+        } else if (message.equals("updatePasteDimension")) {
+            int focusCellRow = (int) payload.get("focusCellRow");
+            int focusCellColumn = (int) payload.get("focusCellColumn");
+
+            int copiedFocusCellRow = (int) payload.get("copiedFocusCellRow");
+            int copiedFocusCellColumn = (int) payload.get("copiedFocusCellColumn");
+            int copiedSelectOppositeCellColumn = (int) payload.get("copiedSelectOppositeCellColumn");
+            int copiedSelectOppositeCellRow = (int) payload.get("copiedSelectOppositeCellRow");
+
+            SSheet sheet = uiSession.getSheet();
+
+            int rowDiff = focusCellRow - copiedFocusCellRow;
+            int columnDiff = focusCellColumn - copiedFocusCellColumn;
+
+            for (int i = copiedFocusCellRow; i <= copiedSelectOppositeCellRow; i++) {
+                for (int j = copiedFocusCellColumn; j <= copiedSelectOppositeCellColumn; j++) {
+                    System.out.print (sheet.getCell(i, j).getStringValue());
+                    updateCellWithNotfication(uiSession, i+rowDiff, j+columnDiff, sheet.getCell(i, j).getStringValue());
+                }
+            }
+
+
         }
     }
 
