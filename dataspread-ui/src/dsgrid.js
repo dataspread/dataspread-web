@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Dimmer, Loader} from 'semantic-ui-react'
+import {Button, Dimmer, Loader} from 'semantic-ui-react'
 import {ArrowKeyStepper, AutoSizer, defaultCellRangeRenderer, Grid, ScrollSync} from './react-virtualized'
 
 import Cell from './cell';
@@ -29,7 +29,14 @@ export default class DSGrid extends Component {
             selectOppositeCellColumn: -1,
             isProcessing: false,
             initialLoadDone:false,
+
+            copied: false,
+            copiedFocusCellRow: -1,
+            copiedFocusCellColumn: -1,
+            copiedSelectOppositeCellColumn: -1,
+            copiedSelectOppositeCellRow: -1,
         }
+
         this.mouseDown = false;
         this.shiftOn = false;
         this.subscribed = false;
@@ -47,6 +54,7 @@ export default class DSGrid extends Component {
         this._onSectionRendered = this._onSectionRendered.bind(this);
         this._cellRenderer = this._cellRenderer.bind(this);
         this._updateCell = this._updateCell.bind(this);
+        this._updateMultipleCells = this._updateMultipleCells.bind(this);
         this._mouseOverCell = this._mouseOverCell.bind(this);
         this._mouseDownCell = this._mouseDownCell.bind(this);
         this._mouseUpCell = this._mouseUpCell.bind(this);
@@ -54,6 +62,8 @@ export default class DSGrid extends Component {
         this._cellRangeRenderer = this._cellRangeRenderer.bind(this);
         this._handleKeyDown = this._handleKeyDown.bind(this);
         this._handleKeyUp = this._handleKeyUp.bind(this);
+        this._handleCopyDimension = this._handleCopyDimension.bind(this);
+        this._handlePasteDimension = this._handlePasteDimension.bind(this);
 
         // this.urlPrefix = ""; // Only for testing.
         // this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
@@ -147,7 +157,12 @@ export default class DSGrid extends Component {
 
     render() {
         return (
+
+
             <div onKeyDown={this._handleKeyDown} onKeyUp={this._handleKeyUp}>
+                <Button onClick={this._handleCopyDimension}>Copy</Button>
+                <Button onClick={this._handlePasteDimension}>Paste</Button>
+
                 <div style={{display: 'flex'}}>
                     <div style={{flex: 'auto', height: '90vh'}}>
                         <Dimmer active={this.state.isProcessing || !this.state.initialLoadDone}>
@@ -336,6 +351,35 @@ export default class DSGrid extends Component {
     ) {
         this.setState({isProcessing: true});
 
+        let fromCache = this.dataCache.get(Math.trunc((rowIndex) / this.fetchSize));
+
+        if (typeof fromCache === "object") {
+            if (value[0] === '=') {
+                fromCache[(rowIndex) % this.fetchSize][columnIndex] = ['...', value.substring(1)];
+            }
+            else {
+                fromCache[(rowIndex) % this.fetchSize][columnIndex] = [value];
+            }
+
+            this.grid.forceUpdate();
+        }
+        this.stompClient.send('/push/status', {}, JSON.stringify({
+            message: 'updateCell',
+            row: rowIndex,
+            column: columnIndex,
+            value: value
+        }));
+
+        //TODO: send update to backend.
+    }
+
+    _updateMultipleCells (
+        {   rowIndex,
+            columnIndex,
+            value
+        }
+    ) {
+        this.setState({isProcessing: true});
 
         let fromCache = this.dataCache.get(Math.trunc((rowIndex) / this.fetchSize));
 
@@ -356,9 +400,12 @@ export default class DSGrid extends Component {
             value: value
         }));
 
-
         //TODO: send update to backend.
     }
+
+
+
+
 
     _setFocusCell(rowIndex, columnIndex) {
         if (this.inclusiveBetween(rowIndex, 0, this.state.rows-1) &&
@@ -520,5 +567,33 @@ export default class DSGrid extends Component {
         }
     }
 
+    _handleCopyDimension() {
+        this.state.copied = true;
+
+        this.state.copiedFocusCellRow = this.state.focusCellRow;
+        this.state.copiedFocusCellColumn = this.state.focusCellColumn;
+        this.state.copiedSelectOppositeCellColumn = this.state.selectOppositeCellColumn;
+        this.state.copiedSelectOppositeCellRow = this.state.selectOppositeCellRow;
+
+        this.stompClient.send('/push/status', {}, JSON.stringify({
+            message: 'updateCopyDimension',
+        }));
+    }
+
+    _handlePasteDimension() {
+        if (this.state.copied === true) {
+            this.stompClient.send('/push/status', {}, JSON.stringify({
+                message: 'updatePasteDimension',
+
+                focusCellRow: this.state.focusCellRow,
+                focusCellColumn: this.state.focusCellColumn,
+
+                copiedFocusCellRow: this.state.copiedFocusCellRow,
+                copiedFocusCellColumn: this.state.copiedFocusCellColumn,
+                copiedSelectOppositeCellColumn: this.state.copiedSelectOppositeCellColumn,
+                copiedSelectOppositeCellRow: this.state.copiedSelectOppositeCellRow,
+            }));
+        };
+    }
 
 }
