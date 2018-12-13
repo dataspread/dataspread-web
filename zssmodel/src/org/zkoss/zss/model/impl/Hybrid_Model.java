@@ -595,7 +595,8 @@ public class Hybrid_Model extends RCV_Model {
     public void deleteCells(DBContext context, CellRegion range) {
         IntStream.range(0, metaDataBlock.modelEntryList.size())
                 .filter(e -> metaDataBlock.modelEntryList.get(e).range.overlaps(range))
-                .forEach(e -> deleteCells(context, range.getOverlap(metaDataBlock.modelEntryList.get(e).range)
+                .forEach(e -> tableModels.get(e).y
+                        .deleteCells(context, range.getOverlap(metaDataBlock.modelEntryList.get(e).range)
                         .shiftedRange(
                                 -metaDataBlock.modelEntryList.get(e).range.getRow(),
                                 -metaDataBlock.modelEntryList.get(e).range.getColumn())));

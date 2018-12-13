@@ -1,9 +1,11 @@
 import React, {Component} from 'react';
+import {Sidebar} from 'semantic-ui-react'
 import './App.css';
 import DSGrid from './dsgrid';
 import Toolbar from './Components/Menu/toolbar'
 import Stylebar from './Components/Stylebar'
 import StartupBox from './Components/StatupBox'
+import TableSidebar from "./Components/Sidebar/TableSidebar";
 
 class App extends Component {
 
@@ -16,8 +18,23 @@ class App extends Component {
             hasFileOpened: false,
             username:""
 
+        };
+        this.onSelectFile = this.onSelectFile.bind(this);
+        this.onFormSubmit = this.onFormSubmit.bind(this);
+
+        // TODO: propagate operations from dsgrid up here
+        // this.urlPrefix = ""; // Only for testing.
+
+        if (typeof process.env.REACT_APP_BASE_HOST === 'undefined') {
+            this.urlPrefix = "";
         }
-        this.onSelectFile = this.onSelectFile.bind(this)
+        else
+        {
+            this.urlPrefix = "http://" + process.env.REACT_APP_BASE_HOST;
+        }
+
+        //this.urlPrefix = process.env.REACT_APP_BASE_URL ; // Only for testing.
+        console.log("urlPrefix:" +  this.urlPrefix);
 
     }
 
@@ -26,6 +43,44 @@ class App extends Component {
             bookId: bookId,
             hasFileOpened: true
         })
+    }
+
+    onFormSubmit ({
+        cellRange,
+        tableName,
+        schema
+    }) {
+        const cellPos = cellRange.split(",").map(str => parseInt(str, 10));
+        const zBookId = this.state.bookId;
+        const zSheetName = 'Sheet1';
+        fetch(this.urlPrefix + "/api/createTable", {
+            method: "POST",
+            cache: "no-cache",
+            headers: {
+                "Content-Type": "application/json; charset=utf-8",
+                "auth-token": this.state.username
+            },
+            body: JSON.stringify({
+                bookId: zBookId,
+                sheetName: zSheetName,
+                tableName: tableName,
+                row1: cellPos[0],
+                col1: cellPos[1],
+                row2: cellPos[2],
+                col2: cellPos[3],
+                schema: schema
+            })
+        })
+            .then(res => res.json())
+            .then(
+                (result) => {
+                    console.log(result);
+                }
+            )
+            .catch((error) => {
+                console.error(error);
+            });
+
     }
 
     componentDidUpdate() {
@@ -51,7 +106,12 @@ class App extends Component {
                 <div>
                     <Toolbar username={this.state.username} onSelectFile={this.onSelectFile} />
                     <Stylebar />
-                    <DSGrid bookId={this.state.bookId} ref={ref => this.grid = ref} />
+                    <Sidebar.Pushable>
+                        <TableSidebar onFormSubmit={this.onFormSubmit} />
+                        <Sidebar.Pusher>
+                            <DSGrid bookId={this.state.bookId} ref={ref => this.grid = ref} />
+                        </Sidebar.Pusher>
+                    </Sidebar.Pushable>
                 </div>
             )
         }
