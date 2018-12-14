@@ -753,7 +753,7 @@ export default class Navigation extends Component {
         })
             .then(response => response.json())
             .then(data => {
-                this.update({navAggRawData: data.data});
+                this.setState({navAggRawData: data.data});
                 console.log(data);
             })
     }
