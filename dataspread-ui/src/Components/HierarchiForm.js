@@ -7,25 +7,39 @@ export default class HierarchiForm extends Component {
         super(props);
         console.log(this);
         this.state = {
+            navPanelOpen:false,
             modalOpen:false,
             getChart: false,
             options: [{text: 'city', value: '0'},
                 {text: 'id', value: '1'},
                 {text: 'name', value: '2'},],
             formula_ls: [{
-                attr_index: 0,
+                attr_index: 1,
                 function: "AVEDEV",
                 param_ls: [""],
             },]
         };
         this.handleRankOrder = this.handleRankOrder.bind(this);
         this.handleSubTotalFunc = this.handleSubTotalFunc.bind(this);
+        this,this.updateOption = this.updateOption.bind(this);
+    }
+    updateOption (data) {
+        let opt = [];
+        for(let i = 0; i < data.length; i++){
+            let temp = {text:data[i], value: i+1};
+            opt.push(temp);
+        }
+        this.setState({
+            navPanelOpen:true,
+            options:opt});
     }
     handleOpen = () => {
-        if(this.props.grid == null || this.props.grid.state.navOpen !== true){
+        if(this.state.navPanelOpen !== true){
+            console.log(this)
             alert("There is no navigation panel.")
             return;
         }else{
+            console.log(this);
             this.setState({ modalOpen: true });
         }
     }
@@ -35,6 +49,34 @@ export default class HierarchiForm extends Component {
         console.log(e);
         console.log("submit");
         console.log(this.state.getChart)
+        let formula_ls = this.state.formula_ls;
+        for (let i = 0; i < formula_ls.length; i++) {
+            formula_ls[i].getChart = this.state.getChart;
+            formula_ls[i].attr_index = "" + formula_ls[i].attr_index + ""
+            switch(formula_ls[i].function){
+                case "COUNTIF":
+                case "SUMIF":
+                case "LARGE":
+                case "SMALL":
+                    if(formula_ls[i].param_ls[1] == ""){
+                        alert("Please fill in the parameter")
+                        return;
+                    }
+                    break;
+                case "RANK":
+                    if(formula_ls[i].param_ls[0] == ""){
+                        alert("Please fill in the parameter")
+                        return;
+                    }
+                    break;
+
+            }
+        }
+
+        this.props.submitHierForm(formula_ls);
+        this.setState({
+            modalOpen: false
+        })
 
     };
     handleChartChange = (e, {value}) => {
@@ -242,7 +284,7 @@ export default class HierarchiForm extends Component {
                         console.log(line);
                         console.log(selected);
                         return (<div>
-                                <Form.Group stackable>
+                                <Form.Group >
                                     <i class="fa fa-minus-circle hierRemove" id="rm1"
                                        aria-hidden="true" onClick={this.handleRemove.bind(this, index)}/>
                                     <Form.Dropdown id={index}
@@ -250,7 +292,7 @@ export default class HierarchiForm extends Component {
                                                    // style={{"minWidth": "6em", "maxWidth": "8.5em",}}
                                                    options={this.state.options}
                                                    selection
-                                                   value={this.state.options[line.attr_index].value}
+                                                   value={this.state.options[line.attr_index - 1].value}
                                                    onChange={this.handleAttrChange}
                                     />
                                     <Form.Dropdown id={index}

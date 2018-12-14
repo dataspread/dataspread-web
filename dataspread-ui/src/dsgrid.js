@@ -62,7 +62,6 @@ export default class DSGrid extends Component {
         this.submitNavForm = this.submitNavForm.bind(this);
         this.closeNavForm = this.closeNavForm.bind(this);
         this.openNavForm = this.openNavForm.bind(this);
-        this.openHierForm = this.openNavForm.bind(this);
 
         // this.urlPrefix = ""; // Only for testing.
         // this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
@@ -156,17 +155,18 @@ export default class DSGrid extends Component {
 
     submitNavForm(attribute){
         if(attribute) {
-        fetch('http://localhost:9999' + '/api/startNav/djjrorgnt/Sheet1/' + attribute)
+        fetch(this.urlPrefix + '/api/startNav/'+ this.props.bookId+'/' + this.state.sheetName+'/' + attribute)
             .then(response => response.json())
             .then(data => {
                 console.log(data);
                 this.setState({navFormOpen:false, navOpen:true});
+                this.props.updateHierFormOption(this.navForm.state.options);
                 this.nav.startNav(data);
             })
         }
     }
     openNavForm() {
-        fetch('http://localhost:9999' + '/api/getSortAttrs/'+ this.props.bookId+'/' + this.state.sheetName)
+        fetch(this.urlPrefix + '/api/getSortAttrs/'+ this.props.bookId+'/' + this.state.sheetName)
             .then(response => response.json())
             .then(data => {
                 console.log(data);
@@ -180,11 +180,7 @@ export default class DSGrid extends Component {
         this.setState({navFormOpen:false});
     }
 
-    openHierForm() {
-        if(this.state.navFormOpen == true){
-            this.setState({hierFormOpen:true})
-        }
-    }
+
 
     render() {
         return (

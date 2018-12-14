@@ -46,6 +46,8 @@ export default class Navigation extends Component {
         this.cellRenderer = this.cellRenderer.bind(this);
         this.colWidthsComputer = this.colWidthsComputer.bind(this);
         this.zoomOutHist = this.zoomOutHist.bind(this);
+        this.submitHierForm = this.submitHierForm.bind(this);
+        this.chartRenderer = this.chartRenderer.bind(this);
     }
 
     startNav(data) {
@@ -280,7 +282,7 @@ export default class Navigation extends Component {
         //console.log(this);
         let tempString = "<div><span>" + value + "</span>";
         const currentState = this.state;
-        if(row >= currentState.cumulativeData[currentState.currLevel].length) return;
+        if (row >= currentState.cumulativeData[currentState.currLevel].length) return;
         if (currentState.currLevel == 0) {
 
             if (currentState.selectedChild.includes(row)) {
@@ -347,7 +349,7 @@ export default class Navigation extends Component {
                         let chartString = "navchartdiv" + row + col;
                         tempString += "<div id=" + chartString + " ></div>";
                         td.innerHTML = tempString + "</div>";
-                        //computeCellChart(chartString, row);
+                        this.computeCellChart(chartString, row);
                         return;
                     }
                 } else {
@@ -538,7 +540,7 @@ export default class Navigation extends Component {
         queryData.bookId = this.props.bookId;
         queryData.sheetName = this.props.grid.state.sheetName;
         queryData.path = childlist;
-        fetch('http://localhost:9999/api/' + 'getChildren', {
+        fetch(this.props.grid.urlPrefix + '/api/' + 'getChildren', {
             method: "POST",
             body: JSON.stringify(queryData),
             headers: {
@@ -652,7 +654,7 @@ export default class Navigation extends Component {
         queryData.sheetName = this.props.grid.state.sheetName;
         queryData.path = childlist;
 
-        fetch('http://localhost:9999/api/' + 'getChildren', {
+        fetch(this.props.grid.urlPrefix + '/api/' + 'getChildren', {
             method: "POST",
             body: JSON.stringify(queryData),
             headers: {
@@ -731,6 +733,877 @@ export default class Navigation extends Component {
             })
 
 
+    }
+
+    submitHierForm(formula_ls) {
+
+        let aggregateData = {};
+
+        aggregateData.bookId = this.props.bookId;
+        aggregateData.sheetName = this.props.grid.state.sheetName;
+        aggregateData.formula_ls = formula_ls;
+        let childlist = this.computePath();
+        aggregateData.path = " " + childlist;
+        fetch(this.props.grid.urlPrefix + '/api/' + 'getHierarchicalAggregateFormula', {
+            method: "POST",
+            body: JSON.stringify(aggregateData),
+            headers: {
+                'Content-Type': 'text/plain'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                this.update({navAggRawData: data.data});
+                console.log(data);
+            })
+    }
+
+    chartRenderer(instance, td, row, col, prop, value, cellProperties) {
+        let currLevel = this.state.currLevel;
+        let navAggRawData = this.state.navAggRawData;
+        let wrapperWidth = this.state.wrapperWidth;
+        let wrapperHeight = this.state.wrapperHeight;
+        let cumulativeData = this.state.cumulativeData;
+        let nav = this.hotTableComponent.current.hotInstance;
+        let childHash = this.state.chidHash;
+        let colOffset = (currLevel == 0) ? 1 : 2;
+
+        if (navAggRawData[col - colOffset][row].chartType == 0) {
+            let tempString = "chartdiv" + row + col;
+            td.innerHTML = "<div id=" + tempString + " ></div>";
+
+            let chartData = navAggRawData[col - colOffset][row]['chartData'];
+            let distribution = [];
+
+            distribution.push({min: chartData[0], max: chartData[1]});
+
+            let min = navAggRawData[col - colOffset][0]['value'];
+            let max = navAggRawData[col - colOffset][0]['value'];
+            for (let i = 0; i < navAggRawData[col - colOffset].length; i++) {
+                if (navAggRawData[col - colOffset][i]['value'] < min) {
+                    min = navAggRawData[col - colOffset][i]['value'];
+                } else if (navAggRawData[col - colOffset][i]['value'] > max) {
+                    max = navAggRawData[col - colOffset][i]['value'];
+                }
+            }
+
+            let margin = {top: 20, right: 40, bottom: 18, left: 35};
+            // here, we want the full chart to be 700x200, so we determine
+            // the width and height by subtracting the margins from those values
+            let fullWidth = wrapperWidth * 0.14;
+            let fullHeight = nav.getRowHeight(row);
+
+            // the width and height values will be used in the ranges of our scales
+            let width = fullWidth - margin.right - margin.left;
+            let height = fullHeight;
+            let svg = d3.select('#' + tempString)
+                .append('svg')
+                .attr('width', fullWidth)
+                .attr('height', fullHeight)
+                // this g is where the bar chart will be drawn
+                .append('g')
+                // translate it to leave room for the left and top margins
+                .attr('transform', 'translate(' + margin.left + ',0)');
+
+            svg.append("rect")
+                .attr("x", width + margin.right / 4)
+                .attr("y", 0)
+                .attr("width", margin.right)
+                .attr("height", fullHeight)
+                .attr("fill", d3.interpolateGreens(
+                    ((value - min) / (max - min)) * 0.85 + 0.15));
+
+            svg.append("text")
+                .attr("x", (width / 2))
+                .attr("y", (margin.top / 2))
+                .attr("text-anchor", "middle")
+                .style("font-size", "10px")
+                .style("font-weight", "bold")
+                .text(value);
+
+            // draw the rectangle
+            //'#0099ff'
+            let fraction = 3; // what fraction of container is the valuebar
+            let valueBarHeight = height / fraction;
+            let valueBar = svg.append("rect")
+                .attr("x", 0 - margin.left / 2)
+                .attr("y", height / 2 - valueBarHeight / 2)
+                .attr("width", width)
+                .attr("height", valueBarHeight)
+                .attr("fill", '#0099ff');
+            // add value rectangle
+            let xScale = d3.scaleLinear()
+                .domain([distribution[0].min, distribution[0].max])
+                .range([0 - margin.left / 2, width - margin.left / 2])
+                .nice();
+
+            var highlightBar = svg.append("rect")
+                .attr("x", xScale(value))
+                .attr("y", height / 2 - valueBarHeight)
+                .attr("width", 2)
+                .attr("height", 2 * valueBarHeight)
+                .attr("fill", '#000000');
+            // add min, max, value text
+            svg.append("text")
+                .attr("x", xScale(distribution[0].min) - 5)
+                .attr("y", function () {
+                    return height / 2 + valueBarHeight / 2 + 8;
+                })
+                .attr("text-anchor", "middle")
+                .style("font-size", "10px")
+                .style("font-weight", "bold")
+                .text(distribution[0].min);
+            svg.append("text")
+                .attr("x", xScale(distribution[0].max) + 5)
+                .attr("y", function () {
+                    return height / 2 + valueBarHeight / 2 + 8;
+                })
+                .attr("text-anchor", "middle")
+                .style("font-size", "10px")
+                .style("font-weight", "bold")
+                .text(distribution[0].max);
+            svg.append("text")
+                .attr("x", xScale(value))
+                .attr("y", function () {
+                    return height / 2 + valueBarHeight + 10;
+                })
+                .attr("text-anchor", "middle")
+                .style("font-size", "10px")
+                .style("font-weight", "bold")
+                .text(value);
+        } else if (navAggRawData[col - colOffset][row].chartType == 1) {
+            console.log("in chart rendered");
+            let tempString = "chartdiv" + row + col;
+            td.innerHTML = "<div id=" + tempString + " ></div>";
+
+            let chartData = navAggRawData[col - colOffset][row]['chartData'];
+            let distribution = [];
+
+            for (let i = 0; i < chartData.counts.length; i++) {
+                let boundstr = chartData.bins[i] + " - " + chartData.bins[i + 1];
+                distribution.push({boundary: boundstr, count: chartData.counts[i]});
+            }
+            let min = navAggRawData[col - colOffset][0]['value'];
+            let max = navAggRawData[col - colOffset][0]['value'];
+            for (let i = 0; i < navAggRawData[col - colOffset].length; i++) {
+                if (navAggRawData[col - colOffset][i]['value'] < min) {
+                    min = navAggRawData[col - colOffset][i]['value'];
+                } else if (navAggRawData[col - colOffset][i]['value'] > max) {
+                    max = navAggRawData[col - colOffset][i]['value'];
+                }
+            }
+
+            let special = navAggRawData[col - colOffset][row]['valueIndex'];
+
+            var margin = {top: 20, right: 25, bottom: 18, left: 35};
+            // here, we want the full chart to be 700x200, so we determine
+            // the width and height by subtracting the margins from those values
+            var fullWidth = wrapperWidth * 0.14;
+            var fullHeight = nav.getRowHeight(row);
+
+            // the width and height values will be used in the ranges of our scales
+            var width = fullWidth - margin.right - margin.left;
+            var height = fullHeight - margin.top - margin.bottom;
+            var svg = d3.select('#' + tempString)
+                .append('svg')
+                .attr('width', fullWidth)
+                .attr('height', fullHeight)
+                // this g is where the bar chart will be drawn
+                .append('g')
+                // translate it to leave room for the left and top margins
+                .attr('transform',
+                    'translate(' + margin.left + ',' + margin.top + ')');
+
+            svg.append("rect")
+                .attr("x", width + margin.right / 4)
+                .attr("y", 0 - margin.top)
+                .attr("width", margin.right)
+                .attr("height", fullHeight)
+                .attr("fill", d3.interpolateGreens(
+                    ((value - min) / (max - min)) * 0.85 + 0.15));
+
+            svg.append("text")
+                .attr("x", (width / 2))
+                .attr("y", 0 - (margin.top / 2))
+                .attr("text-anchor", "middle")
+                .style("font-size", "10px")
+                .style("font-weight", "bold")
+                .text(value);
+
+            let xScale =
+                d3.scaleLinear()
+                    .domain([
+                        chartData.bins[0], chartData.bins[chartData.bins.length - 1]
+                    ])
+                    .range([0, width]);
+
+            // y value determined by temp
+            var maxValue = d3.max(distribution, function (d) {
+                return d.count;
+            });
+            var yScale =
+                d3.scaleLinear().domain([0, maxValue]).range([height, 0]).nice();
+
+            var xAxis = d3.axisBottom(xScale)
+            //.ticks(6,'s');
+                .tickValues(chartData.bins);
+
+            var yAxis = d3.axisLeft(yScale);
+            yAxis.ticks(5);
+
+            var barHolder = svg.append('g').classed('bar-holder', true);
+
+            var tooltip =
+                d3.select('#' + tempString).append("div").attr("class", "toolTip");
+
+            // draw the bars
+            var bars =
+                barHolder.selectAll('rect.bar')
+                    .data(distribution)
+                    .enter()
+                    .append('rect')
+                    .classed('bar', true)
+                    .attr('x',
+                        function (d, i) {
+                            // the x value is determined using the
+                            // month of the datum
+                            return 1 + width / (chartData.counts.length) * i;
+                        })
+                    .attr('width', width / (chartData.counts.length))
+                    .attr('y', function (d) {
+                        return yScale(d.count);
+                    })
+                    .attr('fill',
+                        function (d, i) {
+                            if (i == special) {
+                                return '#ffA500';
+                            } else {
+                                return '#0099ff';
+                            }
+                        })
+                    .attr('height',
+                        function (d) {
+                            // the bar's height should align it with the base of the
+                            // chart (y=0)
+                            return height - yScale(d.count);
+                        })
+                    .on("mouseover",
+                        function (d) {
+                            tooltip.style("left", d3.event.pageX - 20 + "px")
+                                .style("top", d3.event.pageY - 30 + "px")
+                                .style("display", "inline-block")
+                                .html((d.count));
+                        })
+                    .on("mouseout", function (d) {
+                        tooltip.style("display", "none");
+                    });
+
+            // draw the axes
+            svg.append('g')
+                .classed('x axis', true)
+                .attr('transform', 'translate(0,' + height + ')')
+                .call(xAxis);
+
+            var yAxisEle = svg.append('g').classed('y axis', true).call(yAxis);
+
+            // add a label to the yAxis
+            svg.append('text')
+                .attr('transform', 'rotate(-90)')
+                .attr("y", 0 - margin.left)
+                .attr("x", 0 - (height / 2))
+                .style('text-anchor', 'middle')
+                .style('fill', 'black')
+                .attr('dy', '1em')
+                .style('font-size', 10)
+                .text('Count');
+
+        } else if (navAggRawData[col - colOffset][row].chartType == 2) {
+            console.log("in nav chart renderer");
+            let tempString = "chartdiv" + row + col;
+            td.innerHTML = "<div id=" + tempString + " ></div>";
+
+            let chartData = navAggRawData[col - colOffset][row]['chartData'];
+            let distribution = [];
+
+            for (let i = 0; i < chartData.counts.length; i++) {
+                let boundstr = chartData.bins[i] + " - " + chartData.bins[i + 1];
+                distribution.push({boundary: boundstr, count: chartData.counts[i]});
+            }
+            let min = navAggRawData[col - colOffset][0]['value'];
+            let max = navAggRawData[col - colOffset][0]['value'];
+            for (let i = 0; i < navAggRawData[col - colOffset].length; i++) {
+                if (navAggRawData[col - colOffset][i]['value'] < min) {
+                    min = navAggRawData[col - colOffset][i]['value'];
+                } else if (navAggRawData[col - colOffset][i]['value'] > max) {
+                    max = navAggRawData[col - colOffset][i]['value'];
+                }
+            }
+
+            let avg = chartData.AVERAGE;
+            let stdev = chartData.STDEV;
+
+            let showSquare = 1;
+            if (navAggRawData[col - colOffset][row]['formula'].includes("STDEV"))
+                showSquare = 0;
+
+            var margin = {top: 20, right: 25, bottom: 18, left: 35};
+            // here, we want the full chart to be 700x200, so we determine
+            // the width and height by subtracting the margins from those values
+            var fullWidth = wrapperWidth * 0.14;
+            var fullHeight = nav.getRowHeight(row);
+
+            // the width and height values will be used in the ranges of our scales
+            var width = fullWidth - margin.right - margin.left;
+            var height = fullHeight - margin.top - margin.bottom;
+            var svg = d3.select('#' + tempString)
+                .append('svg')
+                .attr('width', fullWidth)
+                .attr('height', fullHeight)
+                // this g is where the bar chart will be drawn
+                .append('g')
+                // translate it to leave room for the left and top margins
+                .attr('transform',
+                    'translate(' + margin.left + ',' + margin.top + ')');
+
+            svg.append("rect")
+                .attr("x", width + margin.right / 4)
+                .attr("y", 0 - margin.top)
+                .attr("width", margin.right)
+                .attr("height", fullHeight)
+                .attr("fill", d3.interpolateGreens(
+                    ((value - min) / (max - min)) * 0.85 + 0.15));
+
+            svg.append("text")
+                .attr("x", (width / 2))
+                .attr("y", 0 - (margin.top / 2))
+                .attr("text-anchor", "middle")
+                .style("font-size", "10px")
+                .style("font-weight", "bold")
+                .text(function () {
+                    if (showSquare == 1)
+                        return "\u03c3" +
+                            "^2: " + value;
+                    else
+                        return "\u03c3" +
+                            ": " + value;
+                });
+
+            let xScale =
+                d3.scaleLinear()
+                    .domain([
+                        chartData.bins[0], chartData.bins[chartData.bins.length - 1]
+                    ])
+                    .range([0, width]);
+
+            // y value determined by temp
+            var maxValue = d3.max(distribution, function (d) {
+                return d.count;
+            });
+            var yScale =
+                d3.scaleLinear().domain([0, maxValue]).range([height, 0]).nice();
+
+            var xAxis = d3.axisBottom(xScale)
+            //.ticks(6,'s');
+                .tickValues(chartData.bins);
+
+            var yAxis = d3.axisLeft(yScale);
+            yAxis.ticks(5);
+
+            var barHolder = svg.append('g').classed('bar-holder', true);
+
+            var tooltip =
+                d3.select('#' + tempString).append("div").attr("class", "toolTip");
+
+            // draw the bars
+            var bars =
+                barHolder.selectAll('rect.bar')
+                    .data(distribution)
+                    .enter()
+                    .append('rect')
+                    .classed('bar', true)
+                    .attr('x',
+                        function (d, i) {
+                            // the x value is determined using the
+                            // month of the datum
+                            return 1 + width / (chartData.counts.length) * i;
+                        })
+                    .attr('width', width / (chartData.counts.length))
+                    .attr('y', function (d) {
+                        return yScale(d.count);
+                    })
+                    .attr('fill', '#0099ff')
+                    .attr('height',
+                        function (d) {
+                            // the bar's height should align it with the base of the
+                            // chart (y=0)
+                            return height - yScale(d.count);
+                        })
+                    .on("mouseover",
+                        function (d) {
+                            tooltip.style("left", d3.event.pageX - 20 + "px")
+                                .style("top", d3.event.pageY - 30 + "px")
+                                .style("display", "inline-block")
+                                .html((d.count));
+                        })
+                    .on("mouseout", function (d) {
+                        tooltip.style("display", "none");
+                    });
+
+            // add the average line
+            svg.append("line")
+                .attr("x1", xScale(avg)) //<<== change your code here
+                .attr("y1", 0)
+                .attr("x2", xScale(avg)) //<<== and here
+                .attr("y2", height)
+                .style("stroke", '#000000')
+                .style("stroke-width", 2);
+
+            // add \mu text
+            svg.append("text")
+                .attr("x", xScale(avg) - 5)
+                .attr("y", margin.top / 4)
+                .attr("text-anchor", "middle")
+                .style("font-size", "10px")
+                .style("font-weight", "bold")
+                .text("\u03bc");
+
+            // add the stdev line
+            svg.append("line")
+                .attr("x1", xScale(avg)) //<<== change your code here
+                .attr("y1", margin.top / 2)
+                .attr("x2", xScale(avg + stdev)) //<<== and here
+                .attr("y2", margin.top / 2)
+                .style("stroke", '#000000')
+                .style("stroke-width", 2);
+
+            // add \sigma text
+            svg.append("text")
+                .attr("x", (xScale(avg) + xScale(avg + stdev)) / 2)
+                .attr("y", margin.top / 4)
+                .attr("text-anchor", "middle")
+                .style("font-size", "10px")
+                .style("font-weight", "bold")
+                .text("\u03c3");
+            // add the stdev rectangle
+            svg.append("rect")
+                .attr("x", xScale(avg)) //<<== change your code here
+                .attr("y", margin.top / 2)
+                .attr("width", xScale(avg + stdev) - xScale(avg)) //<<== and here
+                .attr("height", height - margin.top / 2)
+                .attr('fill', '#0099ff')
+                .style("stroke", "red")
+                .style("stroke-dasharray", ("3, 3"))
+                .style("fill-opacity", 0.2);
+
+            // draw the axes
+            svg.append('g')
+                .classed('x axis', true)
+                .attr('transform', 'translate(0,' + height + ')')
+                .call(xAxis);
+
+            var yAxisEle = svg.append('g').classed('y axis', true).call(yAxis);
+
+            // add a label to the yAxis
+            svg.append('text')
+                .attr('transform', 'rotate(-90)')
+                .attr("y", 0 - margin.left)
+                .attr("x", 0 - (height / 2))
+                .style('text-anchor', 'middle')
+                .style('fill', 'black')
+                .attr('dy', '1em')
+                .style('font-size', 10)
+                .text('Count');
+
+        } else if (navAggRawData[col - colOffset][row].chartType == 3) {
+            let tempString = "chartdiv" + row + col;
+            td.innerHTML = "<div id=" + tempString + " ></div>";
+
+            let chartData = navAggRawData[col - colOffset][row]['chartData'];
+            let distribution = [];
+
+            for (let i = 0; i < chartData.counts.length; i++) {
+                let boundstr = chartData.bins[i] + " - " + chartData.bins[i + 1];
+                distribution.push({boundary: boundstr, count: chartData.counts[i]});
+            }
+            let min = navAggRawData[col - colOffset][0]['value'];
+            let max = navAggRawData[col - colOffset][0]['value'];
+            for (let i = 0; i < navAggRawData[col - colOffset].length; i++) {
+                if (navAggRawData[col - colOffset][i]['value'] < min) {
+                    min = navAggRawData[col - colOffset][i]['value'];
+                } else if (navAggRawData[col - colOffset][i]['value'] > max) {
+                    max = navAggRawData[col - colOffset][i]['value'];
+                }
+            }
+
+            var margin = {top: 20, right: 25, bottom: 18, left: 35};
+            // here, we want the full chart to be 700x200, so we determine
+            // the width and height by subtracting the margins from those values
+            var fullWidth = wrapperWidth * 0.14;
+            var fullHeight = nav.getRowHeight(row);
+
+            // the width and height values will be used in the ranges of our scales
+            var width = fullWidth - margin.right - margin.left;
+            var height = fullHeight - margin.top - margin.bottom;
+            var svg = d3.select('#' + tempString)
+                .append('svg')
+                .attr('width', fullWidth)
+                .attr('height', fullHeight)
+                // this g is where the bar chart will be drawn
+                .append('g')
+                // translate it to leave room for the left and top margins
+                .attr('transform',
+                    'translate(' + margin.left + ',' + margin.top + ')');
+
+            svg.append("rect")
+                .attr("x", width + margin.right / 4)
+                .attr("y", 0 - margin.top)
+                .attr("width", margin.right)
+                .attr("height", fullHeight)
+                .attr("fill", d3.interpolateGreens(
+                    ((value - min) / (max - min)) * 0.85 + 0.15));
+
+            svg.append("text")
+                .attr("x", (width / 2))
+                .attr("y", 0 - (margin.top / 2))
+                .attr("text-anchor", "middle")
+                .style("font-size", "10px")
+                .style("font-weight", "bold")
+                .text(value);
+
+            let xScale =
+                d3.scaleLinear()
+                    .domain([
+                        chartData.bins[0], chartData.bins[chartData.bins.length - 1]
+                    ])
+                    .range([0, width]);
+
+            // y value determined by temp
+            var maxValue = d3.max(distribution, function (d) {
+                return d.count;
+            });
+            var yScale =
+                d3.scaleLinear().domain([0, maxValue]).range([height, 0]).nice();
+
+            var xAxis = d3.axisBottom(xScale)
+            //.ticks(6,'s');
+                .tickValues(chartData.bins);
+
+            var yAxis = d3.axisLeft(yScale);
+            yAxis.ticks(5);
+
+            var barHolder = svg.append('g').classed('bar-holder', true);
+
+            var tooltip =
+                d3.select('#' + tempString).append("div").attr("class", "toolTip");
+
+            // draw the bars
+            var bars =
+                barHolder.selectAll('rect.bar')
+                    .data(distribution)
+                    .enter()
+                    .append('rect')
+                    .classed('bar', true)
+                    .attr('x',
+                        function (d, i) {
+                            // the x value is determined using the
+                            // month of the datum
+                            return 1 + width / (chartData.counts.length) * i;
+                        })
+                    .attr('width', width / (chartData.counts.length))
+                    .attr('y', function (d) {
+                        return yScale(d.count);
+                    })
+                    .attr('fill', '#0099ff')
+                    .attr('height',
+                        function (d) {
+                            // the bar's height should align it with the base of the
+                            // chart (y=0)
+                            return height - yScale(d.count);
+                        })
+                    .on("mouseover",
+                        function (d) {
+                            tooltip.style("left", d3.event.pageX - 20 + "px")
+                                .style("top", d3.event.pageY - 30 + "px")
+                                .style("display", "inline-block")
+                                .html((d.count));
+                        })
+                    .on("mouseout", function (d) {
+                        tooltip.style("display", "none");
+                    });
+
+            // draw the axes
+            svg.append('g')
+                .classed('x axis', true)
+                .attr('transform', 'translate(0,' + height + ')')
+                .call(xAxis);
+
+            var yAxisEle = svg.append('g').classed('y axis', true).call(yAxis);
+
+            // add a label to the yAxis
+            svg.append('text')
+                .attr('transform', 'rotate(-90)')
+                .attr("y", 0 - margin.left)
+                .attr("x", 0 - (height / 2))
+                .style('text-anchor', 'middle')
+                .style('fill', 'black')
+                .attr('dy', '1em')
+                .style('font-size', 10)
+                .text('Count');
+
+        } else if (navAggRawData[col - colOffset][row].chartType == 4) {
+
+            let tempString = "chartdiv" + row + col;
+            td.innerHTML = "<div id=" + tempString + " ></div>";
+
+            let data = navAggRawData[col - colOffset][row];
+            let chartData = data['chartData'];
+            let distribution = [];
+
+            for (let i = 0; i < chartData.counts.length; i++) {
+                let boundstr = chartData.bins[i] + " - " + chartData.bins[i + 1];
+                distribution.push({boundary: boundstr, count: chartData.counts[i]});
+            }
+            let min = navAggRawData[col - colOffset][0]['value'];
+            let max = navAggRawData[col - colOffset][0]['value'];
+            for (let i = 0; i < navAggRawData[col - colOffset].length; i++) {
+                if (navAggRawData[col - colOffset][i]['value'] < min) {
+                    min = navAggRawData[col - colOffset][i]['value'];
+                } else if (navAggRawData[col - colOffset][i]['value'] > max) {
+                    max = navAggRawData[col - colOffset][i]['value'];
+                }
+            }
+
+            var margin = {top: 20, right: 25, bottom: 18, left: 35};
+            // here, we want the full chart to be 700x200, so we determine
+            // the width and height by subtracting the margins from those values
+            var fullWidth = wrapperWidth * 0.14;
+            var fullHeight = nav.getRowHeight(row);
+
+            // the width and height values will be used in the ranges of our scales
+            var width = fullWidth - margin.right - margin.left;
+            var height = fullHeight - margin.top - margin.bottom;
+            var svg = d3.select('#' + tempString)
+                .append('svg')
+                .attr('width', fullWidth)
+                .attr('height', fullHeight)
+                // this g is where the bar chart will be drawn
+                .append('g')
+                // translate it to leave room for the left and top margins
+                .attr('transform',
+                    'translate(' + margin.left + ',' + margin.top + ')');
+
+            svg.append("rect")
+                .attr("x", width + margin.right / 4)
+                .attr("y", 0 - margin.top)
+                .attr("width", margin.right)
+                .attr("height", fullHeight)
+                .attr("fill", d3.interpolateGreens(
+                    ((value - min) / (max - min)) * 0.85 + 0.15));
+
+            svg.append("text")
+                .attr("x", (width / 2))
+                .attr("y", 0 - (margin.top / 2))
+                .attr("text-anchor", "middle")
+                .style("font-size", "10px")
+                .style("font-weight", "bold")
+                .text(function () {
+                    if (navAggRawData[col - colOffset][row].formula.includes("COUNTIF")) {
+                        let percent = (value * 100.0) / cumulativeData[currLevel][row].value;
+                        return value + " (" + percent.toFixed(2) + "%)";
+                    }
+
+                    return value;
+                });
+
+            let xScale =
+                d3.scaleLinear()
+                    .domain([
+                        chartData.bins[0], chartData.bins[chartData.bins.length - 1]
+                    ])
+                    .range([0, width]);
+
+            // y value determined by temp
+            var maxValue = d3.max(distribution, function (d) {
+                return d.count;
+            });
+            var yScale =
+                d3.scaleLinear().domain([0, maxValue]).range([height, 0]).nice();
+
+            var xAxis = d3.axisBottom(xScale)
+            //.ticks(6,'s');
+                .tickValues(chartData.bins);
+
+            var yAxis = d3.axisLeft(yScale);
+            yAxis.ticks(5);
+
+            var barHolder = svg.append('g').classed('bar-holder', true);
+
+            var tooltip =
+                d3.select('#' + tempString).append("div").attr("class", "toolTip");
+
+            // draw the bars
+            var bars =
+                barHolder.selectAll('rect.bar')
+                    .data(distribution)
+                    .enter()
+                    .append('rect')
+                    .classed('bar', true)
+                    .attr('x',
+                        function (d, i) {
+                            // the x value is determined using the
+                            // month of the datum
+                            return 1 + width / (chartData.counts.length) * i;
+                        })
+                    .attr('width', width / (chartData.counts.length))
+                    .attr('y', function (d) {
+                        return yScale(d.count);
+                    })
+                    .attr('fill', '#0099ff')
+                    .attr('height',
+                        function (d) {
+                            // the bar's height should align it with the base of the
+                            // chart (y=0)
+                            return height - yScale(d.count);
+                        })
+                    .on("mouseover",
+                        function (d) {
+                            tooltip.style("left", d3.event.pageX - 20 + "px")
+                                .style("top", d3.event.pageY - 30 + "px")
+                                .style("display", "inline-block")
+                                .html((d.count));
+                        })
+                    .on("mouseout", function (d) {
+                        tooltip.style("display", "none");
+                    });
+
+            // draw the axes
+            svg.append('g')
+                .classed('x axis', true)
+                .attr('transform', 'translate(0,' + height + ')')
+                .call(xAxis);
+
+            var yAxisEle = svg.append('g').classed('y axis', true).call(yAxis);
+
+            // add a label to the yAxis
+            svg.append('text')
+                .attr('transform', 'rotate(-90)')
+                .attr("y", 0 - margin.left)
+                .attr("x", 0 - (height / 2))
+                .style('text-anchor', 'middle')
+                .style('fill', 'black')
+                .attr('dy', '1em')
+                .style('font-size', 10)
+                .text('Count');
+
+            let pivotValue = data.pivotValue;
+            svg.append("line")
+                .attr("x1", xScale(pivotValue)) //<<== change your code here
+                .attr("y1", 0 - margin.top / 4)
+                .attr("x2", xScale(pivotValue)) //<<== and here
+                .attr("y2", height + margin.top / 4)
+                .style("stroke", '#000000')
+                .style("stroke-dasharray", ("3, 3"))
+                .style("stroke-width", 2);
+
+            let dir = data.expandDirection;
+            if (dir != 0) {
+                // add the rectangle
+                svg.append("rect")
+                    .attr("x",
+                        function () {
+                            if (dir == 1)
+                                return 0;
+                            return xScale(pivotValue);
+                        }) //<<== change your code here
+                    .attr("y", yScale(maxValue))
+                    .attr("width",
+                        function () {
+                            if (dir == 1)
+                                return xScale(pivotValue) - xScale(chartData.bins[0]);
+                            return xScale(chartData.bins[chartData.bins.length - 1]) -
+                                xScale(pivotValue);
+                        }) //<<== and here
+                    .attr("height", height - yScale(maxValue))
+                    .attr('fill', '#ffffff')
+                    .style("stroke", "black")
+                    //.style("stroke-dasharray", ("3, 3"))
+                    .style("fill-opacity", 0.7);
+            }
+
+        } else {
+            // Handsontable.renderers.TextRenderer.apply(this, arguments);
+            // td.className = "htCenter htMiddle";
+
+            let tempString = "chartdiv" + row + col;
+            td.innerHTML = "<div id=" + tempString + " ></div>";
+            let data = navAggRawData[col - colOffset][row];
+            let min = navAggRawData[col - colOffset][0]['value'];
+            let max = navAggRawData[col - colOffset][0]['value'];
+            for (let i = 0; i < navAggRawData[col - colOffset].length; i++) {
+                if (navAggRawData[col - colOffset][i]['value'] < min) {
+                    min = navAggRawData[col - colOffset][i]['value'];
+                } else if (navAggRawData[col - colOffset][i]['value'] > max) {
+                    max = navAggRawData[col - colOffset][i]['value'];
+                }
+            }
+            var margin = {top: 20, right: 30, bottom: 0, left: -20};
+            var fullHeight = (wrapperHeight * 0.95 / cumulativeData[currLevel].length > 90)
+                ? wrapperHeight * 0.95 / cumulativeData[currLevel].length - 10 : 80;
+            if (childHash.has(row)) {
+                let result = childHash.get(row);
+                let number = result.length;
+                fullHeight += 10;
+                if (number > 6) {
+                    fullHeight += (number - 6) * 5;
+                }
+            }
+            var fullWidth = wrapperWidth * 0.14;
+            //console.log("row: " + row + " " + fullHeight+" "+ wrapperHeight+" "+ fullWidth+" "+wrapperWidth);
+
+            // the width and height values will be used in the ranges of our scales
+            var width = fullWidth - margin.right - margin.left;
+            var height = fullHeight - margin.top - margin.bottom;
+            var svg = d3.select('#' + tempString)
+                .append('svg')
+                .attr('width', fullWidth)
+                .attr('height', fullHeight)
+                // this g is where the bar chart will be drawn
+                .append('g')
+                // translate it to leave room for the left and top margins
+                .attr('transform',
+                    'translate(' + margin.left + ',' + margin.top + ')');
+            /*svg.append("rect")
+                .attr("x", width)
+                .attr("y", 0 - margin.top)
+                .attr("width", margin.right)
+                .attr("height", fullHeight + 10)
+                .attr("fill", d3.interpolateGreens(
+                    ((value - min) / (max - min)) * 0.85 + 0.15));*/
+            svg.append("rect")
+                .attr("x", 0)
+                .attr("y", 0 - margin.top)
+                .attr("width", fullWidth * (value) / max)
+                .attr("height", fullHeight)
+                .attr("fill", '#B2EEB4');
+
+            svg.append("text")
+                .attr("x", (width / 2))
+                .attr("y", height / 2 + margin.top / 2)
+                .attr("text-anchor", "middle")
+                .style("font-size", "20px")
+                .style("font-weight", "bold")
+                .text(function () {
+                    if (navAggRawData[col - colOffset][row].formula.includes("COUNTIF")) {
+                        let percent = (value * 100.0) / cumulativeData[currLevel][row].value;
+                        return value + " (" + percent.toFixed(2) + "%)";
+                    }
+                    return value;
+                });
+
+        }
+
+        td.style.background = '#FAF2ED';
+        return td;
     }
 
     computePath() {

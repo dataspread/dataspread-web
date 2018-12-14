@@ -14,7 +14,6 @@ export default class Toolbar extends Component {
         super(props)
         this.handler = this.handler.bind(this)
         this.handleNav = this.handleNav.bind(this)
-        this.handleHier = this.handleHier.bind(this)
     }
 
     handler(e) {
@@ -28,9 +27,6 @@ export default class Toolbar extends Component {
         this.props.onNavFormOpen();
     }
 
-    handleHier(e) {
-        this.props.onHierFormSub();
-    }
 
 
     render() {
@@ -58,7 +54,7 @@ export default class Toolbar extends Component {
             <Dropdown item text='Nav'>
                 <Dropdown.Menu>
                     <Dropdown.Item onClick={this.handleNav}>Explore</Dropdown.Item>
-                    <HierarchiForm grid = {this.props.grid}/>
+                    <HierarchiForm ref={ref => this.hier = ref} submitHierForm = {this.props.submitHierForm}/>
                 </Dropdown.Menu>
             </Dropdown>
             <Dropdown item text='Help'>
