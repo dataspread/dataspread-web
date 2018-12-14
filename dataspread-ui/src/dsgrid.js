@@ -171,6 +171,7 @@ export default class DSGrid extends Component {
             .then(data => {
                 console.log(data);
                 this.navForm.setState({options:data.data});
+                this.nav.setState({options:data.data});
                 this.setState({navFormOpen: true})
             })
 

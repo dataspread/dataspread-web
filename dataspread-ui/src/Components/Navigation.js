@@ -240,6 +240,7 @@ export default class Navigation extends Component {
                     case 1:
                         return currState.colHeader[1];
                     default:
+
                         let check =
                             currState.aggregateData.formula_ls[col - 2].getChart ? "checked" : "";
                         return currState.colHeader[col] + "<span id='colClose'>x</span>" +
@@ -753,8 +754,99 @@ export default class Navigation extends Component {
         })
             .then(response => response.json())
             .then(data => {
-                this.setState({navAggRawData: data.data});
-                console.log(data);
+
+                console.log(data.data);
+                let navAggRawData = data.data;
+                let currState = this.state;
+                let currLevel = currState.currLevel;
+                let colHeader = currState.colHeader;
+                let viewData = currState.viewData;
+                let options = currState.options;
+                let cumulativeData = currState.cumulativeData;
+                let wrapperWidth = currState.wrapperWidth;
+                let wrapperHeight = currState.wrapperHeight;
+                if (currLevel == 0) {
+                    colHeader.splice(
+                        1,
+                        colHeader.length - 1,
+                    );
+                    for (let i = 0; i < viewData.length; i++) {
+                        viewData[i].splice(
+                            1,
+                            viewData[i].length - 1,
+                        )
+                    }
+                } else {
+                    colHeader.splice(
+                        2,
+                        colHeader.length - 2,
+                    );
+                    for (let i = 0; i < viewData.length; i++) {
+                        viewData[i].splice(
+                            2,
+                            viewData[i].length - 2,
+                        )
+                    }
+                }
+                for (let i = 0; i < data.data.length; i++) {
+                    let hierCol = aggregateData.formula_ls[i];
+                    colHeader.push(options[hierCol.attr_index - 1] + " " +
+                        hierCol.function + " " + hierCol.param_ls);
+                }
+
+                let targetCol = (currLevel == 0) ? 1 : 2;
+                let navRawFormula = [];
+                for (let i = 0; i < cumulativeData[currLevel].length; i++) {
+                    let formulaRow = [];
+                    for (let j = 0; j < navAggRawData.length; j++) {
+                        formulaRow.push(navAggRawData[j][i].formula);
+                        let text = navAggRawData[j][i].value;
+                        if (isNaN(text)) {
+                            viewData[i][targetCol + j] = text;
+                        } else {
+                            viewData[i][targetCol + j] = text.toFixed(2);
+                        }
+                    }
+                    navRawFormula.push(formulaRow);
+                }
+                let columWidth = [];
+                if (currLevel >= 1) {
+                    columWidth = [
+                        ,
+                        ,
+                    ];
+                } else {
+                    columWidth = [
+                        ,
+                    ];
+                }
+
+                for (let j = 0; j < navAggRawData.length; j++) {
+                    columWidth.push(wrapperWidth * 0.15);
+                }
+
+                let numChild = cumulativeData[currLevel].length;
+                let percentage = currState.alltext ? 0.12 : 0.18;
+                let newWidth = wrapperWidth * (percentage + aggregateData.length * 0.15);
+                this.setState({
+                    aggregateData:aggregateData,
+                    navAggRawData : navAggRawData,
+                    colHeader : colHeader,
+                    viewData : viewData,
+                    cumulativeData : cumulativeData,
+                    navRawFormula:navRawFormula,
+
+                });
+                this.hotTableComponent.current.hotInstance.updateSettings({
+                    width: newWidth,
+                    manualColumnResize: columWidth,
+                    minCols: 1,
+                    data: viewData,
+                    rowHeights: (wrapperHeight * 0.95 / numChild > 90)
+                        ? wrapperHeight * 0.95 / numChild
+                        : 90,
+                });
+
             })
     }
 
@@ -765,9 +857,14 @@ export default class Navigation extends Component {
         let wrapperHeight = this.state.wrapperHeight;
         let cumulativeData = this.state.cumulativeData;
         let nav = this.hotTableComponent.current.hotInstance;
-        let childHash = this.state.chidHash;
+        let childHash = this.state.childHash;
+        console.log(childHash)
         let colOffset = (currLevel == 0) ? 1 : 2;
-
+        console.log(currLevel);
+        console.log(row);
+        console.log(col);
+        console.log(navAggRawData);
+        if(navAggRawData == null) return;
         if (navAggRawData[col - colOffset][row].chartType == 0) {
             let tempString = "chartdiv" + row + col;
             td.innerHTML = "<div id=" + tempString + " ></div>";

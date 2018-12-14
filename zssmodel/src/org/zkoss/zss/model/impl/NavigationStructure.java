@@ -793,7 +793,9 @@ public class NavigationStructure {
         if (aggMemMap.containsKey(formula)) {
             obj.put("value", aggMemMap.get(formula));
         } else {
-            obj = model.getColumnAggregate(currentSheet, startRow, endRow, attrIndex, agg_id, paras, false);
+            //placeholder code to bypass formula computation
+            //obj = model.getColumnAggregate(currentSheet, startRow, endRow, attrIndex, agg_id, paras, false);
+            obj.put("value", 124);
             aggMemMap.put(formula, obj.get("value"));
         }
         return obj;
