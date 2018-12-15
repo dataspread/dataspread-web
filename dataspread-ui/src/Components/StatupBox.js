@@ -1,7 +1,7 @@
 import React, {Component} from 'react'
 import { Button, Divider, Segment } from 'semantic-ui-react'
-import ModalOpenFile from './Menu/File/load'
-import ModalImportFile from './Menu/File/import'
+import ModalOpenFile from './Menu/load'
+import ModalImportFile from './Menu/import'
 
 
 export default class StartupBox extends Component {
@@ -17,16 +17,12 @@ export default class StartupBox extends Component {
                 </Button>
 
                 <Divider horizontal>Or</Divider>
-                
-                <Button secondary fluid>
-                    <ModalOpenFile {...this.props}/>
-                </Button>
+
+                <ModalOpenFile inMenu={false} onSelectFile={this.props.onSelectFile}/>
             
                 <Divider horizontal>Or</Divider>
-            
-                <Button secondary fluid>
-                    <ModalImportFile/>
-                </Button>
+
+                <ModalImportFile inMenu={false}/>
             
             </Segment>
         </div>
@@ -34,7 +30,7 @@ export default class StartupBox extends Component {
   }
 }
 
-//TODO: console log errors here
+
 const center_screen = {
     'display': 'flex',
     'flexDirection': 'column',

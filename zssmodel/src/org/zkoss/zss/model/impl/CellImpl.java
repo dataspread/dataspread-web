@@ -294,22 +294,24 @@ public class CellImpl extends AbstractCellAdv {
 	}
 
 	@Override
-	protected void evalFormula(boolean	sync) {
+	protected synchronized boolean evalFormula(boolean	sync) {
 
 		CellValue val = getCellValue();
-		if(val==null ||  val.getType() != CellType.FORMULA)
-			return;
+		if(val==null ||  val.getType() != CellType.FORMULA) {
+			return false;
+		}
 
 		//if (sync)
 		//	logger.info("Sync eval - " + this.getReferenceString());
-		if (!sync && _formulaResultValue == DirtyManager.getDirtyValue())
-			return;
+		if (!sync && _formulaResultValue == DirtyManager.getDirtyValue()) {
+			return false;
+		}
 
 
         if (trxId == _sheet.getTrxId() && _formulaResultValue != null
                 && _formulaResultValue != DirtyManager.getDirtyValue()) {
 			// Computation not required. _formulaResultValue should have correct value.
-			return;
+			return false;
 		}
 
 		// Check if it is dirty.
@@ -321,29 +323,15 @@ public class CellImpl extends AbstractCellAdv {
 		}
 		else if (sync)
 		{
-		    synchronized (this) {
-                // Recheck if the value is already computed
-                if (trxId == _sheet.getTrxId() && _formulaResultValue != null
-                        && _formulaResultValue != DirtyManager.getDirtyValue()) {
-                    // Computation not required. _formulaResultValue should have correct value.
-                    return;
-                }
-
-                // Compute the value
-                FormulaEvaluationContext evalContext = new FormulaEvaluationContext(this, getRef());
-                FormulaExpression expr = getFormulaExpression();
-                FormulaEngine fe = EngineFactory.getInstance().createFormulaEngine();
-                fe.clearCache(new FormulaClearContext(_sheet));
-                EvaluationResult result = fe.evaluate(expr, evalContext);
-                updateFormulaResultValue(result);
-				trxId = _sheet.getTrxId();
-            }
+			return true;
 		}
 		else
 		{
 			// Update value as dirty -- Computation should have been already scheduled.
 			_formulaResultValue = DirtyManager.getDirtyValue();
+			return false;
 		}
+		return false;
 	}
 
 	@Override
@@ -478,7 +466,33 @@ public class CellImpl extends AbstractCellAdv {
     public Object getValue(boolean evaluatedVal, boolean sync) {
 		CellValue val = getCellValue();
 		if (evaluatedVal && val.getType() == CellType.FORMULA) {
-			evalFormula(sync);
+
+			boolean compute;
+
+			synchronized (this) {
+				compute = evalFormula(sync);
+			}
+
+			if (compute) {
+				synchronized (this) {
+					// Recheck if the value is already computed
+					if (trxId == _sheet.getTrxId() && _formulaResultValue != null
+							&& _formulaResultValue != DirtyManager.getDirtyValue()) {
+						// Computation not required. _formulaResultValue should have correct value.
+					}
+					else {
+						// Compute the value
+						FormulaEvaluationContext evalContext = new FormulaEvaluationContext(this, getRef());
+						FormulaExpression expr = getFormulaExpression();
+						FormulaEngine fe = EngineFactory.getInstance().createFormulaEngine();
+						fe.clearCache(new FormulaClearContext(_sheet));
+						EvaluationResult result = fe.evaluate(expr, evalContext);
+						updateFormulaResultValue(result);
+						trxId = _sheet.getTrxId();
+					}
+				}
+			}
+
 			return this._formulaResultValue.getValue();
 		}
 		return val==null?null:val.getValue();

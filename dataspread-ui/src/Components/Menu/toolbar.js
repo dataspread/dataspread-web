@@ -1,8 +1,8 @@
 import React, {Component} from 'react';
 import {Dropdown, Menu} from 'semantic-ui-react'
-import ModalAboutUs from './Help/about'
-import ModalOpenFile from './File/load'
-import ModalImportFile from './File/import'
+import ModalAboutUs from './about'
+import ModalOpenFile from './load'
+import ModalImportFile from './import'
 
 const favstyle = {
     height: '1.5em',
@@ -10,9 +10,22 @@ const favstyle = {
   };
   
 export default class Toolbar extends Component {
+    constructor(props) {
+        super(props)
+        this.handler = this.handler.bind(this)
+    }
+
+    handler(e) {
+        e.preventDefault()
+        this.setState({
+            open: false
+        })
+    }
+
+
     render() {
       return (
-        <Menu size='mini'>
+        <Menu size='mini' className='toolbar'>
             <Menu.Item>
                 <img src='favicon.ico' style={favstyle} alt='DS'/>
             </Menu.Item>
@@ -20,8 +33,8 @@ export default class Toolbar extends Component {
             <Dropdown item text='File'>
                 <Dropdown.Menu>
                     <Dropdown.Item>New</Dropdown.Item>
-                    <ModalOpenFile {...this.props} />
-                    <ModalImportFile/>
+                    <ModalOpenFile inMenu={true} onSelectFile={this.props.onSelectFile} />
+                    <ModalImportFile inMenu={true} />
                 </Dropdown.Menu>
             </Dropdown>
 

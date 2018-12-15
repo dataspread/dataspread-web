@@ -17,7 +17,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.RestController;
 import org.zkoss.poi.ss.formula.FormulaComputationStatusManager;
+import org.zkoss.poi.ss.formula.eval.ErrorEval;
+import org.zkoss.poi.ss.formula.eval.RelTableEval;
 import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.ErrorValue;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
@@ -57,13 +60,39 @@ public class GeneralController implements FormulaAsyncListener {
         }
     }
 
+    // copied from CellFormat.java
+    // TODO: do this properly using Format
+    public static final String getGeneralFormat(Object value) {
+        String text;
+        if (value == null) {
+            text = "";
+        } else if (value instanceof Byte) { //20100616, Henri Chen
+            text = ErrorEval.getText(((Byte) value).intValue());
+        } else if (value instanceof Number) {
+            //text = CellNumberFormatter.getFormatter(CellNumberFormatter.FormatterType.SIMPLE_NUMBER, locale).format(value);
+            text = ((Number) value).toString();
+        } else if (value instanceof Boolean) { //20100616, Henri Chen
+            text = ((Boolean) value).booleanValue() ? "TRUE" : "FALSE";
+        } else if (value instanceof RelTableEval) {
+            // Show the number of rows and columns in the area
+            int numRow = ((RelTableEval) value).getHeight();
+            int numCol = ((RelTableEval) value).getWidth();
+            text = "[" + ((Integer) numRow).toString() + " x " + ((Integer) numCol).toString() + "]";
+        } else if (value instanceof ErrorValue) {
+            text = ((ErrorValue) value).getErrorString();
+        } else {
+            text = value.toString();
+        }
+        return text;
+    }
+
     @Override
-    public void update(SBook book, SSheet sheet, CellRegion cellRegion, String value, String formula) {
+    public void update(SBook book, SSheet sheet, CellRegion cellRegion, Object value, String formula) {
         List<List<Object>> data = new ArrayList<>();
         List<Object> cellArr = new ArrayList<>(4);
         cellArr.add(cellRegion.getRow());
         cellArr.add(cellRegion.getColumn());
-        cellArr.add(value);
+        cellArr.add(getGeneralFormat(value));
         cellArr.add(formula);
         data.add(cellArr);
 
@@ -108,9 +137,9 @@ public class GeneralController implements FormulaAsyncListener {
                 if (sCell.isNull()) {
                     cellsRow.add(new String[]{""});
                 } else if (sCell.getType() == SCell.CellType.FORMULA)
-                    cellsRow.add(new String[]{sCell.getValue().toString(), sCell.getFormulaValue()});
+                    cellsRow.add(new String[]{getGeneralFormat(sCell.getValue()), sCell.getFormulaValue()});
                 else
-                    cellsRow.add(new String[]{sCell.getValue().toString()});
+                    cellsRow.add(new String[]{getGeneralFormat(sCell.getValue()).toString()});
             }
         }
 
@@ -160,14 +189,15 @@ public class GeneralController implements FormulaAsyncListener {
 
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             SCell cell = sheet.getCell(row, column);
-            if (value.startsWith("="))
+            /*if (value.startsWith("="))
                 cell.setFormulaValue(value.substring(1), connection, true);
             else
                 try {
                     cell.setNumberValue(Double.parseDouble(value), connection, true);
                 } catch (Exception e) {
                     cell.setStringValue(value, connection, true);
-                }
+                }*/
+            cell.setValueParse(value, connection, -1,true);
             connection.commit();
         } catch (Exception e) {
             e.printStackTrace();
@@ -202,7 +232,7 @@ public class GeneralController implements FormulaAsyncListener {
             cellArr.add(ref.getRow());
             cellArr.add(ref.getColumn());
             SCell sCell = sheet.getCell(ref.getRow(), ref.getColumn());
-            cellArr.add(sCell.getValue());
+            cellArr.add(getGeneralFormat(sCell.getValue()));
             if (sCell.getType() == SCell.CellType.FORMULA)
                 cellArr.add(sCell.getFormulaValue());
             data.add(cellArr);
@@ -225,12 +255,12 @@ public class GeneralController implements FormulaAsyncListener {
     }
 
     @SubscribeMapping("/user/push/updates")
-    void subscribe(@Header String bookName,
+    void subscribe(@Header String bookId,
                    @Header String sheetName,
                    @Header int fetchSize,
                    SimpMessageHeaderAccessor accessor) {
 
-        SSheet sheet = BookBindings.getBookById(bookName).getSheetByName(sheetName);
+        SSheet sheet = BookBindings.getBookById(bookId).getSheetByName(sheetName);
         UISessionManager.getInstance()
                 .getUISession(accessor.getSessionId())
                 .assignSheet(sheet, fetchSize);
