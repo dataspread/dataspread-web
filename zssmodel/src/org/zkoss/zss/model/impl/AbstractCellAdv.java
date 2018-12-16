@@ -64,7 +64,7 @@ public abstract class AbstractCellAdv implements SCell,Serializable{
 		}
 	}
 	
-	/*package*/ abstract void evalFormula(boolean sync);
+	/*package*/ abstract boolean evalFormula(boolean sync);
 
     /*package*/
     public abstract Object getValue(boolean evaluatedVal);

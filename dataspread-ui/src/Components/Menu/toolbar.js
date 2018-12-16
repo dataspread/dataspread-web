@@ -33,8 +33,8 @@ export default class Toolbar extends Component {
             <Dropdown item text='File'>
                 <Dropdown.Menu>
                     <Dropdown.Item>New</Dropdown.Item>
-                    <ModalOpenFile {...this.props} handler = {this.handler} />
-                    <ModalImportFile/>
+                    <ModalOpenFile inMenu={true} onSelectFile={this.props.onSelectFile} />
+                    <ModalImportFile inMenu={true} />
                 </Dropdown.Menu>
             </Dropdown>
 

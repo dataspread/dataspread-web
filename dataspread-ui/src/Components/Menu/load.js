@@ -12,6 +12,11 @@ export default class ModalOpenFile extends Component {
             BooksOptions: [],
             BooksSelected: ""
         };
+        if (props.inMenu) {
+        	this.triggerObject = (<Dropdown.Item onClick={this.handleOpen}>Open</Dropdown.Item>);
+		} else {
+            this.triggerObject = (<Button secondary fluid onClick={this.handleOpen}>Open File</Button>);
+		}
         this._handleLoad = this._handleLoad.bind(this);
         if (typeof process.env.REACT_APP_BASE_HOST === 'undefined') {
             this.urlPrefix = "";
@@ -69,7 +74,7 @@ export default class ModalOpenFile extends Component {
 		console.log(this.urlPrefix + '/api/getBooks')
 		return (
 		<Modal
-			trigger={<Dropdown.Item onClick={this.handleOpen}>Open File</Dropdown.Item>}
+			trigger={this.triggerObject}
 			open={this.state.loadModalOpen}
 			onClose={this.handleClose}>
 			<Header icon='folder open outline' content='Open File' />

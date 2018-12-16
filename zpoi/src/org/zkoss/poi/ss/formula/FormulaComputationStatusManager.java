@@ -84,20 +84,26 @@ public class FormulaComputationStatusManager {
     }
 
     public void startComputation(int totalCells) {
-        formulaComputationStatusHashMap.get(Thread.currentThread().getId()).totalCells = totalCells;
+        FormulaComputationStatus formulaComputationStatus =
+                formulaComputationStatusHashMap.get(Thread.currentThread().getId());
+        if (formulaComputationStatus!=null)
+            formulaComputationStatus.totalCells = totalCells;
     }
 
     public synchronized void updateProgress(int currentCells) {
         FormulaComputationStatus formulaComputationStatus = formulaComputationStatusHashMap
                 .get(Thread.currentThread().getId());
-        formulaComputationStatus.currentCells = currentCells;
-        while (formulaComputationStatus.priority > minPriority) {
-            try {
-                System.out.println(Thread.currentThread().getId() + " Waiting ");
-                wait();
-                System.out.println(Thread.currentThread().getId() + " Waiting over ");
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        if (formulaComputationStatus!=null)
+        {
+            formulaComputationStatus.currentCells = currentCells;
+            while (formulaComputationStatus.priority > minPriority) {
+                try {
+                    System.out.println(Thread.currentThread().getId() + " Waiting ");
+                    wait();
+                    System.out.println(Thread.currentThread().getId() + " Waiting over ");
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
 
