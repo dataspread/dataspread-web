@@ -40,7 +40,7 @@ export default class ModalImportFile extends Component {
 		//this.setState({ BooksSelected: data.value });
 	}
 
-	_handleLoad (filename) {
+	_handleLoad = (filename) => {
 		this.setState({ loadModalOpen: false });
 		// change filename to dsgrid
 		this.props.onSelectFile(filename);
