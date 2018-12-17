@@ -9,7 +9,6 @@ import 'react-datasheet/lib/react-datasheet.css';
 import LRUCache from "lru-cache";
 import Stomp from 'stompjs';
 
-// TOTAL_WIDTH=500*150;
 
 export default class DSGrid extends Component {
     toColumnName(num) {
@@ -181,7 +180,6 @@ export default class DSGrid extends Component {
                                                     scrollTop={scrollTop}
                                                     cellRenderer={this._rowHeaderCellRenderer}
                                                     columnWidth={this.columnWidth}
-                                                    // columnWidth={TOTAL_WIDTH}
                                                     columnCount={1}
                                                     rowCount={this.state.rows}
                                                     rowHeight={this.rowHeight}
@@ -203,7 +201,6 @@ export default class DSGrid extends Component {
                                                     }}
                                                     scrollLeft={scrollLeft}
                                                     cellRenderer={this._columnHeaderCellRenderer}
-                                                    // columnWidth={this.columnWidth}
                                                     columnWidth={this._columnWidthHelper}
                                                     columnCount={this.state.columns}
                                                     rowCount={1}
@@ -227,11 +224,9 @@ export default class DSGrid extends Component {
                                                         <div>
                                                             <Grid
                                                                 height={height}
-                                                                // width={TOTAL_WIDTH}
                                                                 width={width - this.columnWidth}
                                                                 cellRenderer={this._cellRenderer}
                                                                 columnCount={this.state.columns}
-                                                                // columnWidth={this.columnWidth}
                                                                 columnWidth={this._columnWidthHelper}
                                                                 rowCount={this.state.rows}
                                                                 rowHeight={this.rowHeight}
@@ -240,7 +235,6 @@ export default class DSGrid extends Component {
                                                                 scrollToRow={scrollToRow}
                                                                 scrollToColumn={scrollToColumn}
                                                                 onSectionRendered={onSectionRendered}
-                                                                //onSectionRendered={this._onSectionRendered}
                                                                 ref={(ref) => this.grid = ref}
                                                                 focusCellColumn={this.state.focusCellColumn}
                                                                 focusCellRow={this.state.focusCellRow}
@@ -332,25 +326,20 @@ export default class DSGrid extends Component {
                                style
                            }) => {
         return (
-            <React.Fragment key={key}>
                 <div
                     key={key}
                     style={style}
                     className='rowHeaderCell'>
                     {this.toColumnName(columnIndex + 1)}
                     <Draggable axis="x"
-                               // bounds={{left:10,right:10}}
-                               // bounds= {{ left: this.state.columnWidths[columnIndex]-this.state.columnWidths[columnIndex-1], right:this.state.columnWidths[columnIndex+1]-this.state.columnWidths[columnIndex]}}
                                defaultClassName="DragHandle"
                                defaultClassNameDragging="DragHandleActive"
                                onDrag={(event,{deltaX}) => this._changeColumnWidth({key,deltaX})}
                                position={{x:0}}
                                zIndex={999}>
                         <a className="drag-icon">|</a>
-                        {/*<Icon className="drag-icon" name="exchange" />*/}
                     </Draggable>
                 </div>
-            </React.Fragment>
         )
     }
 
@@ -547,17 +536,11 @@ export default class DSGrid extends Component {
     }
 
     _columnWidthHelper(params){
-        // console.log("ColumnWidthHelper");
-        // console.log(params);
-        // console.log(params.index);
+
         return this.state.columnWidths[params.index];
     }
 
     _changeColumnWidth({key, deltaX}){
-        // console.log("PREVIOUS");
-        // console.log(this.state.columnWidths);
-        // let prevWidths = this.state.columnWidths;
-        // let index = parseInt(key.split('-')[1], 10);
 
         this.setState(prevState=>{
 
@@ -573,18 +556,8 @@ export default class DSGrid extends Component {
             return (columnWidths)
         });
 
-        // if (prev)
-        console.log("NEW");
-        console.log(this.state.columnWidths);
-        // this._processColumnWidthUpdate();
-
-        // this.headerGrid.forceUpdate();
-        // this.grid.forceUpdate();
         this.headerGrid.recomputeGridSize({columnIndex: parseInt(key.split('-')[1], 10)});
         this.grid.recomputeGridSize();
-        console.log(this.grid);
-        //this.headerGrid.current.recomputeGridSize();
-        //this.grid.current.recomputeGridSize();
 
     }
 
