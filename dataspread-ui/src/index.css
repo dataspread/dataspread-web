@@ -386,3 +386,26 @@ div#dropTarget>label.btn.file-upload::after{
   content: "Select File";
   color: black;
 }
+.drag-icon {
+  position: absolute;
+  right: 0px;
+  float: right;
+  opacity: 0;
+}
+
+.DragHandle {
+  flex: 0 0 16px;
+  z-index: 2;
+  cursor: col-resize;
+  color: #0085ff;
+}
+
+.DragHandle:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.DragHandleActive,
+.DragHandleActive:hover {
+  color: #0b6fcc;
+  z-index: 3;
+}
