@@ -9,7 +9,6 @@ import 'react-datasheet/lib/react-datasheet.css';
 import LRUCache from "lru-cache";
 import Stomp from 'stompjs';
 
-
 export default class DSGrid extends Component {
     toColumnName(num) {
         let ret, a, b;
@@ -33,7 +32,7 @@ export default class DSGrid extends Component {
             isProcessing: false,
             initialLoadDone:false,
             columnWidths: Array(500).fill(150)
-        }
+        };
         this.mouseDown = false;
         this.shiftOn = false;
         this.subscribed = false;
@@ -320,26 +319,26 @@ export default class DSGrid extends Component {
         )
     }
 
-    _columnHeaderCellRenderer = ({
+    _columnHeaderCellRenderer ({
                                columnIndex, // Horizontal (column) index of cell
                                key,         // Unique key within array of cells
                                style
-                           }) => {
+                           }) {
         return (
-                <div
-                    key={key}
-                    style={style}
-                    className='rowHeaderCell'>
-                    {this.toColumnName(columnIndex + 1)}
-                    <Draggable axis="x"
-                               defaultClassName="DragHandle"
-                               defaultClassNameDragging="DragHandleActive"
-                               onDrag={(event,{deltaX}) => this._changeColumnWidth({key,deltaX})}
-                               position={{x:0}}
-                               zIndex={999}>
-                        <a className="drag-icon">|</a>
-                    </Draggable>
-                </div>
+            <div
+                key={key}
+                style={style}
+                className='rowHeaderCell'>
+                {this.toColumnName(columnIndex + 1)}
+                <Draggable axis="x"
+                           defaultClassName="DragHandle"
+                           defaultClassNameDragging="DragHandleActive"
+                           onDrag={(event,{deltaX}) => this._changeColumnWidth({key,deltaX})}
+                           position={{x:0}}
+                           zIndex={999}>
+                    <a className="drag-icon">|</a>
+                </Draggable>
+            </div>
         )
     }
 
@@ -536,29 +535,21 @@ export default class DSGrid extends Component {
     }
 
     _columnWidthHelper(params){
-
         return this.state.columnWidths[params.index];
     }
 
     _changeColumnWidth({key, deltaX}){
-
-        this.setState(prevState=>{
-
-            let columnWidths = prevState.columnWidths;
-            const index = parseInt(key.split('-')[1], 10);
-            const nextKey = index + 1;
-
-            if (deltaX+columnWidths[index]<=30){
-
-            } else{
-                columnWidths[index] = columnWidths[index] + deltaX;
-            }
-            return (columnWidths)
+        const index = parseInt(key.split('-')[1], 10);
+        const newColumnWidths = this.state.columnWidths.slice();
+        if (deltaX+newColumnWidths[index] > 30) {
+            newColumnWidths[index] += deltaX;
+        }
+        this.setState({
+            columnWidths: newColumnWidths
         });
 
-        this.headerGrid.recomputeGridSize({columnIndex: parseInt(key.split('-')[1], 10)});
-        this.grid.recomputeGridSize();
-
+        this.headerGrid.recomputeGridSize({columnIndex: index});
+        this.grid.recomputeGridSize({columnIndex: index});
     }
 
 }

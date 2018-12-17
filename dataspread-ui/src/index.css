@@ -333,11 +333,3 @@ input:checked + .slider:before {
   color: #0b6fcc;
   z-index: 3;
 }
-
-.DragHandleIcon {
-  flex: 0 0 12px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
