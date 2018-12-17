@@ -159,7 +159,7 @@ export default class DSGrid extends Component {
         return (
             <div onKeyDown={this._handleKeyDown} onKeyUp={this._handleKeyUp}>
                 <div style={{display: 'flex'}}>
-                    <div style={{flex: 'auto', height: '90vh'}}>
+                    <div style={{flex: 'auto', height: '91vh'}}>
                         <Dimmer active={this.state.isProcessing || !this.state.initialLoadDone}>
                             <Loader>Processing</Loader>
                         </Dimmer>
