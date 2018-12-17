@@ -54,7 +54,6 @@ class App extends Component {
         tableName,
         schema
     }) {
-        const cellPos = cellRange.split(",").map(str => parseInt(str, 10));
         const zBookId = this.state.bookId;
         const zSheetName = 'Sheet1';
         fetch(this.urlPrefix + "/api/createTable", {
@@ -68,10 +67,10 @@ class App extends Component {
                 bookId: zBookId,
                 sheetName: zSheetName,
                 tableName: tableName,
-                row1: cellPos[0],
-                col1: cellPos[1],
-                row2: cellPos[2],
-                col2: cellPos[3],
+                row1: cellRange[0],
+                col1: cellRange[1],
+                row2: cellRange[2],
+                col2: cellRange[3],
                 schema: schema
             })
         })
