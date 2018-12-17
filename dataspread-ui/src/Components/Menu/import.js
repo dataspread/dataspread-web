@@ -72,12 +72,12 @@ export default class ModalImportFile extends Component {
 					service= {this.urlPrefix + "/api/importFile"}
 					disableDragAndDrop={true}
 					showFileList={false}
-					onFileSuccess={(file, message) => {
+					onFileSuccess={(file, fileServer) => {
 						this.setState({ loadModalOpen: false });
 						//pass in bookname
 						this.setState({filename:file})
-						this._handleLoad()
-						console.log(file, message);
+						//this._handleLoad()
+						console.log(file, fileServer);
 					}}
 					onFileAdded={(file, resumable) => {
 						console.log(file.file);
