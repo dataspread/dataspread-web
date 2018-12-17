@@ -17,9 +17,9 @@ class App extends Component {
             filename:"",
             hasFileOpened: false,
             username:""
-
         };
         this.onSelectFile = this.onSelectFile.bind(this);
+        this.onSelectionChange = this.onSelectionChange.bind(this);
         this.onFormSubmit = this.onFormSubmit.bind(this);
 
         // TODO: propagate operations from dsgrid up here
@@ -43,6 +43,10 @@ class App extends Component {
             bookId: bookId,
             hasFileOpened: true
         })
+    }
+
+    onSelectionChange(selectionString) {
+        this.tableSidebar.handleSelectionChange(selectionString);
     }
 
     onFormSubmit ({
@@ -93,6 +97,7 @@ class App extends Component {
     render () {
         // console.log(this)
         this.grid = null;
+        this.tableSidebar = null;
         if (!this.state.hasFileOpened) {
             return (
                 <div>
@@ -107,9 +112,9 @@ class App extends Component {
                     <Toolbar username={this.state.username} onSelectFile={this.onSelectFile} />
                     <Stylebar />
                     <Sidebar.Pushable>
-                        <TableSidebar onFormSubmit={this.onFormSubmit} />
+                        <TableSidebar ref={ref => this.tableSidebar = ref} onFormSubmit={this.onFormSubmit} />
                         <Sidebar.Pusher>
-                            <DSGrid bookId={this.state.bookId} ref={ref => this.grid = ref} />
+                            <DSGrid bookId={this.state.bookId} ref={ref => this.grid = ref} onSelectionChange={this.onSelectionChange}/>
                         </Sidebar.Pusher>
                     </Sidebar.Pushable>
                 </div>

@@ -45,6 +45,7 @@ export default class DSGrid extends Component {
         this.fetchSize = 50;
 
         this._onSectionRendered = this._onSectionRendered.bind(this);
+        this._notifySelectionChange = this._notifySelectionChange.bind(this);
         this._cellRenderer = this._cellRenderer.bind(this);
         this._updateCell = this._updateCell.bind(this);
         this._mouseOverCell = this._mouseOverCell.bind(this);
@@ -360,6 +361,14 @@ export default class DSGrid extends Component {
         //TODO: send update to backend.
     }
 
+    _notifySelectionChange(rowIndex1, columnIndex1, rowIndex2, columnIndex2) {
+        const columnLetter1 = this.toColumnName(columnIndex1+1);
+        const columnLetter2 = this.toColumnName(columnIndex2+1);
+        const rowNumber1 = rowIndex1+1;
+        const rowNumber2 = rowIndex2+1;
+        this.props.onSelectionChange(columnLetter1+rowNumber1+':'+columnLetter2+rowNumber2);
+    }
+
     _setFocusCell(rowIndex, columnIndex) {
         if (this.inclusiveBetween(rowIndex, 0, this.state.rows-1) &&
             this.inclusiveBetween(columnIndex, 0, this.state.columns-1)) {
@@ -370,9 +379,10 @@ export default class DSGrid extends Component {
                 selectOppositeCellColumn: columnIndex
             });
         }
+        this._notifySelectionChange(rowIndex, columnIndex, rowIndex, columnIndex);
     }
 
-    _setSelectOppositeCell(rowIndex, columnIndex, setFocusCell) {
+    _setSelectOppositeCell(rowIndex, columnIndex) {
         if (this.inclusiveBetween(rowIndex, 0, this.state.rows-1) &&
             this.inclusiveBetween(columnIndex, 0, this.state.columns-1)) {
             this.setState({
@@ -380,6 +390,7 @@ export default class DSGrid extends Component {
                 selectOppositeCellColumn: columnIndex
             });
         }
+        this._notifySelectionChange(this.state.focusCellRow, this.state.focusCellColumn, rowIndex, columnIndex);
     }
 
     _keyMoveCell(rowIndexOffset, columnIndexOffset) {
