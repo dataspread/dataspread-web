@@ -1626,9 +1626,9 @@
     };
     var CellSizeAndPositionManager = function() {
         function CellSizeAndPositionManager(_ref) {
-            var cellCount = _ref.cellCount, cellSizeGetter = _ref.cellSizeGetter, estimatedCellSize = _ref.estimatedCellSize;
+            var cellCount = _ref.cellCount, cellSizeGetter = _ref.cellSizeGetter, estimatedCellSize = _ref.estimatedCellSize, totalSizeGetter = _ref.totalSizeGetter;
             classCallCheck(this, CellSizeAndPositionManager), this._cellSizeAndPositionData = {}, 
-            this._lastMeasuredIndex = -1, this._lastBatchedIndex = -1, this._cellSizeGetter = cellSizeGetter, 
+            this._lastMeasuredIndex = -1, this._lastBatchedIndex = -1, this._cellSizeGetter = cellSizeGetter, this._totalSizeGetter = totalSizeGetter,
             this._cellCount = cellCount, this._estimatedCellSize = estimatedCellSize;
         }
         return createClass(CellSizeAndPositionManager, [ {
@@ -1706,6 +1706,13 @@
             key: "getTotalSize",
             value: function() {
                 var lastMeasuredCellSizeAndPosition = this.getSizeAndPositionOfLastMeasuredCell();
+                // Tana - Fixed for variable size
+                if ("function" === typeof this._totalSizeGetter) {
+                    const size = this._totalSizeGetter();
+                    if (!isNaN(size)) {
+                        return size;
+                    }
+                }
                 // Mangesh - Fixed cell height
                 // return lastMeasuredCellSizeAndPosition.offset + lastMeasuredCellSizeAndPosition.size + (this._cellCount - this._lastMeasuredIndex - 1) * this._estimatedCellSize;
                 var _size = this._cellSizeGetter({
@@ -2015,11 +2022,17 @@
                 cellSizeGetter: function(params) {
                     return Grid._wrapSizeGetter(props.columnWidth)(params);
                 },
+                totalSizeGetter: function(params) {
+                    return Grid._wrapSizeGetter(props.totalWidth)(params);
+                },
                 estimatedCellSize: Grid._getEstimatedColumnSize(props)
             }), rowSizeAndPositionManager = new ScalingCellSizeAndPositionManager({
                 cellCount: props.rowCount,
                 cellSizeGetter: function(params) {
                     return Grid._wrapSizeGetter(props.rowHeight)(params);
+                },
+                totalSizeGetter: function(params) {
+                    return Grid._wrapSizeGetter(props.totalHeight)(params);
                 },
                 estimatedCellSize: Grid._getEstimatedRowSize(props)
             });

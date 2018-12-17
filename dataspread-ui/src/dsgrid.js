@@ -20,10 +20,14 @@ export default class DSGrid extends Component {
 
     constructor(props) {
         super(props);
+        this.rowHeight = 32;
+        this.columnWidth = 150;
+        this.defaultRowCount = 100000000;
+        this.defaultColumnCount = 500;
         this.state = {
-            rows: 100000000,
+            rows: this.defaultRowCount,
+            columns: this.defaultColumnCount,
             sheetName: '',
-            columns: 500,
             version: 0,
             focusCellRow: -1,
             focusCellColumn: -1,
@@ -31,13 +35,12 @@ export default class DSGrid extends Component {
             selectOppositeCellColumn: -1,
             isProcessing: false,
             initialLoadDone:false,
-            columnWidths: Array(500).fill(150)
+            columnWidths: Array(this.defaultColumnCount).fill(this.columnWidth),
+            totalWidth: this.defaultColumnCount*this.columnWidth
         };
         this.mouseDown = false;
         this.shiftOn = false;
         this.subscribed = false;
-        this.rowHeight = 32;
-        this.columnWidth = 150;
         this._disposeFromLRU = this._disposeFromLRU.bind(this);
         this.dataCache = new LRUCache({
             max: 100,
@@ -55,6 +58,7 @@ export default class DSGrid extends Component {
         this._mouseUpCell = this._mouseUpCell.bind(this);
         this._processUpdates = this._processUpdates.bind(this);
         this._cellRangeRenderer = this._cellRangeRenderer.bind(this);
+        this._columnHeaderCellRenderer = this._columnHeaderCellRenderer.bind(this);
         this._handleKeyDown = this._handleKeyDown.bind(this);
         this._handleKeyUp = this._handleKeyUp.bind(this);
 
@@ -202,6 +206,7 @@ export default class DSGrid extends Component {
                                                     cellRenderer={this._columnHeaderCellRenderer}
                                                     columnWidth={this._columnWidthHelper}
                                                     columnCount={this.state.columns}
+                                                    totalWidth={() => this.state.totalWidth}
                                                     rowCount={1}
                                                     rowHeight={this.rowHeight}
                                                     ref={(ref) => this.headerGrid = ref}
@@ -227,6 +232,7 @@ export default class DSGrid extends Component {
                                                                 cellRenderer={this._cellRenderer}
                                                                 columnCount={this.state.columns}
                                                                 columnWidth={this._columnWidthHelper}
+                                                                totalWidth={() => this.state.totalWidth}
                                                                 rowCount={this.state.rows}
                                                                 rowHeight={this.rowHeight}
                                                                 onScroll={onScroll}
@@ -262,12 +268,16 @@ export default class DSGrid extends Component {
             .then(res => res.json())
             .then(
                 (result) => {
+                    const numRow = result['data']['sheets'][0]['numRow'];
+                    const numCol = result['data']['sheets'][0]['numCol'];
                     console.log(result);
                     this.dataCache.reset();
                     this.setState({
                         sheetName: 'Sheet1',
-                        rows: result['data']['sheets'][0]['numRow']+100,
-                        columns: result['data']['sheets'][0]['numCol']
+                        rows: numRow+100,
+                        columns: numCol,
+                        columnWidths: Array(numCol).fill(this.columnWidth),
+                        totalWidth: numCol*this.columnWidth
                     });
 
                     this.grid.scrollToCell ({ columnIndex: 0, rowIndex: 0 });
@@ -278,7 +288,7 @@ export default class DSGrid extends Component {
                             this._processUpdates, {bookId:  this.props.bookId,
                                 sheetName: this.state.sheetName,
                                 fetchSize: this.fetchSize});
-                    console.log("book loaded rows:" + result['data']['sheets'][0]['numRow']);
+                    console.log("book loaded rows:" + numRow);
                 }
             )
             .catch((error) => {
@@ -545,7 +555,8 @@ export default class DSGrid extends Component {
             newColumnWidths[index] += deltaX;
         }
         this.setState({
-            columnWidths: newColumnWidths
+            columnWidths: newColumnWidths,
+            totalWidth: newColumnWidths.reduce((total, e) => total+e, 0)
         });
 
         this.headerGrid.recomputeGridSize({columnIndex: index});
