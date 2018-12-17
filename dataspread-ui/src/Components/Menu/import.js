@@ -8,7 +8,8 @@ export default class ModalImportFile extends Component {
   		super(props);
   		this.state = {
   			loadModalOpen: false,
-  			fileStatus:"None"
+				fileStatus:"None",
+				filename:""
   		};
       if (props.inMenu) {
         this.triggerObject = (<Dropdown.Item onClick={this.handleOpen}>Import</Dropdown.Item>);
@@ -16,7 +17,7 @@ export default class ModalImportFile extends Component {
         this.triggerObject = (<Button secondary fluid onClick={this.handleOpen}>Import File</Button>);
 			}
 			
-			this._handleload = this._handleload.bind(this);
+			this._handleLoad = this._handleLoad.bind(this);
 			this.handleClose = this.handleClose.bind(this);
 
    		if (typeof process.env.REACT_APP_BASE_HOST === 'undefined') {
@@ -40,10 +41,10 @@ export default class ModalImportFile extends Component {
 		//this.setState({ BooksSelected: data.value });
 	}
 
-	_handleLoad = (filename) => {
+	_handleLoad () {
 		this.setState({ loadModalOpen: false });
 		// change filename to dsgrid
-		this.props.onSelectFile(filename);
+		this.props.onSelectFile(this.state.filename);
 	}
 
   render() {
@@ -55,11 +56,6 @@ export default class ModalImportFile extends Component {
 
 
         <Header icon='upload' content='Import File' />
-				
-		
-		{/* button still ugly, doesn't know where to config or override setting 
-			Also not sure if API works.
-		*/}
 
         <Modal.Content>
 					<Header content={"Status: " + this.state.fileStatus} />
@@ -77,8 +73,10 @@ export default class ModalImportFile extends Component {
 					disableDragAndDrop={true}
 					showFileList={false}
 					onFileSuccess={(file, message) => {
+						this.setState({ loadModalOpen: false });
 						//pass in bookname
-						this._handleLoad(file)
+						this.setState({filename:file})
+						this._handleLoad()
 						console.log(file, message);
 					}}
 					onFileAdded={(file, resumable) => {
@@ -88,9 +86,10 @@ export default class ModalImportFile extends Component {
 						//resumable.upload();
 					}}
 					maxFiles={1}
-					onStartUpload={() => {
+					onStartUpload={(file, resumable) => {
 						this.setState({fileStatus:"Uploading..."})
 						console.log("Start upload");
+						//resumable.upload();
 					}}
 					onUploadErrorCallback ={(file, message)=>{
 						this.setState({fileStatus:"File upload ERROR"})

@@ -36,7 +36,6 @@ class App extends Component {
     }
 
     render () {
-        // console.log(this)
         this.grid = null;
         if (!this.state.hasFileOpened) {
             return (
