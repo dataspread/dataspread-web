@@ -19,11 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.zkoss.poi.ss.formula.FormulaComputationStatusManager;
 import org.zkoss.poi.ss.formula.eval.ErrorEval;
 import org.zkoss.poi.ss.formula.eval.RelTableEval;
-import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.ErrorValue;
-import org.zkoss.zss.model.SBook;
-import org.zkoss.zss.model.SCell;
-import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.impl.FormulaCacheCleaner;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncListener;
 import org.zkoss.zss.model.sys.BookBindings;
@@ -87,11 +83,16 @@ public class GeneralController implements FormulaAsyncListener {
     }
 
     @Override
-    public void update(SBook book, SSheet sheet, CellRegion cellRegion, Object value, String formula) {
+    public void update(SBook book, SSheet sheet, CellRegion cellRegion, Object value, String formula, SSemantics.Semantics semantics) {
         List<List<Object>> data = new ArrayList<>();
-        List<Object> cellArr = new ArrayList<>(4);
+        List<Object> cellArr = new ArrayList<>(5);
         cellArr.add(cellRegion.getRow());
         cellArr.add(cellRegion.getColumn());
+        SSemantics.Semantics cSemantics = semantics;
+        if (cSemantics == null) {
+            cSemantics = SSemantics.Semantics.NORMAL;
+        }
+        cellArr.add(cSemantics.toString());
         cellArr.add(getGeneralFormat(value));
         cellArr.add(formula);
         data.add(cellArr);
@@ -134,12 +135,16 @@ public class GeneralController implements FormulaAsyncListener {
 
             for (int col = 0; col <= endColumn; col++) {
                 SCell sCell = sheet.getCell(row, col);
+                SSemantics.Semantics semantics = sCell.getSemantics();
+                if (semantics == null) {
+                    semantics = SSemantics.Semantics.NORMAL;
+                }
                 if (sCell.isNull()) {
-                    cellsRow.add(new String[]{""});
+                    cellsRow.add(new String[]{semantics.toString(), ""});
                 } else if (sCell.getType() == SCell.CellType.FORMULA)
-                    cellsRow.add(new String[]{getGeneralFormat(sCell.getValue()), sCell.getFormulaValue()});
+                    cellsRow.add(new String[]{semantics.toString(), getGeneralFormat(sCell.getValue()), sCell.getFormulaValue()});
                 else
-                    cellsRow.add(new String[]{getGeneralFormat(sCell.getValue()).toString()});
+                    cellsRow.add(new String[]{semantics.toString(), getGeneralFormat(sCell.getValue()).toString()});
             }
         }
 
@@ -228,10 +233,15 @@ public class GeneralController implements FormulaAsyncListener {
             // TODO: These can be ranges, need to explode into cells.
             // TODO: Only push cells if the FE has them cached.
 
-            List<Object> cellArr = new ArrayList<>(4);
+            List<Object> cellArr = new ArrayList<>(5);
             cellArr.add(ref.getRow());
             cellArr.add(ref.getColumn());
             SCell sCell = sheet.getCell(ref.getRow(), ref.getColumn());
+            SSemantics.Semantics semantics = sCell.getSemantics();
+            if (semantics == null) {
+                semantics = SSemantics.Semantics.NORMAL;
+            }
+            cellArr.add(semantics.toString());
             cellArr.add(getGeneralFormat(sCell.getValue()));
             if (sCell.getType() == SCell.CellType.FORMULA)
                 cellArr.add(sCell.getFormulaValue());

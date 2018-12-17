@@ -118,7 +118,7 @@ export default class DSGrid extends Component {
             let cell = jsonMessage['data']
             let fromCache = this.dataCache.get(Math.trunc(cell[0] / this.fetchSize));
             if (typeof fromCache === "object") {
-                fromCache[cell[0] % this.fetchSize][cell[1]][2] = cell[2];
+                fromCache[cell[0] % this.fetchSize][cell[1]][3] = cell[2];
                 this.grid.forceUpdate();
             }
         }
@@ -127,10 +127,10 @@ export default class DSGrid extends Component {
                 let cell = jsonMessage['data'][i];
                 let fromCache = this.dataCache.get(Math.trunc(cell[0] / this.fetchSize));
                 if (typeof fromCache === "object") {
-                    if (cell[3] == null)
-                        fromCache[cell[0] % this.fetchSize][cell[1]] = [cell[2]];
-                    else
+                    if (cell[4] == null)
                         fromCache[cell[0] % this.fetchSize][cell[1]] = [cell[2], cell[3]];
+                    else
+                        fromCache[cell[0] % this.fetchSize][cell[1]] = [cell[2], cell[3], cell[4]];
                 }
             }
             this.grid.forceUpdate();
@@ -485,6 +485,10 @@ export default class DSGrid extends Component {
             } else if (this.inclusiveBetween(rowIndex, this.state.focusCellRow, this.state.selectOppositeCellRow)
             && this.inclusiveBetween(columnIndex, this.state.focusCellColumn, this.state.selectOppositeCellColumn)) {
                 cellClass = 'cellSelected';
+            } else if (cellContent[0] === 'TABLE_HEADER') {
+                cellClass = 'cellTableHeader';
+            } else if (cellContent[0] === 'TABLE_CONTENT') {
+                cellClass = 'cellTable';
             }
         }
         else {
@@ -497,12 +501,12 @@ export default class DSGrid extends Component {
                     key={key}
                     style={style}
                     className={cellClass}
-                    value={cellContent[0]}
-                    formula={cellContent[1] == null ? null : "=" + cellContent[1]}
+                    value={cellContent[1]}
+                    formula={cellContent[2] == null ? null : "=" + cellContent[2]}
                     rowIndex={rowIndex}
                     columnIndex={columnIndex}
-                    isProcessing={cellContent[0] === '...'}
-                    pctProgress={cellContent[2]}
+                    isProcessing={cellContent[1] === '...'}
+                    pctProgress={cellContent[3]}
                     onCellMouseOver={this._mouseOverCell}
                     onCellMouseDown={this._mouseDownCell}
                     onCellMouseUp={this._mouseUpCell}

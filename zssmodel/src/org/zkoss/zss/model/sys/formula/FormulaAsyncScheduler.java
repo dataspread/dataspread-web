@@ -3,6 +3,7 @@ package org.zkoss.zss.model.sys.formula;
 
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
+import org.zkoss.zss.model.SSemantics;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncListener;
 
@@ -32,9 +33,9 @@ public abstract class FormulaAsyncScheduler implements Runnable {
     }
 
 
-    protected void update(SBook book, SSheet sheet, CellRegion cellRegion, Object value, String formula) {
+    protected void update(SBook book, SSheet sheet, CellRegion cellRegion, Object value, String formula, SSemantics.Semantics semantics) {
         if (formulaAsyncListener != null) {
-            formulaAsyncListener.update(book, sheet, cellRegion, value, formula);
+            formulaAsyncListener.update(book, sheet, cellRegion, value, formula, semantics);
         }
     }
 

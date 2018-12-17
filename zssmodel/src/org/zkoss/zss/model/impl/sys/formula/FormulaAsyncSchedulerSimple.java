@@ -55,7 +55,7 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
                                     DirtyManagerLog.instance.markClean(sCell.getCellRegion());
                                     update(sheet.getBook(), sheet, sCell.getCellRegion(),
                                             ((CellImpl) sCell).getValue(true, true),
-                                            sCell.getFormulaValue());
+                                            sCell.getFormulaValue(), sCell.getSemantics());
                                     computedCells.add(sCell);
                                 }
                                 FormulaComputationStatusManager.getInstance().doneComputation();
@@ -84,7 +84,7 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
                         DirtyManagerLog.instance.markClean(sCell.getCellRegion());
                         update(sheet.getBook(), sheet, sCell.getCellRegion(),
                                 ((CellImpl) sCell).getValue(true, true),
-                                sCell.getFormulaValue());
+                                sCell.getFormulaValue(), sCell.getSemantics());
                     }
                     FormulaComputationStatusManager.getInstance().doneComputation();
                 }

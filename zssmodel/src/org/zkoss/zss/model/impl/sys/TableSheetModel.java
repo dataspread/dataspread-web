@@ -264,7 +264,7 @@ public class TableSheetModel {
                 for (int i = fetchRegion.column; i < fixedLastColumn ; i++){
                     int index = (int) colMapping.getIDs(context,i,1).get(0);
                     cells.add(newCell(rowOffset,colOffset + i,
-                            rs.getMetaData().getColumnLabel(index + 2),connection));
+                            rs.getMetaData().getColumnLabel(index + 2),connection, true));
                 }
             }
 
@@ -281,7 +281,7 @@ public class TableSheetModel {
                     JSONArray cell = new JSONArray();
                     int index = (int) colMapping.getIDs(context,i,1).get(0);
                     cells.add(newCell(rowOffset + row,colOffset + i,
-                            getValue(rs,index, schema.get(i - fetchRegion.column)),connection));
+                            getValue(rs,index, schema.get(i - fetchRegion.column)),connection, false));
                 }
             }
             rs.close();
@@ -503,10 +503,14 @@ public class TableSheetModel {
                 throw new Exception("getValue: Unsupported type");
         }
     }
-    private static CellImpl newCell(int row, int column, Object value, AutoRollbackConnection connection){
+    private static CellImpl newCell(int row, int column, Object value, AutoRollbackConnection connection, boolean isHeader){
         CellImpl cell = new CellImpl(row, column);
         cell.setOutterCellValue(value, connection, false);
-        cell.setSemantics(SSemantics.Semantics.TABLE_CONTENT);
+        if (isHeader) {
+            cell.setSemantics(SSemantics.Semantics.TABLE_HEADER);
+        } else {
+            cell.setSemantics(SSemantics.Semantics.TABLE_CONTENT);
+        }
         return cell;
     }
     private static String typeIdToString(Integer type) throws Exception {

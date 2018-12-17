@@ -162,6 +162,8 @@ body {
 .cell,
 .cellFocus,
 .cellSelected,
+.cellTable,
+.cellTableHeader,
 .rowHeaderCell,
 .columnHeaderCell {
   width: 100%;
@@ -174,7 +176,9 @@ body {
 
 .cell,
 .cellFocus,
-.cellSelected {
+.cellSelected,
+.cellTable,
+.cellTableHeader {
   border-right: 1px solid #e0e0e0;
   border-bottom: 1px solid #e0e0e0;
   display: flex;
@@ -189,6 +193,14 @@ body {
 .cellFocus {
   box-shadow: 0 0 0 2px #235360 !important;
   z-index: 1;
+}
+
+.cellTable {
+  background-color: #ffc3a9;
+}
+
+.cellTableHeader {
+  background-color: #ffa67e;
 }
 
 .columnHeaderCell {

@@ -73,7 +73,7 @@ public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
                 // Push individual cells to the UI
                 update(sCell.getSheet().getBook(), sCell.getSheet(), sCell.getCellRegion(),
                         ((CellImpl) sCell).getValue(true, true).toString(),
-                        sCell.getFormulaValue());
+                        sCell.getFormulaValue(), sCell.getSemantics());
                 DirtyManagerLog.instance.markClean(sCell.getCellRegion());
             }
             FormulaComputationStatusManager.getInstance().doneComputation();
