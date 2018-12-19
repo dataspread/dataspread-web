@@ -40,7 +40,7 @@ To host DataSpread locally you can either use one of the pre-build war files, av
 ### Required Software
 
 * [Java Platform (JDK)][java] >= 8
-* [PostgreSQL][posrgres] >= 9.5
+* [PostgreSQL][posrgres] >= 10.5
 * [PostgreSQL JDBC driver][jdbc] = 42.1.4
 * [Apache Tomcat][tomcat] >= 8.5.4
 * [Apache Maven][maven] >= 3.5.0

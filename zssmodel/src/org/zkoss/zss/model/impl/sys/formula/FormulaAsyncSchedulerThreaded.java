@@ -24,7 +24,7 @@ public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
     private boolean emptyQueue = false;
     private ThreadPoolExecutor executorPool;
     private MyMonitorThread monitor;
-    private final boolean runMonitor = false;
+    private final boolean runMonitor = true;
     private final int MaximumWorkers = 4;
 
     public class DynamicPriorityAdjuster implements Runnable {
@@ -146,8 +146,8 @@ public class FormulaAsyncSchedulerThreaded extends FormulaAsyncScheduler {
                 for (SCell sCell : cells) {
                     executorPool.execute(new WorkerThread(sCell));
                 }
-                DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,
-                        dirtyRecord.trxId);
+                //DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,
+                //        dirtyRecord.trxId);
                 //logger.info("Done computing " + dirtyRecord.region );
             }
         }
