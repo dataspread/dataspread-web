@@ -228,12 +228,12 @@ export default class Navigation extends Component {
                         let check =
                             currState.aggregateData.formula_ls[col - 1].getChart ? "checked" : "";
                         return currState.colHeader[col];
-                        //todo add checkbox and delete
-                        // return currState.colHeader[col] + "<span id='colClose' >x</span>" +
-                        //     "<label class=\"switch\">" +
-                        //     "  <input type=\"checkbox\"" + check + ">" +
-                        //     "  <span class=\"slider round\"></span>" +
-                        //     "</label>";
+                    //todo add checkbox and delete
+                    // return currState.colHeader[col] + "<span id='colClose' >x</span>" +
+                    //     "<label class=\"switch\">" +
+                    //     "  <input type=\"checkbox\"" + check + ">" +
+                    //     "  <span class=\"slider round\"></span>" +
+                    //     "</label>";
                 }
             } else {
                 switch (col) {
@@ -246,12 +246,12 @@ export default class Navigation extends Component {
                         let check =
                             currState.aggregateData.formula_ls[col - 2].getChart ? "checked" : "";
                         return currState.colHeader[col];
-                        //todo add checkbox and delete
-                        // return currState.colHeader[col] + "<span id='colClose'>x</span>" +
-                        //     "<label class=\"switch\">" +
-                        //     "  <input type=\"checkbox\"" + check + ">" +
-                        //     "  <span class=\"slider round\"></span>" +
-                        //     "</label>";
+                    //todo add checkbox and delete
+                    // return currState.colHeader[col] + "<span id='colClose'>x</span>" +
+                    //     "<label class=\"switch\">" +
+                    //     "  <input type=\"checkbox\"" + check + ">" +
+                    //     "  <span class=\"slider round\"></span>" +
+                    //     "</label>";
                 }
             }
         }
@@ -829,13 +829,13 @@ export default class Navigation extends Component {
                 let newWidth = wrapperWidth * (percentage + navAggRawData.length * 0.15);
                 console.log(newWidth);
                 this.setState({
-                    hieraOpen:true,
-                    aggregateData:aggregateData,
-                    navAggRawData : navAggRawData,
-                    colHeader : colHeader,
-                    viewData : viewData,
-                    cumulativeData : cumulativeData,
-                    navRawFormula:navRawFormula,
+                    hieraOpen: true,
+                    aggregateData: aggregateData,
+                    navAggRawData: navAggRawData,
+                    colHeader: colHeader,
+                    viewData: viewData,
+                    cumulativeData: cumulativeData,
+                    navRawFormula: navRawFormula,
 
                 });
                 this.hotTableComponent.current.hotInstance.updateSettings({
@@ -866,7 +866,7 @@ export default class Navigation extends Component {
         //console.log(row);
         //console.log(col);
         //console.log(navAggRawData);
-        if(navAggRawData == null|| navAggRawData[col - colOffset] == null) return;
+        if (navAggRawData == null || navAggRawData[col - colOffset] == null) return;
         if (navAggRawData[col - colOffset][row].chartType == 0) {
             let tempString = "chartdiv" + row + col;
             td.innerHTML = "<div id=" + tempString + " ></div>";

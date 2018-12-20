@@ -1,14 +1,14 @@
 import React, {Component} from 'react'
-import {Form, Button, Select, Input,Modal,Dropdown} from 'semantic-ui-react'
+import {Form, Button, Select, Input, Modal, Dropdown} from 'semantic-ui-react'
 import './Navigation.css';
 
 export default class HierarchiForm extends Component {
     constructor(props) {
         super(props);
-        console.log(this);
+        //console.log(this);
         this.state = {
-            navPanelOpen:false,
-            modalOpen:false,
+            navPanelOpen: false,
+            modalOpen: false,
             getChart: false,
             options: [{text: 'city', value: '0'},
                 {text: 'id', value: '1'},
@@ -21,50 +21,53 @@ export default class HierarchiForm extends Component {
         };
         this.handleRankOrder = this.handleRankOrder.bind(this);
         this.handleSubTotalFunc = this.handleSubTotalFunc.bind(this);
-        this,this.updateOption = this.updateOption.bind(this);
+        this, this.updateOption = this.updateOption.bind(this);
     }
-    updateOption (data) {
+
+    updateOption(data) {
         let opt = [];
-        for(let i = 0; i < data.length; i++){
-            let temp = {text:data[i], value: i+1};
+        for (let i = 0; i < data.length; i++) {
+            let temp = {text: data[i], value: i + 1};
             opt.push(temp);
         }
         this.setState({
-            navPanelOpen:true,
-            options:opt});
+            navPanelOpen: true,
+            options: opt
+        });
     }
+
     handleOpen = () => {
-        if(this.state.navPanelOpen !== true){
-            console.log(this)
+        if (this.state.navPanelOpen !== true) {
+            //console.log(this)
             alert("There is no navigation panel.")
             return;
-        }else{
-            console.log(this);
-            this.setState({ modalOpen: true });
+        } else {
+            //console.log(this);
+            this.setState({modalOpen: true});
         }
     }
-    handleClose = () => this.setState({ modalOpen: false })
+    handleClose = () => this.setState({modalOpen: false})
 
     handleSubmit = (e) => {
-        console.log(e);
-        console.log("submit");
-        console.log(this.state.getChart)
+        //console.log(e);
+        //console.log("submit");
+        //console.log(this.state.getChart)
         let formula_ls = this.state.formula_ls;
         for (let i = 0; i < formula_ls.length; i++) {
             formula_ls[i].getChart = this.state.getChart;
             formula_ls[i].attr_index = "" + formula_ls[i].attr_index + ""
-            switch(formula_ls[i].function){
+            switch (formula_ls[i].function) {
                 case "COUNTIF":
                 case "SUMIF":
                 case "LARGE":
                 case "SMALL":
-                    if(formula_ls[i].param_ls[1] == ""){
+                    if (formula_ls[i].param_ls[1] == "") {
                         alert("Please fill in the parameter")
                         return;
                     }
                     break;
                 case "RANK":
-                    if(formula_ls[i].param_ls[0] == ""){
+                    if (formula_ls[i].param_ls[0] == "") {
                         alert("Please fill in the parameter")
                         return;
                     }
@@ -84,8 +87,8 @@ export default class HierarchiForm extends Component {
     };
 
     handleFuncChange = (e, data) => {
-        console.log(e);
-        console.log(data);
+        //console.log(e);
+        //console.log(data);
         let formula = this.state.formula_ls;
         formula[data.id].function = data.value;
         let paraList = [""];
@@ -109,7 +112,7 @@ export default class HierarchiForm extends Component {
         })
     };
     handleAttrChange = (e, data) => {
-        console.log(data);
+        //console.log(data);
         let formula = this.state.formula_ls;
         formula[data.id].attr_index = data.value;
         this.setState({
@@ -118,7 +121,7 @@ export default class HierarchiForm extends Component {
     };
 
     handleAdd = e => {
-        console.log(e);
+        //console.log(e);
         let formula = this.state.formula_ls;
         let temp = {
             attr_index: 0,
@@ -132,7 +135,7 @@ export default class HierarchiForm extends Component {
     };
 
     handleRemove = e => {
-        console.log(e);
+        //console.log(e);
         let formula = this.state.formula_ls;
         if (formula.length == 1) {
             alert("You cannot remove all Options");
@@ -145,9 +148,9 @@ export default class HierarchiForm extends Component {
 
     };
     handleRankInput = (e, data) => {
-        console.log(data);
+        //console.log(data);
         let index = data.name.substring(4);
-        console.log(index);
+        //console.log(index);
         let formula_ls = this.state.formula_ls;
         formula_ls[index].param_ls[0] = data.value;
         this.setState({
@@ -155,9 +158,9 @@ export default class HierarchiForm extends Component {
         })
     };
     handleRankOrder = (e, data) => {
-        console.log(data);
+        //console.log(data);
         let index = data.id.substring(4);
-        console.log(index);
+        //console.log(index);
         let formula_ls = this.state.formula_ls;
         formula_ls[index].param_ls[2] = data.value;
         this.setState({
@@ -165,9 +168,9 @@ export default class HierarchiForm extends Component {
         })
     };
     handleSubTotalFunc = (e, data) => {
-        console.log(e.target.value);
+        //console.log(e.target.value);
         let index = data.id.substring(4);
-        console.log(index);
+        //console.log(index);
         let formula_ls = this.state.formula_ls;
         formula_ls[index].param_ls[0] = data.value;
         this.setState({
@@ -176,9 +179,9 @@ export default class HierarchiForm extends Component {
     };
 
     handleManualInput = (e, data) => {
-        console.log(data);
+        //console.log(data);
         let index = data.id.substring(4);
-        console.log(index);
+        //console.log(index);
         let formula_ls = this.state.formula_ls;
         formula_ls[index].param_ls[1] = data.value;
         this.setState({
@@ -201,8 +204,8 @@ export default class HierarchiForm extends Component {
         const orderOpt = [{text: 'ascending', value: '1'},
             {text: 'descending', value: '0'},];
 
-        console.log("renderpar");
-        console.log(index);
+        //console.log("renderpar");
+        //console.log(index);
         let formula_ls = this.state.formula_ls;
         switch (formula_ls[index].function) {
             case "COUNTIF":
@@ -276,56 +279,56 @@ export default class HierarchiForm extends Component {
                 closeIcon
                 onClose={this.handleClose}
                 trigger={<Dropdown.Item onClick={this.handleOpen}>Add Hierarchical Column</Dropdown.Item>}
-                open = {this.state.modalOpen} >
+                open={this.state.modalOpen}>
                 <Modal.Header>Hierarchical form</Modal.Header>
                 <Modal.Content>
-                <Form onSubmit={this.handleSubmit}>
-                    {formula_ls.map((line, index) => {
-                        console.log(line);
-                        console.log(selected);
-                        return (<div>
-                                <Form.Group >
-                                    <i className="fa fa-minus-circle hierRemove" id="rm1"
-                                       aria-hidden="true" onClick={this.handleRemove.bind(this, index)}/>
-                                    <Form.Dropdown id={index}
-                                                   width={7}
-                                                   // style={{"minWidth": "6em", "maxWidth": "8.5em",}}
-                                                   options={this.state.options}
-                                                   selection
-                                                   value={this.state.options[line.attr_index - 1].value}
-                                                   onChange={this.handleAttrChange}
-                                    />
-                                    <Form.Dropdown id={index}
-                                                   // style={{"minWidth": "6em", "maxWidth": "8.em"}}
-                                                   width={7}
-                                        // inline
-                                        // control={Select}
-                                                   options={funcOptions} selection
-                                        //defaultValue={funcOptions[0].value}
-                                                   value={line.function}
-                                                   onChange={this.handleFuncChange}
-                                    />
-                                    <i className="fa fa-plus-circle fa-1x hierAdd" id='add" + targetId + "'
-                                       aria-hidden="true"
-                                       onClick={this.handleAdd.bind(this, index)}/>
-                                </Form.Group>
-                                {this.renderPara(index)}
-                            </div>
-                        );
+                    <Form onSubmit={this.handleSubmit}>
+                        {formula_ls.map((line, index) => {
+                            //console.log(line);
+                            //console.log(selected);
+                            return (<div>
+                                    <Form.Group>
+                                        <i className="fa fa-minus-circle hierRemove" id="rm1"
+                                           aria-hidden="true" onClick={this.handleRemove.bind(this, index)}/>
+                                        <Form.Dropdown id={index}
+                                                       width={7}
+                                            // style={{"minWidth": "6em", "maxWidth": "8.5em",}}
+                                                       options={this.state.options}
+                                                       selection
+                                                       value={this.state.options[line.attr_index - 1].value}
+                                                       onChange={this.handleAttrChange}
+                                        />
+                                        <Form.Dropdown id={index}
+                                            // style={{"minWidth": "6em", "maxWidth": "8.em"}}
+                                                       width={7}
+                                            // inline
+                                            // control={Select}
+                                                       options={funcOptions} selection
+                                            //defaultValue={funcOptions[0].value}
+                                                       value={line.function}
+                                                       onChange={this.handleFuncChange}
+                                        />
+                                        <i className="fa fa-plus-circle fa-1x hierAdd" id='add" + targetId + "'
+                                           aria-hidden="true"
+                                           onClick={this.handleAdd.bind(this, index)}/>
+                                    </Form.Group>
+                                    {this.renderPara(index)}
+                                </div>
+                            );
 
-                    })}
-                    <Form.Field
-                        inline
-                        control={Select}
-                        options={chartOpt}
-                        label={{children: 'Show result by', htmlFor: 'form-select-control-chart'}}
-                        search
-                        defaultValue={chartOpt[0].value}
-                        searchInput={{id: 'form-select-control-chart'}}
-                        onChange={this.handleChartChange}
-                    />
-                    <Form.Button>Done</Form.Button>
-                </Form>
+                        })}
+                        <Form.Field
+                            inline
+                            control={Select}
+                            options={chartOpt}
+                            label={{children: 'Show result by', htmlFor: 'form-select-control-chart'}}
+                            search
+                            defaultValue={chartOpt[0].value}
+                            searchInput={{id: 'form-select-control-chart'}}
+                            onChange={this.handleChartChange}
+                        />
+                        <Form.Button>Done</Form.Button>
+                    </Form>
                 </Modal.Content>
             </Modal>
         );
