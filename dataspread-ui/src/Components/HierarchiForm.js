@@ -285,7 +285,7 @@ export default class HierarchiForm extends Component {
                         console.log(selected);
                         return (<div>
                                 <Form.Group >
-                                    <i class="fa fa-minus-circle hierRemove" id="rm1"
+                                    <i className="fa fa-minus-circle hierRemove" id="rm1"
                                        aria-hidden="true" onClick={this.handleRemove.bind(this, index)}/>
                                     <Form.Dropdown id={index}
                                                    width={7}
@@ -305,7 +305,7 @@ export default class HierarchiForm extends Component {
                                                    value={line.function}
                                                    onChange={this.handleFuncChange}
                                     />
-                                    <i class="fa fa-plus-circle fa-1x hierAdd" id='add" + targetId + "'
+                                    <i className="fa fa-plus-circle fa-1x hierAdd" id='add" + targetId + "'
                                        aria-hidden="true"
                                        onClick={this.handleAdd.bind(this, index)}/>
                                 </Form.Group>

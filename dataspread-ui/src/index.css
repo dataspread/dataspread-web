@@ -1,8 +1,8 @@
 body {
-    margin: 0;
-    padding: 0;
-    font-family: sans-serif;
-    box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  box-sizing: border-box;
 }
 
 .ui.menu .dropdown.item .menu {
@@ -10,42 +10,42 @@ body {
 }
 
 .vl {
-    border-left: 6px solid green;
-    height: 500px;
+  border-left: 6px solid green;
+  height: 500px;
 }
 
 
 #sheet-panel {
-    height: 5vh;
-    position: fixed;
-    bottom: 0;
-    right: 0;
-    z-index: 5
+  height: 5vh;
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  z-index: 5
 }
 
 #sheets {
-    display: inline;
+  display:inline;
 }
 
 #createSheet {
-    display: inline;
+  display: inline;
 }
 
 .alignRight {
-    position: absolute;
-    right: 0px;
+  position: absolute;
+  right: 0px;
 }
 
 .sheet {
-    padding-right: 3px;
+  padding-right: 3px;
 }
 
 .dsTableHead {
-    background-color: #003F13;
+  background-color: #003F13;
 }
 
 .dsTableBody {
-    background-color: #2A7E43;
+  background-color: #2A7E43;
 }
 
 /* .handsontable td.area {
@@ -59,65 +59,62 @@ body {
   left: 0;
 } */
 
-.navbar1 {
-    height: 6vh;
+.navbar1{
+  height: 6vh;
+}
+.navbar2{
+  height: 6vh;
+}
+.navbar3{
+  height: 6vh;
 }
 
-.navbar2 {
-    height: 6vh;
+.wrapper{
+  height:78vh;
 }
 
-.navbar3 {
-    height: 6vh;
-}
-
-.wrapper {
-    height: 78vh;
-}
-
-.breadcrumb {
-    padding: 0.25rem 0.5rem 0.25rem 0.5rem;
-    width: 80%;
-    margin-bottom: 0;
-    display: inline-flex;
+.breadcrumb{
+  padding: 0.25rem 0.5rem 0.25rem 0.5rem;
+  width: 80%;
+  margin-bottom: 0;
+  display: inline-flex;
 }
 
 .breadcrumb > li + li:before {
-    content: "> " !important;
+  content: "> " !important;
 }
 
-#nav-history {
-    width: 20%;
-    display: inline-block;
-    float: right;
+#nav-history{
+  width: 20%;
+  display: inline-block;
+  float:right;
+}
+#historyDropdown{
+  padding: 0.25rem 0.5rem 0.25rem 0.5rem;
+  background-color: #e9ecef;
 }
 
-#historyDropdown {
-    padding: 0.25rem 0.5rem 0.25rem 0.5rem;
-    background-color: #e9ecef;
-}
-
-.custom-select {
-    width: 50%;
+.custom-select{
+  width:50%;
 }
 
 .wrap {
-    word-wrap: normal;
+  word-wrap: normal;
 }
 
 .formClose {
-    padding-left: 10px;
-    float: right;
-    font-size: 17px;
-    font-weight: bold;
-    cursor: pointer;
+  padding-left: 10px;
+  float: right;
+  font-size: 17px;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 #colClose {
-    padding-left: 10px;
-    font-size: 17px;
-    font-weight: bold;
-    cursor: pointer;
+  padding-left: 10px;
+  font-size: 17px;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 /* #navChart .ht_master tr > td.current {
@@ -125,46 +122,44 @@ body {
   color:white;
 } */
 .progress {
-    position: fixed;
-    left: 0;
-    width: 15px;
-    height: 74.1vh;
-    background-color: #aaa;
+  position:fixed;
+  left: 0;
+  width: 15px;
+  height: 74.1vh;
+  background-color: #aaa;
 }
 
 .progress-bar {
-    position: fixed;
-    left: 0;
-    height: 0px;
-    width: 15px;
-    background-color: #333;
+  position: fixed;
+  left: 0;
+  height: 0px;
+  width: 15px;
+  background-color: #333;
 }
-
-.exploration {
-    color: white;
+.exploration{
+  color: white;
 }
 
 
 .GridRow {
-    margin-top: 15px;
-    display: flex;
-    flex-direction: row;
+  margin-top: 15px;
+  display: flex;
+  flex-direction: row;
 }
-
 .GridColumn {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
 }
-
 .LeftSideGridContainer {
-    flex: 0 0 50px;
+  flex: 0 0 50px;
 }
 
 .BodyGrid {
-    width: 100%;
-    border: 1px solid #e0e0e0;
+  width: 100%;
+  border: 1px solid #e0e0e0;
 }
+
 
 
 .cell,
@@ -172,248 +167,147 @@ body {
 .cellSelected,
 .rowHeaderCell,
 .columnHeaderCell {
-    width: 100%;
-    height: 100%;
-    padding: .5em;
-    box-sizing: border-box;
-    vertical-align: middle;
-    user-select: none;
+  width: 100%;
+  height: 100%;
+  padding:  .5em;
+  box-sizing: border-box;
+  vertical-align: middle;
+  user-select: none;
 }
 
 .cell,
 .cellFocus,
 .cellSelected {
-    border-right: 1px solid #e0e0e0;
-    border-bottom: 1px solid #e0e0e0;
-    display: flex;
-    flex-direction: column;
+  border-right: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
 }
 
 .cellFocus,
 .cellSelected {
-    background-color: #abc6ce;
+  background-color: #abc6ce;
 }
 
 .cellFocus {
-    box-shadow: 0 0 0 2px #235360 !important;
-    z-index: 1;
+  box-shadow: 0 0 0 2px #235360 !important;
+  z-index: 1;
 }
 
 .columnHeaderCell {
-    border-right: 1px solid #e0e0e0;
-    border-bottom: 1px solid black;
-    border-top: 1px solid #e0e0e0;
-    background-color: #d5d5d5;
-    text-align: center;
+  border-right: 1px solid #e0e0e0;
+  border-bottom: 1px solid black;
+  border-top: 1px solid #e0e0e0;
+  background-color: #d5d5d5;
+  text-align: center;
 }
 
 .rowHeaderCell {
-    border-right: 1px solid #e0e0e0;
-    border-bottom: 1px solid #e0e0e0;
-    background-color: #d5d5d5;
-    text-align: center;
+  border-right: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #d5d5d5;
+  text-align: center;
 }
 
 .isScrollingPlaceholder {
-    color: lightgray;
+  color: lightgray;
 }
 
 .centeredCell {
-    align-items: center;
-    text-align: center;
+  align-items: center;
+  text-align: center;
 }
 
 .letterCell {
-    font-size: 1.5em;
-    color: #fff;
-    text-align: center;
+  font-size: 1.5em;
+  color: #fff;
+  text-align: center;
 }
 
 .noCells {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1em;
-    color: #bdbdbd;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1em;
+  color: #bdbdbd;
+}
+.toolTip {
+  position: fixed;
+  display: none;
+  min-width: 10px;
+  height: auto;
+  background: none repeat scroll 0 0 #ffffff;
+  border: 1px solid #6F257F;
+  padding: 3px;
+  text-align: center;
 }
 
-.toolTip {
-    position: fixed;
-    display: none;
-    min-width: 10px;
-    height: auto;
-    background: none repeat scroll 0 0 #ffffff;
-    border: 1px solid #6F257F;
-    padding: 3px;
-    text-align: center;
-}
+
+
 
 
 /* The switch - the box around the slider */
 .switch {
-    position: absolute;
-    display: inline-block;
-    width: 32px;
-    height: 16px;
-    margin: 1px 0px 0px 1px;
+  position: absolute;
+  display: inline-block;
+  width: 32px;
+  height: 16px;
+  margin: 1px 0px 0px 1px;
 }
 
 /* Hide default HTML checkbox */
-.switch input {
-    display: none;
-}
+.switch input {display:none;}
 
 /* The slider */
 .slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ccc;
-    -webkit-transition: .4s;
-    transition: .4s;
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
 }
 
 .slider:before {
-    position: absolute;
-    content: "";
-    height: 14px;
-    width: 14px;
-    left: 2px;
-    bottom: 1px;
-    background-color: white;
-    -webkit-transition: .4s;
-    transition: .4s;
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 2px;
+  bottom: 1px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
 }
 
 input:checked + .slider {
-    background-color: #2196F3;
+  background-color: #2196F3;
 }
 
 input:focus + .slider {
-    box-shadow: 0 0 1px #2196F3;
+  box-shadow: 0 0 1px #2196F3;
 }
 
 input:checked + .slider:before {
-    -webkit-transform: translateX(16px);
-    -ms-transform: translateX(16px);
-    transform: translateX(16px);
+  -webkit-transform: translateX(16px);
+  -ms-transform: translateX(16px);
+  transform: translateX(16px);
 }
 
 
 /* Rounded sliders */
 .slider.round {
-    border-radius: 20px;
+  border-radius: 20px;
 }
 
 .slider.round:before {
-    border-radius: 50%;
-}
-
-
-/*upload button*/
-
-label > button.btn.start {
-    width: 0.1px;
-    height: 0.1px;
-    opacity: 0;
-    overflow: hidden;
-    position: absolute;
-    z-index: -1;
-}
-
-div#dropTarget > label {
-    background: white;
-    width: 30%;
-    margin-right: 20%;
-    /* border-style: solid;
-    border-width: 1px; */
-    border-radius: 5px;
-    color: rgb(0, 0, 0);
-    cursor: pointer;
-    display: inline-block;
-    font-size: inherit;
-    font-weight: 1000;
-    margin-bottom: 1rem;
-    outline: none;
-    padding: 0em 1em 0em 2em;
-    vertical-align: middle;
-}
-
-div#dropTarget > label::before {
-    font-family: "Font Awesome 5 Free";
-    content: "\f04b";
-    color: #2196F3;
-    display: inline-block;
-    font-size: 2em;
-    margin: 12px;
-    vertical-align: middle;
-    font-weight: 900;
-}
-
-div#dropTarget > label::after {
-    /* font-family: "ariel"; */
-    content: "Start Upload";
-    color: black;
-    display: inline-block;
-    font-size: 1.5em;
-    vertical-align: middle;
-    font-weight: 100;
-}
-
-
-/*import button*/
-label > input#importBook.btn {
-    width: 0.1px;
-    height: 0.1px;
-    opacity: 0;
-    overflow: hidden;
-    position: absolute;
-    z-index: -1;
-}
-
-div#dropTarget > label.btn.file-upload::before {
-    font-family: "Font Awesome 5 Free";
-    content: "\f07c";
-    fill: #2196F3;
-    display: inline-block;
-    font-size: 2em;
-    vertical-align: middle;
-    font-weight: 900;
-}
-
-div#dropTarget > label.btn.file-upload::after {
-    content: "Select File";
-    color: black;
-}
-
-.drag-icon {
-    position: absolute;
-    right: 0px;
-    float: right;
-    opacity: 0;
-}
-
-.DragHandle {
-    flex: 0 0 16px;
-    z-index: 2;
-    cursor: col-resize;
-    color: #0085ff;
-}
-
-.DragHandle:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-}
-
-.DragHandleActive,
-.DragHandleActive:hover {
-    color: #0b6fcc;
-    z-index: 3;
+  border-radius: 50%;
 }

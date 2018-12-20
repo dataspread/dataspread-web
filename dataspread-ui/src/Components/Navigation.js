@@ -9,7 +9,7 @@ export default class Navigation extends Component {
 
     constructor(props) {
         super(props);
-        console.log(this);
+        //console.log(this);
         this.state = {
             alltext: true,
             currLevel: 0,
@@ -51,7 +51,7 @@ export default class Navigation extends Component {
     }
 
     startNav(data) {
-        console.log(data);
+        //console.log(data);
         let length = data.data.length;
         let viewData = new Array(data.data.length);
         for (let i = 0; i < length; i++) {
@@ -83,7 +83,7 @@ export default class Navigation extends Component {
             currData: data.data,
             cumulativeData: [data.data]
         });
-        console.log(this.state.cumulativeData[0][0]);
+        //console.log(this.state.cumulativeData[0][0]);
 
 
         var currentState = this.state;
@@ -120,7 +120,7 @@ export default class Navigation extends Component {
                 // else if (currLevel > 0 && coords.row >= 0 && coords.col >= 2) {
                 //     $("#formulaBar").val("=" + navRawFormula[coords.row][coords.col - 2]);
                 // }
-                console.log(e);
+                //console.log(e);
                 //|| zoomming
                 if (topLevel || otherLevel ||
                     e.realTarget.className == "colHeader" ||
@@ -227,11 +227,13 @@ export default class Navigation extends Component {
                     default:
                         let check =
                             currState.aggregateData.formula_ls[col - 1].getChart ? "checked" : "";
-                        return currState.colHeader[col] + "<span id='colClose' >x</span>" +
-                            "<label class=\"switch\">" +
-                            "  <input type=\"checkbox\"" + check + ">" +
-                            "  <span class=\"slider round\"></span>" +
-                            "</label>";
+                        return currState.colHeader[col];
+                        //todo add checkbox and delete
+                        // return currState.colHeader[col] + "<span id='colClose' >x</span>" +
+                        //     "<label class=\"switch\">" +
+                        //     "  <input type=\"checkbox\"" + check + ">" +
+                        //     "  <span class=\"slider round\"></span>" +
+                        //     "</label>";
                 }
             } else {
                 switch (col) {
@@ -243,11 +245,13 @@ export default class Navigation extends Component {
 
                         let check =
                             currState.aggregateData.formula_ls[col - 2].getChart ? "checked" : "";
-                        return currState.colHeader[col] + "<span id='colClose'>x</span>" +
-                            "<label class=\"switch\">" +
-                            "  <input type=\"checkbox\"" + check + ">" +
-                            "  <span class=\"slider round\"></span>" +
-                            "</label>";
+                        return currState.colHeader[col];
+                        //todo add checkbox and delete
+                        // return currState.colHeader[col] + "<span id='colClose'>x</span>" +
+                        //     "<label class=\"switch\">" +
+                        //     "  <input type=\"checkbox\"" + check + ">" +
+                        //     "  <span class=\"slider round\"></span>" +
+                        //     "</label>";
                 }
             }
         }
@@ -280,7 +284,7 @@ export default class Navigation extends Component {
     }
 
     navCellRenderer(instance, td, row, col, prop, value, cellProperties) {
-        //console.log(this);
+        ////console.log(this);
         let tempString = "<div><span>" + value + "</span>";
         const currentState = this.state;
         if (row >= currentState.cumulativeData[currentState.currLevel].length) return;
@@ -432,7 +436,7 @@ export default class Navigation extends Component {
             .data(chartData)
             .on("mouseover",
                 function (d) {
-                    //           console.log(d)
+                    //           //console.log(d)
                     tooltip.style("left", d3.event.pageX - 20 + "px")
                         .style("top", d3.event.pageY - 30 + "px")
                         .style("display", "inline-block")
@@ -457,9 +461,9 @@ export default class Navigation extends Component {
             .attr("height", y.bandwidth())
             .attr("x", 0)
             .attr('fill', function (d, i) {
-                //console.log("selectedBars");
-                //console.log(selectedBars);
-                //console.log(row,i);
+                ////console.log("selectedBars");
+                ////console.log(selectedBars);
+                ////console.log(row,i);
                 for (let ind = 0; ind < self.selectedBars.length; ind++) {
                     if (self.selectedBars[ind].cell == row) {
                         if (self.selectedBars[ind].bars.includes(i))
@@ -476,7 +480,7 @@ export default class Navigation extends Component {
             .style("stroke-width", 1)
             .on("mouseover",
                 function (d) {
-                    //           console.log(d)
+                    //           //console.log(d)
                     tooltip.style("left", d3.event.pageX - 20 + "px")
                         .style("top", d3.event.pageY - 30 + "px")
                         .style("display", "inline-block")
@@ -513,10 +517,9 @@ export default class Navigation extends Component {
 
     zoomIn(child) {
         let currState = this.state;
-        this.hotTableComponent.current.hotInstance.deselectCell();
         let selectFirstChild = false;
-        console.log("In zoom in:" + child);
-        console.log(currState.selectedChild);
+        //console.log("In zoom in:" + child);
+        //console.log(currState.selectedChild);
         let childHash = new Map();
         if (!currState.selectedChild.includes(child) || currState.selectedChild.length == 0)
             selectFirstChild = true;
@@ -537,7 +540,7 @@ export default class Navigation extends Component {
         let childlist = this.computePath(); // get the list of children
 
         let queryData = {};
-        console.log(this)
+        //console.log(this)
         queryData.bookId = this.props.bookId;
         queryData.sheetName = this.props.grid.state.sheetName;
         queryData.path = childlist;
@@ -550,14 +553,12 @@ export default class Navigation extends Component {
         })
             .then(response => response.json())
             .then(data => {
-                console.log(data);
+                //console.log(data);
                 if (data.status == "success") {
                     var result = data.data;
-                    console.log(result);
-                    this.setState({
-                        currData: result.buckets,
-                    })
-                    console.log(this)
+                    //console.log(result);
+
+                    //console.log(this)
                     let currData = result.buckets;
                     let cumulativeData = currState.cumulativeData;
                     let currLevel = currState.currLevel + 1;
@@ -573,11 +574,11 @@ export default class Navigation extends Component {
                     mergeCellInfo.push(
                         {row: 0, col: 0, rowspan: currData.length, colspan: 1});
                     let viewData = [];
-                    console.log(currState);
+                    //console.log(currState);
 
                     for (let i = 0; i < currData.length; i++) {
                         if (i == 0) {
-                            console.log(cumulativeData);
+                            //console.log(cumulativeData);
 
                             viewData.push([cumulativeData[parseInt(currLevel - 1)][child].name]);
                         } else {
@@ -585,7 +586,7 @@ export default class Navigation extends Component {
                         }
                     }
 
-                    console.log(viewData);
+                    //console.log(viewData);
                     cumulativeData.splice(currLevel);
                     cumulativeData.push(currData);
 
@@ -593,6 +594,7 @@ export default class Navigation extends Component {
                         viewData[i][1] = cumulativeData[currLevel][i].name;
                     }
                     this.setState({
+                        currData: result.buckets,
                         childHash: childHash,
                         viewData: viewData,
                         cumulativeData: cumulativeData,
@@ -600,17 +602,16 @@ export default class Navigation extends Component {
                         mergeCellInfo: mergeCellInfo,
                     });
                     currState = this.state;
-
+                    this.hotTableComponent.current.hotInstance.deselectCell();
+                    this.hotTableComponent.current.hotInstance.updateSettings({
+                        data: viewData,
+                        rowHeights: (currState.wrapperHeight * 0.95 / currState.currData.length > 90)
+                            ? currState.wrapperHeight * 0.95 / currState.currData.length
+                            : 90,
+                        mergeCells: mergeCellInfo,
+                    })
                     if (currState.hieraOpen) {
-                        //getAggregateValue();
-                    } else {
-                        this.hotTableComponent.current.hotInstance.updateSettings({
-                            data: currState.viewData,
-                            rowHeights: (currState.wrapperHeight * 0.95 / currState.currData.length > 90)
-                                ? currState.wrapperHeight * 0.95 / currState.currData.length
-                                : 90,
-                            mergeCells: mergeCellInfo,
-                        })
+                        this.submitHierForm(currState.aggregateData.formula_ls);
                     }
 
                     //
@@ -666,7 +667,7 @@ export default class Navigation extends Component {
             .then(data => {
                 if (data.status == "success") {
                     let result = data.data;
-                    //console.log(result);
+                    ////console.log(result);
                     let breadcrum_ls = result.breadCrumb;
                     // clickable = result.clickable;
                     let currLevel = breadcrum_ls.length;
@@ -712,20 +713,15 @@ export default class Navigation extends Component {
                         nextPath: nextPath,
                     });
                     currState = this.state;
+                    this.hotTableComponent.current.hotInstance.updateSettings({
+                        data: viewData,
+                        rowHeights: (currState.wrapperHeight * 0.95 / currState.currData.length > 90)
+                            ? currState.wrapperHeight * 0.95 / numChild
+                            : 90,
+                        mergeCells: mergeCellInfo,
+                    })
                     if (currState.hieraOpen) {
-                        // getAggregateValue();
-
-                    } else {
-                        this.hotTableComponent.current.hotInstance.updateSettings({
-                            data: currState.viewData,
-                            rowHeights: (currState.wrapperHeight * 0.95 / currState.currData.length > 90)
-                                ? currState.wrapperHeight * 0.95 / numChild
-                                : 90,
-                            mergeCells: mergeCellInfo,
-                        })
-                        //       zoomouting = false;
-                        //         nav.render();
-
+                        this.submitHierForm(currState.aggregateData.formula_ls);
                     }
 
                     // updateNavPath(breadcrum_ls);
@@ -755,7 +751,7 @@ export default class Navigation extends Component {
             .then(response => response.json())
             .then(data => {
 
-                console.log(data.data);
+                //console.log(data.data);
                 let navAggRawData = data.data;
                 let currState = this.state;
                 let currLevel = currState.currLevel;
@@ -827,8 +823,13 @@ export default class Navigation extends Component {
 
                 let numChild = cumulativeData[currLevel].length;
                 let percentage = currState.alltext ? 0.12 : 0.18;
-                let newWidth = wrapperWidth * (percentage + aggregateData.length * 0.15);
+                console.log(wrapperWidth)
+                console.log(percentage)
+                console.log(navAggRawData.length)
+                let newWidth = wrapperWidth * (percentage + navAggRawData.length * 0.15);
+                console.log(newWidth);
                 this.setState({
+                    hieraOpen:true,
                     aggregateData:aggregateData,
                     navAggRawData : navAggRawData,
                     colHeader : colHeader,
@@ -838,6 +839,7 @@ export default class Navigation extends Component {
 
                 });
                 this.hotTableComponent.current.hotInstance.updateSettings({
+                    mergeCells: currState.mergeCellInfo,
                     width: newWidth,
                     manualColumnResize: columWidth,
                     minCols: 1,
@@ -858,12 +860,12 @@ export default class Navigation extends Component {
         let cumulativeData = this.state.cumulativeData;
         let nav = this.hotTableComponent.current.hotInstance;
         let childHash = this.state.childHash;
-        console.log(childHash)
+        //console.log(childHash)
         let colOffset = (currLevel == 0) ? 1 : 2;
-        console.log(currLevel);
-        console.log(row);
-        console.log(col);
-        console.log(navAggRawData);
+        ////console.log(currLevel);
+        //console.log(row);
+        //console.log(col);
+        //console.log(navAggRawData);
         if(navAggRawData == null|| navAggRawData[col - colOffset] == null) return;
         if (navAggRawData[col - colOffset][row].chartType == 0) {
             let tempString = "chartdiv" + row + col;
@@ -969,7 +971,7 @@ export default class Navigation extends Component {
                 .style("font-weight", "bold")
                 .text(value);
         } else if (navAggRawData[col - colOffset][row].chartType == 1) {
-            console.log("in chart rendered");
+            //console.log("in chart rendered");
             let tempString = "chartdiv" + row + col;
             td.innerHTML = "<div id=" + tempString + " ></div>";
 
@@ -1115,7 +1117,7 @@ export default class Navigation extends Component {
                 .text('Count');
 
         } else if (navAggRawData[col - colOffset][row].chartType == 2) {
-            console.log("in nav chart renderer");
+            //console.log("in nav chart renderer");
             let tempString = "chartdiv" + row + col;
             td.innerHTML = "<div id=" + tempString + " ></div>";
 
@@ -1655,7 +1657,7 @@ export default class Navigation extends Component {
                 }
             }
             var fullWidth = wrapperWidth * 0.14;
-            //console.log("row: " + row + " " + fullHeight+" "+ wrapperHeight+" "+ fullWidth+" "+wrapperWidth);
+            ////console.log("row: " + row + " " + fullHeight+" "+ wrapperHeight+" "+ fullWidth+" "+wrapperWidth);
 
             // the width and height values will be used in the ranges of our scales
             var width = fullWidth - margin.right - margin.left;
