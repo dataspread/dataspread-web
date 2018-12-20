@@ -32,8 +32,7 @@ public class DBHandler {
         instance.initApplication();
     }
 
-    public AutoRollbackConnection getConnection()
-    {
+    public AutoRollbackConnection getConnection() {
         try {
             return new AutoRollbackConnection(ds.getConnection());
         } catch (SQLException e) {
@@ -42,26 +41,23 @@ public class DBHandler {
         }
     }
 
-    public void cacheDS() throws Exception
-    {
+    public void cacheDS() throws Exception {
         InitialContext cxt = new InitialContext();
-        if ( cxt == null ) {
+        if (cxt == null) {
             throw new Exception("No context!");
         }
 
-        ds = (DataSource) cxt.lookup( "java:/comp/env/jdbc/ibd" );
-        if ( ds == null ) {
+        ds = (DataSource) cxt.lookup("java:/comp/env/jdbc/ibd");
+        if (ds == null) {
             throw new Exception("Data source not found!");
         }
     }
 
-    public static void initDBHandler()
-    {
+    public static void initDBHandler() {
         instance = new DBHandler();
     }
 
-    public void initApplication()
-    {
+    public void initApplication() {
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             DBContext dbContext = new DBContext(connection);
             createBookTable(dbContext);
@@ -70,6 +66,7 @@ public class DBHandler {
             createTableOrders(dbContext);
             createDependencyTable(dbContext);
             createFullDependencyTable(dbContext);
+            createTypeConversionTable(dbContext);
             connection.commit();
             //dbListener = new DBListener();
             //dbListener.start();
@@ -78,17 +75,14 @@ public class DBHandler {
         }
     }
 
-    private void shutdownApplication()
-    {
+    private void shutdownApplication() {
         dbListener.stopListener();
     }
 
 
-    private void createBookTable(DBContext dbContext)
-    {
+    private void createBookTable(DBContext dbContext) {
         AutoRollbackConnection connection = dbContext.getConnection();
-        try (Statement stmt = connection.createStatement())
-        {
+        try (Statement stmt = connection.createStatement()) {
             String createBooksTable = "CREATE TABLE  IF NOT  EXISTS  books (" +
                     "bookname  TEXT NOT NULL," +
                     "booktable TEXT NOT NULL UNIQUE," +
@@ -137,6 +131,22 @@ public class DBHandler {
     }
 
 
+    private void createTypeConversionTable(DBContext dbContext) {
+
+
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement()) {
+            String createTable = "CREATE TABLE IF NOT EXISTS type_converted_books (" +
+                    "bookid  TEXT NOT NULL," +
+                    "sheetname  TEXT NOT NULL," +
+                    "cols   TEXT NOT NULL" +
+                    ");";
+            stmt.execute(createTable);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void createUserBooksTable(DBContext dbContext) {
         AutoRollbackConnection connection = dbContext.getConnection();
         try (Statement stmt = connection.createStatement()) {
@@ -146,9 +156,7 @@ public class DBHandler {
                     "role   TEXT NOT NULL" +
                     ");";
             stmt.execute(createTable);
-        }
-        catch (SQLException e)
-        {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
