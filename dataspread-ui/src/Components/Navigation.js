@@ -864,7 +864,7 @@ export default class Navigation extends Component {
         console.log(row);
         console.log(col);
         console.log(navAggRawData);
-        if(navAggRawData == null) return;
+        if(navAggRawData == null|| navAggRawData[col - colOffset] == null) return;
         if (navAggRawData[col - colOffset][row].chartType == 0) {
             let tempString = "chartdiv" + row + col;
             td.innerHTML = "<div id=" + tempString + " ></div>";
