@@ -1,6 +1,8 @@
 import React, {Component} from 'react';
 import {Dimmer, Loader} from 'semantic-ui-react'
 import {ArrowKeyStepper, AutoSizer, defaultCellRangeRenderer, Grid, ScrollSync} from './react-virtualized'
+import Draggable from "react-draggable";
+
 
 import Cell from './cell';
 import 'react-datasheet/lib/react-datasheet.css';
@@ -22,10 +24,14 @@ export default class DSGrid extends Component {
 
     constructor(props) {
         super(props);
+        this.rowHeight = 32;
+        this.columnWidth = 150;
+        this.defaultRowCount = 100000000;
+        this.defaultColumnCount = 500;
         this.state = {
-            rows: 100000000,
+            rows: this.defaultRowCount,
+            columns: this.defaultColumnCount,
             sheetName: '',
-            columns: 500,
             version: 0,
             focusCellRow: -1,
             focusCellColumn: -1,
@@ -33,12 +39,12 @@ export default class DSGrid extends Component {
             selectOppositeCellColumn: -1,
             isProcessing: false,
             initialLoadDone:false,
-        }
+            columnWidths: Array(this.defaultColumnCount).fill(this.columnWidth),
+            totalWidth: this.defaultColumnCount*this.columnWidth
+        };
         this.mouseDown = false;
         this.shiftOn = false;
         this.subscribed = false;
-        this.rowHeight = 32;
-        this.columnWidth = 150;
         this._disposeFromLRU = this._disposeFromLRU.bind(this);
         this.dataCache = new LRUCache({
             max: 100,
@@ -56,12 +62,16 @@ export default class DSGrid extends Component {
         this._mouseUpCell = this._mouseUpCell.bind(this);
         this._processUpdates = this._processUpdates.bind(this);
         this._cellRangeRenderer = this._cellRangeRenderer.bind(this);
+        this._columnHeaderCellRenderer = this._columnHeaderCellRenderer.bind(this);
         this._handleKeyDown = this._handleKeyDown.bind(this);
         this._handleKeyUp = this._handleKeyUp.bind(this);
 
         this.submitNavForm = this.submitNavForm.bind(this);
         this.closeNavForm = this.closeNavForm.bind(this);
         this.openNavForm = this.openNavForm.bind(this);
+
+        this._changeColumnWidth = this._changeColumnWidth.bind(this);
+        this._columnWidthHelper = this._columnWidthHelper.bind(this);
 
         // this.urlPrefix = ""; // Only for testing.
         // this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
@@ -189,7 +199,7 @@ export default class DSGrid extends Component {
                 <ExplorationForm grid = {this} submitNavForm = {this.submitNavForm} closeNavForm={this.closeNavForm} ref={ref => this.navForm = ref}/>
             <div onKeyDown={this._handleKeyDown} onKeyUp={this._handleKeyUp}>
                 <div style={{display: 'flex'}}>
-                    <div style={{flex: 'auto', height: '90vh'}}>
+                    <div style={{flex: 'auto', height: '91vh'}}>
                         <Dimmer active={this.state.isProcessing || !this.state.initialLoadDone}>
                             <Loader>Processing</Loader>
                         </Dimmer>
@@ -234,10 +244,12 @@ export default class DSGrid extends Component {
                                                     }}
                                                     scrollLeft={scrollLeft}
                                                     cellRenderer={this._columnHeaderCellRenderer}
-                                                    columnWidth={this.columnWidth}
+                                                    columnWidth={this._columnWidthHelper}
                                                     columnCount={this.state.columns}
+                                                    totalWidth={() => this.state.totalWidth}
                                                     rowCount={1}
                                                     rowHeight={this.rowHeight}
+                                                    ref={(ref) => this.headerGrid = ref}
                                                 />
                                             </div>
 
@@ -259,7 +271,8 @@ export default class DSGrid extends Component {
                                                                 width={width - this.columnWidth}
                                                                 cellRenderer={this._cellRenderer}
                                                                 columnCount={this.state.columns}
-                                                                columnWidth={this.columnWidth}
+                                                                columnWidth={this._columnWidthHelper}
+                                                                totalWidth={() => this.state.totalWidth}
                                                                 rowCount={this.state.rows}
                                                                 rowHeight={this.rowHeight}
                                                                 onScroll={onScroll}
@@ -267,7 +280,6 @@ export default class DSGrid extends Component {
                                                                 scrollToRow={scrollToRow}
                                                                 scrollToColumn={scrollToColumn}
                                                                 onSectionRendered={onSectionRendered}
-                                                                //onSectionRendered={this._onSectionRendered}
                                                                 ref={(ref) => this.grid = ref}
                                                                 focusCellColumn={this.state.focusCellColumn}
                                                                 focusCellRow={this.state.focusCellRow}
@@ -297,12 +309,16 @@ export default class DSGrid extends Component {
             .then(res => res.json())
             .then(
                 (result) => {
+                    const numRow = result['data']['sheets'][0]['numRow'];
+                    const numCol = result['data']['sheets'][0]['numCol'];
                     console.log(result);
                     this.dataCache.reset();
                     this.setState({
                         sheetName: 'Sheet1',
-                        rows: result['data']['sheets'][0]['numRow']+100,
-                        columns: result['data']['sheets'][0]['numCol']
+                        rows: numRow+100,
+                        columns: numCol,
+                        columnWidths: Array(numCol).fill(this.columnWidth),
+                        totalWidth: numCol*this.columnWidth
                     });
 
                     this.grid.scrollToCell ({ columnIndex: 0, rowIndex: 0 });
@@ -313,7 +329,7 @@ export default class DSGrid extends Component {
                             this._processUpdates, {bookId:  this.props.bookId,
                                 sheetName: this.state.sheetName,
                                 fetchSize: this.fetchSize});
-                    console.log("book loaded rows:" + result['data']['sheets'][0]['numRow']);
+                    console.log("book loaded rows:" + numRow);
                 }
             )
             .catch((error) => {
@@ -354,17 +370,25 @@ export default class DSGrid extends Component {
         )
     }
 
-    _columnHeaderCellRenderer = ({
+    _columnHeaderCellRenderer ({
                                columnIndex, // Horizontal (column) index of cell
                                key,         // Unique key within array of cells
                                style
-                           }) => {
+                           }) {
         return (
             <div
                 key={key}
                 style={style}
                 className='rowHeaderCell'>
                 {this.toColumnName(columnIndex + 1)}
+                <Draggable axis="x"
+                           defaultClassName="DragHandle"
+                           defaultClassNameDragging="DragHandleActive"
+                           onDrag={(event,{deltaX}) => this._changeColumnWidth({key,deltaX})}
+                           position={{x:0}}
+                           zIndex={999}>
+                    <a className="drag-icon">|</a>
+                </Draggable>
             </div>
         )
     }
@@ -561,5 +585,23 @@ export default class DSGrid extends Component {
         }
     }
 
+    _columnWidthHelper(params){
+        return this.state.columnWidths[params.index];
+    }
+
+    _changeColumnWidth({key, deltaX}){
+        const index = parseInt(key.split('-')[1], 10);
+        const newColumnWidths = this.state.columnWidths.slice();
+        if (deltaX+newColumnWidths[index] > 30) {
+            newColumnWidths[index] += deltaX;
+        }
+        this.setState({
+            columnWidths: newColumnWidths,
+            totalWidth: newColumnWidths.reduce((total, e) => total+e, 0)
+        });
+
+        this.headerGrid.recomputeGridSize({columnIndex: index});
+        this.grid.recomputeGridSize({columnIndex: index});
+    }
 
 }

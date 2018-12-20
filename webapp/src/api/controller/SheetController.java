@@ -157,8 +157,8 @@ public class SheetController {
             SSheet sheet = sbook.getSheet(i);
             HashMap<String, Object> sheetJson = new HashMap<>();
             sheetJson.put("name", sheet.getSheetName());
-            sheetJson.put("numRow", sheet.getEndRowIndex());
-            sheetJson.put("numCol", sheet.getEndColumnIndex());
+            sheetJson.put("numRow", sheet.getEndRowIndex()+1);
+            sheetJson.put("numCol", sheet.getEndColumnIndex()+1);
             sheets.add(sheetJson);
         }
         HashMap<String, Object> data = new HashMap<>();
