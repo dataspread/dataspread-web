@@ -9,6 +9,10 @@ import 'react-datasheet/lib/react-datasheet.css';
 import LRUCache from "lru-cache";
 import Stomp from 'stompjs';
 
+import Navigation from "./Components/Navigation";
+import ExplorationForm from "./Components/ExplorationForm";
+import HierarchiForm from "./Components/HierarchiForm";
+
 export default class DSGrid extends Component {
     toColumnName(num) {
         let ret, a, b;
@@ -61,6 +65,10 @@ export default class DSGrid extends Component {
         this._columnHeaderCellRenderer = this._columnHeaderCellRenderer.bind(this);
         this._handleKeyDown = this._handleKeyDown.bind(this);
         this._handleKeyUp = this._handleKeyUp.bind(this);
+
+        this.submitNavForm = this.submitNavForm.bind(this);
+        this.closeNavForm = this.closeNavForm.bind(this);
+        this.openNavForm = this.openNavForm.bind(this);
 
         this._changeColumnWidth = this._changeColumnWidth.bind(this);
         this._columnWidthHelper = this._columnWidthHelper.bind(this);
@@ -155,8 +163,40 @@ export default class DSGrid extends Component {
         }
     }
 
+    submitNavForm(attribute){
+        if(attribute) {
+        fetch(this.urlPrefix + '/api/startNav/'+ this.props.bookId+'/' + this.state.sheetName+'/' + attribute)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                this.setState({navFormOpen:false, navOpen:true});
+                this.props.updateHierFormOption(this.navForm.state.options);
+                this.nav.startNav(data);
+            })
+        }
+    }
+    openNavForm() {
+        fetch(this.urlPrefix + '/api/getSortAttrs/'+ this.props.bookId+'/' + this.state.sheetName)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                this.navForm.setState({options:data.data});
+                this.nav.setState({options:data.data});
+                this.setState({navFormOpen: true})
+            })
+
+    }
+    closeNavForm() {
+        console.log("close");
+        this.setState({navFormOpen:false});
+    }
+
+
+
     render() {
         return (
+            <div><Navigation bookId={this.props.bookId} grid = {this} ref={ref => this.nav = ref} />
+                <ExplorationForm grid = {this} submitNavForm = {this.submitNavForm} closeNavForm={this.closeNavForm} ref={ref => this.navForm = ref}/>
             <div onKeyDown={this._handleKeyDown} onKeyUp={this._handleKeyUp}>
                 <div style={{display: 'flex'}}>
                     <div style={{flex: 'auto', height: '91vh'}}>
@@ -256,6 +296,7 @@ export default class DSGrid extends Component {
                         </AutoSizer>
                     </div>
                 </div>
+            </div>
             </div>
         )
 

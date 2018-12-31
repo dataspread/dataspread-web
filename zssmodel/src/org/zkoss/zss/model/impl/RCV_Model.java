@@ -185,8 +185,15 @@ public class RCV_Model extends Model {
     @Override
     public void navigationSortBucketByAttribute(SSheet currentSheet, int[] paths, int[] attr_indices, int orderInt) {
         Bucket<String> subRoot = this.navS.getSubRootBucket(paths);
-        subRoot.children = null;
-        navigationSortRangeByAttribute(currentSheet, subRoot.startPos, subRoot.endPos, attr_indices, orderInt);
+        //subRoot.children = null;
+        if(subRoot.getChildren()!=null)
+        {
+
+            for(Bucket b:subRoot.getChildren())
+                navigationSortRangeByAttribute(currentSheet, b.startPos, b.endPos, attr_indices, orderInt);
+        }
+        else
+            navigationSortRangeByAttribute(currentSheet, subRoot.startPos, subRoot.endPos, attr_indices, orderInt);
     }
 
     /**
@@ -240,6 +247,16 @@ public class RCV_Model extends Model {
                  * Populate the attribute.
                  */
                 for (int i = 0; i < result.size(); i++) {
+
+                    //set the type of the navigation attribute to be used lalter for Redefining bucket boundaries
+                    if(i==0)
+                    {
+                        if(result.get(i).getValue() instanceof String)
+                            this.navS.isNumericNavAttr = 0;
+                        else
+                            this.navS.isNumericNavAttr = 1;
+                    }
+
                     combinedEntries.get(i).appendEntry(result.get(i).getValue());
                 }
             }
@@ -264,9 +281,28 @@ public class RCV_Model extends Model {
                 /*
                  * If the given recordList is empty, populate it with the sorted range result. If the given recordList is not empty (presumably the current recordList in the navigation structure), Replace only the range (startRow, endRow) with the sorted result.
                  */
-                if (recordListInNavS.isEmpty()) {
-                    combinedEntries.forEach(combinedEntry -> recordListInNavS.add(combinedEntry.getValues()[0]));
-                } else {
+                if (recordListInNavS.isEmpty()) { // get the leaves for Text data
+                    for(int ci = 0; ci < combinedEntries.size(); ci++)
+                    {
+                        recordListInNavS.add(combinedEntries.get(ci).getValues()[0]);
+                        if(this.navS.uniqueKeyCount.containsKey(combinedEntries.get(ci).getValues()[0].toString())) {
+                            int elemCount = this.navS.uniqueKeyCount.get(combinedEntries.get(ci).getValues()[0].toString())+1;
+                            this.navS.uniqueKeyCount.put(combinedEntries.get(ci).getValues()[0].toString(), elemCount);
+
+                        }
+                        else
+                        {
+                            this.navS.uniqueKeyCount.put(combinedEntries.get(ci).getValues()[0].toString(), 1);
+                        }
+                        if(!this.navS.uniqueKeyStart.containsKey(combinedEntries.get(ci).getValues()[0].toString())) {
+                            this.navS.uniqueKeyStart.put(combinedEntries.get(ci).getValues()[0].toString(), ci+1);
+                            this.navS.uniqueKeyArr.add(combinedEntries.get(ci).getValues()[0].toString());
+                            this.navS.uniqueKeyArrIndex.add(this.navS.uniqueKeyArr.size()-1);
+                        }
+
+                    }
+                }
+                else {
                     List<Object> firstAttrListSubList = recordListInNavS.subList(startRow, endRow + 1);
                     for (int i = 0; i < firstAttrListSubList.size(); i++) {
                         firstAttrListSubList.set(i, combinedEntries.get(i).getValues()[0]);
