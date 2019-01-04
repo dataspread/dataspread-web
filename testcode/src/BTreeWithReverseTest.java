@@ -20,14 +20,14 @@ import java.util.stream.IntStream;
 public class BTreeTest {
 
     public static void main(String[] args) {
-        simpleTest();
+        deepTest();
     }
 
     public static void deepTest(){
-        String url = "jdbc:postgresql://127.0.0.1:5432/Tony";
+        String url = "jdbc:postgresql://127.0.0.1:5432/ibd";
         String driver = "org.postgresql.Driver";
-        String userName = "Tony";
-        String password = "";
+        String userName = "mangesh";
+        String password = "mangesh";
         DBHandler.connectToDB(url, driver, userName, password);
         DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
 
@@ -36,10 +36,10 @@ public class BTreeTest {
         dbContext.getConnection().close();
     }
     public static void simpleTest(){
-        String url = "jdbc:postgresql://127.0.0.1:5432/Tony";
+        String url = "jdbc:postgresql://127.0.0.1:5432/ibd";
         String driver = "org.postgresql.Driver";
-        String userName = "Tony";
-        String password = "";
+        String userName = "mangesh";
+        String password = "mangesh";
         DBHandler.connectToDB(url, driver, userName, password);
         DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
         CountedBTree btree = new CountedBTree(dbContext, "Test1", false);
