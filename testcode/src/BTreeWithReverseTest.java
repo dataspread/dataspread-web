@@ -1,9 +1,8 @@
 import org.model.DBContext;
 import org.model.DBHandler;
-import org.zkoss.zss.model.impl.BTree;
+import org.zkoss.zss.model.impl.CombinedBTree;
 import org.zkoss.zss.model.impl.CountedBTree;
 import org.zkoss.zss.model.impl.KeyBTree;
-import org.zkoss.zss.model.impl.CombinedBTree;
 import org.zkoss.zss.model.impl.statistic.AbstractStatistic;
 import org.zkoss.zss.model.impl.statistic.CombinedStatistic;
 import org.zkoss.zss.model.impl.statistic.CountStatistic;
@@ -12,22 +11,19 @@ import org.zkoss.zss.model.impl.statistic.KeyStatistic;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Random;
-import java.util.stream.IntStream;
 
-public class BTreeTest {
+public class BTreeWithReverseTest {
 
     public static void main(String[] args) {
-        deepTest();
+        simpleTest();
     }
 
     public static void deepTest(){
-        String url = "jdbc:postgresql://127.0.0.1:5432/ibd";
+        String url = "jdbc:postgresql://127.0.0.1:5432/Tony";
         String driver = "org.postgresql.Driver";
-        String userName = "mangesh";
-        String password = "mangesh";
+        String userName = "Tony";
+        String password = "";
         DBHandler.connectToDB(url, driver, userName, password);
         DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
 
@@ -36,10 +32,10 @@ public class BTreeTest {
         dbContext.getConnection().close();
     }
     public static void simpleTest(){
-        String url = "jdbc:postgresql://127.0.0.1:5432/ibd";
+        String url = "jdbc:postgresql://127.0.0.1:5432/Tony";
         String driver = "org.postgresql.Driver";
-        String userName = "mangesh";
-        String password = "mangesh";
+        String userName = "Tony";
+        String password = "";
         DBHandler.connectToDB(url, driver, userName, password);
         DBContext dbContext = new DBContext(DBHandler.instance.getConnection());
         CountedBTree btree = new CountedBTree(dbContext, "Test1", false);
