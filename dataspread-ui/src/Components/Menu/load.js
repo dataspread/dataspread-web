@@ -28,20 +28,24 @@ export default class ModalOpenFile extends Component {
         }
     }
 
-	handleOpen = () => this.setState({ loadModalOpen: true })
+	handleOpen = () =>
+	{
+		// fetch data from api
+		fetch(this.urlPrefix + '/api/getBooks')
+			.then(response => response.json())
+			.then(data => this.transform(data))
+			.then(data => this.setState({
+				BooksOptions: data,
+				loadModalOpen: true
+			}))
+			.catch(()=> {
+				alert("Lost connection to server.")
+			});
+
+	}
 
 	handleClose = () => this.setState({ loadModalOpen: false})
 
-	// fetch data from api
-	componentDidMount() {
-        fetch(this.urlPrefix + '/api/getBooks')
-		.then(response => response.json())
-		.then(data => this.transform(data))
-        .then(data => this.setState({
-            BooksOptions: data,
-            loadModalOpen: false
-        }));
-	}
 
   	//transform data
   	transform = (raw_data) => {
