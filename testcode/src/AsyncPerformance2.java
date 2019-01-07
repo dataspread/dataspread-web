@@ -69,16 +69,6 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         Thread asyncThread = new Thread(formulaAsyncScheduler);
         asyncThread.start();
 
-
-        GraphCompressor  graphCompressor = new GraphCompressor();
-        //Thread graphThread = new Thread(graphCompressor);
-        //graphThread.start();
-
-        //simpleTest(formulaAsyncScheduler);
-        //realTest("survey", "Escalating OSA with Cost Share.xlsx", "Cost Share", formulaAsyncScheduler);
-
-        //graphCompressor.shutdown();
-        //graphThread.join();
         AsyncPerformance2 asyncPerformance = new AsyncPerformance2();
         FormulaAsyncScheduler.initFormulaAsyncListener(asyncPerformance);
         asyncPerformance.simpleTest();
@@ -285,6 +275,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
 
     private static void compressDependencies1(ArrayList<Ref> dependencies) {
         while (dependencies.size() > graphCompressionSize) {
+            //System.out.println("dependencies.size() " + dependencies.size());
             int best_i = 0, best_j = 0, best_area = Integer.MAX_VALUE;
             Ref best_bounding_box = null;
             for (int i = 0; i < dependencies.size() - 1; i++) {
@@ -381,7 +372,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
 
         System.out.println("Starting data creation");
         sheet.setSyncComputation(true);
-        Test4_CreateSheet(sheet);
+        Test10_CreateSheet(sheet);
         sheet.setSyncComputation(sync);
         System.out.println("Data Creation done");
 
@@ -416,6 +407,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
                 sheet.getDependencyTable().addPreDep(updatedCell, new HashSet<>(dependencies1));
             }
         }
+        System.out.println("After Compression Dependencies Table size " + dependencies1.size());
         cellsToUpdate= dependencies1.stream().mapToInt(Ref::getCellCount).sum();
         System.out.println("After Compression Dependencies " + cellsToUpdate);
         sheet.clearCache();
@@ -540,6 +532,9 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         sheet.setDelayComputation(false);
     }
 
+
+
+
     // Real test with a sheet
     private void Test5_CreateSheet(SSheet sheet) {
         try {
@@ -576,6 +571,28 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         //sheet.getCell(0,0).setValue(0.0);
         sheet.getCell("J7").setFormulaValue("A1+100");
     }
+
+
+    // Long chanin
+    private void Test10_CreateSheet(SSheet sheet) {
+        Random random = new Random(7);
+
+        sheet.setDelayComputation(true);
+        int N = 1000;
+
+        sheet.getCell(0, 0).setValue(random.nextInt(10000));
+
+
+
+        for (int i = 1; i < N; i++) {
+            sheet.getCell(i, 0).setFormulaValue("A" + i + " + " + random.nextInt(1000));
+            if (i % 100 == 0)
+                System.out.println(i);
+        }
+
+        sheet.setDelayComputation(false);
+    }
+
 
     public static ArrayList<CellRegion> getBadCells(String bookName, String sheetname) {
         ArrayList<CellRegion> badCells = new ArrayList<>();
@@ -633,7 +650,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
     }
 
     @Override
-    public void update(SBook book, SSheet sheet, CellRegion cellRegion, String value, String formula) {
+    public void update(SBook book, SSheet sheet, CellRegion cellRegion, Object value, String formula) {
         if (testStarted) {
             //System.out.println("Computed " + cellRegion + " " + formula);
             updatedCells++;
