@@ -372,7 +372,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
 
         System.out.println("Starting data creation");
         sheet.setSyncComputation(true);
-        Test10_CreateSheet(sheet);
+        Test_Rate_CreateSheet(sheet);
         sheet.setSyncComputation(sync);
         System.out.println("Data Creation done");
 
@@ -586,6 +586,63 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
 
         for (int i = 1; i < N; i++) {
             sheet.getCell(i, 0).setFormulaValue("A" + i + " + " + random.nextInt(1000));
+            if (i % 100 == 0)
+                System.out.println(i);
+        }
+
+        sheet.setDelayComputation(false);
+    }
+
+
+    private void Test_Rate_CreateSheet(SSheet sheet) {
+        Random random = new Random(7);
+
+        sheet.setDelayComputation(true);
+        int N = 1000;
+
+        sheet.getCell(0, 0).setValue(random.nextInt(10000));
+
+
+        for (int i = 0; i < N; i++) {
+            sheet.getCell(i, 1).setFormulaValue("" + random.nextInt(1000));
+            sheet.getCell(i, 2).setFormulaValue("A1 * B" + (i+1));
+            if (i % 100 == 0)
+                System.out.println(i);
+        }
+
+        sheet.setDelayComputation(false);
+    }
+
+    private void Test_RunningTotalSmart_CreateSheet(SSheet sheet) {
+        Random random = new Random(7);
+
+        sheet.setDelayComputation(true);
+        int N = 5000;
+
+        sheet.getCell(0, 0).setValue(random.nextInt(10000));
+        sheet.getCell(0, 1).setFormulaValue("A1");
+
+
+        for (int i = 1; i < N; i++) {
+            sheet.getCell(i, 0).setFormulaValue("" + random.nextInt(1000));
+            sheet.getCell(i, 1).setFormulaValue("A" + (i+1) + " + B" + (i));
+            if (i % 100 == 0)
+                System.out.println(i);
+        }
+
+        sheet.setDelayComputation(false);
+    }
+
+    private void Test_RunningTotalDumb_CreateSheet(SSheet sheet) {
+        Random random = new Random(7);
+
+        sheet.setDelayComputation(true);
+        int N = 1000;
+
+
+        for (int i = 0; i < N; i++) {
+            sheet.getCell(i, 0).setValue(random.nextInt(1000));
+            sheet.getCell(i, 1).setFormulaValue("SUM(A1:A" + (i+1) + ")");
             if (i % 100 == 0)
                 System.out.println(i);
         }
