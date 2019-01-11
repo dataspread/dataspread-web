@@ -877,6 +877,7 @@ public class CellImpl extends AbstractCellAdv {
 
     public synchronized void updateFormulaResultValue(EvaluationResult result) {
 			_formulaResultValue=new FormulaResultCellValue(result);
-			updateCelltoDB();
+			if (!CellImpl.disableDBUpdates)
+				updateCelltoDB();
 	}
 }
