@@ -410,7 +410,6 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         System.out.println("After Compression Dependencies Table size " + dependencies1.size());
         cellsToUpdate= dependencies1.stream().mapToInt(Ref::getCellCount).sum();
         System.out.println("After Compression Dependencies " + cellsToUpdate);
-        sheet.clearCache();
 
         DirtyManagerLog.instance.init();
         CellImpl.disableDBUpdates = true;

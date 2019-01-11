@@ -489,7 +489,7 @@ public class SheetImpl extends AbstractSheetAdv {
 			AbstractCellAdv cell = null;
 			try {
 
-                cell = sheetDataCache.get(cellRegion, () -> preFetchCells(cellRegion));
+                cell = sheetDataCache.get(cellRegion, () -> new CellProxy(this, rowIdx, columnIdx));
 			} catch (ExecutionException e) {
 				e.printStackTrace();
 			}
