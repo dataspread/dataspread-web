@@ -75,7 +75,7 @@ import java.util.Set;
 			if(sheet.isSyncCalc())
 			{
 				//TODO assuming single sheet
-				dependents.forEach(v -> sheet.getCell(v.getRow(), v.getColumn()).getValueSync());
+				//dependents.forEach(v -> sheet.getCell(v.getRow(), v.getColumn()).getValueSync());
 			}
 			else {
 				dependents.forEach(v ->
