@@ -27,11 +27,6 @@
     <dependencies>
         <dependency>
             <groupId>io.github.dataspread</groupId>
-            <artifactId>rtree</artifactId>
-            <version>${rtree.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.github.dataspread</groupId>
             <artifactId>blockstore</artifactId>
             <version>${blockstore.version}</version>
         </dependency>
