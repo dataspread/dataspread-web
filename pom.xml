@@ -28,7 +28,6 @@
 
     <modules>
         <module>dataspread-ui</module>
-        <module>rtree</module>
         <module>blockstore</module>
         <module>zssmodel</module>
         <module>zpoi</module>
