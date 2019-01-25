@@ -18,31 +18,33 @@ import org.zkoss.zss.model.sys.EngineFactory;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
-import testcases.AsyncTestcase;
-import testcases.TestRunningTotalDumb;
-import testcases.TestRunningTotalSmart;
+import testcases.*;
 
 import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class AsyncPerformance3 implements FormulaAsyncListener {
-    final int testSize = 1000;
-    final boolean sync = false;
-    final boolean graphCompression = true;
-    static int graphCompressionSize = 2;
-
-    long initTime;
-    boolean testStarted = false;
-
+    // Test params
+    final static int testSize = 1000;
+    final static boolean sync = false;
+    final static boolean graphCompression = true;
+    final static int graphCompressionSize = 2;
+    final static boolean schedulerPrioritize = true;
     final static boolean graphInDB = false;
+
+    // Test stats
+    private boolean testStarted = false;
+    private long initTime;
+    private long controlReturnedTime;
+    private long updatedCells = 0;
+    private long cellsToUpdate = 0;
+
     private static Connection conn;
 
     final CellRegion window = null;
     //final CellRegion window = new CellRegion(0, 0, 50, 10);
-    private long controlReturnedTime;
-    private long updatedCells = 0;
-    private long cellsToUpdate = 0;
+
     // Sheet->{session->visibleRange}
     Map<Object, Map<String, int[]>> uiVisibleMap;
 
@@ -76,6 +78,7 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
 
         AsyncPerformance3 asyncPerformance = new AsyncPerformance3();
         FormulaAsyncScheduler.initFormulaAsyncListener(asyncPerformance);
+        FormulaAsyncScheduler.setPrioritize(schedulerPrioritize);
         asyncPerformance.simpleTest();
 
         formulaAsyncScheduler.shutdown();
@@ -272,12 +275,11 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         SBook book = BookBindings.getBookByName("testBook" + System.currentTimeMillis());
         //SBook book = BookBindings.getBookByName("ejnnyuhp8");
         /* Cleaner for sync computation */
-        /*if (sync)
-            FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(book.getBookSeries()));*/
+        if (sync)
+            FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(book.getBookSeries()));
 
         uiVisibleMap = new HashMap<>();
         FormulaAsyncScheduler.updateVisibleMap(uiVisibleMap);
-
 
         SSheet sheet = book.getSheet(0);
 
@@ -290,12 +292,14 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
 
         System.out.println("Starting data creation");
         sheet.setSyncComputation(true);
-        AsyncTestcase test = new TestRunningTotalSmart(sheet, testSize);
+
+        // Generate test case. Change this into the test case.
+        AsyncTestcase test = new TestRunningTotalDumb(sheet, testSize);
         sheet.setSyncComputation(sync);
         System.out.println("Data Creation done");
 
 
-        // Get dependencies ready
+        // Initiate dependency, do compression if asked.
         Ref updatedCell = sheet.getCell(0, 0).getRef();
         ArrayList<Ref> dependencies1 = new ArrayList<>(sheet.getDependencyTable().getDependents(updatedCell));
         cellsToUpdate = dependencies1.size();
@@ -312,7 +316,7 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
             }
         }
         System.out.println("After Compression Dependencies Table size " + dependencies1.size());
-        cellsToUpdate= dependencies1.stream().mapToInt(Ref::getCellCount).sum();
+        cellsToUpdate = dependencies1.stream().mapToInt(Ref::getCellCount).sum();
         System.out.println("After Compression Dependencies " + cellsToUpdate);
 
         // Begin Test
@@ -323,16 +327,16 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         initTime = System.currentTimeMillis();
         System.out.println("Starting Asyn " + initTime);
 
+        // ****** DO THE ONE-CELL VALUE CHANGE ******
         test.change();
 
-        controlReturnedTime = System.currentTimeMillis();
-
-        System.out.println("Before Waiting Correct?: " + (test.verify() ? "YES" : "NO"));
-
-        System.out.println("Control retuned  " + controlReturnedTime);
-
-        System.out.println("Time to update = " + (controlReturnedTime-initTime) );
-
+        //controlReturnedTime = System.currentTimeMillis();
+        for (int i = 0; i < 5; i++) {
+            controlReturnedTime = System.currentTimeMillis();
+            System.out.println("[" + i + ("] Control returned  " + controlReturnedTime));
+            System.out.println("[" + i + ("] Time to update = " + (controlReturnedTime - initTime)));
+            System.out.println("[" + i + ("] Before Waiting Correct?: " + (test.verify() ? "YES" : "NO")));
+        }
         if (!sync) {
             synchronized (this) {
                 try {
@@ -355,11 +359,11 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
                     .collect(Collectors.toList());
 
 
-
+        // By here, the final value should be correct
         System.out.println("Final Value Correct?: " + (test.verify() ? "YES" : "NO"));
 
 
-        //Get total dirty time for all cells
+        // Get total dirty time for all cells
         Collection<SCell> cells = sheet.getCells().stream()
                 .filter(e -> e.getType() == SCell.CellType.FORMULA)
                 .collect(Collectors.toList());
@@ -376,24 +380,6 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         System.out.println("Updated cells  = " + updatedCells);
 
     }
-
-    private void Test_RunningTotalDumb_CreateSheet(SSheet sheet) {
-        Random random = new Random(7);
-
-        sheet.setDelayComputation(true);
-        int N = 1000;
-
-
-        for (int i = 0; i < N; i++) {
-            sheet.getCell(i, 0).setValue(random.nextInt(1000));
-            sheet.getCell(i, 1).setFormulaValue("SUM(A1:A" + (i+1) + ")");
-            if (i % 100 == 0)
-                System.out.println(i);
-        }
-
-        sheet.setDelayComputation(false);
-    }
-
 
     public static ArrayList<CellRegion> getBadCells(String bookName, String sheetname) {
         ArrayList<CellRegion> badCells = new ArrayList<>();

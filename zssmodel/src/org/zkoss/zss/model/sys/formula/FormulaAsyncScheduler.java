@@ -14,6 +14,7 @@ public abstract class FormulaAsyncScheduler implements Runnable {
     private static FormulaAsyncListener formulaAsyncListener;
     // sheet->session-> start,end row
     protected static Map<Object, Map<String, int[]>> uiVisibleMap;
+    protected static boolean prioritize = true;
 
     public static void initFormulaAsyncScheduler(FormulaAsyncScheduler formulaAsyncScheduler) {
         _schedulerInstance = formulaAsyncScheduler;
@@ -21,6 +22,10 @@ public abstract class FormulaAsyncScheduler implements Runnable {
 
     public static void initFormulaAsyncListener(FormulaAsyncListener formulaAsyncListener) {
         FormulaAsyncScheduler.formulaAsyncListener = formulaAsyncListener;
+    }
+
+    public static void setPrioritize(boolean p) {
+        FormulaAsyncScheduler.prioritize = p;
     }
 
     public static FormulaAsyncScheduler getScheduler(){

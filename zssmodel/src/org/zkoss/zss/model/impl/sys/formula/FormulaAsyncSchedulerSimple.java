@@ -70,7 +70,12 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
                 Collection<SCell> cells = sheet.getCells(new CellRegion(dirtyRecord.region));
                 // Order of computation
                 List<SCell> cellsList = new ArrayList<>(cells);
-                cellsList.sort(Comparator.comparingInt(SCell::getComputeCost));
+                if (prioritize) {
+                    cellsList.sort(Comparator.comparingInt(SCell::getComputeCost));
+                } else {
+                    Random random = new Random(7);
+                    Collections.shuffle(cellsList, random);
+                }
 
 
                 /// Order of computation
