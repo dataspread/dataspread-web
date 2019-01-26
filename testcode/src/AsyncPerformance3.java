@@ -10,6 +10,7 @@ import org.zkoss.zss.model.impl.CellImpl;
 import org.zkoss.zss.model.impl.FormulaCacheCleaner;
 import org.zkoss.zss.model.impl.SheetImpl;
 import org.zkoss.zss.model.impl.sys.DependencyTableImplV2;
+import org.zkoss.zss.model.impl.sys.DependencyTableImplV3;
 import org.zkoss.zss.model.impl.sys.DependencyTablePGImpl;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncListener;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerSimple;
@@ -64,7 +65,7 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         if (graphInDB)
             EngineFactory.dependencyTableClazz = DependencyTablePGImpl.class;
         else
-            EngineFactory.dependencyTableClazz = DependencyTableImplV2.class;
+            EngineFactory.dependencyTableClazz = DependencyTableImplV3.class;
 
         DBHandler.connectToDB(url, driver, userName, password);
 
