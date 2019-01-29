@@ -15,6 +15,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RestController;
 import org.zkoss.poi.ss.formula.FormulaComputationStatusManager;
 import org.zkoss.poi.ss.formula.eval.ErrorEval;
@@ -34,6 +35,7 @@ import org.zkoss.zss.range.impl.ModelUpdateCollector;
 
 import java.util.*;
 
+@CrossOrigin(origins = "http://localhost:3000")
 
 @RestController
 @EnableScheduling

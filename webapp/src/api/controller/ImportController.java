@@ -5,6 +5,7 @@ import api.utils.ResumableInfo;
 import api.utils.ResumableInfoStorage;
 import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,6 +19,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Random;
+
+@CrossOrigin(origins = "http://localhost:3000")
 
 @RestController
 public class ImportController {

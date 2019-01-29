@@ -18,6 +18,8 @@ import org.zkoss.zss.model.sys.BookBindings;
 
 import java.util.*;
 
+@CrossOrigin(origins = "http://localhost:3000")
+
 @RestController
 public class NavigationController {
     //http://127.0.0.1:8080//api/getSortAttrs/tjhtmdfii/airbnb_small

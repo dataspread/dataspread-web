@@ -22,6 +22,8 @@ import java.util.*;
 
 import static api.WebSocketConfig.MESSAGE_PREFIX;
 
+@CrossOrigin(origins = "http://localhost:3000")
+
 @RestController
 public class BookController {
     @Autowired
