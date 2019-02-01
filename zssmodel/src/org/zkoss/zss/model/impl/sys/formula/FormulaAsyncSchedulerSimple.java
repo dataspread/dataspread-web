@@ -94,6 +94,11 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
                         update(sheet.getBook(), sheet, sCell.getCellRegion(),
                                 ((CellImpl) sCell).getValue(true, true),
                                 sCell.getFormulaValue());
+                    } else {
+                        DirtyManagerLog.instance.markClean(sCell.getCellRegion());
+                        update(sheet.getBook(), sheet, sCell.getCellRegion(),
+                                ((CellImpl) sCell).getValue(true, true),
+                                "");
                     }
                     FormulaComputationStatusManager.getInstance().doneComputation();
                 }

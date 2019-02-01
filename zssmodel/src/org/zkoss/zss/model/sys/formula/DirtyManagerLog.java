@@ -82,32 +82,40 @@ public class DirtyManagerLog {
     }
 
     public void groupPrint(Collection<CellRegion> sheetCells, long controlReturnedTime, long initTime) {
-        int runningTotal = 0;
         boolean firstNotDone = true;
         SortedMap<Long, Integer> dirtyCellsCounts = new TreeMap<>();
+        Set<CellRegion> dirtyCells = new HashSet<>();
+        long lastTimestamp = -1;
+
         for (DirtyRecordEntry e : dirtyRecordLog) {
-            dirtyCellsCounts.putIfAbsent(e.timestamp, 0);
-            int cellCount = 0;
-            for (CellRegion r1 : sheetCells)
-                if (e.cellRegion.contains(r1))
-                    cellCount++;
-
-            if (e.action == Action.MARK_DIRTY)
-                dirtyCellsCounts.put(e.timestamp, dirtyCellsCounts.get(e.timestamp) + cellCount);
-            else
-                dirtyCellsCounts.put(e.timestamp, dirtyCellsCounts.get(e.timestamp) - cellCount);
+            //System.out.println("["+e.timestamp+"] "+(e.action == Action.MARK_DIRTY ? "DIRTY" : "CLEAN")+" "+e.cellRegion);
+            if (e.timestamp != lastTimestamp && lastTimestamp != -1) {
+                dirtyCellsCounts.put(e.timestamp, dirtyCells.size());
+            }
+            lastTimestamp = e.timestamp;
+            for (CellRegion r1 : sheetCells) {
+                if (e.cellRegion.contains(r1)) {
+                    if (e.action == Action.MARK_DIRTY) {
+                        dirtyCells.add(r1);
+                    } else {
+                        dirtyCells.remove(r1);
+                    }
+                }
+            }
         }
-        for (Map.Entry<Long, Integer> d : dirtyCellsCounts.entrySet()) {
-            runningTotal += d.getValue();
+        if (lastTimestamp != -1) {
+            dirtyCellsCounts.put(lastTimestamp, dirtyCells.size());
+        }
 
+        for (Map.Entry<Long, Integer> d : dirtyCellsCounts.entrySet()) {
             if (d.getKey() > controlReturnedTime) {
                 if (firstNotDone) {
                     System.out.println(0 + "\t" + sheetCells.size());
                     System.out.println(controlReturnedTime - initTime + "\t" + sheetCells.size());
-                    System.out.println(controlReturnedTime - initTime + "\t" + runningTotal);
+                    System.out.println(controlReturnedTime - initTime + "\t" + d.getValue());
                     firstNotDone = false;
                 }
-                System.out.println((d.getKey() - initTime) + "\t" + runningTotal);
+                System.out.println((d.getKey() - initTime) + "\t" + d.getValue());
             }
         }
     }

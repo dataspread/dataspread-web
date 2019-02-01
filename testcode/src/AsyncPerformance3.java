@@ -299,13 +299,25 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         sheet.setSyncComputation(sync);
         System.out.println("Data Creation done");
 
+        // Obtain the collection of all cells.
+        Collection<CellRegion> sheetCells;
+        if (window == null) {
+            sheetCells = sheet.getCells().stream().map(SCell::getCellRegion)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+        } else {
+            sheetCells = sheet.getCells(window).stream().map(SCell::getCellRegion)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+        }
+
 
         // Initiate dependency, do compression if asked.
+        System.out.println("Start obtaining dependents");
         Ref updatedCell = sheet.getCell(0, 0).getRef();
         ArrayList<Ref> dependencies1 = new ArrayList<>(sheet.getDependencyTable().getDependents(updatedCell));
-        cellsToUpdate = dependencies1.size();
 
-        System.out.println("Dependencies " + cellsToUpdate);
+        System.out.println("Dependencies " + dependencies1.size());
         if (graphCompression) {
             // For PG graph
             if (graphInDB) {
@@ -316,9 +328,18 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
                 sheet.getDependencyTable().addPreDep(updatedCell, new HashSet<>(dependencies1));
             }
         }
-        System.out.println("After Compression Dependencies Table size " + dependencies1.size());
-        cellsToUpdate = dependencies1.stream().mapToInt(Ref::getCellCount).sum();
-        System.out.println("After Compression Dependencies " + cellsToUpdate);
+        dependencies1.add(updatedCell);
+
+        // Count cells that needs to be updated before you are done
+        cellsToUpdate = 0;
+        for (CellRegion sheetCell : sheetCells) {
+            for (Ref dependency : dependencies1) {
+                CellRegion reg = new CellRegion(dependency);
+                if (reg.contains(sheetCell)) {
+                    cellsToUpdate++;
+                }
+            }
+        }
 
         // Begin Test
         DirtyManagerLog.instance.init();
@@ -331,13 +352,10 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         // ****** DO THE ONE-CELL VALUE CHANGE ******
         test.change();
 
-        //controlReturnedTime = System.currentTimeMillis();
-        for (int i = 0; i < 5; i++) {
-            controlReturnedTime = System.currentTimeMillis();
-            System.out.println("[" + i + ("] Control returned  " + controlReturnedTime));
-            System.out.println("[" + i + ("] Time to update = " + (controlReturnedTime - initTime)));
-            System.out.println("[" + i + ("] Before Waiting Correct?: " + (test.verify() ? "YES" : "NO")));
-        }
+        controlReturnedTime = System.currentTimeMillis();
+        System.out.println("Control returned  " + controlReturnedTime);
+        System.out.println("Time to update = " + (controlReturnedTime - initTime));
+        System.out.println("Before Waiting Correct?: " + (test.verify() ? "YES" : "NO"));
         if (!sync) {
             synchronized (this) {
                 try {
@@ -348,37 +366,27 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
             }
         }
 
-        Collection<CellRegion> sheetCells;
-
-        if (window == null)
-            sheetCells = sheet.getCells().stream().map(SCell::getCellRegion)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-        else
-            sheetCells = sheet.getCells(window).stream().map(SCell::getCellRegion)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-
+        test.touchAll();
+        long touchedTime = System.currentTimeMillis();
 
         // By here, the final value should be correct
         System.out.println("Final Value Correct?: " + (test.verify() ? "YES" : "NO"));
 
+        if (sync) {
+            System.out.println(0 + "\t" + sheetCells.size());
+            System.out.println(touchedTime - initTime + "\t" + sheetCells.size());
+            System.out.println(touchedTime - initTime + "\t" + "0");
+        } else {
+            DirtyManagerLog.instance.groupPrint(sheetCells, controlReturnedTime, initTime);
+        }
 
-        // Get total dirty time for all cells
-        Collection<SCell> cells = sheet.getCells().stream()
-                .filter(e -> e.getType() == SCell.CellType.FORMULA)
-                .collect(Collectors.toList());
-
-
-        DirtyManagerLog.instance.groupPrint(sheetCells, controlReturnedTime, initTime);
-
-        long totalWaitTime = cells.stream()
-                .mapToLong(e -> DirtyManagerLog.instance.getDirtyTime(e.getCellRegion()))
+        long totalWaitTime = sheetCells.stream()
+                .mapToLong(e -> DirtyManagerLog.instance.getDirtyTime(e))
                 .sum();
         System.out.println("Total Wait time " + totalWaitTime);
-        System.out.println("Avg Wait time " + totalWaitTime / cells.size());
+        System.out.println("Avg Wait time " + totalWaitTime / sheetCells.size());
 
-        System.out.println("Updated cells  = " + updatedCells);
+        System.out.println("Updated cells = " + updatedCells);
 
     }
 

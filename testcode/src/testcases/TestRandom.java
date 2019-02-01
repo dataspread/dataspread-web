@@ -25,7 +25,7 @@ public class TestRandom implements AsyncTestcase {
 
         _r.add(0);
         _c.add(0);
-        _name.add(CellReference.convertNumToColString(0)+"1");
+        _name.add("A1");
 
         Random random = new Random(7);
 
@@ -54,20 +54,20 @@ public class TestRandom implements AsyncTestcase {
 
         _sheet.getCell(0, 0).setValue(1000);
         for (int i = 1; i < N; i++) {
-            StringBuffer buf = new StringBuffer("1");
+            StringBuffer buf = new StringBuffer("0");
             for (int j = 0; j < i; j++) {
-                if (random.nextBoolean()) {
+                if (random.nextInt(8) < 2) {
                     buf.append("+" + _name.get(j));
                 }
             }
             if (i % 100 == 0)
                 System.out.println(i);
             if (buf.length() == 1) {
-                sheet.getCell(_r.get(i), _c.get(i)).setValue(1);
+                sheet.getCell(_r.get(i), _c.get(i)).setValue(0);
             } else {
                 sheet.getCell(_r.get(i), _c.get(i)).setFormulaValue(buf.toString());
             }
-            System.out.println(CellReference.convertNumToColString(_c.get(i))+(_r.get(i)+1)+" is set to "+buf.toString());
+            //System.out.println(CellReference.convertNumToColString(_c.get(i))+(_r.get(i)+1)+" is set to "+buf.toString());
         }
 
         sheet.setDelayComputation(false);
@@ -79,13 +79,18 @@ public class TestRandom implements AsyncTestcase {
     }
 
     @Override
-    public boolean verify() {
-        double something = 0.0;
+    public void touchAll() {
         for (int i = 0; i < _N; i++) {
-            Object v = _sheet.getCell(_r.get(i), _c.get(i)).getValue();
-            System.out.println(CellReference.convertNumToColString(_c.get(i))+(_r.get(i)+1)+" has value "+ v);
+            _sheet.getCell(_r.get(i), _c.get(i)).getValue();
         }
-        System.out.println(something);
-        return true;
+    }
+
+    @Override
+    public boolean verify() {
+        try {
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

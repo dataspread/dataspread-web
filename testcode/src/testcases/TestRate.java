@@ -19,12 +19,14 @@ public class TestRate implements AsyncTestcase {
         sheet.setDelayComputation(true);
 
         sheet.getCell(0, 0).setValue(random.nextInt(1000)+100);
+
         for (int i = 0; i < N; i++) {
             int num = random.nextInt(1000);
             sheet.getCell(i, 1).setValue(num);
             sheet.getCell(i, 2).setFormulaValue("A1 * B" + (i+1));
-            if (i % 100 == 0)
+            if (i % 100 == 0) {
                 System.out.println(i);
+            }
             answer = 20 * num;
         }
 
@@ -37,21 +39,20 @@ public class TestRate implements AsyncTestcase {
     }
 
     @Override
+    public void touchAll() {
+        double something = 0.0;
+        for (int i = 0; i < _N; i++) {
+            Object v = _sheet.getCell(i, 2).getValue();
+            something += (double) v;
+        }
+        System.out.println(something);
+    }
+
+    @Override
     public boolean verify() {
         try {
-            double something = 0.0;
-            for (int i = 0; i < _N; i++) {
-                Object v = _sheet.getCell(i, 2).getValue();
-                something += (double) v;
-            }
-            System.out.println(something);
             Object value_raw = _sheet.getCell(_N - 1, 2).getValue();
-
             double value = (double) value_raw;
-
-            System.out.println("MY ANSWER: " + value);
-            System.out.println("CORRECT ANSWER: " + answer);
-
             return Math.abs(value - answer) <= 1e-6;
         } catch (Exception e) {
             return false;
