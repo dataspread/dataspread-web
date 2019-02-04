@@ -29,6 +29,11 @@ public class DirtyManagerMemImpl extends DirtyManager {
     }
 
     @Override
+    public void reset() {
+        dirtyRecords = new ConcurrentSkipListSet<>();
+    }
+
+    @Override
     public int getDirtyTrxId(Ref region) {
          return dirtyRecords.stream().filter(e->overlaps(e.region, region))
                 .map(e->e.trxId)

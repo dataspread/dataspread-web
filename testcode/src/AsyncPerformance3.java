@@ -17,23 +17,20 @@ import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerSimple;
 import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.EngineFactory;
 import org.zkoss.zss.model.sys.dependency.Ref;
+import org.zkoss.zss.model.sys.formula.DirtyManager;
 import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 import testcases.*;
 
+import java.io.FileOutputStream;
+import java.io.PrintStream;
+import java.lang.reflect.Constructor;
 import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class AsyncPerformance3 implements FormulaAsyncListener {
     // Test params
-    final static int testSize = 1000;
-    final static int testNMultiAgg = 100;
-    final static int testMMultiAgg = 3;
-    final static boolean sync = true;
-    final static boolean graphCompression = false;
-    final static int graphCompressionSize = 2;
-    final static boolean schedulerPrioritize = false;
     final static boolean graphInDB = false;
 
     // Test stats
@@ -62,7 +59,7 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         Properties props = new Properties();
         props.setProperty("user", userName);
         props.setProperty("password", password);
-        conn = DriverManager.getConnection(url, props);
+        conn = DriverManager.getConnection(url2, props);
 
         if (graphInDB)
             EngineFactory.dependencyTableClazz = DependencyTablePGImpl.class;
@@ -75,6 +72,45 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         //SheetImpl.disablePrefetch();
         //FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerPriority();
 
+        //singleTest(20, false, 0, false);
+        multipleTests();
+    }
+
+    public static void multipleTests() {
+        final Class testCases[] = {TestRate.class, TestRunningTotalDumb.class, TestRunningTotalSmart.class};
+        final int testSizes[] = {100000};
+        final String names[]                 = {"s",   "a",   "ac2", "ac20","ap",  "ac2p","ac20p"};
+        final boolean syncs[]                = {true,  false, false, false, false, false, false};
+        final int compressionSizes[]         = {0,     0,     2,     20,    0,     2,     20};
+        final boolean schedulerPrioritizes[] = {false, false, false, false, true,  true,  true};
+
+        for (int testSize: testSizes) {
+            for (Class testCase: testCases) {
+                for (int setup = 6; setup >= 0; setup--) {
+                    try {
+                        String name = names[setup];
+                        boolean sync = syncs[setup];
+                        boolean schedulerPrioritize = schedulerPrioritizes[setup];
+                        int compressionSize = compressionSizes[setup];
+
+                        String testFullName = "test_" + testCase.getName() + "_" + testSize + "_" + name;
+                        FileOutputStream f = new FileOutputStream("/home/tana/testoutput/" + testFullName);
+                        System.setOut(new PrintStream(f));
+
+                        System.err.println(testFullName);
+                        singleTest(testCase, testSize, sync, compressionSize, schedulerPrioritize);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+
+    }
+
+    public static void singleTest(Class testCase, int testSize, boolean sync, int compressionSize, boolean schedulerPrioritize) throws Exception {
+        DirtyManager.dirtyManagerInstance.reset();
+
         FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerSimple();
         Thread asyncThread = new Thread(formulaAsyncScheduler);
         asyncThread.start();
@@ -82,12 +118,11 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         AsyncPerformance3 asyncPerformance = new AsyncPerformance3();
         FormulaAsyncScheduler.initFormulaAsyncListener(asyncPerformance);
         FormulaAsyncScheduler.setPrioritize(schedulerPrioritize);
-        asyncPerformance.simpleTest();
+        asyncPerformance.simpleTest(testCase, testSize, sync, compressionSize);
 
         formulaAsyncScheduler.shutdown();
         asyncThread.join();
     }
-
 
     private static void revertGraphCompression(String bookName) {
         String deleteSql = "DELETE FROM dependency " +
@@ -114,7 +149,7 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
 
     }
 
-    private static void compressPGGraphNode(String bookName, String sheetname, CellRegion cellRegion) {
+    private static void compressPGGraphNode(String bookName, String sheetname, CellRegion cellRegion, int graphCompressionSize) {
         System.out.println("compressGraphNode " + cellRegion);
         String selectSql = "WITH RECURSIVE deps AS (  SELECT " +
                 "bookname::text, sheetname::text, range::text, " +
@@ -164,7 +199,7 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
             rs.close();
 
             System.out.println("Original Deps" + deps.size());
-            compressDependencies(deps);
+            compressDependencies(deps, graphCompressionSize);
             System.out.println("compressed Deps" + deps.size());
 
             stmtDelete.setString(1, bookName);
@@ -196,7 +231,7 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         }
     }
 
-    private static void compressDependencies1(ArrayList<Ref> dependencies) {
+    private static void compressDependencies1(ArrayList<Ref> dependencies, int graphCompressionSize) {
         while (dependencies.size() > graphCompressionSize) {
             //System.out.println("dependencies.size() " + dependencies.size());
             int best_i = 0, best_j = 0, best_area = Integer.MAX_VALUE;
@@ -235,7 +270,7 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         }
     }
 
-    private static void compressDependencies(ArrayList<CellRegion> dependencies) {
+    private static void compressDependencies(ArrayList<CellRegion> dependencies, int graphCompressionSize) {
         while (dependencies.size() > graphCompressionSize) {
             int best_i = 0, best_j = 0, best_area = Integer.MAX_VALUE;
             CellRegion best_bounding_box = null;
@@ -274,8 +309,17 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
     }
 
 
-    public void simpleTest() {
-        SBook book = BookBindings.getBookByName("testBook" + System.currentTimeMillis());
+    public void simpleTest(Class testCase, int testSize, boolean sync, int compressionSize) throws Exception {
+        boolean graphCompression = compressionSize > 0;
+        testStarted = false;
+        updatedCells = 0;
+        cellsToUpdate = 0;
+        CellImpl.disableDBUpdates = false;
+
+        long timeNow = System.currentTimeMillis();
+        SBook book = BookBindings.getBookByName("testBook" + timeNow);
+        System.out.println(testSize);
+        System.out.println(timeNow);
         //SBook book = BookBindings.getBookByName("ejnnyuhp8");
         /* Cleaner for sync computation */
         if (sync)
@@ -296,8 +340,11 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         System.out.println("Starting data creation");
         sheet.setSyncComputation(true);
 
-        // Generate test case. Change this into the test case. @kelly
-        AsyncTestcase test = new TestMultiLevelAgg(sheet, testNMultiAgg, testMMultiAgg);
+        // Generate test case. Change this into the test case.
+        Constructor ctor = testCase.getConstructor(SSheet.class, int.class);
+        AsyncTestcase test = (AsyncTestcase) ctor.newInstance(new Object[] { sheet, testSize });
+
+        //AsyncTestcase test = new TestRunningTotalDumb(sheet, testSize);
         sheet.setSyncComputation(sync);
         System.out.println("Data Creation done");
 
@@ -324,9 +371,9 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
             // For PG graph
             if (graphInDB) {
                 compressPGGraphNode(sheet.getBook().getBookName(),
-                        sheet.getSheetName(), new CellRegion(0, 0));
+                        sheet.getSheetName(), new CellRegion(0, 0), compressionSize);
             } else {
-                compressDependencies1(dependencies1);
+                compressDependencies1(dependencies1, compressionSize);
                 sheet.getDependencyTable().addPreDep(updatedCell, new HashSet<>(dependencies1));
             }
         }
@@ -452,6 +499,7 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         if (testStarted) {
             //System.out.println("Computed " + cellRegion + " " + formula);
             updatedCells++;
+            //System.out.println("Computed "+updatedCells+"/"+cellsToUpdate);
             if (updatedCells == cellsToUpdate)
                 synchronized (this) {
                     notify();

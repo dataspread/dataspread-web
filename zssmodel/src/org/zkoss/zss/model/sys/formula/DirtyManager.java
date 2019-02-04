@@ -10,6 +10,8 @@ public abstract class DirtyManager {
     //static public DirtyManager dirtyManagerInstance = new DirtyManagerPGImpl();
     static public DirtyManager dirtyManagerInstance = new DirtyManagerMemImpl();
 
+    abstract public void reset();
+
     /* Check if the given region is dirty
     *  Return the trxId that made this region dirty
     *  -1 if the target is not dirty */

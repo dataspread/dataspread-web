@@ -27,7 +27,7 @@ public class TestRunningTotalSmart implements AsyncTestcase {
             sheet.getCell(i, 0).setValue(num);
             sheet.getCell(i, 1).setFormulaValue("A" + (i+1) + " + B" + (i));
             if (i % 100 == 0) {
-                System.out.println(i);
+                System.err.println(i);
             }
             answer += num;
         }
