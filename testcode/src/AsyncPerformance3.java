@@ -28,10 +28,12 @@ import java.util.stream.Collectors;
 public class AsyncPerformance3 implements FormulaAsyncListener {
     // Test params
     final static int testSize = 1000;
-    final static boolean sync = false;
-    final static boolean graphCompression = true;
+    final static int testNMultiAgg = 100;
+    final static int testMMultiAgg = 3;
+    final static boolean sync = true;
+    final static boolean graphCompression = false;
     final static int graphCompressionSize = 2;
-    final static boolean schedulerPrioritize = true;
+    final static boolean schedulerPrioritize = false;
     final static boolean graphInDB = false;
 
     // Test stats
@@ -60,7 +62,7 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         Properties props = new Properties();
         props.setProperty("user", userName);
         props.setProperty("password", password);
-        conn = DriverManager.getConnection(url2, props);
+        conn = DriverManager.getConnection(url, props);
 
         if (graphInDB)
             EngineFactory.dependencyTableClazz = DependencyTablePGImpl.class;
@@ -294,8 +296,8 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         System.out.println("Starting data creation");
         sheet.setSyncComputation(true);
 
-        // Generate test case. Change this into the test case.
-        AsyncTestcase test = new TestRunningTotalDumb(sheet, testSize);
+        // Generate test case. Change this into the test case. @kelly
+        AsyncTestcase test = new TestMultiLevelAgg(sheet, testNMultiAgg, testMMultiAgg);
         sheet.setSyncComputation(sync);
         System.out.println("Data Creation done");
 
