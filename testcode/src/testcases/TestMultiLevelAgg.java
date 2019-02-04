@@ -74,6 +74,15 @@ public class TestMultiLevelAgg implements AsyncTestcase {
 
     @Override
     public void touchAll() {
-        // verify already touches all
+        double something = 0;
+        for (int i = 0; i < _N; i++) {
+            Object v = _sheet.getCell(i, _M).getValue();
+            something += (double) v;
+        }
+        something /= _N;
+
+        something += (double) _sheet.getCell(_N,_M).getValue();
+
+        System.out.println("Touched Everything: " + something);
     }
 }

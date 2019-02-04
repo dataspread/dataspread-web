@@ -73,6 +73,11 @@ public class TestMultiAgg implements AsyncTestcase {
 
     @Override
     public void touchAll() {
-        // verify already touches all
+        double something = 0;
+        for (int i = 0; i < _M; i++) {
+            Object v = _sheet.getCell(i, 1).getValue();
+            something += (double) v;
+        }
+        System.out.println("Touched Everyting " + something);
     }
 }
