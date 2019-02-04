@@ -1722,7 +1722,7 @@ export default class Navigation extends Component {
             return (
                 <div id="hot-app">
                     <HotTable ref={this.hotTableComponent}/>
-                    {/*settings={this.hotSettings}*/}
+
                 </div>
             );
         } else {

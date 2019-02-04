@@ -22,6 +22,7 @@ class App extends Component {
         this.onNavFormOpen = this.onNavFormOpen.bind(this)
         this.updateHierFormOption = this.updateHierFormOption.bind(this)
         this.submitHierForm = this.submitHierForm.bind(this)
+        this.onBinFormOpen = this.onBinFormOpen.bind(this)
     }
 
     onSelectFile(bookId) {
@@ -51,6 +52,11 @@ class App extends Component {
        this.grid.nav.submitHierForm(data);
     }
 
+    onBinFormOpen(){
+        if (this.grid !== null) {
+            this.grid.openBinForm();
+        }
+    }
 
     render() {
         // console.log(this)
@@ -69,7 +75,7 @@ class App extends Component {
                 <div>
                     <Toolbar username={this.state.username} onSelectFile={this.onSelectFile}
                              onNavFormOpen={this.onNavFormOpen} ref={ref => this.toolBar = ref}
-                             submitHierForm = {this.submitHierForm}/>
+                             submitHierForm = {this.submitHierForm} onBinFormOpen={this.onBinFormOpen()}/>
                     <Stylebar/>
                     <DSGrid bookId={this.state.bookId} ref={ref => this.grid = ref}
                             updateHierFormOption={this.updateHierFormOption}/>

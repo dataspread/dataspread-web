@@ -12,6 +12,7 @@ import Stomp from 'stompjs';
 import Navigation from "./Components/Navigation";
 import ExplorationForm from "./Components/ExplorationForm";
 import HierarchiForm from "./Components/HierarchiForm";
+import BinCustomizationForm from "./Components/BinCustomizationForm";
 
 export default class DSGrid extends Component {
     toColumnName(num) {
@@ -69,6 +70,7 @@ export default class DSGrid extends Component {
         this.submitNavForm = this.submitNavForm.bind(this);
         this.closeNavForm = this.closeNavForm.bind(this);
         this.openNavForm = this.openNavForm.bind(this);
+        this.openBinForm = this.openBinForm.bind(this);
 
         this._changeColumnWidth = this._changeColumnWidth.bind(this);
         this._columnWidthHelper = this._columnWidthHelper.bind(this);
@@ -187,17 +189,22 @@ export default class DSGrid extends Component {
 
     }
     closeNavForm() {
-        console.log("close");
         this.setState({navFormOpen:false});
     }
 
+    openBinForm(){
+        if(this.state.navOpen){
+            this.setState({binFormOpen:true});
+        }
+    }
 
 
     render() {
         return (
             <div><Navigation bookId={this.props.bookId} grid = {this} ref={ref => this.nav = ref} />
                 <ExplorationForm grid = {this} submitNavForm = {this.submitNavForm} closeNavForm={this.closeNavForm} ref={ref => this.navForm = ref}/>
-            <div onKeyDown={this._handleKeyDown} onKeyUp={this._handleKeyUp}>
+                <BinCustomizationForm grid = {this}  ref={ref => this.binForm = ref}/>
+                <div onKeyDown={this._handleKeyDown} onKeyUp={this._handleKeyUp}>
                 <div style={{display: 'flex'}}>
                     <div style={{flex: 'auto', height: '91vh'}}>
                         <Dimmer active={this.state.isProcessing || !this.state.initialLoadDone}>
