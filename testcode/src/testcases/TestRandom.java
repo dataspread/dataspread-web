@@ -60,8 +60,6 @@ public class TestRandom implements AsyncTestcase {
                     buf.append("+" + _name.get(j));
                 }
             }
-            if (i % 100 == 0)
-                System.out.println(i);
             if (buf.length() == 1) {
                 sheet.getCell(_r.get(i), _c.get(i)).setValue(0);
             } else {

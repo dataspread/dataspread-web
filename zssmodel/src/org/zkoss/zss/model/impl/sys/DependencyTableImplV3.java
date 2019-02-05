@@ -118,14 +118,21 @@ public class DependencyTableImplV3 extends DependencyTableAdv {
 		}
 
 		// search dependents and their dependents recursively
+		Set<Ref> visited = new HashSet<>();
 		Set<Ref> result = new LinkedHashSet<>();
 		Queue<Ref> queue = new LinkedList<>();
 		queue.add(precedent);
+		visited.add(precedent);
 		while(!queue.isEmpty()) {
 			Ref p = queue.remove();
 			Set<Ref> dependents = getDirectDependents(p);
-			queue.addAll(dependents);
-			result.addAll(dependents);
+			for (Ref r : dependents) {
+				if (!visited.contains(r)) {
+					visited.add(r);
+					queue.add(r);
+					result.add(r);
+				}
+			}
 		}
 		return result;
 	}

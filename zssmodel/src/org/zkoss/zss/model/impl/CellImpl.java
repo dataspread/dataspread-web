@@ -379,11 +379,12 @@ public class CellImpl extends AbstractCellAdv {
 	@Override
 	public void setFormulaValue(String formula)
 	{
-		try(AutoRollbackConnection connection = DBHandler.instance.getConnection())
+		/*try(AutoRollbackConnection connection = DBHandler.instance.getConnection())
 		{
 			setFormulaValue(formula, connection, true);
 			connection.commit();
-		}
+		}*/
+		setFormulaValue(formula, null, false);
 	}
 
 	@Override
@@ -616,10 +617,11 @@ public class CellImpl extends AbstractCellAdv {
 	@Override
 	public void setValue(Object newVal)
 	{
-		try(AutoRollbackConnection connection=DBHandler.instance.getConnection()) {
+		/*try(AutoRollbackConnection connection=DBHandler.instance.getConnection()) {
 			setValue(newVal, connection, true);
 			connection.commit();
-		}
+		}*/
+		setValue(newVal, null, false);
 	}
 
 	@Override

@@ -27,8 +27,6 @@ public class TestMultiLevelAgg implements AsyncTestcase {
                 sheet.getCell(i, j).setValue(num);
                 answer += num;
             }
-            if (i % 100 == 0)
-                System.out.println(i);
             CellRegion region = new CellRegion(i,0,i,M-1);
             String stringRegion = region.getReferenceString();
             String formula = "SUM(" + stringRegion + ")";
