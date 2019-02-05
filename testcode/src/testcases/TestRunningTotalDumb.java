@@ -26,9 +26,6 @@ public class TestRunningTotalDumb implements AsyncTestcase {
             int num = random.nextInt(1000);
             sheet.getCell(i, 0).setValue(num);
             sheet.getCell(i, 1).setFormulaValue("SUM(A1:A" + (i + 1) + ")");
-            if (i % 100 == 0) {
-                System.err.println(i);
-            }
             answer += num;
         }
 

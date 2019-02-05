@@ -72,21 +72,22 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         //SheetImpl.disablePrefetch();
         //FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerPriority();
 
-        //singleTest(20, false, 0, false);
+        //singleTest(TestRate.class, 100000, false, 0, false);
         multipleTests();
     }
 
     public static void multipleTests() {
-        final Class testCases[] = {TestRate.class, TestRunningTotalDumb.class, TestRunningTotalSmart.class};
+        final Class testCases[] = {TestRate.class, TestRunningTotalSmart.class, TestRunningTotalDumb.class};
         final int testSizes[] = {100000};
-        final String names[]                 = {"s",   "a",   "ac2", "ac20","ap",  "ac2p","ac20p"};
-        final boolean syncs[]                = {true,  false, false, false, false, false, false};
-        final int compressionSizes[]         = {0,     0,     2,     20,    0,     2,     20};
-        final boolean schedulerPrioritizes[] = {false, false, false, false, true,  true,  true};
+        final String names[]                 = {"brn1","brn2","s",   "a",   "ac2", "ac20","ap",  "ac2p","ac20p"};
+        final boolean syncs[]                = {true,  false, true,  false, false, false, false, false, false};
+        final int compressionSizes[]         = {0,     2,     0,     0,     2,     20,    0,     2,     20};
+        final boolean schedulerPrioritizes[] = {false, false, false, false, false, false, true,  true,  true};
 
         for (int testSize: testSizes) {
             for (Class testCase: testCases) {
-                for (int setup = 6; setup >= 0; setup--) {
+                for (int setup = 0; setup < 9; setup++) {
+                    PrintStream p = null;
                     try {
                         String name = names[setup];
                         boolean sync = syncs[setup];
@@ -94,13 +95,19 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
                         int compressionSize = compressionSizes[setup];
 
                         String testFullName = "test_" + testCase.getName() + "_" + testSize + "_" + name;
-                        FileOutputStream f = new FileOutputStream("/home/tana/testoutput/" + testFullName);
-                        System.setOut(new PrintStream(f));
+                        FileOutputStream f = new FileOutputStream("/home/tana/test20000_3/" + testFullName);
+                        p = new PrintStream(f);
+                        System.setOut(p);
 
-                        System.err.println(testFullName);
+                        System.out.println(testFullName);
+                        System.err.println(" *********** NEW CASE *********** "+testFullName);
                         singleTest(testCase, testSize, sync, compressionSize, schedulerPrioritize);
                     } catch (Exception e) {
                         e.printStackTrace();
+                    } finally {
+                        if (p != null) {
+                            p.flush();
+                        }
                     }
                 }
             }
@@ -318,8 +325,7 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
 
         long timeNow = System.currentTimeMillis();
         SBook book = BookBindings.getBookByName("testBook" + timeNow);
-        System.out.println(testSize);
-        System.out.println(timeNow);
+        System.out.println("TIME BEGIN: "+timeNow);
         //SBook book = BookBindings.getBookByName("ejnnyuhp8");
         /* Cleaner for sync computation */
         if (sync)
@@ -346,12 +352,13 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
 
         //AsyncTestcase test = new TestRunningTotalDumb(sheet, testSize);
         sheet.setSyncComputation(sync);
+        System.err.println("Data Creation done");
         System.out.println("Data Creation done");
 
         // Obtain the collection of all cells.
         Collection<CellRegion> sheetCells;
         if (window == null) {
-            sheetCells = sheet.getCells().stream().map(SCell::getCellRegion)
+            sheetCells = sheet.getCells(new CellRegion(0, 0, testSize+5, 5)).stream().map(SCell::getCellRegion)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
         } else {
@@ -367,6 +374,7 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         ArrayList<Ref> dependencies1 = new ArrayList<>(sheet.getDependencyTable().getDependents(updatedCell));
 
         System.out.println("Dependencies " + dependencies1.size());
+        cellsToUpdate = 0;
         if (graphCompression) {
             // For PG graph
             if (graphInDB) {
@@ -376,19 +384,43 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
                 compressDependencies1(dependencies1, compressionSize);
                 sheet.getDependencyTable().addPreDep(updatedCell, new HashSet<>(dependencies1));
             }
-        }
-        dependencies1.add(updatedCell);
-
-        // Count cells that needs to be updated before you are done
-        cellsToUpdate = 0;
-        for (CellRegion sheetCell : sheetCells) {
+            dependencies1.add(updatedCell);
+            // Count cells that needs to be updated before you are done
+            for (CellRegion sheetCell : sheetCells) {
+                for (Ref dependency : dependencies1) {
+                    CellRegion reg = new CellRegion(dependency);
+                    if (reg.contains(sheetCell)) {
+                        cellsToUpdate++;
+                    }
+                }
+            }
+        } else {
+            dependencies1.add(updatedCell);
+            // Count cells that needs to be updated before you are done
+            Set<CellRegion> dependenciesSingle = new HashSet<>();
+            ArrayList<Ref> dependenciesMult = new ArrayList<>();
             for (Ref dependency : dependencies1) {
-                CellRegion reg = new CellRegion(dependency);
-                if (reg.contains(sheetCell)) {
+                if (dependency.getCellCount() == 1) {
+                    dependenciesSingle.add(new CellRegion(dependency));
+                } else {
+                    dependenciesMult.add(dependency);
+                }
+            }
+            for (CellRegion sheetCell : sheetCells) {
+                if (dependenciesSingle.contains(sheetCell)) {
                     cellsToUpdate++;
+                }
+                for (Ref dependency : dependenciesMult) {
+                    CellRegion reg = new CellRegion(dependency);
+                    if (reg.contains(sheetCell)) {
+                        cellsToUpdate++;
+                    }
                 }
             }
         }
+
+        System.err.println("Cells to Update (counting dupes) " + cellsToUpdate);
+        System.out.println("Cells to Update (counting dupes) " + cellsToUpdate);
 
         // Begin Test
         DirtyManagerLog.instance.init();
@@ -420,6 +452,7 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
 
         // By here, the final value should be correct
         System.out.println("Final Value Correct?: " + (test.verify() ? "YES" : "NO"));
+        System.err.println("Final Value Correct?: " + (test.verify() ? "YES" : "NO"));
 
         if (sync) {
             System.out.println(0 + "\t" + sheetCells.size());
@@ -429,13 +462,14 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
             DirtyManagerLog.instance.groupPrint(sheetCells, controlReturnedTime, initTime);
         }
 
-        long totalWaitTime = sheetCells.stream()
+        /*long totalWaitTime = sheetCells.stream()
                 .mapToLong(e -> DirtyManagerLog.instance.getDirtyTime(e))
                 .sum();
         System.out.println("Total Wait time " + totalWaitTime);
-        System.out.println("Avg Wait time " + totalWaitTime / sheetCells.size());
+        System.out.println("Avg Wait time " + totalWaitTime / sheetCells.size());*/
 
         System.out.println("Updated cells = " + updatedCells);
+        System.out.println("TIME END: "+System.currentTimeMillis());
 
     }
 

@@ -24,9 +24,6 @@ public class TestRate implements AsyncTestcase {
             int num = random.nextInt(1000);
             sheet.getCell(i, 1).setValue(num);
             sheet.getCell(i, 2).setFormulaValue("A1 * B" + (i+1));
-            if (i % 100 == 0) {
-                System.err.println(i);
-            }
             answer = 20 * num;
         }
 

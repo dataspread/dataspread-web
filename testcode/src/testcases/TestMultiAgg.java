@@ -24,8 +24,6 @@ public class TestMultiAgg implements AsyncTestcase {
         for (int i = 0; i < N; i++) {
             int num = random.nextInt(100);
             sheet.getCell(i, 0).setValue(num);
-            if (i % 100 == 0)
-                System.out.println(i);
             answer += num;
         }
         for (int i = 0; i < M; i++) {
