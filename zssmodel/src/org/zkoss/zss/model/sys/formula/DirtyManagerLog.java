@@ -85,6 +85,7 @@ public class DirtyManagerLog {
         boolean firstNotDone = true;
         SortedMap<Long, Integer> dirtyCellsCounts = new TreeMap<>();
         Set<CellRegion> dirtyCells = new HashSet<>();
+        Set<CellRegion> sheetCellsSet = new HashSet<>(sheetCells);
         long lastTimestamp = -1;
 
         for (DirtyRecordEntry e : dirtyRecordLog) {
@@ -93,12 +94,23 @@ public class DirtyManagerLog {
                 dirtyCellsCounts.put(e.timestamp, dirtyCells.size());
             }
             lastTimestamp = e.timestamp;
-            for (CellRegion r1 : sheetCells) {
-                if (e.cellRegion.contains(r1)) {
+            if (e.cellRegion.getCellCount() == 1) {
+                if (sheetCellsSet.contains(e.cellRegion)) {
+                    CellRegion r1 = e.cellRegion;
                     if (e.action == Action.MARK_DIRTY) {
                         dirtyCells.add(r1);
                     } else {
                         dirtyCells.remove(r1);
+                    }
+                }
+            } else {
+                for (CellRegion r1 : sheetCells) {
+                    if (e.cellRegion.contains(r1)) {
+                        if (e.action == Action.MARK_DIRTY) {
+                            dirtyCells.add(r1);
+                        } else {
+                            dirtyCells.remove(r1);
+                        }
                     }
                 }
             }

@@ -39,11 +39,7 @@ public class TestRunningTotalSmart implements AsyncTestcase {
 
     @Override
     public void touchAll() {
-        double something = 0.0;
-        for (int i = 0; i < _N; i++) {
-            Object v = _sheet.getCell(i, 1).getValue();
-            something += (double) v;
-        }
+        double something = (double) _sheet.getCell(_N - 1, 1).getValue();
         System.out.println(something);
     }
 

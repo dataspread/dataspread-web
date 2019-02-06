@@ -40,6 +40,8 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
     private long updatedCells = 0;
     private long cellsToUpdate = 0;
 
+    private Set<CellRegion> cellsToUpdateSet;
+
     private static Connection conn;
 
     final CellRegion window = null;
@@ -79,14 +81,19 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
     public static void multipleTests() {
         final Class testCases[] = {TestRate.class, TestRunningTotalSmart.class, TestRunningTotalDumb.class};
         final int testSizes[] = {100000};
-        final String names[]                 = {"brn1","brn2","s",   "a",   "ac2", "ac20","ap",  "ac2p","ac20p"};
-        final boolean syncs[]                = {true,  false, true,  false, false, false, false, false, false};
-        final int compressionSizes[]         = {0,     2,     0,     0,     2,     20,    0,     2,     20};
-        final boolean schedulerPrioritizes[] = {false, false, false, false, false, false, true,  true,  true};
+        final String names[]                 = {"brn1","brn2","s",   "brn3","brn4","a",   "ac2", "ac20","ap",  "ac2p","ac20p"};
+        final boolean syncs[]                = {true,  false, true,  false, false, false, false, false, false, false, false};
+        final int compressionSizes[]         = {0,     2,     0,     2,     2,     0,     2,     20,    0,     2,     20};
+        final boolean schedulerPrioritizes[] = {false, false, false, false, false, false, false, false, true,  true,  true};
+        /*final String names[]                 = {"brn1","brn2","ac2p", "ac20p"};//  "ac2", "ac20","ap",  "ac2p","ac20p"};
+        final boolean syncs[]                = {true,  false, false,false};//, false, false, false, false, false};
+        final int compressionSizes[]         = {0,     2,    2,20 };//  2,     20,    0,     2,     20};
+        final boolean schedulerPrioritizes[] = {false, false, true,true};//, false, false, true,  true,  true};*/
+
 
         for (int testSize: testSizes) {
             for (Class testCase: testCases) {
-                for (int setup = 0; setup < 9; setup++) {
+                for (int setup = 0; setup < names.length; setup++) {
                     PrintStream p = null;
                     try {
                         String name = names[setup];
@@ -102,6 +109,7 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
                         System.out.println(testFullName);
                         System.err.println(" *********** NEW CASE *********** "+testFullName);
                         singleTest(testCase, testSize, sync, compressionSize, schedulerPrioritize);
+                        System.gc();
                     } catch (Exception e) {
                         e.printStackTrace();
                     } finally {
@@ -267,6 +275,13 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
                         best_j = j;
                         best_bounding_box = bounding;
                     }
+
+                    if (best_area == 0) {
+                        break;
+                    }
+                }
+                if (best_area == 0) {
+                    break;
                 }
             }
             // Merge i,j
@@ -347,8 +362,15 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         sheet.setSyncComputation(true);
 
         // Generate test case. Change this into the test case.
-        Constructor ctor = testCase.getConstructor(SSheet.class, int.class);
-        AsyncTestcase test = (AsyncTestcase) ctor.newInstance(new Object[] { sheet, testSize });
+
+        AsyncTestcase test;
+        if (!testCase.equals(TestMultiLevelAgg.class) && !testCase.equals(TestMultiAgg.class)) {
+            Constructor ctor = testCase.getConstructor(SSheet.class, int.class);
+            test = (AsyncTestcase) ctor.newInstance(new Object[] { sheet, testSize });
+        } else {
+            Constructor ctor = testCase.getConstructor(SSheet.class, int.class, int.class);
+            test = (AsyncTestcase) ctor.newInstance(new Object[] { sheet, testSize, 20 });
+        }
 
         //AsyncTestcase test = new TestRunningTotalDumb(sheet, testSize);
         sheet.setSyncComputation(sync);
@@ -375,6 +397,7 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
 
         System.out.println("Dependencies " + dependencies1.size());
         cellsToUpdate = 0;
+        cellsToUpdateSet = new HashSet<>();
         if (graphCompression) {
             // For PG graph
             if (graphInDB) {
@@ -387,11 +410,16 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
             dependencies1.add(updatedCell);
             // Count cells that needs to be updated before you are done
             for (CellRegion sheetCell : sheetCells) {
+                boolean matched = false;
                 for (Ref dependency : dependencies1) {
                     CellRegion reg = new CellRegion(dependency);
                     if (reg.contains(sheetCell)) {
                         cellsToUpdate++;
+                        matched = true;
                     }
+                }
+                if (matched) {
+                    cellsToUpdateSet.add(sheetCell);
                 }
             }
         } else {
@@ -407,14 +435,20 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
                 }
             }
             for (CellRegion sheetCell : sheetCells) {
+                boolean matched = false;
                 if (dependenciesSingle.contains(sheetCell)) {
                     cellsToUpdate++;
+                    matched = true;
                 }
                 for (Ref dependency : dependenciesMult) {
                     CellRegion reg = new CellRegion(dependency);
                     if (reg.contains(sheetCell)) {
                         cellsToUpdate++;
+                        matched = true;
                     }
+                }
+                if (matched) {
+                    cellsToUpdateSet.add(sheetCell);
                 }
             }
         }
@@ -437,6 +471,7 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         System.out.println("Control returned  " + controlReturnedTime);
         System.out.println("Time to update = " + (controlReturnedTime - initTime));
         System.out.println("Before Waiting Correct?: " + (test.verify() ? "YES" : "NO"));
+        ((FormulaAsyncSchedulerSimple) FormulaAsyncScheduler.getScheduler()).started = true;
         if (!sync) {
             synchronized (this) {
                 try {
@@ -470,6 +505,8 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
 
         System.out.println("Updated cells = " + updatedCells);
         System.out.println("TIME END: "+System.currentTimeMillis());
+        ((FormulaAsyncSchedulerSimple) FormulaAsyncScheduler.getScheduler()).started = false;
+        ((FormulaAsyncSchedulerSimple) FormulaAsyncScheduler.getScheduler()).isDead = false;
 
     }
 
@@ -534,10 +571,16 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
             //System.out.println("Computed " + cellRegion + " " + formula);
             updatedCells++;
             //System.out.println("Computed "+updatedCells+"/"+cellsToUpdate);
-            if (updatedCells == cellsToUpdate)
+            /*if (updatedCells == cellsToUpdate)
+                synchronized (this) {
+                    notify();
+                }*/
+            cellsToUpdateSet.remove(cellRegion);
+            if (cellsToUpdateSet.size() == 0) {
                 synchronized (this) {
                     notify();
                 }
+            }
         }
     }
 }
