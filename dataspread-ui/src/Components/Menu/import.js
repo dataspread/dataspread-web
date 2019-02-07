@@ -1,5 +1,5 @@
 import React, {Component} from 'react'
-import ReactResumableJs from 'react-resumable-js'
+import ReactResumableJs from '../Elements/ReactResumableJs'
 import {Dropdown, Button, Header, Icon, Modal} from 'semantic-ui-react'
 import Stomp from "stompjs";
 
@@ -83,14 +83,14 @@ export default class ModalImportFile extends Component {
 						console.log(file.file);
 						this.setState({fileStatus:"selected "+ file.file.name})
 						console.log("File added.");
-						//resumable.upload();
+						resumable.upload();
 					}}
 					maxFiles={1}
-					onStartUpload={(file, resumable) => {
-						this.setState({fileStatus:"Uploading..."})
-						console.log("Start upload");
-						//resumable.upload();
-					}}
+					// onStartUpload={(file, resumable) => {
+					// 	this.setState({fileStatus:"Uploading..."})
+					// 	console.log("Start upload");
+					// 	resumable.upload();
+					// }}
 					onUploadErrorCallback ={(file, message)=>{
 						this.setState({fileStatus:"File upload ERROR"})
 					}}
