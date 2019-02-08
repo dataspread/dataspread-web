@@ -83,7 +83,7 @@ export default class ModalImportFile extends Component {
 						console.log(file.file);
 						this.setState({fileStatus:"selected "+ file.file.name})
 						console.log("File added.");
-						resumable.upload();
+						//resumable.upload();
 					}}
 					maxFiles={1}
 					// onStartUpload={(file, resumable) => {

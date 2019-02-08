@@ -9,6 +9,7 @@
 
 import React from "react";
 import Resumablejs from "resumablejs";
+import {Button} from 'semantic-ui-react'
 
 export default class ReactResumableJs extends React.Component {
     constructor(props) {
@@ -18,7 +19,8 @@ export default class ReactResumableJs extends React.Component {
             messageStatus: '',
             fileList: {files: []},
             isPaused: false,
-            isUploading: false
+            isUploading: false,
+            fileName: ""
         };
 
         this.resumable = null;
@@ -71,6 +73,9 @@ export default class ReactResumableJs extends React.Component {
 
             if (typeof this.props.onFileAdded === "function") {
                 this.props.onFileAdded(file, this.resumable);
+                this.setState({
+                    fileName : file.file.name
+                });
             } else {
                 ResumableField.upload();
             }
@@ -224,6 +229,10 @@ export default class ReactResumableJs extends React.Component {
         this.props.onStartUpload();
     };
 
+    uploadFile_selection = () => {
+        this.uploader.click();
+    };
+
     render() {
 
         let fileList = null;
@@ -246,8 +255,8 @@ export default class ReactResumableJs extends React.Component {
         let startButton = null;
         if (this.props.startButton) {
             if (typeof this.props.startButton ==="string" || typeof this.props.startButton ==="boolean" ) startButton = <label>
-                <button disabled={this.state.isUploading} className="btn start" onClick={this.startUpload}>{this.props.startButton && "upload"}
-                </button>
+                <Button disabled={this.state.isUploading} className="btn start" onClick={this.startUpload}>{this.props.startButton && "upload"}
+                </Button>
             </label>;
             else startButton =this.props.startButton
         }
@@ -255,8 +264,8 @@ export default class ReactResumableJs extends React.Component {
         let cancelButton = null;
         if (this.props.cancelButton) {
             if (typeof this.props.cancelButton ===  "string" || typeof this.props.cancelButton ===  "boolean")cancelButton = <label>
-                <button disabled={!this.state.isUploading} className="btn cancel" onClick={this.cancelUpload}>{this.props.cancelButton && "cancel"}
-                </button>
+                <Button disabled={!this.state.isUploading} className="btn cancel" onClick={this.cancelUpload}>{this.props.cancelButton && "cancel"}
+                </Button>
             </label>;
             else cancelButton = this.props.cancelButton
         }
@@ -264,8 +273,8 @@ export default class ReactResumableJs extends React.Component {
         let pauseButton = null;
         if (this.props.pauseButton) {
             if (typeof this.props.pauseButton ===  "string" || typeof this.props.pauseButton ===  "boolean") pauseButton = <label>
-                <button disabled={!this.state.isUploading} className="btn pause" onClick={this.pauseUpload}>{this.props.pauseButton && "pause"}
-                </button>
+                <Button disabled={!this.state.isUploading} className="btn pause" onClick={this.pauseUpload}>{this.props.pauseButton && "pause"}
+                </Button>
             </label>;
             else pauseButton = this.props.pauseButton
         }
@@ -274,6 +283,10 @@ export default class ReactResumableJs extends React.Component {
             <div id={this.props.dropTargetID} ref={node => this.dropZone = node}>
                 {previousText}
                 <label className={this.props.disableInput ? 'btn file-upload disabled' : 'btn file-upload'}>{textLabel}
+                    <div className="ui action input">
+                    <input type="text" readOnly
+                        value={this.state.fileName}>
+                    </input>
                     <input
                         ref={node=> this.uploader = node}
                         type="file"
@@ -282,16 +295,23 @@ export default class ReactResumableJs extends React.Component {
                         name={this.props.uploaderID + '-upload'}
                         accept={this.props.fileAccept || '*'}
                         disabled={this.props.disableInput || false}
+                        style={{display: "none"}}
                     />
+                    <div className="ui icon button">
+                        <i className="cloud upload alternate icon"
+                        onClick={this.uploadFile_selection}></i>
+                    </div>
+                    </div>
                 </label>
+                
                 <div className="progress" style={{display: this.state.progressBar === 0 ? "none" : "block"}}>
                     <div className="progress-bar" style={{width: this.state.progressBar + '%'}}></div>
                 </div>
 
-                {fileList}
+                {/* {fileList}
                 {startButton}
                 {pauseButton}
-                {cancelButton}
+                {cancelButton} */}
             </div>
         );
     }
