@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 public class AsyncPerformance3 implements FormulaAsyncListener {
     // Test params
     final static boolean graphInDB = false;
+    final static boolean areaUnderCurveGraph = true;
 
     // Test stats
     private boolean testStarted = false;
@@ -61,7 +62,7 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         Properties props = new Properties();
         props.setProperty("user", userName);
         props.setProperty("password", password);
-        conn = DriverManager.getConnection(url2, props);
+        conn = DriverManager.getConnection(url, props);
 
         if (graphInDB)
             EngineFactory.dependencyTableClazz = DependencyTablePGImpl.class;
@@ -74,8 +75,45 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         //SheetImpl.disablePrefetch();
         //FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerPriority();
 
-        //singleTest(TestRate.class, 100000, false, 0, false);
-        multipleTests();
+        singleTest(TestRate.class, 5000, false, 0, false);
+        //multipleTests();
+    }
+
+    public static void generateAreaUnderCurveGraph(Class testCase) {
+        final int nParams[]                     = {100, 10000};     // @Tana change these to be sizes of your choosing
+        final boolean syncs[]                   = {true,  false, false};
+        final int compressionSizes[]            = {0, 20, 20};
+        final boolean schedulerPrioritizes[]    = {false, false, true};
+        final String names[]                    = {"sync", "gc", "gc+p"};
+
+
+        for (int n: nParams) {
+            for (int index = 0; index < nParams.length; index++) {
+                PrintStream p = null;
+                try {
+                    String name = names[index];
+                    boolean sync = syncs[index];
+                    boolean schedulerPrioritize = schedulerPrioritizes[index];
+                    int compressionSize = compressionSizes[index];
+
+                    String testFullName = "test_" + testCase.getName() + "_" + nParams[index] + "_" + name;
+                    FileOutputStream f = new FileOutputStream("/home/tana/test20000_3/" + testFullName);
+                    p = new PrintStream(f);
+                    System.setOut(p);
+
+                    System.out.println(testFullName);
+                    System.err.println(" *********** NEW CASE *********** "+testFullName);
+                    singleTest(testCase, nParams[index], sync, compressionSize, schedulerPrioritize);
+                    System.gc();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    if (p != null) {
+                        p.flush();
+                    }
+                }
+            }
+        }
     }
 
     public static void multipleTests() {
@@ -120,7 +158,6 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
                 }
             }
         }
-
     }
 
     public static void singleTest(Class testCase, int testSize, boolean sync, int compressionSize, boolean schedulerPrioritize) throws Exception {
@@ -494,14 +531,14 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
             System.out.println(touchedTime - initTime + "\t" + sheetCells.size());
             System.out.println(touchedTime - initTime + "\t" + "0");
         } else {
-            DirtyManagerLog.instance.groupPrint(sheetCells, controlReturnedTime, initTime);
+            if (areaUnderCurveGraph) {
+                double area = DirtyManagerLog.instance.groupPrint(sheetCells, controlReturnedTime, initTime, true);
+                System.out.println("AREA UNDER CURVE IS " + area);
+            }
+            else {
+                DirtyManagerLog.instance.groupPrint(sheetCells, controlReturnedTime, initTime); // utilize group print
+            }
         }
-
-        /*long totalWaitTime = sheetCells.stream()
-                .mapToLong(e -> DirtyManagerLog.instance.getDirtyTime(e))
-                .sum();
-        System.out.println("Total Wait time " + totalWaitTime);
-        System.out.println("Avg Wait time " + totalWaitTime / sheetCells.size());*/
 
         System.out.println("Updated cells = " + updatedCells);
         System.out.println("TIME END: "+System.currentTimeMillis());

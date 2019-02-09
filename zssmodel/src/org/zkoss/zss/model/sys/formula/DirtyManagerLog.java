@@ -82,6 +82,11 @@ public class DirtyManagerLog {
     }
 
     public void groupPrint(Collection<CellRegion> sheetCells, long controlReturnedTime, long initTime) {
+        groupPrint(sheetCells, controlReturnedTime, initTime, false);
+    }
+
+    public double groupPrint(Collection<CellRegion> sheetCells,
+                             long controlReturnedTime, long initTime, boolean getAreaUnderCurve) {
         boolean firstNotDone = true;
         SortedMap<Long, Integer> dirtyCellsCounts = new TreeMap<>();
         Set<CellRegion> dirtyCells = new HashSet<>();
@@ -118,9 +123,26 @@ public class DirtyManagerLog {
         if (lastTimestamp != -1) {
             dirtyCellsCounts.put(lastTimestamp, dirtyCells.size());
         }
-
+        double areaUnderCurve = 0;
+        double prevTime = controlReturnedTime;
+        double prevNumDirty = 0;
         for (Map.Entry<Long, Integer> d : dirtyCellsCounts.entrySet()) {
+            if (Math.abs(d.getKey() - controlReturnedTime) <= Math.pow(10, -5)) {
+                prevNumDirty = d.getValue();
+            }
             if (d.getKey() > controlReturnedTime) {
+                if (getAreaUnderCurve) {
+                    // calculate area
+                    if (prevTime == controlReturnedTime){
+                        prevNumDirty = d.getValue();
+                        prevTime = d.getKey();
+                        continue;
+                    }
+                    double barWidth = d.getKey() - prevTime;
+                    prevTime = d.getKey();
+                    areaUnderCurve += barWidth * prevNumDirty;
+                    prevNumDirty = d.getValue();
+                }
                 if (firstNotDone) {
                     System.out.println(0 + "\t" + sheetCells.size());
                     System.out.println(controlReturnedTime - initTime + "\t" + sheetCells.size());
@@ -130,6 +152,10 @@ public class DirtyManagerLog {
                 System.out.println((d.getKey() - initTime) + "\t" + d.getValue());
             }
         }
+        if (getAreaUnderCurve)
+            return areaUnderCurve;
+        else
+            return 0;
     }
 
     public void print() {
