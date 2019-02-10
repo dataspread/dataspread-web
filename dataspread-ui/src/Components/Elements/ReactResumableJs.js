@@ -283,7 +283,7 @@ export default class ReactResumableJs extends React.Component {
             <div id={this.props.dropTargetID} ref={node => this.dropZone = node}>
                 {previousText}
                 <label className={this.props.disableInput ? 'btn file-upload disabled' : 'btn file-upload'}>{textLabel}
-                    <div className="ui action input">
+                    <div className="ui action input importTextBox">
                     <input type="text" readOnly
                         value={this.state.fileName}>
                     </input>

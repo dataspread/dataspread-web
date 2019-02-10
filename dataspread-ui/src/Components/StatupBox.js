@@ -22,7 +22,7 @@ export default class StartupBox extends Component {
             
                 <Divider horizontal>Or</Divider>
 
-                <ModalImportFile inMenu={false}/>
+                <ModalImportFile inMenu={false} onSelectFile={this.props.onSelectFile}/>
             
             </Segment>
         </div>

@@ -10,7 +10,8 @@ export default class ModalImportFile extends Component {
   			loadModalOpen: false,
 				fileStatus:"Waiting For File",
 				filename:"",
-				resumable:undefined
+				resumable:undefined,
+				fileId:""
   		};
       if (props.inMenu) {
         this.triggerObject = (<Dropdown.Item onClick={this.handleOpen}>Import</Dropdown.Item>);
@@ -20,7 +21,9 @@ export default class ModalImportFile extends Component {
 			
 			this._handleLoad = this._handleLoad.bind(this);
 			this.handleClose = this.handleClose.bind(this);
+			this.handleOpen = this.handleOpen.bind(this);
 			this._startUpload = this._startUpload.bind(this);
+			//this._loadFile = this._loadFile.bind(this);
    		if (typeof process.env.REACT_APP_BASE_HOST === 'undefined') {
 				this.urlPrefix = "";
 				this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
@@ -57,9 +60,18 @@ export default class ModalImportFile extends Component {
 		this.state.resumable.upload()
 	}
 
+	// _loadFile (){
+	// 	setTimeout(function(){
+	// 		console.log(this.state.fileId)
+	// 		//this.props.onSelectFile(this.state.fileId)
+	// 	}, 5000);
+		
+	// }
+
   render() {
     return (
 		<Modal
+		className='importFileModel'
 		trigger={this.triggerObject}
 		open={this.state.modalOpen}
 		onClose={this.handleClose}>
@@ -83,21 +95,23 @@ export default class ModalImportFile extends Component {
 					disableDragAndDrop={true}
 					showFileList={false}
 					onFileSuccess={(file, fileServer) => {
-						this.setState({ loadModalOpen: false });
-						//pass in bookname
-						this.setState({filename:file})
-						//this._handleLoad()
-						console.log(file, fileServer);
+						//this.setState({ loadModalOpen: false });
+						this.setState({
+							fileStatus: 'Done. Redirecting...',
+						})
+						console.log(file.file.name)
+						console.log(file);
+						console.log('Success');
+						console.log('fileId: ' + fileServer)
+						//fileServer Should return BookId
+						//this.props.onSelectFile(this.state.fileServer)
 					}}
-					onFileAdded={(file, resumable3) => {
+					onFileAdded={(file, resumable) => {
 						this.setState({
 							fileStatus:"selected "+ file.file.name,
-							resumable: resumable3
+							resumable: resumable
 						})
 						console.log("File added.");
-						console.log(resumable3)
-						//this.state.resumable = resumable
-						//resumable.upload();
 					}}
 					maxFiles={1}
 					// onStartUpload={(file, resumable) => {
@@ -113,7 +127,8 @@ export default class ModalImportFile extends Component {
         </Modal.Content>
 
         <Modal.Actions>
-					<Header content={"Status: " + this.state.fileStatus} />
+					
+					<Header className='uploadTextStatusBar' content={"Status: " + this.state.fileStatus} />
 					<Button onClick={this._startUpload}>Upload</Button>
           <Button color='blue' onClick={this.handleClose} inverted>
             <Icon name='checkmark' /> Close
