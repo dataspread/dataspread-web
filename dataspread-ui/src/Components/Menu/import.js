@@ -23,6 +23,7 @@ export default class ModalImportFile extends Component {
 			this.handleClose = this.handleClose.bind(this);
 			this.handleOpen = this.handleOpen.bind(this);
 			this._startUpload = this._startUpload.bind(this);
+			this.sleep = this.sleep.bind(this);
 			//this._loadFile = this._loadFile.bind(this);
    		if (typeof process.env.REACT_APP_BASE_HOST === 'undefined') {
 				this.urlPrefix = "";
@@ -60,13 +61,9 @@ export default class ModalImportFile extends Component {
 		this.state.resumable.upload()
 	}
 
-	// _loadFile (){
-	// 	setTimeout(function(){
-	// 		console.log(this.state.fileId)
-	// 		//this.props.onSelectFile(this.state.fileId)
-	// 	}, 5000);
-		
-	// }
+	sleep = (milliseconds) => {
+		return new Promise(resolve => setTimeout(resolve, milliseconds))
+	}
 
   render() {
     return (
@@ -95,16 +92,20 @@ export default class ModalImportFile extends Component {
 					disableDragAndDrop={true}
 					showFileList={false}
 					onFileSuccess={(file, fileServer) => {
-						//this.setState({ loadModalOpen: false });
+						console.log('Success');
 						this.setState({
 							fileStatus: 'Done. Redirecting...',
-						})
-						console.log(file.file.name)
-						console.log(file);
-						console.log('Success');
-						console.log('fileId: ' + fileServer)
-						//fileServer Should return BookId
-						//this.props.onSelectFile(this.state.fileServer)
+							fileId: 'bjryj0wh7'
+						},
+							() => {
+								this.sleep(2000).then(() => {
+									//fileServer Should return BookId here and load directly,
+									//remove the fileId in setState
+									console.log('fileId: ' + this.state.fileId);
+									this.props.onSelectFile(this.state.fileId);
+								})
+							}
+						)
 					}}
 					onFileAdded={(file, resumable) => {
 						this.setState({
