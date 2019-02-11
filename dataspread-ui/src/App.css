@@ -58,6 +58,15 @@ div.item.stylebar-padding{
   border-right: 1px solid rgba(34,36,38,.1);
 }
 
+.rowHeaderMenu{
+  display: block !important;
+  position: absolute !important;
+  zIndex: 1000 !important;
+  backgroundColor: rgba(52,52,52,1) !important;
+  opacity: 1 !important;
+  width: 100% !important;
+  height: 10% !important;
+}
 /* div.separator{
   border-left:1px solid #38546d !important; 
   border-right:1px solid #16222c !important; 
