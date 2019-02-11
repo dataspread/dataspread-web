@@ -99,11 +99,8 @@ export default class ModalImportFile extends Component {
 						},
 							() => {
 								this.sleep(2000).then(() => {
-									console.log(JSON.parse(fileServer))
-									//fileServer Should return BookId here and load directly,
-									//remove the fileId in setState
-									//console.log(JSON.parse(fileServer.data));
-									this.props.onSelectFile(this.state.fileId);
+									console.log("Will load bookId: " + JSON.parse(fileServer).data)
+									this.props.onSelectFile(JSON.parse(fileServer).data);
 								})
 							}
 						)
