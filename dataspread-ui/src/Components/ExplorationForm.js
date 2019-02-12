@@ -18,7 +18,7 @@ export default class ExplorationForm extends Component {
 
     componentDidMount() {
         console.log( "componentmoutn explore form")
-        console.log(this.props.grid.state.sheetName)
+        //console.log(this.props.grid.state.sheetName)
     }
 
     handleChange = (e, { value }) => {
@@ -33,10 +33,10 @@ export default class ExplorationForm extends Component {
 
     handleClose = () =>{
         console.log("close")
-        this.props.closeNavForm();
+        this.state.navFormOpen = false;
     }
     render(){
-        if(this.props.grid.state.navFormOpen){
+        if(this.state.navFormOpen){
             var optionList = this.state.options;
             return(<div id = "explore-form">
 

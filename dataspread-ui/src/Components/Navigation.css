@@ -8,6 +8,11 @@
 #formClose{
     float:right;
 }
+#nav-history {
+    width: 20%;
+    display: inline-block;
+    float: right;
+}
 
 .hierRemove{
     cursor: pointer;

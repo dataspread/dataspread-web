@@ -21,7 +21,7 @@ export default class HierarchiForm extends Component {
         };
         this.handleRankOrder = this.handleRankOrder.bind(this);
         this.handleSubTotalFunc = this.handleSubTotalFunc.bind(this);
-        this, this.updateOption = this.updateOption.bind(this);
+        this.updateOption = this.updateOption.bind(this);
     }
 
     updateOption(data) {

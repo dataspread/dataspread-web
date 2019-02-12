@@ -274,7 +274,7 @@ export default class Navigation extends Component {
             });
 
             let lowerRange = this.state.cumulativeData[this.state.currLevel][r].rowRange[0];
-            this.props.grid.grid.scrollToCell({columnIndex: 0, rowIndex: lowerRange + 26});
+            this.props.scrollTo(lowerRange);
             // let upperRange = cumulativeData[currLevel][r].rowRange[1];
             // updateData(cumulativeData[currLevel][r].rowRange[0], 0,
             //     cumulativeData[currLevel][r].rowRange[1], 15, true);
@@ -370,7 +370,8 @@ export default class Navigation extends Component {
 
     computeCellChart(chartString, row) {
         let self = this.state;
-        let grid = this.props.grid.grid;
+        let grid = this.props.grid;
+        let scrollTo = this.props.scrollTo;
         let result = self.childHash.get(row);
         let number = result.length;
         let maxLen = 0;
@@ -492,7 +493,7 @@ export default class Navigation extends Component {
             })
             .on("click", function (d) {
                 let lowerRange = hash.get(d.name).range;
-                grid.scrollToCell({columnIndex: 0, rowIndex: lowerRange + 26});
+                scrollTo(lowerRange);
                 //updataHighlight();
             });
         //   .on("dblclick",function(d){ alert("node was double clicked"); });
@@ -542,9 +543,9 @@ export default class Navigation extends Component {
         let queryData = {};
         //console.log(this)
         queryData.bookId = this.props.bookId;
-        queryData.sheetName = this.props.grid.state.sheetName;
+        queryData.sheetName = this.state.sheetName;
         queryData.path = childlist;
-        fetch(this.props.grid.urlPrefix + '/api/' + 'getChildren', {
+        fetch(this.state.urlPrefix + '/api/' + 'getChildren', {
             method: "POST",
             body: JSON.stringify(queryData),
             headers: {
@@ -653,10 +654,10 @@ export default class Navigation extends Component {
         let queryData = {};
 
         queryData.bookId = this.props.bookId;
-        queryData.sheetName = this.props.grid.state.sheetName;
+        queryData.sheetName = this.state.sheetName;
         queryData.path = childlist;
 
-        fetch(this.props.grid.urlPrefix + '/api/' + 'getChildren', {
+        fetch(this.state.urlPrefix + '/api/' + 'getChildren', {
             method: "POST",
             body: JSON.stringify(queryData),
             headers: {
@@ -737,11 +738,11 @@ export default class Navigation extends Component {
         let aggregateData = {};
 
         aggregateData.bookId = this.props.bookId;
-        aggregateData.sheetName = this.props.grid.state.sheetName;
+        aggregateData.sheetName = this.state.sheetName;
         aggregateData.formula_ls = formula_ls;
         let childlist = this.computePath();
         aggregateData.path = " " + childlist;
-        fetch(this.props.grid.urlPrefix + '/api/' + 'getHierarchicalAggregateFormula', {
+        fetch(this.state.urlPrefix + '/api/' + 'getHierarchicalAggregateFormula', {
             method: "POST",
             body: JSON.stringify(aggregateData),
             headers: {
@@ -1718,7 +1719,7 @@ export default class Navigation extends Component {
     }
 
     render() {
-        if (this.props.grid.state.navOpen) {
+        if (this.state.navOpen) {
             return (
                 <div id="hot-app">
                     <HotTable ref={this.hotTableComponent}/>
