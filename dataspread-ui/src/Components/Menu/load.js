@@ -18,6 +18,7 @@ export default class ModalOpenFile extends Component {
             this.triggerObject = (<Button secondary fluid onClick={this.handleOpen}>Open File</Button>);
 		}
         this._handleLoad = this._handleLoad.bind(this);
+        this.handleClose = this.handleClose.bind(this);
         if (typeof process.env.REACT_APP_BASE_HOST === 'undefined') {
             this.urlPrefix = "";
             this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
@@ -75,7 +76,7 @@ export default class ModalOpenFile extends Component {
 	}
 
 	render() {
-		console.log(this.urlPrefix + '/api/getBooks')
+		//console.log(this.urlPrefix + '/api/getBooks')
 		return (
 		<Modal
 			trigger={this.triggerObject}

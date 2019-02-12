@@ -16,10 +16,10 @@
     "react-datasheet": "^1.3.8",
     "react-dom": "^16.6.0",
     "react-draggable": "^3.0.5",
-    "react-resumable-js": "^1.1.24",
     "react-scripts": "1.1.4",
     "react-virtualized": "^9.20.1",
     "require": "^2.4.20",
+    "resumablejs": "^1.1.0",
     "semantic-ui-css": "^2.3.3",
     "semantic-ui-react": "^0.82.2",
     "stompjs": "^2.3.3"

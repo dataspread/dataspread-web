@@ -5,6 +5,7 @@ import api.utils.ResumableInfo;
 import api.utils.ResumableInfoStorage;
 import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,12 +20,14 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Random;
 
+@CrossOrigin(origins = "http://localhost:3000")
+
 @RestController
 public class ImportController {
     static final String UPLOAD_DIR = System.getProperty("java.io.tmpdir");
 
     @PostMapping("/api/importFile")
-    public String uploadFile(@RequestParam("file") MultipartFile file,
+    public HashMap<String, Object> uploadFile(@RequestParam("file") MultipartFile file,
                                           @RequestParam("resumableIdentifier") String resumableIdentifier,
                                           @RequestParam("resumableFilename") String resumableFilename,
                                           @RequestParam("resumableChunkSize") int resumableChunkSize,
@@ -63,9 +66,9 @@ public class ImportController {
             ResumableInfoStorage.getInstance().remove(info);
             System.out.println("File uploaded to " + UPLOAD_DIR);
             InputStream inputStream = new FileInputStream(new File(UPLOAD_DIR, resumableFilename));
-            importBook(inputStream);
+            HashMap<String, Object> msg = importBook(inputStream);
             inputStream.close();
-            return "All chunks finished.";
+            return msg;
         }
         else {
             return null;
@@ -121,7 +124,8 @@ public class ImportController {
         }
         //send message
         System.out.println("Imported to book " + book.getBookName());
-        return null;
+        //return null;
+        return JsonWrapper.generateJson(book.getId());
     }
 
 

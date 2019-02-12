@@ -12,6 +12,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 
+@CrossOrigin(origins = "http://localhost:3000")
+
 @RestController
 public class UserController {
     @Autowired
