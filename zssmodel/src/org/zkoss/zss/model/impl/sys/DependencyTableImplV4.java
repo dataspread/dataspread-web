@@ -152,12 +152,15 @@ public class DependencyTableImplV4 extends DependencyTableAdv {
 	@Override
 	public Set<Ref> getDirectDependents(Ref precedent) {
 		Set<Ref> result = new LinkedHashSet<>();
-		if (precedent.getType()==RefType.CELL)
-			return singleDepMap.get(precedent);
-		else if (precedent.getType()==RefType.AREA)
-			depGraph.search(getRectangeFromRef(precedent))
-					.toBlocking().toIterable()
-					.forEach(e->result.add(e.value()));
+		if (precedent.getType() == RefType.CELL) {
+			Set<Ref> dep = singleDepMap.get(precedent);
+			if (dep != null) {
+				result.addAll(dep);
+			}
+		}
+		depGraph.search(getRectangeFromRef(precedent))
+				.toBlocking().toIterable()
+				.forEach(e->result.add(e.value()));
 		return result;
 	}
 

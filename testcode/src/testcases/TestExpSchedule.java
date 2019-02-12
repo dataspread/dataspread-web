@@ -4,29 +4,33 @@ import org.zkoss.zss.model.SSheet;
 
 import java.util.Random;
 
-public class TestRunningTotalSmart implements AsyncTestcase {
+public class TestExpSchedule implements AsyncTestcase {
     // TODO: fix overflow
     private SSheet _sheet;
     private int _N;
+    private int _M;
     private int answer;
 
-    public TestRunningTotalSmart(SSheet sheet, int N) {
+    public TestExpSchedule(SSheet sheet, int N) {
         _sheet = sheet;
         _N = N;
-        answer = 20;
+        _M = 6;
 
         Random random = new Random(7);
 
         sheet.setDelayComputation(true);
 
         sheet.getCell(0, 0).setValue(random.nextInt(1000)+100);
-        sheet.getCell(0, 1).setFormulaValue("A1");
 
-        for (int i = 1; i < N; i++) {
-            int num = random.nextInt(1000);
+        for (int i = 0; i < N; i++) {
+            int num = random.nextInt(1000) + 100;
             sheet.getCell(i, 0).setValue(num);
-            sheet.getCell(i, 1).setFormulaValue("A" + (i+1) + " + B" + (i));
-            answer += num;
+            answer = 20 * num;
+        }
+
+        for (int i = 0; i < _M; i++) {
+            int size = (N*(i+1))/_M;
+            sheet.getCell(i, 1).setFormulaValue("SUM(A1:A" + (size)+")");
         }
 
         sheet.setDelayComputation(false);
@@ -40,7 +44,7 @@ public class TestRunningTotalSmart implements AsyncTestcase {
     @Override
     public void touchAll() {
         double something = 0.0;
-        for (int i = 0; i < _N; i++) {
+        for (int i = 0; i < _M; i++) {
             Object v = _sheet.getCell(i, 1).getValue();
             something += (double) v;
         }
@@ -49,12 +53,6 @@ public class TestRunningTotalSmart implements AsyncTestcase {
 
     @Override
     public boolean verify() {
-        try {
-            Object value_raw = _sheet.getCell(_N - 1, 1).getValue();
-            double value = (double) value_raw;
-            return Math.abs(value - answer) <= 1e-6;
-        } catch (Exception e) {
-            return false;
-        }
+        return true;
     }
 }

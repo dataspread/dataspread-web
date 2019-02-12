@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 public class AsyncPerformance3 implements FormulaAsyncListener {
     // Test params
     final static boolean graphInDB = false;
-    final static boolean areaUnderCurveGraph = true;
+    final static boolean areaUnderCurveGraph = false;
 
     // Test stats
     private boolean testStarted = false;
@@ -74,8 +74,8 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         //SheetImpl.disablePrefetch();
         //FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerPriority();
 
-        singleTest(TestRunningTotalSmart.class, 10000, false, 0, false);
-        //multipleTests();
+        //singleTest(TestRunningTotalDumb.class, 10000, false, 0, false);
+        multipleTests();
     }
 
     public static void generateAreaUnderCurveGraph(Class testCase) {
@@ -116,16 +116,21 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
     }
 
     public static void multipleTests() {
-        final Class testCases[] = {TestRate.class, TestRunningTotalSmart.class, TestRunningTotalDumb.class};
-        final int testSizes[] = {100000};
-        final String names[]                 = {"brn1","brn2","s",   "brn3","brn4","a",   "ac2", "ac20","ap",  "ac2p","ac20p"};
+        final Class testCases[] = {TestRunningTotalDumb.class};
+        final int testSizes[] = {10000};
+        /*final String names[]                 = {"brn1","brn2","s",   "brn3","brn4","a",   "ac2", "ac20"};
+        final boolean syncs[]                = {true,  false, true,  false, false, false, false, false};
+        final int compressionSizes[]         = {0,     0,     0,     0,     0,     0,     2,     20};
+        final boolean schedulerPrioritizes[] = {false, false, false, false, false, false, false, false};*/
+        final String names[]                 = {"brn1","brn2","s",   "brn3","brn4","a",   "ac2", "ac20","ap",   "ac2p", "ac20p"};
         final boolean syncs[]                = {true,  false, true,  false, false, false, false, false, false, false, false};
-        final int compressionSizes[]         = {0,     2,     0,     2,     2,     0,     2,     20,    0,     2,     20};
-        final boolean schedulerPrioritizes[] = {false, false, false, false, false, false, false, false, true,  true,  true};
-        /*final String names[]                 = {"brn1","brn2","ac2p", "ac20p"};//  "ac2", "ac20","ap",  "ac2p","ac20p"};
-        final boolean syncs[]                = {true,  false, false,false};//, false, false, false, false, false};
-        final int compressionSizes[]         = {0,     2,    2,20 };//  2,     20,    0,     2,     20};
-        final boolean schedulerPrioritizes[] = {false, false, true,true};//, false, false, true,  true,  true};*/
+        final int compressionSizes[]         = {0,     0,     0,     0,     0,     0,     2,     20,     0,     2,     20};
+        final boolean schedulerPrioritizes[] = {false, false, false, false, false, false, false, false, true, true, true};
+        // FOR TestExpSchedule
+        /*final String names[]                 = {"brn1","brn2","a1"};//,"ap"};
+        final boolean syncs[]                = {true,  false ,false};//, false};
+        final int compressionSizes[]         = {0,     2,      0};//,   0};
+        final boolean schedulerPrioritizes[] = {false, false,  true};//, true};*/
 
 
         for (int testSize: testSizes) {
@@ -147,6 +152,7 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
                         System.err.println(" *********** NEW CASE *********** "+testFullName);
                         singleTest(testCase, testSize, sync, compressionSize, schedulerPrioritize);
                         System.gc();
+                        Thread.sleep(5000);
                     } catch (Exception e) {
                         e.printStackTrace();
                     } finally {
@@ -172,6 +178,12 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         asyncPerformance.simpleTest(testCase, testSize, sync, compressionSize);
 
         formulaAsyncScheduler.shutdown();
+
+        while (!((FormulaAsyncSchedulerSimple) FormulaAsyncScheduler.getScheduler()).isDead) {
+            Thread.sleep(10);
+        }
+        ((FormulaAsyncSchedulerSimple) FormulaAsyncScheduler.getScheduler()).started = false;
+        ((FormulaAsyncSchedulerSimple) FormulaAsyncScheduler.getScheduler()).isDead = false;
         asyncThread.join();
     }
 
@@ -544,9 +556,6 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
 
         System.out.println("Updated cells = " + updatedCells);
         System.out.println("TIME END: "+System.currentTimeMillis());
-        ((FormulaAsyncSchedulerSimple) FormulaAsyncScheduler.getScheduler()).started = false;
-        ((FormulaAsyncSchedulerSimple) FormulaAsyncScheduler.getScheduler()).isDead = false;
-
     }
 
     public static ArrayList<CellRegion> getBadCells(String bookName, String sheetname) {

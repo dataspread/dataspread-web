@@ -23,6 +23,10 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
     private boolean keepRunning = true;
     public static boolean started = false;
     public static boolean isDead = false;
+    private static PriorityQueue<CellItem> pq = new PriorityQueue<>(new CellItemCompare());
+    private static Queue<SCell> queue = new LinkedList<>();
+    private static int MAX_QUEUE_SIZE = 2000;
+    private static Set<Ref> computedCells = new HashSet<>();
 
     private class CellItem {
         public SCell cell;
@@ -34,7 +38,7 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
         }
     }
 
-    private class CellItemCompare implements Comparator<CellItem> {
+    private static class CellItemCompare implements Comparator<CellItem> {
         @Override
         public int compare(CellItem cellItem, CellItem t1) {
             return cellItem.weight-t1.weight;
@@ -55,7 +59,7 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
             List<DirtyManager.DirtyRecord> dirtyRecordSet = DirtyManager.dirtyManagerInstance.getAllDirtyRegions();
 
             //List<SCell> computedCells = new ArrayList<>();
-            Set<Ref> computedCells = new HashSet<>();
+
 
             // Compute visible range first
             /*for (DirtyManager.DirtyRecord dirtyRecord : dirtyRecordSet) {
@@ -116,31 +120,40 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
                             dirtyRecord.trxId);
                 }
             } else {
-                PriorityQueue<CellItem> queue = new PriorityQueue<>(new CellItemCompare());
-                //System.err.println("HAVE NOW: "+dirtyRecordSet.size());
+
+                //System.err.println("QSIZE NOW: "+queue.size()+" "+pq.size());
                 for (DirtyManager.DirtyRecord dirtyRecord : dirtyRecordSet) {
                     SSheet sheet = BookBindings.getSheetByRef(dirtyRecord.region);
                     Collection<SCell> cells = sheet.getCells(new CellRegion(dirtyRecord.region));
-                    for (SCell sCell : cells) {
-                        DependencyTableAdv table = ((DependencyTableAdv) sheet.getDependencyTable());
-                        Ref ref = sCell.getRef();
-                        Set<Ref> sr = table.getDirectPrecedents(ref);
-                        int numPrec = (sr == null) ? 0 : sr.stream().mapToInt(Ref::getCellCount).sum();
-                        queue.add(new CellItem(sCell, numPrec));
-                    }
-
+                    queue.addAll(cells);
                     DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,
                             dirtyRecord.trxId);
                 }
-                while (!queue.isEmpty()) {
-                    SCell cell = queue.poll().cell;
-                    //System.err.println("I CHOOSE YOU: "+cell.getCellRegion());
-                    letsCompute(computedCells, cell.getSheet(), cell);
+                while (!queue.isEmpty() || !pq.isEmpty()) {
+                    //System.err.println("QSIZE NOW: "+queue.size()+" "+pq.size());
+                    while (!queue.isEmpty() && pq.size() < MAX_QUEUE_SIZE) {
+                        SCell cell = queue.poll();
+                        SSheet sheet = cell.getSheet();
+                        DependencyTableAdv table = ((DependencyTableAdv) sheet.getDependencyTable());
+                        Ref ref = cell.getRef();
+                        Set<Ref> sr = table.getDirectPrecedents(ref);
+                        int numPrec = (sr == null) ? 0 : sr.stream().mapToInt(Ref::getCellCount).sum();
+                        int z = numPrec;//((cell.getRowIndex()+21)*29+11)%17;//(cell.getRowIndex()*7)%13;
+                        pq.add(new CellItem(cell, z));
+                    }
+                    if (!pq.isEmpty()) {
+                        SCell cell = pq.poll().cell;
+                        //System.err.println("I CHOOSE YOU: "+cell.getCellRegion());
+                        letsCompute(computedCells, cell.getSheet(), cell);
+                    }
                 }
             }
             //logger.info("Done computing " + dirtyRecord.region );
         }
         isDead = true;
+        computedCells.clear();
+        pq.clear();
+        queue.clear();
     }
 
     private List<Ref> getRefsInBlock(Ref ref) {
@@ -160,10 +173,10 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
         return ans;
     }
 
-    private void letsCompute(Set<Ref> computedCells, SSheet sheet, SCell cell) {
+    private void letsCompute(Set<Ref> computedCells,SSheet sheet, SCell cell) {
         //System.out.println("letsCompute " + cell);
         Ref ref = cell.getRef();
-        if (!computedCells.contains(ref)) {
+        //if (!computedCells.contains(ref)) {
             if (cell.getType() == SCell.CellType.FORMULA) {
                 //System.err.println("computed: "+cell.getCellRegion());
                 Object value = ((CellImpl) cell).getValue(true, true);
@@ -175,8 +188,8 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
                 update(sheet.getBook(), sheet, cell.getCellRegion(), value, "");
                 DirtyManagerLog.instance.markClean(cell.getCellRegion());
             }
-            computedCells.add(ref);
-        }
+        //    computedCells.add(ref);
+        //}
     }
 
     private void letsCompute_old(Set<Ref> computedCells, SSheet sheet, SCell cell) {
