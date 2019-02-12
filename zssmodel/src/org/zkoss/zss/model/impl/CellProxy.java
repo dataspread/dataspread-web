@@ -20,6 +20,7 @@ import org.model.AutoRollbackConnection;
 import org.zkoss.poi.ss.formula.eval.ValueEval;
 import org.zkoss.zss.model.*;
 import org.zkoss.zss.model.sys.dependency.Ref;
+import org.zkoss.zss.model.sys.formula.EvaluationResult;
 import org.zkoss.zss.model.sys.formula.FormulaExpression;
 
 import java.util.Collection;
@@ -366,6 +367,12 @@ class CellProxy extends AbstractCellAdv {
 	public void translate(int rowShift, int colShift) {
 		this._rowIdx += rowShift;
 		this._columnIdx += colShift;
+	}
+
+	@Override
+	public void updateFormulaResultValue(EvaluationResult result) {
+		if (_proxy!=null)
+			_proxy.updateFormulaResultValue(result);
 	}
 
 	@Override

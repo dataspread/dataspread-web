@@ -109,7 +109,7 @@ public class DirtyManagerMemImpl extends DirtyManager {
         ret.addAll(ret2);
         if (ret.isEmpty()) {
             try {
-                wait(1000);
+                wait(10);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

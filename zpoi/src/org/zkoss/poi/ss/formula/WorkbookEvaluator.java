@@ -415,6 +415,7 @@ public final class WorkbookEvaluator {
 				OperationEvaluationContext ec = new OperationEvaluationContext(this, _workbook, sheetIndex, rowIndex, columnIndex, tracker, _dependencyTracker, ref);
 				result = evaluateFormula(ec, ptgs, false, false);
 				//System.out.println("Done Evaluating " + srcCell);
+				srcCell.updateFormulaResultValue(result);
 				return result;
 			}
 
@@ -1018,7 +1019,12 @@ public final class WorkbookEvaluator {
 				// TODO Auto-generated method stub
 				return Cell.CELL_TYPE_BLANK;
 			}
-			
+
+			@Override
+			public void updateFormulaResultValue(ValueEval result) {
+
+			}
+
 		};
 		FormulaCellCacheEntry cce = _cache.getOrCreateFormulaCellEntry(virtualCell);
 		ValueEval result;
@@ -1133,7 +1139,12 @@ public final class WorkbookEvaluator {
 				// TODO Auto-generated method stub
 				return Cell.CELL_TYPE_BLANK;
 			}
-			
+
+			@Override
+			public void updateFormulaResultValue(ValueEval result) {
+
+			}
+
 		};
 		FormulaCellCacheEntry cce = _cache.getOrCreateFormulaCellEntry(virtualCell);
 		ValueEval result;

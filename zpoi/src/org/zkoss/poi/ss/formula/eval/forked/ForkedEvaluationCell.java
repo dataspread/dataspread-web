@@ -17,14 +17,9 @@
 
 package org.zkoss.poi.ss.formula.eval.forked;
 
-import org.zkoss.poi.ss.formula.eval.BlankEval;
-import org.zkoss.poi.ss.formula.eval.BoolEval;
-import org.zkoss.poi.ss.formula.eval.ErrorEval;
-import org.zkoss.poi.ss.formula.eval.NumberEval;
-import org.zkoss.poi.ss.formula.eval.StringEval;
-import org.zkoss.poi.ss.formula.eval.ValueEval;
 import org.zkoss.poi.ss.formula.EvaluationCell;
 import org.zkoss.poi.ss.formula.EvaluationSheet;
+import org.zkoss.poi.ss.formula.eval.*;
 import org.zkoss.poi.ss.usermodel.Cell;
 
 /**
@@ -137,5 +132,10 @@ final class ForkedEvaluationCell implements EvaluationCell {
     public int getCachedFormulaResultType() {
         return _masterCell.getCachedFormulaResultType();
     }
+
+	@Override
+	public void updateFormulaResultValue(ValueEval result) {
+
+	}
 
 }

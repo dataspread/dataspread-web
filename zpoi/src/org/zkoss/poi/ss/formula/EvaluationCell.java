@@ -17,6 +17,8 @@
 
 package org.zkoss.poi.ss.formula;
 
+import org.zkoss.poi.ss.formula.eval.ValueEval;
+
 /**
  * Abstracts a cell for the purpose of formula evaluation.  This interface represents both formula
  * and non-formula cells.<br/>
@@ -44,4 +46,5 @@ public interface EvaluationCell {
 	int getErrorCellValue();
 
 	int getCachedFormulaResultType();
+	void updateFormulaResultValue(ValueEval result);
 }

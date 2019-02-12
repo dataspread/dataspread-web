@@ -13,6 +13,8 @@ package org.zkoss.zss.model.impl.sys.formula;
 
 import org.zkoss.poi.ss.formula.EvaluationCell;
 import org.zkoss.poi.ss.formula.EvaluationSheet;
+import org.zkoss.poi.ss.formula.eval.EvaluationException;
+import org.zkoss.poi.ss.formula.eval.ValueEval;
 import org.zkoss.poi.ss.usermodel.Cell;
 import org.zkoss.poi.ss.usermodel.FormulaError;
 import org.zkoss.zss.model.ErrorValue;
@@ -157,6 +159,16 @@ public class EvalSheet implements EvaluationSheet {
 			return cell.getType() == CellType.FORMULA ?
                     (FormulaExpression) ((AbstractCellAdv) cell).getValue(false) : null;
         }
+
+		public void updateFormulaResultValue(ValueEval result)
+		{
+			try {
+				cell.updateFormulaResultValue(FormulaEngineImpl
+						.convertToEvaluationResult(result));
+			} catch (EvaluationException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	private static class Key {

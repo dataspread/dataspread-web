@@ -19,6 +19,7 @@ package org.zkoss.poi.xssf.usermodel;
 
 import org.zkoss.poi.ss.formula.EvaluationCell;
 import org.zkoss.poi.ss.formula.EvaluationSheet;
+import org.zkoss.poi.ss.formula.eval.ValueEval;
 
 /**
  * XSSF wrapper for a cell under evaluation
@@ -80,5 +81,10 @@ final class XSSFEvaluationCell implements EvaluationCell {
 
 	public int getCachedFormulaResultType() {
 		return _cell.getCachedFormulaResultType();
+	}
+
+	@Override
+	public void updateFormulaResultValue(ValueEval result) {
+
 	}
 }

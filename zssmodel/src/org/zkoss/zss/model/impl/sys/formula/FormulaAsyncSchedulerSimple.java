@@ -1,6 +1,5 @@
 package org.zkoss.zss.model.impl.sys.formula;
 
-import org.zkoss.poi.ss.formula.FormulaComputationStatusManager;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
@@ -162,6 +161,26 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
     }
 
     private void letsCompute(Set<Ref> computedCells, SSheet sheet, SCell cell) {
+        //System.out.println("letsCompute " + cell);
+        Ref ref = cell.getRef();
+        if (!computedCells.contains(ref)) {
+            if (cell.getType() == SCell.CellType.FORMULA) {
+                //System.err.println("computed: "+cell.getCellRegion());
+                Object value = ((CellImpl) cell).getValue(true, true);
+                update(sheet.getBook(), sheet, cell.getCellRegion(), value, cell.getFormulaValue());
+                DirtyManagerLog.instance.markClean(cell.getCellRegion());
+            } else {
+                //System.err.println("computed: "+cell.getCellRegion());
+                Object value = ((CellImpl) cell).getValue(true, true);
+                update(sheet.getBook(), sheet, cell.getCellRegion(), value, "");
+                DirtyManagerLog.instance.markClean(cell.getCellRegion());
+            }
+            computedCells.add(ref);
+        }
+    }
+
+    private void letsCompute_old(Set<Ref> computedCells, SSheet sheet, SCell cell) {
+        //System.out.println("letsCompute " + cell);
         Ref ref = cell.getRef();
         if (!computedCells.contains(ref)) {
             if (cell.getType() == SCell.CellType.FORMULA) {
