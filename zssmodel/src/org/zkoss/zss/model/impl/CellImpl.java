@@ -493,7 +493,7 @@ public class CellImpl extends AbstractCellAdv {
 						fe.clearCache(new FormulaClearContext(_sheet));
 						EvaluationResult result = fe.evaluate(expr, evalContext);
 						updateFormulaResultValue(result);
-						trxId = _sheet.getTrxId();
+
 					}
 				}
 			}
@@ -880,7 +880,9 @@ public class CellImpl extends AbstractCellAdv {
     public synchronized void updateFormulaResultValue(EvaluationResult result) {
 		//System.out.println("updateFormulaResultValue " + this);
     	_formulaResultValue=new FormulaResultCellValue(result);
-			if (!CellImpl.disableDBUpdates)
-				updateCelltoDB();
+        DirtyManagerLog.instance.markClean(getCellRegion());
+        trxId = _sheet.getTrxId();
+        if (!CellImpl.disableDBUpdates)
+            updateCelltoDB();
 	}
 }
