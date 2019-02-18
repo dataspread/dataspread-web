@@ -38,6 +38,7 @@ export default class Navigation extends Component {
 
         this.startNav = this.startNav.bind(this);
         this.navCellRenderer = this.navCellRenderer.bind(this);
+        this.beforeOnCellMouseDownHandler = this.beforeOnCellMouseDownHandler.bind(this);
         this.afterSelectionHandler = this.afterSelectionHandler.bind(this);
         this.computeCellChart = this.computeCellChart.bind(this);
         this.zoomIn = this.zoomIn.bind(this);
@@ -48,6 +49,7 @@ export default class Navigation extends Component {
         this.zoomOutHist = this.zoomOutHist.bind(this);
         this.submitHierForm = this.submitHierForm.bind(this);
         this.chartRenderer = this.chartRenderer.bind(this);
+
     }
 
     startNav(data) {
@@ -96,7 +98,7 @@ export default class Navigation extends Component {
                 ? currentState.wrapperHeight * 0.93 / currentState.currData.length
                 : 90,
             width: currentState.wrapperWidth * 0.19,
-            height: currentState.wrapperHeight * 0.93,
+            height: currentState.wrapperHeight * 0.92,
             rowHeaderWidth: 0,
             rowHeaders: true,
             colWidths: self.colWidthsComputer,
@@ -105,49 +107,9 @@ export default class Navigation extends Component {
             contextMenu: false,
             outsideClickDeselects: false,
             className: "wrap",
-            search: true,
-            sortIndicator: true,
-            manualColumnResize: true,
+            //manualColumnResize: true,
             mergeCells: currentState.mergeCellInfo,
-            beforeOnCellMouseDown: function (e, coords, element) {
-                // $("#formulaBar").val("");
-
-                let topLevel = (currentState.currLevel == 0 && coords.col != 0)
-                let otherLevel = (currentState.currLevel > 0 && coords.col != 1)
-                // if (topLevel && coords.row >= 0) {
-                //     $("#formulaBar").val("=" + navRawFormula[coords.row][coords.col - 1]);
-                // }
-                // else if (currLevel > 0 && coords.row >= 0 && coords.col >= 2) {
-                //     $("#formulaBar").val("=" + navRawFormula[coords.row][coords.col - 2]);
-                // }
-                //console.log(e);
-                //|| zoomming
-                if (topLevel || otherLevel ||
-                    e.realTarget.className == "colHeader" ||
-                    e.realTarget.className == "relative" || e.realTarget.className.baseVal == "bar") {
-                    e.stopImmediatePropagation();
-                }
-                if (e.realTarget.classList['3'] == "zoomInPlus") {
-                    e.stopImmediatePropagation();
-                    self.zoomIn(coords.row);
-                }
-                if (e.realTarget.classList['3'] == "zoomOutM") {
-                    e.stopImmediatePropagation();
-                    self.zoomOutHist();
-                    return;
-                }
-                if (e.realTarget.id == "colClose") {
-                    self.removeHierarchiCol(coords.col)
-                }
-                if (e.realTarget.classList['0'] == "slider") {
-                    let level = coords.col - 1;
-                    if (currentState.currLevel > 0)
-                        level = coords.col - 2;
-                    currentState.aggregateData.formula_ls[level].getChart =
-                        !currentState.aggregateData.formula_ls[level].getChart;
-                    self.getAggregateValue();
-                }
-            },
+            beforeOnCellMouseDown: self.beforeOnCellMouseDownHandler,
             cells: self.cellRenderer,
             afterSelection: self.afterSelectionHandler,
         })
@@ -175,6 +137,49 @@ export default class Navigation extends Component {
                 }
             }
         });
+    }
+
+    beforeOnCellMouseDownHandler (e, coords, element) {
+        // $("#formulaBar").val("");
+        let currentState = this.state;
+        let self = this;
+        let topLevel = (currentState.currLevel == 0 && coords.col != 0)
+        let otherLevel = (currentState.currLevel > 0 && coords.col != 1)
+        // if (topLevel && coords.row >= 0) {
+        //     $("#formulaBar").val("=" + navRawFormula[coords.row][coords.col - 1]);
+        // }
+        // else if (currLevel > 0 && coords.row >= 0 && coords.col >= 2) {
+        //     $("#formulaBar").val("=" + navRawFormula[coords.row][coords.col - 2]);
+        // }
+        //console.log(e);
+        //|| zoomming
+        if (topLevel || otherLevel ||
+            e.realTarget.className == "colHeader" ||
+            e.realTarget.className == "relative" || e.realTarget.className.baseVal == "bar") {
+
+            e.stopImmediatePropagation();
+        }
+        if (e.realTarget.classList['3'] == "zoomInPlus") {
+            e.stopImmediatePropagation();
+            self.zoomIn(coords.row);
+        }
+
+        if (e.realTarget.classList['3'] == "zoomOutM") {
+            e.stopImmediatePropagation();
+            self.zoomOutHist();
+            return;
+        }
+        if (e.realTarget.id == "colClose") {
+            self.removeHierarchiCol(coords.col)
+        }
+        if (e.realTarget.classList['0'] == "slider") {
+            let level = coords.col - 1;
+            if (currentState.currLevel > 0)
+                level = coords.col - 2;
+            currentState.aggregateData.formula_ls[level].getChart =
+                !currentState.aggregateData.formula_ls[level].getChart;
+            self.getAggregateValue();
+        }
     }
 
     colWidthsComputer(col) {
@@ -260,6 +265,7 @@ export default class Navigation extends Component {
     afterSelectionHandler(r, c, r2, c2, preventScrolling,
                           selectionLayerLevel) {
         // setting if prevent scrolling after selection
+        console.log(r,c,r2,c2)
         if (this.state.cumulativeData[this.state.currLevel][r] != undefined) {
             let selectedChild = [];
             selectedChild.push(r);
@@ -369,8 +375,8 @@ export default class Navigation extends Component {
     }
 
     computeCellChart(chartString, row) {
+        let nav = this;
         let self = this.state;
-        let grid = this.props.grid;
         let scrollTo = this.props.scrollTo;
         let result = self.childHash.get(row);
         let number = result.length;
@@ -491,8 +497,23 @@ export default class Navigation extends Component {
             .on("mouseout", function (d) {
                 tooltip.style("display", "none");
             })
-            .on("click", function (d) {
+            .on("click", function (d,i) {
+
+                // work around for highlight nav chart
+                let selectedChild = [];
+                selectedChild.push(row);
+                let selectedBars = [];
+                let barObj = {};
+                barObj.cell = row;
+                barObj.bars = [i];
+                selectedBars.push(barObj);
+                nav.setState({
+                    selectedChild: selectedChild,
+                    selectedBars: selectedBars
+                });
                 let lowerRange = hash.get(d.name).range;
+
+
                 scrollTo(lowerRange);
                 //updataHighlight();
             });
@@ -622,7 +643,7 @@ export default class Navigation extends Component {
                     //             zoomming = false;
                     //             //nav.selectCell(0, 1)
                     //         }
-                    //         updateNavPath(breadcrum_ls); // calculate breadcrumb
+                    this.props.updateBreadcrumb(result.breadCrumb, childlist); // calculate breadcrumb
                     //         updateNavCellFocus(currentFirstRow, currentLastRow);
                     if (selectFirstChild)
                         this.hotTableComponent.current.hotInstance.selectCell(0, 1);
@@ -725,7 +746,7 @@ export default class Navigation extends Component {
                         this.submitHierForm(currState.aggregateData.formula_ls);
                     }
 
-                    // updateNavPath(breadcrum_ls);
+                    this.props.updateBreadcrumb(result.breadCrumb,childlist); // calculate breadcrumb
                     // updateNavCellFocus(currentFirstRow, currentLastRow);
                 }
             })
@@ -1717,6 +1738,7 @@ export default class Navigation extends Component {
         }
         return childlist;
     }
+
 
     render() {
         if (this.state.navOpen) {
