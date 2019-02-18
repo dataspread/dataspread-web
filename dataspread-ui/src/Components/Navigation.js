@@ -49,6 +49,7 @@ export default class Navigation extends Component {
         this.zoomOutHist = this.zoomOutHist.bind(this);
         this.submitHierForm = this.submitHierForm.bind(this);
         this.chartRenderer = this.chartRenderer.bind(this);
+        this.jumpToHistorialView = this.jumpToHistorialView.bind(this);
 
     }
 
@@ -750,8 +751,119 @@ export default class Navigation extends Component {
                     // updateNavCellFocus(currentFirstRow, currentLastRow);
                 }
             })
+    }
 
+    jumpToHistorialView(childlist) {
+        console.log("In Jump to Historical view");
+        let currState = this.state;
+        let childHash = new Map();
+        let clickable = true;
+        //nav.deselectCell();
 
+        let tmp_ls = childlist.split(",");
+        let levelList = []
+        for (let i = 0; i < tmp_ls.length; i++) {
+            if (tmp_ls[i].length != 0)
+                levelList[i] = parseInt(tmp_ls[i]);
+        }
+        let targetChild = levelList[levelList.length - 1];
+
+        this.setState({
+            selectedChild: [],
+            selectedBars: [],
+            sortChild_ls: [],
+            levelList: levelList,
+        });
+
+        // api call to /levelList + '.' + child to get currData
+        let queryData = {};
+
+        queryData.bookId = this.props.bookId;
+        queryData.sheetName = this.state.sheetName;
+        queryData.path = childlist;
+        fetch(this.state.urlPrefix + '/api/' + 'getChildren', {
+            method: "POST",
+            body: JSON.stringify(queryData),
+            headers: {
+                'Content-Type': 'text/plain'
+            }
+        }).then(response => response.json())
+            .then(data => {
+            if (data.status == "success") {
+                var result = data.data;
+                let breadcrumb_ls = result.breadCrumb;
+                // clickable = result.clickable;
+                let currLevel = breadcrumb_ls.length;
+                let currData = result.buckets;
+                for (let i = 0; i < currData.length; i++) {
+                    childHash.set(i, currData[i].children);
+                }
+                let prevPath = result.prev.path;
+                let nextPath = result.later.path;
+                let numChild = currData.length;
+                let viewData = new Array(numChild);
+                let cumulativeData = currState.cumulativeData;
+                cumulativeData[currLevel] = currData;
+                let mergeCellInfo = [];
+                let colHeader = currState.colHeader;
+                if (breadcrumb_ls.length != 0) {
+                    mergeCellInfo.push({row: 0, col: 0, rowspan: numChild, colspan: 1});
+
+                    let parentName = breadcrumb_ls[breadcrumb_ls.length - 1];
+
+                    for (let i = 0; i < numChild; i++) {
+                        if (i == 0) {
+                            viewData[i] = [parentName];
+                        } else {
+                            viewData[i] = [""];
+                        }
+                        viewData[i][1] = currData[i].name;
+                    }
+                } else {
+                    colHeader.splice(1, 1);
+                    for (let i = 0; i < numChild; i++) {
+                        viewData[i] = [currData[i].name];
+                    }
+                }
+
+                let columWidth = [];
+                if (breadcrumb_ls.length >= 1) {
+                    columWidth = [40, 160];
+                } else {
+                    columWidth = 200;
+                }
+
+                this.setState({
+                    currData: result.buckets,
+                    childHash: childHash,
+                    viewData: viewData,
+                    cumulativeData: cumulativeData,
+                    currLevel: currLevel,
+                    mergeCellInfo: mergeCellInfo,
+                    colHeader:colHeader,
+                    prevPath: prevPath,
+                    nextPath: nextPath,
+                });
+                currState = this.state;
+                this.hotTableComponent.current.hotInstance.deselectCell();
+
+                this.hotTableComponent.current.hotInstance.updateSettings({
+                        data: viewData,
+                    rowHeights: (currState.wrapperHeight * 0.95 / currState.currData.length > 90)
+                        ? currState.wrapperHeight * 0.95 / currState.currData.length
+                        : 90,
+                        mergeCells: mergeCellInfo,
+                    });
+                if (currState.hieraOpen) {
+                    this.submitHierForm(currState.aggregateData.formula_ls);
+                }
+                this.props.updateBreadcrumb(result.breadCrumb, childlist); // calculate breadcrumb
+            //     if (currLevel == 0) {
+            //         updateNavCellFocus(currentFirstRow, currentLastRow);
+            //     } else
+            //         nav.selectCell(0, 1);
+            // }
+        }});
     }
 
     submitHierForm(formula_ls) {

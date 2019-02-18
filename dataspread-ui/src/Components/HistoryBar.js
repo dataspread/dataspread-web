@@ -3,6 +3,7 @@ import {Breadcrumb, Dropdown} from 'semantic-ui-react'
 import './Navigation.css';
 
 export default class HistoryBar extends Component {
+
     constructor(props) {
         super(props);
         console.log(this);
@@ -13,10 +14,7 @@ export default class HistoryBar extends Component {
             navHistoryPathIndex: {},
             navHistoryTable: {},
             historyList: [],
-        }
-        this.handleChange = this.handleChange.bind(this);
-        this.handleSubmit = this.handleSubmit.bind(this);
-        this.handleClose = this.handleClose.bind(this);
+        };
         this.updateNavPath = this.updateNavPath.bind(this);
 
     }
@@ -26,20 +24,15 @@ export default class HistoryBar extends Component {
         console.log(this.props)
     }
 
-    handleChange = (e, {value}) => {
-
+    handleHistClick = (row) =>{
+        console.log(row)
+        console.log(this.state.navHistoryPathIndex[row])
+        this.props.jumpToHistorialView(this.state.navHistoryPathIndex[row])
     }
-
-    handleSubmit = () => {
-
-    }
-
-    handleClose = () => {
-
-    }
-    handleClick = (index) => {
+    handleBreadcrumbClick = (index) => {
         console.log(index)
-        console.log("home pressed")
+        console.log(this.state.breadCrumbHistoryPathIndex[parseInt(index)])
+        this.props.jumpToHistorialView(this.state.breadCrumbHistoryPathIndex[parseInt(index)])
     }
 
     updateNavPath(breadcrumb_ls,path_index) {
@@ -81,9 +74,6 @@ export default class HistoryBar extends Component {
             temp_ls.splice(0,0,navHistoryPath);
             history = temp_ls;
         }
-        // this.setState({
-        //     breadcrumb_ls:breadcrumb_ls,
-        // })
         this.setState({
             breadcrumb_ls: breadcrumb_ls,
             breadCrumbHistoryPathIndex: breadCrumbHistoryPathIndex,
@@ -92,24 +82,31 @@ export default class HistoryBar extends Component {
     }
 
     render() {
+        if(this.state.open == false) return null;
         var breadCrumb = [];
-        for (let i = 0; i < this.state.breadcrumb_ls.length; i++) {
+        if(this.state.breadcrumb_ls.length > 0) {
+            breadCrumb.push(<Breadcrumb.Section link onClick={() => this.handleBreadcrumbClick(0)}>Home</Breadcrumb.Section>);
+            for (let i = 0; i < this.state.breadcrumb_ls.length - 1; i++) {
+                breadCrumb.push(<Breadcrumb.Divider icon='right angle'/>);
+                breadCrumb.push(<Breadcrumb.Section link
+                                                    onClick={() => this.handleBreadcrumbClick(i + 1)}>{this.state.breadcrumb_ls[i]}</Breadcrumb.Section>)
+            }
             breadCrumb.push(<Breadcrumb.Divider icon='right angle'/>);
-            breadCrumb.push(<Breadcrumb.Section link
-                                                onClick={() => this.handleClick(i + 1)}>{this.state.breadcrumb_ls[i]}</Breadcrumb.Section>)
+            breadCrumb.push(<Breadcrumb.Section>{this.state.breadcrumb_ls[this.state.breadcrumb_ls.length - 1]}</Breadcrumb.Section>)
+        }else {
+            breadCrumb.push(<Breadcrumb.Section>Home</Breadcrumb.Section>);
         }
-        // if(this.state.open == false) return null;
         console.log(this.state.historyList)
         return (
             <div style={{display: "flex", height: "4vh", padding: '0', alignItems: 'center'}}>
-                <Breadcrumb size='big' style={{padding: '0px 0px 0px 10px'}}><Breadcrumb.Section link onClick={() => this.handleClick(0)}>Home</Breadcrumb.Section>
+                <Breadcrumb size='big' style={{padding: '0px 0px 0px 10px'}}>
                     {breadCrumb}</Breadcrumb>
                 <Dropdown text='Navigation History' id="nav-history">
                     <Dropdown.Menu>
                     {this.state.historyList.map((line,index)=>{
                         console.log(line)
                         console.log(index)
-                        return (<Dropdown.Item text={line} />);
+                        return (<Dropdown.Item text={line} onClick={()=> this.handleHistClick(line)}/>);
                     })
                     }
                     </Dropdown.Menu>

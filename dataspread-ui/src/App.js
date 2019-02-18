@@ -32,6 +32,7 @@ class App extends Component {
         this.scrollTo = this.scrollTo.bind(this);
         this.updateBreadcrumb = this.updateBreadcrumb.bind(this);
         this.computePath = this.computePath.bind(this);
+        this.jumpToHistorialView = this.jumpToHistorialView.bind(this);
     }
 
     onSelectFile(bookId) {
@@ -83,7 +84,14 @@ class App extends Component {
                     this.nav.setState({navOpen:true,sheetName:this.grid.state.sheetName,urlPrefix:this.grid.urlPrefix});
                     this.updateHierFormOption(this.navForm.state.options);
                     this.nav.startNav(data);
-                    this.navBar.setState({open:true});
+                    this.navBar.setState({
+                        breadcrumb_ls: [],
+                        attribute: 0,
+                        open: true,
+                        navHistoryPathIndex: {},
+                        navHistoryTable: {},
+                        historyList: [],
+                    });
                 })
         }
     }
@@ -91,7 +99,10 @@ class App extends Component {
     updateBreadcrumb(breadcrumb_ls, path_index){
         this.navBar.updateNavPath(breadcrumb_ls,path_index);
     }
-
+    jumpToHistorialView(path){
+        console.log(path)
+        this.nav.jumpToHistorialView(path);
+    }
     computePath(){
         return this.nav.computePath();
     }
@@ -125,7 +136,7 @@ class App extends Component {
                              onNavFormOpen={this.onNavFormOpen} ref={ref => this.toolBar = ref}
                              submitHierForm = {this.submitHierForm} />
                     <Stylebar/>
-                    <HistoryBar ref={ref=>this.navBar = ref} computePath={this.computePath}/>
+                    <HistoryBar ref={ref=>this.navBar = ref} computePath={this.computePath} jumpToHistorialView={this.jumpToHistorialView}/>
                     <Navigation bookId={this.state.bookId} scrollTo={this.scrollTo} ref={ref => this.nav = ref} updateBreadcrumb={this.updateBreadcrumb}/>
                     <ExplorationForm grid = {this.grid} submitNavForm = {this.submitNavForm} ref={ref => this.navForm = ref}/>
                     <DSGrid bookId={this.state.bookId} ref={ref => this.grid = ref}
