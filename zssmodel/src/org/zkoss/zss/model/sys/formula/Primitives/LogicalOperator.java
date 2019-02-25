@@ -12,8 +12,12 @@ public class LogicalOperator implements Comparable<LogicalOperator> {
 
     LogicalOperator(){}
 
-    public static void connect(LogicalOperator in, LogicalOperator out){
-        Edge edge = new Edge(in,out);
+    public static void connect(LogicalOperator in, LogicalOperator out) {
+        connect(in, out, 0);
+    }
+
+    public static void connect(LogicalOperator in, LogicalOperator out, int tag){
+        Edge edge = new Edge(in,out,tag);
         in.addOutput(edge);
         out.addInput(edge);
     }

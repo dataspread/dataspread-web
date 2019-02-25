@@ -104,9 +104,9 @@ public class QueryOptimizer {
                 if (data instanceof GroupedDataOperator)
                     data.mergeChildren();
 
-        if (mergeOperation)
-            for (DataOperator data:ret.dataNodes)
-                data.splitFilters();
+//        if (mergeOperation)
+//            for (DataOperator data:ret.dataNodes)
+//                data.splitFilters();
 
         return ret;
     }

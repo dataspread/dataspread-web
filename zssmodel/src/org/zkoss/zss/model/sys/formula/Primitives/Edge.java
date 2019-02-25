@@ -13,9 +13,12 @@ class Edge {
 
     Range inRange,outRange;
 
-    Edge(LogicalOperator in, LogicalOperator out){
+    private int tag;
+
+    Edge(LogicalOperator in, LogicalOperator out,int tag){
         this.in = in;
         this.out = out;
+        this.tag = tag;
     }
 
     void remove(){
@@ -58,6 +61,14 @@ class Edge {
         result = null;
         ((PhysicalOperator)out).decInputCount();
         return ret;
+    }
+
+    void setTag(int t){
+        tag = t;
+    }
+
+    int getTag(){
+        return tag;
     }
 
 }

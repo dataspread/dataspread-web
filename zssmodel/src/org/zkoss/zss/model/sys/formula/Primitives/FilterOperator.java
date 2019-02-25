@@ -3,14 +3,12 @@ package org.zkoss.zss.model.sys.formula.Primitives;
 import org.zkoss.poi.ss.formula.functions.Countif.CmpOp;
 import org.zkoss.poi.ss.formula.ptg.*;
 import org.zkoss.zss.model.sys.formula.Exception.OptimizationError;
-import org.zkoss.zss.model.sys.formula.QueryOptimization.FormulaExecutor;
 
-import java.util.List;
 import java.util.function.Consumer;
 
 public abstract class FilterOperator extends PhysicalOperator implements MultiOutputOperator {
 
-    private static final int CRITERIA = 0;
+    public static final int CRITERIA = 0;
     private static final int FILTERRANGE = 1;
     private static final int RETURNRANGE = 2;
 
@@ -56,7 +54,7 @@ public abstract class FilterOperator extends PhysicalOperator implements MultiOu
 
         if (ptgs.length > 1 && (predicate.length() > op.getLength() ||
                 !(ptgs.length == 3 && ptgs[2] instanceof ConcatPtg))) // Judge if it is operator + & + Reference
-            return newSingleFilter(op,criteria);
+            return newSingleFilter(op,criteria); // todo:correct this
 
 
         if (ptgs.length == 1)
@@ -87,7 +85,7 @@ public abstract class FilterOperator extends PhysicalOperator implements MultiOu
 
         FilterOperator filter = getCriteria(ops[CRITERIA]);
 
-        connect(ops[FILTERRANGE],filter);
+        connect(ops[FILTERRANGE],filter,1);
 
         return filter;
 
@@ -122,6 +120,10 @@ public abstract class FilterOperator extends PhysicalOperator implements MultiOu
             throw OptimizationError.UNSUPPORTED_FUNCTION;
         }
 
+    }
+
+    public boolean isDataEdge(Edge e){
+        return e.getTag() != CRITERIA;
     }
 
     @Override

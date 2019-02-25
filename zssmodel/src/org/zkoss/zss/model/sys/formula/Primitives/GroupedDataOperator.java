@@ -67,8 +67,9 @@ public class GroupedDataOperator extends DataOperator {
         throw OptimizationError.UNSUPPORTED_FUNCTION;
     }
 
-    @Override
-    public void mergeChildren() {
+
+    void mergeAggregates(){
+        // todo: if this part is bottleneck, consider merge classification of edges across all different type of edges
         ArrayList<Edge>[] aggregateEdges = new ArrayList[BinaryFunction.getMaxId()];
         for (int i = 0; i < aggregateEdges.length; i++)
             aggregateEdges[i] = new ArrayList<>();
@@ -117,6 +118,60 @@ public class GroupedDataOperator extends DataOperator {
                             new Range(temp.get(0).getFirstInEdge().inRange.left,currentMax));
                 }
             }
+    }
+
+    void mergeEqualFilters(){
+        ArrayList<Edge> filters = new ArrayList();
+        forEachOutEdge(edge -> {
+            LogicalOperator out = edge.getOutVertex();
+            if (out instanceof SingleEqualFilterOperator && edge.getTag() != FilterOperator.CRITERIA)
+                filters.add(edge);
+        });
+
+
+        if (filters.size() > 0){
+            if (OptimizationError.detectBucketSort && filters.size() * Math.log(filters.size()) > _region.getRowCount())
+                throw OptimizationError.BUCKETSORT;
+            filters.sort((e1, e2) -> e1.inRange.left == e2.inRange.left ?
+                    e1.inRange.right - e2.inRange.right
+                    :e1.inRange.left - e2.inRange.left);
+            List<SingleEqualFilterOperator> temp = new ArrayList<>();
+            temp.add((SingleEqualFilterOperator) filters.get(0).getOutVertex());
+            int currentMax = filters.get(0).inRange.right;
+            Edge edge;
+            for (int i = 1, isize = filters.size(); i < isize; i++){
+                edge = filters.get(i);
+                int left = edge.inRange.left, right = edge.inRange.right;
+                if (left > currentMax){
+                    if (temp.size() > 0){
+                        new GroupedEqualFilterOperator(temp,
+                                new Range(temp.get(0).getFirstInEdge().inRange.left,currentMax));
+                    }
+                    temp = new ArrayList<>();
+                    temp.add((SingleEqualFilterOperator)edge.getOutVertex());
+                }
+                else {
+                    int size = temp.size();
+//                    if (size > 0 && left == temp.get(size - 1).getFirstInEdge().inRange.left
+//                            && right == temp.get(size - 1).getFirstInEdge().inRange.right)
+//                        temp.get(size - 1).merge((AggregateOperator) edge.getOutVertex());
+//                    else
+                    temp.add((SingleEqualFilterOperator)edge.getOutVertex());
+                }
+                currentMax = Math.max(currentMax, right);
+
+            }
+
+            if (temp.size() > 0){
+                new GroupedEqualFilterOperator(temp,
+                        new Range(temp.get(0).getFirstInEdge().inRange.left,currentMax));
+            }
+        }
+    }
+
+    @Override
+    public void mergeChildren() {
+        mergeAggregates();
     }
 
     @Override
