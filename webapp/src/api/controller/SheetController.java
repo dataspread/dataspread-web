@@ -16,6 +16,8 @@ import java.util.List;
 
 import static api.WebSocketConfig.MESSAGE_PREFIX;
 
+@CrossOrigin(origins = "http://localhost:3000")
+
 @RestController
 public class SheetController {
     @Autowired

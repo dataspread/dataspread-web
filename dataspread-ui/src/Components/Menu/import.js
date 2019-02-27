@@ -1,5 +1,5 @@
 import React, {Component} from 'react'
-import ReactResumableJs from 'react-resumable-js'
+import ReactResumableJs from '../Elements/ReactResumableJs'
 import {Dropdown, Button, Header, Icon, Modal} from 'semantic-ui-react'
 import Stomp from "stompjs";
 
@@ -8,8 +8,10 @@ export default class ModalImportFile extends Component {
   		super(props);
   		this.state = {
   			loadModalOpen: false,
-				fileStatus:"None",
-				filename:""
+				fileStatus:"Waiting For File",
+				filename:"",
+				resumable:undefined,
+				fileId:""
   		};
       if (props.inMenu) {
         this.triggerObject = (<Dropdown.Item onClick={this.handleOpen}>Import</Dropdown.Item>);
@@ -19,7 +21,10 @@ export default class ModalImportFile extends Component {
 			
 			this._handleLoad = this._handleLoad.bind(this);
 			this.handleClose = this.handleClose.bind(this);
-
+			this.handleOpen = this.handleOpen.bind(this);
+			this._startUpload = this._startUpload.bind(this);
+			this.sleep = this.sleep.bind(this);
+			//this._loadFile = this._loadFile.bind(this);
    		if (typeof process.env.REACT_APP_BASE_HOST === 'undefined') {
 				this.urlPrefix = "";
 				this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
@@ -29,7 +34,9 @@ export default class ModalImportFile extends Component {
    	}
   }
 
-  state = { modalOpen: false }
+	// state = { 
+	// 	modalOpen: false
+	// }
 
   handleOpen = () => this.setState({ modalOpen: true })
 
@@ -47,9 +54,21 @@ export default class ModalImportFile extends Component {
 		this.props.onSelectFile(this.state.filename);
 	}
 
+	_startUpload () {
+		console.log("Uploading...")
+		
+		console.log(this.state)
+		this.state.resumable.upload()
+	}
+
+	sleep = (milliseconds) => {
+		return new Promise(resolve => setTimeout(resolve, milliseconds))
+	}
+
   render() {
     return (
 		<Modal
+		className='importFileModel'
 		trigger={this.triggerObject}
 		open={this.state.modalOpen}
 		onClose={this.handleClose}>
@@ -58,8 +77,8 @@ export default class ModalImportFile extends Component {
         <Header icon='upload' content='Import File' />
 
         <Modal.Content>
-					<Header content={"Status: " + this.state.fileStatus} />
-					
+					<h4>Please Select File to Upload</h4>
+									
 					<ReactResumableJs
 					uploaderID="importBook"
 					filetypes={["csv"]}
@@ -73,31 +92,43 @@ export default class ModalImportFile extends Component {
 					disableDragAndDrop={true}
 					showFileList={false}
 					onFileSuccess={(file, fileServer) => {
-						this.setState({ loadModalOpen: false });
-						//pass in bookname
-						this.setState({filename:file})
-						//this._handleLoad()
-						console.log(file, fileServer);
+						console.log('Success');
+						this.setState({
+							fileStatus: 'Done. Redirecting...',
+							fileId: 'bjryj0wh7'
+						},
+							() => {
+								this.sleep(2000).then(() => {
+									console.log("Will load bookId: " + JSON.parse(fileServer).data)
+									this.props.onSelectFile(JSON.parse(fileServer).data);
+								})
+							}
+						)
 					}}
 					onFileAdded={(file, resumable) => {
-						console.log(file.file);
-						this.setState({fileStatus:"selected "+ file.file.name})
+						this.setState({
+							fileStatus:"selected "+ file.file.name,
+							resumable: resumable
+						})
 						console.log("File added.");
-						//resumable.upload();
 					}}
 					maxFiles={1}
-					onStartUpload={(file, resumable) => {
-						this.setState({fileStatus:"Uploading..."})
-						console.log("Start upload");
-						//resumable.upload();
-					}}
+					// onStartUpload={(file, resumable) => {
+					// 	this.setState({fileStatus:"Uploading..."})
+					// 	console.log("Start upload");
+					// 	resumable.upload();
+					// }}
 					onUploadErrorCallback ={(file, message)=>{
 						this.setState({fileStatus:"File upload ERROR"})
 					}}
 					/>
+					
         </Modal.Content>
 
         <Modal.Actions>
+					
+					<Header className='uploadTextStatusBar' content={"Status: " + this.state.fileStatus} />
+					<Button onClick={this._startUpload}>Upload</Button>
           <Button color='blue' onClick={this.handleClose} inverted>
             <Icon name='checkmark' /> Close
           </Button>

@@ -312,101 +312,16 @@ input:checked + .slider:before {
   border-radius: 50%;
 }
 
-/*upload button*/
-
-label > button.btn.start {
-    width: 0.1px;
-    height: 0.1px;
-    opacity: 0;
-    overflow: hidden;
-    position: absolute;
-    z-index: -1;
+.uploadTextStatusBar{
+  float: left;
+  position: absolute;
+  bottom: 0.3em;
 }
 
-div#dropTarget > label {
-    background: white;
-    width: 30%;
-    margin-right: 20%;
-    /* border-style: solid;
-    border-width: 1px; */
-    border-radius: 5px;
-    color: rgb(0, 0, 0);
-    cursor: pointer;
-    display: inline-block;
-    font-size: inherit;
-    font-weight: 1000;
-    margin-bottom: 1rem;
-    outline: none;
-    padding: 0em 1em 0em 2em;
-    vertical-align: middle;
+.importFileModel{
+  max-width: 50%;
 }
 
-div#dropTarget > label::before {
-    font-family: "Font Awesome 5 Free";
-    content: "\f04b";
-    color: #2196F3;
-    display: inline-block;
-    font-size: 2em;
-    margin: 12px;
-    vertical-align: middle;
-    font-weight: 900;
-}
-
-div#dropTarget > label::after {
-    /* font-family: "ariel"; */
-    content: "Start Upload";
-    color: black;
-    display: inline-block;
-    font-size: 1.5em;
-    vertical-align: middle;
-    font-weight: 100;
-}
-
-/*import button*/
-label > input#importBook.btn {
-    width: 0.1px;
-    height: 0.1px;
-    opacity: 0;
-    overflow: hidden;
-    position: absolute;
-    z-index: -1;
-}
-
-div#dropTarget > label.btn.file-upload::before {
-    font-family: "Font Awesome 5 Free";
-    content: "\f07c";
-    fill: #2196F3;
-    display: inline-block;
-    font-size: 2em;
-    vertical-align: middle;
-    font-weight: 900;
-}
-
-div#dropTarget > label.btn.file-upload::after {
-    content: "Select File";
-    color: black;
-}
-
-.drag-icon {
-    position: absolute;
-    right: 0px;
-    float: right;
-    opacity: 0;
-}
-
-.DragHandle {
-    flex: 0 0 16px;
-    z-index: 2;
-    cursor: col-resize;
-    color: #0085ff;
-}
-
-.DragHandle:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-}
-
-.DragHandleActive,
-.DragHandleActive:hover {
-    color: #0b6fcc;
-    z-index: 3;
+.importTextBox{
+  min-width: 100%;
 }
