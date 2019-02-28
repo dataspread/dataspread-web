@@ -2098,6 +2098,7 @@ export default class Navigation extends Component {
                     colHeader:colHeader,
                     prevPath: prevPath,
                     nextPath: nextPath,
+                    levelList:levelList,
                 });
 
                 let  currState = this.state;
