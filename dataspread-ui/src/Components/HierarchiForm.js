@@ -65,8 +65,7 @@ export default class HierarchiForm extends Component {
                         alert("Please fill in the parameter")
                         return;
                     }else if(formula_ls[i].param_ls[1].charAt(0) === '\''){
-                        formula_ls[i].param_ls[1]
-                        formula_ls[i].param_ls[1].replace(/\'/g,'\"');
+                        formula_ls[i].param_ls[1] = formula_ls[i].param_ls[1].replace(/'/g,'\"');
                         console.log(formula_ls[i].param_ls[1])
                     } else if(formula_ls[i].param_ls[1].charAt(0) !== '\"'){
                         formula_ls[i].param_ls[1] = "\"" + formula_ls[i].param_ls[1] +"\"";

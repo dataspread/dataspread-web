@@ -465,6 +465,8 @@ export default class DSGrid extends Component {
                 if (this.rowStartIndex!==props.rowStartIndex || this.rowStopIndex!==props.rowStopIndex) {
                     this.rowStartIndex=props.rowStartIndex;
                     this.rowStopIndex=props.rowStopIndex;
+                    console.log(props.rowStartIndex,props.rowStopIndex)
+                    this.props.brushNlink(props.rowStartIndex, props.rowStopIndex)
                     this.stompClient.send('/push/status', {}, JSON.stringify({
                         message: 'changeViewPort',
                         rowStartIndex: this.rowStartIndex,

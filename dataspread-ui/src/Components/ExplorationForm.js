@@ -33,7 +33,9 @@ export default class ExplorationForm extends Component {
 
     handleClose = () =>{
         console.log("close")
-        this.state.navFormOpen = false;
+        this.setState({
+            navFormOpen:false,
+        })
     }
     render(){
         if(this.state.navFormOpen){

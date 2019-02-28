@@ -33,6 +33,7 @@ class App extends Component {
         this.updateBreadcrumb = this.updateBreadcrumb.bind(this);
         this.computePath = this.computePath.bind(this);
         this.jumpToHistorialView = this.jumpToHistorialView.bind(this);
+        this.brushNlink = this.brushNlink.bind(this);
     }
 
     onSelectFile(bookId) {
@@ -114,8 +115,15 @@ class App extends Component {
     }
 
     scrollTo(lowerRange){
-        this.grid.grid.scrollToCell({columnIndex: 0, rowIndex: lowerRange + 26});
+        this.grid.grid.scrollToCell({columnIndex: 0, rowIndex: lowerRange+20});
     }
+
+    brushNlink(lower, upper){
+        if(this.nav.state.navOpen){
+             this.nav.brushNlink(lower,upper);
+        }
+    }
+
 
     render() {
         // console.log(this)
@@ -139,7 +147,7 @@ class App extends Component {
                     <HistoryBar ref={ref=>this.navBar = ref} computePath={this.computePath} jumpToHistorialView={this.jumpToHistorialView}/>
                     <Navigation bookId={this.state.bookId} scrollTo={this.scrollTo} ref={ref => this.nav = ref} updateBreadcrumb={this.updateBreadcrumb}/>
                     <ExplorationForm grid = {this.grid} submitNavForm = {this.submitNavForm} ref={ref => this.navForm = ref}/>
-                    <DSGrid bookId={this.state.bookId} ref={ref => this.grid = ref}
+                    <DSGrid bookId={this.state.bookId} ref={ref => this.grid = ref} brushNlink = {this.brushNlink}
                             updateHierFormOption={this.updateHierFormOption}/>
                 </div>
             )

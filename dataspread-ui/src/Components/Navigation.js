@@ -32,6 +32,7 @@ export default class Navigation extends Component {
             sortChild_ls: [],
             prevPath: '',
             nextPath: '',
+
         }
 
         this.hotTableComponent = React.createRef();
@@ -50,6 +51,10 @@ export default class Navigation extends Component {
         this.submitHierForm = this.submitHierForm.bind(this);
         this.chartRenderer = this.chartRenderer.bind(this);
         this.jumpToHistorialView = this.jumpToHistorialView.bind(this);
+        this.brushNlink = this.brushNlink.bind(this);
+        this.updateBarChartFocus = this.updateBarChartFocus.bind(this);
+        this.updateNavCellFocus = this.updateNavCellFocus.bind(this);
+        this.jumpToFocus = this.jumpToFocus.bind(this);
 
     }
 
@@ -152,7 +157,9 @@ export default class Navigation extends Component {
         // else if (currLevel > 0 && coords.row >= 0 && coords.col >= 2) {
         //     $("#formulaBar").val("=" + navRawFormula[coords.row][coords.col - 2]);
         // }
-        //console.log(e);
+        console.log("beforeoncellmousdown")
+        console.log(e);
+        console.log(coords);
         //|| zoomming
         if (topLevel || otherLevel ||
             e.realTarget.className == "colHeader" ||
@@ -231,8 +238,8 @@ export default class Navigation extends Component {
                     case 0:
                         return currState.colHeader[0];
                     default:
-                        let check =
-                            currState.aggregateData.formula_ls[col - 1].getChart ? "checked" : "";
+                        // let check =
+                        //     currState.aggregateData.formula_ls[col - 1].getChart ? "checked" : "";
                         return currState.colHeader[col];
                     //todo add checkbox and delete
                     // return currState.colHeader[col] + "<span id='colClose' >x</span>" +
@@ -281,6 +288,8 @@ export default class Navigation extends Component {
             });
 
             let lowerRange = this.state.cumulativeData[this.state.currLevel][r].rowRange[0];
+            console.log('afterselection');
+            console.log(lowerRange)
             this.props.scrollTo(lowerRange);
             // let upperRange = cumulativeData[currLevel][r].rowRange[1];
             // updateData(cumulativeData[currLevel][r].rowRange[0], 0,
@@ -501,17 +510,17 @@ export default class Navigation extends Component {
             .on("click", function (d,i) {
 
                 // work around for highlight nav chart
-                let selectedChild = [];
-                selectedChild.push(row);
-                let selectedBars = [];
-                let barObj = {};
-                barObj.cell = row;
-                barObj.bars = [i];
-                selectedBars.push(barObj);
-                nav.setState({
-                    selectedChild: selectedChild,
-                    selectedBars: selectedBars
-                });
+                // let selectedChild = [];
+                // selectedChild.push(row);
+                // let selectedBars = [];
+                // let barObj = {};
+                // barObj.cell = row;
+                // barObj.bars = [i];
+                // selectedBars.push(barObj);
+                // nav.setState({
+                //     selectedChild: selectedChild,
+                //     selectedBars: selectedBars
+                // });
                 let lowerRange = hash.get(d.name).range;
 
 
@@ -590,8 +599,8 @@ export default class Navigation extends Component {
                         if (currData[i].clickable) alltext = false;
                         childHash.set(i, currData[i].children);
                     }
-                    // prevPath = result.prev.path;
-                    // nextPath = result.later.path;
+                    let prevPath = result.prev.path;
+                    let nextPath = result.later.path;
                     // let breadcrum_ls = result.breadCrumb;
                     let mergeCellInfo = [];
                     mergeCellInfo.push(
@@ -623,9 +632,13 @@ export default class Navigation extends Component {
                         cumulativeData: cumulativeData,
                         currLevel: currLevel,
                         mergeCellInfo: mergeCellInfo,
+                        prevPath:prevPath,
+                        nextPath: nextPath,
                     });
                     currState = this.state;
                     this.hotTableComponent.current.hotInstance.deselectCell();
+                    console.log("638")
+                    console.log(viewData)
                     this.hotTableComponent.current.hotInstance.updateSettings({
                         data: viewData,
                         rowHeights: (currState.wrapperHeight * 0.95 / currState.currData.length > 90)
@@ -645,7 +658,7 @@ export default class Navigation extends Component {
                     //             //nav.selectCell(0, 1)
                     //         }
                     this.props.updateBreadcrumb(result.breadCrumb, childlist); // calculate breadcrumb
-                    //         updateNavCellFocus(currentFirstRow, currentLastRow);
+                    this.updateNavCellFocus(currData[0].rowRange[0], currData[0].rowRange[0]+20);
                     if (selectFirstChild)
                         this.hotTableComponent.current.hotInstance.selectCell(0, 1);
                 }
@@ -748,7 +761,7 @@ export default class Navigation extends Component {
                     }
 
                     this.props.updateBreadcrumb(result.breadCrumb,childlist); // calculate breadcrumb
-                    // updateNavCellFocus(currentFirstRow, currentLastRow);
+                    this.updateNavCellFocus(this.firstRow, this.lastRow);
                 }
             })
     }
@@ -1838,6 +1851,275 @@ export default class Navigation extends Component {
         td.style.background = '#FAF2ED';
         return td;
     }
+     brushNlink(firstRow, lastRow) {
+        console.log("brush and link");
+
+        let path = this.computePath();
+
+        // console.log("path: "+path);
+
+
+        let currentFocus = this.state.cumulativeData[this.state.currLevel];
+        if (currentFocus == undefined)
+            return;
+
+        //console.log(currentFocus);
+        let lastElement = currentFocus[currentFocus.length - 1];
+        let firstElement = currentFocus[0];
+        // console.log(lastElement)
+        let endRow = lastElement.rowRange[1];
+        let startRow = firstElement.rowRange[0];
+
+        console.log("endRow: " + endRow + ", firstRow: " + firstRow);
+        console.log("startRow: " + startRow + ", lastRow: " + lastRow);
+        this.firstRow = firstRow;
+        this.lastRow = lastRow;
+        if (startRow > lastRow) {
+            this.jumpToFocus(this.state.prevPath);
+            // this.updateNavCellFocus(firstRow, lastRow);
+        }
+        else if (endRow < firstRow) {
+            this.jumpToFocus(this.state.nextPath);
+            // this.updateNavCellFocus(firstRow, lastRow);
+        }
+        else {
+            this.updateNavCellFocus(firstRow, lastRow);
+        }
+
+        //updateSScolor(firstRow,lastRow);
+
+    }
+
+     updateBarChartFocus(firstRow, lastRow) {
+        //console.log(childHash);
+        let newSelectedBars = [];
+        for (let selI = 0; selI < this.state.cumulativeData[this.state.currLevel].length; selI++) {
+            if (this.state.childHash.get(selI) === undefined)
+                continue;
+            let newSelectedBar = [];
+            //console.log(childHash.get(selI));
+            for (let selJ = 0; selJ < this.state.childHash.get(selI).length; selJ++) {
+                let lower = this.state.childHash.get(selI)[selJ].rowRange[0];
+                let upper = this.state.childHash.get(selI)[selJ].rowRange[1];
+
+                //console.log("lowerRange,upperRange", lower, upper);
+                if (firstRow > upper)
+                    continue;
+                if (lastRow < lower)
+                    break;
+                newSelectedBar.push(selJ);
+            }
+
+            if (newSelectedBar.length > 0) {
+                let barObj = {};
+                barObj.cell = selI;
+                barObj.bars = newSelectedBar;
+                newSelectedBars.push(barObj);
+            }
+        }
+
+        //console.log("newselectedBars");
+        //console.log(newSelectedBars);
+        if (newSelectedBars.length === 1 && this.state.selectedBars.length === 1 && newSelectedBars[0].cell === this.state.selectedBars[0].cell && newSelectedBars[0].bars.length === this.state.selectedBars[0].bars.length) {
+            for (let selI = 0; selI < newSelectedBars[0].bars.length; selI++) {
+                if (newSelectedBars[0].bars[selI] != this.state.selectedBars[0].bars[selI]) {
+                   this.setState({
+                       selectedBars:newSelectedBars,
+                   });
+                    return ;
+                }
+            }
+            return;
+        }
+
+         this.setState({
+             selectedBars:newSelectedBars,
+         });
+         return ;
+    }
+
+     updateNavCellFocus(firstRow, lastRow) {
+
+        console.log("firstRow,lastRow:", firstRow, lastRow);
+
+        let currentFirstRow = firstRow;
+        let currentLastRow = lastRow;
+
+        let newSelectedChild = [];
+        for (let selI = 0; selI < this.state.cumulativeData[this.state.currLevel].length; selI++) {
+            let lower = this.state.cumulativeData[this.state.currLevel][selI].rowRange[0];
+            let upper = this.state.cumulativeData[this.state.currLevel][selI].rowRange[1];
+
+            //console.log("lowerRange,upperRange",lower,upper);
+            if (firstRow > upper)
+                continue;
+            if (lastRow < lower)
+                break;
+            newSelectedChild.push(selI);
+        }
+
+        if (newSelectedChild.length == 1) {
+            console.log("line1954 newselectedchild")
+            console.log(newSelectedChild)
+            if (this.state.selectedChild.length === 0 || this.state.selectedChild.length > 1|| this.state.selectedChild[0] !== newSelectedChild[0]) {
+                this.hotTableComponent.current.hotInstance.deselectCell();
+                this.setState({
+                    currentFirstRow:currentFirstRow,
+                    currentLastRow:currentLastRow,
+                    selectedChild: newSelectedChild,
+                })
+                this.updateBarChartFocus(firstRow, lastRow);
+            }
+            else {
+                this.updateBarChartFocus(firstRow, lastRow);
+            }
+        }
+        else if (newSelectedChild.length > 1) {
+            console.log("line1970 newselectedchild")
+            console.log(newSelectedChild)
+            this.hotTableComponent.current.hotInstance.deselectCell();
+            this.setState({
+                selectedChild: newSelectedChild,
+            })
+            this.updateBarChartFocus(firstRow, lastRow);
+        }
+    }
+
+     jumpToFocus(path) {
+
+        let childHash = new Map();
+        console.log("nextPath:" + path);
+        let path_str = "";
+        let levelList = [];
+        for (let i = 0; i < path.length; i++) {
+            if (path.length != 0) {
+                levelList[i] = parseInt(path[i]);
+                if (i == 0)
+                    path_str += path[i];
+                else if (i < path.length - 1)
+                    path_str += "," + path[i];
+            }
+        }
+        let selectedChild = [];
+        let selectedBars = [];
+        // let sortChild_ls = [];
+
+        let queryData = {};
+
+
+        queryData.bookId = this.props.bookId;
+        queryData.sheetName = this.state.sheetName;
+        queryData.path = path_str;
+
+        console.log("queryData:");
+        console.log(queryData);
+         fetch(this.state.urlPrefix + '/api/' + 'getChildren', {
+             method: "POST",
+             body: JSON.stringify(queryData),
+             headers: {
+                 'Content-Type': 'text/plain'
+             }
+         }).then(response => response.json())
+             .then(data => {
+            if (data.status == "success") {
+                var result = data.data;
+                console.log(result);
+                let currData = result.buckets;
+
+                let prevPath = result.prev.path;
+                let nextPath = result.later.path;
+                let breadcrumb_ls = result.breadCrumb;
+                let currLevel = breadcrumb_ls.length;
+                let numChild = currData.length;
+                let viewData = new Array(numChild);
+                let colHeader = this.state.colHeader;
+                let cumulativeData = this.state.cumulativeData;
+                if (currLevel == 0) {
+                    colHeader.splice(1, 0, "")
+                }
+                console.log(result);
+                console.log("currLevel: " + currLevel);
+                let mergeCellInfo = [];
+                if (currData.length != 0 && breadcrumb_ls.length != 0) {
+                    for (let i = 0; i < currData.length; i++) {
+                        childHash.set(i, currData[i].children);
+                    }
+                    mergeCellInfo.push({row: 0, col: 0, rowspan: currData.length, colspan: 1});
+                    for (let i = 0; i < currData.length; i++) {
+                        if (i == 0) {
+                            viewData[i] = [breadcrumb_ls[breadcrumb_ls.length - 1]];
+                        } else {
+                            viewData[i] = [""];
+                        }
+                    }
+
+                    cumulativeData.pop();
+                    cumulativeData.push(currData);
+
+                    for (let i = 0; i < currData.length; i++) {
+                        //double layer
+                        viewData[i][1] = cumulativeData[currLevel][i].name;
+
+                    }
+
+                    // cumulativeDataSize += currData.length;
+                }
+                else if (currData.length != 0 && breadcrumb_ls.length == 0) {
+                    for (let i = 0; i < currData.length; i++) {
+                        childHash.set(i, currData[i].children);
+                    }
+                    //colHeader.splice(1, 1);
+                    cumulativeData = [];
+                    cumulativeData.push(currData);
+                    for (let i = 0; i < numChild; i++) {
+                        viewData[i] = [currData[i].name];
+                    }
+                    // cumulativeDataSize += currData.length;
+                }
+                else {
+                    path.splice(-1, 1);
+                    this.jumpToFocus(path);
+                    return;
+                }
+
+                // let columWidth = [];
+                // if (currLevel >= 1) {
+                //     //columWidth = [50];
+                // } else {
+                //     columWidth = 200;
+                // }
+                this.setState({
+                    currData: result.buckets,
+                    childHash: childHash,
+                    viewData: viewData,
+                    cumulativeData: cumulativeData,
+                    currLevel: currLevel,
+                    mergeCellInfo: mergeCellInfo,
+                    colHeader:colHeader,
+                    prevPath: prevPath,
+                    nextPath: nextPath,
+                });
+
+                let  currState = this.state;
+                this.hotTableComponent.current.hotInstance.deselectCell();
+
+                this.hotTableComponent.current.hotInstance.updateSettings({
+                    data: viewData,
+                    rowHeights: (currState.wrapperHeight * 0.95 / currState.currData.length > 90)
+                        ? currState.wrapperHeight * 0.95 / currState.currData.length
+                        : 90,
+                    mergeCells: mergeCellInfo,
+                });
+
+                if (currState.hieraOpen) {
+                    this.submitHierForm(currState.aggregateData.formula_ls);
+                }
+                this.props.updateBreadcrumb(result.breadCrumb, path_str); // calculate breadcrumb
+                this.updateNavCellFocus(this.firstRow, this.lastRow);
+            }
+        })
+    }
+
 
     computePath() {
         let childlist = "";
