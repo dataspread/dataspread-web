@@ -146,7 +146,7 @@ export default class Navigation extends Component {
         });
     }
 
-    beforeOnCellMouseDownHandler (e, coords, element) {
+    beforeOnCellMouseDownHandler(e, coords, element) {
         // $("#formulaBar").val("");
         let currentState = this.state;
         let self = this;
@@ -274,7 +274,7 @@ export default class Navigation extends Component {
     afterSelectionHandler(r, c, r2, c2, preventScrolling,
                           selectionLayerLevel) {
         // setting if prevent scrolling after selection
-        console.log(r,c,r2,c2)
+        console.log(r, c, r2, c2)
         if (this.state.cumulativeData[this.state.currLevel][r] != undefined) {
             let selectedChild = [];
             selectedChild.push(r);
@@ -508,7 +508,7 @@ export default class Navigation extends Component {
             .on("mouseout", function (d) {
                 tooltip.style("display", "none");
             })
-            .on("click", function (d,i) {
+            .on("click", function (d, i) {
 
                 // work around for highlight nav chart
                 // let selectedChild = [];
@@ -633,7 +633,7 @@ export default class Navigation extends Component {
                         cumulativeData: cumulativeData,
                         currLevel: currLevel,
                         mergeCellInfo: mergeCellInfo,
-                        prevPath:prevPath,
+                        prevPath: prevPath,
                         nextPath: nextPath,
                     });
                     currState = this.state;
@@ -659,7 +659,7 @@ export default class Navigation extends Component {
                     //             //nav.selectCell(0, 1)
                     //         }
                     this.props.updateBreadcrumb(result.breadCrumb, childlist); // calculate breadcrumb
-                    this.updateNavCellFocus(currData[0].rowRange[0], currData[0].rowRange[0]+20);
+                    this.updateNavCellFocus(currData[0].rowRange[0], currData[0].rowRange[0] + 20);
                     if (selectFirstChild)
                         this.hotTableComponent.current.hotInstance.selectCell(0, 1);
                 }
@@ -761,7 +761,7 @@ export default class Navigation extends Component {
                         this.submitHierForm(currState.aggregateData.formula_ls);
                     }
 
-                    this.props.updateBreadcrumb(result.breadCrumb,childlist); // calculate breadcrumb
+                    this.props.updateBreadcrumb(result.breadCrumb, childlist); // calculate breadcrumb
                     this.updateNavCellFocus(this.firstRow, this.lastRow);
                 }
             })
@@ -803,81 +803,82 @@ export default class Navigation extends Component {
             }
         }).then(response => response.json())
             .then(data => {
-            if (data.status == "success") {
-                var result = data.data;
-                let breadcrumb_ls = result.breadCrumb;
-                // clickable = result.clickable;
-                let currLevel = breadcrumb_ls.length;
-                let currData = result.buckets;
-                for (let i = 0; i < currData.length; i++) {
-                    childHash.set(i, currData[i].children);
-                }
-                let prevPath = result.prev.path;
-                let nextPath = result.later.path;
-                let numChild = currData.length;
-                let viewData = new Array(numChild);
-                let cumulativeData = currState.cumulativeData;
-                cumulativeData[currLevel] = currData;
-                let mergeCellInfo = [];
-                let colHeader = currState.colHeader;
-                if (breadcrumb_ls.length != 0) {
-                    mergeCellInfo.push({row: 0, col: 0, rowspan: numChild, colspan: 1});
+                if (data.status == "success") {
+                    var result = data.data;
+                    let breadcrumb_ls = result.breadCrumb;
+                    // clickable = result.clickable;
+                    let currLevel = breadcrumb_ls.length;
+                    let currData = result.buckets;
+                    for (let i = 0; i < currData.length; i++) {
+                        childHash.set(i, currData[i].children);
+                    }
+                    let prevPath = result.prev.path;
+                    let nextPath = result.later.path;
+                    let numChild = currData.length;
+                    let viewData = new Array(numChild);
+                    let cumulativeData = currState.cumulativeData;
+                    cumulativeData[currLevel] = currData;
+                    let mergeCellInfo = [];
+                    let colHeader = currState.colHeader;
+                    if (breadcrumb_ls.length != 0) {
+                        mergeCellInfo.push({row: 0, col: 0, rowspan: numChild, colspan: 1});
 
-                    let parentName = breadcrumb_ls[breadcrumb_ls.length - 1];
+                        let parentName = breadcrumb_ls[breadcrumb_ls.length - 1];
 
-                    for (let i = 0; i < numChild; i++) {
-                        if (i == 0) {
-                            viewData[i] = [parentName];
-                        } else {
-                            viewData[i] = [""];
+                        for (let i = 0; i < numChild; i++) {
+                            if (i == 0) {
+                                viewData[i] = [parentName];
+                            } else {
+                                viewData[i] = [""];
+                            }
+                            viewData[i][1] = currData[i].name;
                         }
-                        viewData[i][1] = currData[i].name;
+                    } else {
+                        colHeader.splice(1, 1);
+                        for (let i = 0; i < numChild; i++) {
+                            viewData[i] = [currData[i].name];
+                        }
                     }
-                } else {
-                    colHeader.splice(1, 1);
-                    for (let i = 0; i < numChild; i++) {
-                        viewData[i] = [currData[i].name];
+
+                    let columWidth = [];
+                    if (breadcrumb_ls.length >= 1) {
+                        columWidth = [40, 160];
+                    } else {
+                        columWidth = 200;
                     }
-                }
 
-                let columWidth = [];
-                if (breadcrumb_ls.length >= 1) {
-                    columWidth = [40, 160];
-                } else {
-                    columWidth = 200;
-                }
+                    this.setState({
+                        currData: result.buckets,
+                        childHash: childHash,
+                        viewData: viewData,
+                        cumulativeData: cumulativeData,
+                        currLevel: currLevel,
+                        mergeCellInfo: mergeCellInfo,
+                        colHeader: colHeader,
+                        prevPath: prevPath,
+                        nextPath: nextPath,
+                    });
+                    currState = this.state;
+                    this.hotTableComponent.current.hotInstance.deselectCell();
 
-                this.setState({
-                    currData: result.buckets,
-                    childHash: childHash,
-                    viewData: viewData,
-                    cumulativeData: cumulativeData,
-                    currLevel: currLevel,
-                    mergeCellInfo: mergeCellInfo,
-                    colHeader:colHeader,
-                    prevPath: prevPath,
-                    nextPath: nextPath,
-                });
-                currState = this.state;
-                this.hotTableComponent.current.hotInstance.deselectCell();
-
-                this.hotTableComponent.current.hotInstance.updateSettings({
+                    this.hotTableComponent.current.hotInstance.updateSettings({
                         data: viewData,
-                    rowHeights: (currState.wrapperHeight * 0.95 / currState.currData.length > 90)
-                        ? currState.wrapperHeight * 0.95 / currState.currData.length
-                        : 90,
+                        rowHeights: (currState.wrapperHeight * 0.95 / currState.currData.length > 90)
+                            ? currState.wrapperHeight * 0.95 / currState.currData.length
+                            : 90,
                         mergeCells: mergeCellInfo,
                     });
-                if (currState.hieraOpen) {
-                    this.submitHierForm(currState.aggregateData.formula_ls);
+                    if (currState.hieraOpen) {
+                        this.submitHierForm(currState.aggregateData.formula_ls);
+                    }
+                    this.props.updateBreadcrumb(result.breadCrumb, childlist); // calculate breadcrumb
+                    //     if (currLevel == 0) {
+                    //         updateNavCellFocus(currentFirstRow, currentLastRow);
+                    //     } else
+                    //         nav.selectCell(0, 1);
+                    // }
                 }
-                this.props.updateBreadcrumb(result.breadCrumb, childlist); // calculate breadcrumb
-            //     if (currLevel == 0) {
-            //         updateNavCellFocus(currentFirstRow, currentLastRow);
-            //     } else
-            //         nav.selectCell(0, 1);
-            // }
-        }});
+            });
     }
 
     submitHierForm(formula_ls) {
@@ -1011,10 +1012,9 @@ export default class Navigation extends Component {
                     let firstR = [];
                     let lastR = [];
 
-                    // for (let i = 0; i < selectedChild.length; i++) {
-                    //  let formula = data[selectedChild[i]].formula;
-                    let formula = data[0].formula;
-                    if (formula.includes("COUNTIF") || formula.includes("SUMIF")) {
+                    // for (let i = 0; i < cumulativeData[currLevel].length; i++) {
+                        let formula = data[0].formula;
+                        if (formula.includes("COUNTIF") || formula.includes("SUMIF")) {
                             let ls = formula.split(",")[1].split(")")[0];
                             let str = ls.substring(1, 3);
                             if (str.includes(">=") || str.includes("<=") || str.includes("<>")) {
@@ -1031,7 +1031,8 @@ export default class Navigation extends Component {
                             }
                         }
                         else if (formula.includes("MIN") || formula.includes("MAX") || formula.includes("MEDIAN") || formula.includes("MODE") || formula.includes("RANK") || formula.includes("SMALL") || formula.includes("LARGE")) {
-                            value.push(data[0].value);
+                            cond.push("");
+                            value.push(data[0].value.toString());
                         }
 
                         //TODO: when ondemand loading of data available
@@ -1051,7 +1052,6 @@ export default class Navigation extends Component {
                         // else
                         firstR.push(cumulativeData[currLevel][0].rowRange[0]);
                         lastR.push(cumulativeData[currLevel][cumulativeData[currLevel].length-1].rowRange[1]);
-
                     // }
 
                     queryObj.bookId = this.props.bookId;
@@ -1071,22 +1071,23 @@ export default class Navigation extends Component {
                     })
                         .then(response => response.json())
                         .then(data => {
-                        if (data.status == "success") {
-                            console.log(data.data);//#d4eafc
+                            if (data.status == "success") {
+                                console.log(data.data);//#d4eafc
 
-                            brushNLinkRows = data.data;
+                                brushNLinkRows = data.data;
 
-                        }
-                        this.props.updateHighlight(hierarchicalColAttr,brushNLinkRows);
+                            }
+                            this.props.updateHighlight(hierarchicalColAttr, brushNLinkRows);
 
-                    });
+                        });
 
                 }
 
                 else //higlight hierarchical col
-                this.props.updateHighlight(hierarchicalColAttr,brushNLinkRows);
+                    this.props.updateHighlight(hierarchicalColAttr, brushNLinkRows);
             })
     }
+
     isPointFormula(formula) {
         let str = formula.split("(")[0];
         var pointFunc = ["MIN", "MAX", "MEDIAN", "MODE", "RANK", "SMALL", "LARGE", "COUNTIF", "SUMIF"];
@@ -1948,7 +1949,8 @@ export default class Navigation extends Component {
         td.style.background = '#FAF2ED';
         return td;
     }
-     brushNlink(firstRow, lastRow) {
+
+    brushNlink(firstRow, lastRow) {
         console.log("brush and link");
 
         let path = this.computePath();
@@ -1987,7 +1989,7 @@ export default class Navigation extends Component {
 
     }
 
-     updateBarChartFocus(firstRow, lastRow) {
+    updateBarChartFocus(firstRow, lastRow) {
         //console.log(childHash);
         let newSelectedBars = [];
         for (let selI = 0; selI < this.state.cumulativeData[this.state.currLevel].length; selI++) {
@@ -2020,22 +2022,22 @@ export default class Navigation extends Component {
         if (newSelectedBars.length === 1 && this.state.selectedBars.length === 1 && newSelectedBars[0].cell === this.state.selectedBars[0].cell && newSelectedBars[0].bars.length === this.state.selectedBars[0].bars.length) {
             for (let selI = 0; selI < newSelectedBars[0].bars.length; selI++) {
                 if (newSelectedBars[0].bars[selI] != this.state.selectedBars[0].bars[selI]) {
-                   this.setState({
-                       selectedBars:newSelectedBars,
-                   });
-                    return ;
+                    this.setState({
+                        selectedBars: newSelectedBars,
+                    });
+                    return;
                 }
             }
             return;
         }
 
-         this.setState({
-             selectedBars:newSelectedBars,
-         });
-         return ;
+        this.setState({
+            selectedBars: newSelectedBars,
+        });
+        return;
     }
 
-     updateNavCellFocus(firstRow, lastRow) {
+    updateNavCellFocus(firstRow, lastRow) {
 
         console.log("firstRow,lastRow:", firstRow, lastRow);
 
@@ -2058,11 +2060,11 @@ export default class Navigation extends Component {
         if (newSelectedChild.length == 1) {
             console.log("line1954 newselectedchild")
             console.log(newSelectedChild)
-            if (this.state.selectedChild.length === 0 || this.state.selectedChild.length > 1|| this.state.selectedChild[0] !== newSelectedChild[0]) {
+            if (this.state.selectedChild.length === 0 || this.state.selectedChild.length > 1 || this.state.selectedChild[0] !== newSelectedChild[0]) {
                 this.hotTableComponent.current.hotInstance.deselectCell();
                 this.setState({
-                    currentFirstRow:currentFirstRow,
-                    currentLastRow:currentLastRow,
+                    currentFirstRow: currentFirstRow,
+                    currentLastRow: currentLastRow,
                     selectedChild: newSelectedChild,
                 })
                 this.updateBarChartFocus(firstRow, lastRow);
@@ -2082,7 +2084,7 @@ export default class Navigation extends Component {
         }
     }
 
-     jumpToFocus(path) {
+    jumpToFocus(path) {
 
         let childHash = new Map();
         console.log("nextPath:" + path);
@@ -2110,112 +2112,112 @@ export default class Navigation extends Component {
 
         console.log("queryData:");
         console.log(queryData);
-         fetch(this.state.urlPrefix + '/api/' + 'getChildren', {
-             method: "POST",
-             body: JSON.stringify(queryData),
-             headers: {
-                 'Content-Type': 'text/plain'
-             }
-         }).then(response => response.json())
-             .then(data => {
-            if (data.status == "success") {
-                var result = data.data;
-                console.log(result);
-                let currData = result.buckets;
-
-                let prevPath = result.prev.path;
-                let nextPath = result.later.path;
-                let breadcrumb_ls = result.breadCrumb;
-                let currLevel = breadcrumb_ls.length;
-                let numChild = currData.length;
-                let viewData = new Array(numChild);
-                let colHeader = this.state.colHeader;
-                let cumulativeData = this.state.cumulativeData;
-                if (currLevel == 0) {
-                    colHeader.splice(1, 0, "")
-                }
-                console.log(result);
-                console.log("currLevel: " + currLevel);
-                let mergeCellInfo = [];
-                if (currData.length != 0 && breadcrumb_ls.length != 0) {
-                    for (let i = 0; i < currData.length; i++) {
-                        childHash.set(i, currData[i].children);
-                    }
-                    mergeCellInfo.push({row: 0, col: 0, rowspan: currData.length, colspan: 1});
-                    for (let i = 0; i < currData.length; i++) {
-                        if (i == 0) {
-                            viewData[i] = [breadcrumb_ls[breadcrumb_ls.length - 1]];
-                        } else {
-                            viewData[i] = [""];
-                        }
-                    }
-
-                    cumulativeData.pop();
-                    cumulativeData.push(currData);
-
-                    for (let i = 0; i < currData.length; i++) {
-                        //double layer
-                        viewData[i][1] = cumulativeData[currLevel][i].name;
-
-                    }
-
-                    // cumulativeDataSize += currData.length;
-                }
-                else if (currData.length != 0 && breadcrumb_ls.length == 0) {
-                    for (let i = 0; i < currData.length; i++) {
-                        childHash.set(i, currData[i].children);
-                    }
-                    //colHeader.splice(1, 1);
-                    cumulativeData = [];
-                    cumulativeData.push(currData);
-                    for (let i = 0; i < numChild; i++) {
-                        viewData[i] = [currData[i].name];
-                    }
-                    // cumulativeDataSize += currData.length;
-                }
-                else {
-                    path.splice(-1, 1);
-                    this.jumpToFocus(path);
-                    return;
-                }
-
-                // let columWidth = [];
-                // if (currLevel >= 1) {
-                //     //columWidth = [50];
-                // } else {
-                //     columWidth = 200;
-                // }
-                this.setState({
-                    currData: result.buckets,
-                    childHash: childHash,
-                    viewData: viewData,
-                    cumulativeData: cumulativeData,
-                    currLevel: currLevel,
-                    mergeCellInfo: mergeCellInfo,
-                    colHeader:colHeader,
-                    prevPath: prevPath,
-                    nextPath: nextPath,
-                    levelList:levelList,
-                });
-
-                let  currState = this.state;
-                this.hotTableComponent.current.hotInstance.deselectCell();
-
-                this.hotTableComponent.current.hotInstance.updateSettings({
-                    data: viewData,
-                    rowHeights: (currState.wrapperHeight * 0.95 / currState.currData.length > 90)
-                        ? currState.wrapperHeight * 0.95 / currState.currData.length
-                        : 90,
-                    mergeCells: mergeCellInfo,
-                });
-
-                if (currState.hieraOpen) {
-                    this.submitHierForm(currState.aggregateData.formula_ls);
-                }
-                this.props.updateBreadcrumb(result.breadCrumb, path_str); // calculate breadcrumb
-                this.updateNavCellFocus(this.firstRow, this.lastRow);
+        fetch(this.state.urlPrefix + '/api/' + 'getChildren', {
+            method: "POST",
+            body: JSON.stringify(queryData),
+            headers: {
+                'Content-Type': 'text/plain'
             }
-        })
+        }).then(response => response.json())
+            .then(data => {
+                if (data.status == "success") {
+                    var result = data.data;
+                    console.log(result);
+                    let currData = result.buckets;
+
+                    let prevPath = result.prev.path;
+                    let nextPath = result.later.path;
+                    let breadcrumb_ls = result.breadCrumb;
+                    let currLevel = breadcrumb_ls.length;
+                    let numChild = currData.length;
+                    let viewData = new Array(numChild);
+                    let colHeader = this.state.colHeader;
+                    let cumulativeData = this.state.cumulativeData;
+                    if (currLevel == 0) {
+                        colHeader.splice(1, 0, "")
+                    }
+                    console.log(result);
+                    console.log("currLevel: " + currLevel);
+                    let mergeCellInfo = [];
+                    if (currData.length != 0 && breadcrumb_ls.length != 0) {
+                        for (let i = 0; i < currData.length; i++) {
+                            childHash.set(i, currData[i].children);
+                        }
+                        mergeCellInfo.push({row: 0, col: 0, rowspan: currData.length, colspan: 1});
+                        for (let i = 0; i < currData.length; i++) {
+                            if (i == 0) {
+                                viewData[i] = [breadcrumb_ls[breadcrumb_ls.length - 1]];
+                            } else {
+                                viewData[i] = [""];
+                            }
+                        }
+
+                        cumulativeData.pop();
+                        cumulativeData.push(currData);
+
+                        for (let i = 0; i < currData.length; i++) {
+                            //double layer
+                            viewData[i][1] = cumulativeData[currLevel][i].name;
+
+                        }
+
+                        // cumulativeDataSize += currData.length;
+                    }
+                    else if (currData.length != 0 && breadcrumb_ls.length == 0) {
+                        for (let i = 0; i < currData.length; i++) {
+                            childHash.set(i, currData[i].children);
+                        }
+                        //colHeader.splice(1, 1);
+                        cumulativeData = [];
+                        cumulativeData.push(currData);
+                        for (let i = 0; i < numChild; i++) {
+                            viewData[i] = [currData[i].name];
+                        }
+                        // cumulativeDataSize += currData.length;
+                    }
+                    else {
+                        path.splice(-1, 1);
+                        this.jumpToFocus(path);
+                        return;
+                    }
+
+                    // let columWidth = [];
+                    // if (currLevel >= 1) {
+                    //     //columWidth = [50];
+                    // } else {
+                    //     columWidth = 200;
+                    // }
+                    this.setState({
+                        currData: result.buckets,
+                        childHash: childHash,
+                        viewData: viewData,
+                        cumulativeData: cumulativeData,
+                        currLevel: currLevel,
+                        mergeCellInfo: mergeCellInfo,
+                        colHeader: colHeader,
+                        prevPath: prevPath,
+                        nextPath: nextPath,
+                        levelList: levelList,
+                    });
+
+                    let currState = this.state;
+                    this.hotTableComponent.current.hotInstance.deselectCell();
+
+                    this.hotTableComponent.current.hotInstance.updateSettings({
+                        data: viewData,
+                        rowHeights: (currState.wrapperHeight * 0.95 / currState.currData.length > 90)
+                            ? currState.wrapperHeight * 0.95 / currState.currData.length
+                            : 90,
+                        mergeCells: mergeCellInfo,
+                    });
+
+                    if (currState.hieraOpen) {
+                        this.submitHierForm(currState.aggregateData.formula_ls);
+                    }
+                    this.props.updateBreadcrumb(result.breadCrumb, path_str); // calculate breadcrumb
+                    this.updateNavCellFocus(this.firstRow, this.lastRow);
+                }
+            })
     }
 
 
