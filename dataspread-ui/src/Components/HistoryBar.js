@@ -96,7 +96,7 @@ export default class HistoryBar extends Component {
         }else {
             breadCrumb.push(<Breadcrumb.Section>Home</Breadcrumb.Section>);
         }
-        console.log(this.state.historyList)
+        // console.log(this.state.historyList)
         return (
             <div style={{display: "flex", height: "4vh", padding: '0', alignItems: 'center'}}>
                 <Breadcrumb size='big' style={{padding: '0px 0px 0px 10px'}}>

@@ -59,6 +59,7 @@ export default class Navigation extends Component {
     }
 
     startNav(data) {
+        console.log(this)
         //console.log(data);
         let length = data.data.length;
         let viewData = new Array(data.data.length);
@@ -931,8 +932,10 @@ export default class Navigation extends Component {
                         )
                     }
                 }
+                let hierarchicalColAttr = [];
                 for (let i = 0; i < data.data.length; i++) {
                     let hierCol = aggregateData.formula_ls[i];
+                    hierarchicalColAttr.push(parseInt(hierCol.attr_index - 1));
                     colHeader.push(options[hierCol.attr_index - 1] + " " +
                         hierCol.function + " " + hierCol.param_ls);
                 }
@@ -970,18 +973,18 @@ export default class Navigation extends Component {
 
                 let numChild = cumulativeData[currLevel].length;
                 let percentage = currState.alltext ? 0.12 : 0.18;
-                console.log(wrapperWidth)
-                console.log(percentage)
-                console.log(navAggRawData.length)
+                // console.log(wrapperWidth)
+                // console.log(percentage)
+                // console.log(navAggRawData.length)
                 let newWidth = wrapperWidth * (percentage + navAggRawData.length * 0.15);
-                console.log(newWidth);
+                // console.log(newWidth);
                 this.setState({
                     hieraOpen: true,
                     aggregateData: aggregateData,
                     navAggRawData: navAggRawData,
                     colHeader: colHeader,
                     viewData: viewData,
-                    cumulativeData: cumulativeData,
+                    // cumulativeData: cumulativeData,
                     navRawFormula: navRawFormula,
 
                 });
@@ -996,7 +999,101 @@ export default class Navigation extends Component {
                         : 90,
                 });
 
+                // for highlight
+                let brushNLinkRows = [];
+                if (navAggRawData.length == 1 && this.isPointFormula(navAggRawData[0][0].formula)) {
+                    console.log("Brush color list satisfied");
+                    console.log(navAggRawData)
+                    let data = navAggRawData[0];
+                    let queryObj = {}
+                    let cond = [];
+                    let value = [];
+                    let firstR = [];
+                    let lastR = [];
+
+                    // for (let i = 0; i < selectedChild.length; i++) {
+                    //  let formula = data[selectedChild[i]].formula;
+                    let formula = data[0].formula;
+                    if (formula.includes("COUNTIF") || formula.includes("SUMIF")) {
+                            let ls = formula.split(",")[1].split(")")[0];
+                            let str = ls.substring(1, 3);
+                            if (str.includes(">=") || str.includes("<=") || str.includes("<>")) {
+                                cond.push(ls.substring(1, 3));
+                                value.push(ls.substring(3, ls.length - 1));
+                            }
+                            else if (str.includes(">") || str.includes("<") || str.includes("=")) {
+                                cond.push(ls.substring(1, 2));
+                                value.push(ls.substring(2, ls.length - 1));
+                            }
+                            else {
+                                cond.push("=");
+                                value.push(ls.substring(1, ls.length - 1));
+                            }
+                        }
+                        else if (formula.includes("MIN") || formula.includes("MAX") || formula.includes("MEDIAN") || formula.includes("MODE") || formula.includes("RANK") || formula.includes("SMALL") || formula.includes("LARGE")) {
+                            value.push(data[0].value);
+                        }
+
+                        //TODO: when ondemand loading of data available
+                        /*let first = cumulativeData[currLevel][selectedChild[i]].rowRange[0];
+                        let last = cumulativeData[currLevel][selectedChild[i]].rowRange[1];
+
+                        if (first < currentFirstRow)
+                            firstR.push(currentFirstRow)
+                        else
+                            firstR.push(first);
+                        if (last > currentLastRow)
+                            lastR.push(currentLastRow);
+                        else
+                            lastR.push(last);*/
+                        // if (this.lowerRange == 0)
+                        //     firstR.push(lowerRange + 1);
+                        // else
+                        firstR.push(cumulativeData[currLevel][0].rowRange[0]);
+                        lastR.push(cumulativeData[currLevel][cumulativeData[currLevel].length-1].rowRange[1]);
+
+                    // }
+
+                    queryObj.bookId = this.props.bookId;
+                    queryObj.sheetName = this.state.sheetName;
+                    queryObj.index = parseInt(formula_ls[0].attr_index) - 1;
+                    queryObj.first = firstR;
+                    queryObj.last = lastR;
+                    queryObj.conditions = cond;
+                    queryObj.values = value;
+
+                    fetch(this.state.urlPrefix + '/api/' + 'getBrushColorList', {
+                        method: "POST",
+                        body: JSON.stringify(queryObj),
+                        headers: {
+                            'Content-Type': 'text/plain'
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                        if (data.status == "success") {
+                            console.log(data.data);//#d4eafc
+
+                            brushNLinkRows = data.data;
+
+                        }
+                        this.props.updateHighlight(hierarchicalColAttr,brushNLinkRows);
+
+                    });
+
+                }
+
+                else //higlight hierarchical col
+                this.props.updateHighlight(hierarchicalColAttr,brushNLinkRows);
             })
+    }
+    isPointFormula(formula) {
+        let str = formula.split("(")[0];
+        var pointFunc = ["MIN", "MAX", "MEDIAN", "MODE", "RANK", "SMALL", "LARGE", "COUNTIF", "SUMIF"];
+        console.log(str)
+        if (pointFunc.includes(str))
+            return true;
+        return false;
     }
 
     chartRenderer(instance, td, row, col, prop, value, cellProperties) {

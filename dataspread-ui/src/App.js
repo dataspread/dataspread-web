@@ -34,6 +34,7 @@ class App extends Component {
         this.computePath = this.computePath.bind(this);
         this.jumpToHistorialView = this.jumpToHistorialView.bind(this);
         this.brushNlink = this.brushNlink.bind(this);
+        this.updateHighlight = this.updateHighlight.bind(this);
     }
 
     onSelectFile(bookId) {
@@ -93,6 +94,9 @@ class App extends Component {
                         navHistoryTable: {},
                         historyList: [],
                     });
+                    this.grid.setState({
+                        exploreCol: attribute - 1,
+                    })
                 })
         }
     }
@@ -101,7 +105,7 @@ class App extends Component {
         this.navBar.updateNavPath(breadcrumb_ls,path_index);
     }
     jumpToHistorialView(path){
-        console.log(path)
+        // console.log(path)
         this.nav.jumpToHistorialView(path);
     }
     computePath(){
@@ -125,6 +129,16 @@ class App extends Component {
     }
 
 
+    updateHighlight(colNum, brushNLinkRows){
+        console.log(colNum);
+        console.log(brushNLinkRows);
+        this.grid.setState({
+            hierarchicalCol:colNum,
+            brushNLinkRows:brushNLinkRows,
+        })
+
+    }
+
     render() {
         // console.log(this)
         this.grid = null;
@@ -145,7 +159,7 @@ class App extends Component {
                              submitHierForm = {this.submitHierForm} />
                     <Stylebar/>
                     <HistoryBar ref={ref=>this.navBar = ref} computePath={this.computePath} jumpToHistorialView={this.jumpToHistorialView}/>
-                    <Navigation bookId={this.state.bookId} scrollTo={this.scrollTo} ref={ref => this.nav = ref} updateBreadcrumb={this.updateBreadcrumb}/>
+                    <Navigation bookId={this.state.bookId} scrollTo={this.scrollTo} ref={ref => this.nav = ref} updateBreadcrumb={this.updateBreadcrumb} updateHighlight={this.updateHighlight}/>
                     <ExplorationForm grid = {this.grid} submitNavForm = {this.submitNavForm} ref={ref => this.navForm = ref}/>
                     <DSGrid bookId={this.state.bookId} ref={ref => this.grid = ref} brushNlink = {this.brushNlink}
                             updateHierFormOption={this.updateHierFormOption}/>

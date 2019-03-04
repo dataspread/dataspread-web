@@ -511,11 +511,26 @@ export default class DSGrid extends Component {
             cellClass = 'isScrollingPlaceholder'
             cellContent = ['Loading ...'];
         }
+        let highLightStyle = {};
 
+        if(this.state.exploreCol !== null && columnIndex === this.state.exploreCol){
+            highLightStyle.backgroundColor = '#32CC99';
+        }else if(this.state.hierarchicalCol && this.state.hierarchicalCol.includes(columnIndex)){
+            if(this.state.brushNLinkRows !== 0){
+                if(this.state.brushNLinkRows.includes(rowIndex)){
+                    highLightStyle.backgroundColor = '#d4eafc';
+
+                }else{
+                    highLightStyle.backgroundColor = '#f5e9e1';
+                }
+            }else{
+                highLightStyle.backgroundColor = '#f5e9e1';
+            }
+        }
         return (
                 <Cell
                     key={key}
-                    style={style}
+                    style={{...style,...highLightStyle}}
                     className={cellClass}
                     value={cellContent[0]}
                     formula={cellContent[1] == null ? null : "=" + cellContent[1]}
