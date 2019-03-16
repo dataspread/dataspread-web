@@ -25,14 +25,9 @@ export default class HierarchiForm extends Component {
     }
 
     updateOption(data) {
-        let opt = [];
-        for (let i = 0; i < data.length; i++) {
-            let temp = {text: data[i], value: i + 1};
-            opt.push(temp);
-        }
         this.setState({
             navPanelOpen: true,
-            options: opt
+            options: data
         });
     }
 
@@ -246,8 +241,11 @@ export default class HierarchiForm extends Component {
         }
         return null;
     }
-
     render() {
+
+        if(this.state.navPanelOpen !== true){
+            return null;
+        }
         const chartOpt = [
             {key: 'r', text: 'Raw Value', value: '1'},
             {key: 'c', text: 'Chart', value: '2'},
@@ -289,8 +287,8 @@ export default class HierarchiForm extends Component {
                 <Modal.Content>
                     <Form onSubmit={this.handleSubmit}>
                         {formula_ls.map((line, index) => {
-                            // console.log(line)
-                            // console.log(this.state.options)
+                            console.log(line)
+                            console.log(this.state.options)
                             return (<div>
                                     <Form.Group>
                                         <i className="fa fa-minus-circle hierRemove" id="rm1"

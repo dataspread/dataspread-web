@@ -15,6 +15,9 @@ export default class Toolbar extends Component {
         this.handler = this.handler.bind(this);
         this.handleNav = this.handleNav.bind(this);
         this.handleBin = this.handleBin.bind(this);
+        this.state = {
+            navOpen: false
+        }
     }
 
     handler(e) {
@@ -60,7 +63,7 @@ export default class Toolbar extends Component {
                 <Dropdown.Menu>
                     <Dropdown.Item onClick={this.handleNav}>Explore</Dropdown.Item>
                     <HierarchiForm ref={ref => this.hier = ref} submitHierForm = {this.props.submitHierForm}/>
-                    <Dropdown.Item onClick={this.handleBin}>Customize Bins</Dropdown.Item>
+                    {/*<Dropdown.Item onClick={this.handleBin}>Customize Bins</Dropdown.Item>*/}
                 </Dropdown.Menu>
             </Dropdown>
             <Dropdown item text='Help'>
