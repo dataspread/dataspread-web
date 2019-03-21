@@ -228,7 +228,10 @@ export default class DSGrid extends Component {
                                                 <ArrowKeyStepper
                                                     rowCount={this.state.rows}
                                                     columnCount={this.state.columns}>
-                                                    {({onSectionRendered, scrollToColumn, scrollToRow}) => (
+                                                    {({onSectionRendered, scrollToColumn, scrollToRow}) =>{
+
+                                                        console.log(scrollToRow)
+                                                            return(
                                                         <div>
                                                             <Grid
                                                                 height={height}
@@ -243,6 +246,8 @@ export default class DSGrid extends Component {
                                                                 cellRangeRenderer={this._cellRangeRenderer}
                                                                 scrollToRow={scrollToRow}
                                                                 scrollToColumn={scrollToColumn}
+                                                                scrollToAlignment={'start'}
+                                                                overscanRowCount={0}
                                                                 onSectionRendered={onSectionRendered}
                                                                 ref={(ref) => this.grid = ref}
                                                                 focusCellColumn={this.state.focusCellColumn}
@@ -250,7 +255,7 @@ export default class DSGrid extends Component {
                                                                 selectOppositeCellColumn={this.state.selectOppositeCellColumn}
                                                                 selectOppositeCellRow={this.state.selectOppositeCellRow}
                                                             />
-                                                        </div>)}
+                                                        </div>);}}
                                                 </ArrowKeyStepper>
                                             </div>
                                         </div>
@@ -465,7 +470,7 @@ export default class DSGrid extends Component {
                 if (this.rowStartIndex!==props.rowStartIndex || this.rowStopIndex!==props.rowStopIndex) {
                     this.rowStartIndex=props.rowStartIndex;
                     this.rowStopIndex=props.rowStopIndex;
-                    console.log(props.rowStartIndex,props.rowStopIndex)
+                    // console.log(props.rowStartIndex,props.rowStopIndex)
                     this.props.brushNlink(props.rowStartIndex, props.rowStopIndex)
                     this.stompClient.send('/push/status', {}, JSON.stringify({
                         message: 'changeViewPort',

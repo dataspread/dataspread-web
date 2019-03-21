@@ -109,6 +109,8 @@ class App extends Component {
                     this.grid.setState({
                         exploreCol: attribute - 1,
                     })
+                    console.log(this.grid)
+                    this.nav.brushNlink(this.grid.rowStartIndex,this.grid.rowStopIndex);
                 })
         }
     }
@@ -133,7 +135,7 @@ class App extends Component {
     }
 
     scrollTo(lowerRange) {
-        this.grid.grid.scrollToCell({columnIndex: 0, rowIndex: lowerRange + 20});
+        this.grid.grid.scrollToCell({columnIndex: 0, rowIndex: lowerRange});
     }
 
     brushNlink(lower, upper) {

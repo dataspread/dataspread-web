@@ -287,8 +287,8 @@ export default class HierarchiForm extends Component {
                 <Modal.Content>
                     <Form onSubmit={this.handleSubmit}>
                         {formula_ls.map((line, index) => {
-                            console.log(line)
-                            console.log(this.state.options)
+                            // console.log(line)
+                            // console.log(this.state.options)
                             return (<div>
                                     <Form.Group>
                                         <i className="fa fa-minus-circle hierRemove" id="rm1"

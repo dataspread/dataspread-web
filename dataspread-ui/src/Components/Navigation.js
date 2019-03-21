@@ -187,7 +187,8 @@ export default class Navigation extends Component {
                 level = coords.col - 2;
             currentState.aggregateData.formula_ls[level].getChart =
                 !currentState.aggregateData.formula_ls[level].getChart;
-            self.getAggregateValue();
+            console.log(currentState.aggregateData)
+            self.submitHierForm(currentState.aggregateData.formula_ls);
         }
     }
 
@@ -239,15 +240,13 @@ export default class Navigation extends Component {
                     case 0:
                         return currState.colHeader[0];
                     default:
-                        // let check =
-                        //     currState.aggregateData.formula_ls[col - 1].getChart ? "checked" : "";
-                        return currState.colHeader[col];
-                    //todo add checkbox and delete
-                    // return currState.colHeader[col] + "<span id='colClose' >x</span>" +
-                    //     "<label class=\"switch\">" +
-                    //     "  <input type=\"checkbox\"" + check + ">" +
-                    //     "  <span class=\"slider round\"></span>" +
-                    //     "</label>";
+                        let check =
+                            currState.aggregateData.formula_ls[col - 1].getChart ? "checked" : "";
+                    return currState.colHeader[col] + "<span id='colClose' >x</span>" +
+                        "<label class=\"switch\">" +
+                        "  <input type=\"checkbox\"" + check + ">" +
+                        "  <span class=\"slider round\"></span>" +
+                        "</label>";
                 }
             } else {
                 switch (col) {
@@ -257,15 +256,12 @@ export default class Navigation extends Component {
                         return currState.colHeader[1];
                     default:
 
-                        let check =
-                            currState.aggregateData.formula_ls[col - 2].getChart ? "checked" : "";
-                        return currState.colHeader[col];
-                    //todo add checkbox and delete
-                    // return currState.colHeader[col] + "<span id='colClose'>x</span>" +
-                    //     "<label class=\"switch\">" +
-                    //     "  <input type=\"checkbox\"" + check + ">" +
-                    //     "  <span class=\"slider round\"></span>" +
-                    //     "</label>";
+                        let check = currState.aggregateData.formula_ls[col - 2].getChart ? "checked" : "";
+                    return currState.colHeader[col] + "<span id='colClose'>x</span>" +
+                        "<label class=\"switch\">" +
+                        "  <input type=\"checkbox\"" + check + ">" +
+                        "  <span class=\"slider round\"></span>" +
+                        "</label>";
                 }
             }
         }
@@ -1951,7 +1947,7 @@ export default class Navigation extends Component {
     }
 
     brushNlink(firstRow, lastRow) {
-        console.log("brush and link");
+        //console.log("brush and link");
 
         let path = this.computePath();
 
@@ -1969,8 +1965,8 @@ export default class Navigation extends Component {
         let endRow = lastElement.rowRange[1];
         let startRow = firstElement.rowRange[0];
 
-        console.log("endRow: " + endRow + ", firstRow: " + firstRow);
-        console.log("startRow: " + startRow + ", lastRow: " + lastRow);
+        //console.log("endRow: " + endRow + ", firstRow: " + firstRow);
+        //console.log("startRow: " + startRow + ", lastRow: " + lastRow);
         this.firstRow = firstRow;
         this.lastRow = lastRow;
         if (startRow > lastRow) {
@@ -2039,7 +2035,7 @@ export default class Navigation extends Component {
 
     updateNavCellFocus(firstRow, lastRow) {
 
-        console.log("firstRow,lastRow:", firstRow, lastRow);
+        //console.log("firstRow,lastRow:", firstRow, lastRow);
 
         let currentFirstRow = firstRow;
         let currentLastRow = lastRow;
@@ -2058,8 +2054,8 @@ export default class Navigation extends Component {
         }
 
         if (newSelectedChild.length == 1) {
-            console.log("line1954 newselectedchild")
-            console.log(newSelectedChild)
+          //  console.log("line1954 newselectedchild")
+          //  console.log(newSelectedChild)
             if (this.state.selectedChild.length === 0 || this.state.selectedChild.length > 1 || this.state.selectedChild[0] !== newSelectedChild[0]) {
                 this.hotTableComponent.current.hotInstance.deselectCell();
                 this.setState({
@@ -2074,8 +2070,8 @@ export default class Navigation extends Component {
             }
         }
         else if (newSelectedChild.length > 1) {
-            console.log("line1970 newselectedchild")
-            console.log(newSelectedChild)
+        //    console.log("line1970 newselectedchild")
+        //    console.log(newSelectedChild)
             this.hotTableComponent.current.hotInstance.deselectCell();
             this.setState({
                 selectedChild: newSelectedChild,
@@ -2087,7 +2083,7 @@ export default class Navigation extends Component {
     jumpToFocus(path) {
 
         let childHash = new Map();
-        console.log("nextPath:" + path);
+      //  console.log("nextPath:" + path);
         let path_str = "";
         let levelList = [];
         for (let i = 0; i < path.length; i++) {
@@ -2110,8 +2106,8 @@ export default class Navigation extends Component {
         queryData.sheetName = this.state.sheetName;
         queryData.path = path_str;
 
-        console.log("queryData:");
-        console.log(queryData);
+      //  console.log("queryData:");
+     //   console.log(queryData);
         fetch(this.state.urlPrefix + '/api/' + 'getChildren', {
             method: "POST",
             body: JSON.stringify(queryData),
@@ -2136,8 +2132,8 @@ export default class Navigation extends Component {
                     if (currLevel == 0) {
                         colHeader.splice(1, 0, "")
                     }
-                    console.log(result);
-                    console.log("currLevel: " + currLevel);
+                  //  console.log(result);
+                  //  console.log("currLevel: " + currLevel);
                     let mergeCellInfo = [];
                     if (currData.length != 0 && breadcrumb_ls.length != 0) {
                         for (let i = 0; i < currData.length; i++) {
