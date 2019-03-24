@@ -55,6 +55,7 @@ export default class Navigation extends Component {
         this.updateBarChartFocus = this.updateBarChartFocus.bind(this);
         this.updateNavCellFocus = this.updateNavCellFocus.bind(this);
         this.jumpToFocus = this.jumpToFocus.bind(this);
+        this.removeHierarchiCol = this.removeHierarchiCol.bind(this);
 
     }
 
@@ -120,30 +121,34 @@ export default class Navigation extends Component {
             cells: self.cellRenderer,
             afterSelection: self.afterSelectionHandler,
         })
-        this.hotTableComponent.current.hotInstance.view.wt.update('onCellDblClick', function (e, cell) {
-            if (cell.row >= 0) {
-                if (currentState.currLevel == 0) {
-                    if (cell.col == 0 && currentState.cumulativeData[currentState.currLevel][cell.row].clickable) {
-                        //        var child = cell.row/spanList[currLevel];
-                        let child = cell.row;
-                        //nav.deselectCell();
-                        //zoomming = true;
-                        self.zoomIn(child);
-                    }
-                } else {
-                    if (cell.col == 1 && currentState.cumulativeData[currentState.currLevel][cell.row].clickable) {
-                        //  var child = cell.row/spanList[currLevel];
-                        var child = cell.row;
-                        //nav.deselectCell();
-                        //zoomming = true;
-                        self.zoomIn(child);
-                    } else if (cell.col == 0) {
-                        //zoomouting = true;
-                        //zoomOutHist(nav);
-                    }
-                }
-            }
-        });
+        // this.hotTableComponent.current.hotInstance.view.wt.update('onCellDblClick', function (e, cell) {
+        //     console.log("double clicked")
+        //     console.log(this.state)
+        //     if (cell.row >= 0) {
+        //         console.log("double clicked2r")
+        //         console.log(currentState.currLevel)
+        //         if (currentState.currLevel == 0) {
+        //             if (cell.col == 0 && currentState.cumulativeData[currentState.currLevel][cell.row].clickable) {
+        //                 //        var child = cell.row/spanList[currLevel];
+        //                 let child = cell.row;
+        //                 //nav.deselectCell();
+        //                 //zoomming = true;
+        //                 self.zoomIn(child);
+        //             }
+        //         } else {
+        //             if (cell.col == 1 && currentState.cumulativeData[currentState.currLevel][cell.row].clickable) {
+        //                 //  var child = cell.row/spanList[currLevel];
+        //                 var child = cell.row;
+        //                 //nav.deselectCell();
+        //                 //zoomming = true;
+        //                 self.zoomIn(child);
+        //             } else if (cell.col == 0) {
+        //                 //zoomouting = true;
+        //                 //zoomOutHist(nav);
+        //             }
+        //         }
+        //     }
+        // });
     }
 
     beforeOnCellMouseDownHandler(e, coords, element) {
@@ -878,7 +883,7 @@ export default class Navigation extends Component {
     }
 
     submitHierForm(formula_ls) {
-
+        console.log(formula_ls)
         let aggregateData = {};
 
         aggregateData.bookId = this.props.bookId;
@@ -1945,7 +1950,29 @@ export default class Navigation extends Component {
         td.style.background = '#FAF2ED';
         return td;
     }
+    removeHierarchiCol(colIndex) {
+        if (this.state.aggregateData.formula_ls.length > 1){
+            //let formula = Array.from(this.state.aggregateData.formula_ls)
+            let formula = this.state.aggregateData.formula_ls;
 
+            if (this.state.currLevel == 0) {
+                formula.splice(colIndex - 1, 1);
+            } else {
+                formula.splice(colIndex - 2, 1);
+            }
+            this.submitHierForm(formula);
+        } else {
+
+                this.setState({
+                    hieraOpen:false,
+                })
+                let currState = this.state;
+                this.hotTableComponent.current.hotInstance.alter('remove_col', colIndex);
+                this.hotTableComponent.current.hotInstance.updateSettings({
+                    width: currState.wrapperWidth * 0.19,});
+
+        }
+    }
     brushNlink(firstRow, lastRow) {
         //console.log("brush and link");
 

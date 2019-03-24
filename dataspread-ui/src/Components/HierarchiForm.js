@@ -126,7 +126,7 @@ export default class HierarchiForm extends Component {
         let temp = {
             attr_index: 1,
             function: "AVEDEV",
-            param_ls: [],
+            param_ls: [""],
         };
         formula.splice(e + 1, 0, temp);
         this.setState({
