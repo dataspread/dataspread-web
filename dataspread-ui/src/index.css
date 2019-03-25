@@ -5,6 +5,9 @@ body {
   box-sizing: border-box;
 }
 
+.ui.menu .dropdown.item .menu {
+    z-index: 999 !important;
+}
 
 .vl {
   border-left: 6px solid green;
@@ -307,4 +310,18 @@ input:checked + .slider:before {
 
 .slider.round:before {
   border-radius: 50%;
+}
+
+.uploadTextStatusBar{
+  float: left;
+  position: absolute;
+  bottom: 0.3em;
+}
+
+.importFileModel{
+  max-width: 50%;
+}
+
+.importTextBox{
+  min-width: 100%;
 }

@@ -9,6 +9,7 @@ import java.util.*;
 public class Bucket<T> implements Serializable {
     T minValue;
     T maxValue;
+    LinkedHashSet<T> leaves;
     int startPos;
     int endPos;
     int size;
@@ -27,7 +28,7 @@ public class Bucket<T> implements Serializable {
     public String toString() {
         if (minValue == null || maxValue == null)
             return null;
-        return minValue.toString().equals(maxValue.toString()) ? minValue.toString() : minValue.toString() + " to " + maxValue.toString();
+        return minValue.toString().equals(maxValue.toString()) ? minValue.toString() : minValue.toString() + " - " + maxValue.toString();
     }
 
     public T getMaxValue() {
@@ -54,6 +55,14 @@ public class Bucket<T> implements Serializable {
         return size;
     }
 
+    public LinkedHashSet<T> getLeaves() {
+        return leaves;
+    }
+
+    public void setLeaves(LinkedHashSet<T> leaves)
+    {
+        this.leaves = leaves;
+    }
     public void setName(boolean isUniform) {
         if (isUniform)
             name = (this.startPos + 2) + "_" + (this.endPos + 2);

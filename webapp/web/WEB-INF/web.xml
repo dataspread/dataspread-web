@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.4"
-		 xmlns="http://java.sun.com/xml/ns/j2ee"
-		 xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
+         xmlns="http://java.sun.com/xml/ns/j2ee"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
 
-	<description>DataSpread</description>
-	<display-name>DataSpread</display-name>
-
-
-	<!-- ZK Spreadsheet App -->
-
-	<listener>
-		<description>Startup background processes</description>
-		<listener-class>org.zkoss.zss.app.repository.impl.ServletContextListenerImpl</listener-class>
-	</listener>
+    <description>DataSpread</description>
+    <display-name>DataSpread</display-name>
 
 
-	<!-- //// -->
-	<!-- ZK -->
-	<!--
+    <!-- ZK Spreadsheet App -->
+
+    <listener>
+        <description>Startup background processes</description>
+        <listener-class>org.zkoss.zss.app.repository.impl.ServletContextListenerImpl</listener-class>
+    </listener>
+
+
+    <!-- //// -->
+    <!-- ZK -->
+    <!--
 <listener>
     <description>ZK listener for session cleanup</description>
     <listener-class>org.zkoss.zk.ui.http.HttpSessionListener</listener-class>
@@ -26,72 +26,72 @@
  -->
 
 
-<context-param>
-    <param-name>log4jConfigLocation</param-name>
-    <param-value>classpath:/main/resources/log4j.xml</param-value>
-</context-param>
+    <context-param>
+        <param-name>log4jConfigLocation</param-name>
+        <param-value>classpath:/main/resources/log4j.xml</param-value>
+    </context-param>
 
 
-<!-- /////////// -->
-	<!-- [Optional] Session timeout -->
-	<session-config>
-		<session-timeout>60</session-timeout>
-	</session-config>
+    <!-- /////////// -->
+    <!-- [Optional] Session timeout -->
+    <session-config>
+        <session-timeout>60</session-timeout>
+    </session-config>
 
-	<!-- [Optional] MIME mapping -->
-	<mime-mapping>
-		<extension>doc</extension>
-		<mime-type>application/vnd.ms-word</mime-type>
-	</mime-mapping>
-	<mime-mapping>
-		<extension>gif</extension>
-		<mime-type>image/gif</mime-type>
-	</mime-mapping>
-	<mime-mapping>
-		<extension>htm</extension>
-		<mime-type>text/html</mime-type>
-	</mime-mapping>
-	<mime-mapping>
-		<extension>html</extension>
-		<mime-type>text/html</mime-type>
-	</mime-mapping>
-	<mime-mapping>
-		<extension>jpeg</extension>
-		<mime-type>image/jpeg</mime-type>
-	</mime-mapping>
-	<mime-mapping>
-		<extension>jpg</extension>
-		<mime-type>image/jpeg</mime-type>
-	</mime-mapping>
-	<mime-mapping>
-		<extension>js</extension>
-		<mime-type>text/javascript</mime-type>
-	</mime-mapping>
-	<mime-mapping>
-		<extension>pdf</extension>
-		<mime-type>application/pdf</mime-type>
-	</mime-mapping>
-	<mime-mapping>
-		<extension>png</extension>
-		<mime-type>image/png</mime-type>
-	</mime-mapping>
-	<mime-mapping>
-		<extension>txt</extension>
-		<mime-type>text/plain</mime-type>
-	</mime-mapping>
-	<mime-mapping>
-		<extension>xls</extension>
-		<mime-type>application/vnd.ms-excel</mime-type>
-	</mime-mapping>
-	<mime-mapping>
-		<extension>xml</extension>
-		<mime-type>text/xml</mime-type>
-	</mime-mapping>
+    <!-- [Optional] MIME mapping -->
+    <mime-mapping>
+        <extension>doc</extension>
+        <mime-type>application/vnd.ms-word</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>gif</extension>
+        <mime-type>image/gif</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>htm</extension>
+        <mime-type>text/html</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>html</extension>
+        <mime-type>text/html</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>jpeg</extension>
+        <mime-type>image/jpeg</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>jpg</extension>
+        <mime-type>image/jpeg</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>js</extension>
+        <mime-type>text/javascript</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>pdf</extension>
+        <mime-type>application/pdf</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>png</extension>
+        <mime-type>image/png</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>txt</extension>
+        <mime-type>text/plain</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>xls</extension>
+        <mime-type>application/vnd.ms-excel</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>xml</extension>
+        <mime-type>text/xml</mime-type>
+    </mime-mapping>
 
-	<welcome-file-list>
-		<welcome-file>index.html</welcome-file>
-		<welcome-file>index.htm</welcome-file>
-	</welcome-file-list>
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+        <welcome-file>index.htm</welcome-file>
+    </welcome-file-list>
 
 
 </web-app>

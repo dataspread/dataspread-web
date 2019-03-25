@@ -501,7 +501,7 @@ public class AsyncPerformance implements FormulaAsyncListener {
 
 
     @Override
-    public void update(SBook book, SSheet sheet, CellRegion cellRegion, String value, String formula) {
+    public void update(SBook book, SSheet sheet, CellRegion cellRegion, Object value, String formula) {
         if (cellRegion.row == cellCount && testStarted) {
 
             List<CellRegion> sheetCells = sheet.getCells().stream().map(SCell::getCellRegion)

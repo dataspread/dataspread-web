@@ -8,7 +8,6 @@
 	<properties>
 		<zk.version>7.0.3</zk.version>
         <blockstore.version>1.0.0</blockstore.version>
-        <rtree.version>1.0.0</rtree.version>
 		<zpoi.version>3.9.8</zpoi.version>
 		<jsoup.version>1.7.3</jsoup.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -18,11 +17,11 @@
 	<name>ZK Spreadsheet Model</name>
 	<description>ZK Spreadsheet</description>
 	<dependencies>
-        <dependency>
-            <groupId>io.github.dataspread</groupId>
-            <artifactId>rtree</artifactId>
-            <version>${rtree.version}</version>
-        </dependency>
+		<dependency>
+			<groupId>com.github.davidmoten</groupId>
+			<artifactId>rtree</artifactId>
+			<version>0.8.6</version>
+		</dependency>
         <dependency>
             <groupId>io.github.dataspread</groupId>
             <artifactId>blockstore</artifactId>

@@ -18,6 +18,7 @@ export default class ModalOpenFile extends Component {
             this.triggerObject = (<Button secondary fluid onClick={this.handleOpen}>Open File</Button>);
 		}
         this._handleLoad = this._handleLoad.bind(this);
+        this.handleClose = this.handleClose.bind(this);
         if (typeof process.env.REACT_APP_BASE_HOST === 'undefined') {
             this.urlPrefix = "";
             this.stompClient = Stomp.client("ws://" + window.location.host + "/ds-push/websocket");
@@ -28,20 +29,24 @@ export default class ModalOpenFile extends Component {
         }
     }
 
-	handleOpen = () => this.setState({ loadModalOpen: true })
+	handleOpen = () =>
+	{
+		// fetch data from api
+		fetch(this.urlPrefix + '/api/getBooks')
+			.then(response => response.json())
+			.then(data => this.transform(data))
+			.then(data => this.setState({
+				BooksOptions: data,
+				loadModalOpen: true
+			}))
+			.catch(()=> {
+				alert("Lost connection to server.")
+			});
+
+	}
 
 	handleClose = () => this.setState({ loadModalOpen: false})
 
-	// fetch data from api
-	componentDidMount() {
-        fetch(this.urlPrefix + '/api/getBooks')
-		.then(response => response.json())
-		.then(data => this.transform(data))
-        .then(data => this.setState({
-            BooksOptions: data,
-            loadModalOpen: false
-        }));
-	}
 
   	//transform data
   	transform = (raw_data) => {
@@ -71,7 +76,7 @@ export default class ModalOpenFile extends Component {
 	}
 
 	render() {
-		console.log(this.urlPrefix + '/api/getBooks')
+		//console.log(this.urlPrefix + '/api/getBooks')
 		return (
 		<Modal
 			trigger={this.triggerObject}

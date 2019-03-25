@@ -376,7 +376,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
     }
 
     @Override
-    public void update(SBook book, SSheet sheet, CellRegion cellRegion, String value, String formula) {
+    public void update(SBook book, SSheet sheet, CellRegion cellRegion, Object value, String formula) {
         //System.out.println("Computed " + cellRegion + " " + formula);
         if (testStarted) {
             updatedCells++;

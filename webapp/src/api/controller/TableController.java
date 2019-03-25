@@ -19,6 +19,8 @@ import org.zkoss.json.*;
 import static api.WebSocketConfig.MESSAGE_PREFIX;
 import static org.zkoss.zss.model.impl.sys.TableMonitor.formatTableName;
 
+@CrossOrigin(origins = "http://localhost:3000")
+
 @RestController
 public class TableController {
 
