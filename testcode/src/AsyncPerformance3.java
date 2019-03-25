@@ -133,31 +133,37 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         final boolean schedulerPrioritizes[] = {false, false,  true};//, true};*/
 
 
-        for (int testSize: testSizes) {
-            for (Class testCase: testCases) {
-                for (int setup = 0; setup < names.length; setup++) {
-                    PrintStream p = null;
-                    try {
-                        String name = names[setup];
-                        boolean sync = syncs[setup];
-                        boolean schedulerPrioritize = schedulerPrioritizes[setup];
-                        int compressionSize = compressionSizes[setup];
+        for (int testSize : testSizes) {
+            for (Class testCase : testCases) {
+                for (int run = 0; run < 10; run++) {
+                    for (int setup = 0; setup < names.length; setup++) {
+                        PrintStream p = null;
+                        try {
+                            String name = names[setup];
+                            boolean sync = syncs[setup];
+                            boolean schedulerPrioritize = schedulerPrioritizes[setup];
+                            int compressionSize = compressionSizes[setup];
 
-                        String testFullName = "test_" + testCase.getName() + "_" + testSize + "_" + name;
-                        FileOutputStream f = new FileOutputStream("/home/tana/test20000_3/" + testFullName);
-                        p = new PrintStream(f);
-                        System.setOut(p);
+                            String testFullName = "test_" + testCase.getName() + "_" + testSize + "_" + name + "_" + run;
+                            FileOutputStream f = new FileOutputStream("/home/tana/test20000_3/" + testFullName);
+                            p = new PrintStream(f);
+                            System.setOut(p);
 
-                        System.out.println(testFullName);
-                        System.err.println(" *********** NEW CASE *********** "+testFullName);
-                        singleTest(testCase, testSize, sync, compressionSize, schedulerPrioritize);
-                        System.gc();
-                        Thread.sleep(5000);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    } finally {
-                        if (p != null) {
-                            p.flush();
+                            System.out.println(testFullName);
+                            System.err.println(" *********** NEW CASE *********** " + testFullName);
+                            singleTest(testCase, testSize, sync, compressionSize, schedulerPrioritize);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        } finally {
+                            if (p != null) {
+                                p.flush();
+                            }
+                            System.gc();
+                        }
+                        try {
+                            Thread.sleep(5000);
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
                     }
                 }
@@ -547,15 +553,17 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         } else {
             if (areaUnderCurveGraph) {
                 double area = DirtyManagerLog.instance.groupPrint(sheetCells, controlReturnedTime, initTime, true);
+                System.out.println("Updated cells = " + updatedCells);
+                System.out.println("TIME END: "+System.currentTimeMillis());
                 System.out.println("AREA UNDER CURVE IS " + area);
             }
             else {
                 DirtyManagerLog.instance.groupPrint(sheetCells, controlReturnedTime, initTime); // utilize group print
+                System.out.println("Updated cells = " + updatedCells);
+                System.out.println("TIME END: "+System.currentTimeMillis());
             }
         }
 
-        System.out.println("Updated cells = " + updatedCells);
-        System.out.println("TIME END: "+System.currentTimeMillis());
     }
 
     public static ArrayList<CellRegion> getBadCells(String bookName, String sheetname) {
