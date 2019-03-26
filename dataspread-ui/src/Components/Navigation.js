@@ -247,11 +247,11 @@ export default class Navigation extends Component {
                     default:
                         let check =
                             currState.aggregateData.formula_ls[col - 1].getChart ? "checked" : "";
-                    return currState.colHeader[col] + "<span id='colClose' >x</span>" +
-                        "<label class=\"switch\">" +
-                        "  <input type=\"checkbox\"" + check + ">" +
-                        "  <span class=\"slider round\"></span>" +
-                        "</label>";
+                        return currState.colHeader[col] + "<span id='colClose' >x</span>" +
+                            "<label class=\"switch\">" +
+                            "  <input type=\"checkbox\"" + check + ">" +
+                            "  <span class=\"slider round\"></span>" +
+                            "</label>";
                 }
             } else {
                 switch (col) {
@@ -262,11 +262,11 @@ export default class Navigation extends Component {
                     default:
 
                         let check = currState.aggregateData.formula_ls[col - 2].getChart ? "checked" : "";
-                    return currState.colHeader[col] + "<span id='colClose'>x</span>" +
-                        "<label class=\"switch\">" +
-                        "  <input type=\"checkbox\"" + check + ">" +
-                        "  <span class=\"slider round\"></span>" +
-                        "</label>";
+                        return currState.colHeader[col] + "<span id='colClose'>x</span>" +
+                            "<label class=\"switch\">" +
+                            "  <input type=\"checkbox\"" + check + ">" +
+                            "  <span class=\"slider round\"></span>" +
+                            "</label>";
                 }
             }
         }
@@ -938,8 +938,8 @@ export default class Navigation extends Component {
                 for (let i = 0; i < data.data.length; i++) {
                     let hierCol = aggregateData.formula_ls[i];
                     hierarchicalColAttr.push(parseInt(hierCol.attr_index - 1));
-                    colHeader.push(options[hierCol.attr_index - 1] + " " +
-                        hierCol.function + " " + hierCol.param_ls);
+                    let funcName = hierCol.function === 'COUNTIF'? 'CIF':'';
+                    colHeader.push(options[hierCol.attr_index - 1] + " " + funcName + " " + hierCol.param_ls);
                 }
 
                 let targetCol = (currLevel == 0) ? 1 : 2;
@@ -1014,45 +1014,45 @@ export default class Navigation extends Component {
                     let lastR = [];
 
                     // for (let i = 0; i < cumulativeData[currLevel].length; i++) {
-                        let formula = data[0].formula;
-                        if (formula.includes("COUNTIF") || formula.includes("SUMIF")) {
-                            let ls = formula.split(",")[1].split(")")[0];
-                            let str = ls.substring(1, 3);
-                            if (str.includes(">=") || str.includes("<=") || str.includes("<>")) {
-                                cond.push(ls.substring(1, 3));
-                                value.push(ls.substring(3, ls.length - 1));
-                            }
-                            else if (str.includes(">") || str.includes("<") || str.includes("=")) {
-                                cond.push(ls.substring(1, 2));
-                                value.push(ls.substring(2, ls.length - 1));
-                            }
-                            else {
-                                cond.push("=");
-                                value.push(ls.substring(1, ls.length - 1));
-                            }
+                    let formula = data[0].formula;
+                    if (formula.includes("COUNTIF") || formula.includes("SUMIF")) {
+                        let ls = formula.split(",")[1].split(")")[0];
+                        let str = ls.substring(1, 3);
+                        if (str.includes(">=") || str.includes("<=") || str.includes("<>")) {
+                            cond.push(ls.substring(1, 3));
+                            value.push(ls.substring(3, ls.length - 1));
                         }
-                        else if (formula.includes("MIN") || formula.includes("MAX") || formula.includes("MEDIAN") || formula.includes("MODE") || formula.includes("RANK") || formula.includes("SMALL") || formula.includes("LARGE")) {
-                            cond.push("");
-                            value.push(data[0].value.toString());
+                        else if (str.includes(">") || str.includes("<") || str.includes("=")) {
+                            cond.push(ls.substring(1, 2));
+                            value.push(ls.substring(2, ls.length - 1));
                         }
+                        else {
+                            cond.push("=");
+                            value.push(ls.substring(1, ls.length - 1));
+                        }
+                    }
+                    else if (formula.includes("MIN") || formula.includes("MAX") || formula.includes("MEDIAN") || formula.includes("MODE") || formula.includes("RANK") || formula.includes("SMALL") || formula.includes("LARGE")) {
+                        cond.push("");
+                        value.push(data[0].value.toString());
+                    }
 
-                        //TODO: when ondemand loading of data available
-                        /*let first = cumulativeData[currLevel][selectedChild[i]].rowRange[0];
-                        let last = cumulativeData[currLevel][selectedChild[i]].rowRange[1];
+                    //TODO: when ondemand loading of data available
+                    /*let first = cumulativeData[currLevel][selectedChild[i]].rowRange[0];
+                    let last = cumulativeData[currLevel][selectedChild[i]].rowRange[1];
 
-                        if (first < currentFirstRow)
-                            firstR.push(currentFirstRow)
-                        else
-                            firstR.push(first);
-                        if (last > currentLastRow)
-                            lastR.push(currentLastRow);
-                        else
-                            lastR.push(last);*/
-                        // if (this.lowerRange == 0)
-                        //     firstR.push(lowerRange + 1);
-                        // else
-                        firstR.push(cumulativeData[currLevel][0].rowRange[0]);
-                        lastR.push(cumulativeData[currLevel][cumulativeData[currLevel].length-1].rowRange[1]);
+                    if (first < currentFirstRow)
+                        firstR.push(currentFirstRow)
+                    else
+                        firstR.push(first);
+                    if (last > currentLastRow)
+                        lastR.push(currentLastRow);
+                    else
+                        lastR.push(last);*/
+                    // if (this.lowerRange == 0)
+                    //     firstR.push(lowerRange + 1);
+                    // else
+                    firstR.push(cumulativeData[currLevel][0].rowRange[0]);
+                    lastR.push(cumulativeData[currLevel][cumulativeData[currLevel].length - 1].rowRange[1]);
                     // }
 
                     queryObj.bookId = this.props.bookId;
@@ -1752,10 +1752,10 @@ export default class Navigation extends Component {
                 .style("font-size", "10px")
                 .style("font-weight", "bold")
                 .text(function () {
-                    if (navAggRawData[col - colOffset][row].formula.includes("COUNTIF")) {
-                        let percent = (value * 100.0) / cumulativeData[currLevel][row].value;
-                        return value + " (" + percent.toFixed(2) + "%)";
-                    }
+                    // if (navAggRawData[col - colOffset][row].formula.includes("COUNTIF")) {
+                    //     let percent = (value * 100.0) / cumulativeData[currLevel][row].value;
+                    //     return value + " (" + percent.toFixed(2) + "%)";
+                    // }
 
                     return value;
                 });
@@ -1938,10 +1938,10 @@ export default class Navigation extends Component {
                 .style("font-size", "20px")
                 .style("font-weight", "bold")
                 .text(function () {
-                    if (navAggRawData[col - colOffset][row].formula.includes("COUNTIF")) {
-                        let percent = (value * 100.0) / cumulativeData[currLevel][row].value;
-                        return value + " (" + percent.toFixed(2) + "%)";
-                    }
+                    // if (navAggRawData[col - colOffset][row].formula.includes("COUNTIF")) {
+                    //     let percent = (value * 100.0) / cumulativeData[currLevel][row].value;
+                    //     return value + " (" + percent.toFixed(2) + "%)";
+                    // }
                     return value;
                 });
 
@@ -1950,8 +1950,9 @@ export default class Navigation extends Component {
         td.style.background = '#FAF2ED';
         return td;
     }
+
     removeHierarchiCol(colIndex) {
-        if (this.state.aggregateData.formula_ls.length > 1){
+        if (this.state.aggregateData.formula_ls.length > 1) {
             //let formula = Array.from(this.state.aggregateData.formula_ls)
             let formula = this.state.aggregateData.formula_ls;
 
@@ -1963,16 +1964,18 @@ export default class Navigation extends Component {
             this.submitHierForm(formula);
         } else {
 
-                this.setState({
-                    hieraOpen:false,
-                })
-                let currState = this.state;
-                this.hotTableComponent.current.hotInstance.alter('remove_col', colIndex);
-                this.hotTableComponent.current.hotInstance.updateSettings({
-                    width: currState.wrapperWidth * 0.19,});
+            this.setState({
+                hieraOpen: false,
+            })
+            let currState = this.state;
+            this.hotTableComponent.current.hotInstance.alter('remove_col', colIndex);
+            this.hotTableComponent.current.hotInstance.updateSettings({
+                width: currState.wrapperWidth * 0.19,
+            });
 
         }
     }
+
     brushNlink(firstRow, lastRow) {
         //console.log("brush and link");
 
@@ -2081,8 +2084,8 @@ export default class Navigation extends Component {
         }
 
         if (newSelectedChild.length == 1) {
-          //  console.log("line1954 newselectedchild")
-          //  console.log(newSelectedChild)
+            //  console.log("line1954 newselectedchild")
+            //  console.log(newSelectedChild)
             if (this.state.selectedChild.length === 0 || this.state.selectedChild.length > 1 || this.state.selectedChild[0] !== newSelectedChild[0]) {
                 this.hotTableComponent.current.hotInstance.deselectCell();
                 this.setState({
@@ -2097,8 +2100,8 @@ export default class Navigation extends Component {
             }
         }
         else if (newSelectedChild.length > 1) {
-        //    console.log("line1970 newselectedchild")
-        //    console.log(newSelectedChild)
+            //    console.log("line1970 newselectedchild")
+            //    console.log(newSelectedChild)
             this.hotTableComponent.current.hotInstance.deselectCell();
             this.setState({
                 selectedChild: newSelectedChild,
@@ -2110,7 +2113,7 @@ export default class Navigation extends Component {
     jumpToFocus(path) {
 
         let childHash = new Map();
-      //  console.log("nextPath:" + path);
+        //  console.log("nextPath:" + path);
         let path_str = "";
         let levelList = [];
         for (let i = 0; i < path.length; i++) {
@@ -2133,8 +2136,8 @@ export default class Navigation extends Component {
         queryData.sheetName = this.state.sheetName;
         queryData.path = path_str;
 
-      //  console.log("queryData:");
-     //   console.log(queryData);
+        //  console.log("queryData:");
+        //   console.log(queryData);
         fetch(this.state.urlPrefix + '/api/' + 'getChildren', {
             method: "POST",
             body: JSON.stringify(queryData),
@@ -2159,8 +2162,8 @@ export default class Navigation extends Component {
                     if (currLevel == 0) {
                         colHeader.splice(1, 0, "")
                     }
-                  //  console.log(result);
-                  //  console.log("currLevel: " + currLevel);
+                    //  console.log(result);
+                    //  console.log("currLevel: " + currLevel);
                     let mergeCellInfo = [];
                     if (currData.length != 0 && breadcrumb_ls.length != 0) {
                         for (let i = 0; i < currData.length; i++) {
