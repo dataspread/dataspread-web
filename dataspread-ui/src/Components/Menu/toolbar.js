@@ -12,8 +12,12 @@ const favstyle = {
 export default class Toolbar extends Component {
     constructor(props) {
         super(props)
-        this.handler = this.handler.bind(this)
-        this.handleNav = this.handleNav.bind(this)
+        this.handler = this.handler.bind(this);
+        this.handleNav = this.handleNav.bind(this);
+        this.handleBin = this.handleBin.bind(this);
+        this.state = {
+            navOpen: false
+        }
     }
 
     handler(e) {
@@ -25,6 +29,10 @@ export default class Toolbar extends Component {
 
     handleNav (e) {
         this.props.onNavFormOpen();
+    }
+
+    handleBin(e){
+        this.props.onBinFormOpen();
     }
 
 
@@ -55,6 +63,7 @@ export default class Toolbar extends Component {
                 <Dropdown.Menu>
                     <Dropdown.Item onClick={this.handleNav}>Explore</Dropdown.Item>
                     <HierarchiForm ref={ref => this.hier = ref} submitHierForm = {this.props.submitHierForm}/>
+                    {/*<Dropdown.Item onClick={this.handleBin}>Customize Bins</Dropdown.Item>*/}
                 </Dropdown.Menu>
             </Dropdown>
             <Dropdown item text='Help'>

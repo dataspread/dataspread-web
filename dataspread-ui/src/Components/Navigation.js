@@ -32,12 +32,14 @@ export default class Navigation extends Component {
             sortChild_ls: [],
             prevPath: '',
             nextPath: '',
+
         }
 
         this.hotTableComponent = React.createRef();
 
         this.startNav = this.startNav.bind(this);
         this.navCellRenderer = this.navCellRenderer.bind(this);
+        this.beforeOnCellMouseDownHandler = this.beforeOnCellMouseDownHandler.bind(this);
         this.afterSelectionHandler = this.afterSelectionHandler.bind(this);
         this.computeCellChart = this.computeCellChart.bind(this);
         this.zoomIn = this.zoomIn.bind(this);
@@ -48,9 +50,17 @@ export default class Navigation extends Component {
         this.zoomOutHist = this.zoomOutHist.bind(this);
         this.submitHierForm = this.submitHierForm.bind(this);
         this.chartRenderer = this.chartRenderer.bind(this);
+        this.jumpToHistorialView = this.jumpToHistorialView.bind(this);
+        this.brushNlink = this.brushNlink.bind(this);
+        this.updateBarChartFocus = this.updateBarChartFocus.bind(this);
+        this.updateNavCellFocus = this.updateNavCellFocus.bind(this);
+        this.jumpToFocus = this.jumpToFocus.bind(this);
+        this.removeHierarchiCol = this.removeHierarchiCol.bind(this);
+
     }
 
     startNav(data) {
+        console.log(this)
         //console.log(data);
         let length = data.data.length;
         let viewData = new Array(data.data.length);
@@ -96,7 +106,7 @@ export default class Navigation extends Component {
                 ? currentState.wrapperHeight * 0.93 / currentState.currData.length
                 : 90,
             width: currentState.wrapperWidth * 0.19,
-            height: currentState.wrapperHeight * 0.93,
+            height: currentState.wrapperHeight * 0.92,
             rowHeaderWidth: 0,
             rowHeaders: true,
             colWidths: self.colWidthsComputer,
@@ -105,76 +115,86 @@ export default class Navigation extends Component {
             contextMenu: false,
             outsideClickDeselects: false,
             className: "wrap",
-            search: true,
-            sortIndicator: true,
-            manualColumnResize: true,
+            //manualColumnResize: true,
             mergeCells: currentState.mergeCellInfo,
-            beforeOnCellMouseDown: function (e, coords, element) {
-                // $("#formulaBar").val("");
-
-                let topLevel = (currentState.currLevel == 0 && coords.col != 0)
-                let otherLevel = (currentState.currLevel > 0 && coords.col != 1)
-                // if (topLevel && coords.row >= 0) {
-                //     $("#formulaBar").val("=" + navRawFormula[coords.row][coords.col - 1]);
-                // }
-                // else if (currLevel > 0 && coords.row >= 0 && coords.col >= 2) {
-                //     $("#formulaBar").val("=" + navRawFormula[coords.row][coords.col - 2]);
-                // }
-                //console.log(e);
-                //|| zoomming
-                if (topLevel || otherLevel ||
-                    e.realTarget.className == "colHeader" ||
-                    e.realTarget.className == "relative" || e.realTarget.className.baseVal == "bar") {
-                    e.stopImmediatePropagation();
-                }
-                if (e.realTarget.classList['3'] == "zoomInPlus") {
-                    e.stopImmediatePropagation();
-                    self.zoomIn(coords.row);
-                }
-                if (e.realTarget.classList['3'] == "zoomOutM") {
-                    e.stopImmediatePropagation();
-                    self.zoomOutHist();
-                    return;
-                }
-                if (e.realTarget.id == "colClose") {
-                    self.removeHierarchiCol(coords.col)
-                }
-                if (e.realTarget.classList['0'] == "slider") {
-                    let level = coords.col - 1;
-                    if (currentState.currLevel > 0)
-                        level = coords.col - 2;
-                    currentState.aggregateData.formula_ls[level].getChart =
-                        !currentState.aggregateData.formula_ls[level].getChart;
-                    self.getAggregateValue();
-                }
-            },
+            beforeOnCellMouseDown: self.beforeOnCellMouseDownHandler,
             cells: self.cellRenderer,
             afterSelection: self.afterSelectionHandler,
         })
-        this.hotTableComponent.current.hotInstance.view.wt.update('onCellDblClick', function (e, cell) {
-            if (cell.row >= 0) {
-                if (currentState.currLevel == 0) {
-                    if (cell.col == 0 && currentState.cumulativeData[currentState.currLevel][cell.row].clickable) {
-                        //        var child = cell.row/spanList[currLevel];
-                        let child = cell.row;
-                        //nav.deselectCell();
-                        //zoomming = true;
-                        self.zoomIn(child);
-                    }
-                } else {
-                    if (cell.col == 1 && currentState.cumulativeData[currentState.currLevel][cell.row].clickable) {
-                        //  var child = cell.row/spanList[currLevel];
-                        var child = cell.row;
-                        //nav.deselectCell();
-                        //zoomming = true;
-                        self.zoomIn(child);
-                    } else if (cell.col == 0) {
-                        //zoomouting = true;
-                        //zoomOutHist(nav);
-                    }
-                }
-            }
-        });
+        // this.hotTableComponent.current.hotInstance.view.wt.update('onCellDblClick', function (e, cell) {
+        //     console.log("double clicked")
+        //     console.log(this.state)
+        //     if (cell.row >= 0) {
+        //         console.log("double clicked2r")
+        //         console.log(currentState.currLevel)
+        //         if (currentState.currLevel == 0) {
+        //             if (cell.col == 0 && currentState.cumulativeData[currentState.currLevel][cell.row].clickable) {
+        //                 //        var child = cell.row/spanList[currLevel];
+        //                 let child = cell.row;
+        //                 //nav.deselectCell();
+        //                 //zoomming = true;
+        //                 self.zoomIn(child);
+        //             }
+        //         } else {
+        //             if (cell.col == 1 && currentState.cumulativeData[currentState.currLevel][cell.row].clickable) {
+        //                 //  var child = cell.row/spanList[currLevel];
+        //                 var child = cell.row;
+        //                 //nav.deselectCell();
+        //                 //zoomming = true;
+        //                 self.zoomIn(child);
+        //             } else if (cell.col == 0) {
+        //                 //zoomouting = true;
+        //                 //zoomOutHist(nav);
+        //             }
+        //         }
+        //     }
+        // });
+    }
+
+    beforeOnCellMouseDownHandler(e, coords, element) {
+        // $("#formulaBar").val("");
+        let currentState = this.state;
+        let self = this;
+        let topLevel = (currentState.currLevel == 0 && coords.col != 0)
+        let otherLevel = (currentState.currLevel > 0 && coords.col != 1)
+        // if (topLevel && coords.row >= 0) {
+        //     $("#formulaBar").val("=" + navRawFormula[coords.row][coords.col - 1]);
+        // }
+        // else if (currLevel > 0 && coords.row >= 0 && coords.col >= 2) {
+        //     $("#formulaBar").val("=" + navRawFormula[coords.row][coords.col - 2]);
+        // }
+        console.log("beforeoncellmousdown")
+        console.log(e);
+        console.log(coords);
+        //|| zoomming
+        if (topLevel || otherLevel ||
+            e.realTarget.className == "colHeader" ||
+            e.realTarget.className == "relative" || e.realTarget.className.baseVal == "bar") {
+
+            e.stopImmediatePropagation();
+        }
+        if (e.realTarget.classList['3'] == "zoomInPlus") {
+            e.stopImmediatePropagation();
+            self.zoomIn(coords.row);
+        }
+
+        if (e.realTarget.classList['3'] == "zoomOutM") {
+            e.stopImmediatePropagation();
+            self.zoomOutHist();
+            return;
+        }
+        if (e.realTarget.id == "colClose") {
+            self.removeHierarchiCol(coords.col)
+        }
+        if (e.realTarget.classList['0'] == "slider") {
+            let level = coords.col - 1;
+            if (currentState.currLevel > 0)
+                level = coords.col - 2;
+            currentState.aggregateData.formula_ls[level].getChart =
+                !currentState.aggregateData.formula_ls[level].getChart;
+            console.log(currentState.aggregateData)
+            self.submitHierForm(currentState.aggregateData.formula_ls);
+        }
     }
 
     colWidthsComputer(col) {
@@ -227,13 +247,11 @@ export default class Navigation extends Component {
                     default:
                         let check =
                             currState.aggregateData.formula_ls[col - 1].getChart ? "checked" : "";
-                        return currState.colHeader[col];
-                    //todo add checkbox and delete
-                    // return currState.colHeader[col] + "<span id='colClose' >x</span>" +
-                    //     "<label class=\"switch\">" +
-                    //     "  <input type=\"checkbox\"" + check + ">" +
-                    //     "  <span class=\"slider round\"></span>" +
-                    //     "</label>";
+                        return currState.colHeader[col] + "<span id='colClose' >x</span>" +
+                            "<label class=\"switch\">" +
+                            "  <input type=\"checkbox\"" + check + ">" +
+                            "  <span class=\"slider round\"></span>" +
+                            "</label>";
                 }
             } else {
                 switch (col) {
@@ -243,15 +261,12 @@ export default class Navigation extends Component {
                         return currState.colHeader[1];
                     default:
 
-                        let check =
-                            currState.aggregateData.formula_ls[col - 2].getChart ? "checked" : "";
-                        return currState.colHeader[col];
-                    //todo add checkbox and delete
-                    // return currState.colHeader[col] + "<span id='colClose'>x</span>" +
-                    //     "<label class=\"switch\">" +
-                    //     "  <input type=\"checkbox\"" + check + ">" +
-                    //     "  <span class=\"slider round\"></span>" +
-                    //     "</label>";
+                        let check = currState.aggregateData.formula_ls[col - 2].getChart ? "checked" : "";
+                        return currState.colHeader[col] + "<span id='colClose'>x</span>" +
+                            "<label class=\"switch\">" +
+                            "  <input type=\"checkbox\"" + check + ">" +
+                            "  <span class=\"slider round\"></span>" +
+                            "</label>";
                 }
             }
         }
@@ -260,6 +275,7 @@ export default class Navigation extends Component {
     afterSelectionHandler(r, c, r2, c2, preventScrolling,
                           selectionLayerLevel) {
         // setting if prevent scrolling after selection
+        console.log(r, c, r2, c2)
         if (this.state.cumulativeData[this.state.currLevel][r] != undefined) {
             let selectedChild = [];
             selectedChild.push(r);
@@ -274,7 +290,9 @@ export default class Navigation extends Component {
             });
 
             let lowerRange = this.state.cumulativeData[this.state.currLevel][r].rowRange[0];
-            this.props.grid.grid.scrollToCell({columnIndex: 0, rowIndex: lowerRange + 26});
+            console.log('afterselection');
+            console.log(lowerRange)
+            this.props.scrollTo(lowerRange);
             // let upperRange = cumulativeData[currLevel][r].rowRange[1];
             // updateData(cumulativeData[currLevel][r].rowRange[0], 0,
             //     cumulativeData[currLevel][r].rowRange[1], 15, true);
@@ -369,8 +387,9 @@ export default class Navigation extends Component {
     }
 
     computeCellChart(chartString, row) {
+        let nav = this;
         let self = this.state;
-        let grid = this.props.grid.grid;
+        let scrollTo = this.props.scrollTo;
         let result = self.childHash.get(row);
         let number = result.length;
         let maxLen = 0;
@@ -490,9 +509,24 @@ export default class Navigation extends Component {
             .on("mouseout", function (d) {
                 tooltip.style("display", "none");
             })
-            .on("click", function (d) {
+            .on("click", function (d, i) {
+
+                // work around for highlight nav chart
+                // let selectedChild = [];
+                // selectedChild.push(row);
+                // let selectedBars = [];
+                // let barObj = {};
+                // barObj.cell = row;
+                // barObj.bars = [i];
+                // selectedBars.push(barObj);
+                // nav.setState({
+                //     selectedChild: selectedChild,
+                //     selectedBars: selectedBars
+                // });
                 let lowerRange = hash.get(d.name).range;
-                grid.scrollToCell({columnIndex: 0, rowIndex: lowerRange + 26});
+
+
+                scrollTo(lowerRange);
                 //updataHighlight();
             });
         //   .on("dblclick",function(d){ alert("node was double clicked"); });
@@ -542,9 +576,9 @@ export default class Navigation extends Component {
         let queryData = {};
         //console.log(this)
         queryData.bookId = this.props.bookId;
-        queryData.sheetName = this.props.grid.state.sheetName;
+        queryData.sheetName = this.state.sheetName;
         queryData.path = childlist;
-        fetch(this.props.grid.urlPrefix + '/api/' + 'getChildren', {
+        fetch(this.state.urlPrefix + '/api/' + 'getChildren', {
             method: "POST",
             body: JSON.stringify(queryData),
             headers: {
@@ -567,8 +601,8 @@ export default class Navigation extends Component {
                         if (currData[i].clickable) alltext = false;
                         childHash.set(i, currData[i].children);
                     }
-                    // prevPath = result.prev.path;
-                    // nextPath = result.later.path;
+                    let prevPath = result.prev.path;
+                    let nextPath = result.later.path;
                     // let breadcrum_ls = result.breadCrumb;
                     let mergeCellInfo = [];
                     mergeCellInfo.push(
@@ -600,9 +634,13 @@ export default class Navigation extends Component {
                         cumulativeData: cumulativeData,
                         currLevel: currLevel,
                         mergeCellInfo: mergeCellInfo,
+                        prevPath: prevPath,
+                        nextPath: nextPath,
                     });
                     currState = this.state;
                     this.hotTableComponent.current.hotInstance.deselectCell();
+                    console.log("638")
+                    console.log(viewData)
                     this.hotTableComponent.current.hotInstance.updateSettings({
                         data: viewData,
                         rowHeights: (currState.wrapperHeight * 0.95 / currState.currData.length > 90)
@@ -621,8 +659,8 @@ export default class Navigation extends Component {
                     //             zoomming = false;
                     //             //nav.selectCell(0, 1)
                     //         }
-                    //         updateNavPath(breadcrum_ls); // calculate breadcrumb
-                    //         updateNavCellFocus(currentFirstRow, currentLastRow);
+                    this.props.updateBreadcrumb(result.breadCrumb, childlist); // calculate breadcrumb
+                    this.updateNavCellFocus(currData[0].rowRange[0], currData[0].rowRange[0] + 20);
                     if (selectFirstChild)
                         this.hotTableComponent.current.hotInstance.selectCell(0, 1);
                 }
@@ -653,10 +691,10 @@ export default class Navigation extends Component {
         let queryData = {};
 
         queryData.bookId = this.props.bookId;
-        queryData.sheetName = this.props.grid.state.sheetName;
+        queryData.sheetName = this.state.sheetName;
         queryData.path = childlist;
 
-        fetch(this.props.grid.urlPrefix + '/api/' + 'getChildren', {
+        fetch(this.state.urlPrefix + '/api/' + 'getChildren', {
             method: "POST",
             body: JSON.stringify(queryData),
             headers: {
@@ -724,24 +762,136 @@ export default class Navigation extends Component {
                         this.submitHierForm(currState.aggregateData.formula_ls);
                     }
 
-                    // updateNavPath(breadcrum_ls);
-                    // updateNavCellFocus(currentFirstRow, currentLastRow);
+                    this.props.updateBreadcrumb(result.breadCrumb, childlist); // calculate breadcrumb
+                    this.updateNavCellFocus(this.firstRow, this.lastRow);
                 }
             })
+    }
 
+    jumpToHistorialView(childlist) {
+        console.log("In Jump to Historical view");
+        let currState = this.state;
+        let childHash = new Map();
+        let clickable = true;
+        //nav.deselectCell();
 
+        let tmp_ls = childlist.split(",");
+        let levelList = []
+        for (let i = 0; i < tmp_ls.length; i++) {
+            if (tmp_ls[i].length != 0)
+                levelList[i] = parseInt(tmp_ls[i]);
+        }
+        let targetChild = levelList[levelList.length - 1];
+
+        this.setState({
+            selectedChild: [],
+            selectedBars: [],
+            sortChild_ls: [],
+            levelList: levelList,
+        });
+
+        // api call to /levelList + '.' + child to get currData
+        let queryData = {};
+
+        queryData.bookId = this.props.bookId;
+        queryData.sheetName = this.state.sheetName;
+        queryData.path = childlist;
+        fetch(this.state.urlPrefix + '/api/' + 'getChildren', {
+            method: "POST",
+            body: JSON.stringify(queryData),
+            headers: {
+                'Content-Type': 'text/plain'
+            }
+        }).then(response => response.json())
+            .then(data => {
+                if (data.status == "success") {
+                    var result = data.data;
+                    let breadcrumb_ls = result.breadCrumb;
+                    // clickable = result.clickable;
+                    let currLevel = breadcrumb_ls.length;
+                    let currData = result.buckets;
+                    for (let i = 0; i < currData.length; i++) {
+                        childHash.set(i, currData[i].children);
+                    }
+                    let prevPath = result.prev.path;
+                    let nextPath = result.later.path;
+                    let numChild = currData.length;
+                    let viewData = new Array(numChild);
+                    let cumulativeData = currState.cumulativeData;
+                    cumulativeData[currLevel] = currData;
+                    let mergeCellInfo = [];
+                    let colHeader = currState.colHeader;
+                    if (breadcrumb_ls.length != 0) {
+                        mergeCellInfo.push({row: 0, col: 0, rowspan: numChild, colspan: 1});
+
+                        let parentName = breadcrumb_ls[breadcrumb_ls.length - 1];
+
+                        for (let i = 0; i < numChild; i++) {
+                            if (i == 0) {
+                                viewData[i] = [parentName];
+                            } else {
+                                viewData[i] = [""];
+                            }
+                            viewData[i][1] = currData[i].name;
+                        }
+                    } else {
+                        colHeader.splice(1, 1);
+                        for (let i = 0; i < numChild; i++) {
+                            viewData[i] = [currData[i].name];
+                        }
+                    }
+
+                    let columWidth = [];
+                    if (breadcrumb_ls.length >= 1) {
+                        columWidth = [40, 160];
+                    } else {
+                        columWidth = 200;
+                    }
+
+                    this.setState({
+                        currData: result.buckets,
+                        childHash: childHash,
+                        viewData: viewData,
+                        cumulativeData: cumulativeData,
+                        currLevel: currLevel,
+                        mergeCellInfo: mergeCellInfo,
+                        colHeader: colHeader,
+                        prevPath: prevPath,
+                        nextPath: nextPath,
+                    });
+                    currState = this.state;
+                    this.hotTableComponent.current.hotInstance.deselectCell();
+
+                    this.hotTableComponent.current.hotInstance.updateSettings({
+                        data: viewData,
+                        rowHeights: (currState.wrapperHeight * 0.95 / currState.currData.length > 90)
+                            ? currState.wrapperHeight * 0.95 / currState.currData.length
+                            : 90,
+                        mergeCells: mergeCellInfo,
+                    });
+                    if (currState.hieraOpen) {
+                        this.submitHierForm(currState.aggregateData.formula_ls);
+                    }
+                    this.props.updateBreadcrumb(result.breadCrumb, childlist); // calculate breadcrumb
+                    //     if (currLevel == 0) {
+                    //         updateNavCellFocus(currentFirstRow, currentLastRow);
+                    //     } else
+                    //         nav.selectCell(0, 1);
+                    // }
+                }
+            });
     }
 
     submitHierForm(formula_ls) {
-
+        console.log(formula_ls)
         let aggregateData = {};
 
         aggregateData.bookId = this.props.bookId;
-        aggregateData.sheetName = this.props.grid.state.sheetName;
+        aggregateData.sheetName = this.state.sheetName;
         aggregateData.formula_ls = formula_ls;
         let childlist = this.computePath();
         aggregateData.path = " " + childlist;
-        fetch(this.props.grid.urlPrefix + '/api/' + 'getHierarchicalAggregateFormula', {
+        fetch(this.state.urlPrefix + '/api/' + 'getHierarchicalAggregateFormula', {
             method: "POST",
             body: JSON.stringify(aggregateData),
             headers: {
@@ -784,10 +934,12 @@ export default class Navigation extends Component {
                         )
                     }
                 }
+                let hierarchicalColAttr = [];
                 for (let i = 0; i < data.data.length; i++) {
                     let hierCol = aggregateData.formula_ls[i];
-                    colHeader.push(options[hierCol.attr_index - 1] + " " +
-                        hierCol.function + " " + hierCol.param_ls);
+                    hierarchicalColAttr.push(parseInt(hierCol.attr_index - 1));
+                    let funcName = hierCol.function === 'COUNTIF'? 'CIF':'';
+                    colHeader.push(options[hierCol.attr_index - 1] + " " + funcName + " " + hierCol.param_ls);
                 }
 
                 let targetCol = (currLevel == 0) ? 1 : 2;
@@ -823,18 +975,18 @@ export default class Navigation extends Component {
 
                 let numChild = cumulativeData[currLevel].length;
                 let percentage = currState.alltext ? 0.12 : 0.18;
-                console.log(wrapperWidth)
-                console.log(percentage)
-                console.log(navAggRawData.length)
+                // console.log(wrapperWidth)
+                // console.log(percentage)
+                // console.log(navAggRawData.length)
                 let newWidth = wrapperWidth * (percentage + navAggRawData.length * 0.15);
-                console.log(newWidth);
+                // console.log(newWidth);
                 this.setState({
                     hieraOpen: true,
                     aggregateData: aggregateData,
                     navAggRawData: navAggRawData,
                     colHeader: colHeader,
                     viewData: viewData,
-                    cumulativeData: cumulativeData,
+                    // cumulativeData: cumulativeData,
                     navRawFormula: navRawFormula,
 
                 });
@@ -849,7 +1001,101 @@ export default class Navigation extends Component {
                         : 90,
                 });
 
+                // for highlight
+                let brushNLinkRows = [];
+                if (navAggRawData.length == 1 && this.isPointFormula(navAggRawData[0][0].formula)) {
+                    console.log("Brush color list satisfied");
+                    console.log(navAggRawData)
+                    let data = navAggRawData[0];
+                    let queryObj = {}
+                    let cond = [];
+                    let value = [];
+                    let firstR = [];
+                    let lastR = [];
+
+                    // for (let i = 0; i < cumulativeData[currLevel].length; i++) {
+                    let formula = data[0].formula;
+                    if (formula.includes("COUNTIF") || formula.includes("SUMIF")) {
+                        let ls = formula.split(",")[1].split(")")[0];
+                        let str = ls.substring(1, 3);
+                        if (str.includes(">=") || str.includes("<=") || str.includes("<>")) {
+                            cond.push(ls.substring(1, 3));
+                            value.push(ls.substring(3, ls.length - 1));
+                        }
+                        else if (str.includes(">") || str.includes("<") || str.includes("=")) {
+                            cond.push(ls.substring(1, 2));
+                            value.push(ls.substring(2, ls.length - 1));
+                        }
+                        else {
+                            cond.push("=");
+                            value.push(ls.substring(1, ls.length - 1));
+                        }
+                    }
+                    else if (formula.includes("MIN") || formula.includes("MAX") || formula.includes("MEDIAN") || formula.includes("MODE") || formula.includes("RANK") || formula.includes("SMALL") || formula.includes("LARGE")) {
+                        cond.push("");
+                        value.push(data[0].value.toString());
+                    }
+
+                    //TODO: when ondemand loading of data available
+                    /*let first = cumulativeData[currLevel][selectedChild[i]].rowRange[0];
+                    let last = cumulativeData[currLevel][selectedChild[i]].rowRange[1];
+
+                    if (first < currentFirstRow)
+                        firstR.push(currentFirstRow)
+                    else
+                        firstR.push(first);
+                    if (last > currentLastRow)
+                        lastR.push(currentLastRow);
+                    else
+                        lastR.push(last);*/
+                    // if (this.lowerRange == 0)
+                    //     firstR.push(lowerRange + 1);
+                    // else
+                    firstR.push(cumulativeData[currLevel][0].rowRange[0]);
+                    lastR.push(cumulativeData[currLevel][cumulativeData[currLevel].length - 1].rowRange[1]);
+                    // }
+
+                    queryObj.bookId = this.props.bookId;
+                    queryObj.sheetName = this.state.sheetName;
+                    queryObj.index = parseInt(formula_ls[0].attr_index) - 1;
+                    queryObj.first = firstR;
+                    queryObj.last = lastR;
+                    queryObj.conditions = cond;
+                    queryObj.values = value;
+
+                    fetch(this.state.urlPrefix + '/api/' + 'getBrushColorList', {
+                        method: "POST",
+                        body: JSON.stringify(queryObj),
+                        headers: {
+                            'Content-Type': 'text/plain'
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status == "success") {
+                                console.log(data.data);//#d4eafc
+
+                                brushNLinkRows = data.data;
+
+                            }
+                            this.props.updateHighlight(hierarchicalColAttr, brushNLinkRows);
+
+                        });
+
+                }
+
+                else //higlight hierarchical col
+                    this.props.updateHighlight(hierarchicalColAttr, brushNLinkRows);
             })
+    }
+
+    isPointFormula(formula) {
+        let str = formula.split("(")[0];
+        var pointFunc = ["MIN", "MAX", "MEDIAN", "MODE", "RANK", "SMALL", "LARGE", "COUNTIF", "SUMIF"];
+        console.log(str)
+        if (pointFunc.includes(str))
+            return true;
+        return false;
     }
 
     chartRenderer(instance, td, row, col, prop, value, cellProperties) {
@@ -1506,10 +1752,10 @@ export default class Navigation extends Component {
                 .style("font-size", "10px")
                 .style("font-weight", "bold")
                 .text(function () {
-                    if (navAggRawData[col - colOffset][row].formula.includes("COUNTIF")) {
-                        let percent = (value * 100.0) / cumulativeData[currLevel][row].value;
-                        return value + " (" + percent.toFixed(2) + "%)";
-                    }
+                    // if (navAggRawData[col - colOffset][row].formula.includes("COUNTIF")) {
+                    //     let percent = (value * 100.0) / cumulativeData[currLevel][row].value;
+                    //     return value + " (" + percent.toFixed(2) + "%)";
+                    // }
 
                     return value;
                 });
@@ -1692,10 +1938,10 @@ export default class Navigation extends Component {
                 .style("font-size", "20px")
                 .style("font-weight", "bold")
                 .text(function () {
-                    if (navAggRawData[col - colOffset][row].formula.includes("COUNTIF")) {
-                        let percent = (value * 100.0) / cumulativeData[currLevel][row].value;
-                        return value + " (" + percent.toFixed(2) + "%)";
-                    }
+                    // if (navAggRawData[col - colOffset][row].formula.includes("COUNTIF")) {
+                    //     let percent = (value * 100.0) / cumulativeData[currLevel][row].value;
+                    //     return value + " (" + percent.toFixed(2) + "%)";
+                    // }
                     return value;
                 });
 
@@ -1704,6 +1950,302 @@ export default class Navigation extends Component {
         td.style.background = '#FAF2ED';
         return td;
     }
+
+    removeHierarchiCol(colIndex) {
+        if (this.state.aggregateData.formula_ls.length > 1) {
+            //let formula = Array.from(this.state.aggregateData.formula_ls)
+            let formula = this.state.aggregateData.formula_ls;
+
+            if (this.state.currLevel == 0) {
+                formula.splice(colIndex - 1, 1);
+            } else {
+                formula.splice(colIndex - 2, 1);
+            }
+            this.submitHierForm(formula);
+        } else {
+
+            this.setState({
+                hieraOpen: false,
+            })
+            let currState = this.state;
+            this.hotTableComponent.current.hotInstance.alter('remove_col', colIndex);
+            this.hotTableComponent.current.hotInstance.updateSettings({
+                width: currState.wrapperWidth * 0.19,
+            });
+
+        }
+    }
+
+    brushNlink(firstRow, lastRow) {
+        //console.log("brush and link");
+
+        let path = this.computePath();
+
+        // console.log("path: "+path);
+
+
+        let currentFocus = this.state.cumulativeData[this.state.currLevel];
+        if (currentFocus == undefined)
+            return;
+
+        //console.log(currentFocus);
+        let lastElement = currentFocus[currentFocus.length - 1];
+        let firstElement = currentFocus[0];
+        // console.log(lastElement)
+        let endRow = lastElement.rowRange[1];
+        let startRow = firstElement.rowRange[0];
+
+        //console.log("endRow: " + endRow + ", firstRow: " + firstRow);
+        //console.log("startRow: " + startRow + ", lastRow: " + lastRow);
+        this.firstRow = firstRow;
+        this.lastRow = lastRow;
+        if (startRow > lastRow) {
+            this.jumpToFocus(this.state.prevPath);
+            // this.updateNavCellFocus(firstRow, lastRow);
+        }
+        else if (endRow < firstRow) {
+            this.jumpToFocus(this.state.nextPath);
+            // this.updateNavCellFocus(firstRow, lastRow);
+        }
+        else {
+            this.updateNavCellFocus(firstRow, lastRow);
+        }
+
+        //updateSScolor(firstRow,lastRow);
+
+    }
+
+    updateBarChartFocus(firstRow, lastRow) {
+        //console.log(childHash);
+        let newSelectedBars = [];
+        for (let selI = 0; selI < this.state.cumulativeData[this.state.currLevel].length; selI++) {
+            if (this.state.childHash.get(selI) === undefined)
+                continue;
+            let newSelectedBar = [];
+            //console.log(childHash.get(selI));
+            for (let selJ = 0; selJ < this.state.childHash.get(selI).length; selJ++) {
+                let lower = this.state.childHash.get(selI)[selJ].rowRange[0];
+                let upper = this.state.childHash.get(selI)[selJ].rowRange[1];
+
+                //console.log("lowerRange,upperRange", lower, upper);
+                if (firstRow > upper)
+                    continue;
+                if (lastRow < lower)
+                    break;
+                newSelectedBar.push(selJ);
+            }
+
+            if (newSelectedBar.length > 0) {
+                let barObj = {};
+                barObj.cell = selI;
+                barObj.bars = newSelectedBar;
+                newSelectedBars.push(barObj);
+            }
+        }
+
+        //console.log("newselectedBars");
+        //console.log(newSelectedBars);
+        if (newSelectedBars.length === 1 && this.state.selectedBars.length === 1 && newSelectedBars[0].cell === this.state.selectedBars[0].cell && newSelectedBars[0].bars.length === this.state.selectedBars[0].bars.length) {
+            for (let selI = 0; selI < newSelectedBars[0].bars.length; selI++) {
+                if (newSelectedBars[0].bars[selI] != this.state.selectedBars[0].bars[selI]) {
+                    this.setState({
+                        selectedBars: newSelectedBars,
+                    });
+                    return;
+                }
+            }
+            return;
+        }
+
+        this.setState({
+            selectedBars: newSelectedBars,
+        });
+        return;
+    }
+
+    updateNavCellFocus(firstRow, lastRow) {
+
+        //console.log("firstRow,lastRow:", firstRow, lastRow);
+
+        let currentFirstRow = firstRow;
+        let currentLastRow = lastRow;
+
+        let newSelectedChild = [];
+        for (let selI = 0; selI < this.state.cumulativeData[this.state.currLevel].length; selI++) {
+            let lower = this.state.cumulativeData[this.state.currLevel][selI].rowRange[0];
+            let upper = this.state.cumulativeData[this.state.currLevel][selI].rowRange[1];
+
+            //console.log("lowerRange,upperRange",lower,upper);
+            if (firstRow > upper)
+                continue;
+            if (lastRow < lower)
+                break;
+            newSelectedChild.push(selI);
+        }
+
+        if (newSelectedChild.length == 1) {
+            //  console.log("line1954 newselectedchild")
+            //  console.log(newSelectedChild)
+            if (this.state.selectedChild.length === 0 || this.state.selectedChild.length > 1 || this.state.selectedChild[0] !== newSelectedChild[0]) {
+                this.hotTableComponent.current.hotInstance.deselectCell();
+                this.setState({
+                    currentFirstRow: currentFirstRow,
+                    currentLastRow: currentLastRow,
+                    selectedChild: newSelectedChild,
+                })
+                this.updateBarChartFocus(firstRow, lastRow);
+            }
+            else {
+                this.updateBarChartFocus(firstRow, lastRow);
+            }
+        }
+        else if (newSelectedChild.length > 1) {
+            //    console.log("line1970 newselectedchild")
+            //    console.log(newSelectedChild)
+            this.hotTableComponent.current.hotInstance.deselectCell();
+            this.setState({
+                selectedChild: newSelectedChild,
+            })
+            this.updateBarChartFocus(firstRow, lastRow);
+        }
+    }
+
+    jumpToFocus(path) {
+
+        let childHash = new Map();
+        //  console.log("nextPath:" + path);
+        let path_str = "";
+        let levelList = [];
+        for (let i = 0; i < path.length; i++) {
+            if (path.length != 0) {
+                levelList[i] = parseInt(path[i]);
+                if (i == 0)
+                    path_str += path[i];
+                else if (i < path.length - 1)
+                    path_str += "," + path[i];
+            }
+        }
+        let selectedChild = [];
+        let selectedBars = [];
+        // let sortChild_ls = [];
+
+        let queryData = {};
+
+
+        queryData.bookId = this.props.bookId;
+        queryData.sheetName = this.state.sheetName;
+        queryData.path = path_str;
+
+        //  console.log("queryData:");
+        //   console.log(queryData);
+        fetch(this.state.urlPrefix + '/api/' + 'getChildren', {
+            method: "POST",
+            body: JSON.stringify(queryData),
+            headers: {
+                'Content-Type': 'text/plain'
+            }
+        }).then(response => response.json())
+            .then(data => {
+                if (data.status == "success") {
+                    var result = data.data;
+                    console.log(result);
+                    let currData = result.buckets;
+
+                    let prevPath = result.prev.path;
+                    let nextPath = result.later.path;
+                    let breadcrumb_ls = result.breadCrumb;
+                    let currLevel = breadcrumb_ls.length;
+                    let numChild = currData.length;
+                    let viewData = new Array(numChild);
+                    let colHeader = this.state.colHeader;
+                    let cumulativeData = this.state.cumulativeData;
+                    if (currLevel == 0) {
+                        colHeader.splice(1, 0, "")
+                    }
+                    //  console.log(result);
+                    //  console.log("currLevel: " + currLevel);
+                    let mergeCellInfo = [];
+                    if (currData.length != 0 && breadcrumb_ls.length != 0) {
+                        for (let i = 0; i < currData.length; i++) {
+                            childHash.set(i, currData[i].children);
+                        }
+                        mergeCellInfo.push({row: 0, col: 0, rowspan: currData.length, colspan: 1});
+                        for (let i = 0; i < currData.length; i++) {
+                            if (i == 0) {
+                                viewData[i] = [breadcrumb_ls[breadcrumb_ls.length - 1]];
+                            } else {
+                                viewData[i] = [""];
+                            }
+                        }
+
+                        cumulativeData.pop();
+                        cumulativeData.push(currData);
+
+                        for (let i = 0; i < currData.length; i++) {
+                            //double layer
+                            viewData[i][1] = cumulativeData[currLevel][i].name;
+
+                        }
+
+                        // cumulativeDataSize += currData.length;
+                    }
+                    else if (currData.length != 0 && breadcrumb_ls.length == 0) {
+                        for (let i = 0; i < currData.length; i++) {
+                            childHash.set(i, currData[i].children);
+                        }
+                        //colHeader.splice(1, 1);
+                        cumulativeData = [];
+                        cumulativeData.push(currData);
+                        for (let i = 0; i < numChild; i++) {
+                            viewData[i] = [currData[i].name];
+                        }
+                        // cumulativeDataSize += currData.length;
+                    }
+                    else {
+                        path.splice(-1, 1);
+                        this.jumpToFocus(path);
+                        return;
+                    }
+
+                    // let columWidth = [];
+                    // if (currLevel >= 1) {
+                    //     //columWidth = [50];
+                    // } else {
+                    //     columWidth = 200;
+                    // }
+                    this.setState({
+                        currData: result.buckets,
+                        childHash: childHash,
+                        viewData: viewData,
+                        cumulativeData: cumulativeData,
+                        currLevel: currLevel,
+                        mergeCellInfo: mergeCellInfo,
+                        colHeader: colHeader,
+                        prevPath: prevPath,
+                        nextPath: nextPath,
+                        levelList: levelList,
+                    });
+
+                    let currState = this.state;
+                    this.hotTableComponent.current.hotInstance.deselectCell();
+
+                    this.hotTableComponent.current.hotInstance.updateSettings({
+                        data: viewData,
+                        rowHeights: (currState.wrapperHeight * 0.95 / currState.currData.length > 90)
+                            ? currState.wrapperHeight * 0.95 / currState.currData.length
+                            : 90,
+                        mergeCells: mergeCellInfo,
+                    });
+
+                    if (currState.hieraOpen) {
+                        this.submitHierForm(currState.aggregateData.formula_ls);
+                    }
+                    this.props.updateBreadcrumb(result.breadCrumb, path_str); // calculate breadcrumb
+                    this.updateNavCellFocus(this.firstRow, this.lastRow);
+                }
+            })
+    }
+
 
     computePath() {
         let childlist = "";
@@ -1717,12 +2259,13 @@ export default class Navigation extends Component {
         return childlist;
     }
 
+
     render() {
-        if (this.props.grid.state.navOpen) {
+        if (this.state.navOpen) {
             return (
                 <div id="hot-app">
                     <HotTable ref={this.hotTableComponent}/>
-                    {/*settings={this.hotSettings}*/}
+
                 </div>
             );
         } else {

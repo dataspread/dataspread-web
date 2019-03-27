@@ -21,18 +21,13 @@ export default class HierarchiForm extends Component {
         };
         this.handleRankOrder = this.handleRankOrder.bind(this);
         this.handleSubTotalFunc = this.handleSubTotalFunc.bind(this);
-        this, this.updateOption = this.updateOption.bind(this);
+        this.updateOption = this.updateOption.bind(this);
     }
 
     updateOption(data) {
-        let opt = [];
-        for (let i = 0; i < data.length; i++) {
-            let temp = {text: data[i], value: i + 1};
-            opt.push(temp);
-        }
         this.setState({
             navPanelOpen: true,
-            options: opt
+            options: data
         });
     }
 
@@ -64,6 +59,11 @@ export default class HierarchiForm extends Component {
                     if (formula_ls[i].param_ls[1] == "") {
                         alert("Please fill in the parameter")
                         return;
+                    }else if(formula_ls[i].param_ls[1].charAt(0) === '\''){
+                        formula_ls[i].param_ls[1] = formula_ls[i].param_ls[1].replace(/'/g,'\"');
+                        console.log(formula_ls[i].param_ls[1])
+                    } else if(formula_ls[i].param_ls[1].charAt(0) !== '\"'){
+                        formula_ls[i].param_ls[1] = "\"" + formula_ls[i].param_ls[1] +"\"";
                     }
                     break;
                 case "RANK":
@@ -124,9 +124,9 @@ export default class HierarchiForm extends Component {
         //console.log(e);
         let formula = this.state.formula_ls;
         let temp = {
-            attr_index: 0,
+            attr_index: 1,
             function: "AVEDEV",
-            param_ls: [],
+            param_ls: [""],
         };
         formula.splice(e + 1, 0, temp);
         this.setState({
@@ -241,8 +241,11 @@ export default class HierarchiForm extends Component {
         }
         return null;
     }
-
     render() {
+
+        if(this.state.navPanelOpen !== true){
+            return null;
+        }
         const chartOpt = [
             {key: 'r', text: 'Raw Value', value: '1'},
             {key: 'c', text: 'Chart', value: '2'},
@@ -284,8 +287,8 @@ export default class HierarchiForm extends Component {
                 <Modal.Content>
                     <Form onSubmit={this.handleSubmit}>
                         {formula_ls.map((line, index) => {
-                            //console.log(line);
-                            //console.log(selected);
+                            // console.log(line)
+                            // console.log(this.state.options)
                             return (<div>
                                     <Form.Group>
                                         <i className="fa fa-minus-circle hierRemove" id="rm1"
