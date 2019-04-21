@@ -9,7 +9,7 @@ export default class HistoryBar extends Component {
         console.log(this);
         this.state = {
             breadcrumb_ls: [],
-            attribute: 0,
+            // attribute: 0,
             open: false,
             navHistoryPathIndex: {},
             navHistoryTable: {},
@@ -24,18 +24,18 @@ export default class HistoryBar extends Component {
         console.log(this.props)
     }
 
-    handleHistClick = (row) =>{
+    handleHistClick = (row) => {
         console.log(row)
         console.log(this.state.navHistoryPathIndex[row])
         this.props.jumpToHistorialView(this.state.navHistoryPathIndex[row])
     }
     handleBreadcrumbClick = (index) => {
         console.log(index)
-        console.log(this.state.breadCrumbHistoryPathIndex[parseInt(index)])
-        this.props.jumpToHistorialView(this.state.breadCrumbHistoryPathIndex[parseInt(index)])
+        console.log(this.state.breadCrumbHistoryPathIndex[parseInt(index, 10)])
+        this.props.jumpToHistorialView(this.state.breadCrumbHistoryPathIndex[parseInt(index, 10)])
     }
 
-    updateNavPath(breadcrumb_ls,path_index) {
+    updateNavPath(breadcrumb_ls, path_index) {
         // add to navigation history
         let navHistoryPath = "Home";
         for (let j = 0; j < breadcrumb_ls.length; j++) {
@@ -71,7 +71,7 @@ export default class HistoryBar extends Component {
         } else // if existing path, delete from dropdown and prepend
         {
             let temp_ls = history.filter(item => item !== navHistoryPath);
-            temp_ls.splice(0,0,navHistoryPath);
+            temp_ls.splice(0, 0, navHistoryPath);
             history = temp_ls;
         }
         this.setState({
@@ -82,18 +82,20 @@ export default class HistoryBar extends Component {
     }
 
     render() {
-        if(this.state.open == false) return null;
+        if (this.state.open == false) return null;
         var breadCrumb = [];
-        if(this.state.breadcrumb_ls.length > 0) {
-            breadCrumb.push(<Breadcrumb.Section link onClick={() => this.handleBreadcrumbClick(0)}>Home</Breadcrumb.Section>);
+        if (this.state.breadcrumb_ls.length > 0) {
+            breadCrumb.push(<Breadcrumb.Section link
+                                                onClick={() => this.handleBreadcrumbClick(0)}>Home</Breadcrumb.Section>);
             for (let i = 0; i < this.state.breadcrumb_ls.length - 1; i++) {
                 breadCrumb.push(<Breadcrumb.Divider icon='right angle'/>);
                 breadCrumb.push(<Breadcrumb.Section link
                                                     onClick={() => this.handleBreadcrumbClick(i + 1)}>{this.state.breadcrumb_ls[i]}</Breadcrumb.Section>)
             }
             breadCrumb.push(<Breadcrumb.Divider icon='right angle'/>);
-            breadCrumb.push(<Breadcrumb.Section>{this.state.breadcrumb_ls[this.state.breadcrumb_ls.length - 1]}</Breadcrumb.Section>)
-        }else {
+            breadCrumb.push(
+                <Breadcrumb.Section>{this.state.breadcrumb_ls[this.state.breadcrumb_ls.length - 1]}</Breadcrumb.Section>)
+        } else {
             breadCrumb.push(<Breadcrumb.Section>Home</Breadcrumb.Section>);
         }
         // console.log(this.state.historyList)
@@ -103,12 +105,12 @@ export default class HistoryBar extends Component {
                     {breadCrumb}</Breadcrumb>
                 <Dropdown text='Navigation History' id="nav-history">
                     <Dropdown.Menu>
-                    {this.state.historyList.map((line,index)=>{
-                        console.log(line)
-                        console.log(index)
-                        return (<Dropdown.Item text={line} onClick={()=> this.handleHistClick(line)}/>);
-                    })
-                    }
+                        {this.state.historyList.map((line, index) => {
+                            console.log(line)
+                            console.log(index)
+                            return (<Dropdown.Item text={line} onClick={() => this.handleHistClick(line)}/>);
+                        })
+                        }
                     </Dropdown.Menu>
                 </Dropdown>
 
