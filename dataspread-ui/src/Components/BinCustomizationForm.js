@@ -7,8 +7,8 @@ export default class BinCustomizationForm extends Component {
         super(props);
         console.log(this);
         this.state = {
-            binFormOpen: true,
-            isNumeric: 1,
+            binFormOpen: false,
+            isNumeric: 0,
             //  bucketArray: [["Ashville", "Austin", "Boston"], ["Chicago", "Denver"], ["LA"], ["Nashville", "New Orleans"], ["New York City"], ["Oakland", "Portland", "San Diego"], ["San Francisco", "Santacruz", "Seattle"], ["Washington D.C."]],
             bucketArray: [["0.0", "53.0"], ["54.0", "69.0"], ["70.0", "85.0"], ["86.0", "99.0"], ["100.0", "120.0"], ["121.0", "149.0"], ["150.0", "185.0"], ["186.0", "250.0"], ["251.0", "750.0"], ["775.0", "10000.0"]],
             checkedCount: 0,
