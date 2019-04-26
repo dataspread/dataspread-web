@@ -1062,6 +1062,8 @@ export default class Navigation extends Component {
                     queryObj.last = lastR;
                     queryObj.conditions = cond;
                     queryObj.values = value;
+                    let childlist = this.computePath();
+                    queryObj.path = " " + childlist;
 
                     fetch(this.state.urlPrefix + '/api/' + 'getBrushColorList', {
                         method: "POST",
