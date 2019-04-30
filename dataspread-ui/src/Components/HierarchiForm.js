@@ -44,9 +44,6 @@ export default class HierarchiForm extends Component {
     handleClose = () => this.setState({modalOpen: false})
 
     handleSubmit = (e) => {
-        //console.log(e);
-        //console.log("submit");
-        //console.log(this.state.getChart)
         let formula_ls = this.state.formula_ls;
         for (let i = 0; i < formula_ls.length; i++) {
             formula_ls[i].getChart = this.state.getChart;

@@ -1242,16 +1242,16 @@ export default class Navigation extends Component {
 
             let special = navAggRawData[col - colOffset][row]['valueIndex'];
 
-            var margin = {top: 20, right: 25, bottom: 18, left: 35};
+            let margin = {top: 20, right: 25, bottom: 18, left: 35};
             // here, we want the full chart to be 700x200, so we determine
             // the width and height by subtracting the margins from those values
-            var fullWidth = wrapperWidth * 0.14;
-            var fullHeight = nav.getRowHeight(row);
+            let fullWidth = wrapperWidth * 0.14;
+            let fullHeight = nav.getRowHeight(row);
 
             // the width and height values will be used in the ranges of our scales
-            var width = fullWidth - margin.right - margin.left;
-            var height = fullHeight - margin.top - margin.bottom;
-            var svg = d3.select('#' + tempString)
+            let width = fullWidth - margin.right - margin.left;
+            let height = fullHeight - margin.top - margin.bottom;
+            let svg = d3.select('#' + tempString)
                 .append('svg')
                 .attr('width', fullWidth)
                 .attr('height', fullHeight)
@@ -1285,26 +1285,26 @@ export default class Navigation extends Component {
                     .range([0, width]);
 
             // y value determined by temp
-            var maxValue = d3.max(distribution, function (d) {
+            let maxValue = d3.max(distribution, function (d) {
                 return d.count;
             });
-            var yScale =
+            let yScale =
                 d3.scaleLinear().domain([0, maxValue]).range([height, 0]).nice();
 
-            var xAxis = d3.axisBottom(xScale)
+            let xAxis = d3.axisBottom(xScale)
             //.ticks(6,'s');
                 .tickValues(chartData.bins);
 
-            var yAxis = d3.axisLeft(yScale);
+            let yAxis = d3.axisLeft(yScale);
             yAxis.ticks(5);
 
-            var barHolder = svg.append('g').classed('bar-holder', true);
+            let barHolder = svg.append('g').classed('bar-holder', true);
 
-            var tooltip =
+            let tooltip =
                 d3.select('#' + tempString).append("div").attr("class", "toolTip");
 
             // draw the bars
-            var bars =
+            let bars =
                 barHolder.selectAll('rect.bar')
                     .data(distribution)
                     .enter()
@@ -1351,7 +1351,7 @@ export default class Navigation extends Component {
                 .attr('transform', 'translate(0,' + height + ')')
                 .call(xAxis);
 
-            var yAxisEle = svg.append('g').classed('y axis', true).call(yAxis);
+            let yAxisEle = svg.append('g').classed('y axis', true).call(yAxis);
 
             // add a label to the yAxis
             svg.append('text')
@@ -1393,16 +1393,16 @@ export default class Navigation extends Component {
             if (navAggRawData[col - colOffset][row]['formula'].includes("STDEV"))
                 showSquare = 0;
 
-            var margin = {top: 20, right: 25, bottom: 18, left: 35};
+            let margin = {top: 20, right: 25, bottom: 18, left: 35};
             // here, we want the full chart to be 700x200, so we determine
             // the width and height by subtracting the margins from those values
-            var fullWidth = wrapperWidth * 0.14;
-            var fullHeight = nav.getRowHeight(row);
+            let fullWidth = wrapperWidth * 0.14;
+            let fullHeight = nav.getRowHeight(row);
 
             // the width and height values will be used in the ranges of our scales
-            var width = fullWidth - margin.right - margin.left;
-            var height = fullHeight - margin.top - margin.bottom;
-            var svg = d3.select('#' + tempString)
+            let width = fullWidth - margin.right - margin.left;
+            let height = fullHeight - margin.top - margin.bottom;
+            let svg = d3.select('#' + tempString)
                 .append('svg')
                 .attr('width', fullWidth)
                 .attr('height', fullHeight)
@@ -1443,26 +1443,26 @@ export default class Navigation extends Component {
                     .range([0, width]);
 
             // y value determined by temp
-            var maxValue = d3.max(distribution, function (d) {
+            let maxValue = d3.max(distribution, function (d) {
                 return d.count;
             });
-            var yScale =
+            let yScale =
                 d3.scaleLinear().domain([0, maxValue]).range([height, 0]).nice();
 
-            var xAxis = d3.axisBottom(xScale)
+            let xAxis = d3.axisBottom(xScale)
             //.ticks(6,'s');
                 .tickValues(chartData.bins);
 
-            var yAxis = d3.axisLeft(yScale);
+            let yAxis = d3.axisLeft(yScale);
             yAxis.ticks(5);
 
-            var barHolder = svg.append('g').classed('bar-holder', true);
+            let barHolder = svg.append('g').classed('bar-holder', true);
 
-            var tooltip =
+            let tooltip =
                 d3.select('#' + tempString).append("div").attr("class", "toolTip");
 
             // draw the bars
-            var bars =
+            let bars =
                 barHolder.selectAll('rect.bar')
                     .data(distribution)
                     .enter()
@@ -1548,7 +1548,7 @@ export default class Navigation extends Component {
                 .attr('transform', 'translate(0,' + height + ')')
                 .call(xAxis);
 
-            var yAxisEle = svg.append('g').classed('y axis', true).call(yAxis);
+            let yAxisEle = svg.append('g').classed('y axis', true).call(yAxis);
 
             // add a label to the yAxis
             svg.append('text')
@@ -1582,16 +1582,16 @@ export default class Navigation extends Component {
                 }
             }
 
-            var margin = {top: 20, right: 25, bottom: 18, left: 35};
+            let margin = {top: 20, right: 25, bottom: 18, left: 35};
             // here, we want the full chart to be 700x200, so we determine
             // the width and height by subtracting the margins from those values
-            var fullWidth = wrapperWidth * 0.14;
-            var fullHeight = nav.getRowHeight(row);
+            let fullWidth = wrapperWidth * 0.14;
+            let fullHeight = nav.getRowHeight(row);
 
             // the width and height values will be used in the ranges of our scales
-            var width = fullWidth - margin.right - margin.left;
-            var height = fullHeight - margin.top - margin.bottom;
-            var svg = d3.select('#' + tempString)
+            let width = fullWidth - margin.right - margin.left;
+            let height = fullHeight - margin.top - margin.bottom;
+            let svg = d3.select('#' + tempString)
                 .append('svg')
                 .attr('width', fullWidth)
                 .attr('height', fullHeight)
@@ -1625,26 +1625,26 @@ export default class Navigation extends Component {
                     .range([0, width]);
 
             // y value determined by temp
-            var maxValue = d3.max(distribution, function (d) {
+            let maxValue = d3.max(distribution, function (d) {
                 return d.count;
             });
-            var yScale =
+            let yScale =
                 d3.scaleLinear().domain([0, maxValue]).range([height, 0]).nice();
 
-            var xAxis = d3.axisBottom(xScale)
+            let xAxis = d3.axisBottom(xScale)
             //.ticks(6,'s');
                 .tickValues(chartData.bins);
 
-            var yAxis = d3.axisLeft(yScale);
+            let yAxis = d3.axisLeft(yScale);
             yAxis.ticks(5);
 
-            var barHolder = svg.append('g').classed('bar-holder', true);
+            let barHolder = svg.append('g').classed('bar-holder', true);
 
-            var tooltip =
+            let tooltip =
                 d3.select('#' + tempString).append("div").attr("class", "toolTip");
 
             // draw the bars
-            var bars =
+            let bars =
                 barHolder.selectAll('rect.bar')
                     .data(distribution)
                     .enter()
@@ -1684,7 +1684,7 @@ export default class Navigation extends Component {
                 .attr('transform', 'translate(0,' + height + ')')
                 .call(xAxis);
 
-            var yAxisEle = svg.append('g').classed('y axis', true).call(yAxis);
+            let yAxisEle = svg.append('g').classed('y axis', true).call(yAxis);
 
             // add a label to the yAxis
             svg.append('text')
@@ -1720,16 +1720,16 @@ export default class Navigation extends Component {
                 }
             }
 
-            var margin = {top: 20, right: 25, bottom: 18, left: 35};
+            let margin = {top: 20, right: 25, bottom: 18, left: 35};
             // here, we want the full chart to be 700x200, so we determine
             // the width and height by subtracting the margins from those values
-            var fullWidth = wrapperWidth * 0.14;
-            var fullHeight = nav.getRowHeight(row);
+            let fullWidth = wrapperWidth * 0.14;
+            let fullHeight = nav.getRowHeight(row);
 
             // the width and height values will be used in the ranges of our scales
-            var width = fullWidth - margin.right - margin.left;
-            var height = fullHeight - margin.top - margin.bottom;
-            var svg = d3.select('#' + tempString)
+            let width = fullWidth - margin.right - margin.left;
+            let height = fullHeight - margin.top - margin.bottom;
+            let svg = d3.select('#' + tempString)
                 .append('svg')
                 .attr('width', fullWidth)
                 .attr('height', fullHeight)
@@ -1770,26 +1770,26 @@ export default class Navigation extends Component {
                     .range([0, width]);
 
             // y value determined by temp
-            var maxValue = d3.max(distribution, function (d) {
+            let maxValue = d3.max(distribution, function (d) {
                 return d.count;
             });
-            var yScale =
+            let yScale =
                 d3.scaleLinear().domain([0, maxValue]).range([height, 0]).nice();
 
-            var xAxis = d3.axisBottom(xScale)
+            let xAxis = d3.axisBottom(xScale)
             //.ticks(6,'s');
                 .tickValues(chartData.bins);
 
-            var yAxis = d3.axisLeft(yScale);
+            let yAxis = d3.axisLeft(yScale);
             yAxis.ticks(5);
 
-            var barHolder = svg.append('g').classed('bar-holder', true);
+            let barHolder = svg.append('g').classed('bar-holder', true);
 
-            var tooltip =
+            let tooltip =
                 d3.select('#' + tempString).append("div").attr("class", "toolTip");
 
             // draw the bars
-            var bars =
+            let bars =
                 barHolder.selectAll('rect.bar')
                     .data(distribution)
                     .enter()
@@ -1829,7 +1829,7 @@ export default class Navigation extends Component {
                 .attr('transform', 'translate(0,' + height + ')')
                 .call(xAxis);
 
-            var yAxisEle = svg.append('g').classed('y axis', true).call(yAxis);
+            let yAxisEle = svg.append('g').classed('y axis', true).call(yAxis);
 
             // add a label to the yAxis
             svg.append('text')
@@ -1893,8 +1893,8 @@ export default class Navigation extends Component {
                     max = navAggRawData[col - colOffset][i]['value'];
                 }
             }
-            var margin = {top: 20, right: 30, bottom: 0, left: -20};
-            var fullHeight = (wrapperHeight * 0.95 / cumulativeData[currLevel].length > 90)
+            let margin = {top: 20, right: 30, bottom: 0, left: -20};
+            let fullHeight = (wrapperHeight * 0.95 / cumulativeData[currLevel].length > 90)
                 ? wrapperHeight * 0.95 / cumulativeData[currLevel].length - 10 : 80;
             if (childHash.has(row)) {
                 let result = childHash.get(row);
@@ -1904,13 +1904,13 @@ export default class Navigation extends Component {
                     fullHeight += (number - 6) * 5;
                 }
             }
-            var fullWidth = wrapperWidth * 0.14;
+            let fullWidth = wrapperWidth * 0.14;
             ////console.log("row: " + row + " " + fullHeight+" "+ wrapperHeight+" "+ fullWidth+" "+wrapperWidth);
 
             // the width and height values will be used in the ranges of our scales
-            var width = fullWidth - margin.right - margin.left;
-            var height = fullHeight - margin.top - margin.bottom;
-            var svg = d3.select('#' + tempString)
+            let width = fullWidth - margin.right - margin.left;
+            let height = fullHeight - margin.top - margin.bottom;
+            let svg = d3.select('#' + tempString)
                 .append('svg')
                 .attr('width', fullWidth)
                 .attr('height', fullHeight)

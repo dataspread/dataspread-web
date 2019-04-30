@@ -26,10 +26,9 @@ class App extends Component {
         this.onNavFormOpen = this.onNavFormOpen.bind(this)
         this.updateHierFormOption = this.updateHierFormOption.bind(this)
         this.submitHierForm = this.submitHierForm.bind(this)
-        //this.onBinFormOpen = this.onBinFormOpen.bind(this)
+        this.onBinFormOpen = this.onBinFormOpen.bind(this)
 
         this.submitNavForm = this.submitNavForm.bind(this);
-        this.openBinForm = this.openBinForm.bind(this);
         this.scrollTo = this.scrollTo.bind(this);
         this.updateBreadcrumb = this.updateBreadcrumb.bind(this);
         this.computePath = this.computePath.bind(this);
@@ -78,11 +77,83 @@ class App extends Component {
         this.nav.submitHierForm(data);
     }
 
-    // onBinFormOpen(){
-    //     if (this.grid !== null) {
-    //         this.grid.openBinForm();
-    //     }
-    // }
+    onBinFormOpen() {
+        if (this.nav.state.navOpen) {
+            let queryData = {};
+            queryData.bookId = this.state.bookId;
+            queryData.sheetName = this.grid.state.sheetName;
+            queryData.path = this.nav.computePath();
+            fetch(this.grid.urlPrefix + '/api/' + 'redefineBoundaries', {
+                method: "POST",
+                body: JSON.stringify(queryData),
+                headers: {
+                    'Content-Type': 'text/plain'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data)
+                    let array = [];
+                    for (let i = 0; i < data.data.bucketArray.length; i++) {
+                        array.push(false);
+                    }
+                    this.binForm.setState({
+                        binFormOpen: true,
+                        isNumeric: data.data.isNumeric,
+                        bucketArray: data.data.bucketArray,
+                        checkedArray: array,
+                        checkedCount: 0,
+                        checkedIndex: 0,
+                        dropdownIndex: 0,
+                    });
+
+                })
+        }
+    }
+
+    submitBinForm = () => {
+        console.log(this.binForm)
+        this.binForm.setState({
+            binFormOpen: false,
+        });
+
+        let queryData = {};
+        queryData.bookId = this.state.bookId;
+        queryData.sheetName = this.grid.state.sheetName;
+        queryData.path = this.nav.computePath();
+        if (this.binForm.state.isNumeric) {
+            queryData.bucketArray = this.binForm.state.bucketArray;
+        } else {
+            let temp = [];
+            let dataBucket = this.binForm.state.bucketArray;
+            for (let i = 0; i < dataBucket.length; i++) {
+                temp.push([dataBucket[i][0], dataBucket[i][dataBucket[i].length - 1]]);
+            }
+            queryData.bucketArray = temp;
+        }
+        console.log(queryData)
+        fetch(this.grid.urlPrefix + '/api/' + 'updateBoundaries', {
+            method: "POST",
+            body: JSON.stringify(queryData),
+            headers: {
+                'Content-Type': 'text/plain'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data)
+                console.log(this)
+                if (this.nav.state.currLevel > 0) {
+                    this.nav.jumpToHistorialView(this.nav.computePath());
+                } else {
+                    this.submitNavForm(this.grid.state.exploreCol + 1);
+                    // if (hieraOpen) {
+                    //     getAggregateValue();
+                    //
+                    // }
+                }
+            });
+    }
 
     submitNavForm(attribute) {
         if (attribute) {
@@ -97,10 +168,13 @@ class App extends Component {
                         urlPrefix: this.grid.urlPrefix
                     });
                     this.updateHierFormOption(this.navForm.state.options);
+                    this.toolBar.setState({
+                        navOpen: true,
+                    })
                     this.nav.startNav(data);
                     this.navBar.setState({
                         breadcrumb_ls: [],
-                        attribute: 0,
+                      //  attribute: 0,
                         open: true,
                         navHistoryPathIndex: {},
                         navHistoryTable: {},
@@ -110,7 +184,7 @@ class App extends Component {
                         exploreCol: attribute - 1,
                     })
                     console.log(this.grid)
-                    this.nav.brushNlink(this.grid.rowStartIndex,this.grid.rowStopIndex);
+                    this.nav.brushNlink(this.grid.rowStartIndex, this.grid.rowStopIndex);
                 })
         }
     }
@@ -120,18 +194,11 @@ class App extends Component {
     }
 
     jumpToHistorialView(path) {
-        // console.log(path)
         this.nav.jumpToHistorialView(path);
     }
 
     computePath() {
         return this.nav.computePath();
-    }
-
-    openBinForm() {
-        if (this.state.navOpen) {
-            this.setState({binFormOpen: true});
-        }
     }
 
     scrollTo(lowerRange) {
@@ -172,16 +239,18 @@ class App extends Component {
                 <div>
                     <Toolbar username={this.state.username} onSelectFile={this.onSelectFile}
                              onNavFormOpen={this.onNavFormOpen} ref={ref => this.toolBar = ref}
-                             submitHierForm={this.submitHierForm}/>
+                             submitHierForm={this.submitHierForm} onBinFormOpen={this.onBinFormOpen}/>
                     <Stylebar/>
                     <HistoryBar ref={ref => this.navBar = ref} computePath={this.computePath}
                                 jumpToHistorialView={this.jumpToHistorialView}/>
-                    <Navigation bookId={this.state.bookId} scrollTo={this.scrollTo} ref={ref => this.nav = ref}
-                                updateBreadcrumb={this.updateBreadcrumb} updateHighlight={this.updateHighlight}/>
                     <ExplorationForm grid={this.grid} submitNavForm={this.submitNavForm}
                                      ref={ref => this.navForm = ref}/>
+                    <Navigation bookId={this.state.bookId} scrollTo={this.scrollTo} ref={ref => this.nav = ref}
+                                updateBreadcrumb={this.updateBreadcrumb} updateHighlight={this.updateHighlight}/>
+                    <BinCustomizationForm ref={ref => this.binForm = ref} submitBinForm={this.submitBinForm}/>
                     <DSGrid bookId={this.state.bookId} ref={ref => this.grid = ref} brushNlink={this.brushNlink}
                             updateHierFormOption={this.updateHierFormOption}/>
+
                 </div>
             )
         }
