@@ -83,14 +83,14 @@ To host DataSpread locally you can either use one of the pre-build war files, av
  
 6. Deploy the war file within Tomcat. This can be done via Tomcat's web interface or by manually copying the war file in the `webapps` folder under `TOMCAT_HOME`.
 
-7. Now you are ready to run the program. Visit the url where Tomcat is installed. It will be typically [http://localhost:8080/DataSpread/][install_loc] for a local install.
+7. Now you are ready to run the program. Visit the url where Tomcat is installed. It will be typically [http://localhost:8080/][install_loc] for a local install.
 
 
 License
 ----
 MIT
 
-[install_loc]: http://localhost:8080/DataSpread/
+[install_loc]: http://localhost:8080/
 [tomcat_install]: https://www.ntu.edu.sg/home/ehchua/programming/howto/Tomcat_HowTo.html
 [postgre_install]: https://wiki.postgresql.org/wiki/Detailed_installation_guides
 [Postgres.app]: http://postgresapp.com
