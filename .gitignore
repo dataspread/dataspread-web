@@ -99,5 +99,7 @@ dataspread-ui/npm-debug.log*
 dataspread-ui/yarn-debug.log*
 dataspread-ui/yarn-error.log*
 
+tomcat_log.txt
+
 #js .env file
 dataspread-ui/.env
