@@ -11,8 +11,8 @@ services:
         - db-data:/var/lib/postgresql/data
 
   app-web:
-    # Build using Dockerfile in build-web
-    build: ./build-web
+    # Build using Dockerfile in project folder
+    build: ./
     container_name: dataspread-web
     ports:
       # Change left value for different host port i.e. localhost:8080
