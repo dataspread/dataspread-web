@@ -33,25 +33,71 @@ In future releases, DataSpread will support SQL on the spreadsheet frontend, alo
 
 ## Setup Instructions:
 
-You can directly use DataSpread via our cloud-hosted [site][siteinfo].
+You can directly use DataSpread via our cloud-hosted [site][siteinfo] (Temporarily offline).
 
-To host DataSpread locally you can either use one of the pre-build war files, available [here][warlink], or build the war file yourself from the source.
+DataSpread can be deployed locally through Docker (recommended) or through Apache Tomcat.
+
+## Docker Method
+
+### Required Software
+
+* [Docker][docker] >= 1.13.0
+
+### Deploying DataSpread locally.
+
+1. Clone the DataSpread repository and go the directory in your terminal. Alternatively, you can download the source as a zip or tar.gz. 
+
+2. Install Docker. [Docker][docker] makes it easy to separate applications from underlying infrastructure so setting up and running applications is quick and easy.
+
+3. Start Docker and start the application. It should be accessible at [http://localhost:8080/][install_loc]. Stop the application with `CTRL+C`.
+	```
+	docker-compose up
+	```
+
+
+### Rebuilding Changes
+
+Any changes to the code can be rebuilt by adding the build tag when starting the application.
+```
+docker-compose up --build
+```
+
+If there are any errors or the docker image needs to be built from scratch, run the following.
+```
+docker-compose down
+docker-compose build --no-cache
+docker-compose up
+```
+
+### Data Persistance
+
+Data is automatically persisted in a Docker volume across shutdowns. Erase the persisted data by running the following.
+```
+docker-compose down -v
+```
+
+### Additional Information
+
+Docker uses the `/docker-compose.yml` to startup the application. For more information about how the application is deployed, look at `/docker-compose.yml`, `/Dockerfile`, and the files in the `/build-db` and `/build-web` folders.
+
+## Tomcat Method
+
+To host DataSpread locally on Tomcat, you can either use one of the pre-build WAR files, available [here][warlink], or build the WAR file yourself from the source.
 
 ### Required Software
 
 * [Java Platform (JDK)][java] >= 8
-* [PostgreSQL][posrgres] >= 10.5
+* [PostgreSQL][postgres] >= 10.5
 * [PostgreSQL JDBC driver][jdbc] = 42.1.4
 * [Apache Tomcat][tomcat] >= 8.5.4
 * [Apache Maven][maven] >= 3.5.0
 * [NodeJS][node] >= 10.9
 
-
-### Building Instructions (To generate a war file)
+### Building Instructions (To generate a WAR file)
 
 1. Clone the DataSpread repository. Alternatively, you can download the source as a zip or tar.gz. 
 
-2. Use maven to build the `war` file using the following command.  After the build completes the war is available at `webapp/target/DataSpread.war`. 
+2. Use maven to build the `war` file using the following command.  After the build completes, the WAR is available at `webapp/target/DataSpread.war`. 
 
 	```
 	mvn clean install
@@ -81,7 +127,7 @@ To host DataSpread locally you can either use one of the pre-build war files, av
 
 5. Copy `postgresql-42.1.4.jar` (Download from [here][jdbc]) to `lib` folder under `TOMCAT_HOME`.  It is crucial to have the exact version of this file. 
  
-6. Deploy the war file within Tomcat. This can be done via Tomcat's web interface or by manually copying the war file in the `webapps` folder under `TOMCAT_HOME`.
+6. Deploy the WAR file within Tomcat as the root application. This can be done via Tomcat's web interface by undeploying any application located at `/` and deploying the WAR file with the context path `/`. To do this manually, delete the `webapps/ROOT` folder under `TOMCAT_HOME` while the application is not running, copy the WAR file to the `webapps` folder, and rename it to `ROOT.war`. 
 
 7. Now you are ready to run the program. Visit the url where Tomcat is installed. It will be typically [http://localhost:8080/][install_loc] for a local install.
 
@@ -98,7 +144,7 @@ MIT
 [ant]: https://ant.apache.org/bindownload.cgi
 [tomcat]: http://tomcat.apache.org/download-80.cgi
 [java]: http://www.oracle.com/technetwork/java/javase/downloads/index-jsp-138363.html
-[posrgres]:https://www.postgresql.org/download/
+[postgres]:https://www.postgresql.org/download/
 [siteinfo]: http://kite.cs.illinois.edu:8080
 [zksite]: https://www.zkoss.org/product/zkspreadsheet
 [postgressite]: https://www.postgresql.org/
@@ -107,4 +153,4 @@ MIT
 [dataspread-site]: http://data-people.cs.illinois.edu/dataspread.pdf
 [maven]: https://maven.apache.org/install.html
 [node]: https://nodejs.org/en/download/current/
-
+[docker]: https://www.docker.com/products/docker-desktop
