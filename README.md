@@ -35,7 +35,7 @@ In future releases, DataSpread will support SQL on the spreadsheet frontend, alo
 
 You can directly use DataSpread via our cloud-hosted [site][siteinfo] (Temporarily offline).
 
-DataSpread can be deployed locally through Docker (recommended) or through Apache Tomcat.
+DataSpread can be deployed locally through Docker (recommended) or through Apache Tomcat. To start a new book, import a `csv` file or use the `/sample.csv` provided.
 
 ## Docker Method
 
