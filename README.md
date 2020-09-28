@@ -140,7 +140,7 @@ MIT
 [tomcat_install]: https://www.ntu.edu.sg/home/ehchua/programming/howto/Tomcat_HowTo.html
 [postgre_install]: https://wiki.postgresql.org/wiki/Detailed_installation_guides
 [Postgres.app]: http://postgresapp.com
-[jdbc]: http://central.maven.org/maven2/org/postgresql/postgresql/42.1.4/postgresql-42.1.4.jar
+[jdbc]: https://repo1.maven.org/maven2/org/postgresql/postgresql/42.1.4/postgresql-42.1.4.jar
 [ant]: https://ant.apache.org/bindownload.cgi
 [tomcat]: http://tomcat.apache.org/download-80.cgi
 [java]: http://www.oracle.com/technetwork/java/javase/downloads/index-jsp-138363.html
