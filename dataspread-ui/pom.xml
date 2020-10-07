@@ -39,23 +39,30 @@
             </plugin>
 
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>1.3.2</version>
+                <!-- frontend-maven-plugin enables node to be installed in Docker -->
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <!-- Use the latest released version:
+                https://repo1.maven.org/maven2/com/github/eirslett/frontend-maven-plugin/ -->
+                <version>1.9.1</version>
                 <executions>
+                    <execution>
+                        <id>install node and npm</id>
+                        <goals>
+                            <goal>install-node-and-npm</goal>
+                        </goals>
+                        <phase>pre-clean</phase>
+                    </execution>
                     <!-- Required: The following will ensure `npm install` is called
                          before anything else during the 'Default Lifecycle' -->
                     <execution>
                         <id>npm install (initialize)</id>
                         <goals>
-                            <goal>exec</goal>
+                            <goal>npm</goal>
                         </goals>
                         <phase>initialize</phase>
                         <configuration>
-                            <executable>npm</executable>
-                            <arguments>
-                                <argument>install</argument>
-                            </arguments>
+                            <arguments>install</arguments>
                         </configuration>
                     </execution>
                     <!-- Required: The following will ensure `npm install` is called
@@ -63,14 +70,11 @@
                     <execution>
                         <id>npm install (clean)</id>
                         <goals>
-                            <goal>exec</goal>
+                            <goal>npm</goal>
                         </goals>
                         <phase>pre-clean</phase>
                         <configuration>
-                            <executable>npm</executable>
-                            <arguments>
-                                <argument>install</argument>
-                            </arguments>
+                            <arguments>install</arguments>
                         </configuration>
                     </execution>
 
@@ -80,20 +84,17 @@
                     <execution>
                         <id>npm run build (compile)</id>
                         <goals>
-                            <goal>exec</goal>
+                            <goal>npm</goal>
                         </goals>
                         <phase>compile</phase>
                         <configuration>
-                            <executable>npm</executable>
-                            <arguments>
-                                <argument>run</argument>
-                                <argument>build</argument>
-                            </arguments>
+                            <arguments>run build</arguments>
                         </configuration>
                     </execution>
 
                 </executions>
                 <configuration>
+                    <nodeVersion>v12.18.4</nodeVersion>
                     <environmentVariables>
                         <CI>false</CI>
                         <!-- The following parameters create an NPM sandbox for CI -->
