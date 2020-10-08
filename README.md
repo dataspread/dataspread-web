@@ -2,6 +2,7 @@
 
 ![dataspread-fiverr2-cropped](https://cloud.githubusercontent.com/assets/1056605/21773459/cec3c198-d654-11e6-8d0e-5c7a867ed77b.png)
 
+## Introduction
 
 [DataSpread][dataspread-github] is a _spreadsheet-database hybrid system_, with a spreadsheet frontend, and a database backend. Thus, DataSpread inherits the flexibility and ease-of-use of spreadsheets, as well as the scalability and power of databases. A paper describing DataSpread's architecture, design decisions, and optimization can be found [here][dataspread-site]. DataSpread is a multi-year project, supported by the National Science Foundation via award number 1633755.
 
@@ -11,7 +12,15 @@ Several key design innovations in DataSpread include, but are not limited to:
 * _Asynchronous formulae evaluation_ thereby not requiring the users to wait for long running operations to complete
 * A _navigation panel_ which enables the users to explore tabular spreadsheet data and obtain additional details on demand via aggregation operations.
 
-## Setup Instructions:
+## Full Documentation
+
+See the [Wiki][wiki] for full documentation on APIs, developer environment setup, and other information.
+
+### Version
+
+The current version is 0.5.1.
+
+## Getting Started
 
 You can directly use DataSpread via our cloud-hosted [site][siteinfo] (Temporarily offline).
 
@@ -112,6 +121,12 @@ To host DataSpread locally on Tomcat, you can either use one of the pre-build WA
 7. Now you are ready to run the program. Visit the url where Tomcat is installed. It will be typically [http://localhost:8080/][install_loc] for a local install.
 
 
+## Contributing
+
+To work with the DataSpread source code, follow the [developer setup guide][developer_setup]. Contributions are welcome!
+
+For bugs and feedback, please use the [GitHub Issues][issues].
+
 License
 ----
 MIT
@@ -134,3 +149,6 @@ MIT
 [maven]: https://maven.apache.org/install.html
 [node]: https://nodejs.org/en/download/current/
 [docker]: https://www.docker.com/products/docker-desktop
+[wiki]: https://github.com/dataspread/dataspread-web/wiki
+[issues]: https://github.com/dataspread/dataspread-web/issues
+[developer_setup]: TODO
