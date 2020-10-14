@@ -278,6 +278,7 @@ export default class DSGrid extends Component {
             .then(res => res.json())
             .then(
                 (result) => {
+                    console.log('sheets')
                     const numRow = result['data']['sheets'][0]['numRow'];
                     const numCol = result['data']['sheets'][0]['numCol'];
                     console.log(result);

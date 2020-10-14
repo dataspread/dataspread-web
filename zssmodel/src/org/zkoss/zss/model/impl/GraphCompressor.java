@@ -19,13 +19,15 @@ public class GraphCompressor extends Thread {
 
     @Override
     public void run() {
-        try {
-            compressDependency();
+
+       /** try {
+            //compressDependency();
+
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     public void stopListener() {

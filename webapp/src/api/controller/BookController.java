@@ -244,7 +244,7 @@ public class BookController {
             return JsonWrapper.generateError(e.getMessage());
         }
         HashMap<String, Object> data = new HashMap<>();
-        data.put("book", bookJson);
+        data.put("Book", bookJson);
         return JsonWrapper.generateJson(data);
     }
 }
