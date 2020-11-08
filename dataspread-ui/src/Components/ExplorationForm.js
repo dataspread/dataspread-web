@@ -44,6 +44,7 @@ export default class ExplorationForm extends Component {
     }
 
     render() {
+        console.log("explore")
         if (this.state.navFormOpen) {
             var optionList = this.state.options;
             return (<Modal

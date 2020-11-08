@@ -159,6 +159,7 @@ export default class DSGrid extends Component {
 
 
     render() {
+        console.log("dsgrid")
         return (
             <div>
                 <div onKeyDown={this._handleKeyDown} onKeyUp={this._handleKeyUp}>

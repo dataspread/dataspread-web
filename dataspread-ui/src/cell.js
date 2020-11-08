@@ -68,7 +68,7 @@ export default class Cell extends Component {
     }
 
     render() {
-
+        console.log("cell")
             if (this.state.editing) {
                 return (<Input
                         style={this.props.style}
