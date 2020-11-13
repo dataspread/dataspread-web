@@ -141,17 +141,12 @@ body {
 }
 
 
-.GridRow {
+.gridContainer {
   margin-top: 15px;
   display: flex;
   flex-direction: row;
 }
-.GridColumn {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-}
-.LeftSideGridContainer {
+.gridHeaderContainer {
   flex: 0 0 50px;
 }
 
@@ -164,12 +159,10 @@ body {
 
 .cell,
 .cellFocus,
-.cellSelected,
-.rowHeaderCell,
-.columnHeaderCell {
+.cellSelected {
   width: 100%;
   height: 100%;
-  padding:  .5em;
+  padding: .5em;
   box-sizing: border-box;
   vertical-align: middle;
   user-select: none;
@@ -182,6 +175,7 @@ body {
   border-bottom: 1px solid #e0e0e0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .cellFocus,
@@ -194,19 +188,38 @@ body {
   z-index: 1;
 }
 
+.rowHeaderCell,
 .columnHeaderCell {
-  border-right: 1px solid #e0e0e0;
-  border-bottom: 1px solid black;
-  border-top: 1px solid #e0e0e0;
-  background-color: #d5d5d5;
-  text-align: center;
+  width: 100%;
+  height: 100%;
+  padding: .5em 0;
+  box-sizing: border-box;
+  vertical-align: middle;
+  user-select: none;
 }
 
-.rowHeaderCell {
+.columnHeaderCell {
+  margin-left: .5em;
+}
+
+.headerCellContainer {
+  display: flex;
   border-right: 1px solid #e0e0e0;
   border-bottom: 1px solid #e0e0e0;
   background-color: #d5d5d5;
+  padding: 0;
   text-align: center;
+}
+
+.drag-icon {
+  display: inline-block;
+  width: .5em;
+  height: 100%;
+}
+
+.drag-icon:hover {
+  background-color: #0d71bb;
+  cursor: col-resize;
 }
 
 .isScrollingPlaceholder {

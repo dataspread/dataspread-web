@@ -171,8 +171,8 @@ export default class DSGrid extends Component {
                             {({height, width}) => (
                                 <ScrollSync>
                                     {({clientHeight, clientWidth, onScroll, scrollHeight, scrollLeft, scrollTop, scrollWidth}) => (
-                                        <div className='GridRow'>
-                                            <div className='LeftSideGridContainer'
+                                        <div className='gridContainer'>
+                                            <div className='gridHeaderContainer'
                                                  style={{
                                                      position: 'absolute',
                                                      left: 0,
@@ -193,7 +193,7 @@ export default class DSGrid extends Component {
                                                 />
                                             </div>
 
-                                            <div className='LeftSideGridContainer'
+                                            <div className='gridHeaderContainer'
                                                  style={{
                                                      position: 'absolute',
                                                      left: this.columnWidth,
@@ -218,7 +218,7 @@ export default class DSGrid extends Component {
                                             </div>
 
 
-                                            <div className='RightColumn'
+                                            <div className='gridContentContainer'
                                                  style={{
                                                      position: 'absolute',
                                                      left: this.columnWidth,
@@ -333,8 +333,10 @@ export default class DSGrid extends Component {
             <div
                 key={key}
                 style={style}
-                className='rowHeaderCell'>
-                {rowIndex + 1}
+                className='headerCellContainer'>
+                <div className='rowHeaderCell'>
+                    {rowIndex + 1}
+                </div>
             </div>
         )
     }
@@ -348,15 +350,17 @@ export default class DSGrid extends Component {
             <div
                 key={key}
                 style={style}
-                className='rowHeaderCell'>
-                {this.toColumnName(columnIndex + 1)}
+                className='headerCellContainer'>
+                <div className='columnHeaderCell'>
+                    {this.toColumnName(columnIndex + 1)}
+                </div>
                 <Draggable axis="x"
                            defaultClassName="DragHandle"
                            defaultClassNameDragging="DragHandleActive"
                            onDrag={(event,{deltaX}) => this._changeColumnWidth({key,deltaX})}
                            position={{x:0}}
                            zIndex={999}>
-                    <a className="drag-icon">|</a>
+                    <div className="drag-icon"></div>
                 </Draggable>
             </div>
         )
