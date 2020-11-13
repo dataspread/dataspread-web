@@ -8,6 +8,7 @@ import Cell from './cell';
 import 'react-datasheet/lib/react-datasheet.css';
 import LRUCache from "lru-cache";
 import Stomp from 'stompjs';
+import Formulabar from "./Components/Formulabar"
 
 
 export default class DSGrid extends Component {
@@ -37,7 +38,8 @@ export default class DSGrid extends Component {
             isProcessing: false,
             initialLoadDone:false,
             columnWidths: Array(this.defaultColumnCount).fill(this.columnWidth),
-            totalWidth: this.defaultColumnCount*this.columnWidth
+            totalWidth: this.defaultColumnCount*this.columnWidth,
+            currentFormula: ''
         };
         this.mouseDown = false;
         this.shiftOn = false;
@@ -57,6 +59,7 @@ export default class DSGrid extends Component {
         this._mouseOverCell = this._mouseOverCell.bind(this);
         this._mouseDownCell = this._mouseDownCell.bind(this);
         this._mouseUpCell = this._mouseUpCell.bind(this);
+        this._selectFormula = this._selectFormula.bind(this);
         this._processUpdates = this._processUpdates.bind(this);
         this._cellRangeRenderer = this._cellRangeRenderer.bind(this);
         this._columnHeaderCellRenderer = this._columnHeaderCellRenderer.bind(this);
@@ -162,6 +165,7 @@ export default class DSGrid extends Component {
         return (
             <div>
                 <div onKeyDown={this._handleKeyDown} onKeyUp={this._handleKeyUp}>
+                <Formulabar currentFormula={this.state.currentFormula}/>
                 <div style={{display: 'flex'}}>
                     <div style={{flex: 'auto', height: '91vh'}}>
                         <Dimmer active={this.state.isProcessing || !this.state.initialLoadDone}>
@@ -394,6 +398,14 @@ export default class DSGrid extends Component {
         //TODO: send update to backend.
     }
 
+    _selectFormula({
+                       value
+                   }) {
+        this.setState({
+            currentFormula: value
+        });
+    }
+
     _setFocusCell(rowIndex, columnIndex) {
         if (this.inclusiveBetween(rowIndex, 0, this.state.rows-1) &&
             this.inclusiveBetween(columnIndex, 0, this.state.columns-1)) {
@@ -546,6 +558,7 @@ export default class DSGrid extends Component {
                     onCellMouseOver={this._mouseOverCell}
                     onCellMouseDown={this._mouseDownCell}
                     onCellMouseUp={this._mouseUpCell}
+                    onSelectFormula={this._selectFormula}
                     onUpdate={this._updateCell}
                 />
         )

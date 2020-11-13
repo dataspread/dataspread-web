@@ -41,6 +41,9 @@ import org.zkoss.zss.model.sys.format.FormatContext;
 import org.zkoss.zss.model.sys.format.FormatEngine;
 import org.zkoss.zss.model.sys.format.FormatResult;
 import org.zkoss.zss.model.sys.formula.*;
+import org.zkoss.zss.model.sys.input.InputEngine;
+import org.zkoss.zss.model.sys.input.InputParseContext;
+import org.zkoss.zss.model.sys.input.InputResult;
 import org.zkoss.zss.model.util.Validations;
 
 import java.io.ByteArrayOutputStream;
@@ -120,17 +123,53 @@ public class CellImpl extends AbstractCellAdv {
 			} catch (Exception e) {
                 // data that cannot be parsed parse as number else as string
 				cellImpl = new CellImpl(row, column);
+				cellImpl._sheet = (AbstractSheetAdv) sheet;
                 String cellString = new String(inByteArray);
-                try {
+                /*try {
                     cellImpl._localValue = new CellValue(Double.parseDouble(cellString));
                 } catch (Exception e1) {
                     cellImpl._localValue = new CellValue(cellString);
-                }
+                }*/
+				InputResult result = parse(cellString);
+				Object resultVal = result.getValue();
+				SCell.CellType resultType = result.getType();
+				if (resultType == CellType.FORMULA) {
+					String formula = (String) resultVal;
+
+					//System.out.println("FORMULA: " + formula);
+					FormulaEngine fe = EngineFactory.getInstance().createFormulaEngine();
+					FormulaParseContext formulaCtx =
+							new FormulaParseContext(sheet.getBook(), sheet, cellImpl, sheet.getSheetName(), null, Locale.US);
+					FormulaExpression expr = fe.parse(formula, formulaCtx);//for test error, no need to build dependency
+					if (expr.hasError()) {
+						String msg = expr.getErrorMessage();
+						throw new InvalidFormulaException(msg == null ? "The formula =" + formula + " contains error" : msg);
+					}
+					cellImpl._localValue = new CellValue(resultType, expr);
+					cellImpl._formulaResultValue = DirtyManager.getDirtyValue();
+					FormulaParseContext context = new FormulaParseContext(cellImpl, new RefImpl(cellImpl));
+					fe.updateDependencyTable(expr, context);
+
+					SBook book = sheet.getBook();
+					SBookSeries bookSeries = book.getBookSeries();
+					ModelUpdateUtil.handlePrecedentUpdate(bookSeries, (AbstractSheetAdv) sheet, new RefImpl(cellImpl));
+				} else {
+					cellImpl._localValue = new CellValue(resultType, resultVal);
+				}
 			}
 		}
 		cellImpl._sheet = (AbstractSheetAdv) sheet;
 		kryoPool.release(kryo);
 		return cellImpl;
+	}
+
+	private static InputResult parse(String valueParse) {
+		final InputEngine ie = EngineFactory.getInstance().createInputEngine();
+		Locale locale = ZssContext.getCurrent().getLocale();
+		InputResult result;
+		result = ie.parseInput(valueParse == null ? ""
+				: valueParse, null, new InputParseContext(locale));
+		return result;
 	}
 
 	private static boolean valueEquals(Object val1, Object val2) {

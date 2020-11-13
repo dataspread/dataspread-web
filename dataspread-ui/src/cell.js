@@ -40,6 +40,9 @@ export default class Cell extends Component {
             rowIndex: this.props.rowIndex,
             columnIndex: this.props.columnIndex
         });
+        this.props.onSelectFormula({
+            value: this.props.formula == null ? this.props.value : this.props.formula
+        });
     }
 
     handleMouseUp() {

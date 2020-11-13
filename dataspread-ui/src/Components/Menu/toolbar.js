@@ -45,13 +45,6 @@ export default class Toolbar extends Component {
                     </Dropdown.Menu>
                 </Dropdown>
 
-                <Dropdown item text='Edit'>
-                    <Dropdown.Menu>
-                        <Dropdown.Item>Copy</Dropdown.Item>
-                        <Dropdown.Item>Paste</Dropdown.Item>
-                    </Dropdown.Menu>
-                </Dropdown>
-
                 <Dropdown item text='Nav'>
                     <Dropdown.Menu>
                         <Dropdown.Item onClick={this.handleNav}>Explore</Dropdown.Item>

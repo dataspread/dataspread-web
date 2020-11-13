@@ -230,7 +230,6 @@ class App extends Component {
                 <div>
                     <Toolbar username={this.state.username} onSelectFile={this.onSelectFile}
                              onNavFormOpen={this.onNavFormOpen}/>
-                    <Stylebar/>
                     <StartupBox username={this.state.username} onSelectFile={this.onSelectFile}/>
                 </div>
             )
@@ -240,7 +239,6 @@ class App extends Component {
                     <Toolbar username={this.state.username} onSelectFile={this.onSelectFile}
                              onNavFormOpen={this.onNavFormOpen} ref={ref => this.toolBar = ref}
                              submitHierForm={this.submitHierForm} onBinFormOpen={this.onBinFormOpen}/>
-                    <Stylebar/>
                     <HistoryBar ref={ref => this.navBar = ref} computePath={this.computePath}
                                 jumpToHistorialView={this.jumpToHistorialView}/>
                     <ExplorationForm grid={this.grid} submitNavForm={this.submitNavForm}
