@@ -92,7 +92,7 @@ public class BTree <K extends AbstractStatistic> {
         bs.dropSchemaAndClear(context);
     }
 
-    public boolean add(DBContext context, K statistic, Integer val, boolean flush, AbstractStatistic.Type type) {
+    public Node<K> add(DBContext context, K statistic, Integer val, boolean flush, AbstractStatistic.Type type) {
         return add(context, statistic, val, 1, flush, type);
     }
     /**
@@ -101,9 +101,9 @@ public class BTree <K extends AbstractStatistic> {
      *
      * @param statistic the key for the value
      * @param val the value corresponding to key
-     * @return
+     * @return rightNode leaf node where the key is inserted.
      */
-    public boolean add(DBContext context, K statistic, Integer val, int count, boolean flush, AbstractStatistic.Type type) {
+    public Node<K> add(DBContext context, K statistic, Integer val, int count, boolean flush, AbstractStatistic.Type type) {
         Node<K> rightNode = addRecursive(context, statistic, metaDataBlock.ri, val, count, type);
         if (rightNode != null) {   // root was split, make new root
             Node<K> leftNode = (new Node<K>(emptyStatistic)).get(context, bs, metaDataBlock.ri);
@@ -132,7 +132,13 @@ public class BTree <K extends AbstractStatistic> {
         // Update Database
         if (flush)
             bs.flushDirtyBlocks(context);
-        return true;
+
+        //return the leaf node where the key is added to.
+        //null means not splited.
+        if(rightNode != null){
+            return rightNode;
+        }
+        return (new Node<K>(emptyStatistic)).get(context, bs, metaDataBlock.ri);
     }
 
     /**
@@ -511,17 +517,21 @@ public class BTree <K extends AbstractStatistic> {
         bs.flushDirtyBlocks(context);
     }
 
-    public void createIDs(DBContext context, K statistic, Integer val, int count, boolean flush, AbstractStatistic.Type type) {
-        add(context, statistic, val, count, flush, type);
+    public Node<K> createIDs(DBContext context, K statistic, Integer val, int count, boolean flush, AbstractStatistic.Type type) {
+        Node<K> leafNode= add(context, statistic, val, count, flush, type);
         bs.flushDirtyBlocks(context);
+        return leafNode;
     }
 
-    public void insertIDs(DBContext context, ArrayList<K> statistics, ArrayList<Integer> ids, AbstractStatistic.Type type) {
+    public Node<K> insertIDs(DBContext context, ArrayList<K> statistics, ArrayList<Integer> ids, AbstractStatistic.Type type) {
         int count = ids.size();
+        //this node is only used with the counted tree with reverse where IDs are inserted one by one
+        Node<K> node = null;
         for (int i = 0; i < count; i++) {
-            add(context, statistics.get(i), ids.get(i), false, type);
+            node = add(context, statistics.get(i), ids.get(i), false, type);
         }
         bs.flushDirtyBlocks(context);
+        return node;
     }
 
     public ArrayList<Integer> deleteIDs(DBContext context, ArrayList<K> statistics, AbstractStatistic.Type type) {
@@ -533,6 +543,7 @@ public class BTree <K extends AbstractStatistic> {
         return ids;
     }
 
+    //This method is never used.
     public ArrayList<Integer> getIDs(DBContext context, ArrayList<K> statistics, AbstractStatistic.Type type) {
         ArrayList<Integer> ids = new ArrayList<>();
         int count = statistics.size();

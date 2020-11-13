@@ -3,8 +3,8 @@ import {Dimmer, Loader} from 'semantic-ui-react'
 import {ArrowKeyStepper, AutoSizer, defaultCellRangeRenderer, Grid, ScrollSync} from './react-virtualized'
 import Draggable from "react-draggable";
 
-
 import Cell from './cell';
+import RowHeaderCell from './rowheadercell';
 import 'react-datasheet/lib/react-datasheet.css';
 import LRUCache from "lru-cache";
 import Stomp from 'stompjs';
@@ -182,7 +182,7 @@ export default class DSGrid extends Component {
                                                     height={height}
                                                     width={this.columnWidth}
                                                     style={{
-                                                        overflow: 'hidden'
+                                                        overflow: 'visible'
                                                     }}
                                                     scrollTop={scrollTop}
                                                     cellRenderer={this._rowHeaderCellRenderer}
@@ -190,6 +190,7 @@ export default class DSGrid extends Component {
                                                     columnCount={1}
                                                     rowCount={this.state.rows}
                                                     rowHeight={this.rowHeight}
+                                                    ref={(ref) => this.grid = ref}
                                                 />
                                             </div>
 
@@ -222,7 +223,8 @@ export default class DSGrid extends Component {
                                                  style={{
                                                      position: 'absolute',
                                                      left: this.columnWidth,
-                                                     top: this.rowHeight
+                                                     top: this.rowHeight,
+                                                     zIndex:-1
                                                  }}>
 
                                                 <ArrowKeyStepper
@@ -330,13 +332,32 @@ export default class DSGrid extends Component {
                                style
                            }) {
         return (
-            <div
+            <RowHeaderCell
                 key={key}
                 style={style}
-                className='rowHeaderCell'>
-                {rowIndex + 1}
-            </div>
+                value={rowIndex+1}
+                rowIndex={rowIndex}
+            />
         )
+        // return (
+        //     <div
+        //         key={key}
+        //         style={style}
+        //         className='rowHeaderCell'
+                // onContextMenu={function(e) {
+                //     return (
+                //         <div style={{
+                //     zIndex: '999',
+                //     width: '50%',
+                //     height: '50%',
+                //     backgroundColor: "green"
+                // }}>77777</div>
+                //     )
+                // }}
+        //         >
+        //         {rowIndex + 1}
+        //     </div>
+        // )
     }
 
     _columnHeaderCellRenderer ({

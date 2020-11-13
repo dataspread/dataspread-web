@@ -1,9 +1,8 @@
 import org.model.DBContext;
 import org.model.DBHandler;
-import org.zkoss.zss.model.impl.BTree;
+import org.zkoss.zss.model.impl.CombinedBTree;
 import org.zkoss.zss.model.impl.CountedBTree;
 import org.zkoss.zss.model.impl.KeyBTree;
-import org.zkoss.zss.model.impl.CombinedBTree;
 import org.zkoss.zss.model.impl.statistic.AbstractStatistic;
 import org.zkoss.zss.model.impl.statistic.CombinedStatistic;
 import org.zkoss.zss.model.impl.statistic.CountStatistic;
@@ -12,12 +11,9 @@ import org.zkoss.zss.model.impl.statistic.KeyStatistic;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Random;
-import java.util.stream.IntStream;
 
-public class BTreeTest {
+public class BTreeWithReverseTest {
 
     public static void main(String[] args) {
         simpleTest();
