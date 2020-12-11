@@ -1,0 +1,23 @@
+version: '3'
+services:
+  app-db:  
+    # Build using Dockerfile in build-db
+    build: ./build-db
+    container_name: dataspread-db
+    expose:
+      - "5432"
+    volumes:
+        # Persist data across containers
+        - db-data:/var/lib/postgresql/data
+
+  app-web:
+    # Build using Dockerfile in project folder
+    build: ./
+    container_name: dataspread-web
+    ports:
+      # Change left value for different host port i.e. localhost:8080
+      - "8080:8080"
+    depends_on:
+      - app-db
+volumes:
+  db-data:

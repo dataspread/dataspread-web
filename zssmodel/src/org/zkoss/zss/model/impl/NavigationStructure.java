@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.model.AutoRollbackConnection;
 import org.model.DBContext;
 import org.model.DBHandler;
+import org.zkoss.json.JSONArray;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
@@ -32,6 +33,9 @@ public class NavigationStructure {
      */
     private ReturnBuffer returnBuffer;
     public int isNumericNavAttr;
+    List cellIndices;
+
+
 
 
     class ReturnBuffer {
@@ -96,6 +100,51 @@ public class NavigationStructure {
 
         return -1;
 
+    }
+
+    public List<Integer> getBrushColotList(int first, int last, JSONArray val_ls,JSONArray cond_ls, int attrIndex) {
+
+        System.out.println(first+","+last);
+        List newCellIndices = new ArrayList<Integer>();
+        if(cellIndices!=null)
+        {
+
+            for(int i=first-1;i<last;i++)
+            {
+                if((int) cellIndices.get(i)==1)
+                    newCellIndices.add(i+1);
+            }
+            return newCellIndices;
+        }
+        cellIndices = new ArrayList<Integer>();
+        for(int j=first;j<=last;j++)
+        {
+            SCell sCell = currentSheet.getCell(j, attrIndex);
+
+            try {
+                double currvalue = Double.parseDouble(String.valueOf(sCell.getValue()));
+                double queryValue = Double.parseDouble((String) val_ls.get(0));
+
+                if (isConditionSatisfied(currvalue, (String) cond_ls.get(0), queryValue)) {
+                    cellIndices.add(1);
+                    newCellIndices.add(j);
+                }
+                else
+                    cellIndices.add(0);
+            }catch (Exception e)
+            {
+                String currvalue = String.valueOf(sCell.getValue());
+                String queryValue = (String) val_ls.get(0);
+
+                if (isConditionSatisfiedStr(currvalue, (String) cond_ls.get(0), queryValue)){
+                    cellIndices.add(1);
+                    newCellIndices.add(j);
+                }
+                else
+                    cellIndices.add(0);
+            }
+        }
+        return newCellIndices;
     }
 
     public boolean isConditionSatisfied(double currValue, String condition, double queryValue) {

@@ -79,6 +79,7 @@ dsapi/src/ui/node_modules/
 
 # Node js
 # dependencies
+dataspread-ui/node
 dataspread-ui/node_modules
 dataspread-ui/npm
 
@@ -98,6 +99,8 @@ dataspread-ui/.env.production.local
 dataspread-ui/npm-debug.log*
 dataspread-ui/yarn-debug.log*
 dataspread-ui/yarn-error.log*
+
+tomcat_log.txt
 
 #js .env file
 dataspread-ui/.env

@@ -18,6 +18,8 @@ import org.zkoss.zss.model.sys.BookBindings;
 
 import java.util.*;
 
+@CrossOrigin(origins = "http://localhost:3000")
+
 @RestController
 public class NavigationController {
     //http://127.0.0.1:8080//api/getSortAttrs/tjhtmdfii/airbnb_small
@@ -239,6 +241,8 @@ public class NavigationController {
         JSONObject dict = (JSONObject) parser.parse(value);
         String bookId = (String) dict.get("bookId");
         String sheetName = (String) dict.get("sheetName");
+        String path = (String) dict.get("path");
+
         JSONArray first_ls = (JSONArray) dict.get("first");
         JSONArray last_ls = (JSONArray) dict.get("last");
         JSONArray cond_ls = (JSONArray) dict.get("conditions");
@@ -247,7 +251,8 @@ public class NavigationController {
         SBook book = BookBindings.getBookById(bookId);
         SSheet currentSheet = book.getSheetByName(sheetName);
 
-        ArrayList<Integer> indices = new ArrayList<Integer>();
+
+        List cellIndices;
         Model model = currentSheet.getDataModel();
         //Todo: when on demand loading available
         /*for(int i=0;i<first_ls.size();i++)
@@ -262,13 +267,19 @@ public class NavigationController {
                 double queryValue = Double.parseDouble((String) val_ls.get(i));
 
                 if(model.navS.isConditionSatisfied(currvalue,(String) cond_ls.get(i),queryValue))
-                    indices.add(j);
+                    cellIndices.add(j);
             }
         }*/
 
         System.out.println("Calling brush color list");
+
+
         int first = (Integer) first_ls.get(0);
         int last = (Integer) last_ls.get(0);
+
+        //cellIndices = model.navS.getBrushColotList(first,last,val_ls,cond_ls,attrIndex);
+
+        cellIndices = new ArrayList<Integer>();
         for(int j=first;j<=last;j++)
         {
             SCell sCell = currentSheet.getCell(j, attrIndex);
@@ -278,19 +289,19 @@ public class NavigationController {
                 double queryValue = Double.parseDouble((String) val_ls.get(0));
 
                 if (model.navS.isConditionSatisfied(currvalue, (String) cond_ls.get(0), queryValue))
-                    indices.add(j);
+                    cellIndices.add(j);
             }catch (Exception e)
             {
                 String currvalue = String.valueOf(sCell.getValue());
                 String queryValue = (String) val_ls.get(0);
 
                 if (model.navS.isConditionSatisfiedStr(currvalue, (String) cond_ls.get(0), queryValue))
-                    indices.add(j);
+                    cellIndices.add(j);
             }
         }
 
 
-        return JsonWrapper.generateJson(indices);
+        return JsonWrapper.generateJson(cellIndices);
     }
 
     private int[] getIndices(String path) {

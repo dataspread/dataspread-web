@@ -19,6 +19,7 @@ public class Bucket<T> implements Serializable {
     String summary;
     ArrayList<Bucket> children;
     Map<String, Object> aggMem;
+    Map<String, Object> summaryStat;
 
     Bucket() {
         aggMem = new HashMap<>();

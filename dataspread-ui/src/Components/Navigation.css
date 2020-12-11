@@ -1,12 +1,17 @@
 #hot-app {
     float:left;
 }
-#explore-form{
-    float:left;
+
+#bucket-col{
+    float: left;
+    width: 20vw;
+    padding: 10px;
 }
 
-#formClose{
-    float:right;
+#nav-history {
+    width: 20%;
+    display: inline-block;
+    float: right;
 }
 
 .hierRemove{

@@ -78,10 +78,13 @@ class NavChartsPrototype {
 
 
 
-    public HashMap<String,Double> summaryStat(int attr, Bucket<String> subGroup)
+    public Map<String,Object> summaryStat(int attr, Bucket<String> subGroup)
     {
+        if(subGroup.summaryStat!=null)
+            return subGroup.summaryStat;
+
         ArrayList<Double> numData = navS.collectDoubleValues(attr, subGroup);
-        HashMap<String,Double> result = new HashMap<String,Double>();
+        Map<String,Object> result = new HashMap<>();
         //min, max, average, var, STDDEV
         //  0,   1,       2,   3,     4
         double min = Double.MAX_VALUE;
@@ -107,7 +110,7 @@ class NavChartsPrototype {
         result.put("AVERAGE",avg/numData.size());
         result.put("STDEV",Double.MAX_VALUE);
         result.put("VAR",Double.MAX_VALUE);
-
+        subGroup.summaryStat = result;
         return result;
     }
 
@@ -133,14 +136,14 @@ class NavChartsPrototype {
     private void type0Chart(Map<String, Object> obj, int attr, Bucket<String> subGroup, String formula) {
         obj.put("chartType", 0);
         List<Double> chartData = new ArrayList<>();
-        HashMap<String,Double> res =  summaryStat(attr,subGroup);
+        Map<String, Object> res =  summaryStat(attr,subGroup);
         List<String> emptyList = new ArrayList<>();
         emptyList.add("");
         for (String f : type0Stat) {
             if(!f.equals("MEDIAN"))
             {
-                chartData.add(res.get(f));
-                navS.setBucketAggWithMemoization(model,subGroup,attr,f,emptyList,res.get(f));
+                chartData.add((Double) res.get(f));
+                navS.setBucketAggWithMemoization(model,subGroup,attr,f,emptyList,(Double) res.get(f));
             }
             else if(formula.equals("MEDIAN"))
             {
@@ -177,7 +180,7 @@ class NavChartsPrototype {
         NavigationHistogram hist = new NavigationHistogram(navS.collectDoubleValues(attr, subGroup));
         hist.formattedOutput(obj, null);
 
-        HashMap<String,Double> res =  summaryStat(attr,subGroup);
+        Map<String, Object> res =  summaryStat(attr,subGroup);
 
         HashMap<String, Object> chartData = (HashMap) obj.get("chartData");
         List<String> emptyList = new ArrayList<>();
@@ -186,12 +189,12 @@ class NavChartsPrototype {
             if(f.equals("AVERAGE"))
             {
                 chartData.put(f,res.get(f));
-                navS.setBucketAggWithMemoization(model,subGroup,attr,f,emptyList,res.get(f));
+                navS.setBucketAggWithMemoization(model,subGroup,attr,f,emptyList,(Double) res.get(f));
             }
             else
             {
                 Map<String, Object> resMed = navS.getBucketAggWithMemoization(model, subGroup, attr, f, emptyList);
-                chartData.put(f,(Double) resMed.get("value"));
+                chartData.put(f,resMed.get("value"));
             }
         }
     }

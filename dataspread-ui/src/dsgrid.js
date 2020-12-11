@@ -9,9 +9,6 @@ import 'react-datasheet/lib/react-datasheet.css';
 import LRUCache from "lru-cache";
 import Stomp from 'stompjs';
 
-import Navigation from "./Components/Navigation";
-import ExplorationForm from "./Components/ExplorationForm";
-import HierarchiForm from "./Components/HierarchiForm";
 
 export default class DSGrid extends Component {
     toColumnName(num) {
@@ -65,11 +62,6 @@ export default class DSGrid extends Component {
         this._columnHeaderCellRenderer = this._columnHeaderCellRenderer.bind(this);
         this._handleKeyDown = this._handleKeyDown.bind(this);
         this._handleKeyUp = this._handleKeyUp.bind(this);
-
-        this.submitNavForm = this.submitNavForm.bind(this);
-        this.closeNavForm = this.closeNavForm.bind(this);
-        this.openNavForm = this.openNavForm.bind(this);
-
         this._changeColumnWidth = this._changeColumnWidth.bind(this);
         this._columnWidthHelper = this._columnWidthHelper.bind(this);
 
@@ -163,41 +155,13 @@ export default class DSGrid extends Component {
         }
     }
 
-    submitNavForm(attribute){
-        if(attribute) {
-        fetch(this.urlPrefix + '/api/startNav/'+ this.props.bookId+'/' + this.state.sheetName+'/' + attribute)
-            .then(response => response.json())
-            .then(data => {
-                console.log(data);
-                this.setState({navFormOpen:false, navOpen:true});
-                this.props.updateHierFormOption(this.navForm.state.options);
-                this.nav.startNav(data);
-            })
-        }
-    }
-    openNavForm() {
-        fetch(this.urlPrefix + '/api/getSortAttrs/'+ this.props.bookId+'/' + this.state.sheetName)
-            .then(response => response.json())
-            .then(data => {
-                console.log(data);
-                this.navForm.setState({options:data.data});
-                this.nav.setState({options:data.data});
-                this.setState({navFormOpen: true})
-            })
-
-    }
-    closeNavForm() {
-        console.log("close");
-        this.setState({navFormOpen:false});
-    }
 
 
 
     render() {
         return (
-            <div><Navigation bookId={this.props.bookId} grid = {this} ref={ref => this.nav = ref} />
-                <ExplorationForm grid = {this} submitNavForm = {this.submitNavForm} closeNavForm={this.closeNavForm} ref={ref => this.navForm = ref}/>
-            <div onKeyDown={this._handleKeyDown} onKeyUp={this._handleKeyUp}>
+            <div>
+                <div onKeyDown={this._handleKeyDown} onKeyUp={this._handleKeyUp}>
                 <div style={{display: 'flex'}}>
                     <div style={{flex: 'auto', height: '91vh'}}>
                         <Dimmer active={this.state.isProcessing || !this.state.initialLoadDone}>
@@ -207,8 +171,8 @@ export default class DSGrid extends Component {
                             {({height, width}) => (
                                 <ScrollSync>
                                     {({clientHeight, clientWidth, onScroll, scrollHeight, scrollLeft, scrollTop, scrollWidth}) => (
-                                        <div className='GridRow'>
-                                            <div className='LeftSideGridContainer'
+                                        <div className='gridContainer'>
+                                            <div className='gridHeaderContainer'
                                                  style={{
                                                      position: 'absolute',
                                                      left: 0,
@@ -229,7 +193,7 @@ export default class DSGrid extends Component {
                                                 />
                                             </div>
 
-                                            <div className='LeftSideGridContainer'
+                                            <div className='gridHeaderContainer'
                                                  style={{
                                                      position: 'absolute',
                                                      left: this.columnWidth,
@@ -254,7 +218,7 @@ export default class DSGrid extends Component {
                                             </div>
 
 
-                                            <div className='RightColumn'
+                                            <div className='gridContentContainer'
                                                  style={{
                                                      position: 'absolute',
                                                      left: this.columnWidth,
@@ -264,7 +228,10 @@ export default class DSGrid extends Component {
                                                 <ArrowKeyStepper
                                                     rowCount={this.state.rows}
                                                     columnCount={this.state.columns}>
-                                                    {({onSectionRendered, scrollToColumn, scrollToRow}) => (
+                                                    {({onSectionRendered, scrollToColumn, scrollToRow}) =>{
+
+                                                        console.log(scrollToRow)
+                                                            return(
                                                         <div>
                                                             <Grid
                                                                 height={height}
@@ -279,6 +246,8 @@ export default class DSGrid extends Component {
                                                                 cellRangeRenderer={this._cellRangeRenderer}
                                                                 scrollToRow={scrollToRow}
                                                                 scrollToColumn={scrollToColumn}
+                                                                scrollToAlignment={'start'}
+                                                                overscanRowCount={0}
                                                                 onSectionRendered={onSectionRendered}
                                                                 ref={(ref) => this.grid = ref}
                                                                 focusCellColumn={this.state.focusCellColumn}
@@ -286,7 +255,7 @@ export default class DSGrid extends Component {
                                                                 selectOppositeCellColumn={this.state.selectOppositeCellColumn}
                                                                 selectOppositeCellRow={this.state.selectOppositeCellRow}
                                                             />
-                                                        </div>)}
+                                                        </div>);}}
                                                 </ArrowKeyStepper>
                                             </div>
                                         </div>
@@ -364,8 +333,10 @@ export default class DSGrid extends Component {
             <div
                 key={key}
                 style={style}
-                className='rowHeaderCell'>
-                {rowIndex + 1}
+                className='headerCellContainer'>
+                <div className='rowHeaderCell'>
+                    {rowIndex + 1}
+                </div>
             </div>
         )
     }
@@ -379,15 +350,17 @@ export default class DSGrid extends Component {
             <div
                 key={key}
                 style={style}
-                className='rowHeaderCell'>
-                {this.toColumnName(columnIndex + 1)}
+                className='headerCellContainer'>
+                <div className='columnHeaderCell'>
+                    {this.toColumnName(columnIndex + 1)}
+                </div>
                 <Draggable axis="x"
                            defaultClassName="DragHandle"
                            defaultClassNameDragging="DragHandleActive"
                            onDrag={(event,{deltaX}) => this._changeColumnWidth({key,deltaX})}
                            position={{x:0}}
                            zIndex={999}>
-                    <a className="drag-icon">|</a>
+                    <div className="drag-icon"></div>
                 </Draggable>
             </div>
         )
@@ -501,6 +474,8 @@ export default class DSGrid extends Component {
                 if (this.rowStartIndex!==props.rowStartIndex || this.rowStopIndex!==props.rowStopIndex) {
                     this.rowStartIndex=props.rowStartIndex;
                     this.rowStopIndex=props.rowStopIndex;
+                    // console.log(props.rowStartIndex,props.rowStopIndex)
+                    this.props.brushNlink(props.rowStartIndex, props.rowStopIndex)
                     this.stompClient.send('/push/status', {}, JSON.stringify({
                         message: 'changeViewPort',
                         rowStartIndex: this.rowStartIndex,
@@ -545,11 +520,26 @@ export default class DSGrid extends Component {
             cellClass = 'isScrollingPlaceholder'
             cellContent = ['Loading ...'];
         }
+        let highLightStyle = {};
 
+        if(this.state.exploreCol !== null && columnIndex === this.state.exploreCol){
+            highLightStyle.backgroundColor = '#32CC99';
+        }else if(this.state.hierarchicalCol && this.state.hierarchicalCol.includes(columnIndex)){
+            if(this.state.brushNLinkRows !== 0){
+                if(this.state.brushNLinkRows.includes(rowIndex)){
+                    highLightStyle.backgroundColor = '#d4eafc';
+
+                }else{
+                    highLightStyle.backgroundColor = '#f5e9e1';
+                }
+            }else{
+                highLightStyle.backgroundColor = '#f5e9e1';
+            }
+        }
         return (
                 <Cell
                     key={key}
-                    style={style}
+                    style={{...style,...highLightStyle}}
                     className={cellClass}
                     value={cellContent[0]}
                     formula={cellContent[1] == null ? null : "=" + cellContent[1]}
