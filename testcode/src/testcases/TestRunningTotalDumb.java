@@ -50,10 +50,16 @@ public class TestRunningTotalDumb implements AsyncTestcase {
     @Override
     public boolean verify() {
         try {
+            // This seems to fail if `sync` is false in AsyncPerformance3.java
             Object value_raw = _sheet.getCell(_N - 1, 1).getValue();
+            if (value_raw.getClass() != Double.class) {
+                throw new Exception("Got unexpected value for value_raw: " + value_raw);
+            }
             double value = (double) value_raw;
             return Math.abs(value - answer) <= 1e-6;
         } catch (Exception e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }

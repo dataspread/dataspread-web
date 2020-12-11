@@ -158,6 +158,77 @@ public class DirtyManagerLog {
             return 0;
     }
 
+    public double getAreas(Collection<CellRegion> sheetCells, long controlReturnedTime, long initTime, boolean getAreaUnderCurve) {
+        boolean firstNotDone = true;
+        SortedMap<Long, Integer> dirtyCellsCounts = new TreeMap<>();
+        Set<CellRegion> dirtyCells = new HashSet<>();
+        Set<CellRegion> sheetCellsSet = new HashSet<>(sheetCells);
+        long lastTimestamp = -1;
+
+        for (DirtyRecordEntry e : dirtyRecordLog) {
+            if (e.timestamp != lastTimestamp && lastTimestamp != -1) {
+                dirtyCellsCounts.put(e.timestamp, dirtyCells.size());
+            }
+            lastTimestamp = e.timestamp;
+            if (e.cellRegion.getCellCount() == 1) {
+                if (sheetCellsSet.contains(e.cellRegion)) {
+                    CellRegion r1 = e.cellRegion;
+                    if (e.action == Action.MARK_DIRTY) {
+                        dirtyCells.add(r1);
+                    } else {
+                        dirtyCells.remove(r1);
+                    }
+                }
+            } else {
+                for (CellRegion r1 : sheetCells) {
+                    if (e.cellRegion.contains(r1)) {
+                        if (e.action == Action.MARK_DIRTY) {
+                            dirtyCells.add(r1);
+                        } else {
+                            dirtyCells.remove(r1);
+                        }
+                    }
+                }
+            }
+        }
+        if (lastTimestamp != -1) {
+            dirtyCellsCounts.put(lastTimestamp, dirtyCells.size());
+        }
+        double areaUnderCurve = 0;
+        double prevTime = controlReturnedTime;
+        double prevNumDirty = 0;
+        for (Map.Entry<Long, Integer> d : dirtyCellsCounts.entrySet()) {
+            if (Math.abs(d.getKey() - controlReturnedTime) <= Math.pow(10, -5)) {
+                prevNumDirty = d.getValue();
+            }
+            if (d.getKey() > controlReturnedTime) {
+                if (getAreaUnderCurve) {
+                    // calculate area
+                    if (prevTime == controlReturnedTime){
+                        prevNumDirty = d.getValue();
+                        prevTime = d.getKey();
+                        continue;
+                    }
+                    double barWidth = d.getKey() - prevTime;
+                    prevTime = d.getKey();
+                    areaUnderCurve += barWidth * prevNumDirty;
+                    prevNumDirty = d.getValue();
+                }
+                if (firstNotDone) {
+                    System.out.println(0 + "\t" + sheetCells.size());
+                    System.out.println(controlReturnedTime - initTime + "\t" + sheetCells.size());
+                    System.out.println(controlReturnedTime - initTime + "\t" + d.getValue());
+                    firstNotDone = false;
+                }
+                System.out.println((d.getKey() - initTime) + "\t" + d.getValue());
+            }
+        }
+        if (getAreaUnderCurve)
+            return areaUnderCurve;
+        else
+            return 0;
+    }
+
     public void print() {
         dirtyRecordLog.stream().forEach(System.out::println);
     }
