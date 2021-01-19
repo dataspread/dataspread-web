@@ -1,6 +1,6 @@
 DataSpread is under active development. 
 This guide contains information on the workflow for contributing to the Dataspread codebase. 
-Parts of this guide are adapted from the [Contribution Document](https://github.com/lux-org/lux/blob/master/CONTRIBUTING.md) 
+Parts of this guide are adapted from the [Contributing Document](https://github.com/lux-org/lux/blob/master/CONTRIBUTING.md) 
 of [Lux](https://github.com/lux-org/lux)
 
 # Fork a Local Repo 
