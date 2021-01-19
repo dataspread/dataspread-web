@@ -7,7 +7,8 @@ Something to try
 
 # Fork a Local Repo 
 
-To setup Dataspread manually for development purposes, you should [fork](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo) the Github repo and clone the forked version.
+To setup Dataspread manually for development purposes, 
+you should [fork](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo) the Github repo and clone the forked version.
 
 ```bash
 git clone https://github.com/USERNAME/dataspread-web.git
