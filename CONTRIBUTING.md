@@ -14,7 +14,8 @@ git clone https://github.com/USERNAME/dataspread-web.git
 # Submitting a Pull Request
 
 You can commit your code and push to your forked repo. 
-Once all of your local changes have been tested and formatted, you are ready to submit a pull request (PR). 
+Once all of your local changes have been tested and formatted, 
+you are ready to submit a pull request (PR). 
 For Dataspread, we use the "Squash and Merge" strategy to merge in PR, 
 which means that even if you make a lot of small commits in your PR, 
 they will all get squashed into a single commit associated with the PR. 
