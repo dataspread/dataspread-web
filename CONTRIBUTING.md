@@ -3,12 +3,9 @@ This guide contains information on the workflow for contributing to the Dataspre
 Parts of this guide are adapted from the [Contributing Document](https://github.com/lux-org/lux/blob/master/CONTRIBUTING.md) 
 of [Lux](https://github.com/lux-org/lux)
 
-Something to try
-
 # Fork a Local Repo 
 
-To setup Dataspread manually for development purposes, 
-you should [fork](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo) the Github repo and clone the forked version.
+To setup Dataspread manually for development purposes, you should [fork](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo) the Github repo and clone the forked version.
 
 ```bash
 git clone https://github.com/USERNAME/dataspread-web.git
