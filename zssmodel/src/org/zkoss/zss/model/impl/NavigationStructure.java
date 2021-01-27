@@ -300,7 +300,7 @@ public class NavigationStructure {
             StringBuffer sbSS = new StringBuffer();
             PreparedStatement pstSS = null;
 
-            CellRegion tableRegion = new CellRegion(0, col, currentSheet.getEndRowIndex() - 1, col);
+            CellRegion tableRegion = new CellRegion(0, col, currentSheet.getEndRowIndex() , col);
             ArrayList<SCell> result = (ArrayList<SCell>) currentSheet.getCells(tableRegion);
             result.forEach(x -> x.updateCellTypeFromString(connection, false));
             Collection<AbstractCellAdv> castCells = new ArrayList<>();
@@ -308,7 +308,7 @@ public class NavigationStructure {
             currentSheet.getDataModel().updateCells(new DBContext(connection), castCells);
             connection.commit();
 
-            if (colSet.size() == 1 && colSet.contains("")) {
+            if (columns.length() == 0) {
                 col_list = Integer.toString(col);
                 sbSS.append("INSERT into " + tableName + " (bookid, sheetname, cols) values(\'" + currentSheet.getBook().getId() + "\',\'" + currentSheet.getSheetName() + "\',\'" + col_list + "\')");
             } else {
