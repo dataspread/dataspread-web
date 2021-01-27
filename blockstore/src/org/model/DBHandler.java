@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 
 /**
  * Created by Mangesh Bendre on 4/22/2016.
- */
+ */s/
 public class DBHandler {
     private static final Logger logger = Logger.getLogger(DBHandler.class.getName());
     public static DBHandler instance;
@@ -185,9 +185,9 @@ public class DBHandler {
                     "ordername TEXT NOT NULL," +
                     "rowIdxTable TEXT, " +
                     "colIdxTable TEXT, " +
+                    "oid INT GENERATED ALWAYS AS IDENTITY,"+
                     "PRIMARY KEY (tablename, ordername)," +
-                    "UNIQUE (oid)" +
-                    ") WITH oids";
+                    "UNIQUE (oid))";
             stmt.execute(createTable);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -207,11 +207,12 @@ public class DBHandler {
                     "dep_sheetname TEXT    NOT NULL," +
                     "dep_range     BOX     NOT NULL," +
                     "must_expand   BOOLEAN NOT NULL," +
+                    "oid INT GENERATED ALWAYS AS IDENTITY,"+
                     "FOREIGN KEY (bookname, sheetname) REFERENCES sheets (bookname, sheetname)" +
                     " ON DELETE CASCADE ON UPDATE CASCADE," +
                     "FOREIGN KEY (dep_bookname, dep_sheetname) REFERENCES sheets (bookname, sheetname)" +
                     " ON DELETE CASCADE ON UPDATE CASCADE," +
-                    " UNIQUE (oid) ) WITH oids";
+                    " UNIQUE (oid) )";
             stmt.execute(createTable);
 
             stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx1 " +
@@ -238,11 +239,12 @@ public class DBHandler {
                     "dep_sheetname TEXT    NOT NULL," +
                     "dep_range     BOX     NOT NULL," +
                     "must_expand   BOOLEAN NOT NULL," +
+                    "oid INT GENERATED ALWAYS AS IDENTITY,"+
                     "FOREIGN KEY (bookname, sheetname) REFERENCES sheets (bookname, sheetname)" +
                     " ON DELETE CASCADE ON UPDATE CASCADE," +
                     "FOREIGN KEY (dep_bookname, dep_sheetname) REFERENCES sheets (bookname, sheetname)" +
                     " ON DELETE CASCADE ON UPDATE CASCADE," +
-                    " UNIQUE (oid) ) WITH oids";
+                    " UNIQUE (oid) ) ";
             stmt.execute(createTable);
 
             stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx1 " +
