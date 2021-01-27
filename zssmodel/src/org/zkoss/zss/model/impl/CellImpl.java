@@ -465,7 +465,7 @@ public class CellImpl extends AbstractCellAdv {
 	@Override
     public Object getValue(boolean evaluatedVal, boolean sync) {
 		CellValue val = getCellValue();
-		if (evaluatedVal && val.getType() == CellType.FORMULA) {
+		if (evaluatedVal && val != null && val.getType() == CellType.FORMULA) {
 
 			boolean compute;
 
