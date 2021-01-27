@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 
 /**
  * Created by Mangesh Bendre on 4/22/2016.
- */s/
+ */
 public class DBHandler {
     private static final Logger logger = Logger.getLogger(DBHandler.class.getName());
     public static DBHandler instance;
