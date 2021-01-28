@@ -77,6 +77,7 @@ export default class ModalOpenFile extends Component {
 
 	render() {
 		//console.log(this.urlPrefix + '/api/getBooks')
+		console.log("load")
 		return (
 		<Modal
 			trigger={this.triggerObject}

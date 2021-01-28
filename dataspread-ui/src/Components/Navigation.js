@@ -2263,6 +2263,7 @@ export default class Navigation extends Component {
 
 
     render() {
+        console.log("nav")
         if (this.state.navOpen) {
             return (
                 <div id="hot-app">

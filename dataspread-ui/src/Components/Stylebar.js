@@ -21,6 +21,7 @@ export default class Stylebar extends Component {
 
 
     render() {
+        console.log("style")
       return (
         <Menu size='mini' borderless={true} attached='bottom'>
 

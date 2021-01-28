@@ -82,13 +82,15 @@ public class DBHandler {
 
     private void createBookTable(DBContext dbContext) {
         AutoRollbackConnection connection = dbContext.getConnection();
+
         try (Statement stmt = connection.createStatement()) {
-            String createBooksTable = "CREATE TABLE  IF NOT  EXISTS  books (" +
+            String createBooksTable = "CREATE TABLE IF NOT EXISTS books (" +
                     "bookname  TEXT NOT NULL," +
                     "booktable TEXT NOT NULL UNIQUE," +
                     "lastmodified timestamp," +
                     "createdtime timestamp," +
                     "PRIMARY KEY (bookname))";
+
             stmt.execute(createBooksTable);
 
 
@@ -103,7 +105,7 @@ public class DBHandler {
                     "  UNIQUE (bookname,sheetname))";
             stmt.execute(createSheetsTable);
 
-            String createDataTableSheetLink = "CREATE TABLE  IF NOT  EXISTS  sheet_table_link (" +
+            String createDataTableSheetLink = "CREATE TABLE IF NOT EXISTS sheet_table_link (" +
                     "linkid  TEXT NOT NULL," +
                     "bookid  TEXT NOT NULL," +
                     "sheetname  TEXT NOT NULL," +
@@ -180,15 +182,25 @@ public class DBHandler {
     private void createTableOrders(DBContext dbContext) {
         AutoRollbackConnection connection = dbContext.getConnection();
         try (Statement stmt = connection.createStatement()) {
-            String createTable = "CREATE TABLE  IF NOT  EXISTS  tableorders (" +
-                    "tablename  TEXT NOT NULL," +
+            String createTable = "CREATE TABLE IF NOT EXISTS tableorders (" +
+                    "tablename    TEXT NOT NULL," +
                     "ordername TEXT NOT NULL," +
                     "rowIdxTable TEXT, " +
                     "colIdxTable TEXT, " +
-                    "PRIMARY KEY (tablename, ordername)," +
-                    "UNIQUE (oid)" +
-                    ") WITH oids";
+                    "oid INT GENERATED ALWAYS AS IDENTITY,"+
+                    "PRIMARY KEY (tablename, ordername), " +
+                    "UNIQUE (oid))";
+                    //"WITH oids";
             stmt.execute(createTable);
+            //before migrating table
+            //stmt.execute("ALTER TABLE tableorders ADD noid bigint NOT NULL");
+           //stmt.execute("UPDATE tableorders SET noid = oid");
+            //stmt.execute("ALTER TABLE tableorders SET WITHOUT OIDS");
+            //After migration
+            //stmt.execute("ALTER TABLE tableorders RENAME noid TO oid");
+            //stmt.execute("CREATE SEQUENCE has_oids_oid_se OWNED BY tableorders.oid");
+          // stmt.execute("ALTER TABLE tableorders ALTER oid SET DEFAULT nextval('has_oids_oid_se')");
+           // stmt.execute("SELECT setval('has_oids_oid_se', 100000)");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -199,20 +211,32 @@ public class DBHandler {
         try (Statement stmt = connection.createStatement()) {
             stmt.execute("CREATE EXTENSION IF NOT EXISTS  btree_gist");
 
-            String createTable = "CREATE TABLE  IF NOT  EXISTS  dependency (" +
+            String createTable = "CREATE TABLE  IF NOT EXISTS  dependency (" +
                     "bookname      TEXT    NOT NULL," +
                     "sheetname     TEXT    NOT NULL," +
                     "range         BOX     NOT NULL," +
                     "dep_bookname  TEXT    NOT NULL," +
                     "dep_sheetname TEXT    NOT NULL," +
                     "dep_range     BOX     NOT NULL," +
-                    "must_expand   BOOLEAN NOT NULL," +
+                    "must_expand   BOOLEAN NOT NULL,"+
+                     "oid INT GENERATED ALWAYS AS IDENTITY," +
                     "FOREIGN KEY (bookname, sheetname) REFERENCES sheets (bookname, sheetname)" +
                     " ON DELETE CASCADE ON UPDATE CASCADE," +
                     "FOREIGN KEY (dep_bookname, dep_sheetname) REFERENCES sheets (bookname, sheetname)" +
-                    " ON DELETE CASCADE ON UPDATE CASCADE," +
-                    " UNIQUE (oid) ) WITH oids";
+                    " ON DELETE CASCADE ON UPDATE CASCADE"
+                     +", UNIQUE (oid))";
+
+            //before migrating table
             stmt.execute(createTable);
+            //stmt.execute("ALTER TABLE dependency ADD noid bigint NOT NULL");
+           // stmt.execute("UPDATE dependency SET noid = oid");
+            //stmt.execute("ALTER TABLE dependency SET WITHOUT OIDS");
+            //After migration
+           // stmt.execute("ALTER TABLE dependency RENAME noid TO oid");
+            //stmt.execute("CREATE SEQUENCE has_oids_oid OWNED BY dependency.oid");
+            //stmt.execute("ALTER TABLE dependency ALTER oid SET DEFAULT nextval('has_oids_oid')");
+            //stmt.execute("SELECT setval('has_oids_oid', 100000)");
+
 
             stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx1 " +
                     " ON dependency using GIST (bookname, sheetname, range)");
@@ -238,12 +262,25 @@ public class DBHandler {
                     "dep_sheetname TEXT    NOT NULL," +
                     "dep_range     BOX     NOT NULL," +
                     "must_expand   BOOLEAN NOT NULL," +
+                    "oid INT GENERATED ALWAYS AS IDENTITY,"+
                     "FOREIGN KEY (bookname, sheetname) REFERENCES sheets (bookname, sheetname)" +
                     " ON DELETE CASCADE ON UPDATE CASCADE," +
                     "FOREIGN KEY (dep_bookname, dep_sheetname) REFERENCES sheets (bookname, sheetname)" +
-                    " ON DELETE CASCADE ON UPDATE CASCADE," +
-                    " UNIQUE (oid) ) WITH oids";
+                    " ON DELETE CASCADE ON UPDATE CASCADE" +
+                    ", UNIQUE (oid) )";
+
             stmt.execute(createTable);
+            //before migration
+           // stmt.execute("ALTER TABLE full_dependency ADD noid bigint NOT NULL");
+           // stmt.execute("UPDATE full_dependency SET noid = oid");
+           // stmt.execute("ALTER TABLE full_dependency SET WITHOUT OIDS");
+            // after migrating table
+            //After migration
+            //stmt.execute("ALTER TABLE full_dependency RENAME noid TO oid");
+           // stmt.execute("CREATE SEQUENCE has_oids_oid_seq OWNED BY full_dependency.oid");
+            //stmt.execute("ALTER TABLE full_dependency ALTER oid SET DEFAULT nextval('has_oids_oid_seq')");
+            //stmt.execute("SELECT setval('has_oids_oid_seq', 100000)");
+
 
             stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx1 " +
                     " ON full_dependency using GIST (bookname, sheetname, range)");

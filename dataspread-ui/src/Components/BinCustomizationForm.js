@@ -288,7 +288,7 @@ export default class BinCustomizationForm extends Component {
     }
 
     render() {
-
+        console.log("bincustom")
         if (this.state.binFormOpen !== true) {
             return null;
         } else {

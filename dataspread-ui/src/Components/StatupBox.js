@@ -7,6 +7,7 @@ import ModalImportFile from './Menu/import'
 export default class StartupBox extends Component {
 
   render() {
+      console.log("Statup")
       return (
         <div style={center_screen}>
             <Segment padded>
@@ -17,6 +18,7 @@ export default class StartupBox extends Component {
                 </Button>
 
                 <Divider horizontal>Or</Divider>
+
 
                 <ModalOpenFile inMenu={false} onSelectFile={this.props.onSelectFile}/>
             

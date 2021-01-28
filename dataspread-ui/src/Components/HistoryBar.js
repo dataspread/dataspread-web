@@ -82,6 +82,7 @@ export default class HistoryBar extends Component {
     }
 
     render() {
+        console.log("history")
         if (this.state.open == false) return null;
         var breadCrumb = [];
         if (this.state.breadcrumb_ls.length > 0) {

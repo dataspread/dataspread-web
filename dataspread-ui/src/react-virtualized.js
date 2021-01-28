@@ -196,6 +196,7 @@
         }, {
             key: "render",
             value: function() {
+                
                 var _props = this.props, className = _props.className, children = _props.children, _getScrollState2 = this._getScrollState(), scrollToColumn = _getScrollState2.scrollToColumn, scrollToRow = _getScrollState2.scrollToRow;
                 return React.createElement("div", {
                     className: className,
@@ -353,6 +354,7 @@
         }, {
             key: "render",
             value: function() {
+                console.log("virutal")
                 var _props = this.props, children = _props.children, className = _props.className, disableHeight = _props.disableHeight, disableWidth = _props.disableWidth, style = _props.style, _state = this.state, height = _state.height, width = _state.width, outerStyle = {
                     overflow: "visible"
                 }, childParams = {};

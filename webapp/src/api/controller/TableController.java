@@ -56,7 +56,7 @@ public class TableController {
     static final String COLUMN_NAME          = "columnName";
     static final String COLUMN               = "column";
     static final String VALUES               = "values";
-    final static String        TABLES         = "tables";
+    final static String TABLES         = "tables";
 
 
     @RequestMapping(value = "/api/createTable",
