@@ -32,3 +32,6 @@ by looking at the "File Changes" diff view on the pull request page.
 Once the pull request is submitted, the maintainer will get notified and review your pull request. 
 They may ask for additional changes or comment on the PR. 
 You can always make updates to your pull request after submitting it.
+
+# Clean up your commits for a pull request
+One pull request includes the full commit hoistory. However, some commits are only for test purposes and do not contribute to the final commit. We encourage you to check out this [doc](https://christoph-rumpel.com/2015/05/clean-up-your-commits-for-a-pull-request) to see how to submit a clean pull request with only meaningful commits.
