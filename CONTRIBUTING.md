@@ -13,7 +13,10 @@ git clone https://github.com/USERNAME/dataspread-web.git
 
 # Keep Your Fork Synced
 
-While you are working on your local repo, you also need to keep your fork synced and resolve conflicts locally. Please check out the [Keep your fork synced](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo) and [Sync a fork](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/syncing-a-fork) for more information.
+While you are working on your local repo, you also need to keep your fork synced and resolve conflicts locally. 
+Please check out the [Keep your fork synced](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo) 
+and [Sync a fork](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/syncing-a-fork) 
+for more information.
 
 # Submitting a Pull Request
 
