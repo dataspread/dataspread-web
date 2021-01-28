@@ -71,7 +71,7 @@ Docker uses the `/docker-compose.yml` to startup the application. For more infor
 
 ## Tomcat Method
 
-To host DataSpread locally on Tomcat, you can either use one of the pre-build WAR files, available [here][warlink], or build the WAR file yourself from the source.
+To host DataSpread locally on Tomcat, you can either use one of the pre-built WAR files, available [here][warlink], or build the WAR file yourself from the source.
 
 ### Required Software
 
@@ -151,4 +151,4 @@ MIT
 [docker]: https://www.docker.com/products/docker-desktop
 [wiki]: https://github.com/dataspread/dataspread-web/wiki
 [issues]: https://github.com/dataspread/dataspread-web/issues
-[developer_setup]: TODO
+[developer_setup]: https://github.com/dataspread/dataspread-web/wiki/Setting-up-Developer-Environment
