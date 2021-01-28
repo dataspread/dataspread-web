@@ -123,7 +123,7 @@ To host DataSpread locally on Tomcat, you can either use one of the pre-built WA
 
 ## Contributing
 
-To work with the DataSpread source code, follow the [developer setup guide][developer_setup]. Contributions are welcome!
+To work with the DataSpread source code, follow the [developer setup guide][developer_setup]. Read the [contributing guide](CONTRIBUTING) before making a pull request. Contributions are welcome!
 
 For bugs and feedback, please use the [GitHub Issues][issues].
 
