@@ -24,10 +24,10 @@ import java.util.*;
  *
  * Test Runners:
  *
- *      Each test is run by a particular "test runner". There are currently two types of test runners:
+ *      A test runner is an object that executes test cases. There are currently two types of test runners:
  *
- *          1. SyncTestRunner   : Runs a test case WITHOUT  asynchronous computation
- *          2. AsyncTestRunner  : Runs a test case WITH     asynchronous computation
+ *          1. SyncTestRunner   : Runs test cases WITHOUT  asynchronous computation
+ *          2. AsyncTestRunner  : Runs test cases WITH     asynchronous computation
  *
  *      A test runner can be configured with particular settings such as the type of compression and the type of
  *      scheduler. For example, the following call creates a synchronous test runner that does not prioritize cells
@@ -40,7 +40,7 @@ import java.util.*;
  *
  *          AsyncBaseTestRunner runner = new AsyncTestRunner (true, new AsyncCompressor(5))
  *
- *      Each test runner has a `run` method that executes any test case that extends AsyncBaseTest.
+ *      Each test runner has a `run` method which can execute any test case that extends AsyncBaseTest.
  *
  * Test cases:
  *
@@ -93,25 +93,16 @@ public class AsyncPerformanceMain {
      * EDIT ZONE ******************************************************************************************************
      ******************************************************************************************************************/
 
-    // For AsyncCompressor
     public static final boolean graphInDB   = false;
 
-    // Database configurations
     public static final String  URL         = "jdbc:postgresql://127.0.0.1:5433/dataspread";
     public static final String  DBDRIVER    = "org.postgresql.Driver";
     public static final String  USERNAME    = "dataspreaduser";
     public static final String  PASSWORD    = "password";
-
-    // The directory to write test reports to
-    public static final Path    PATH        = Paths.get("REPORTS");
-
-    // Number of testing rounds to perform
+    public static final Path    OUT_PATH    = Paths.get("REPORTS");
     public static final int     ROUNDS      = 1;
-
-    // Number of milliseconds to sleep after every runner
     public static final int     SLEEP       = 5000;
 
-    // The test parameters to use
     public static final LinkedHashMap<String, AsyncBaseTestRunner> RUNNERS = Util.pairsToMap(
         Arrays.asList(
             Util.pair("runner0", new SyncTestRunner (false, new DefaultCompressor())),
@@ -124,13 +115,13 @@ public class AsyncPerformanceMain {
         )
     );
 
-    // The tests to perform
+    // Make sure `isTemplate` is set to true here
     public static final AsyncBaseTest[] TESTS = {
             new TestRunningTotalDumb(true, 10),
             new TestRunningTotalDumb(true, 10000)
     };
 
-    // The order that runners should be executed. Keys should serve as valid directory names.
+    // Keys should serve as valid directory names
     public static final LinkedHashMap<String, AsyncBaseTestRunner> SCHEDULE = Util.pairsToMap(
         Arrays.asList(
             Util.pair("brn1"   , RUNNERS.get("runner0")),
@@ -152,13 +143,11 @@ public class AsyncPerformanceMain {
     private static void basicSetup () {
         EngineFactory.dependencyTableClazz = (graphInDB ? DependencyTablePGImpl.class : DependencyTableImplV4.class);
         SheetImpl.simpleModel = true;
-        Util.createDirectory(PATH);
+        Util.createDirectory(OUT_PATH);
     }
 
     public static void main (String[] args) {
-
         LocalDateTime start = LocalDateTime.now();
-
         AsyncPerformanceMain.basicSetup();
         for (int r = 0; r < ROUNDS; r++) {
             for (AsyncBaseTest test : TESTS) {
@@ -167,7 +156,7 @@ public class AsyncPerformanceMain {
                     // Setup
                     String runName = String.join("-", new String[]{ test.toString(), "round" + r });
                     AsyncBaseTestRunner runner = entry.getValue();
-                    Path subDirectory = Paths.get(PATH.toString(), entry.getKey());
+                    Path subDirectory = Paths.get(OUT_PATH.toString(), entry.getKey());
                     System.out.println("\n" + Util.getCurrentTime() + ": " + entry.getKey() + "-" + runName + "\n");
 
                     // Run the test
@@ -184,7 +173,6 @@ public class AsyncPerformanceMain {
                 }
             }
         }
-
         long seconds = Duration.between(start, LocalDateTime.now()).getSeconds();
         System.out.println("\nTime taken (HH:MM:SS): " +
                 String.format("%02d:%02d:%02d"
@@ -193,7 +181,6 @@ public class AsyncPerformanceMain {
                         , (seconds % 60)
                 )
         );
-
     }
 
 }

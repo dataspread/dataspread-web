@@ -1,7 +1,7 @@
 package networkcompression.tests;
 
-import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.sys.dependency.Ref;
+import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.CellRegion;
 import networkcompression.utils.Util;
 import org.zkoss.zss.model.SSheet;
@@ -33,7 +33,7 @@ public abstract class AsyncBaseTest {
     /**
      *
      * @return True if the results of this test case are correct
-     * after calling `updateCell()`.
+     * after `updateCell()` is called.
      */
     public boolean verify () { return true; }
 
@@ -102,7 +102,10 @@ public abstract class AsyncBaseTest {
     /**
      *
      * @return The human-readable string representation of
-     * this test.
+     * this test. Tests with the same test parameters (not
+     * including isTemplate) should have the same string
+     * representation. If this is not the case, file naming
+     * errors will occur.
      */
     @Override
     public abstract String toString ();
