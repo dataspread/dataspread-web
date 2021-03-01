@@ -52,6 +52,10 @@ import java.util.*;
  *          3. Implement the required methods
  *          4. Create your test in the TESTS variable of AsyncPerformanceMain.java
  *
+ *      It is important that test cases define two constructors. One constructor should initialize all members except
+ *      the test book. The other constructor should initialize all members and the test book. If this convention is
+ *      upheld (and all the previous steps have been completed), you shouldn't need to make any changes to main().
+ *
  * Test execution:
  *
  *      The TESTS variable and SCHEDULE variable control how test cases are executed. The TESTS variable is an array
