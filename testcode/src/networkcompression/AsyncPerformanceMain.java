@@ -49,16 +49,16 @@ import java.util.*;
  *          1. Create your new test in the tests directory
  *          2. Have the test extend AsyncBaseTest.java
  *          3. Implement the required methods
- *          4. In AsyncPerformanceMain, edit the TESTS variable with the proper test parameters
+ *          4. Create your test in the TESTS variable of AsyncPerformanceMain.java
  *
  * Test execution:
  *
- *      The TESTS and SCHEDULE variables control how test runners will execute test cases. The TESTS variable is an
- *      array that contains the test cases initialized with the parameters you want to use. The `isTemplate` parameter
- *      should be true for all of these test cases so that they simply store the parameters you want to use for later.
- *      The SCHEDULE variable maps strings to test runners. Each runner in SCHEDULE performs the current test before
- *      moving on to the next test. Runners are executed in the order you define and each test case is executed in the
- *      order you define. In pseudocode, this is basically equivalent to:
+ *      The TESTS variable and SCHEDULE variable control how test cases are executed. The TESTS variable is an array
+ *      that stores test cases. Each test will be run in the order you specify and should be initialized with their
+ *      `isTemplate` parameters set to true so that the other constructor parameters you want to use are stored for
+ *      later. The SCHEDULE variable maps strings to test runners. All runners in SCHEDULE will perform the current
+ *      test before moving on to the next test. Each runner is executed in the order you specify. In pseudocode, this
+ *      is basically equivalent to:
  *
  *          for test in TESTS:
  *              for name, runnner in SCHEDULE:
@@ -70,6 +70,21 @@ import java.util.*;
  *              for test in TESTS:
  *                  for name, runnner in SCHEDULE:
  *                      runner.run(test)
+ *
+ * Explanation of other variables:
+ *
+ *      RUNNERS     :   A map from string to test runner. This variable is used to define your test runners and give
+ *                      them names so that they are easier to identify when initializing the SCHEDULE variable.
+ *
+ *      SLEEP       :   Controls the number of milliseconds to sleep after running a single test runner in SCHEDULE.
+ *
+ *      PATH        :   The name of the directory to write test reports to. This directory is automatically created
+ *                      for you in the project's root folder.
+ *
+ *      graphInDB   :   If true, AsyncCompressor will assume that the spreadsheet formula network exists in a
+ *                      PostgreSQL database and will issue SQL queries to perform dependency compression.
+ *
+ *      The rest of the variables are reserved for database configurations.
  *
  */
 public class AsyncPerformanceMain {
