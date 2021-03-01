@@ -20,7 +20,7 @@ import java.util.*;
 
 /**
  *
- * How does testing work?
+ * Test Runners:
  *
  *      Each test is run by a particular "test runner". There are currently two types of test runners:
  *
@@ -38,14 +38,36 @@ import java.util.*;
  *
  *          AsyncBaseTestRunner runner = new AsyncTestRunner (true, new AsyncCompressor(5))
  *
- *      Each test runner can run any test case that extends AsyncBaseTest by calling the method `run(testCase)`.
+ *      Each test runner has a `run` method that executes any test case that extends AsyncBaseTest.
  *
- * How can I run my own tests?
+ * Test cases:
  *
- *      1. Be sure your database configurations are correct. If they aren't an error will be raised.
- *      2. Define the name of the directory to output testing data
- *      3. Define the number of runs to perform
- *      4. 
+ *      To create a new test case, the following steps should be performed:
+ *
+ *          1. Create your new test in the tests directory
+ *          2. Have the test extend AsyncBaseTest.java
+ *          3. Implement the required methods
+ *          4. In AsyncPerformanceMain, edit the TESTS variable with the proper test parameters
+ *
+ * Test execution:
+ *
+ *      The TESTS and SCHEDULE variables control how test runners will execute test cases. The TESTS variable is an
+ *      array that contains the test cases initialized with the parameters you want to use. The `isTemplate` parameter
+ *      should be true for all of these test cases so that they simply store the parameters you want to use for later.
+ *      The SCHEDULE variable maps strings to test runners. Each runner in SCHEDULE performs the current test before
+ *      moving on to the next test. Runners are run in the order you define and test cases are run in the order you
+ *      define. In pseudocode, this is basically equivalent to:
+ *
+ *          for test in TESTS:
+ *              for name, runnner in SCHEDULE:
+ *                  runner.run(test)
+ *
+ *      You can also control the number of times to repeat the loops above with the ROUNDS parameter:
+ *
+ *          for i = 1 to ROUNDS:
+ *              for test in TESTS:
+ *                  for name, runnner in SCHEDULE:
+ *                      runner.run(test)
  *
  */
 public class AsyncPerformanceMain {
@@ -66,8 +88,8 @@ public class AsyncPerformanceMain {
     // The directory to write test reports to
     public static final Path    PATH        = Paths.get("REPORTS");
 
-    // Number of runs to perform
-    public static final int     RUNS        = 1;
+    // Number of testing rounds to perform
+    public static final int     ROUNDS      = 1;
 
     // Number of milliseconds to sleep after every runner
     public static final int     SLEEP       = 5000;
@@ -91,8 +113,8 @@ public class AsyncPerformanceMain {
             new TestRunningTotalDumb(true, 10000)
     };
 
-    // Defines the order of a single test run
-    public static final LinkedHashMap<String, AsyncBaseTestRunner> RUN_ORDER = Util.pairsToMap(
+    // The order that runners should be executed
+    public static final LinkedHashMap<String, AsyncBaseTestRunner> SCHEDULE = Util.pairsToMap(
         Arrays.asList(
             Util.pair("brn1"   , RUNNERS.get("runner0")),
             Util.pair("brn2"   , RUNNERS.get("runner1")),
@@ -118,15 +140,15 @@ public class AsyncPerformanceMain {
 
     public static void main (String[] args) {
         AsyncPerformanceMain.basicSetup();
-        for (int run = 0; run < RUNS; run++) {
+        for (int r = 0; r < ROUNDS; r++) {
             for (AsyncBaseTest test : TESTS) {
-                for (Map.Entry<String, AsyncBaseTestRunner> entry : RUN_ORDER.entrySet()) {
+                for (Map.Entry<String, AsyncBaseTestRunner> entry : SCHEDULE.entrySet()) {
 
                     // Setup
-                    String runName = String.join("-", new String[]{ test.toString(), "run" + run });
+                    String runName = String.join("-", new String[]{ test.toString(), "round" + r });
                     AsyncBaseTestRunner runner = entry.getValue();
                     Path subDirectory = Paths.get(PATH.toString(), entry.getKey());
-                    System.out.println(Util.getCurrentTime() + ": " + entry.getKey() + "-" + runName);
+                    System.out.println("\n" + Util.getCurrentTime() + ": " + entry.getKey() + "-" + runName + "\n");
 
                     // Run the test
                     runner.run(test.duplicate(false));

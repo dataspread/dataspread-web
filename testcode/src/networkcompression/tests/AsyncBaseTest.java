@@ -32,6 +32,27 @@ public abstract class AsyncBaseTest {
 
     /**
      *
+     * @return True if the results of this test case are correct
+     * after calling `updateCell()`.
+     */
+    public boolean verify () { return true; }
+
+    /**
+     *
+     * Calls `getValue()` on all cells used in this test case to
+     * ensure that lazy computation is triggered for them.
+     */
+    public void touchAll () {
+        CellRegion region = this.getRegion();
+        for (int r = region.getRow(); r < region.getLastRow(); r++) {
+            for (int c = region.getColumn(); c < region.getLastColumn(); c++) {
+                this.sheet.getCell(r, c).getValue();
+            }
+        }
+    }
+
+    /**
+     *
      * @return The book associated with this test case.
      */
     public SBook getBook () { return this.book; }

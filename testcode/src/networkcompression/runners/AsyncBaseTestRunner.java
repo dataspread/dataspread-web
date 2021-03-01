@@ -67,6 +67,9 @@ public abstract class AsyncBaseTestRunner implements FormulaAsyncListener {
         this.metadata.totlTimeToUpdateCells = this.metadata.asyncFinalTime - this.metadata.asyncStartTime;
         FormulaAsyncSchedulerSimple.started = true;
         this.runAfter(testCase);
+        testCase.touchAll();
+        this.metadata.touchedTime = System.currentTimeMillis();
+        this.metadata.isCorrect = testCase.verify();
     }
 
     /**
