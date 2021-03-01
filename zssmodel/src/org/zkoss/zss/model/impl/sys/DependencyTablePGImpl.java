@@ -89,6 +89,7 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
                     dependant.getLastColumn()), Types.OTHER);
 
             stmt.execute();
+            connection.commit();
         } catch (SQLException e) {
             e.printStackTrace();
         }
