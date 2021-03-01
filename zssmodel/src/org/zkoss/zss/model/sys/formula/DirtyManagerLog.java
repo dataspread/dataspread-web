@@ -1,8 +1,7 @@
 package org.zkoss.zss.model.sys.formula;
 
-import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.sys.dependency.Ref;
+import org.zkoss.zss.model.CellRegion;
 
 import java.util.*;
 
@@ -32,7 +31,7 @@ public class DirtyManagerLog {
 
     public void init()
     {
-        dirtyRecordLog = Collections.synchronizedList(new ArrayList());
+        dirtyRecordLog = Collections.synchronizedList(new ArrayList<>());
     }
 
     public long getDirtyTime(CellRegion cellRegion)
@@ -158,7 +157,76 @@ public class DirtyManagerLog {
             return 0;
     }
 
+    public double getAreaUnderCurve (Collection<CellRegion> sheetCells, long controlReturnedTime, long initTime, List<Long> times, List<Integer> cells) {
+        boolean firstNotDone = true;
+        SortedMap<Long, Integer> dirtyCellsCounts = new TreeMap<>();
+        Set<CellRegion> dirtyCells = new HashSet<>();
+        Set<CellRegion> sheetCellsSet = new HashSet<>(sheetCells);
+        long lastTimestamp = -1;
+
+        for (DirtyRecordEntry e : dirtyRecordLog) {
+            if (e.timestamp != lastTimestamp && lastTimestamp != -1) {
+                dirtyCellsCounts.put(e.timestamp, dirtyCells.size());
+            }
+            lastTimestamp = e.timestamp;
+            if (e.cellRegion.getCellCount() == 1) {
+                if (sheetCellsSet.contains(e.cellRegion)) {
+                    CellRegion r1 = e.cellRegion;
+                    if (e.action == Action.MARK_DIRTY) {
+                        dirtyCells.add(r1);
+                    } else {
+                        dirtyCells.remove(r1);
+                    }
+                }
+            } else {
+                for (CellRegion r1 : sheetCells) {
+                    if (e.cellRegion.contains(r1)) {
+                        if (e.action == Action.MARK_DIRTY) {
+                            dirtyCells.add(r1);
+                        } else {
+                            dirtyCells.remove(r1);
+                        }
+                    }
+                }
+            }
+        }
+        if (lastTimestamp != -1) {
+            dirtyCellsCounts.put(lastTimestamp, dirtyCells.size());
+        }
+        double areaUnderCurve = 0;
+        double prevTime = controlReturnedTime;
+        double prevNumDirty = 0;
+        for (Map.Entry<Long, Integer> d : dirtyCellsCounts.entrySet()) {
+            if (Math.abs(d.getKey() - controlReturnedTime) <= Math.pow(10, -5)) {
+                prevNumDirty = d.getValue();
+            }
+            if (d.getKey() > controlReturnedTime) {
+                if (prevTime == controlReturnedTime){
+                    prevNumDirty = d.getValue();
+                    prevTime = d.getKey();
+                    continue;
+                }
+                double barWidth = d.getKey() - prevTime;
+                prevTime = d.getKey();
+                areaUnderCurve += barWidth * prevNumDirty;
+                prevNumDirty = d.getValue();
+                if (firstNotDone) {
+                    times.add(0L);
+                    times.add(controlReturnedTime - initTime);
+                    times.add(controlReturnedTime - initTime);
+                    cells.add(sheetCells.size());
+                    cells.add(sheetCells.size());
+                    cells.add(d.getValue());
+                    firstNotDone = false;
+                }
+                times.add(d.getKey() - initTime);
+                cells.add(d.getValue());
+            }
+        }
+        return areaUnderCurve;
+    }
+
     public void print() {
-        dirtyRecordLog.stream().forEach(System.out::println);
+        dirtyRecordLog.forEach(System.out::println);
     }
 }
