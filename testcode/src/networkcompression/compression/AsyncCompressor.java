@@ -34,8 +34,6 @@ public class AsyncCompressor implements Compressable {
         SSheet sheet = test.getSheet();
         Collection<CellRegion> sheetCells = Util.getSheetCells(sheet, test.getRegion());
         ArrayList<Ref> dependencies = new ArrayList<>(sheet.getDependencyTable().getDependents(test.getCellToUpdate()));
-        dependencies.add(test.getCellToUpdate());
-
         if (AsyncPerformanceMain.graphInDB) {
             int[] depSizes = this.compressPGGraphNode(
                     sheet.getBook().getBookName(),
@@ -50,7 +48,7 @@ public class AsyncCompressor implements Compressable {
             testRunner.metadata.finalNumberOfDependents = dependencies.size();
             sheet.getDependencyTable().addPreDep(test.getCellToUpdate(), new HashSet<>(dependencies));
         }
-
+        dependencies.add(test.getCellToUpdate());
         int cellsToUpdate = 0;
         for (CellRegion sheetCell : sheetCells) {
             boolean matched = false;

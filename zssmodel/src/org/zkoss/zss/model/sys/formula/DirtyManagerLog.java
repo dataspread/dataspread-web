@@ -157,7 +157,7 @@ public class DirtyManagerLog {
             return 0;
     }
 
-    public double getAreaUnderCurve (Collection<CellRegion> sheetCells, long controlReturnedTime, long initTime, List<Long> times, List<Integer> cells) {
+    public double getAreaUnderCurve (Collection<CellRegion> sheetCells, long controlReturnedTime, long initTime, List<String> curve) {
         boolean firstNotDone = true;
         SortedMap<Long, Integer> dirtyCellsCounts = new TreeMap<>();
         Set<CellRegion> dirtyCells = new HashSet<>();
@@ -211,16 +211,12 @@ public class DirtyManagerLog {
                 areaUnderCurve += barWidth * prevNumDirty;
                 prevNumDirty = d.getValue();
                 if (firstNotDone) {
-                    times.add(0L);
-                    times.add(controlReturnedTime - initTime);
-                    times.add(controlReturnedTime - initTime);
-                    cells.add(sheetCells.size());
-                    cells.add(sheetCells.size());
-                    cells.add(d.getValue());
+                    curve.add("\n" + 0L + ", " + sheetCells.size());
+                    curve.add("\n" + (controlReturnedTime - initTime) + ", " + sheetCells.size());
+                    curve.add("\n" + (controlReturnedTime - initTime) + ", " + sheetCells.size());
                     firstNotDone = false;
                 }
-                times.add(d.getKey() - initTime);
-                cells.add(d.getValue());
+                curve.add("\n" + (d.getKey() - initTime) + ", " + d.getValue());
             }
         }
         return areaUnderCurve;

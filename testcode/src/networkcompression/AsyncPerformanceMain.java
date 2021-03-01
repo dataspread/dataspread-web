@@ -14,8 +14,10 @@ import org.zkoss.zss.model.impl.sys.DependencyTablePGImpl;
 import org.zkoss.zss.model.sys.EngineFactory;
 import org.zkoss.zss.model.impl.SheetImpl;
 
+import java.time.LocalDateTime;
 import java.nio.file.Paths;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.*;
 
 /**
@@ -55,8 +57,8 @@ import java.util.*;
  *      array that contains the test cases initialized with the parameters you want to use. The `isTemplate` parameter
  *      should be true for all of these test cases so that they simply store the parameters you want to use for later.
  *      The SCHEDULE variable maps strings to test runners. Each runner in SCHEDULE performs the current test before
- *      moving on to the next test. Runners are run in the order you define and test cases are run in the order you
- *      define. In pseudocode, this is basically equivalent to:
+ *      moving on to the next test. Runners are executed in the order you define and each test case is executed in the
+ *      order you define. In pseudocode, this is basically equivalent to:
  *
  *          for test in TESTS:
  *              for name, runnner in SCHEDULE:
@@ -113,7 +115,7 @@ public class AsyncPerformanceMain {
             new TestRunningTotalDumb(true, 10000)
     };
 
-    // The order that runners should be executed
+    // The order that runners should be executed. Keys should serve as valid directory names.
     public static final LinkedHashMap<String, AsyncBaseTestRunner> SCHEDULE = Util.pairsToMap(
         Arrays.asList(
             Util.pair("brn1"   , RUNNERS.get("runner0")),
@@ -139,6 +141,9 @@ public class AsyncPerformanceMain {
     }
 
     public static void main (String[] args) {
+
+        LocalDateTime start = LocalDateTime.now();
+
         AsyncPerformanceMain.basicSetup();
         for (int r = 0; r < ROUNDS; r++) {
             for (AsyncBaseTest test : TESTS) {
@@ -164,6 +169,16 @@ public class AsyncPerformanceMain {
                 }
             }
         }
+
+        long seconds = Duration.between(start, LocalDateTime.now()).getSeconds();
+        System.out.println("\nTime taken (HH:MM:SS): " +
+                String.format("%02d:%02d:%02d"
+                        , (seconds / 3600)
+                        , (seconds % 3600) / 60
+                        , (seconds % 60)
+                )
+        );
+
     }
 
 }

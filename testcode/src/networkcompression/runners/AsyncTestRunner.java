@@ -27,8 +27,7 @@ public class AsyncTestRunner extends AsyncBaseTestRunner {
             Util.getSheetCells(testCase.getSheet(), testCase.getRegion())
             , super.metadata.asyncFinalTime
             , super.metadata.asyncStartTime
-            , super.metadata.timeList
-            , super.metadata.cellList
+            , super.metadata.curve
         );
     }
 
