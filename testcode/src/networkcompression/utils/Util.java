@@ -1,7 +1,13 @@
 package networkcompression.utils;
 
 import networkcompression.AsyncPerformanceMain;
+import org.zkoss.zss.api.model.impl.BookImpl;
+import org.zkoss.zss.api.model.impl.SimpleRef;
+import org.zkoss.zss.app.impl.CollaborationInfoImpl;
 import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.sys.BookBindings;
+import org.zkoss.zss.range.SImporters;
+import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.SCell;
 import org.model.DBHandler;
@@ -67,6 +73,23 @@ public class Util {
                 AsyncPerformanceMain.PASSWORD
             );
         }
+    }
+
+    // TODO: This seems to cause an illegal reflective access operation warning
+    public static SBook importBook (Path path) {
+        Util.connectToDBIfNotConnected();
+        SBook book = null;
+        try {
+            book = SImporters.getImporter().imports(path.toFile(), "testBook" + System.currentTimeMillis());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return book;
+    }
+
+    public static SBook getEmptyBook () {
+        Util.connectToDBIfNotConnected();
+        return BookBindings.getBookByName("testBook" + System.currentTimeMillis());
     }
 
 }

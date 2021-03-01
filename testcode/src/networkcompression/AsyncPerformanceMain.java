@@ -3,6 +3,7 @@ package networkcompression;
 import networkcompression.compression.DefaultCompressor;
 import networkcompression.compression.AsyncCompressor;
 import networkcompression.runners.AsyncBaseTestRunner;
+import networkcompression.tests.TestCustomStructure;
 import networkcompression.tests.TestRunningTotalDumb;
 import networkcompression.runners.AsyncTestRunner;
 import networkcompression.runners.SyncTestRunner;
@@ -54,11 +55,11 @@ import java.util.*;
  * Test execution:
  *
  *      The TESTS variable and SCHEDULE variable control how test cases are executed. The TESTS variable is an array
- *      that stores test cases. Each test will be run in the order you specify and should be initialized with their
- *      `isTemplate` parameters set to true so that the other constructor parameters you want to use are stored for
- *      later. The SCHEDULE variable maps strings to test runners. All runners in SCHEDULE will perform the current
- *      test before moving on to the next test. Each runner is executed in the order you specify. In pseudocode, this
- *      is basically equivalent to:
+ *      that stores test cases. Each test will be run in the order you specify and should be initialized with all
+ *      necessary parameters except the test book (book creation is handled later by the newTest() method). The
+ *      SCHEDULE variable maps strings to test runners. All runners in SCHEDULE will perform the current test before
+ *      moving on to the next test. Each runner is executed in the order you specify. In pseudocode, this is basically
+ *      equivalent to:
  *
  *          for test in TESTS:
  *              for name, runnner in SCHEDULE:
@@ -115,10 +116,10 @@ public class AsyncPerformanceMain {
         )
     );
 
-    // Make sure `isTemplate` is set to true here
+    // No need to include the test book here, just include the test parameters here
     public static final AsyncBaseTest[] TESTS = {
-            new TestRunningTotalDumb(true, 10),
-            new TestRunningTotalDumb(true, 10000)
+            new TestCustomStructure(Paths.get("../EXCEL", "sample.xlsx")),
+            new TestRunningTotalDumb(10),
     };
 
     // Keys should serve as valid directory names
@@ -150,17 +151,17 @@ public class AsyncPerformanceMain {
         LocalDateTime start = LocalDateTime.now();
         AsyncPerformanceMain.basicSetup();
         for (int r = 0; r < ROUNDS; r++) {
-            for (AsyncBaseTest test : TESTS) {
+            for (AsyncBaseTest testTemplate : TESTS) {
                 for (Map.Entry<String, AsyncBaseTestRunner> entry : SCHEDULE.entrySet()) {
 
                     // Setup
-                    String runName = String.join("-", new String[]{ test.toString(), "round" + r });
+                    String runName = String.join("-", new String[]{ testTemplate.toString(), "round" + r });
                     AsyncBaseTestRunner runner = entry.getValue();
                     Path subDirectory = Paths.get(OUT_PATH.toString(), entry.getKey());
                     System.out.println("\n" + Util.getCurrentTime() + ": " + entry.getKey() + "-" + runName + "\n");
 
                     // Run the test
-                    runner.run(test.duplicate(false));
+                    runner.run(testTemplate.newTest());
 
                     // Output results
                     Util.createDirectory(subDirectory);

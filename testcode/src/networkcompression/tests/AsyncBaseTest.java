@@ -1,33 +1,27 @@
 package networkcompression.tests;
 
 import org.zkoss.zss.model.sys.dependency.Ref;
-import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.model.CellRegion;
-import networkcompression.utils.Util;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.SBook;
 
 /**
  *
- * The parent class for all async test cases.
+ * The parent class for all async test cases. All subclasses should define
+ * at least two constructors. One constructor should initialize all members
+ * except the test book. The other constructor should initialize all members
+ * and the test book.
  */
 public abstract class AsyncBaseTest {
 
     protected SBook    book  = null;
     protected SSheet   sheet = null;
 
-    /**
-     * Initializes a new test case.
-     *
-     * @param isTemplate if true, then this object's test book
-     *                   and test sheet are left uninitialized.
-     */
-    public AsyncBaseTest (final boolean isTemplate) {
-        Util.connectToDBIfNotConnected();
-        if (!isTemplate) {
-            this.book   = BookBindings.getBookByName("testBook" + System.currentTimeMillis());
-            this.sheet  = book.getSheet(0);
-        }
+    public AsyncBaseTest () { }
+
+    public AsyncBaseTest (final SBook book) {
+        this.book   = book;
+        this.sheet  = book.getSheet(0);
     }
 
     /**
@@ -95,17 +89,17 @@ public abstract class AsyncBaseTest {
 
     /**
      *
-     * @return A fresh copy of the current test case.
+     * @return A fresh copy of the current test case with its
+     * test sheet and test book initialized.
      */
-    public abstract AsyncBaseTest duplicate (final boolean isTemplate);
+    public abstract AsyncBaseTest newTest ();
 
     /**
      *
      * @return The human-readable string representation of
-     * this test. Tests with the same test parameters (not
-     * including isTemplate) should have the same string
-     * representation. If this is not the case, file naming
-     * errors will occur.
+     * this test. Tests with the same test parameters should
+     * have the same string representation. If this is not
+     * the case, file naming errors will occur.
      */
     @Override
     public abstract String toString ();

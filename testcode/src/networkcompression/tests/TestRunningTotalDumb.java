@@ -1,5 +1,7 @@
 package networkcompression.tests;
 
+import networkcompression.utils.Util;
+import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.CellRegion;
 
@@ -13,8 +15,12 @@ public class TestRunningTotalDumb extends AsyncBaseTest {
 
     private final int ROWS;
 
-    public TestRunningTotalDumb (final boolean isTemplate, final int rows) {
-        super(isTemplate);
+    public TestRunningTotalDumb (final int rows) {
+        this.ROWS = rows;
+    }
+
+    public TestRunningTotalDumb (final SBook book, final int rows) {
+        super(book);
         this.ROWS = rows;
     }
 
@@ -37,16 +43,16 @@ public class TestRunningTotalDumb extends AsyncBaseTest {
     }
 
     @Override
-    public Ref getCellToUpdate() { return super.sheet.getCell(0, 0).getRef(); }
+    public Ref getCellToUpdate() { return sheet.getCell(0, 0).getRef(); }
 
     @Override
-    public void updateCell() { super.sheet.getCell(0, 0).setValue(20); }
+    public void updateCell() { sheet.getCell(0, 0).setValue(20); }
 
     @Override
     public CellRegion getRegion () { return new CellRegion(0, 0, ROWS, 1); }
 
     @Override
-    public AsyncBaseTest duplicate (final boolean init) { return new TestRunningTotalDumb(init, ROWS); }
+    public AsyncBaseTest newTest () { return new TestRunningTotalDumb(Util.getEmptyBook(), ROWS); }
 
     @Override
     public String toString () { return "TestRunningTotalDumb" + ROWS; }
