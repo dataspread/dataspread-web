@@ -1,5 +1,6 @@
 package networkcompression.tests;
 
+import networkcompression.utils.Util;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SSheet;
@@ -17,9 +18,9 @@ public abstract class AsyncBaseTest {
     protected SBook    book  = null;
     protected SSheet   sheet = null;
 
-    public AsyncBaseTest () { }
+    protected AsyncBaseTest () { }
 
-    public AsyncBaseTest (SBook book) {
+    protected AsyncBaseTest (SBook book) {
         this.book   = book;
         this.sheet  = book.getSheet(0);
     }

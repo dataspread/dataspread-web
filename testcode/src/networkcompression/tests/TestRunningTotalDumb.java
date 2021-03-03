@@ -1,11 +1,12 @@
 package networkcompression.tests;
 
 import networkcompression.utils.Util;
-import org.zkoss.zss.model.SBook;
+
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.CellRegion;
+import org.zkoss.zss.model.SBook;
 
-import java.util.*;
+import java.util.Random;
 
 /**
  *
@@ -19,7 +20,7 @@ public class TestRunningTotalDumb extends AsyncBaseTest {
         ROWS = rows;
     }
 
-    public TestRunningTotalDumb (SBook book, final int rows) {
+    private TestRunningTotalDumb (SBook book, final int rows) {
         super(book);
         ROWS = rows;
     }

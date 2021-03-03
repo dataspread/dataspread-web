@@ -30,15 +30,15 @@ import java.nio.file.Path;
  * Sheet1 or similar. To remedy this, simply rename the sheet to
  * something else.
  */
-public class TestCustomStructure extends AsyncBaseTest {
+public class TestCustomSheet extends AsyncBaseTest {
 
     private final Path PATH;
 
-    public TestCustomStructure (final Path pathToExcelFile) {
+    public TestCustomSheet(final Path pathToExcelFile) {
         PATH = pathToExcelFile;
     }
 
-    public TestCustomStructure (SBook book, final Path pathToExcelFile) {
+    private TestCustomSheet(SBook book, final Path pathToExcelFile) {
         super(book);
         PATH = pathToExcelFile;
     }
@@ -59,7 +59,7 @@ public class TestCustomStructure extends AsyncBaseTest {
     public CellRegion getRegion () { return new CellRegion(0, 0, 9, 0); }
 
     @Override
-    public AsyncBaseTest newTest () { return new TestCustomStructure(Util.importBook(PATH), PATH); }
+    public AsyncBaseTest newTest () { return new TestCustomSheet(Util.importBook(PATH), PATH); }
 
     @Override
     public String toString () {

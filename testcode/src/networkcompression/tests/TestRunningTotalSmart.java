@@ -17,7 +17,7 @@ public class TestRunningTotalSmart extends AsyncBaseTest {
         ROWS = rows;
     }
 
-    public TestRunningTotalSmart (SBook book, final int rows) {
+    private TestRunningTotalSmart (SBook book, final int rows) {
         super(book);
         ROWS = rows;
     }

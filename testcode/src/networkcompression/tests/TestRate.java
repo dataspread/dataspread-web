@@ -17,7 +17,7 @@ public class TestRate extends AsyncBaseTest {
         ROWS = rows;
     }
 
-    public TestRate (SBook book, final int rows) {
+    private TestRate (SBook book, final int rows) {
         super(book);
         ROWS = rows;
     }

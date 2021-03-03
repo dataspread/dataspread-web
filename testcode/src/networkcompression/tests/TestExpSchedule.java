@@ -1,9 +1,10 @@
 package networkcompression.tests;
 
 import networkcompression.utils.Util;
+
+import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
-import org.zkoss.zss.model.sys.dependency.Ref;
 
 import java.util.Random;
 
@@ -18,7 +19,7 @@ public class TestExpSchedule extends AsyncBaseTest {
         CELLS_IN_COLUMN_B = b;
     }
 
-    public TestExpSchedule (SBook book, final int a, final int b) {
+    private TestExpSchedule (SBook book, final int a, final int b) {
         super(book);
         CELLS_IN_COLUMN_A = a;
         CELLS_IN_COLUMN_B = b;
@@ -40,7 +41,7 @@ public class TestExpSchedule extends AsyncBaseTest {
 
         for (int i = 0; i < CELLS_IN_COLUMN_B; i++) {
             int size = (CELLS_IN_COLUMN_A*(i+1))/CELLS_IN_COLUMN_B;
-            sheet.getCell(i, 1).setFormulaValue("SUM(A1:A" + (size)+")");
+            sheet.getCell(i, 1).setFormulaValue("SUM(A1:A" + size + ")");
         }
 
         sheet.setDelayComputation(false);

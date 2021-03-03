@@ -1,15 +1,15 @@
 package networkcompression.tests;
 
 import networkcompression.utils.Util;
-import org.zkoss.poi.ss.util.CellReference;
+
 import org.zkoss.zss.model.sys.dependency.Ref;
+import org.zkoss.poi.ss.util.CellReference;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Random;
+import java.util.List;
 
 public class TestRandom extends AsyncBaseTest {
 
@@ -21,7 +21,7 @@ public class TestRandom extends AsyncBaseTest {
         ITERATIONS = iterations;
     }
 
-    public TestRandom (SBook book, final int iterations) {
+    private TestRandom (SBook book, final int iterations) {
         super(book);
         ITERATIONS = iterations;
     }

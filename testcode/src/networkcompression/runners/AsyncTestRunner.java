@@ -25,8 +25,8 @@ public class AsyncTestRunner extends AsyncBaseTestRunner {
         synchronized (this) { try { wait(); } catch (InterruptedException e) { e.printStackTrace(); } }
         super.metadata.area = DirtyManagerLog.instance.getAreaUnderCurve(
             Util.getSheetCells(testCase.getSheet(), testCase.getRegion())
-            , super.metadata.asyncFinalTime
-            , super.metadata.asyncStartTime
+            , super.metadata.updateCellFinalTime
+            , super.metadata.updateCellStartTime
             , super.metadata.curve
         );
     }
