@@ -3,7 +3,6 @@ package networkcompression;
 import networkcompression.compression.DefaultCompressor;
 import networkcompression.compression.AsyncCompressor;
 import networkcompression.runners.AsyncBaseTestRunner;
-import networkcompression.tests.TestCustomStructure;
 import networkcompression.tests.TestRunningTotalDumb;
 import networkcompression.runners.AsyncTestRunner;
 import networkcompression.runners.SyncTestRunner;
@@ -48,7 +47,7 @@ import java.util.*;
  *      To create a new test case, the following steps should be performed:
  *
  *          1. Create your new test in the tests directory
- *          2. Have the test extend AsyncBaseTest.java
+ *          2. Have the test extend AsyncBaseTest
  *          3. Implement the required methods
  *          4. Create your test in the TESTS variable of AsyncPerformanceMain.java
  *
@@ -89,7 +88,8 @@ import java.util.*;
  *      graphInDB   :   If true, AsyncCompressor will assume that the spreadsheet formula network exists in a
  *                      PostgreSQL database and will issue SQL queries to perform dependency compression.
  *
- *      The rest of the variables are reserved for database configurations.
+ *      The rest of the variables are reserved for database configurations and setting the dependency table
+ *      implementation.
  *
  */
 public class AsyncPerformanceMain {
@@ -98,15 +98,16 @@ public class AsyncPerformanceMain {
      * EDIT ZONE ******************************************************************************************************
      ******************************************************************************************************************/
 
-    public static final boolean graphInDB   = false;
+    public static final Class<?>    DEPENDENCY_TABLE_IMPLEMENTATION = DependencyTableImplV4.class;
 
-    public static final String  URL         = "jdbc:postgresql://127.0.0.1:5433/dataspread";
-    public static final String  DBDRIVER    = "org.postgresql.Driver";
-    public static final String  USERNAME    = "dataspreaduser";
-    public static final String  PASSWORD    = "password";
-    public static final Path    OUT_PATH    = Paths.get("REPORTS");
-    public static final int     ROUNDS      = 1;
-    public static final int     SLEEP       = 5000;
+    public static final boolean     graphInDB   = false;
+    public static final String      URL         = "jdbc:postgresql://127.0.0.1:5433/dataspread";
+    public static final String      DBDRIVER    = "org.postgresql.Driver";
+    public static final String      USERNAME    = "dataspreaduser";
+    public static final String      PASSWORD    = "password";
+    public static final Path        OUT_PATH    = Paths.get("REPORTS");
+    public static final int         ROUNDS      = 1;
+    public static final int         SLEEP       = 5000;
 
     public static final LinkedHashMap<String, AsyncBaseTestRunner> RUNNERS = Util.pairsToMap(
         Arrays.asList(
@@ -120,9 +121,9 @@ public class AsyncPerformanceMain {
         )
     );
 
-    // No need to include the test book here, just include the test parameters here
+    // No need to include the test book here, just include the test parameters
     public static final AsyncBaseTest[] TESTS = {
-            new TestCustomStructure(Paths.get("../EXCEL", "sample.xlsx")),
+//            new TestCustomStructure(Paths.get("..", "EXCEL", "sample.xlsx")),
             new TestRunningTotalDumb(10),
     };
 
@@ -146,7 +147,7 @@ public class AsyncPerformanceMain {
     /******************************************************************************************************************/
 
     private static void basicSetup () {
-        EngineFactory.dependencyTableClazz = (graphInDB ? DependencyTablePGImpl.class : DependencyTableImplV4.class);
+        EngineFactory.dependencyTableClazz = (graphInDB ? DependencyTablePGImpl.class : DEPENDENCY_TABLE_IMPLEMENTATION);
         SheetImpl.simpleModel = true;
         Util.createDirectory(OUT_PATH);
     }
@@ -161,13 +162,13 @@ public class AsyncPerformanceMain {
                     // Setup
                     String runName = String.join("-", new String[]{ testTemplate.toString(), "round" + r });
                     AsyncBaseTestRunner runner = entry.getValue();
-                    Path subDirectory = Paths.get(OUT_PATH.toString(), entry.getKey());
                     System.out.println("\n" + Util.getCurrentTime() + ": " + entry.getKey() + "-" + runName + "\n");
 
                     // Run the test
                     runner.run(testTemplate.newTest());
 
                     // Output results
+                    Path subDirectory = Paths.get(OUT_PATH.toString(), entry.getKey());
                     Util.createDirectory(subDirectory);
                     runner.metadata.writeStatsToFile(subDirectory.toString(), runName + ".txt");
 

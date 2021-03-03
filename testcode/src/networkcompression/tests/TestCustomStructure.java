@@ -15,7 +15,7 @@ import java.nio.file.Path;
  *
  *      |    A
  *  ----------------
- *  1   |   =10
+ *  1   |   =1
  *  ----------------
  *  2   |   =A1 + 1
  *  ----------------
@@ -32,15 +32,15 @@ import java.nio.file.Path;
  */
 public class TestCustomStructure extends AsyncBaseTest {
 
-    private Path path;
+    private final Path PATH;
 
-    public TestCustomStructure (Path pathToExcelFile) {
-        this.path = pathToExcelFile;
+    public TestCustomStructure (final Path pathToExcelFile) {
+        PATH = pathToExcelFile;
     }
 
-    public TestCustomStructure (SBook book, Path pathToExcelFile) {
+    public TestCustomStructure (SBook book, final Path pathToExcelFile) {
         super(book);
-        this.path = pathToExcelFile;
+        PATH = pathToExcelFile;
     }
 
     @Override
@@ -59,11 +59,11 @@ public class TestCustomStructure extends AsyncBaseTest {
     public CellRegion getRegion () { return new CellRegion(0, 0, 9, 0); }
 
     @Override
-    public AsyncBaseTest newTest () { return new TestCustomStructure(Util.importBook(this.path), this.path); }
+    public AsyncBaseTest newTest () { return new TestCustomStructure(Util.importBook(PATH), PATH); }
 
     @Override
     public String toString () {
-        String fileName = this.path.toFile().getName();
+        String fileName = PATH.toFile().getName();
         int index = fileName.lastIndexOf('.');
         if (index != -1) {
             return fileName.substring(0, index);

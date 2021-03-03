@@ -18,10 +18,12 @@ public class TestMetadata {
     public double   area = 0.0;
     public boolean  isCorrect;
     public long     touchedTime;
+    public long     depStartTime;
+    public long     depFinalTime;
     public long     testStartTime;
     public long     testFinalTime;
-    public long     asyncStartTime;
-    public long     asyncFinalTime;
+    public long     updateCellStartTime;
+    public long     updateCellFinalTime;
     public long     numberOfCellsToUpdate;
     public long     totlTimeToUpdateCells;
     public long     startNumberOfDependents;
@@ -31,10 +33,12 @@ public class TestMetadata {
         try (PrintWriter prw = new PrintWriter(new FileWriter(Paths.get(dir, filename).toString()))) {
             prw.println("Report:\n\n"
                     + "Correct: "                           + isCorrect                         + "\n"
+                    + "Get dependents start time: "         + depStartTime                      + "\n"
+                    + "Get dependents end time: "           + depFinalTime                      + "\n"
                     + "Test start time: "                   + testStartTime                     + "\n"
                     + "Test end time: "                     + testFinalTime                     + "\n"
-                    + "Async start time: "                  + asyncStartTime                    + "\n"
-                    + "Async end time: "                    + asyncFinalTime                    + "\n"
+                    + "Update cell start time: "            + updateCellStartTime               + "\n"
+                    + "Update cell end time: "              + updateCellFinalTime               + "\n"
                     + "Touched time: "                      + touchedTime                       + "\n"
                     + "Number of cells updated: "           + numberOfCellsToUpdate             + "\n"
                     + "Total time to update cells: "        + totlTimeToUpdateCells             + "\n"

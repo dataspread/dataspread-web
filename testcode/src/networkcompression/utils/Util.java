@@ -9,6 +9,7 @@ import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
 import org.model.DBHandler;
 
+import java.nio.file.Paths;
 import java.util.stream.Collectors;
 import java.text.SimpleDateFormat;
 import java.io.IOException;
@@ -31,7 +32,11 @@ public class Util {
     }
 
     public static void sleep (final long millis) {
-        try { Thread.sleep(millis); } catch (InterruptedException e) { e.printStackTrace(); }
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     public static String getCurrentTime () {
@@ -72,8 +77,19 @@ public class Util {
         }
     }
 
-    // TODO: This seems to cause an illegal reflective access operation warning
-    public static SBook importBook (Path path) {
+    // This method works correctly, but seems to cause an illegal reflective
+    // access operation warning. This warning appears once and its source is
+    // pretty deep in the codebase:
+    //
+    // SImporters
+    //      -> ExcelImportFactory
+    //          -> AbstractImporter
+    //              -> ExcelImportAdapter
+    //                  -> AbstractExcelImporter
+    //                      -> ExcelXlsxImporter
+    //                          -> XSSFWorkbook
+    //                              -> ...
+    public static SBook importBook (final Path path) {
         Util.connectToDBIfNotConnected();
         SBook book = null;
         try {
@@ -84,7 +100,7 @@ public class Util {
         return book;
     }
 
-    public static SBook getEmptyBook () {
+    public static SBook createEmptyBook() {
         Util.connectToDBIfNotConnected();
         return BookBindings.getBookByName("testBook" + System.currentTimeMillis());
     }

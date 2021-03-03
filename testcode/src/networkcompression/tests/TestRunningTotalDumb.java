@@ -16,12 +16,12 @@ public class TestRunningTotalDumb extends AsyncBaseTest {
     private final int ROWS;
 
     public TestRunningTotalDumb (final int rows) {
-        this.ROWS = rows;
+        ROWS = rows;
     }
 
-    public TestRunningTotalDumb (final SBook book, final int rows) {
+    public TestRunningTotalDumb (SBook book, final int rows) {
         super(book);
-        this.ROWS = rows;
+        ROWS = rows;
     }
 
     @Override
@@ -49,10 +49,10 @@ public class TestRunningTotalDumb extends AsyncBaseTest {
     public void updateCell() { sheet.getCell(0, 0).setValue(20); }
 
     @Override
-    public CellRegion getRegion () { return new CellRegion(0, 0, ROWS, 1); }
+    public CellRegion getRegion () { return new CellRegion(0, 0, ROWS - 1, 1); }
 
     @Override
-    public AsyncBaseTest newTest () { return new TestRunningTotalDumb(Util.getEmptyBook(), ROWS); }
+    public AsyncBaseTest newTest () { return new TestRunningTotalDumb(Util.createEmptyBook(), ROWS); }
 
     @Override
     public String toString () { return "TestRunningTotalDumb" + ROWS; }
