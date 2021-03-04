@@ -50,14 +50,14 @@ public abstract class AsyncBaseTest {
      * @return A list that contains all dependents of this test
      * case's updated cell.
      */
-    public List<Ref> getDependencies () {
+    public List<Ref> getDependenciesOfUpdatedCell () {
         return new ArrayList<>(this.getSheet().getDependencyTable().getDependents(this.getCellToUpdate()));
     }
 
     /**
      * @return The cells that this test case uses.
      */
-    public Collection<CellRegion> getCells() {
+    public Collection<CellRegion> getCells () {
         return Util.getSheetCells(this.getSheet(), this.getRegion());
     }
 
@@ -82,7 +82,7 @@ public abstract class AsyncBaseTest {
      *  sheet.setDelayComputation(false);
      *
      */
-    public abstract void initSheet ();
+    public abstract void init();
 
     /**
      * This method should return the cell that this test case

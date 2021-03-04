@@ -17,7 +17,7 @@ public abstract class BaseCompressor {
     public BaseCompressor () { }
 
     protected BaseCompressor (TestMetadata metadata, AsyncBaseTest testCase) {
-        this.dependencies = testCase.getDependencies();
+        this.dependencies = testCase.getDependenciesOfUpdatedCell();
         this.metadata = metadata;
         this.testCase = testCase;
     }

@@ -4,6 +4,7 @@ import networkcompression.compression.asynccomp.AsyncPgCompressor;
 import networkcompression.compression.asynccomp.AsyncCompressor;
 import networkcompression.compression.DefaultCompressor;
 import networkcompression.runners.AsyncBaseTestRunner;
+import networkcompression.tests.TestRealWorldSheet;
 import networkcompression.tests.TestRunningTotalDumb;
 import networkcompression.runners.AsyncTestRunner;
 import networkcompression.runners.SyncTestRunner;
@@ -109,7 +110,7 @@ public class AsyncPerformanceMain {
     public static final String      DBDRIVER    = "org.postgresql.Driver";
     public static final String      USERNAME    = "dataspreaduser";
     public static final String      PASSWORD    = "password";
-    public static final Path        OUT_PATH    = Paths.get("REPORTS");
+    public static final Path        OUT_PATH    = Paths.get("..", "REPORTS");
     public static final int         ROUNDS      = 1;
     public static final int         SLEEP       = 5000;
 
@@ -127,11 +128,11 @@ public class AsyncPerformanceMain {
 
     // No need to include the test book here, just include the test parameters
     public static final AsyncBaseTest[] TESTS = {
-            // new TestCustomStructure(Paths.get("..", "EXCEL", "sample.xlsx")),
+            new TestRealWorldSheet(Paths.get("..", "EXCEL", "sample.xlsx")),
             new TestRunningTotalDumb(10000),
     };
 
-    // Keys should serve as valid directory names
+    // Keys should also be valid directory names
     public static final LinkedHashMap<String, AsyncBaseTestRunner> SCHEDULE = Util.pairsToMap(
         Arrays.asList(
             Util.pair("brn1"   , RUNNERS.get("runner0")),
@@ -184,7 +185,7 @@ public class AsyncPerformanceMain {
                     // Output results
                     Path subDirectory = Paths.get(OUT_PATH.toString(), entry.getKey());
                     runner.dumpMetadata(subDirectory, Paths.get(runName + ".txt"));
-                    System.out.println(Util.getCurrentTime() + ": Results logged!");
+                    System.out.println(Util.getCurrentTime() + ": Results logged to " + subDirectory);
 
                     // Clean up
                     System.gc();

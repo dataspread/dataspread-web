@@ -26,7 +26,7 @@ public class TestExpSchedule extends AsyncBaseTest {
     }
 
     @Override
-    public void initSheet () {
+    public void init() {
         Random random = new Random(7);
 
         sheet.setDelayComputation(true);

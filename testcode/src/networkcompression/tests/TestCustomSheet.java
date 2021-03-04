@@ -47,7 +47,7 @@ public class TestCustomSheet extends AsyncBaseTest {
     public boolean verify () { return Double.compare((double) sheet.getCell(9, 0).getValue(), 55.0) == 0; }
 
     @Override
-    public void initSheet () { sheet.setDelayComputation(false); }
+    public void init() { sheet.setDelayComputation(false); }
 
     @Override
     public Ref getCellToUpdate () { return sheet.getCell(0, 0).getRef(); }

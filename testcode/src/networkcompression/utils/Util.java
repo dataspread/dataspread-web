@@ -70,7 +70,7 @@ public class Util {
             String first = paths[0].toString();
             String[] rest = new String[paths.length - 1];
             for (int i = 1; i < paths.length; i++) {
-                rest[i] = paths[i].toString();
+                rest[i - 1] = paths[i].toString();
             }
             return Paths.get(first, rest);
         }

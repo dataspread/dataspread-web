@@ -27,7 +27,7 @@ public class TestRandom extends AsyncBaseTest {
     }
 
     @Override
-    public void initSheet () {
+    public void init() {
         List<String>  cellNames  = new ArrayList<>();
         List<Integer> rowIndices = new ArrayList<>();
         List<Integer> colIndices = new ArrayList<>();

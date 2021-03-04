@@ -48,7 +48,7 @@ public abstract class AsyncBaseTestRunner implements FormulaAsyncListener {
         this.runBefore(testCase);
         FormulaAsyncScheduler.updateVisibleMap(new HashMap<>());
         testCase.getSheet().setSyncComputation(true);
-        testCase.initSheet();
+        testCase.init();
         this.extraSetup(testCase);
         COMPRESSOR.runAll(this.metadata, testCase, this.cellsToUpdateSet);
         DirtyManagerLog.instance.init();
