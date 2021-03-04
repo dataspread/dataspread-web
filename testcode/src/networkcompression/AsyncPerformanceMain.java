@@ -1,8 +1,8 @@
 package networkcompression;
 
-import networkcompression.compression.DefaultCompressor;
-import networkcompression.compression.asynccomp.AsyncCompressor;
 import networkcompression.compression.asynccomp.AsyncPgCompressor;
+import networkcompression.compression.asynccomp.AsyncCompressor;
+import networkcompression.compression.DefaultCompressor;
 import networkcompression.runners.AsyncBaseTestRunner;
 import networkcompression.tests.TestRunningTotalDumb;
 import networkcompression.runners.AsyncTestRunner;
@@ -16,10 +16,14 @@ import org.zkoss.zss.model.sys.EngineFactory;
 import org.zkoss.zss.model.impl.SheetImpl;
 
 import java.time.LocalDateTime;
+import java.time.Duration;
+
 import java.nio.file.Paths;
 import java.nio.file.Path;
-import java.time.Duration;
-import java.util.*;
+
+import java.util.LinkedHashMap;
+import java.util.Arrays;
+import java.util.Map;
 
 /**
  *
@@ -52,9 +56,10 @@ import java.util.*;
  *          3. Implement the required methods
  *          4. Create your test in the TESTS variable of AsyncPerformanceMain.java
  *
- *      It is important that test cases define two constructors. One constructor should initialize all members except
- *      the test book. The other constructor should initialize all members and the test book. If this convention is
- *      upheld (and all the previous steps have been completed), you shouldn't need to make any changes to main().
+ *      It is important that test cases define two constructors. One constructor should be public and initialize all
+ *      test parameters except the test book. The other constructor should be private and initialize all members with
+ *      the test book. If this convention is upheld (and all the previous steps have been completed), you shouldn't
+ *      need to make any changes to main().
  *
  * Test execution:
  *
