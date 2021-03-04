@@ -1,7 +1,7 @@
 package networkcompression.runners;
 
+import networkcompression.compression.BaseCompressor;
 import org.zkoss.zss.model.impl.FormulaCacheCleaner;
-import networkcompression.compression.Compressable;
 import networkcompression.tests.AsyncBaseTest;
 
 /**
@@ -10,7 +10,7 @@ import networkcompression.tests.AsyncBaseTest;
  */
 public class SyncTestRunner extends AsyncBaseTestRunner {
 
-    public SyncTestRunner (final boolean prioritize, final Compressable compressor) {
+    public SyncTestRunner (final boolean prioritize, final BaseCompressor compressor) {
         super(prioritize, compressor);
     }
 

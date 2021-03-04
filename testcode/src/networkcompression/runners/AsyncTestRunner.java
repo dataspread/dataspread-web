@@ -1,9 +1,10 @@
 package networkcompression.runners;
 
-import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
-import networkcompression.compression.Compressable;
+import networkcompression.compression.BaseCompressor;
 import networkcompression.tests.AsyncBaseTest;
 import networkcompression.utils.Util;
+
+import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 
 /**
  *
@@ -11,7 +12,7 @@ import networkcompression.utils.Util;
  */
 public class AsyncTestRunner extends AsyncBaseTestRunner {
 
-    public AsyncTestRunner (final boolean prioritize, final Compressable compressor) {
+    public AsyncTestRunner (final boolean prioritize, final BaseCompressor compressor) {
         super(prioritize, compressor);
     }
 

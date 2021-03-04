@@ -8,10 +8,6 @@ import org.zkoss.zss.model.SBook;
 
 import java.util.Random;
 
-/**
- *
- * An example of how to create an async test case.
- */
 public class TestRunningTotalDumb extends AsyncBaseTest {
 
     private final int ROWS;

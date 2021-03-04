@@ -1,7 +1,8 @@
 package networkcompression;
 
 import networkcompression.compression.DefaultCompressor;
-import networkcompression.compression.AsyncCompressor;
+import networkcompression.compression.asynccomp.AsyncCompressor;
+import networkcompression.compression.asynccomp.AsyncPgCompressor;
 import networkcompression.runners.AsyncBaseTestRunner;
 import networkcompression.tests.TestRunningTotalDumb;
 import networkcompression.runners.AsyncTestRunner;
@@ -59,8 +60,8 @@ import java.util.*;
  *
  *      The TESTS variable and SCHEDULE variable control how test cases are executed. The TESTS variable is an array
  *      that stores test cases. Each test will be run in the order you specify and should be initialized with all
- *      necessary parameters except the test book (book creation is handled later by the newTest() method). The
- *      SCHEDULE variable maps strings to test runners. All runners in SCHEDULE will perform the current test before
+ *      necessary parameters except the test book (book creation is handled later in main() by the newTest() method).
+ *      The SCHEDULE variable maps strings to test runners. All runners in SCHEDULE will run the current test before
  *      moving on to the next test. Each runner is executed in the order you specify. In pseudocode, this is basically
  *      equivalent to:
  *
@@ -82,11 +83,8 @@ import java.util.*;
  *
  *      SLEEP       :   Controls the number of milliseconds to sleep after running a single test runner in SCHEDULE.
  *
- *      PATH        :   The name of the directory to write test reports to. This directory is automatically created
+ *      OUT_PATH    :   The name of the directory to write test reports to. This directory is automatically created
  *                      for you in the project's root folder.
- *
- *      graphInDB   :   If true, AsyncCompressor will assume that the spreadsheet formula network exists in a
- *                      PostgreSQL database and will issue SQL queries to perform dependency compression.
  *
  *      The rest of the variables are reserved for database configurations and setting the dependency table
  *      implementation.
@@ -98,9 +96,10 @@ public class AsyncPerformanceMain {
      * EDIT ZONE ******************************************************************************************************
      ******************************************************************************************************************/
 
+    // The dependency table implementation below will be used for all compressors except AsyncPgCompressor. If a runner
+    // uses AsyncPgCompressor, the dependency table implementation will automatically be set to DependencyTablePGImpl.
     public static final Class<?>    DEPENDENCY_TABLE_IMPLEMENTATION = DependencyTableImplV4.class;
 
-    public static final boolean     graphInDB   = false;
     public static final String      URL         = "jdbc:postgresql://127.0.0.1:5433/dataspread";
     public static final String      DBDRIVER    = "org.postgresql.Driver";
     public static final String      USERNAME    = "dataspreaduser";
@@ -123,7 +122,7 @@ public class AsyncPerformanceMain {
 
     // No need to include the test book here, just include the test parameters
     public static final AsyncBaseTest[] TESTS = {
-//            new TestCustomStructure(Paths.get("..", "EXCEL", "sample.xlsx")),
+            // new TestCustomStructure(Paths.get("..", "EXCEL", "sample.xlsx")),
             new TestRunningTotalDumb(10000),
     };
 
@@ -147,9 +146,16 @@ public class AsyncPerformanceMain {
     /******************************************************************************************************************/
 
     private static void basicSetup () {
-        EngineFactory.dependencyTableClazz = (graphInDB ? DependencyTablePGImpl.class : DEPENDENCY_TABLE_IMPLEMENTATION);
         SheetImpl.simpleModel = true;
         Util.createDirectory(OUT_PATH);
+    }
+
+    private static void setDependencyTableImpl (AsyncBaseTestRunner runner) {
+        if (runner.COMPRESSOR instanceof AsyncPgCompressor) {
+            EngineFactory.dependencyTableClazz = DependencyTablePGImpl.class;
+        } else {
+            EngineFactory.dependencyTableClazz = DEPENDENCY_TABLE_IMPLEMENTATION;
+        }
     }
 
     public static void main (String[] args) {
@@ -162,15 +168,18 @@ public class AsyncPerformanceMain {
                     // Setup
                     String runName = String.join("-", new String[]{ testTemplate.toString(), "round" + r });
                     AsyncBaseTestRunner runner = entry.getValue();
-                    System.out.println("\n" + Util.getCurrentTime() + ": " + entry.getKey() + "-" + runName + "\n");
+                    AsyncPerformanceMain.setDependencyTableImpl(runner);
+                    System.out.println("\n" + Util.getCurrentTime() + ": " + entry.getKey() + "-" + runName);
 
                     // Run the test
+                    System.out.println(Util.getCurrentTime() + ": Running test...");
                     runner.run(testTemplate.newTest());
+                    System.out.println(Util.getCurrentTime() + ": Done!");
 
                     // Output results
                     Path subDirectory = Paths.get(OUT_PATH.toString(), entry.getKey());
-                    Util.createDirectory(subDirectory);
-                    runner.metadata.writeStatsToFile(subDirectory.toString(), runName + ".txt");
+                    runner.dumpMetadata(subDirectory, Paths.get(runName + ".txt"));
+                    System.out.println(Util.getCurrentTime() + ": Results logged!");
 
                     // Clean up
                     System.gc();

@@ -1,17 +1,21 @@
 package networkcompression.runners;
 
+import networkcompression.compression.BaseCompressor;
+
+import networkcompression.utils.Util;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncSchedulerSimple;
 import org.zkoss.zss.model.impl.sys.formula.FormulaAsyncListener;
 import org.zkoss.zss.model.sys.formula.FormulaAsyncScheduler;
 import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 import org.zkoss.zss.model.sys.formula.DirtyManager;
-import networkcompression.compression.Compressable;
 import networkcompression.tests.AsyncBaseTest;
 import org.zkoss.zss.model.impl.CellImpl;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.SBook;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -22,15 +26,14 @@ import java.util.Set;
  */
 public abstract class AsyncBaseTestRunner implements FormulaAsyncListener {
 
+    public final BaseCompressor COMPRESSOR;
     public final boolean        PRIORITIZE;
-    public final Compressable   COMPRESSOR;
 
     public TestMetadata         metadata            = new TestMetadata();
-    public Set<CellRegion>      cellsToUpdateSet    = new HashSet<>();
-    public boolean              testStarted         = false;
-    public long                 updatedCells        = 0;
+    private Set<CellRegion>     cellsToUpdateSet    = new HashSet<>();
+    private boolean             testStarted         = false;
 
-    public AsyncBaseTestRunner (final boolean prioritize, final Compressable compressor) {
+    public AsyncBaseTestRunner (final boolean prioritize, final BaseCompressor compressor) {
         this.PRIORITIZE = prioritize;
         this.COMPRESSOR = compressor;
     }
@@ -48,9 +51,7 @@ public abstract class AsyncBaseTestRunner implements FormulaAsyncListener {
         testCase.getSheet().setSyncComputation(true);
         testCase.initSheet();
         this.extraSetup(testCase);
-        this.metadata.compStartTime = System.currentTimeMillis();
-        this.metadata.numberOfCellsToUpdate = this.COMPRESSOR.getCellsToUpdate(this, testCase);
-        this.metadata.compFinalTime = System.currentTimeMillis();
+        COMPRESSOR.runAll(this.metadata, testCase, this.cellsToUpdateSet);
         DirtyManagerLog.instance.init();
         CellImpl.disableDBUpdates =  true;
     }
@@ -106,6 +107,7 @@ public abstract class AsyncBaseTestRunner implements FormulaAsyncListener {
         try {
 
             // Setup async scheduler
+            this.reset();
             DirtyManager.dirtyManagerInstance.reset();
             FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerSimple();
             Thread asyncThread = new Thread(formulaAsyncScheduler);
@@ -129,10 +131,21 @@ public abstract class AsyncBaseTestRunner implements FormulaAsyncListener {
         } catch (InterruptedException e) { e.printStackTrace(); }
     }
 
+    public void dumpMetadata (Path dirName, Path fileName) {
+        Util.createDirectory(dirName);
+        this.metadata.writeStatsToFile(Util.joinPaths(dirName, fileName));
+    }
+
+    private void reset () {
+        this.metadata.reset();
+        cellsToUpdateSet = new HashSet<>();
+        testStarted = false;
+    }
+
     @Override
-    public void update(SBook book, SSheet sheet, CellRegion cellRegion, Object value, String formula) {
+    public void update (SBook book, SSheet sheet, CellRegion cellRegion, Object value, String formula) {
         if (this.testStarted) {
-            this.updatedCells++;
+            this.metadata.updatedCells++;
             this.cellsToUpdateSet.remove(cellRegion);
             if (this.cellsToUpdateSet.size() == 0) {
                 synchronized (this) {

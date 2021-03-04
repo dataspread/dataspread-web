@@ -1,9 +1,9 @@
 package networkcompression.runners;
 
-import java.nio.file.Paths;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.FileWriter;
+import java.nio.file.Path;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,22 +17,24 @@ public class TestMetadata {
     public List<String> curve = new ArrayList<>();
 
     public double   area = 0.0;
-    public boolean  isCorrect;
-    public long     touchedTime;
-    public long     compStartTime;
-    public long     compFinalTime;
-    public long     testStartTime;
-    public long     testFinalTime;
-    public long     updateCellStartTime;
-    public long     updateCellFinalTime;
-    public long     numberOfCellsToUpdate;
-    public long     startNumberOfDependents;
-    public long     finalNumberOfDependents;
+    public boolean  isCorrect = false;
+    public long     touchedTime = 0;
+    public long     updatedCells = 0;
+    public long     compStartTime = 0;
+    public long     compFinalTime = 0;
+    public long     testStartTime = 0;
+    public long     testFinalTime = 0;
+    public long     updateCellStartTime = 0;
+    public long     updateCellFinalTime = 0;
+    public long     numberOfCellsToUpdate = 0;
+    public long     startNumberOfDependents = 0;
+    public long     finalNumberOfDependents = 0;
 
-    public void writeStatsToFile (String dir, String filename) {
-        try (PrintWriter prw = new PrintWriter(new FileWriter(Paths.get(dir, filename).toString()))) {
+    public void writeStatsToFile (Path path) {
+        try (PrintWriter prw = new PrintWriter(new FileWriter(path.toFile()))) {
             prw.println("Report:\n\n"
                     + "Correct: "                           + isCorrect                                     + "\n"
+                    + "Touched time: "                      + touchedTime                                   + "\n"
                     + "Test start time: "                   + testStartTime                                 + "\n"
                     + "Test end time: "                     + testFinalTime                                 + "\n"
                     + "Total test time (ms): "              + (testFinalTime - testStartTime)               + "\n"
@@ -41,17 +43,34 @@ public class TestMetadata {
                     + "Compression start time: "            + compStartTime                                 + "\n"
                     + "Compression end time: "              + compFinalTime                                 + "\n"
                     + "Total compression time (ms): "       + (compFinalTime - compStartTime)               + "\n"
+                    + "Number of cells to update: "         + numberOfCellsToUpdate                         + "\n"
+                    + "Number of cells updated: "           + updatedCells                                  + "\n"
                     + "Update cell start time: "            + updateCellStartTime                           + "\n"
                     + "Update cell end time: "              + updateCellFinalTime                           + "\n"
                     + "Total time to update cells (ms): "   + (updateCellFinalTime - updateCellStartTime)   + "\n"
-                    + "Touched time: "                      + touchedTime                                   + "\n"
-                    + "Number of cells updated: "           + numberOfCellsToUpdate                         + "\n"
                     + "Area under curve: "                  + area                                          + "\n"
                     + "Curve: "                             + String.join("", curve)                + "\n"
             );
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void reset () {
+        curve = new ArrayList<>();
+        area = 0.0;
+        isCorrect = false;
+        touchedTime = 0;
+        updatedCells = 0;
+        compStartTime = 0;
+        compFinalTime = 0;
+        testStartTime = 0;
+        testFinalTime = 0;
+        updateCellStartTime = 0;
+        updateCellFinalTime = 0;
+        numberOfCellsToUpdate = 0;
+        startNumberOfDependents = 0;
+        finalNumberOfDependents = 0;
     }
 
 }

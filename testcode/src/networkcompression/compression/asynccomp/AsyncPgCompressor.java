@@ -1,133 +1,51 @@
-package networkcompression.compression;
+package networkcompression.compression.asynccomp;
 
-import networkcompression.runners.AsyncBaseTestRunner;
-import networkcompression.AsyncPerformanceMain;
+import networkcompression.utils.Util;
+
+import networkcompression.compression.BaseCompressor;
+import networkcompression.runners.TestMetadata;
 import networkcompression.tests.AsyncBaseTest;
-import org.zkoss.zss.model.sys.dependency.Ref;
 import org.model.AutoRollbackConnection;
 import org.postgresql.geometric.PGbox;
 import org.zkoss.zss.model.CellRegion;
-import networkcompression.utils.Util;
-import org.zkoss.zss.model.SSheet;
 import org.model.DBHandler;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.ResultSet;
 import java.sql.Types;
-import java.util.*;
 
-/**
- *
- * A class for performing the dependency compression algorithm described in the Anti-Freeze paper.
- */
-public class AsyncCompressor implements Compressable {
+import java.util.ArrayList;
+import java.util.List;
+
+public class AsyncPgCompressor extends AsyncBaseCompressor {
 
     private final int COMPRESSION_CONSTANT;
 
-    public AsyncCompressor (final int compressionConstant) {
+    public AsyncPgCompressor (final int compressionConstant) {
+        this.COMPRESSION_CONSTANT = compressionConstant;
+    }
+
+    private AsyncPgCompressor (TestMetadata metadata, AsyncBaseTest test, final int compressionConstant) {
+        super(metadata, test);
         this.COMPRESSION_CONSTANT = compressionConstant;
     }
 
     @Override
-    public int getCellsToUpdate (AsyncBaseTestRunner testRunner, AsyncBaseTest test) {
-        SSheet sheet = test.getSheet();
-        Collection<CellRegion> sheetCells = Util.getSheetCells(sheet, test.getRegion());
-        ArrayList<Ref> dependencies = new ArrayList<>(sheet.getDependencyTable().getDependents(test.getCellToUpdate()));
-        if (AsyncPerformanceMain.graphInDB) {
-            int[] depSizes = this.compressPGGraphNode(
-                    sheet.getBook().getBookName(),
-                    sheet.getSheetName(),
-                    new CellRegion(0, 0)
-            );
-            testRunner.metadata.startNumberOfDependents = depSizes[0];
-            testRunner.metadata.finalNumberOfDependents = depSizes[1];
-        } else {
-            testRunner.metadata.startNumberOfDependents = dependencies.size();
-            this.compressRefDependencies(dependencies);
-            testRunner.metadata.finalNumberOfDependents = dependencies.size();
-            sheet.getDependencyTable().addPreDep(test.getCellToUpdate(), new HashSet<>(dependencies));
-        }
-        dependencies.add(test.getCellToUpdate());
-        int cellsToUpdate = 0;
-        for (CellRegion sheetCell : sheetCells) {
-            boolean matched = false;
-            for (Ref dependency : dependencies) {
-                CellRegion reg = new CellRegion(dependency);
-                if (reg.contains(sheetCell)) {
-                    cellsToUpdate++;
-                    matched = true;
-                }
-            }
-            if (matched) {
-                testRunner.cellsToUpdateSet.add(sheetCell);
-            }
-        }
-
-        return cellsToUpdate;
+    protected BaseCompressor newCompressor (TestMetadata metadata, AsyncBaseTest testCase) {
+        return new AsyncPgCompressor(metadata, testCase, this.COMPRESSION_CONSTANT);
     }
-
-    private int[] compressPGGraphNode(String bookName, String sheetname, CellRegion cellRegion) {
-        int startSize = -1, finalSize = -1;
-        Util.connectToDBIfNotConnected();
-        try (AutoRollbackConnection autoRollbackConnection = DBHandler.instance.getConnection()) {
-            PGbox region = this.cellRegionToPGbox(cellRegion);
-            ArrayList<CellRegion> deps = this.getUncompressedDependents(autoRollbackConnection, bookName, sheetname, region);
-            startSize = deps.size();
-            this.compressCellRegionDependencies(deps);
-            finalSize = deps.size();
-            this.deleteUncompressedDependents(autoRollbackConnection, bookName, sheetname, region);
-            this.insertCompressedDependents(autoRollbackConnection, bookName, sheetname, region, deps);
-            autoRollbackConnection.commit();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return new int[]{ startSize, finalSize };
-    }
-
-    private void compressRefDependencies (ArrayList<Ref> dependencies) {
-        while (dependencies.size() > this.COMPRESSION_CONSTANT) {
-            //System.out.println("dependencies.size() " + dependencies.size());
-            int best_i = 0, best_j = 0, best_area = Integer.MAX_VALUE;
-            Ref best_bounding_box = null;
-            for (int i = 0; i < dependencies.size() - 1; i++) {
-                for (int j = i + 1; j < dependencies.size(); j++) {
-                    Ref bounding = dependencies.get(i).getBoundingBox(dependencies.get(j));
-                    int new_area = bounding.getCellCount() -
-                            dependencies.get(i).getCellCount() - dependencies.get(j).getCellCount();
-                    Ref overlap = dependencies.get(i).getOverlap(dependencies.get(j));
-                    if (overlap != null)
-                        new_area += overlap.getCellCount();
-                    if (new_area==0) {
-                        best_area = new_area;
-                        best_i = i;
-                        best_j = j;
-                        best_bounding_box = bounding;
-                        i=dependencies.size();
-                        break;
-                    }
-
-
-                    if (new_area < best_area) {
-                        best_area = new_area;
-                        best_i = i;
-                        best_j = j;
-                        best_bounding_box = bounding;
-                    }
-
-                    if (best_area == 0) {
-                        break;
-                    }
-                }
-                if (best_area == 0) {
-                    break;
-                }
-            }
-            // Merge i,j
-            dependencies.remove(best_j);
-            dependencies.remove(best_i);
-            dependencies.add(best_bounding_box);
-        }
+    @Override
+    protected void compress () {
+        super.getMetadata().compStartTime = System.currentTimeMillis();
+        int[] depSizes = this.compressPGGraphNode(
+                super.getTest().getBook().getBookName(),
+                super.getTest().getSheet().getSheetName(),
+                new CellRegion(super.getTest().getCellToUpdate())
+        );
+        super.getMetadata().compFinalTime = System.currentTimeMillis();
+        super.getMetadata().startNumberOfDependents = depSizes[0];
+        super.getMetadata().finalNumberOfDependents = depSizes[1];
     }
 
     private PGbox cellRegionToPGbox (CellRegion cellRegion) {
@@ -149,7 +67,25 @@ public class AsyncCompressor implements Compressable {
         );
     }
 
-    private void compressCellRegionDependencies (ArrayList<CellRegion> dependencies) {
+    private int[] compressPGGraphNode(String bookName, String sheetname, CellRegion cellRegion) {
+        int startSize = -1, finalSize = -1;
+        Util.connectToDBIfNotConnected();
+        try (AutoRollbackConnection autoRollbackConnection = DBHandler.instance.getConnection()) {
+            PGbox region = this.cellRegionToPGbox(cellRegion);
+            List<CellRegion> deps = this.getUncompressedDependents(autoRollbackConnection, bookName, sheetname, region);
+            startSize = deps.size();
+            this.compressCellRegionDependencies(deps);
+            finalSize = deps.size();
+            this.deleteUncompressedDependents(autoRollbackConnection, bookName, sheetname, region);
+            this.insertCompressedDependents(autoRollbackConnection, bookName, sheetname, region, deps);
+            autoRollbackConnection.commit();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return new int[]{ startSize, finalSize };
+    }
+
+    private void compressCellRegionDependencies (List<CellRegion> dependencies) {
         while (dependencies.size() > this.COMPRESSION_CONSTANT) {
             int best_i = 0, best_j = 0, best_area = Integer.MAX_VALUE;
             CellRegion best_bounding_box = null;
@@ -251,7 +187,7 @@ public class AsyncCompressor implements Compressable {
         }
     }
 
-    private void insertCompressedDependents (AutoRollbackConnection autoRollbackConnection, String bookName, String sheetname, PGbox pgBox, ArrayList<CellRegion> deps) {
+    private void insertCompressedDependents (AutoRollbackConnection autoRollbackConnection, String bookName, String sheetname, PGbox pgBox, List<CellRegion> deps) {
         String insertSql = "INSERT INTO dependency VALUES (?,?,?,?,?,?,?)";
         try (PreparedStatement stmtInsert = autoRollbackConnection.prepareStatement(insertSql)) {
             stmtInsert.setString(1, bookName);
@@ -268,5 +204,4 @@ public class AsyncCompressor implements Compressable {
             e.printStackTrace();
         }
     }
-
 }

@@ -1,9 +1,15 @@
 package networkcompression.tests;
 
+import networkcompression.utils.Util;
+
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.SBook;
+
+import java.util.Collection;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The parent class for all tests. All subclasses should have at
@@ -25,14 +31,39 @@ public abstract class AsyncBaseTest {
     }
 
     /**
+     * @return The book associated with this test case.
+     */
+    public SBook getBook () { return this.book; }
+
+    /**
+     * @return The sheet associated with this test case.
+     */
+    public SSheet getSheet () { return this.sheet; }
+
+    /**
      * @return True if the results of this test case are correct
      * after `updateCell()` is called.
      */
     public boolean verify () { return true; }
 
     /**
-     * Calls `getValue()` on all cells used in this test case to
-     * ensure that lazy computation is triggered for them.
+     * @return A list that contains all dependents of this test
+     * case's updated cell.
+     */
+    public List<Ref> getDependencies () {
+        return new ArrayList<>(this.getSheet().getDependencyTable().getDependents(this.getCellToUpdate()));
+    }
+
+    /**
+     * @return The cells that this test case uses.
+     */
+    public Collection<CellRegion> getCells() {
+        return Util.getSheetCells(this.getSheet(), this.getRegion());
+    }
+
+    /**
+     * Calls `getValue()` on all cells used in this test case
+     * to ensure that lazy computation is triggered for them.
      */
     public void touchAll () {
         CellRegion region = this.getRegion();
@@ -42,16 +73,6 @@ public abstract class AsyncBaseTest {
             }
         }
     }
-
-    /**
-     * @return The book associated with this test case.
-     */
-    public SBook getBook () { return this.book; }
-
-    /**
-     * @return The sheet associated with this test case.
-     */
-    public SSheet getSheet () { return this.sheet; }
 
     /**
      * This method should initialize `sheet` with a particular

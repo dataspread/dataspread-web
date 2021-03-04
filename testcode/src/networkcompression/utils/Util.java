@@ -23,6 +23,21 @@ import java.util.*;
  */
 public class Util {
 
+    public static String getCurrentTime () {
+        return (new SimpleDateFormat("dd-MM-yyyy HH:mm:ss")).format(new Date());
+    }
+
+    public static <K, V> AbstractMap.SimpleImmutableEntry<K, V> pair (final K key, final V val) {
+        return new AbstractMap.SimpleImmutableEntry<>(key, val);
+    }
+
+    public static <T> List<T> addAndReturn (List<T> lst, T item) {
+        if (lst != null) {
+            lst.add(item);
+        }
+        return lst;
+    }
+
     public static Collection<CellRegion> getSheetCells (SSheet sheet, CellRegion region) {
         return sheet.getCells(region)
             .stream()
@@ -39,14 +54,6 @@ public class Util {
         }
     }
 
-    public static String getCurrentTime () {
-        return (new SimpleDateFormat("dd-MM-yyyy HH:mm:ss")).format(new Date());
-    }
-
-    public static <K, V> AbstractMap.SimpleImmutableEntry<K, V> pair (final K key, final V val) {
-        return new AbstractMap.SimpleImmutableEntry<>(key, val);
-    }
-
     public static void createDirectory (final Path path) {
         try {
             if (!Files.exists(path)) {
@@ -56,6 +63,18 @@ public class Util {
             System.out.println("Error creating directory. Exiting...");
             System.exit(0);
         }
+    }
+
+    public static Path joinPaths (Path... paths) {
+        if (paths.length != 0) {
+            String first = paths[0].toString();
+            String[] rest = new String[paths.length - 1];
+            for (int i = 1; i < paths.length; i++) {
+                rest[i] = paths[i].toString();
+            }
+            return Paths.get(first, rest);
+        }
+        return Paths.get("");
     }
 
     public static <K, V> LinkedHashMap<K, V> pairsToMap (final List<AbstractMap.SimpleImmutableEntry<K, V>> list) {
