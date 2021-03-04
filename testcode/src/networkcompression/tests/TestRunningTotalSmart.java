@@ -23,7 +23,7 @@ public class TestRunningTotalSmart extends AsyncBaseTest {
     }
 
     @Override
-    public boolean verify() {
+    public boolean verify () {
         try {
             Object value_raw = sheet.getCell(ROWS - 1, 1).getValue();
             double value = (double) value_raw;
@@ -34,7 +34,7 @@ public class TestRunningTotalSmart extends AsyncBaseTest {
     }
 
     @Override
-    public void initSheet() {
+    public void initSheet () {
         Random random = new Random(7);
 
         sheet.setDelayComputation(true);
@@ -53,18 +53,18 @@ public class TestRunningTotalSmart extends AsyncBaseTest {
     }
 
     @Override
-    public Ref getCellToUpdate() { return sheet.getCell(0, 0).getRef(); }
+    public Ref getCellToUpdate () { return sheet.getCell(0, 0).getRef(); }
 
     @Override
-    public void updateCell() { sheet.getCell(0, 0).setValue(20); }
+    public void updateCell () { sheet.getCell(0, 0).setValue(20); }
 
     @Override
-    public CellRegion getRegion() { return new CellRegion(0, 0, ROWS - 1, 1); }
+    public CellRegion getRegion () { return new CellRegion(0, 0, ROWS - 1, 1); }
 
     @Override
-    public AsyncBaseTest newTest() { return new TestRunningTotalSmart(Util.createEmptyBook(), ROWS); }
+    public AsyncBaseTest newTest () { return new TestRunningTotalSmart(Util.createEmptyBook(), ROWS); }
 
     @Override
-    public String toString() { return "TestRunningTotalSmart" + ROWS; }
+    public String toString () { return "TestRunningTotalSmart" + ROWS; }
 
 }

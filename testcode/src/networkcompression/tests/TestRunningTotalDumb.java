@@ -26,7 +26,7 @@ public class TestRunningTotalDumb extends AsyncBaseTest {
     }
 
     @Override
-    public void initSheet() {
+    public void initSheet () {
         Random random = new Random(7);
 
         sheet.setDelayComputation(true);
@@ -44,10 +44,10 @@ public class TestRunningTotalDumb extends AsyncBaseTest {
     }
 
     @Override
-    public Ref getCellToUpdate() { return sheet.getCell(0, 0).getRef(); }
+    public Ref getCellToUpdate () { return sheet.getCell(0, 0).getRef(); }
 
     @Override
-    public void updateCell() { sheet.getCell(0, 0).setValue(20); }
+    public void updateCell () { sheet.getCell(0, 0).setValue(20); }
 
     @Override
     public CellRegion getRegion () { return new CellRegion(0, 0, ROWS - 1, 1); }

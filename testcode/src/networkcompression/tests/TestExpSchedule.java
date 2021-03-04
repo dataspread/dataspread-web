@@ -26,7 +26,7 @@ public class TestExpSchedule extends AsyncBaseTest {
     }
 
     @Override
-    public void initSheet() {
+    public void initSheet () {
         Random random = new Random(7);
 
         sheet.setDelayComputation(true);
@@ -48,17 +48,17 @@ public class TestExpSchedule extends AsyncBaseTest {
     }
 
     @Override
-    public Ref getCellToUpdate() { return sheet.getCell(0, 0).getRef(); }
+    public Ref getCellToUpdate () { return sheet.getCell(0, 0).getRef(); }
 
     @Override
-    public void updateCell() { sheet.getCell(0, 0).setValue(20); }
+    public void updateCell () { sheet.getCell(0, 0).setValue(20); }
 
     @Override
-    public CellRegion getRegion() { return new CellRegion(0, 0, CELLS_IN_COLUMN_A, 1); }
+    public CellRegion getRegion () { return new CellRegion(0, 0, CELLS_IN_COLUMN_A, 1); }
 
     @Override
-    public AsyncBaseTest newTest() { return new TestExpSchedule(Util.createEmptyBook(), CELLS_IN_COLUMN_A, CELLS_IN_COLUMN_B); }
+    public AsyncBaseTest newTest () { return new TestExpSchedule(Util.createEmptyBook(), CELLS_IN_COLUMN_A, CELLS_IN_COLUMN_B); }
 
     @Override
-    public String toString() { return "TestExpSchedule-(" + CELLS_IN_COLUMN_A + ", " + CELLS_IN_COLUMN_B + ")"; }
+    public String toString () { return "TestExpSchedule-(" + CELLS_IN_COLUMN_A + ", " + CELLS_IN_COLUMN_B + ")"; }
 }

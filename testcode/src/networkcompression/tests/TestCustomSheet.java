@@ -34,11 +34,11 @@ public class TestCustomSheet extends AsyncBaseTest {
 
     private final Path PATH;
 
-    public TestCustomSheet(final Path pathToExcelFile) {
+    public TestCustomSheet (final Path pathToExcelFile) {
         PATH = pathToExcelFile;
     }
 
-    private TestCustomSheet(SBook book, final Path pathToExcelFile) {
+    private TestCustomSheet (SBook book, final Path pathToExcelFile) {
         super(book);
         PATH = pathToExcelFile;
     }

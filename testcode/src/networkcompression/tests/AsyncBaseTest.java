@@ -1,17 +1,16 @@
 package networkcompression.tests;
 
-import networkcompression.utils.Util;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.SBook;
 
 /**
- *
- * The parent class for all async test cases. All subclasses should define
- * at least two constructors. One constructor should initialize all members
- * except the test book. The other constructor should initialize all members
- * and the test book.
+ * The parent class for all tests. All subclasses should have at
+ * least two constructors. One constructor should be public and
+ * initialize all test parameters except the test book. The other
+ * constructor should be private and initialize all members with
+ * the test book.
  */
 public abstract class AsyncBaseTest {
 
@@ -67,14 +66,12 @@ public abstract class AsyncBaseTest {
     /**
      * This method should return the cell that this test case
      * will update for dependency identification.
-     *
      */
     public abstract Ref getCellToUpdate ();
 
     /**
      * This method should update the cell returned by
      * `getCellToUpdate()`.
-     *
      */
     public abstract void updateCell ();
 

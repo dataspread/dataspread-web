@@ -48,9 +48,9 @@ public abstract class AsyncBaseTestRunner implements FormulaAsyncListener {
         testCase.getSheet().setSyncComputation(true);
         testCase.initSheet();
         this.extraSetup(testCase);
-        this.metadata.depStartTime = System.currentTimeMillis();
+        this.metadata.compStartTime = System.currentTimeMillis();
         this.metadata.numberOfCellsToUpdate = this.COMPRESSOR.getCellsToUpdate(this, testCase);
-        this.metadata.depFinalTime = System.currentTimeMillis();
+        this.metadata.compFinalTime = System.currentTimeMillis();
         DirtyManagerLog.instance.init();
         CellImpl.disableDBUpdates =  true;
     }
@@ -66,7 +66,6 @@ public abstract class AsyncBaseTestRunner implements FormulaAsyncListener {
         this.metadata.updateCellStartTime = System.currentTimeMillis();
         testCase.updateCell();
         this.metadata.updateCellFinalTime = System.currentTimeMillis();
-        this.metadata.totlTimeToUpdateCells = this.metadata.updateCellFinalTime - this.metadata.updateCellStartTime;
         FormulaAsyncSchedulerSimple.started = true;
         this.runAfter(testCase);
         testCase.touchAll();

@@ -124,7 +124,7 @@ public class AsyncPerformanceMain {
     // No need to include the test book here, just include the test parameters
     public static final AsyncBaseTest[] TESTS = {
 //            new TestCustomStructure(Paths.get("..", "EXCEL", "sample.xlsx")),
-            new TestRunningTotalDumb(10),
+            new TestRunningTotalDumb(10000),
     };
 
     // Keys should serve as valid directory names
