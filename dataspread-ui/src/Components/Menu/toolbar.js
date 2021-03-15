@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import {Dropdown, Menu} from 'semantic-ui-react'
 import ModalAboutUs from './about'
 import ModalOpenFile from './load'
+import ModalCloseFile from './close'
 import ModalImportFile from './import'
 import HierarchiForm from ".././HierarchiForm";
 
@@ -42,6 +43,7 @@ export default class Toolbar extends Component {
                         <Dropdown.Item>New</Dropdown.Item>
                         <ModalOpenFile inMenu={true} onSelectFile={this.props.onSelectFile}/>
                         <ModalImportFile inMenu={true}/>
+                        <ModalCloseFile inMenu={true} onSelectFile={this.props.onSelectFile}/>
                     </Dropdown.Menu>
                 </Dropdown>
 

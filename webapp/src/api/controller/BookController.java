@@ -3,6 +3,7 @@ package api.controller;
 import api.Authorization;
 import api.JsonWrapper;
 import com.google.common.collect.ImmutableMap;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
@@ -77,20 +78,31 @@ public class BookController {
     public HashMap<String, Object> deleteBook(@RequestHeader("auth-token") String authToken,
                                               @RequestBody String json) {
         JSONObject obj = new JSONObject(json);
-        String bookId = (String) obj.get("bookId");
-        if (!Authorization.ownerBook(bookId, authToken)){
-            JsonWrapper.generateError("Permission denied for deleting this book");
-        }
-        BookImpl.deleteBook(null, bookId);
-        String query = "DELETE FROM user_books WHERE booktable = ?";
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, bookId);
-            statement.execute();
-            connection.commit();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return JsonWrapper.generateError(e.getMessage());
+        JSONArray bookIds = (JSONArray) obj.get("bookId");
+
+        /*
+
+        */
+        for (int i = 0; i < bookIds.length(); i++) {
+            // Authorization for each individual book
+            // if (!Authorization.ownerBook(bookId, authToken)){
+            String bookId = bookIds.getString(i);
+
+            if (!Authorization.ownerBook(bookId, authToken)){
+                JsonWrapper.generateError("Permission denied for deleting this book");
+            }
+
+            BookImpl.deleteBook(null, bookId);
+            String query = "DELETE FROM user_books WHERE booktable = ?";
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(query)) {
+                statement.setString(1, bookId);
+                statement.execute();
+                connection.commit();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return JsonWrapper.generateError(e.getMessage());
+            }
         }
         template.convertAndSend(getCallbackPath(), "");
         return JsonWrapper.generateJson(null);
