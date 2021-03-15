@@ -1,7 +1,7 @@
 package org.zkoss.zss.model.sys.formula;
 
+import org.zkoss.util.Pair;
 import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
 import java.util.*;
@@ -32,7 +32,7 @@ public class DirtyManagerLog {
 
     public void init()
     {
-        dirtyRecordLog = Collections.synchronizedList(new ArrayList());
+        dirtyRecordLog = Collections.synchronizedList(new ArrayList<>());
     }
 
     public long getDirtyTime(CellRegion cellRegion)
@@ -87,6 +87,15 @@ public class DirtyManagerLog {
 
     public double groupPrint(Collection<CellRegion> sheetCells,
                              long controlReturnedTime, long initTime, boolean getAreaUnderCurve) {
+        List<Pair<Long, Integer> > coords = new ArrayList<>();
+        double area = getAreaUnderCurve(sheetCells, controlReturnedTime, initTime, coords);
+        for (Pair<Long, Integer> p : coords) {
+            System.out.println(p.getX() + "\t" + p.getY());
+        }
+        return area;
+    }
+
+    public double getAreaUnderCurve(Collection<CellRegion> sheetCells, long controlReturnedTime, long initTime, List<Pair<Long, Integer> > coords) {
         boolean firstNotDone = true;
         SortedMap<Long, Integer> dirtyCellsCounts = new TreeMap<>();
         Set<CellRegion> dirtyCells = new HashSet<>();
@@ -94,7 +103,6 @@ public class DirtyManagerLog {
         long lastTimestamp = -1;
 
         for (DirtyRecordEntry e : dirtyRecordLog) {
-            //System.out.println("["+e.timestamp+"] "+(e.action == Action.MARK_DIRTY ? "DIRTY" : "CLEAN")+" "+e.cellRegion);
             if (e.timestamp != lastTimestamp && lastTimestamp != -1) {
                 dirtyCellsCounts.put(e.timestamp, dirtyCells.size());
             }
@@ -131,34 +139,28 @@ public class DirtyManagerLog {
                 prevNumDirty = d.getValue();
             }
             if (d.getKey() > controlReturnedTime) {
-                if (getAreaUnderCurve) {
-                    // calculate area
-                    if (prevTime == controlReturnedTime){
-                        prevNumDirty = d.getValue();
-                        prevTime = d.getKey();
-                        continue;
-                    }
-                    double barWidth = d.getKey() - prevTime;
-                    prevTime = d.getKey();
-                    areaUnderCurve += barWidth * prevNumDirty;
+                if (prevTime == controlReturnedTime){
                     prevNumDirty = d.getValue();
+                    prevTime = d.getKey();
+                    continue;
                 }
+                double barWidth = d.getKey() - prevTime;
+                prevTime = d.getKey();
+                areaUnderCurve += barWidth * prevNumDirty;
+                prevNumDirty = d.getValue();
                 if (firstNotDone) {
-                    System.out.println(0 + "\t" + sheetCells.size());
-                    System.out.println(controlReturnedTime - initTime + "\t" + sheetCells.size());
-                    System.out.println(controlReturnedTime - initTime + "\t" + d.getValue());
+                    coords.add(new Pair<>(0L, sheetCells.size()));
+                    coords.add(new Pair<>(controlReturnedTime - initTime, sheetCells.size()));
+                    coords.add(new Pair<>(controlReturnedTime - initTime, d.getValue()));
                     firstNotDone = false;
                 }
-                System.out.println((d.getKey() - initTime) + "\t" + d.getValue());
+                coords.add(new Pair<>(d.getKey() - initTime, d.getValue()));
             }
         }
-        if (getAreaUnderCurve)
-            return areaUnderCurve;
-        else
-            return 0;
+        return areaUnderCurve;
     }
 
     public void print() {
-        dirtyRecordLog.stream().forEach(System.out::println);
+        dirtyRecordLog.forEach(System.out::println);
     }
 }
