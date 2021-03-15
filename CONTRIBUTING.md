@@ -13,7 +13,10 @@ git clone https://github.com/USERNAME/dataspread-web.git
 
 # Keep Your Fork Synced
 
-While you are working on your local repo, you also need to keep your fork synced and resolve conflicts locally. Please check out the [Keep your fork synced](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo) and [Sync a fork](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/syncing-a-fork) for more information.
+While you are working on your local repo, you also need to keep your fork synced and resolve conflicts locally. 
+Please check out the [Keep your fork synced](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo) 
+and [Sync a fork](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/syncing-a-fork) 
+for more information.
 
 # Submitting a Pull Request
 
@@ -29,3 +32,6 @@ by looking at the "File Changes" diff view on the pull request page.
 Once the pull request is submitted, the maintainer will get notified and review your pull request. 
 They may ask for additional changes or comment on the PR. 
 You can always make updates to your pull request after submitting it.
+
+# Clean up your commits for a pull request
+One pull request includes the full commit history. However, some commits are only for test purposes and do not contribute to the final commit. We encourage you to check out this [doc](https://christoph-rumpel.com/2015/05/clean-up-your-commits-for-a-pull-request) to see how to submit a clean pull request with only meaningful commits.
