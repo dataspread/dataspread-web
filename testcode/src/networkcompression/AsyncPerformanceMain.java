@@ -124,10 +124,10 @@ public class AsyncPerformanceMain {
         )
     );
 
-    // No need to include the test book here, just include the test parameters
-    public static final AsyncBaseTest[] TESTS = {
-            new TestRealWorldSheet(Paths.get("..", "EXCEL", "sample.xlsx")),
-            new TestRunningTotalDumb(10000),
+    // List the factories of the tests needed
+    public static final AsyncTestFactory[] TESTS = {
+            //TestRealWorldSheet.getFactory(Paths.get("..", "EXCEL", "sample.xlsx")),
+            TestRunningTotalSlow.getFactory(3000),
     };
 
     // Keys should also be valid directory names
@@ -166,18 +166,18 @@ public class AsyncPerformanceMain {
         LocalDateTime start = LocalDateTime.now();
         AsyncPerformanceMain.basicSetup();
         for (int r = 0; r < ROUNDS; r++) {
-            for (AsyncBaseTest testTemplate : TESTS) {
+            for (AsyncTestFactory testFactory : TESTS) {
                 for (Map.Entry<String, AsyncBaseTestRunner> entry : SCHEDULE.entrySet()) {
 
                     // Setup
-                    String runName = String.join("-", new String[]{ testTemplate.toString(), "round" + r });
+                    String runName = String.join("-", new String[]{ testFactory.toString(), "round" + r });
                     AsyncBaseTestRunner runner = entry.getValue();
                     AsyncPerformanceMain.setDependencyTableImpl(runner);
                     System.out.println("\n" + Util.getCurrentTime() + ": " + entry.getKey() + "-" + runName);
 
                     // Run the test
                     System.out.println(Util.getCurrentTime() + ": Running test...");
-                    runner.run(testTemplate.newTest());
+                    runner.run(testFactory.createTest());
                     System.out.println(Util.getCurrentTime() + ": Done!");
 
                     // Output results

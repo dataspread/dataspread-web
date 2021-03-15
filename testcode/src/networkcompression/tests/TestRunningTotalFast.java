@@ -5,7 +5,7 @@ import org.zkoss.zss.model.sys.dependency.Ref;
 
 import java.util.Random;
 
-public class TestRate extends AsyncBaseTest {
+public class TestRunningTotalFast extends AsyncBaseTest {
 
     private final int rows;
     private int answer;
@@ -14,34 +14,37 @@ public class TestRate extends AsyncBaseTest {
         return new AsyncTestFactory() {
             @Override
             public AsyncBaseTest createTest() {
-                return new TestRate(rows);
+                return new TestRunningTotalFast(rows);
             }
 
             @Override
             public String toString() {
-                return "TestRate" + rows;
+                return "TestRunningTotalFast" + rows;
             }
         };
     }
 
-    public TestRate(final int rows) {
+    public TestRunningTotalFast(final int rows) {
         super();
         this.rows = rows;
     }
 
     @Override
     public void init() {
+        answer = 20;
+
         Random random = new Random(7);
 
         sheet.setDelayComputation(true);
 
         sheet.getCell(0, 0).setValue(random.nextInt(1000) + 100);
+        sheet.getCell(0, 1).setFormulaValue("A1");
 
-        for (int i = 0; i < rows; i++) {
+        for (int i = 1; i < rows; i++) {
             int num = random.nextInt(1000);
-            sheet.getCell(i, 1).setValue(num);
-            sheet.getCell(i, 2).setFormulaValue("A1 * B" + (i + 1));
-            answer = 20 * num;
+            sheet.getCell(i, 0).setValue(num);
+            sheet.getCell(i, 1).setFormulaValue("A" + (i + 1) + " + B" + (i));
+            answer += num;
         }
 
         sheet.setDelayComputation(false);
@@ -51,7 +54,7 @@ public class TestRate extends AsyncBaseTest {
     public void touchAll() {
         double result = 0.0;
         for (int i = 0; i < rows; i++) {
-            Object v = sheet.getCell(i, 2).getValue();
+            Object v = sheet.getCell(i, 1).getValue();
             result += (double) v;
         }
         System.out.println(result);
@@ -60,7 +63,7 @@ public class TestRate extends AsyncBaseTest {
     @Override
     public boolean verify() {
         try {
-            Object value_raw = sheet.getCell(rows - 1, 2).getValue();
+            Object value_raw = sheet.getCell(rows - 1, 1).getValue();
             double value = (double) value_raw;
             return Math.abs(value - answer) <= 1e-6;
         } catch (Exception e) {
@@ -80,7 +83,7 @@ public class TestRate extends AsyncBaseTest {
 
     @Override
     public CellRegion getRegion() {
-        return new CellRegion(0, 0, rows - 1, 2);
+        return new CellRegion(0, 0, rows - 1, 1);
     }
 
 }

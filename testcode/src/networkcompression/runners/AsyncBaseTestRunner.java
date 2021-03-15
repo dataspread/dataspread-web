@@ -20,19 +20,18 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- *
  * The parent class for all Async test runners.
  */
 public abstract class AsyncBaseTestRunner implements FormulaAsyncListener {
 
     public final BaseCompressor COMPRESSOR;
-    public final boolean        PRIORITIZE;
+    public final boolean PRIORITIZE;
 
-    public TestMetadata         metadata            = new TestMetadata();
-    private Set<CellRegion>     cellsToUpdateSet    = new HashSet<>();
-    private boolean             testStarted         = false;
+    public TestMetadata metadata;
+    private Set<CellRegion> cellsToUpdateSet;
+    private boolean testStarted;
 
-    public AsyncBaseTestRunner (final boolean prioritize, final BaseCompressor compressor) {
+    public AsyncBaseTestRunner(final boolean prioritize, final BaseCompressor compressor) {
         this.PRIORITIZE = prioritize;
         this.COMPRESSOR = compressor;
     }
@@ -43,16 +42,16 @@ public abstract class AsyncBaseTestRunner implements FormulaAsyncListener {
      *
      * @param testCase
      */
-    protected void runSetup (final AsyncBaseTest testCase) {
+    protected void runSetup(final AsyncBaseTest testCase) {
         CellImpl.disableDBUpdates = false;
         this.runBefore(testCase);
         FormulaAsyncScheduler.updateVisibleMap(new HashMap<>());
         testCase.getSheet().setSyncComputation(true);
         testCase.init();
-        this.extraSetup(testCase);
+        this.runAfterInit(testCase);
         COMPRESSOR.runAll(this.metadata, testCase, this.cellsToUpdateSet);
         DirtyManagerLog.instance.init();
-        CellImpl.disableDBUpdates =  true;
+        CellImpl.disableDBUpdates = true;
     }
 
     /**
@@ -61,16 +60,17 @@ public abstract class AsyncBaseTestRunner implements FormulaAsyncListener {
      *
      * @param testCase
      */
-    protected void runTest (final AsyncBaseTest testCase) {
+    protected void runTest(final AsyncBaseTest testCase) {
         this.testStarted = true;
         this.metadata.updateCellStartTime = System.currentTimeMillis();
         testCase.updateCell();
         this.metadata.updateCellFinalTime = System.currentTimeMillis();
         FormulaAsyncSchedulerSimple.started = true;
-        this.runAfter(testCase);
+        this.runAfterUpdate(testCase);
         testCase.touchAll();
         this.metadata.touchedTime = System.currentTimeMillis();
         this.metadata.isCorrect = testCase.verify();
+        this.runAfter(testCase);
     }
 
     /**
@@ -79,7 +79,8 @@ public abstract class AsyncBaseTestRunner implements FormulaAsyncListener {
      *
      * @param testCase
      */
-    protected void runBefore (final AsyncBaseTest testCase) { }
+    protected void runBefore(final AsyncBaseTest testCase) {
+    }
 
     /**
      * This method will be run directly after sheet initialization
@@ -87,7 +88,16 @@ public abstract class AsyncBaseTestRunner implements FormulaAsyncListener {
      *
      * @param testCase
      */
-    protected void extraSetup (final AsyncBaseTest testCase) { }
+    protected void runAfterInit(final AsyncBaseTest testCase) {
+    }
+
+    /**
+     * This method will be run after the cell has been updated.
+     *
+     * @param testCase
+     */
+    protected void runAfterUpdate(final AsyncBaseTest testCase) {
+    }
 
     /**
      * This method will be run after the default testing steps have
@@ -95,14 +105,15 @@ public abstract class AsyncBaseTestRunner implements FormulaAsyncListener {
      *
      * @param testCase
      */
-    protected void runAfter (final AsyncBaseTest testCase) {}
+    protected void runAfter(final AsyncBaseTest testCase) {
+    }
 
     /**
      * Runs the given test case.
      *
      * @param testCase
      */
-    public void run (final AsyncBaseTest testCase) {
+    public void run(final AsyncBaseTest testCase) {
         try {
 
             // Setup async scheduler
@@ -117,32 +128,36 @@ public abstract class AsyncBaseTestRunner implements FormulaAsyncListener {
             // Perform the test
             this.metadata.testStartTime = System.currentTimeMillis();
             this.runSetup(testCase);
-            this.runTest (testCase);
+            this.runTest(testCase);
             this.metadata.testFinalTime = System.currentTimeMillis();
 
             // Wait for the test to finish
             formulaAsyncScheduler.shutdown();
-            while (!FormulaAsyncSchedulerSimple.isDead) { Thread.sleep(10); }
+            while (!FormulaAsyncSchedulerSimple.isDead) {
+                Thread.sleep(10);
+            }
             FormulaAsyncSchedulerSimple.started = false;
-            FormulaAsyncSchedulerSimple.isDead  = false;
+            FormulaAsyncSchedulerSimple.isDead = false;
             asyncThread.join();
 
-        } catch (InterruptedException e) { e.printStackTrace(); }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
-    public void dumpMetadata (Path dirName, Path fileName) {
+    public void dumpMetadata(Path dirName, Path fileName) {
         Util.createDirectory(dirName);
         this.metadata.writeStatsToFile(Util.joinPaths(dirName, fileName));
     }
 
-    private void reset () {
-        this.metadata.reset();
+    private void reset() {
+        this.metadata = new TestMetadata();
         cellsToUpdateSet = new HashSet<>();
         testStarted = false;
     }
 
     @Override
-    public void update (SBook book, SSheet sheet, CellRegion cellRegion, Object value, String formula) {
+    public void update(SBook book, SSheet sheet, CellRegion cellRegion, Object value, String formula) {
         if (this.testStarted) {
             this.metadata.updatedCells++;
             this.cellsToUpdateSet.remove(cellRegion);

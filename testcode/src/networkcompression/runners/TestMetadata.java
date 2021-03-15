@@ -1,5 +1,7 @@
 package networkcompression.runners;
 
+import org.zkoss.util.Pair;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.FileWriter;
@@ -14,7 +16,7 @@ import java.util.List;
  */
 public class TestMetadata {
 
-    public List<String> curve = new ArrayList<>();
+    public List<Pair<Long, Integer>> curve = new ArrayList<>();
 
     public double   area = 0.0;
     public boolean  isCorrect = false;
@@ -49,28 +51,14 @@ public class TestMetadata {
                     + "Update cell end time: "              + updateCellFinalTime                           + "\n"
                     + "Total time to update cells (ms): "   + (updateCellFinalTime - updateCellStartTime)   + "\n"
                     + "Area under curve: "                  + area                                          + "\n"
-                    + "Curve: "                             + String.join("", curve)                + "\n"
+                    + "Curve: "
             );
+            for (Pair<Long, Integer> p : curve) {
+                prw.println(p.getX() + ", " + p.getY());
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public void reset () {
-        curve = new ArrayList<>();
-        area = 0.0;
-        isCorrect = false;
-        touchedTime = 0;
-        updatedCells = 0;
-        compStartTime = 0;
-        compFinalTime = 0;
-        testStartTime = 0;
-        testFinalTime = 0;
-        updateCellStartTime = 0;
-        updateCellFinalTime = 0;
-        numberOfCellsToUpdate = 0;
-        startNumberOfDependents = 0;
-        finalNumberOfDependents = 0;
     }
 
 }

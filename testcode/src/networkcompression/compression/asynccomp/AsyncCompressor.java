@@ -6,29 +6,28 @@ import networkcompression.tests.AsyncBaseTest;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
 /**
- *
  * A class for performing the dependency compression algorithm described in the Anti-Freeze paper.
  */
 public class AsyncCompressor extends AsyncBaseCompressor {
 
     private final int COMPRESSION_CONSTANT;
 
-    public AsyncCompressor (final int compressionConstant) {
+    public AsyncCompressor(final int compressionConstant) {
         this.COMPRESSION_CONSTANT = compressionConstant;
     }
 
-    private AsyncCompressor (TestMetadata metadata, AsyncBaseTest test, final int compressionConstant) {
+    private AsyncCompressor(TestMetadata metadata, AsyncBaseTest test, final int compressionConstant) {
         super(metadata, test);
         this.COMPRESSION_CONSTANT = compressionConstant;
     }
 
     @Override
-    protected BaseCompressor newCompressor (TestMetadata metadata, AsyncBaseTest testCase) {
+    protected BaseCompressor newCompressor(TestMetadata metadata, AsyncBaseTest testCase) {
         return new AsyncCompressor(metadata, testCase, this.COMPRESSION_CONSTANT);
     }
 
     @Override
-    protected void compress () {
+    protected void compress() {
         super.getMetadata().startNumberOfDependents = dependencies.size();
         super.getMetadata().compStartTime = System.currentTimeMillis();
         while (dependencies.size() > this.COMPRESSION_CONSTANT) {
@@ -43,12 +42,12 @@ public class AsyncCompressor extends AsyncBaseCompressor {
                     Ref overlap = dependencies.get(i).getOverlap(dependencies.get(j));
                     if (overlap != null)
                         new_area += overlap.getCellCount();
-                    if (new_area==0) {
+                    if (new_area == 0) {
                         best_area = new_area;
                         best_i = i;
                         best_j = j;
                         best_bounding_box = bounding;
-                        i=dependencies.size();
+                        i = dependencies.size();
                         break;
                     }
 

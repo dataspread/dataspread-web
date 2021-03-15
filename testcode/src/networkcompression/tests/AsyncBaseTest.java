@@ -20,58 +20,30 @@ import java.util.List;
  */
 public abstract class AsyncBaseTest {
 
-    protected SBook    book  = null;
-    protected SSheet   sheet = null;
+    protected SBook book;
+    protected SSheet sheet;
 
-    protected AsyncBaseTest () { }
+    protected AsyncBaseTest() {
+        this(Util.createEmptyBook());
+    }
 
-    protected AsyncBaseTest (SBook book) {
-        this.book   = book;
-        this.sheet  = book.getSheet(0);
+    protected AsyncBaseTest(SBook book) {
+        this.book = book;
+        this.sheet = book.getSheet(0);
     }
 
     /**
      * @return The book associated with this test case.
      */
-    public SBook getBook () { return this.book; }
+    public SBook getBook() {
+        return book;
+    }
 
     /**
      * @return The sheet associated with this test case.
      */
-    public SSheet getSheet () { return this.sheet; }
-
-    /**
-     * @return True if the results of this test case are correct
-     * after `updateCell()` is called.
-     */
-    public boolean verify () { return true; }
-
-    /**
-     * @return A list that contains all dependents of this test
-     * case's updated cell.
-     */
-    public List<Ref> getDependenciesOfUpdatedCell () {
-        return new ArrayList<>(this.getSheet().getDependencyTable().getDependents(this.getCellToUpdate()));
-    }
-
-    /**
-     * @return The cells that this test case uses.
-     */
-    public Collection<CellRegion> getCells () {
-        return Util.getSheetCells(this.getSheet(), this.getRegion());
-    }
-
-    /**
-     * Calls `getValue()` on all cells used in this test case
-     * to ensure that lazy computation is triggered for them.
-     */
-    public void touchAll () {
-        CellRegion region = this.getRegion();
-        for (int r = region.getRow(); r < region.getLastRow(); r++) {
-            for (int c = region.getColumn(); c < region.getLastColumn(); c++) {
-                this.sheet.getCell(r, c).getValue();
-            }
-        }
+    public SSheet getSheet() {
+        return sheet;
     }
 
     /**
@@ -85,16 +57,52 @@ public abstract class AsyncBaseTest {
     public abstract void init();
 
     /**
+     * Calls `getValue()` on all cells used in this test case
+     * to ensure that lazy computation is triggered for them.
+     */
+    public void touchAll() {
+        CellRegion region = this.getRegion();
+        for (int r = region.getRow(); r < region.getLastRow(); r++) {
+            for (int c = region.getColumn(); c < region.getLastColumn(); c++) {
+                sheet.getCell(r, c).getValue();
+            }
+        }
+    }
+
+    /**
+     * @return True if the results of this test case are correct
+     * after `updateCell()` is called.
+     */
+    public boolean verify() {
+        return true;
+    }
+
+    /**
+     * @return The cells that this test case uses.
+     */
+    public Collection<CellRegion> getCells() {
+        return Util.getSheetCells(this.getSheet(), this.getRegion());
+    }
+
+    /**
      * This method should return the cell that this test case
      * will update for dependency identification.
      */
-    public abstract Ref getCellToUpdate ();
+    public abstract Ref getCellToUpdate();
+
+    /**
+     * @return A list that contains all dependents of this test
+     * case's updated cell.
+     */
+    public List<Ref> getDependenciesOfUpdatedCell() {
+        return new ArrayList<>(this.getSheet().getDependencyTable().getDependents(this.getCellToUpdate()));
+    }
 
     /**
      * This method should update the cell returned by
      * `getCellToUpdate()`.
      */
-    public abstract void updateCell ();
+    public abstract void updateCell();
 
     /**
      * @return A cell region that encompasses all the cells
@@ -102,21 +110,13 @@ public abstract class AsyncBaseTest {
      * exact. Including a few unused cells shouldn't cause
      * any problems.
      */
-    public abstract CellRegion getRegion ();
-
-    /**
-     * @return A fresh copy of the current test case with its
-     * test sheet and test book initialized.
-     */
-    public abstract AsyncBaseTest newTest ();
-
-    /**
-     * @return The human-readable string representation of
-     * this test. Tests with the same test parameters should
-     * have the same string representation. If this is not
-     * the case, file naming errors may occur.
-     */
-    @Override
-    public abstract String toString ();
+    public CellRegion getRegion() {
+        return new CellRegion(
+                sheet.getStartRowIndex(),
+                sheet.getStartColumnIndex(),
+                sheet.getEndRowIndex(),
+                sheet.getEndColumnIndex()
+        );
+    }
 
 }

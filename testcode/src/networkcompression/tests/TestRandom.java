@@ -1,7 +1,5 @@
 package networkcompression.tests;
 
-import networkcompression.utils.Util;
-
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.poi.ss.util.CellReference;
 import org.zkoss.zss.model.CellRegion;
@@ -13,17 +11,27 @@ import java.util.List;
 
 public class TestRandom extends AsyncBaseTest {
 
-    private final int ITERATIONS;
+    private final int iterations;
     private int maxRow = Integer.MIN_VALUE;
     private int maxCol = Integer.MIN_VALUE;
 
-    public TestRandom (final int iterations) {
-        ITERATIONS = iterations;
+    public static AsyncTestFactory getFactory(final int iterations) {
+        return new AsyncTestFactory() {
+            @Override
+            public AsyncBaseTest createTest() {
+                return new TestRandom(iterations);
+            }
+
+            @Override
+            public String toString() {
+                return "TestRandom" + iterations;
+            }
+        };
     }
 
-    private TestRandom (SBook book, final int iterations) {
-        super(book);
-        ITERATIONS = iterations;
+    public TestRandom(final int iterations) {
+        super();
+        this.iterations = iterations;
     }
 
     @Override
@@ -38,8 +46,8 @@ public class TestRandom extends AsyncBaseTest {
 
         Random random = new Random(7);
 
-        int w = (int) Math.max(3, Math.round(Math.sqrt(ITERATIONS)*1.5));
-        for (int i = 1; i < ITERATIONS; i++) {
+        int w = (int) Math.max(3, Math.round(Math.sqrt(iterations) * 1.5));
+        for (int i = 1; i < iterations; i++) {
             boolean done = false;
             int r = 0;
             int c = 0;
@@ -58,13 +66,13 @@ public class TestRandom extends AsyncBaseTest {
             maxCol = Math.max(maxCol, c);
             rowIndices.add(r);
             colIndices.add(c);
-            cellNames.add(CellReference.convertNumToColString(c)+(r+1));
+            cellNames.add(CellReference.convertNumToColString(c) + (r + 1));
         }
 
         sheet.setDelayComputation(true);
 
         sheet.getCell(0, 0).setValue(1000);
-        for (int i = 1; i < ITERATIONS; i++) {
+        for (int i = 1; i < iterations; i++) {
             StringBuilder buf = new StringBuilder("0");
             for (int j = 0; j < i; j++) {
                 if (random.nextInt(8) < 2) {
@@ -83,17 +91,18 @@ public class TestRandom extends AsyncBaseTest {
     }
 
     @Override
-    public Ref getCellToUpdate () { return sheet.getCell(0, 0).getRef(); }
+    public Ref getCellToUpdate() {
+        return sheet.getCell(0, 0).getRef();
+    }
 
     @Override
-    public void updateCell () { sheet.getCell(0, 0).setValue(20); }
+    public void updateCell() {
+        sheet.getCell(0, 0).setValue(20);
+    }
 
     @Override
-    public CellRegion getRegion () { return new CellRegion(0, 0, maxRow, maxCol); }
+    public CellRegion getRegion() {
+        return new CellRegion(0, 0, maxRow, maxCol);
+    }
 
-    @Override
-    public AsyncBaseTest newTest () { return new TestRandom(Util.createEmptyBook(), ITERATIONS); }
-
-    @Override
-    public String toString () { return "TestRate" + ITERATIONS; }
 }

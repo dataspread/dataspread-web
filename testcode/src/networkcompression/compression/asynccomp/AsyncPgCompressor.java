@@ -22,21 +22,22 @@ public class AsyncPgCompressor extends AsyncBaseCompressor {
 
     private final int COMPRESSION_CONSTANT;
 
-    public AsyncPgCompressor (final int compressionConstant) {
+    public AsyncPgCompressor(final int compressionConstant) {
         this.COMPRESSION_CONSTANT = compressionConstant;
     }
 
-    private AsyncPgCompressor (TestMetadata metadata, AsyncBaseTest test, final int compressionConstant) {
+    private AsyncPgCompressor(TestMetadata metadata, AsyncBaseTest test, final int compressionConstant) {
         super(metadata, test);
         this.COMPRESSION_CONSTANT = compressionConstant;
     }
 
     @Override
-    protected BaseCompressor newCompressor (TestMetadata metadata, AsyncBaseTest testCase) {
+    protected BaseCompressor newCompressor(TestMetadata metadata, AsyncBaseTest testCase) {
         return new AsyncPgCompressor(metadata, testCase, this.COMPRESSION_CONSTANT);
     }
+
     @Override
-    protected void compress () {
+    protected void compress() {
         super.getMetadata().compStartTime = System.currentTimeMillis();
         int[] depSizes = this.compressPGGraphNode(
                 super.getTest().getBook().getBookName(),
@@ -48,7 +49,7 @@ public class AsyncPgCompressor extends AsyncBaseCompressor {
         super.getMetadata().finalNumberOfDependents = depSizes[1];
     }
 
-    private PGbox cellRegionToPGbox (CellRegion cellRegion) {
+    private PGbox cellRegionToPGbox(CellRegion cellRegion) {
         return new PGbox(
                 cellRegion.getRow(),
                 cellRegion.getColumn(),
@@ -57,7 +58,7 @@ public class AsyncPgCompressor extends AsyncBaseCompressor {
         );
     }
 
-    private CellRegion pgBoxToCellRegion (PGbox pgBox) {
+    private CellRegion pgBoxToCellRegion(PGbox pgBox) {
         // The order of points is based on how postgres stores them
         return new CellRegion(
                 (int) pgBox.point[1].x,
@@ -82,10 +83,10 @@ public class AsyncPgCompressor extends AsyncBaseCompressor {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return new int[]{ startSize, finalSize };
+        return new int[]{startSize, finalSize};
     }
 
-    private void compressCellRegionDependencies (List<CellRegion> dependencies) {
+    private void compressCellRegionDependencies(List<CellRegion> dependencies) {
         while (dependencies.size() > this.COMPRESSION_CONSTANT) {
             int best_i = 0, best_j = 0, best_area = Integer.MAX_VALUE;
             CellRegion best_bounding_box = null;
@@ -97,12 +98,12 @@ public class AsyncPgCompressor extends AsyncBaseCompressor {
                     CellRegion overlap = dependencies.get(i).getOverlap(dependencies.get(j));
                     if (overlap != null)
                         new_area += overlap.getCellCount();
-                    if (new_area==0) {
+                    if (new_area == 0) {
                         best_area = new_area;
                         best_i = i;
                         best_j = j;
                         best_bounding_box = bounding;
-                        i=dependencies.size();
+                        i = dependencies.size();
                         break;
                     }
 
@@ -123,7 +124,7 @@ public class AsyncPgCompressor extends AsyncBaseCompressor {
         }
     }
 
-    private ArrayList<CellRegion> getUncompressedDependents (AutoRollbackConnection autoRollbackConnection, String bookName, String sheetname, PGbox pgBox) {
+    private ArrayList<CellRegion> getUncompressedDependents(AutoRollbackConnection autoRollbackConnection, String bookName, String sheetname, PGbox pgBox) {
         String selectSql = "WITH RECURSIVE deps AS ( "
                 +   "SELECT bookname::text"
                 +       ", sheetname::text"
@@ -175,7 +176,7 @@ public class AsyncPgCompressor extends AsyncBaseCompressor {
         return deps;
     }
 
-    private void deleteUncompressedDependents (AutoRollbackConnection autoRollbackConnection, String bookName, String sheetname, PGbox pgBox) {
+    private void deleteUncompressedDependents(AutoRollbackConnection autoRollbackConnection, String bookName, String sheetname, PGbox pgBox) {
         String deleteSql = "DELETE FROM dependency WHERE bookname = ? AND sheetname = ? AND range && ? ";
         try (PreparedStatement stmtDelete = autoRollbackConnection.prepareStatement(deleteSql)) {
             stmtDelete.setString(1, bookName);
@@ -187,7 +188,7 @@ public class AsyncPgCompressor extends AsyncBaseCompressor {
         }
     }
 
-    private void insertCompressedDependents (AutoRollbackConnection autoRollbackConnection, String bookName, String sheetname, PGbox pgBox, List<CellRegion> deps) {
+    private void insertCompressedDependents(AutoRollbackConnection autoRollbackConnection, String bookName, String sheetname, PGbox pgBox, List<CellRegion> deps) {
         String insertSql = "INSERT INTO dependency VALUES (?,?,?,?,?,?,?)";
         try (PreparedStatement stmtInsert = autoRollbackConnection.prepareStatement(insertSql)) {
             stmtInsert.setString(1, bookName);

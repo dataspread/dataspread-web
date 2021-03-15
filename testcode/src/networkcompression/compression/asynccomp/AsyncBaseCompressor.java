@@ -12,9 +12,10 @@ import java.util.Set;
 
 public abstract class AsyncBaseCompressor extends BaseCompressor {
 
-    protected AsyncBaseCompressor () {}
+    protected AsyncBaseCompressor() {
+    }
 
-    public AsyncBaseCompressor (TestMetadata metadata, AsyncBaseTest testCase) {
+    public AsyncBaseCompressor(TestMetadata metadata, AsyncBaseTest testCase) {
         super(metadata, testCase);
     }
 

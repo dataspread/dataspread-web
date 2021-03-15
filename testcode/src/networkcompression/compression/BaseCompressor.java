@@ -10,21 +10,26 @@ import java.util.Set;
 
 public abstract class BaseCompressor {
 
-    protected List<Ref>     dependencies = null;
-    private AsyncBaseTest   testCase = null;
-    private TestMetadata    metadata = null;
+    protected List<Ref> dependencies = null;
+    private AsyncBaseTest testCase = null;
+    private TestMetadata metadata = null;
 
-    public BaseCompressor () { }
+    public BaseCompressor() {
+    }
 
-    protected BaseCompressor (TestMetadata metadata, AsyncBaseTest testCase) {
+    protected BaseCompressor(TestMetadata metadata, AsyncBaseTest testCase) {
         this.dependencies = testCase.getDependenciesOfUpdatedCell();
         this.metadata = metadata;
         this.testCase = testCase;
     }
 
-    public AsyncBaseTest getTest () { return this.testCase; }
+    public AsyncBaseTest getTest() {
+        return this.testCase;
+    }
 
-    public TestMetadata getMetadata () { return this.metadata; }
+    public TestMetadata getMetadata() {
+        return this.metadata;
+    }
 
     /**
      * @param metadata
@@ -32,19 +37,19 @@ public abstract class BaseCompressor {
      * @return A new BaseCompressor instance with the `metadata` and
      * `testCase` members initialized.
      */
-    protected abstract BaseCompressor newCompressor (TestMetadata metadata, AsyncBaseTest testCase);
+    protected abstract BaseCompressor newCompressor(TestMetadata metadata, AsyncBaseTest testCase);
 
     /**
      * This function should update the following fields:
-     *  - `metadata.compStartTime`
-     *  - `metadata.compFinalTime`
-     *  - `metadata.startNumberOfDependents`
-     *  - `metadata.finalNumberOfDependents`
-     *
+     * - `metadata.compStartTime`
+     * - `metadata.compFinalTime`
+     * - `metadata.startNumberOfDependents`
+     * - `metadata.finalNumberOfDependents`
+     * <p>
      * It should also perform dependency compression on `dependencies`
      * in place.
      */
-    protected abstract void compress ();
+    protected abstract void compress();
 
     /**
      * This function will be called right after `compress`. It should
@@ -54,7 +59,7 @@ public abstract class BaseCompressor {
      *
      * @param cellsToUpdateSet
      */
-    protected abstract void initCellsToUpdate (Set<CellRegion> cellsToUpdateSet);
+    protected abstract void initCellsToUpdate(Set<CellRegion> cellsToUpdateSet);
 
     /**
      * Runs all abstract methods.
@@ -63,7 +68,7 @@ public abstract class BaseCompressor {
      * @param testCase
      * @param cellsToUpdateSet
      */
-    public void runAll (TestMetadata metadata, AsyncBaseTest testCase, Set<CellRegion> cellsToUpdateSet) {
+    public void runAll(TestMetadata metadata, AsyncBaseTest testCase, Set<CellRegion> cellsToUpdateSet) {
         BaseCompressor compressor = this.newCompressor(metadata, testCase);
         compressor.compress();
         compressor.initCellsToUpdate(cellsToUpdateSet);

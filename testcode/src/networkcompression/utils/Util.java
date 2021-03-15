@@ -1,52 +1,51 @@
 package networkcompression.utils;
 
 import networkcompression.AsyncPerformanceMain;
-import org.zkoss.zss.model.sys.BookBindings;
+import org.model.DBHandler;
 import org.zkoss.zss.model.CellRegion;
-import org.zkoss.zss.range.SImporters;
-import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SCell;
-import org.model.DBHandler;
+import org.zkoss.zss.model.SSheet;
+import org.zkoss.zss.model.sys.BookBindings;
+import org.zkoss.zss.range.SImporters;
 
-import java.nio.file.Paths;
-import java.util.stream.Collectors;
-import java.text.SimpleDateFormat;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
- *
  * A class with utilities that may be used for all code in this package.
  */
 public class Util {
 
-    public static String getCurrentTime () {
+    public static String getCurrentTime() {
         return (new SimpleDateFormat("dd-MM-yyyy HH:mm:ss")).format(new Date());
     }
 
-    public static <K, V> AbstractMap.SimpleImmutableEntry<K, V> pair (final K key, final V val) {
+    public static <K, V> AbstractMap.SimpleImmutableEntry<K, V> pair(final K key, final V val) {
         return new AbstractMap.SimpleImmutableEntry<>(key, val);
     }
 
-    public static <T> List<T> addAndReturn (List<T> lst, T item) {
+    public static <T> List<T> addAndReturn(List<T> lst, T item) {
         if (lst != null) {
             lst.add(item);
         }
         return lst;
     }
 
-    public static Collection<CellRegion> getSheetCells (SSheet sheet, CellRegion region) {
+    public static Collection<CellRegion> getSheetCells(SSheet sheet, CellRegion region) {
         return sheet.getCells(region)
-            .stream()
-            .map(SCell::getCellRegion)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+                .stream()
+                .map(SCell::getCellRegion)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
-    public static void sleep (final long millis) {
+    public static void sleep(final long millis) {
         try {
             Thread.sleep(millis);
         } catch (InterruptedException e) {
@@ -54,7 +53,7 @@ public class Util {
         }
     }
 
-    public static void createDirectory (final Path path) {
+    public static void createDirectory(final Path path) {
         try {
             if (!Files.exists(path)) {
                 Files.createDirectory(path);
@@ -65,7 +64,7 @@ public class Util {
         }
     }
 
-    public static Path joinPaths (Path... paths) {
+    public static Path joinPaths(Path... paths) {
         if (paths.length != 0) {
             String first = paths[0].toString();
             String[] rest = new String[paths.length - 1];
@@ -77,7 +76,7 @@ public class Util {
         return Paths.get("");
     }
 
-    public static <K, V> LinkedHashMap<K, V> pairsToMap (final List<AbstractMap.SimpleImmutableEntry<K, V>> list) {
+    public static <K, V> LinkedHashMap<K, V> pairsToMap(final List<AbstractMap.SimpleImmutableEntry<K, V>> list) {
         LinkedHashMap<K, V> map = new LinkedHashMap<>();
         for (AbstractMap.SimpleImmutableEntry<K, V> entry : list) {
             map.put(entry.getKey(), entry.getValue());
@@ -85,13 +84,13 @@ public class Util {
         return map;
     }
 
-    public static void connectToDBIfNotConnected () {
+    public static void connectToDBIfNotConnected() {
         if (DBHandler.instance == null) {
             DBHandler.connectToDB(
-                AsyncPerformanceMain.URL,
-                AsyncPerformanceMain.DBDRIVER,
-                AsyncPerformanceMain.USERNAME,
-                AsyncPerformanceMain.PASSWORD
+                    AsyncPerformanceMain.URL,
+                    AsyncPerformanceMain.DBDRIVER,
+                    AsyncPerformanceMain.USERNAME,
+                    AsyncPerformanceMain.PASSWORD
             );
         }
     }
@@ -108,7 +107,7 @@ public class Util {
     //                      -> ExcelXlsxImporter
     //                          -> XSSFWorkbook
     //                              -> ...
-    public static SBook importBook (final Path path) {
+    public static SBook importBook(final Path path) {
         Util.connectToDBIfNotConnected();
         SBook book = null;
         try {
