@@ -174,22 +174,21 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
     public static void singleTest(Class testCase, int testSize, boolean sync, int compressionSize, boolean schedulerPrioritize) throws Exception {
         DirtyManager.dirtyManagerInstance.reset();
 
-        FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerSimple();
-        Thread asyncThread = new Thread(formulaAsyncScheduler);
+        FormulaAsyncSchedulerSimple.initScheduler();
+        Thread asyncThread = new Thread(FormulaAsyncScheduler.getScheduler());
         asyncThread.start();
 
         AsyncPerformance3 asyncPerformance = new AsyncPerformance3();
-        FormulaAsyncScheduler.initFormulaAsyncListener(asyncPerformance);
-        FormulaAsyncScheduler.setPrioritize(schedulerPrioritize);
+        FormulaAsyncScheduler.getScheduler().setFormulaAsyncListener(asyncPerformance);
+        FormulaAsyncScheduler.getScheduler().setPrioritize(schedulerPrioritize);
         asyncPerformance.simpleTest(testCase, testSize, sync, compressionSize);
 
-        formulaAsyncScheduler.shutdown();
+        FormulaAsyncScheduler.getScheduler().shutdown();
 
-        while (!((FormulaAsyncSchedulerSimple) FormulaAsyncScheduler.getScheduler()).isDead) {
+        while (!FormulaAsyncScheduler.getScheduler().isShutdownCompleted()) {
             Thread.sleep(10);
         }
-        ((FormulaAsyncSchedulerSimple) FormulaAsyncScheduler.getScheduler()).started = false;
-        ((FormulaAsyncSchedulerSimple) FormulaAsyncScheduler.getScheduler()).isDead = false;
+        FormulaAsyncScheduler.getScheduler().reset();
         asyncThread.join();
     }
 
@@ -401,7 +400,7 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
             FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(book.getBookSeries()));
 
         uiVisibleMap = new HashMap<>();
-        FormulaAsyncScheduler.updateVisibleMap(uiVisibleMap);
+        FormulaAsyncScheduler.getScheduler().updateVisibleMap(uiVisibleMap);
 
         SSheet sheet = book.getSheet(0);
 
@@ -528,7 +527,7 @@ public class AsyncPerformance3 implements FormulaAsyncListener {
         System.out.println("Control returned  " + controlReturnedTime);
         System.out.println("Time to update = " + (controlReturnedTime - initTime));
         System.out.println("Before Waiting Correct?: " + (test.verify() ? "YES" : "NO"));
-        ((FormulaAsyncSchedulerSimple) FormulaAsyncScheduler.getScheduler()).started = true;
+        FormulaAsyncScheduler.getScheduler().start();
         if (!sync) {
             synchronized (this) {
                 try {

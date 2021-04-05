@@ -112,7 +112,7 @@ public class UISessionManager  {
         uiSessionMap = new HashMap<>();
         uiSheetSessionMap = new HashMap<>();
         uiVisibleMap = new HashMap<>();
-        FormulaAsyncScheduler.updateVisibleMap(uiVisibleMap);
+        FormulaAsyncScheduler.getScheduler().updateVisibleMap(uiVisibleMap);
     }
 
     public static UISessionManager getInstance()

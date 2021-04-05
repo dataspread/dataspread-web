@@ -45,7 +45,7 @@ public abstract class AsyncBaseTestRunner implements FormulaAsyncListener {
     protected void runSetup(final AsyncBaseTest testCase) {
         CellImpl.disableDBUpdates = false;
         this.runBefore(testCase);
-        FormulaAsyncScheduler.updateVisibleMap(new HashMap<>());
+        FormulaAsyncScheduler.getScheduler().updateVisibleMap(new HashMap<>());
         testCase.getSheet().setSyncComputation(true);
         testCase.init();
         this.runAfterInit(testCase);
@@ -65,7 +65,7 @@ public abstract class AsyncBaseTestRunner implements FormulaAsyncListener {
         this.metadata.updateCellStartTime = System.currentTimeMillis();
         testCase.updateCell();
         this.metadata.updateCellFinalTime = System.currentTimeMillis();
-        FormulaAsyncSchedulerSimple.started = true;
+        FormulaAsyncScheduler.getScheduler().start();
         this.runAfterUpdate(testCase);
         testCase.touchAll();
         this.metadata.touchedTime = System.currentTimeMillis();
@@ -119,11 +119,11 @@ public abstract class AsyncBaseTestRunner implements FormulaAsyncListener {
             // Setup async scheduler
             this.reset();
             DirtyManager.dirtyManagerInstance.reset();
-            FormulaAsyncScheduler formulaAsyncScheduler = new FormulaAsyncSchedulerSimple();
-            Thread asyncThread = new Thread(formulaAsyncScheduler);
+            FormulaAsyncSchedulerSimple.initScheduler();
+            Thread asyncThread = new Thread(FormulaAsyncScheduler.getScheduler());
             asyncThread.start();
-            FormulaAsyncScheduler.initFormulaAsyncListener(this);
-            FormulaAsyncScheduler.setPrioritize(this.PRIORITIZE);
+            FormulaAsyncScheduler.getScheduler().setFormulaAsyncListener(this);
+            FormulaAsyncScheduler.getScheduler().setPrioritize(this.PRIORITIZE);
 
             // Perform the test
             this.metadata.testStartTime = System.currentTimeMillis();
@@ -132,12 +132,11 @@ public abstract class AsyncBaseTestRunner implements FormulaAsyncListener {
             this.metadata.testFinalTime = System.currentTimeMillis();
 
             // Wait for the test to finish
-            formulaAsyncScheduler.shutdown();
-            while (!FormulaAsyncSchedulerSimple.isDead) {
+            FormulaAsyncScheduler.getScheduler().shutdown();
+            while (!FormulaAsyncScheduler.getScheduler().isShutdownCompleted()) {
                 Thread.sleep(10);
             }
-            FormulaAsyncSchedulerSimple.started = false;
-            FormulaAsyncSchedulerSimple.isDead = false;
+            FormulaAsyncScheduler.getScheduler().reset();
             asyncThread.join();
 
         } catch (InterruptedException e) {

@@ -8,7 +8,6 @@ import org.zkoss.zss.model.SCell;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.CellImpl;
 import org.zkoss.zss.model.impl.FormulaCacheCleaner;
-import org.zkoss.zss.model.impl.GraphCompressor;
 import org.zkoss.zss.model.impl.SheetImpl;
 import org.zkoss.zss.model.impl.sys.DependencyTableImplV2;
 import org.zkoss.zss.model.impl.sys.DependencyTablePGImpl;
@@ -70,7 +69,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         asyncThread.start();
 
         AsyncPerformance2 asyncPerformance = new AsyncPerformance2();
-        FormulaAsyncScheduler.initFormulaAsyncListener(asyncPerformance);
+        FormulaAsyncScheduler.getScheduler().setFormulaAsyncListener(asyncPerformance);
         asyncPerformance.simpleTest();
 
         formulaAsyncScheduler.shutdown();
@@ -360,7 +359,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
             FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(book.getBookSeries()));
 
         uiVisibleMap = new HashMap<>();
-        FormulaAsyncScheduler.updateVisibleMap(uiVisibleMap);
+        FormulaAsyncScheduler.getScheduler().updateVisibleMap(uiVisibleMap);
 
 
         SSheet sheet = book.getSheet(0);
