@@ -81,9 +81,9 @@ export default class ModalImportFile extends Component {
 									
 					<ReactResumableJs
 					uploaderID="importBook"
-					filetypes={["csv"]}
+					filetypes={["csv", "xls", "xlsx"]}
 					startButton={true}
-					fileAccept="text/csv"
+					fileAccept="text/csv/xls/xlsx"
 					maxFileSize={100000000000}
 					simultaneousUploads={4}
 					fileAddedMessage="Started!"
