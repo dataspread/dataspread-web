@@ -30,10 +30,8 @@ public class XLStoCSV {
     }
 
     /**
-     *
-     * @param csv
-     *
-     * Converts excel file to csv file
+     * @param csv: CSV file to be written to
+     * Converts excel file to csv file.
      */
     public void fullConvert(File csv) {
         try {
@@ -64,16 +62,15 @@ public class XLStoCSV {
     }
 
     /**
-     * @return longest row in the Excel wb
-     *
-     * adds sheet number to row offset maps to sheetOffsets
+     * @return longest row in the Excel workbook
+     * fills in sheetOffsets and sheetLengths with appropriate values.
      */
     private int setUp() {
         int longestRow = 0;
         int offset = 0;
         int[] lastCellRefs = new int[workbook.getNumberOfSheets() + 1];
         sheetOffsets = new int[workbook.getNumberOfSheets() + 1];
-        sheetLengths = new int[workbook.getNumberOfSheets() + 1];
+        sheetLengths = new int[workbook.getNumberOfSheets()];
         for (int s = 0; s < workbook.getNumberOfSheets(); s++) {
             Sheet sheet = workbook.getSheetAt(s);
             sheetOffsets[s] = offset;
@@ -128,21 +125,23 @@ public class XLStoCSV {
         for (int i = 0; i < lastCellRefs.length - 1; i++) {
             if (lastCellRefs[i] > sheetLengths[i]) {
                 int adjust = lastCellRefs[i] - sheetLengths[i];
+                sheetLengths[i] = lastCellRefs[i];
                 for (int j = i + 1; j < sheetOffsets.length; j++) {
                     sheetOffsets[j] += adjust;
                 }
             }
-            System.out.println("Sheet added to Excel to CSV converter:\t Offset: " + sheetOffsets[i] +
-                    "\tSheetname: " + workbook.getSheetName(i));
+            // For debugging
+            // System.out.println("Sheet added to Excel to CSV converter:\t | Offset: " + sheetOffsets[i] +
+            //        "\t | Sheet length: " + sheetLengths[i] + "\t | Sheet name: " + workbook.getSheetName(i));
         }
         return longestRow;
     }
 
     /**
-     * @param cell
+     * @param cell: Cell to get formula from
      * @return the string representaion of the cell with translated cell coordinates
      */
-    private String getFormulaWithOffset(org.apache.poi.ss.usermodel.Cell cell) {
+    private String getFormulaWithOffset(Cell cell) {
         assert(cell.getCellType().equals(CellType.FORMULA));
         try {
             Ptg[] tokens = FormulaParser.parse(
@@ -179,63 +178,17 @@ public class XLStoCSV {
                     tokens[i] = new RefPtg(refPtgBase.getRow() + offset, refPtgBase.getColumn(),
                             refPtgBase.isRowRelative(), refPtgBase.isColRelative());
                 }
-//
-//                if (token instanceof Area3DPtg) {
-//                    Area3DPtg token3D = (Area3DPtg) token;
-//                    String refString = token3D.toFormulaString((FormulaRenderingWorkbook) parsingWorkbook);
-//                    String sheetName = refString.substring(0, refString.indexOf('!'));
-//                    int offset = sheetOffsets[workbook.getSheetIndex(sheetName)];
-//                    tokens[i] = new AreaPtg(token3D.getFirstRow() + offset, token3D.getLastRow() + offset,
-//                            token3D.getFirstColumn(), token3D.getLastColumn(),
-//                            token3D.isFirstRowRelative(), token3D.isLastRowRelative(),
-//                            token3D.isFirstColRelative(), token3D.isLastColRelative());
-//                } else if (token instanceof AreaPtg) {
-//                    AreaPtg tokenArea = (AreaPtg) token;
-//                    int offset = sheetOffsets[workbook.getSheetIndex(cell.getSheet().getSheetName())];
-//                    tokens[i] = new AreaPtg(tokenArea.getFirstRow() + offset, tokenArea.getLastRow() + offset,
-//                            tokenArea.getFirstColumn(), tokenArea.getLastColumn(),
-//                            tokenArea.isFirstRowRelative(), tokenArea.isLastRowRelative(),
-//                            tokenArea.isFirstColRelative(), tokenArea.isLastColRelative());
-//                } else if (token instanceof RefPtg) {
-//                    RefPtg tokenRef = (RefPtg) token;
-//                    int offset = sheetOffsets[workbook.getSheetIndex(cell.getSheet().getSheetName())];
-//                    tokens[i] = new RefPtg(tokenRef.getRow() + offset, tokenRef.getColumn(),
-//                            tokenRef.isRowRelative(), tokenRef.isColRelative());
-//                } else if (token instanceof Ref3DPtg) {
-//                    Ref3DPtg token3D = (Ref3DPtg) token;
-//                    String refString = token3D.toFormulaString((FormulaRenderingWorkbook) parsingWorkbook);
-//                    String sheetName = refString.substring(0, refString.indexOf('!'));
-//                    int offset = sheetOffsets[workbook.getSheetIndex(sheetName)];
-//                    tokens[i] = new RefPtg(token3D.getRow() + offset, token3D.getColumn(),
-//                            token3D.isRowRelative(), token3D.isColRelative());
-//                } else if (token instanceof Area3DPxg) {
-//                    Area3DPxg token3D = (Area3DPxg) token;
-//                    String refString = token3D.toFormulaString();
-//                    String sheetName = refString.substring(0, refString.indexOf('!'));
-//                    int offset = sheetOffsets[workbook.getSheetIndex(sheetName)];
-//                    tokens[i] = new AreaPtg(token3D.getFirstRow() + offset, token3D.getLastRow() + offset,
-//                            token3D.getFirstColumn(), token3D.getLastColumn(),
-//                            token3D.isFirstRowRelative(), token3D.isLastRowRelative(),
-//                            token3D.isFirstColRelative(), token3D.isLastColRelative());
-//                } else if (token instanceof Ref3DPxg) {
-//                    Ref3DPxg ref3DPxg = (Ref3DPxg) token;
-//                    String refString = ref3DPxg.toFormulaString();
-//                    String sheetName = refString.substring(0, refString.indexOf('!'));
-//                    int offset = sheetOffsets[workbook.getSheetIndex(sheetName)];
-//                    tokens[i] = new RefPtg(ref3DPxg.getRow() + offset, ref3DPxg.getColumn(),
-//                            ref3DPxg.isRowRelative(), ref3DPxg.isColRelative());
-//                }
             }
-            return FormulaRenderer.toFormulaString((FormulaRenderingWorkbook) parsingWorkbook, tokens);
+            return "=" + FormulaRenderer.toFormulaString((FormulaRenderingWorkbook) parsingWorkbook, tokens);
         } catch(Exception e) {
-            return "";
+            return "Cell formula is either malformed or uses too many nested functions.";
         }
 
     }
 
     /**
-     * @param fileName
-     * @return file extension of fileName
+     * @param fileName: File to get extension from.
+     * @return file extension of fileName.
      */
     private String getFileExt(String fileName) {
         int i = fileName.lastIndexOf('.');
@@ -245,7 +198,7 @@ public class XLStoCSV {
     }
 
     /**
-     * @param cell A cell in the Workbook
+     * @param cell: Cell to get text from.
      * @return A string representation of the cell. Replaces cell coordinates based on sheet offsets.
      */
     private String getCellTextWithOffset(org.apache.poi.ss.usermodel.Cell cell) {
@@ -260,7 +213,7 @@ public class XLStoCSV {
                     value = cell.getStringCellValue();
                     break;
                 case FORMULA:
-                    value = "=" + getFormulaWithOffset(cell);
+                    value = getFormulaWithOffset(cell);
                     break;
                 case BOOLEAN:
                     value = cell.getBooleanCellValue() ? "true" : "false";
@@ -297,10 +250,10 @@ public class XLStoCSV {
     public static void main(String[] args) throws IOException {
         //File xls = new File("F:\\Program Files\\ApacheTomcat\\apache-tomcat-9.0.41\\temp\\test.xls,test.xls.temp");
         //File xls = new File("F:\\Code\\ExcelParser\\xmlParser\\dataset-formula-comp-master\\SinglethreadedParser\\testDS\\test_xssf.xlsx");
-        //File xls = new File("F:\\Code\\ExcelParser\\xmlParser\\dataset-formula-comp-master\\SinglethreadedParser\\testDS\\test_hssf.xls");
+        File xls = new File("F:\\Code\\ExcelParser\\xmlParser\\dataset-formula-comp-master\\SinglethreadedParser\\testDS\\test_hssf.xls");
         //File xls = new File("F:\\Code\\ExcelParser\\xmlParser\\dataset-formula-comp-master\\SinglethreadedParser\\testDS\\albert_meyers_000_1_1.pst.0.xls");
         //File xls = new File("F:\\Code\\ExcelParser\\xmlParser\\dataset-formula-comp-master\\SinglethreadedParser\\testDS\\cooper_richey_000_1_1.pst.256.xls");
-        File xls = new File("F:\\Code\\ExcelParser\\xmlParser\\dataset-formula-comp-master\\SinglethreadedParser\\testDS\\craig_dean_000_1_1.pst.3.xls");
+        //File xls = new File("F:\\Code\\ExcelParser\\xmlParser\\dataset-formula-comp-master\\SinglethreadedParser\\testDS\\craig_dean_000_1_1.pst.3.xls");
         //File xls = new File("F:\\Code\\ExcelParser\\xmlParser\\dataset-formula-comp-master\\SinglethreadedParser\\testDS\\andrea_ring_000_1_1.pst.1.xls");
 
         File csv = new File("F:\\Code\\ExcelParser\\xmlParser\\dataset-formula-comp-master\\SinglethreadedParser\\testDS\\result.csv");
