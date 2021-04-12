@@ -246,22 +246,4 @@ public class XLStoCSV {
             return Double.toString(numericValue);
         }
     }
-
-    public static void main(String[] args) throws IOException {
-        //File xls = new File("F:\\Program Files\\ApacheTomcat\\apache-tomcat-9.0.41\\temp\\test.xls,test.xls.temp");
-        //File xls = new File("F:\\Code\\ExcelParser\\xmlParser\\dataset-formula-comp-master\\SinglethreadedParser\\testDS\\test_xssf.xlsx");
-        File xls = new File("F:\\Code\\ExcelParser\\xmlParser\\dataset-formula-comp-master\\SinglethreadedParser\\testDS\\test_hssf.xls");
-        //File xls = new File("F:\\Code\\ExcelParser\\xmlParser\\dataset-formula-comp-master\\SinglethreadedParser\\testDS\\albert_meyers_000_1_1.pst.0.xls");
-        //File xls = new File("F:\\Code\\ExcelParser\\xmlParser\\dataset-formula-comp-master\\SinglethreadedParser\\testDS\\cooper_richey_000_1_1.pst.256.xls");
-        //File xls = new File("F:\\Code\\ExcelParser\\xmlParser\\dataset-formula-comp-master\\SinglethreadedParser\\testDS\\craig_dean_000_1_1.pst.3.xls");
-        //File xls = new File("F:\\Code\\ExcelParser\\xmlParser\\dataset-formula-comp-master\\SinglethreadedParser\\testDS\\andrea_ring_000_1_1.pst.1.xls");
-
-        File csv = new File("F:\\Code\\ExcelParser\\xmlParser\\dataset-formula-comp-master\\SinglethreadedParser\\testDS\\result.csv");
-
-        //basicFullConvert(xls, csv);
-
-        XLStoCSV tester = new XLStoCSV(xls);
-        tester.fullConvert(csv);
-
-    }
 }
