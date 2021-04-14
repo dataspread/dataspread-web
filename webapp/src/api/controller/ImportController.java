@@ -1,6 +1,7 @@
 package api.controller;
 
 import api.JsonWrapper;
+import api.XLStoCSV;
 import api.utils.ResumableInfo;
 import api.utils.ResumableInfoStorage;
 import org.model.AutoRollbackConnection;
@@ -64,6 +65,21 @@ public class ImportController {
         info.uploadedChunks.add(new ResumableInfo.ResumableChunkNumber(resumableChunkNumber));
         if (info.checkIfUploadFinished()) { //Check if all chunks uploaded, and change filename
             ResumableInfoStorage.getInstance().remove(info);
+            String FilePath = new File(UPLOAD_DIR, resumableFilename).getAbsolutePath();
+            int i = FilePath.lastIndexOf('.');
+            String ext = FilePath.substring(i + 1);
+            if (ext.equals("xls") || ext.equals("xlsx")) {
+                File csv = new File(new File(UPLOAD_DIR,
+                        resumableFilename).getAbsolutePath().substring(0, i) + ".csv");
+                try {
+                    XLStoCSV tester = new XLStoCSV(new File(FilePath));
+                    tester.fullConvert(csv);
+                    System.out.println("File converted to CSV");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                resumableFilename = csv.getName();
+            }
             System.out.println("File uploaded to " + UPLOAD_DIR);
             InputStream inputStream = new FileInputStream(new File(UPLOAD_DIR, resumableFilename));
             HashMap<String, Object> msg = importBook(inputStream);
