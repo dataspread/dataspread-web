@@ -1,4 +1,4 @@
-package org.zkoss.zss.model.impl.sys.compression;
+package org.zkoss.zss.model.impl.sys.utils;
 
 public class Offset {
 
