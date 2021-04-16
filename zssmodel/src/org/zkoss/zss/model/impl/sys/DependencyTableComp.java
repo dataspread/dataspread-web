@@ -124,7 +124,6 @@ public class DependencyTableComp {
         updateQueue.add(precUpdate);
         while (!updateQueue.isEmpty()) {
             Ref updateRef = updateQueue.remove();
-
             Iterator<Ref> refIter = findOverlappingRefs(updateRef);
             while (refIter.hasNext()) {
                 Ref precRef = refIter.next();
@@ -458,5 +457,4 @@ public class DependencyTableComp {
 
        return result.iterator();
     }
-
 }
