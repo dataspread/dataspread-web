@@ -35,6 +35,19 @@ public class BookController {
         template.convertAndSend(MESSAGE_PREFIX+"/greetings", "");
         return null;
     }
+    @RequestMapping(value = "/api/getname",
+            method = {RequestMethod.POST, RequestMethod.GET})
+    public Map<String, Object> getname(@RequestBody String json){
+        JSONObject obj = new JSONObject(json);
+        String bookId = (String) obj.get("bookId");
+        System.out.println("get "+bookId);
+        SBook book = BookBindings.getBookById(bookId);
+        String name = book.getBookName();
+        System.out.println(name);
+        Map<String, Object> bookn = ImmutableMap.of("name", name);
+        System.out.println(bookn.toString());
+        return bookn;
+    }
 
     public static String getCallbackPath() {
         return new StringBuilder()
@@ -136,19 +149,39 @@ public class BookController {
 
 
     @RequestMapping(value = "/api/changeBookName",
-            method = RequestMethod.PUT)
-    public HashMap<String, Object> changeBookName(@RequestHeader("auth-token") String authToken,
-                                                  @RequestBody String json) {
+            method = {RequestMethod.PUT, RequestMethod.GET})
+    //public HashMap<String, Object> changeBookName(@RequestHeader("auth-token") String authToken,
+                                                  //@RequestBody String json) {
+    public HashMap<String, Object> changeBookName(@RequestBody String json) {
+        System.out.println(json);
         JSONObject obj = new JSONObject(json);
+        System.out.println(obj);
         String bookId = (String) obj.get("bookId");
-        if (!Authorization.authorizeBook(bookId, authToken)){
-            JsonWrapper.generateError("Permission denied for accessing this book");
-        }
+        System.out.println(bookId);
+        //if (!Authorization.authorizeBook(bookId, authToken)){
+            //JsonWrapper.generateError("Permission denied for accessing this book");
+        //}
         String newBookName = (String) obj.get("newBookName");
+        String query = "SELECT COUNT(*) FROM books WHERE bookname = ?";
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, newBookName);
+            ResultSet rs = statement.executeQuery();
+            if (rs.next()) {
+                if (rs.getInt(1) > 0)
+                    return JsonWrapper.generateError("Duplicated Book Name");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return JsonWrapper.generateError(e.getMessage());
+        }
+        newBookName = (String) obj.get("newBookName");
         SBook book = BookBindings.getBookById(bookId);
         book.setBookName(newBookName);
+        System.out.println(book.getBookName() + "name\n");
         template.convertAndSend(getCallbackPath(), "");
         return bookWrapper(bookId, newBookName);
+
     }
 
     @RequestMapping(value = "/api/importBook",
