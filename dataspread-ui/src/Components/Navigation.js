@@ -584,10 +584,11 @@ export default class Navigation extends Component {
             headers: {
                 'Content-Type': 'text/plain'
             }
+
         })
             .then(response => response.json())
             .then(data => {
-                //console.log(data);
+                console.log(this.state.urlPrefix);
                 if (data.status == "success") {
                     var result = data.data;
                     //console.log(result);

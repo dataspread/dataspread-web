@@ -39,7 +39,7 @@ export default class ModalOpenFile extends Component {
 				BooksOptions: data,
 				loadModalOpen: true
 			}))
-			.catch(()=> {
+			.catch(()=> {so
 				alert("Lost connection to server.")
 			});
 

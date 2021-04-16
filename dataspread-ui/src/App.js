@@ -4,7 +4,7 @@ import DSGrid from './dsgrid';
 import Toolbar from './Components/Menu/toolbar'
 import Stylebar from './Components/Stylebar'
 import StartupBox from './Components/StatupBox'
-
+import LoadedToolbar from './Components/Menu/LoadedToolbar'
 import Navigation from "./Components/Navigation";
 import ExplorationForm from "./Components/ExplorationForm";
 import BinCustomizationForm from "./Components/BinCustomizationForm";
@@ -237,9 +237,10 @@ class App extends Component {
         } else {
             return (
                 <div>
-                    <Toolbar username={this.state.username} onSelectFile={this.onSelectFile}
+                    <LoadedToolbar username={this.state.username} onSelectFile={this.onSelectFile}
                              onNavFormOpen={this.onNavFormOpen} ref={ref => this.toolBar = ref}
-                             submitHierForm={this.submitHierForm} onBinFormOpen={this.onBinFormOpen}/>
+                             submitHierForm={this.submitHierForm} onBinFormOpen={this.onBinFormOpen}
+                                   bookId={this.state.bookId}/>
                     <Stylebar/>
                     <HistoryBar ref={ref => this.navBar = ref} computePath={this.computePath}
                                 jumpToHistorialView={this.jumpToHistorialView}/>
