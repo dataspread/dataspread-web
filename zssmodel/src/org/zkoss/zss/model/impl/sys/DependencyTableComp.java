@@ -65,7 +65,7 @@ public class DependencyTableComp {
     Set<Ref> getDirectDependents(Ref precedent) {
 
         // enforce consuming all unprocessed log entries
-        refreshCache();
+        refreshCache(precedent.getBookName(), precedent.getSheetName());
 
         boolean isDirectDep = true;
         LinkedHashSet<Ref> result = new LinkedHashSet<>() ;
