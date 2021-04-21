@@ -69,7 +69,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
         //graphCompressor.shutdown();
         //graphThread.join();
         AsyncPerformance2 asyncPerformance = new AsyncPerformance2();
-        FormulaAsyncScheduler.initFormulaAsyncListener(asyncPerformance);
+        FormulaAsyncScheduler.getScheduler().setFormulaAsyncListener(asyncPerformance);
         asyncPerformance.simpleTest();
 
         formulaAsyncScheduler.shutdown();
@@ -268,7 +268,7 @@ public class AsyncPerformance2 implements FormulaAsyncListener {
             FormulaCacheCleaner.setCurrent(new FormulaCacheCleaner(book.getBookSeries()));
 
         uiVisibleMap = new HashMap<>();
-        FormulaAsyncScheduler.updateVisibleMap(uiVisibleMap);
+        FormulaAsyncScheduler.getScheduler().updateVisibleMap(uiVisibleMap);
 
 
         SSheet sheet = book.getSheet(0);

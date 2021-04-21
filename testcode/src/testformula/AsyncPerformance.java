@@ -66,7 +66,7 @@ public class AsyncPerformance implements FormulaAsyncListener {
         //graphCompressor.shutdown();
         //graphThread.join();
         AsyncPerformance asyncPerformance = new AsyncPerformance();
-        FormulaAsyncScheduler.initFormulaAsyncListener(asyncPerformance);
+        FormulaAsyncScheduler.getScheduler().setFormulaAsyncListener(asyncPerformance);
         asyncPerformance.simpleTest();
 
         formulaAsyncScheduler.shutdown();

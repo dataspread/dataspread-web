@@ -164,11 +164,15 @@ public class CellImpl extends AbstractCellAdv {
 		return ret;
 	}
 
-	public int getComputeCost()
-	{
-		return getReferredCells().stream().map(e->new CellRegion(e))
-				.mapToInt(CellRegion::getCellCount)
-				.sum();
+	public int getComputeCost() {
+		Collection<Ref> referredCells = getReferredCells();
+		if (referredCells == null) {
+			return 0;
+		} else {
+			return referredCells.stream().map(e -> new CellRegion(e))
+					.mapToInt(CellRegion::getCellCount)
+					.sum();
+		}
 	}
 
 	@Override
@@ -375,11 +379,12 @@ public class CellImpl extends AbstractCellAdv {
 	@Override
 	public void setFormulaValue(String formula)
 	{
-		try(AutoRollbackConnection connection = DBHandler.instance.getConnection())
+		/*try(AutoRollbackConnection connection = DBHandler.instance.getConnection())
 		{
 			setFormulaValue(formula, connection, true);
 			connection.commit();
-		}
+		}*/
+		setFormulaValue(formula, null, false);
 	}
 
 	@Override
@@ -488,7 +493,7 @@ public class CellImpl extends AbstractCellAdv {
 						fe.clearCache(new FormulaClearContext(_sheet));
 						EvaluationResult result = fe.evaluate(expr, evalContext);
 						updateFormulaResultValue(result);
-						trxId = _sheet.getTrxId();
+						//trxId = _sheet.getTrxId();
 					}
 				}
 			}
@@ -514,7 +519,8 @@ public class CellImpl extends AbstractCellAdv {
 		//clear the dependent's formula result cache
 		SBook book = getSheet().getBook();
 		SBookSeries bookSeries = book.getBookSeries();
-		ModelUpdateUtil.handlePrecedentUpdate(bookSeries, _sheet, getRef());
+		if (!getSheet().isDelayComputation())
+			ModelUpdateUtil.handlePrecedentUpdate(bookSeries, _sheet, getRef());
 		// TODO Check if we need add cell update.
 
 		//ZSS-985: if it is not destroying this cell
@@ -611,10 +617,11 @@ public class CellImpl extends AbstractCellAdv {
 	@Override
 	public void setValue(Object newVal)
 	{
-		try(AutoRollbackConnection connection=DBHandler.instance.getConnection()) {
+		/*try(AutoRollbackConnection connection=DBHandler.instance.getConnection()) {
 			setValue(newVal, connection, true);
 			connection.commit();
-		}
+		}*/
+		setValue(newVal, null, false);
 	}
 
 	@Override
@@ -872,6 +879,9 @@ public class CellImpl extends AbstractCellAdv {
 
     public synchronized void updateFormulaResultValue(EvaluationResult result) {
 			_formulaResultValue=new FormulaResultCellValue(result);
-			updateCelltoDB();
+			DirtyManagerLog.instance.markClean(getCellRegion());
+			trxId = _sheet.getTrxId();
+			if (!CellImpl.disableDBUpdates)
+				updateCelltoDB();
 	}
 }
