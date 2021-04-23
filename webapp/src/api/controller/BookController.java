@@ -35,17 +35,15 @@ public class BookController {
         template.convertAndSend(MESSAGE_PREFIX+"/greetings", "");
         return null;
     }
-    @RequestMapping(value = "/api/getname",
+    @RequestMapping(value = "/api/getName",
             method = {RequestMethod.POST, RequestMethod.GET})
-    public Map<String, Object> getname(@RequestBody String json){
+    public Map<String, Object> getName(@RequestBody String json){
         JSONObject obj = new JSONObject(json);
         String bookId = (String) obj.get("bookId");
-        System.out.println("get "+bookId);
         SBook book = BookBindings.getBookById(bookId);
         String name = book.getBookName();
-        System.out.println(name);
         Map<String, Object> bookn = ImmutableMap.of("name", name);
-        System.out.println(bookn.toString());
+
         return bookn;
     }
 
@@ -150,37 +148,68 @@ public class BookController {
 
     @RequestMapping(value = "/api/changeBookName",
             method = {RequestMethod.PUT, RequestMethod.GET})
-    //public HashMap<String, Object> changeBookName(@RequestHeader("auth-token") String authToken,
-                                                  //@RequestBody String json) {
+
     public HashMap<String, Object> changeBookName(@RequestBody String json) {
-        System.out.println(json);
+
         JSONObject obj = new JSONObject(json);
-        System.out.println(obj);
+        HashMap m = new HashMap();
         String bookId = (String) obj.get("bookId");
-        System.out.println(bookId);
-        //if (!Authorization.authorizeBook(bookId, authToken)){
-            //JsonWrapper.generateError("Permission denied for accessing this book");
-        //}
+
         String newBookName = (String) obj.get("newBookName");
-        String query = "SELECT COUNT(*) FROM books WHERE bookname = ?";
+        SBook book = BookBindings.getBookById(bookId);
+        String query = "SELECT EXISTS( SELECT FROM books WHERE bookname = ? )";
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setString(1, newBookName);
             ResultSet rs = statement.executeQuery();
+            String oldName = book.getBookName();
+
             if (rs.next()) {
-                if (rs.getInt(1) > 0)
-                    return JsonWrapper.generateError("Duplicated Book Name");
+                System.out.println(rs.getBoolean(1));
+                if (rs.getBoolean(1) == true && !oldName.equals(newBookName) ){
+                    m.put("success","0");
+
+                    return m;
+                }
+
+            }
+            System.out.println("newname " + newBookName);
+            if (!oldName.equals(newBookName)){
+                System.out.println("starting2");
+                query = "UPDATE books SET bookname = ? WHERE bookname = ?";
+                PreparedStatement statement1 = connection.prepareStatement(query);
+                statement1.setString(1, newBookName);
+                statement1.setString(2, oldName);
+                statement1.executeUpdate();
+
+                query = "UPDATE dependency SET bookname = ? WHERE bookname = ?";
+                PreparedStatement statement2 = connection.prepareStatement(query);
+                statement2.setString(1, newBookName);
+                statement2.setString(2, oldName);
+                statement2.executeUpdate();
+                query = "UPDATE full_dependency SET bookname = ? WHERE bookname = ?";
+                PreparedStatement statement3 = connection.prepareStatement(query);
+                statement3.setString(1, newBookName);
+                statement3.setString(2, oldName);
+                statement3.executeUpdate();
+                query = "UPDATE sheets SET bookname = ? WHERE bookname = ?";
+                PreparedStatement statement4 = connection.prepareStatement(query);
+                statement4.setString(1, newBookName);
+                statement4.setString(2, oldName);
+                statement4.executeUpdate();
             }
         } catch (SQLException e) {
             e.printStackTrace();
+
             return JsonWrapper.generateError(e.getMessage());
         }
-        newBookName = (String) obj.get("newBookName");
-        SBook book = BookBindings.getBookById(bookId);
+
+
         book.setBookName(newBookName);
         System.out.println(book.getBookName() + "name\n");
         template.convertAndSend(getCallbackPath(), "");
-        return bookWrapper(bookId, newBookName);
+        m.put("success","1");
+        return m;
 
     }
 

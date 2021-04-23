@@ -51,14 +51,20 @@ export default class NameForm extends Component {
             }
         })
             .then((response) => response.json())
-            .then((data) => {console.log("newname"),
-                console.log(data)});
-            //.then((data) => this.transform(data))
-            //.catch(() => {
-               // alert("Lost connection to server.");
-           // });
+            .then((data) => {console.log(data),
+
+                console.log(data.success)
+                if (data.success == "0"){
+                    alert("Duplicate name");
+                    this.fetchn();
+                }})
+            .catch(() => {
+                alert("Duplicate name")
+                this.fetchn();
+            });
 
     }
+
     fetchn() {
         let queryData = {
             "bookId": this.props.bookId,
@@ -66,7 +72,7 @@ export default class NameForm extends Component {
         let tmp = (this.state.urlPrefix+'').slice(0,-10);
         console.log(queryData);
         console.log(JSON.stringify(queryData));
-        fetch(tmp + "/api/getname",{
+        fetch(tmp + "/api/getName",{
             method: "POST",
             body: JSON.stringify(queryData),
             headers: {
@@ -78,7 +84,7 @@ export default class NameForm extends Component {
                 data => {
                     console.log(data),
                         console.log(data.name),
-                    this.setState({ text: data.name })
+                        this.setState({ text: data.name })
                 });
         console.log("reset");
         console.log(this.state.text);

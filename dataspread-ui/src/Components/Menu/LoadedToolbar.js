@@ -67,15 +67,11 @@ export default class LoadedToolbar extends Component {
                         <ModalAboutUs/>
                     </Dropdown.Menu>
                 </Dropdown>
-                
-                <NameForm bookId={this.props.bookId} key={new Date().getTime()}/>
-                
-
-
                 <Menu.Menu position='right'>
                     <Menu.Item>
-                        Sign In
+                        <NameForm bookId={this.props.bookId} key={new Date().getTime()}/>
                     </Menu.Item>
+
                 </Menu.Menu>
             </Menu>
         )
