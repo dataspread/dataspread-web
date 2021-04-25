@@ -25,6 +25,10 @@ public class FormulaAsyncSchedulerSimple extends FormulaAsyncScheduler {
     private static final Logger logger = Logger.getLogger(FormulaAsyncSchedulerSimple.class.getName());
     private boolean keepRunning = true;
 
+    public static void initScheduler() {
+        schedulerInstance = new FormulaAsyncSchedulerSimple();
+    }
+
     @Override
     public void run() {
         while (keepRunning) {

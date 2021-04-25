@@ -18,6 +18,11 @@ public class DirtyManagerPGImpl extends DirtyManager {
     }
 
     @Override
+    public void reset() {
+
+    }
+
+    @Override
     public int getDirtyTrxId(Ref region) {
         int trxId = -1;
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
