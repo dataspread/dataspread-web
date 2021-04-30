@@ -16,6 +16,8 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zss.model.sys.dependency;
 
+import org.zkoss.util.Pair;
+
 import java.util.Set;
 
 /**
@@ -46,7 +48,11 @@ public interface DependencyTable {
 
 	Set<Ref> searchPrecedents(RefFilter filter);
 
-	/**
+
+	default void addBatch(Set<Pair<Ref, Ref>> edgeBatch) {}
+	default void refreshCache(String bookName, String sheetName) {}
+
+		/**
 	 * @since 3.5.0
 	 */
 	public interface RefFilter{

@@ -1,8 +1,9 @@
 package org.zkoss.zss.model.impl.sys.utils;
 
 public enum Direction {
-    TOLEFT,
+    TODOWN,
     TORIGHT,
     TOUP,
-    TODOWN
+    TOLEFT,
+    NODIRECTION
 }
