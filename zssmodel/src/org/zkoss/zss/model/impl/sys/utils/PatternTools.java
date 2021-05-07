@@ -4,6 +4,7 @@ import org.zkoss.util.Pair;
 import org.zkoss.zss.model.impl.RefImpl;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class PatternTools {
@@ -17,9 +18,14 @@ public class PatternTools {
     }
 
     // Only called after isCompressibleTypeOne is true
-    public static boolean isCompressibleTypeZero(Ref candPrec, Ref candDep,
-                                          Direction direction) {
-        return shiftRef(candPrec, direction).equals(candDep);
+    public static boolean isCompressibleTypeZero(Ref candPrec, Ref candDep) {
+        boolean isTypeZero = false;
+        for (Direction direction: Direction.values()) {
+            if (direction != Direction.NODIRECTION && !isTypeZero) {
+                isTypeZero = shiftRef(candPrec, direction).equals(candDep);
+            }
+        }
+        return isTypeZero;
     }
 
     // Relative start, fixed end
@@ -181,20 +187,29 @@ public class PatternTools {
         int endRowOffset = edgeMeta.endOffset.getRowOffset();
         int endColOffset = edgeMeta.endOffset.getColOffset();
 
-        switch (edgeMeta.patternType) {
-            case TYPEZERO:
-            case TYPETWO: // relative start, fixed end
-                row = precRange.getRow() + startRowOffset;
-                col = precRange.getColumn() + startColOffset;
-                lastRow = dep.getLastRow();
-                lastCol = dep.getLastColumn();
-                break;
+        PatternType patternType;
+        if (edgeMeta.patternType != PatternType.TYPEZERO)
+            patternType = edgeMeta.patternType;
+        else { // TYPEZERO
+            if (startRowOffset == 1 || startColOffset == 1) patternType = PatternType.TYPETWO;
+            else if (startRowOffset == -1 || startColOffset == -1) patternType = PatternType.TYPETHREE;
+            else throw new RuntimeException("TYPE ZERO offset (" + startRowOffset + ","
+                        + startColOffset + ") wrong");
+        }
 
+        switch (patternType) {
             case TYPEONE: // relative start, relative end
                 row = precRange.getRow() + startRowOffset;
                 col = precRange.getColumn() + startColOffset;
                 lastRow = precRange.getLastRow() + endRowOffset;
                 lastCol = precRange.getLastColumn() + endColOffset;
+                break;
+
+            case TYPETWO: // relative start, fixed end
+                row = precRange.getRow() + startRowOffset;
+                col = precRange.getColumn() + startColOffset;
+                lastRow = dep.getLastRow();
+                lastCol = dep.getLastColumn();
                 break;
 
             case TYPETHREE: // fixed start, relative end
@@ -204,13 +219,16 @@ public class PatternTools {
                 lastCol = precRange.getLastColumn() + endColOffset;
                 break;
 
-            case TYPEFOUR: // fixed start, fixed end
+            default: //case TYPEFOUR: fixed start, fixed end
+                     //case NOTYPE
                 row = dep.getRow();
                 col = dep.getColumn();
                 lastRow = dep.getLastRow();
                 lastCol = dep.getLastColumn();
                 break;
         }
+
+        assert edgeMeta.patternType != PatternType.NOTYPE || (row == lastRow && col == lastCol);
 
         return new RefImpl(
                 prec.getBookName(),
@@ -231,22 +249,29 @@ public class PatternTools {
         int endRowOffset = edgeMeta.endOffset.getRowOffset();
         int endColOffset = edgeMeta.endOffset.getColOffset();
 
-        PatternType realType = edgeMeta.patternType;
-        if (edgeMeta.patternType == PatternType.TYPEZERO && isDirectPrec)
-            realType = PatternType.TYPEONE;
+        PatternType patternType;
+        if (edgeMeta.patternType != PatternType.TYPEZERO)
+            patternType = edgeMeta.patternType;
+        else { // TYPEZERO
+            if (isDirectPrec) patternType = PatternType.TYPEONE;
+            else if (startRowOffset == 1 || startColOffset == 1) patternType = PatternType.TYPETWO;
+            else if (startRowOffset == -1 || startColOffset == -1) patternType = PatternType.TYPETHREE;
+            else throw new RuntimeException("TYPE ZERO offset (" + startRowOffset + ","
+                        + startColOffset + ") wrong");
+        }
 
-        switch (realType) {
-            case TYPEZERO:
-            case TYPETWO: // relative start, fixed end
-                row = prec.getRow();
-                col = prec.getColumn();
-                lastRow = depRange.getLastRow() - startRowOffset;
-                lastCol = depRange.getLastColumn() - startColOffset;
-                break;
+        switch (patternType) {
 
             case TYPEONE: // relative start, relative end
                 row = depRange.getRow() - endRowOffset;
                 col = depRange.getColumn() - endColOffset;
+                lastRow = depRange.getLastRow() - startRowOffset;
+                lastCol = depRange.getLastColumn() - startColOffset;
+                break;
+
+            case TYPETWO: // relative start, fixed end
+                row = prec.getRow();
+                col = prec.getColumn();
                 lastRow = depRange.getLastRow() - startRowOffset;
                 lastCol = depRange.getLastColumn() - startColOffset;
                 break;
@@ -258,7 +283,8 @@ public class PatternTools {
                 lastCol = prec.getLastColumn();
                 break;
 
-            case TYPEFOUR: // fixed start, fixed end
+            default: // TYPEFOUR: fixed start, fixed end
+                     // NOTYPE
                 row = prec.getRow();
                 col = prec.getColumn();
                 lastRow = prec.getLastRow();
