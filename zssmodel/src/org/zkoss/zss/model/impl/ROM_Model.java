@@ -131,6 +131,8 @@ public class ROM_Model extends Model {
         }
         rowMapping.dropSchema(context);
         colMapping.dropSchema(context);
+        rowCombinedTree.dropSchema(context);
+        colCombinedTree.dropSchema(context);
     }
 
 
