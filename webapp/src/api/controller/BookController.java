@@ -96,9 +96,8 @@ public class BookController {
             }
 
             // Clean up sheet table
-            List<SSheet> sheets = bookImpl.getSheets();
-            for (SSheet sheet : sheets) {
-                bookImpl.deleteSheet(sheet);
+            while (bookImpl.getNumOfSheet() > 0) {
+                bookImpl.deleteSheet(bookImpl.getSheet(0));
             }
 
             // Delete row from book table
@@ -106,12 +105,11 @@ public class BookController {
 
             // Delete rows from other tables
             for (String table : clearTables) {
-                String query = "DELETE FROM ? WHERE booktable = ?";
+                String query = "DELETE FROM " + table + " WHERE booktable = ?";
                 System.out.println(query);
                 try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
                      PreparedStatement statement = connection.prepareStatement(query)) {
-                    statement.setString(1, table);
-                    statement.setString(2, bookId);
+                    statement.setString(1, bookId);
                     statement.execute();
                     connection.commit();
                 } catch (SQLException e) {
@@ -122,12 +120,11 @@ public class BookController {
 
             // Delete rows from dependency tables
             for (String table : clearDepTables) {
-                String query = "DELETE FROM ? WHERE bookname = ?";
+                String query = "DELETE FROM" + table + " WHERE bookname = ?";
                 System.out.println(query);
                 try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
                      PreparedStatement statement = connection.prepareStatement(query)) {
-                    statement.setString(1, table);
-                    statement.setString(2, bookName);
+                    statement.setString(1, bookName);
                     statement.execute();
                     connection.commit();
                 } catch (SQLException e) {
