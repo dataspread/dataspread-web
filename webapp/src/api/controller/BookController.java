@@ -132,7 +132,6 @@ public class BookController {
             //         return JsonWrapper.generateError(e.getMessage());
             //     }
             // }
-
         }
         template.convertAndSend(getCallbackPath(), "");
         return JsonWrapper.generateJson(null);
