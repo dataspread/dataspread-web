@@ -119,19 +119,19 @@ public class BookController {
             }
 
             // Delete rows from dependency tables
-            for (String table : clearDepTables) {
-                String query = "DELETE FROM" + table + " WHERE bookname = ?";
-                System.out.println(query);
-                try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-                     PreparedStatement statement = connection.prepareStatement(query)) {
-                    statement.setString(1, bookName);
-                    statement.execute();
-                    connection.commit();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    return JsonWrapper.generateError(e.getMessage());
-                }
-            }
+            // for (String table : clearDepTables) {
+            //     String query = "DELETE FROM " + table + " WHERE bookname = ?";
+            //     System.out.println(query);
+            //     try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+            //          PreparedStatement statement = connection.prepareStatement(query)) {
+            //         statement.setString(1, bookName);
+            //         statement.execute();
+            //         connection.commit();
+            //     } catch (SQLException e) {
+            //         e.printStackTrace();
+            //         return JsonWrapper.generateError(e.getMessage());
+            //     }
+            // }
 
         }
         template.convertAndSend(getCallbackPath(), "");
