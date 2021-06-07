@@ -1,4 +1,4 @@
-package networkcompression.tests;
+package ASyncTest.tests;
 
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.sys.dependency.Ref;

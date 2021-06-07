@@ -1,4 +1,4 @@
-package networkcompression.tests;
+package ASyncTest.tests;
 
 public interface AsyncTestFactory {
 

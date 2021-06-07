@@ -89,8 +89,7 @@ public class DependencyTableComp extends DependencyTableAdv {
     public void add(Ref dependent, Ref precedent) {
         String insertQuery = "INSERT INTO " + logTableName
                 + "VALUES (?,?,?,?,?,?,?,TRUE)";
-        boolean isInsert = true;
-        appendOneLog(insertQuery, precedent, dependent, isInsert);
+        appendOneLog(insertQuery, precedent, dependent);
     }
 
     @Override
@@ -99,11 +98,10 @@ public class DependencyTableComp extends DependencyTableAdv {
     }
 
     @Override
-    public void clearDependents(Ref dependant) {
+    public void clearDependents(Ref dependent) {
         String deleteQuery = "INSERT INTO " + logTableName
                 + "VALUES (?,?,?,?,?,?,?,FALSE)";
-        boolean isInsert = false;
-        appendOneLog(deleteQuery, null, dependant, isInsert);
+        appendOneLog(deleteQuery, null, dependent);
     }
 
     @Override
@@ -164,6 +162,20 @@ public class DependencyTableComp extends DependencyTableAdv {
                 }
             }
         });
+
+        // Flush the update cache
+        updateCache.forEach(edgeUpdate -> {
+            if (edgeUpdate.hasUpdate()) {
+                try {
+                    deleteDBEntry(dbContext, edgeUpdate.oldPrec, edgeUpdate.oldDep, edgeUpdate.oldEdgeMeta);
+                    insertDBEntry(dbContext, edgeUpdate.newPrec, edgeUpdate.newDep, edgeUpdate.newEdgeMeta.patternType,
+                            edgeUpdate.newEdgeMeta.startOffset, edgeUpdate.newEdgeMeta.endOffset);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
         connection.commit();
     }
 
@@ -204,7 +216,7 @@ public class DependencyTableComp extends DependencyTableAdv {
                 Ref prec = null;
                 if (range != null) prec = boxToRef(range, bookName, sheetName);
                 Ref dep = boxToRef(dep_range, bookName, sheetName);
-                boolean isInsert = rs.getBoolean(3);
+                boolean isInsert = rs.getBoolean(4);
                 result.add(new LogEntry(id, prec, dep, isInsert));
             }
         } catch (SQLException e) {
@@ -240,12 +252,11 @@ public class DependencyTableComp extends DependencyTableAdv {
 
     private void appendOneLog(String appendLogQuery,
                               Ref prec,
-                              Ref dep,
-                              boolean isInsert) {
+                              Ref dep) {
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
              PreparedStatement stmt = connection.prepareStatement(appendLogQuery)) {
             stmt.setInt(1, logEntryNum);
-            if (!isInsert) {
+            if (prec != null) {
                 stmt.setString(2, prec.getBookName());
                 stmt.setString(3, prec.getSheetName());
                 stmt.setObject(4, refToPGBox(prec), Types.OTHER);
@@ -258,13 +269,17 @@ public class DependencyTableComp extends DependencyTableAdv {
             stmt.setString(6, dep.getSheetName());
             stmt.setObject(7, refToPGBox(dep), Types.OTHER);
             stmt.execute();
+
+            logEntryNum += 1;
+            if (prec != null) insertEntryNum += 1;
+
             connection.commit();
         } catch (SQLException e) {
+            logEntryNum -= 1;
+            if (prec != null) insertEntryNum -= 1;
+
             e.printStackTrace();
         }
-
-        logEntryNum += 1;
-        if (isInsert) insertEntryNum += 1;
     }
 
     private EdgeUpdate addToUpdateCache(LinkedList<EdgeUpdate> updateCache,
@@ -382,11 +397,11 @@ public class DependencyTableComp extends DependencyTableAdv {
 
     private Offset refToOffset(Ref prec, Ref dep, boolean isStart) {
         if (isStart) {
+            return new Offset(dep.getLastRow() - prec.getLastRow(),
+                    dep.getLastColumn() - prec.getLastColumn());
+        } else {
             return new Offset(dep.getRow() - prec.getRow(),
                     dep.getColumn() - prec.getColumn());
-        } else {
-            return new Offset(dep.getLastRow() - prec.getLastRow(),
-                    dep.getColumn() - prec.getLastColumn());
         }
     }
 
@@ -460,13 +475,17 @@ public class DependencyTableComp extends DependencyTableAdv {
     private void insertMemEntry(Ref prec,
                                 Ref dep,
                                 EdgeMeta edgeMeta) {
-        List<RefWithMeta> depList = _mapCache.get(prec);
-        depList.add(new RefWithMeta(dep, edgeMeta));
-        _mapCache.put(prec, depList);
+        if (_mapCache.containsKey(prec)) {
+            List<RefWithMeta> depList = _mapCache.get(prec);
+            depList.add(new RefWithMeta(dep, edgeMeta));
+            _mapCache.put(prec, depList);
+        }
 
-        List<RefWithMeta> precList = _reverseMapCache.get(dep);
-        precList.add(new RefWithMeta(prec, edgeMeta));
-        _reverseMapCache.put(dep, precList);
+        if (_reverseMapCache.containsKey(dep)) {
+            List<RefWithMeta> precList = _reverseMapCache.get(dep);
+            precList.add(new RefWithMeta(prec, edgeMeta));
+            _reverseMapCache.put(dep, precList);
+        }
     }
 
     private void performOneDelete(int id, Ref delDep) {
@@ -578,14 +597,15 @@ public class DependencyTableComp extends DependencyTableAdv {
             ResultSet rs =  stmt.executeQuery();
             while(rs.next()) {
                 PGbox range = (PGbox) rs.getObject(1);
-                _rectToRefCache.add(boxToRef(range, bookName, sheetName), boxtoRef(range));
+                _rectToRefCache.add(boxToRef(range, bookName, sheetName), boxToRect(range));
             }
+            connection.commit();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    private Rectangle boxtoRef(PGbox box) {
+    private Rectangle boxToRect(PGbox box) {
         return RectangleFloat.create((float) box.point[0].x, (float) box.point[0].y,
                 (float) (0.5 + box.point[1].x), (float) (0.5 + box.point[1].y));
     }
@@ -629,7 +649,7 @@ public class DependencyTableComp extends DependencyTableAdv {
 
         // Otherwise, find the compression type
         Direction direction = findAdjacencyDirection(dep, candDep);
-        Ref lastCandPrec = findLastPrec(prec, dep, metaData, direction);
+        Ref lastCandPrec = findLastPrec(candPrec, candDep, metaData, direction);
         PatternType compressType =
                 findCompPatternHelper(direction, prec, dep, candPrec, candDep, lastCandPrec);
         PatternType retCompType = PatternType.NOTYPE;
@@ -647,7 +667,7 @@ public class DependencyTableComp extends DependencyTableAdv {
         PatternType compressType = PatternType.NOTYPE;
         if (isCompressibleTypeOne(lastCandPrec, prec, direction)) {
             compressType = PatternType.TYPEONE;
-            if (isCompressibleTypeZero(candPrec, candDep, direction))
+            if (isCompressibleTypeZero(candPrec, candDep))
                 compressType = PatternType.TYPEZERO;
         } else if (isCompressibleTypeTwo(lastCandPrec, prec, direction))
             compressType = PatternType.TYPETWO;
@@ -670,9 +690,10 @@ public class DependencyTableComp extends DependencyTableAdv {
         Arrays.stream(Direction.values()).filter(direction -> direction != Direction.NODIRECTION)
                 .forEach(direction ->
                         findOverlappingRefs(shiftRef(ref, direction))
-                .forEachRemaining(adjRef -> {
-                    if (isValidAdjacency(adjRef, ref)) res.addLast(adjRef); // valid adjacency
-                }));
+                                .forEachRemaining(adjRef -> {
+                                    if (isValidAdjacency(adjRef, ref)) res.addLast(adjRef); // valid adjacency
+                                })
+                );
 
         return res;
     }
@@ -875,6 +896,13 @@ public class DependencyTableComp extends DependencyTableAdv {
             this.newDep = newDep;
             this.newEdgeMeta = newEdgeMeta;
         }
+
+        boolean hasUpdate() {
+            return !(oldPrec.equals(newPrec) &&
+                     oldDep.equals(oldPrec) &&
+                     oldEdgeMeta.equals(newEdgeMeta));
+        }
+
     }
 
     private class CompressInfo {
