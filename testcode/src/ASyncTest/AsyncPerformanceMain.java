@@ -1,13 +1,13 @@
-package networkcompression;
+package ASyncTest;
 
-import networkcompression.compression.asynccomp.AsyncPgCompressor;
-import networkcompression.compression.asynccomp.AsyncCompressor;
-import networkcompression.compression.DefaultCompressor;
-import networkcompression.runners.AsyncBaseTestRunner;
-import networkcompression.runners.AsyncTestRunner;
-import networkcompression.runners.SyncTestRunner;
-import networkcompression.utils.Util;
-import networkcompression.tests.*;
+import ASyncTest.compression.asynccomp.AsyncPgCompressor;
+import ASyncTest.compression.asynccomp.AsyncCompressor;
+import ASyncTest.compression.DefaultCompressor;
+import ASyncTest.runners.AsyncBaseTestRunner;
+import ASyncTest.runners.AsyncTestRunner;
+import ASyncTest.runners.SyncTestRunner;
+import ASyncTest.utils.Util;
+import ASyncTest.tests.*;
 
 import org.zkoss.zss.model.impl.sys.DependencyTableImplV4;
 import org.zkoss.zss.model.impl.sys.DependencyTablePGImpl;

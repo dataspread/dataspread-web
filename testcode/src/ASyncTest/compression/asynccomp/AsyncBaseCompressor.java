@@ -1,10 +1,10 @@
-package networkcompression.compression.asynccomp;
+package ASyncTest.compression.asynccomp;
 
-import networkcompression.utils.Util;
+import ASyncTest.utils.Util;
 
-import networkcompression.compression.BaseCompressor;
-import networkcompression.runners.TestMetadata;
-import networkcompression.tests.AsyncBaseTest;
+import ASyncTest.compression.BaseCompressor;
+import ASyncTest.runners.TestMetadata;
+import ASyncTest.tests.AsyncBaseTest;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.CellRegion;
 

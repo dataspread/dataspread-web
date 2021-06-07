@@ -1,8 +1,8 @@
-package networkcompression.runners;
+package ASyncTest.runners;
 
-import networkcompression.compression.BaseCompressor;
-import networkcompression.tests.AsyncBaseTest;
-import networkcompression.utils.Util;
+import ASyncTest.compression.BaseCompressor;
+import ASyncTest.tests.AsyncBaseTest;
+import ASyncTest.utils.Util;
 
 import org.zkoss.zss.model.sys.formula.DirtyManagerLog;
 

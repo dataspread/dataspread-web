@@ -1,6 +1,6 @@
-package networkcompression.utils;
+package ASyncTest.utils;
 
-import networkcompression.AsyncPerformanceMain;
+import ASyncTest.AsyncPerformanceMain;
 import org.model.DBHandler;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;

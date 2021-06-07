@@ -1,11 +1,11 @@
-package networkcompression.tests;
+package ASyncTest.tests;
 
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
 import java.util.Random;
 
-public class TestRunningTotalSlow extends AsyncBaseTest {
+public class TestRunningTotalFast extends AsyncBaseTest {
 
     private final int rows;
     private int answer;
@@ -14,17 +14,17 @@ public class TestRunningTotalSlow extends AsyncBaseTest {
         return new AsyncTestFactory() {
             @Override
             public AsyncBaseTest createTest() {
-                return new TestRunningTotalSlow(rows);
+                return new TestRunningTotalFast(rows);
             }
 
             @Override
             public String toString() {
-                return "TestRunningTotalSlow" + rows;
+                return "TestRunningTotalFast" + rows;
             }
         };
     }
 
-    public TestRunningTotalSlow(final int rows) {
+    public TestRunningTotalFast(final int rows) {
         super();
         this.rows = rows;
     }
@@ -43,7 +43,7 @@ public class TestRunningTotalSlow extends AsyncBaseTest {
         for (int i = 1; i < rows; i++) {
             int num = random.nextInt(1000);
             sheet.getCell(i, 0).setValue(num);
-            sheet.getCell(i, 1).setFormulaValue("SUM(A1:A" + (i + 1) + ")");
+            sheet.getCell(i, 1).setFormulaValue("A" + (i + 1) + " + B" + (i));
             answer += num;
         }
 

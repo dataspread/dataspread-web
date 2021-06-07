@@ -1,4 +1,4 @@
-package networkcompression.runners;
+package ASyncTest.runners;
 
 import org.zkoss.util.Pair;
 
