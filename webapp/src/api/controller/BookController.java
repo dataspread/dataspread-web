@@ -3,6 +3,7 @@ package api.controller;
 import api.Authorization;
 import api.JsonWrapper;
 import com.google.common.collect.ImmutableMap;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
@@ -11,6 +12,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.zkoss.poi.util.IOUtils;
 import org.zkoss.zss.model.SBook;
+import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.impl.BookImpl;
 import org.zkoss.zss.model.sys.BookBindings;
 
@@ -77,20 +79,59 @@ public class BookController {
     public HashMap<String, Object> deleteBook(@RequestHeader("auth-token") String authToken,
                                               @RequestBody String json) {
         JSONObject obj = new JSONObject(json);
-        String bookId = (String) obj.get("bookId");
-        if (!Authorization.ownerBook(bookId, authToken)){
-            JsonWrapper.generateError("Permission denied for deleting this book");
-        }
-        BookImpl.deleteBook(null, bookId);
-        String query = "DELETE FROM user_books WHERE booktable = ?";
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, bookId);
-            statement.execute();
-            connection.commit();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return JsonWrapper.generateError(e.getMessage());
+        JSONArray bookIds = (JSONArray) obj.get("bookId");
+        String[] clearTables = {"user_books"};
+        String[] clearDepTables = {"dependency", "full_dependency"};
+
+        for (int i = 0; i < bookIds.length(); i++) {
+            // Run delete logic for each individual book
+            String bookId = bookIds.getString(i);
+            SBook bookImpl = BookBindings.getBookById(bookId);
+            String bookName = bookImpl.getBookName();
+            System.out.println(bookName);
+            // TODO: Find bookName from book table
+
+            if (!Authorization.ownerBook(bookId, authToken)){
+                JsonWrapper.generateError("Permission denied for deleting this book");
+            }
+
+            // Clean up sheet table
+            while (bookImpl.getNumOfSheet() > 0) {
+                bookImpl.deleteSheet(bookImpl.getSheet(0));
+            }
+
+            // Delete row from book table
+            BookImpl.deleteBook(null, bookId);
+
+            // Delete rows from other tables
+            for (String table : clearTables) {
+                String query = "DELETE FROM " + table + " WHERE booktable = ?";
+                System.out.println(query);
+                try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+                     PreparedStatement statement = connection.prepareStatement(query)) {
+                    statement.setString(1, bookId);
+                    statement.execute();
+                    connection.commit();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    return JsonWrapper.generateError(e.getMessage());
+                }
+            }
+
+            // Delete rows from dependency tables
+            // for (String table : clearDepTables) {
+            //     String query = "DELETE FROM " + table + " WHERE bookname = ?";
+            //     System.out.println(query);
+            //     try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+            //          PreparedStatement statement = connection.prepareStatement(query)) {
+            //         statement.setString(1, bookName);
+            //         statement.execute();
+            //         connection.commit();
+            //     } catch (SQLException e) {
+            //         e.printStackTrace();
+            //         return JsonWrapper.generateError(e.getMessage());
+            //     }
+            // }
         }
         template.convertAndSend(getCallbackPath(), "");
         return JsonWrapper.generateJson(null);
