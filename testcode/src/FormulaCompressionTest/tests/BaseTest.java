@@ -3,11 +3,16 @@ package FormulaCompressionTest.tests;
 import FormulaCompressionTest.runners.TestStats;
 import FormulaCompressionTest.utils.Util;
 
+import org.model.AutoRollbackConnection;
+import org.model.DBHandler;
+import org.zkoss.zss.model.impl.BookImpl;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.SBook;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -166,4 +171,26 @@ public abstract class BaseTest {
         );
     }
 
+    public void cleanup() {
+        // Clean up sheet table
+        while (book.getNumOfSheet() > 0) {
+            book.deleteSheet(book.getSheet(0));
+        }
+
+        // Delete row from book table
+        BookImpl.deleteBook(book.getBookName(), book.getId());
+
+        // Clean up other tables
+        String query = "DELETE FROM " + DBHandler.userBooks + " WHERE booktable = ?";
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, book.getId());
+            statement.execute();
+            connection.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
+
+    }
 }
