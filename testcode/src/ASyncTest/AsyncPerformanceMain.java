@@ -104,7 +104,10 @@ public class AsyncPerformanceMain {
     // uses AsyncPgCompressor, the dependency table implementation will automatically be set to DependencyTablePGImpl.
     public static final Class<?>    DEPENDENCY_TABLE_IMPLEMENTATION = DependencyTableImplV4.class;
 
-    public static final Path        CONFIG_PATH = Paths.get("..", "REPORTS/config");
+    public static final String      URL         = "jdbc:postgresql://127.0.0.1:5433/dataspread";
+    public static final String      DBDRIVER    = "org.postgresql.Driver";
+    public static final String      USERNAME    = "dataspreaduser";
+    public static final String      PASSWORD    = "password";
     public static final Path        OUT_PATH    = Paths.get("..", "REPORTS");
     public static final int         ROUNDS      = 10;
     public static final int         SLEEP       = 5000;
@@ -124,9 +127,7 @@ public class AsyncPerformanceMain {
     // List the factories of the tests needed
     public static final AsyncTestFactory[] TESTS = {
             //TestRealWorldSheet.getFactory(Paths.get("..", "EXCEL", "sample.xlsx")),
-            //TestRate.getFactory(3000),
-            TestRunningTotalSlow.getFactory(3000)
-            //TestRunningTotalFast.getFactory(3000)
+            TestRunningTotalSlow.getFactory(3000),
     };
 
     // Keys should also be valid directory names
