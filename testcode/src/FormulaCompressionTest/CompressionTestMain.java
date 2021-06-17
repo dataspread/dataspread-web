@@ -29,7 +29,7 @@ public class CompressionTestMain {
     /**
      * Config File Path
      */
-    public static final String configPath = "../config.properties";
+    public static String configPath = "../config.properties";
 
     /**
      * DB Connection Configuration
@@ -159,7 +159,11 @@ public class CompressionTestMain {
 
             spreadsheetString = config.getProperty("spreadsheetString");
             spreadsheetOperation = config.getProperty("spreadsheetOperation");
-            testArgs = new String[] {config.getProperty("testarg1"), config.getProperty("testarg2")};
+            testArgs = new String[Integer.parseInt(config.getProperty("numTestArgs"))];
+            for (int i = 0; i < testArgs.length; i++) {
+                testArgs[i] = config.getProperty("testArg." + i);
+            }
+
         } catch (Exception e) {
             System.out.println("Error trying to open config file at " +
                     new File(configPath).getAbsolutePath());
@@ -170,19 +174,22 @@ public class CompressionTestMain {
     public static void main (String[] args) {
 
         // Setup
-        readConfig();
-        CompressionTestMain.basicSetup(outFolder);
-        CompressionTestMain.configTestRunner(useSyncRunner, outFolder);
-        CompressionTestMain.configDependencyTable(depTableClassString);
-        CompressionTestMain.genTestCase(spreadsheetString, spreadsheetOperation,
-                depTableCacheSize, ASYNC_COMPRESS_CONSTANT);
+        for (String path : args) {
+            configPath = path;
+            readConfig();
+            CompressionTestMain.basicSetup(outFolder);
+            CompressionTestMain.configTestRunner(useSyncRunner, outFolder);
+            CompressionTestMain.configDependencyTable(depTableClassString);
+            CompressionTestMain.genTestCase(spreadsheetString, spreadsheetOperation,
+                    depTableCacheSize, ASYNC_COMPRESS_CONSTANT);
 
-        // Run the test
-        System.out.println(Util.getCurrentTime() + ": Running test...");
-        testRunner.run(oneTest);
-        System.out.println(Util.getCurrentTime() + ": Done!");
+            // Run the test
+            System.out.println(Util.getCurrentTime() + ": Running test...");
+            testRunner.run(oneTest);
+            System.out.println(Util.getCurrentTime() + ": Done!");
 
-        testRunner.dumpStatdata();
+            testRunner.dumpStatdata();
+        }
 
     }
 
