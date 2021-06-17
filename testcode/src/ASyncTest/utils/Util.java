@@ -9,6 +9,8 @@ import org.zkoss.zss.model.SSheet;
 import org.zkoss.zss.model.sys.BookBindings;
 import org.zkoss.zss.range.SImporters;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -86,13 +88,38 @@ public class Util {
 
     public static void connectToDBIfNotConnected() {
         if (DBHandler.instance == null) {
+            String[] configData = readConfig();
             DBHandler.connectToDB(
-                    AsyncPerformanceMain.URL,
-                    AsyncPerformanceMain.DBDRIVER,
-                    AsyncPerformanceMain.USERNAME,
-                    AsyncPerformanceMain.PASSWORD
+                    configData[0], configData[1], configData[2], configData[3]
             );
         }
+    }
+
+    public static String[] readConfig() {
+        String[] configData = new String[4];
+        try {
+            File configFile = AsyncPerformanceMain.CONFIG_PATH.toFile();
+            Scanner sc = new Scanner(configFile);
+            for (int i = 0; i < 4; i++) {
+                configData[i] = sc.nextLine();
+            }
+        } catch (FileNotFoundException e) {
+            System.out.println("Config file not found. Make a file named config in ../REPORTS formatted as follows:" +
+                    "\n[PostgreSQL URL]" +
+                    "\n[DB Driver]" +
+                    "\n[PostgreSQL Username]" +
+                    "\n[PostgreSQL Password]" +
+                    "\n" +
+                    "\nAttempting to use default PostgreSQL login.");
+            configData = new String[] {
+                    "jdbc:postgresql://127.0.0.1:5433/dataspread",
+                    "org.postgresql.Driver",
+                    "dataspreaduser",
+                    "password"
+            };
+        }
+
+        return configData;
     }
 
     // This method works correctly, but seems to cause an illegal reflective
