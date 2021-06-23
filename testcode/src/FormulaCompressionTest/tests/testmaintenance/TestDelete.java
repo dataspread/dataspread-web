@@ -1,16 +1,17 @@
-package FormulaCompressionTest.tests;
+package FormulaCompressionTest.tests.testmaintenance;
 
+import FormulaCompressionTest.tests.BaseTest;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
 import java.util.Random;
 
-public class TestRunningTotalSlow extends BaseTest {
+public class TestDelete extends BaseTest {
 
     private final int rows;
     private int answer;
 
-    public TestRunningTotalSlow(final int rows) {
+    public TestDelete(final int rows) {
         super();
         this.rows = rows;
     }
@@ -42,30 +43,29 @@ public class TestRunningTotalSlow extends BaseTest {
         double result = 0.0;
         for (int i = 0; i < rows; i++) {
             Object v = sheet.getCell(i, 1).getValue();
-            result += (double) v;
+            if (v != null) result += (double) v;
         }
         System.out.println(result);
     }
 
     @Override
     public boolean verify() {
-        try {
-            Object value_raw = sheet.getCell(rows - 1, 1).getValue();
-            double value = (double) value_raw;
-            return Math.abs(value - answer) <= 1e-6;
-        } catch (Exception e) {
-            return false;
-        }
+        return true;
     }
 
     @Override
     public Ref getCellToUpdate() {
-        return sheet.getCell(0, 0).getRef();
+        return sheet.getCell(0, 1).getRef();
     }
 
     @Override
     public void updateCell() {
-        sheet.getCell(0, 0).setValue(20);
+        sheet.getCell(0, 1).setValue(null);
+    }
+
+    @Override
+    public void execAfterUpdate() {
+        refreshDepTable();
     }
 
     @Override
@@ -75,6 +75,6 @@ public class TestRunningTotalSlow extends BaseTest {
 
     @Override
     public String toString() {
-        return "TestRunningTotalSlow" + rows;
+        return "TestDeletingRunningTotalSlow" + rows;
     }
 }

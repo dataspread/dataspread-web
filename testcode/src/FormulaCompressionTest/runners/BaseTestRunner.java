@@ -50,7 +50,6 @@ public abstract class BaseTestRunner implements FormulaAsyncListener {
         FormulaAsyncScheduler.getScheduler().updateVisibleMap(new HashMap<>());
         testCase.getSheet().setSyncComputation(true);
         testCase.init();
-        testCase.refreshDepTable();
         this.runAfterInit(testCase);
         testCase.genCellsToUpdate(this.cellsToUpdateSet, testStats);
         DirtyManagerLog.instance.init();
@@ -70,6 +69,7 @@ public abstract class BaseTestRunner implements FormulaAsyncListener {
         this.testStats.updateCellFinalTime = System.currentTimeMillis();
         FormulaAsyncScheduler.getScheduler().start();
         this.runAfterUpdate(testCase);
+        testCase.execAfterUpdate();
         testCase.touchAll();
         this.testStats.touchedTime = System.currentTimeMillis();
         this.testStats.isCorrect = testCase.verify();

@@ -298,7 +298,7 @@ public class CellImpl extends AbstractCellAdv {
 	}
 
 	@Override
-	protected synchronized boolean evalFormula(boolean	sync) {
+	public synchronized boolean evalFormula(boolean sync) {
 
 		CellValue val = getCellValue();
 		if(val==null ||  val.getType() != CellType.FORMULA) {

@@ -27,10 +27,10 @@ import static org.zkoss.zss.model.impl.sys.utils.PatternTools.*;
 
 public class DependencyTableComp extends DependencyTableAdv {
 
-    private final String dependencyTableName = "compressed_dependency";
-    private final String logTableName = "staged_log";
+    private final String dependencyTableName = DBHandler.compressDependency;
+    private final String logTableName = DBHandler.stagedLog;
 
-    private final int CACHE_SIZE = 1000000;
+    private int CACHE_SIZE = 1000000;
     private final int UPDATE_CACHE_SIZE = 100;
 
     /** Map<dependant, precedent> */
@@ -54,15 +54,18 @@ public class DependencyTableComp extends DependencyTableAdv {
     public Set<Ref> getDependents(Ref precedent) {
         final boolean isDirectDep = false;
         LinkedHashSet<Ref> result = new LinkedHashSet<>();
-        getDependentsInternal(precedent, result, isDirectDep);
 
-        if (insertEntryNum != 0) {
-            final boolean isInsertOnly = true;
-            getLogEntries(precedent.getBookName(), precedent.getSheetName(), isInsertOnly)
-                    .forEach(logEntry -> {
-                        getDependentsInternal(logEntry.prec, result, isDirectDep);
-                        getDependentsInternal(logEntry.dep, result, isDirectDep);
-                    });
+        if (isValidRef(precedent)) {
+            getDependentsInternal(precedent, result, isDirectDep);
+
+            if (insertEntryNum != 0) {
+                final boolean isInsertOnly = true;
+                getLogEntries(precedent.getBookName(), precedent.getSheetName(), isInsertOnly)
+                        .forEach(logEntry -> {
+                            getDependentsInternal(logEntry.prec, result, isDirectDep);
+                            getDependentsInternal(logEntry.dep, result, isDirectDep);
+                        });
+            }
         }
 
         return result;
@@ -81,14 +84,14 @@ public class DependencyTableComp extends DependencyTableAdv {
 
         boolean isDirectDep = true;
         LinkedHashSet<Ref> result = new LinkedHashSet<>() ;
-        getDependentsInternal(precedent, result, isDirectDep);
+        if (isValidRef(precedent)) getDependentsInternal(precedent, result, isDirectDep);
         return result;
     }
 
     @Override
     public void add(Ref dependent, Ref precedent) {
         String insertQuery = "INSERT INTO " + logTableName
-                + "VALUES (?,?,?,?,?,?,?,TRUE)";
+                + " VALUES (?,?,?,?,?,?,?,TRUE)";
         appendOneLog(insertQuery, precedent, dependent);
     }
 
@@ -100,7 +103,7 @@ public class DependencyTableComp extends DependencyTableAdv {
     @Override
     public void clearDependents(Ref dependent) {
         String deleteQuery = "INSERT INTO " + logTableName
-                + "VALUES (?,?,?,?,?,?,?,FALSE)";
+                + " VALUES (?,?,?,?,?,?,?,FALSE)";
         appendOneLog(deleteQuery, null, dependent);
     }
 
@@ -110,73 +113,103 @@ public class DependencyTableComp extends DependencyTableAdv {
     }
 
     @Override
-    public void addBatch(Set<Pair<Ref, Ref>> edgeBatch) {
-        AutoRollbackConnection connection = DBHandler.instance.getConnection();
-        DBContext dbContext = new DBContext(connection);
-        LinkedList<EdgeUpdate> updateCache = new LinkedList<>();
-        edgeBatch.forEach(oneEdge -> {
-            Ref prec = oneEdge.getX();
-            Ref dep = oneEdge.getY();
+    public void addBatch(List<Pair<Ref, Ref>> edgeBatch) {
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            DBContext dbContext = new DBContext(connection);
+            LinkedList<EdgeUpdate> updateCache = new LinkedList<>();
+            edgeBatch.forEach(oneEdge -> {
+                Ref prec = oneEdge.getX();
+                Ref dep = oneEdge.getY();
 
-            CompressInfo selectedInfo = null;
-            Pair<CompressInfo, EdgeUpdate> updatePair =
-                    findCompressInfoInUpdateCache(prec, dep, updateCache);
-            if (updatePair != null) {
-                selectedInfo = updatePair.getX();
-                EdgeUpdate updateMatch = updatePair.getY();
-                if (!selectedInfo.isDuplicate) {
-                    updateCache.remove(updateMatch);
-                    Ref newPrec = selectedInfo.prec.getBoundingBox(selectedInfo.candPrec);
-                    Ref newDep = selectedInfo.dep.getBoundingBox(selectedInfo.candDep);
-                    Pair<Offset, Offset> offsetPair = computeOffset(newPrec, newDep, selectedInfo.compType);
-                    updateMatch.updateEdge(newPrec, newDep,
-                            new EdgeMeta(selectedInfo.compType, offsetPair.getX(), offsetPair.getY()));
-                    updateCache.addFirst(updateMatch);
-                }
-            } else {
-                try {
-                    LinkedList<CompressInfo> compressInfoList = findCompressInfo(prec, dep);
-                    if (!compressInfoList.isEmpty()) {
-                        selectedInfo = Collections.min(compressInfoList, compressInfoComparator);
-
+                CompressInfo selectedInfo = null;
+                Pair<CompressInfo, EdgeUpdate> updatePair =
+                        findCompressInfoInUpdateCache(prec, dep, updateCache);
+                if (updatePair != null) {
+                    selectedInfo = updatePair.getX();
+                    EdgeUpdate updateMatch = updatePair.getY();
+                    if (!selectedInfo.isDuplicate) {
+                        updateCache.remove(updateMatch);
                         Ref newPrec = selectedInfo.prec.getBoundingBox(selectedInfo.candPrec);
                         Ref newDep = selectedInfo.dep.getBoundingBox(selectedInfo.candDep);
                         Pair<Offset, Offset> offsetPair = computeOffset(newPrec, newDep, selectedInfo.compType);
-
-                        EdgeUpdate evicted = addToUpdateCache(updateCache, newPrec, newDep,
+                        updateMatch.updateEdge(newPrec, newDep,
                                 new EdgeMeta(selectedInfo.compType, offsetPair.getX(), offsetPair.getY()));
-                        deleteDBEntry(dbContext, evicted.oldPrec, evicted.oldDep, evicted.oldEdgeMeta);
-                        insertDBEntry(dbContext, evicted.newPrec, evicted.newDep, evicted.newEdgeMeta.patternType,
-                                evicted.newEdgeMeta.startOffset, evicted.newEdgeMeta.endOffset);
-
-                    } else {
-                        EdgeMeta noTypeEdgeMeta = new EdgeMeta(PatternType.NOTYPE,
-                                Offset.noOffset, Offset.noOffset);
-                        EdgeUpdate evicted = addToUpdateCache(updateCache, prec, dep, noTypeEdgeMeta);
-                        deleteDBEntry(dbContext, evicted.oldPrec, evicted.oldDep, evicted.oldEdgeMeta);
-                        insertDBEntry(dbContext, evicted.newPrec, evicted.newDep, evicted.newEdgeMeta.patternType,
-                                evicted.newEdgeMeta.startOffset, evicted.newEdgeMeta.endOffset);
+                        updateCache.addFirst(updateMatch);
                     }
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+                } else {
+                    try {
+                        LinkedList<CompressInfo> compressInfoList = findCompressInfo(prec, dep);
+                        if (!compressInfoList.isEmpty()) {
+                            selectedInfo = Collections.min(compressInfoList, compressInfoComparator);
 
-        // Flush the update cache
-        updateCache.forEach(edgeUpdate -> {
-            if (edgeUpdate.hasUpdate()) {
-                try {
-                    deleteDBEntry(dbContext, edgeUpdate.oldPrec, edgeUpdate.oldDep, edgeUpdate.oldEdgeMeta);
-                    insertDBEntry(dbContext, edgeUpdate.newPrec, edgeUpdate.newDep, edgeUpdate.newEdgeMeta.patternType,
-                            edgeUpdate.newEdgeMeta.startOffset, edgeUpdate.newEdgeMeta.endOffset);
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+                            Ref newPrec = selectedInfo.prec.getBoundingBox(selectedInfo.candPrec);
+                            Ref newDep = selectedInfo.dep.getBoundingBox(selectedInfo.candDep);
+                            Pair<Offset, Offset> offsetPair = computeOffset(newPrec, newDep, selectedInfo.compType);
 
-        connection.commit();
+                            EdgeUpdate evicted = addToUpdateCache(updateCache, newPrec, newDep,
+                                    new EdgeMeta(selectedInfo.compType, offsetPair.getX(), offsetPair.getY()));
+                            if (evicted != null) {
+                                deleteDBEntry(dbContext, evicted.oldPrec, evicted.oldDep, evicted.oldEdgeMeta);
+                                insertDBEntry(dbContext, evicted.newPrec, evicted.newDep, evicted.newEdgeMeta.patternType,
+                                        evicted.newEdgeMeta.startOffset, evicted.newEdgeMeta.endOffset);
+                            }
+                        } else {
+                            EdgeMeta noTypeEdgeMeta = new EdgeMeta(PatternType.NOTYPE,
+                                    Offset.noOffset, Offset.noOffset);
+                            EdgeUpdate evicted = addToUpdateCache(updateCache, prec, dep, noTypeEdgeMeta);
+                            if (evicted != null) {
+                                deleteDBEntry(dbContext, evicted.oldPrec, evicted.oldDep, evicted.oldEdgeMeta);
+                                insertDBEntry(dbContext, evicted.newPrec, evicted.newDep, evicted.newEdgeMeta.patternType,
+                                        evicted.newEdgeMeta.startOffset, evicted.newEdgeMeta.endOffset);
+                            }
+                        }
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+
+            // Flush the update cache
+            updateCache.forEach(edgeUpdate -> {
+                if (edgeUpdate.hasUpdate()) {
+                    try {
+                        deleteDBEntry(dbContext, edgeUpdate.oldPrec, edgeUpdate.oldDep, edgeUpdate.oldEdgeMeta);
+                        insertDBEntry(dbContext, edgeUpdate.newPrec, edgeUpdate.newDep, edgeUpdate.newEdgeMeta.patternType,
+                                edgeUpdate.newEdgeMeta.startOffset, edgeUpdate.newEdgeMeta.endOffset);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+
+            connection.commit();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    @Override
+    public void configDepedencyTable(int cacheSize, int compConstant) {
+        CACHE_SIZE = cacheSize/3;
+    }
+
+    @Override
+    public List<Pair<Ref, Ref>> getLoadedBatch(String bookName, String sheetName) {
+        boolean isInsertOnly = false;
+        LinkedList<Pair<Ref, Ref>> loadedBatch = new LinkedList<>();
+        getLogEntries(bookName, sheetName, isInsertOnly).forEach(oneLog -> {
+            Pair<Ref, Ref> oneEdge = new Pair<>(oneLog.prec, oneLog.dep);
+            loadedBatch.addLast(oneEdge);
+        });
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            DBContext dbContext = new DBContext(connection);
+            deleteLoadedLogs(dbContext, bookName, sheetName, loadedBatch.size());
+            connection.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return loadedBatch;
     }
 
     @Override
@@ -191,15 +224,23 @@ public class DependencyTableComp extends DependencyTableAdv {
         maintainRectToRefCache(bookName, sheetName);
     }
 
+    private boolean isValidRef(Ref ref) {
+        return (ref.getRow() >= 0 &&
+                ref.getColumn() >=0 &&
+                ref.getRow() <= ref.getLastRow() &&
+                ref.getColumn() <= ref.getLastColumn());
+    }
+
     private LinkedList<LogEntry> getLogEntries(
             String bookName,
             String sheetName,
             boolean isInsertOnly) {
         String selectQuery =
-                "SELECT id, range, dep_range, isInsert FROM " + logTableName +
-                "WHERE bookname = ?    " +
-                "AND sheetname = ?     ";
-        if (isInsertOnly) selectQuery += "WHERE isInsert = TRUE";
+                "SELECT logid, range, dep_range, isInsert FROM " + logTableName +
+                " WHERE dep_bookname = ?    " +
+                " AND dep_sheetname = ?     ";
+        if (isInsertOnly) selectQuery += " AND isInsert = TRUE ";
+        selectQuery += " ORDER BY logid";
 
         LinkedList<LogEntry> result = new LinkedList<>();
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
@@ -241,13 +282,17 @@ public class DependencyTableComp extends DependencyTableAdv {
                 findDeps(precRef).forEach(depRefWithMeta -> {
                     Ref depUpdateRef = findUpdateDepRef(precRef, depRefWithMeta.getRef(),
                             depRefWithMeta.getEdgeMeta(), realUpdateRef);
-                    if (!result.contains(depUpdateRef)) {
+                    if (!isContained(result, depUpdateRef)) {
                         result.add(depUpdateRef);
                         if (!isDirectDep) updateQueue.add(depUpdateRef);
                     }
                 });
             }
         }
+    }
+
+    private boolean isContained(LinkedHashSet<Ref> result, Ref input) {
+        return result.stream().anyMatch(ref -> isSubsume(ref, input));
     }
 
     private void appendOneLog(String appendLogQuery,
@@ -261,9 +306,9 @@ public class DependencyTableComp extends DependencyTableAdv {
                 stmt.setString(3, prec.getSheetName());
                 stmt.setObject(4, refToPGBox(prec), Types.OTHER);
             } else {
-                stmt.setNull(2, Types.NVARCHAR);
-                stmt.setNull(3, Types.NVARCHAR);
-                stmt.setNull(4, Types.OTHER);
+                stmt.setNull(2, Types.NULL);
+                stmt.setNull(3, Types.NULL);
+                stmt.setNull(4, Types.NULL);
             }
             stmt.setString(5, dep.getBookName());
             stmt.setString(6, dep.getSheetName());
@@ -317,7 +362,7 @@ public class DependencyTableComp extends DependencyTableAdv {
     private void updateOneCompressEntry(DBContext dbContext,
                                         CompressInfo selectedInfo) throws SQLException {
         if (selectedInfo.isDuplicate) return;
-        deleteDBEntry(dbContext, selectedInfo.prec, selectedInfo.dep, selectedInfo.edgeMeta);
+        deleteDBEntry(dbContext, selectedInfo.candPrec, selectedInfo.candDep, selectedInfo.edgeMeta);
 
         Ref newPrec = selectedInfo.prec.getBoundingBox(selectedInfo.candPrec);
         Ref newDep = selectedInfo.dep.getBoundingBox(selectedInfo.candDep);
@@ -405,10 +450,25 @@ public class DependencyTableComp extends DependencyTableAdv {
         }
     }
 
+    private void deleteLoadedLogs(DBContext dbContext,
+                                  String bookname,
+                                  String sheetname,
+                                  int numOfLogs) throws SQLException {
+        String query = "DELETE FROM " + logTableName +
+                " WHERE bookname = ? " +
+                " AND sheetname = ? ";
+        PreparedStatement retStmt = dbContext.getConnection().prepareStatement(query);
+        retStmt.setString(1, bookname);
+        retStmt.setString(2, sheetname);
+        retStmt.execute();
+        logEntryNum -= numOfLogs;
+        insertEntryNum -= numOfLogs;
+    }
+
     private void deleteLogEntry(DBContext dbContext,
                                 int id, boolean isInsert) throws SQLException {
         String query = "DELETE FROM " + logTableName +
-                " WHERE id = ?";
+                " WHERE logid = ?";
         PreparedStatement retStmt = dbContext.getConnection().prepareStatement(query);
         retStmt.setInt(1, id);
         retStmt.execute();
@@ -421,8 +481,7 @@ public class DependencyTableComp extends DependencyTableAdv {
                                Ref dep,
                                EdgeMeta edgeMeta) throws SQLException {
         deleteMemEntry(prec, dep, edgeMeta);
-
-        String query = "DELETE FROM" + dependencyTableName +
+        String query = "DELETE FROM " + dependencyTableName +
                 " WHERE  bookname  = ?" +
                 " AND    sheetname =  ?" +
                 " AND    range ~= ?" +
@@ -447,8 +506,8 @@ public class DependencyTableComp extends DependencyTableAdv {
                                Offset startOffset,
                                Offset endOffset) throws SQLException {
         insertMemEntry(newPrec, newDep, new EdgeMeta(patternType, startOffset, endOffset));
-        String query = "INSERT INTO" + dependencyTableName +
-                "VALUES (?,?,?,?,?,?,?,?,?)";
+        String query = "INSERT INTO " + dependencyTableName +
+                " VALUES (?,?,?,?,?,?,?,?,?)";
         PreparedStatement retStmt = dbContext.getConnection().prepareStatement(query);
         retStmt.setString(1, newPrec.getBookName());
         retStmt.setString(2, newPrec.getSheetName());
@@ -578,11 +637,7 @@ public class DependencyTableComp extends DependencyTableAdv {
 
     private void rebuildRectToRefCache(String bookName, String sheetName) {
         String selectQuery =
-                " SELECT range  FROM " + dependencyTableName +
-                " WHERE bookname = ?    " +
-                " AND sheetname = ?     " +
-                " UNION " +
-                " SELECT dep_range FROM " + dependencyTableName +
+                " SELECT range, dep_range FROM " + dependencyTableName +
                 " WHERE bookname = ?    " +
                 " AND sheetname = ?     ";
 
@@ -591,13 +646,14 @@ public class DependencyTableComp extends DependencyTableAdv {
 
             stmt.setString(1, bookName);
             stmt.setString(2, sheetName);
-            stmt.setString(3, bookName);
-            stmt.setString(4, sheetName);
 
             ResultSet rs =  stmt.executeQuery();
             while(rs.next()) {
                 PGbox range = (PGbox) rs.getObject(1);
-                _rectToRefCache.add(boxToRef(range, bookName, sheetName), boxToRect(range));
+                _rectToRefCache = _rectToRefCache.add(boxToRef(range, bookName, sheetName), boxToRect(range));
+
+                PGbox dep_range = (PGbox) rs.getObject(2);
+                _rectToRefCache = _rectToRefCache.add(boxToRef(dep_range, bookName, sheetName), boxToRect(dep_range));
             }
             connection.commit();
         } catch (SQLException e) {
@@ -606,8 +662,8 @@ public class DependencyTableComp extends DependencyTableAdv {
     }
 
     private Rectangle boxToRect(PGbox box) {
-        return RectangleFloat.create((float) box.point[0].x, (float) box.point[0].y,
-                (float) (0.5 + box.point[1].x), (float) (0.5 + box.point[1].y));
+        return RectangleFloat.create((float) box.point[1].x, (float) box.point[1].y,
+                (float) (0.5 + box.point[0].x), (float) (0.5 + box.point[0].y));
     }
 
     private Ref coordToRef(Ref ref, int firstRow, int firstCol,
@@ -623,10 +679,10 @@ public class DependencyTableComp extends DependencyTableAdv {
 
     private Ref boxToRef(PGbox range, String bookName, String sheetName) {
         return new RefImpl(bookName, sheetName,
-                (int) range.point[0].x,
-                (int) range.point[0].y,
                 (int) range.point[1].x,
-                (int) range.point[1].y);
+                (int) range.point[1].y,
+                (int) range.point[0].x,
+                (int) range.point[0].y);
     }
 
     private PGbox offsetToPGBox(Offset startOffset,
@@ -667,7 +723,7 @@ public class DependencyTableComp extends DependencyTableAdv {
         PatternType compressType = PatternType.NOTYPE;
         if (isCompressibleTypeOne(lastCandPrec, prec, direction)) {
             compressType = PatternType.TYPEONE;
-            if (isCompressibleTypeZero(candPrec, candDep))
+            if (isCompressibleTypeZero(prec, dep, lastCandPrec))
                 compressType = PatternType.TYPEZERO;
         } else if (isCompressibleTypeTwo(lastCandPrec, prec, direction))
             compressType = PatternType.TYPETWO;
@@ -680,6 +736,7 @@ public class DependencyTableComp extends DependencyTableAdv {
     }
 
     private boolean isSubsume(Ref large, Ref small) {
+        if (large.getOverlap(small) == null) return false;
         return large.getOverlap(small).equals(small);
     }
 
@@ -706,7 +763,7 @@ public class DependencyTableComp extends DependencyTableAdv {
 
     private Iterable<RefWithMeta> findPrecs(Ref dep) {
         List<RefWithMeta> precIter = _reverseMapCache.get(dep);
-        if (precIter.isEmpty()) {
+        if (precIter == null || precIter.isEmpty()) {
             precIter = findPrecsFromDB(dep);
             _reverseMapCache.put(dep, precIter);
         }
@@ -715,7 +772,7 @@ public class DependencyTableComp extends DependencyTableAdv {
 
     private Iterable<RefWithMeta> findDeps(Ref prec) {
         List<RefWithMeta> depIter = _mapCache.get(prec);
-        if (depIter.isEmpty()) {
+        if (depIter == null || depIter.isEmpty()) {
             depIter = findDepsFromDB(prec);
             _mapCache.put(prec, depIter);
         }
@@ -724,7 +781,7 @@ public class DependencyTableComp extends DependencyTableAdv {
 
     private List<RefWithMeta> findDepsFromDB(Ref prec) {
         String selectQuery =
-                "  SELECT dep_range::box, patternType, offsetRange::box" +
+                "  SELECT dep_range::box, pattern_type, offsetRange::box" +
                 "  FROM " + dependencyTableName +
                 "  WHERE  bookname  = ?" +
                 "  AND    sheetname =  ?" +
@@ -734,7 +791,7 @@ public class DependencyTableComp extends DependencyTableAdv {
 
     private List<RefWithMeta> findPrecsFromDB(Ref dep) {
         String selectQuery =
-                "  SELECT range::box, patternType, offsetRange::box" +
+                "  SELECT range::box, pattern_type, offsetRange::box" +
                         "  FROM " + dependencyTableName +
                         "  WHERE  bookname  = ?" +
                         "  AND    sheetname =  ?" +
@@ -789,7 +846,7 @@ public class DependencyTableComp extends DependencyTableAdv {
             };
         }
 
-        if (_rectToRefCache != null) {
+        if (!_rectToRefCache.isEmpty()) {
             Iterator<Entry<Ref, Rectangle>> entryIter =
                     _rectToRefCache.search(getRectangleFromRef(updateRef))
                             .toBlocking().getIterator();
@@ -807,40 +864,44 @@ public class DependencyTableComp extends DependencyTableAdv {
     }
 
     private Iterator<Ref> findOverlappingRefsFromDB(Ref updateRef) {
-        String selectQuery =
+        String selectQueryA =
                 "  SELECT range::box from " + dependencyTableName +
                 "  WHERE  bookname  = ?" +
                 "  AND    sheetname =  ?" +
-                "  AND    range && ?" +
-                "  UNION " +
+                "  AND    range && ?";
+
+        String selectQueryB =
                 "  SELECT dep_range::box from " + dependencyTableName +
                 "  WHERE  dep_bookname  = ?" +
                 "  AND    dep_sheetname =  ?" +
                 "  AND    dep_range && ?";
 
-       LinkedList<Ref> result = new LinkedList<>();
-       try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-            PreparedStatement stmt = connection.prepareStatement(selectQuery)) {
-           stmt.setString(1, updateRef.getBookName());
-           stmt.setString(2, updateRef.getSheetName());
-           stmt.setObject(3, refToPGBox(updateRef), Types.OTHER);
+       HashSet<Ref> resultSet = new HashSet<>();
+       findOverlappingRefsHelper(resultSet, selectQueryA, updateRef);
+       findOverlappingRefsHelper(resultSet, selectQueryB, updateRef);
 
-           stmt.setString(4, updateRef.getBookName());
-           stmt.setString(5, updateRef.getSheetName());
-           stmt.setObject(6, refToPGBox(updateRef), Types.OTHER);
+       return resultSet.iterator();
+    }
 
-           ResultSet rs =  stmt.executeQuery();
-           while(rs.next())
-           {
-               PGbox range = (PGbox) rs.getObject(1);
-               // The order of points is based on how postgres stores them
-               result.add(boxToRef(range, updateRef.getBookName(), updateRef.getSheetName()));
-           }
-       } catch (SQLException e) {
-           e.printStackTrace();
-       }
+    private void findOverlappingRefsHelper(HashSet<Ref> resultSet,
+                                           String selectQuery,
+                                           Ref updateRef) {
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(selectQuery)) {
+            stmt.setString(1, updateRef.getBookName());
+            stmt.setString(2, updateRef.getSheetName());
+            stmt.setObject(3, refToPGBox(updateRef), Types.OTHER);
 
-       return result.iterator();
+            ResultSet rs =  stmt.executeQuery();
+            while(rs.next())
+            {
+                PGbox range = (PGbox) rs.getObject(1);
+                Ref resRef = boxToRef(range, updateRef.getBookName(), updateRef.getSheetName());
+                resultSet.add(resRef);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

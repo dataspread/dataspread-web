@@ -200,6 +200,8 @@ public interface SCell extends CellStyleHolder,FormulaContent{
 
     void translate(int rowShift, int colShift);
 
+	boolean evalFormula(boolean sync);
+
 
     /**
 	 * @since 3.5.0

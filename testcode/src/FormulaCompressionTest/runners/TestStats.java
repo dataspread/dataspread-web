@@ -31,6 +31,7 @@ public class TestStats {
     public long     numberOfCellsToUpdate = 0;
     public long     startNumberOfDependents = 0;
     public long     finalNumberOfDependents = 0;
+    public long     totalGetDependentsTime = 0;
 
     public void writeStatsToFile (Path path) {
         try (PrintWriter prw = new PrintWriter(new FileWriter(path.toFile(), true))) {
@@ -50,6 +51,8 @@ public class TestStats {
                     + "Update cell start time: "            + updateCellStartTime                           + "\n"
                     + "Update cell end time: "              + updateCellFinalTime                           + "\n"
                     + "Total time to update cells (ms): "   + (updateCellFinalTime - updateCellStartTime)   + "\n"
+                    + "Total time after the update (ms): "  + (touchedTime - updateCellFinalTime)           + "\n"
+                    + "Total time of getting dependents (ms): "  + totalGetDependentsTime                   + "\n"
                     + "Area under curve: "                  + area                                          + "\n"
                     + "Curve: "
             );

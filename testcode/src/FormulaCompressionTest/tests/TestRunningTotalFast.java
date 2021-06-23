@@ -33,13 +33,14 @@ public class TestRunningTotalFast extends BaseTest {
             answer += num;
         }
 
+        refreshDepTable();
         sheet.setDelayComputation(false);
     }
 
     @Override
     public void touchAll() {
         double result = 0.0;
-        for (int i = 0; i < rows; i++) {
+        for (int i = rows - 1; i >= 0; i--) {
             Object v = sheet.getCell(i, 1).getValue();
             result += (double) v;
         }
