@@ -304,14 +304,14 @@ public class DBHandler {
 
             String createTable = "CREATE TABLE  IF NOT  EXISTS " + stagedLog + " (" +
                     "logID         INTEGER NOT NULL," +
-                    "bookname      TEXT    NOT NULL," +
-                    "sheetname     TEXT    NOT NULL," +
-                    "range         BOX     NOT NULL," +
-                    "dep_bookname  TEXT," +
-                    "dep_sheetname TEXT," +
-                    "dep_range     BOX," +
-                    "isInsert        BOOLEAN NOT NULL," +
-                    "FOREIGN KEY (bookname, sheetname) REFERENCES sheets (bookname, sheetname)" +
+                    "bookname      TEXT    ," +
+                    "sheetname     TEXT    ," +
+                    "range         BOX     ," +
+                    "dep_bookname  TEXT    NOT NULL," +
+                    "dep_sheetname TEXT    NOT NULL," +
+                    "dep_range     BOX     NOT NULL," +
+                    "isInsert      BOOLEAN NOT NULL," +
+                    "FOREIGN KEY (dep_bookname, dep_sheetname) REFERENCES sheets (bookname, sheetname)" +
                     " ON DELETE CASCADE ON UPDATE CASCADE," +
                     " UNIQUE (oid) ) WITH oids";
             stmt.execute(createTable);

@@ -157,6 +157,10 @@ public class EvalSheet implements EvaluationSheet {
 			return cell.getType() == CellType.FORMULA ?
                     (FormulaExpression) ((AbstractCellAdv) cell).getValue(false) : null;
         }
+
+        public boolean evalFormula(boolean isSync) {
+			return cell.evalFormula(isSync);
+		}
 	}
 
 	private static class Key {

@@ -19,6 +19,7 @@ package org.zkoss.zss.model.sys.dependency;
 import org.zkoss.util.Pair;
 
 import java.util.Set;
+import java.util.List;
 
 /**
  * 
@@ -50,7 +51,8 @@ public interface DependencyTable {
 
 
 	default void configDepedencyTable(int cacheSize, int compConstant) {}
-	default void addBatch(Set<Pair<Ref, Ref>> edgeBatch) {}
+	default void addBatch(List<Pair<Ref, Ref>> edgeBatch) {}
+	default List<Pair<Ref, Ref>> getLoadedBatch(String bookName, String sheetName) {return null;}
 	default void refreshCache(String bookName, String sheetName) {}
 
 		/**

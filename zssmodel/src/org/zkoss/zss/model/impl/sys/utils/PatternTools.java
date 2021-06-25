@@ -9,8 +9,8 @@ import java.util.List;
 
 public class PatternTools {
     private final static int SHIFT_STEP = 1;
-    private final static int FIRST_ROW = 1;
-    private final static int FIRST_COL = 1;
+    private final static int FIRST_ROW = 0;
+    private final static int FIRST_COL = 0;
 
     public static boolean isCompressibleTypeOne(Ref lastCandPrec, Ref prec,
                                          Direction direction) {
@@ -18,11 +18,17 @@ public class PatternTools {
     }
 
     // Only called after isCompressibleTypeOne is true
-    public static boolean isCompressibleTypeZero(Ref candPrec, Ref candDep) {
+    public static boolean isCompressibleTypeZero(Ref prec, Ref dep,
+                                                 Ref lastCandPrec) {
         boolean isTypeZero = false;
         for (Direction direction: Direction.values()) {
             if (direction != Direction.NODIRECTION && !isTypeZero) {
-                isTypeZero = shiftRef(candPrec, direction).equals(candDep);
+                Ref shiftedRef = shiftRef(prec, direction);
+                if (shiftedRef != null && shiftedRef.equals(dep)) { // check adjacency
+                    Ref lastCandDep = shiftRef(lastCandPrec, direction);
+                    isTypeZero = (lastCandDep != null && lastCandDep.equals(prec)) ||
+                            lastCandPrec.equals(dep);
+                }
             }
         }
         return isTypeZero;
@@ -138,7 +144,7 @@ public class PatternTools {
                 res = new RefImpl(ref.getBookName(),
                         ref.getSheetName(),
                         ref.getRow() + SHIFT_STEP, ref.getColumn(),
-                        ref.getLastRow() + SHIFT_STEP, ref.getLastRow());
+                        ref.getLastRow() + SHIFT_STEP, ref.getLastColumn());
         }
         return res;
     }

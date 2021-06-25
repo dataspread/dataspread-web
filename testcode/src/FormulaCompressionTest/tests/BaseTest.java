@@ -5,6 +5,7 @@ import FormulaCompressionTest.utils.Util;
 
 import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
+import org.zkoss.util.Pair;
 import org.zkoss.zss.model.impl.BookImpl;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.CellRegion;
@@ -47,7 +48,10 @@ public abstract class BaseTest {
                 .refreshCache(book.getBookName(),sheet.getSheetName());
     }
 
-    public void setTestOperation(String sheetOperation) {}
+    public void loadBatch() {
+        List<Pair<Ref, Ref>> loadedBatch = sheet.getDependencyTable().getLoadedBatch(book.getBookName(), sheet.getSheetName());
+        sheet.getDependencyTable().addBatch(loadedBatch);
+    }
 
     /**
      * @return The book associated with this test case.
@@ -111,11 +115,13 @@ public abstract class BaseTest {
      * @return A list that contains all dependents of this test
      * case's updated cell.
      */
-    public List<Ref> getDependenciesOfUpdatedCell() {
+    public List<Ref> getDependenciesOfUpdatedCell(TestStats testStats) {
         if (dependencies == null) {
+            long startTime = System.currentTimeMillis();
             dependencies =
                     new ArrayList<>(this.getSheet().getDependencyTable()
                             .getDependents(this.getCellToUpdate()));
+            testStats.totalGetDependentsTime = System.currentTimeMillis() - startTime;
         }
         return dependencies;
     }
@@ -124,7 +130,8 @@ public abstract class BaseTest {
                                  TestStats testStats) {
         List<Ref> dependenciesMultpl = new ArrayList<>();
         Set<CellRegion> dependenciesSingle = new HashSet<>();
-        for (Ref dependency : Util.addAndReturn(getDependenciesOfUpdatedCell(), getCellToUpdate())) {
+        for (Ref dependency :
+                Util.addAndReturn(getDependenciesOfUpdatedCell(testStats), getCellToUpdate())) {
             if (dependency.getCellCount() == 1) {
                 dependenciesSingle.add(new CellRegion(dependency));
             } else {
@@ -155,6 +162,8 @@ public abstract class BaseTest {
      * `getCellToUpdate()`.
      */
     public abstract void updateCell();
+
+    public void execAfterUpdate() {}
 
     /**
      * @return A cell region that encompasses all the cells

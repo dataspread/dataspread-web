@@ -104,13 +104,27 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
         }
     }
 
+	// The following SQL statements are changed for testing,
+	// assuming we only have one book and sheet
 	@Override
 	public Set<Ref> getActualDependents(Ref precedent) {
+		// String selectQuery = "WITH RECURSIVE deps AS (" +
+		// 		"  SELECT dep_bookname, dep_sheetname, dep_range::text, must_expand FROM full_dependency" +
+		// 		"  WHERE  bookname  = ?" +
+		// 		"  AND    sheetname =  ?" +
+		// 		"  AND    range && ?" +
+		// 		"  UNION " +
+		// 		"  SELECT d.dep_bookname, d.dep_sheetname, d.dep_range::text, d.must_expand FROM full_dependency d" +
+		// 		"    INNER JOIN deps t" +
+		// 		"    ON  d.bookname   =  t.dep_bookname" +
+		// 		"    AND t.must_expand" +
+		// 		"    AND d.sheetname =  t.dep_sheetname" +
+		// 		"    AND d.range      && t.dep_range::box)" +
+		// 		" SELECT dep_bookname, dep_sheetname, dep_range::box FROM deps";
+
 		String selectQuery = "WITH RECURSIVE deps AS (" +
 				"  SELECT dep_bookname, dep_sheetname, dep_range::text, must_expand FROM full_dependency" +
-				"  WHERE  bookname  = ?" +
-				"  AND    sheetname =  ?" +
-				"  AND    range && ?" +
+				"  WHERE  range && ?" +
 				"  UNION " +
 				"  SELECT d.dep_bookname, d.dep_sheetname, d.dep_range::text, d.must_expand FROM full_dependency d" +
 				"    INNER JOIN deps t" +
@@ -125,19 +139,32 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
 
     @Override
 	public Set<Ref> getDependents(Ref precedent) {
-        String selectQuery = "WITH RECURSIVE deps AS (" +
-                "  SELECT dep_bookname, dep_sheetname, dep_range::text, must_expand FROM dependency" +
-                "  WHERE  bookname  = ?" +
-                "  AND    sheetname =  ?" +
-                "  AND    range && ?" +
-                "  UNION " +
-                "  SELECT d.dep_bookname, d.dep_sheetname, d.dep_range::text, d.must_expand FROM dependency d" +
-                "    INNER JOIN deps t" +
-                "    ON  d.bookname   =  t.dep_bookname" +
-                "    AND t.must_expand" +
+        // String selectQuery = "WITH RECURSIVE deps AS (" +
+        //         "  SELECT dep_bookname, dep_sheetname, dep_range::text, must_expand FROM dependency" +
+        //         "  WHERE  bookname  = ?" +
+        //         "  AND    sheetname =  ?" +
+        //         "  AND    range && ?" +
+        //         "  UNION " +
+        //         "  SELECT d.dep_bookname, d.dep_sheetname, d.dep_range::text, d.must_expand FROM dependency d" +
+        //         "    INNER JOIN deps t" +
+        //         "    ON  d.bookname   =  t.dep_bookname" +
+        //         "    AND t.must_expand" +
+		// 		"    AND d.sheetname =  t.dep_sheetname" +
+        //         "    AND d.range      && t.dep_range::box)" +
+        //         " SELECT dep_bookname, dep_sheetname, dep_range::box FROM deps";
+
+		String selectQuery = "WITH RECURSIVE deps AS (" +
+		        "  SELECT dep_bookname, dep_sheetname, dep_range::text, must_expand FROM dependency" +
+		        "  WHERE  range && ?" +
+		        "  UNION " +
+		        "  SELECT d.dep_bookname, d.dep_sheetname, d.dep_range::text, d.must_expand FROM dependency d" +
+		        "    INNER JOIN deps t" +
+		        "    ON  d.bookname   =  t.dep_bookname" +
+		        "    AND t.must_expand" +
 				"    AND d.sheetname =  t.dep_sheetname" +
-                "    AND d.range      && t.dep_range::box)" +
-                " SELECT dep_bookname, dep_sheetname, dep_range::box FROM deps";
+		        "    AND d.range      && t.dep_range::box)" +
+		        " SELECT dep_bookname, dep_sheetname, dep_range::box FROM deps";
+
         return getDependentsQuery(precedent, selectQuery);
 	}
 
@@ -147,9 +174,9 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
         long startTime = System.currentTimeMillis();
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
              PreparedStatement stmt = connection.prepareStatement(selectQuery)) {
-            stmt.setString(1, precedent.getBookName());
-            stmt.setString(2, precedent.getSheetName());
-            stmt.setObject(3, new PGbox(precedent.getRow(),
+            // stmt.setString(1, precedent.getBookName());
+            // stmt.setString(2, precedent.getSheetName());
+            stmt.setObject(1, new PGbox(precedent.getRow(),
                     precedent.getColumn(), precedent.getLastRow(),
                     precedent.getLastColumn()), Types.OTHER);
 
@@ -175,10 +202,12 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
 
 	@Override
 	public Set<Ref> getDirectDependents(Ref precedent) {
-        String selectQuery = "SELECT dep_bookname, dep_sheetname, dep_range  FROM dependency " +
-                " WHERE bookname = ? " +
-                " AND   sheetname = ? " +
-                " AND   range && ?";
+        // String selectQuery = "SELECT dep_bookname, dep_sheetname, dep_range  FROM dependency " +
+        //         " WHERE bookname = ? " +
+        //         " AND   sheetname = ? " +
+        //         " AND   range && ?";
+		String selectQuery = "SELECT dep_bookname, dep_sheetname, dep_range  FROM dependency " +
+				" WHERE   range && ?";
         return getDependentsQuery(precedent, selectQuery);
 	}
 
@@ -195,10 +224,13 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
 	//ZSS-648
 	@Override
 	public Set<Ref> getDirectPrecedents(Ref dependent) {
-        String selectQuery = "SELECT bookname, sheetname, range FROM dependency " +
-                " WHERE dep_bookname = ? " +
-                " AND   dep_sheetname = ? " +
-                " AND   dep_range && ?";
+        // String selectQuery = "SELECT bookname, sheetname, range FROM dependency " +
+        //         " WHERE dep_bookname = ? " +
+        //         " AND   dep_sheetname = ? " +
+        //         " AND   dep_range && ?";
+
+		String selectQuery = "SELECT bookname, sheetname, range FROM dependency " +
+				" WHERE   dep_range && ?";
         return getDependentsQuery(dependent, selectQuery);
 	}
 
