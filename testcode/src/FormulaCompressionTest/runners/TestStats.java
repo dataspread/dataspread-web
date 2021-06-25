@@ -5,6 +5,7 @@ import org.zkoss.util.Pair;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.FileWriter;
+import java.nio.file.Paths;
 import java.nio.file.Path;
 
 import java.util.ArrayList;
@@ -17,6 +18,9 @@ import java.util.List;
 public class TestStats {
 
     public List<Pair<Long, Integer>> curve = new ArrayList<>();
+
+    private final String debugStatsOutFileName = "debug.stat";
+    private final String coreStatsOutFileName = "core.stat";
 
     public double   area = 0.0;
     public boolean  isCorrect = false;
@@ -32,10 +36,15 @@ public class TestStats {
     public long     startNumberOfDependents = 0;
     public long     finalNumberOfDependents = 0;
     public long     totalGetDependentsTime = 0;
+    public String   testCase = "";
 
-    public void writeStatsToFile (Path path) {
-        try (PrintWriter prw = new PrintWriter(new FileWriter(path.toFile(), true))) {
+    public void writeStatsToFile (String outFolder) {
+        Path debugPath = Paths.get(outFolder + "/" + debugStatsOutFileName);
+        Path corePath = Paths.get(outFolder + "/" + coreStatsOutFileName);
+
+        try (PrintWriter prw = new PrintWriter(new FileWriter(debugPath.toFile(), true))) {
             prw.println("Report:\n\n"
+                    + "TestCase: "                          + testCase                                      + "\n"
                     + "Correct: "                           + isCorrect                                     + "\n"
                     + "Touched time: "                      + touchedTime                                   + "\n"
                     + "Test start time: "                   + testStartTime                                 + "\n"
@@ -59,6 +68,22 @@ public class TestStats {
             for (Pair<Long, Integer> p : curve) {
                 prw.println(p.getX() + ", " + p.getY());
             }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        try (PrintWriter prw = new PrintWriter(new FileWriter(corePath.toFile(), true))) {
+            prw.println(
+                      "Total test time (ms): "              + (testFinalTime - testStartTime)               + "\n"
+                    + "Number of cells to update: "         + numberOfCellsToUpdate                         + "\n"
+                    + "Number of cells updated: "           + updatedCells                                  + "\n"
+                    + "Total time to update cells (ms): "   + (updateCellFinalTime - updateCellStartTime)   + "\n"
+                    + "Total time after the update (ms): "  + (touchedTime - updateCellFinalTime)           + "\n"
+                    + "Total time of getting dependents (ms): "  + totalGetDependentsTime                   + "\n"
+                    + "Area under curve: "                  + area                                          + "\n"
+            );
+
         } catch (IOException e) {
             e.printStackTrace();
         }

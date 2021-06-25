@@ -55,7 +55,6 @@ public class CompressionTestMain {
      * Workload configuration
      * */
     public static String      spreadsheetString = "RunningTotalSlow";
-    public static String      spreadsheetOperation = "LongestChainUpdate";
     public static String[]    testArgs = null;
 
     /**
@@ -88,15 +87,6 @@ public class CompressionTestMain {
             case "pgimpl":
                 EngineFactory.dependencyTableClazz = DependencyTablePGImpl.class;
                 break;
-            case "implv":
-                EngineFactory.dependencyTableClazz = DependencyTableImpl.class;
-                break;
-            case "implv2":
-                EngineFactory.dependencyTableClazz = DependencyTableImplV2.class;
-                break;
-            case "implv4":
-                EngineFactory.dependencyTableClazz = DependencyTableImplV4.class;
-                break;
             case "comp":
                 EngineFactory.dependencyTableClazz = DependencyTableComp.class;
                 break;
@@ -109,7 +99,6 @@ public class CompressionTestMain {
 
     // TODO: add more test cases and make all test cases configurable
     private static void genTestCase(String sheetString,
-                                    String sheetOperation,
                                     int depTblCacheSize,
                                     int compConstant) {
         switch (sheetString.toLowerCase()) {
@@ -138,30 +127,36 @@ public class CompressionTestMain {
         }
 
         oneTest.configDepTable(depTblCacheSize, compConstant);
-        oneTest.setTestOperation(sheetOperation);
     }
 
     private static void readConfig() {
         try (InputStream input = new FileInputStream(configPath)) {
-            Properties config = new Properties();
-            config.load(input);
+            Properties defultProperties = new Properties();
+            defultProperties.load(input);
 
-            url = config.getProperty("url");
-            dbDriver = config.getProperty("dbDriver");
-            userName = config.getProperty("username");
-            password = config.getProperty("password");
+            Properties systemProperties = System.getProperties();
 
-            outFolder = config.getProperty("outFolder");
+            url = systemProperties.getProperty("url", defultProperties.getProperty("url"));
+            dbDriver = systemProperties.getProperty("dbDriver", defultProperties.getProperty("dbDriver"));
+            userName = systemProperties.getProperty("username", defultProperties.getProperty("username"));
+            password = systemProperties.getProperty("password", defultProperties.getProperty("password"));
 
-            useSyncRunner = config.getProperty("useSyncRunner").toLowerCase().equals("true");
-            depTableClassString = config.getProperty("depTableClassString");
-            depTableCacheSize = Integer.parseInt(config.getProperty("depTableCacheSize"));
+            outFolder = systemProperties.getProperty("outFolder", defultProperties.getProperty("outFolder"));
 
-            spreadsheetString = config.getProperty("spreadsheetString");
-            spreadsheetOperation = config.getProperty("spreadsheetOperation");
-            testArgs = new String[Integer.parseInt(config.getProperty("numTestArgs"))];
+            useSyncRunner = systemProperties.getProperty("userSyncRunner", defultProperties.getProperty("useSyncRunner"))
+                    .toLowerCase().equals("true");
+            depTableClassString = systemProperties.getProperty("depTableClassString",
+                    defultProperties.getProperty("depTableClassString"));
+            depTableCacheSize = Integer.parseInt(systemProperties.getProperty("depTableCacheSize",
+                    defultProperties.getProperty("depTableCacheSize")));
+
+            spreadsheetString = systemProperties.getProperty("spreadsheetString",
+                    defultProperties.getProperty("spreadsheetString"));
+            testArgs = new String[Integer.parseInt(systemProperties.getProperty("numTestArgs",
+                    defultProperties.getProperty("numTestArgs")))];
             for (int i = 0; i < testArgs.length; i++) {
-                testArgs[i] = config.getProperty("testArg." + i);
+                String key = "testArg." + i;
+                testArgs[i] = systemProperties.getProperty(key, defultProperties.getProperty(key));
             }
 
         } catch (Exception e) {
@@ -173,23 +168,25 @@ public class CompressionTestMain {
 
     public static void main (String[] args) {
 
-        // Setup
-        for (String path : args) {
-            configPath = path;
-            readConfig();
-            CompressionTestMain.basicSetup(outFolder);
-            CompressionTestMain.configTestRunner(useSyncRunner, outFolder);
-            CompressionTestMain.configDependencyTable(depTableClassString);
-            CompressionTestMain.genTestCase(spreadsheetString, spreadsheetOperation,
-                    depTableCacheSize, ASYNC_COMPRESS_CONSTANT);
-
-            // Run the test
-            System.out.println(Util.getCurrentTime() + ": Running test...");
-            testRunner.run(oneTest);
-            System.out.println(Util.getCurrentTime() + ": Done!");
-
-            testRunner.dumpStatdata();
+        if (args.length != 1) {
+            System.out.println("Wrong argument number; We need a configuration file");
+            System.exit(-1);
         }
+        configPath = args[0];
+        readConfig();
+
+        CompressionTestMain.basicSetup(outFolder);
+        CompressionTestMain.configTestRunner(useSyncRunner, outFolder);
+        CompressionTestMain.configDependencyTable(depTableClassString);
+        CompressionTestMain.genTestCase(spreadsheetString,
+                depTableCacheSize, ASYNC_COMPRESS_CONSTANT);
+
+        // Run the test
+        System.out.println(Util.getCurrentTime() + ": Running test...");
+        testRunner.run(oneTest);
+        System.out.println(Util.getCurrentTime() + ": Done!");
+
+        testRunner.dumpStatdata();
 
     }
 

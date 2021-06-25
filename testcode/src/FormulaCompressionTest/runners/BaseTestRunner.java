@@ -29,7 +29,6 @@ public abstract class BaseTestRunner implements FormulaAsyncListener {
     private boolean testStarted;
     private String statsOutFolder;
 
-    private final String statsOutFileName = "output.stat";
     private final boolean PRIORITIZE = false;
 
     public BaseTestRunner() {}
@@ -121,6 +120,8 @@ public abstract class BaseTestRunner implements FormulaAsyncListener {
 
             // Setup async scheduler
             this.reset();
+            testStats.testCase = testCase.toString();
+
             DirtyManager.dirtyManagerInstance.reset();
             FormulaAsyncSchedulerTesting.initScheduler();
             Thread asyncThread = new Thread(FormulaAsyncScheduler.getScheduler());
@@ -149,8 +150,7 @@ public abstract class BaseTestRunner implements FormulaAsyncListener {
     }
 
     public void dumpStatdata() {
-        Path outputPath = Paths.get(statsOutFolder + "/" + statsOutFileName);
-        this.testStats.writeStatsToFile(outputPath);
+        this.testStats.writeStatsToFile(statsOutFolder);
     }
 
     private void reset() {

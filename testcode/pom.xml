@@ -58,7 +58,7 @@
 
     </dependencies>
     <build>
-        <finalName>DataSpread Test Code</finalName>
+        <finalName>testcode</finalName>
         <sourceDirectory>${project.basedir}/src</sourceDirectory>
         <plugins>
             <plugin>
@@ -68,7 +68,12 @@
                     <source>1.8</source>
                     <target>1.8</target>
                 </configuration>
-            </plugin>
+	    </plugin>
+	    <plugin>
+		<groupId>org.codehaus.mojo</groupId>
+            	<artifactId>exec-maven-plugin</artifactId>
+            	<version>3.0.0</version>
+    	    </plugin>
         </plugins>
     </build>
 </project>

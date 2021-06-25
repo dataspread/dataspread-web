@@ -30,7 +30,8 @@ public class TestRate extends BaseTest {
             answer = 20 * num;
         }
 
-        refreshDepTable();
+        // refreshDepTable();
+        loadBatch();
         sheet.setDelayComputation(false);
     }
 

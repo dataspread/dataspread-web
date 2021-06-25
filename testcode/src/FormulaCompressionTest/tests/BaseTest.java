@@ -5,6 +5,7 @@ import FormulaCompressionTest.utils.Util;
 
 import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
+import org.zkoss.util.Pair;
 import org.zkoss.zss.model.impl.BookImpl;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.CellRegion;
@@ -47,7 +48,10 @@ public abstract class BaseTest {
                 .refreshCache(book.getBookName(),sheet.getSheetName());
     }
 
-    public void setTestOperation(String sheetOperation) {}
+    public void loadBatch() {
+        List<Pair<Ref, Ref>> loadedBatch = sheet.getDependencyTable().getLoadedBatch(book.getBookName(), sheet.getSheetName());
+        sheet.getDependencyTable().addBatch(loadedBatch);
+    }
 
     /**
      * @return The book associated with this test case.
