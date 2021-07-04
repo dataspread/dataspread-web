@@ -6,6 +6,7 @@ import com.github.davidmoten.rtree.geometry.internal.RectangleFloat;
 import org.zkoss.util.logging.Log;
 import org.zkoss.zss.model.SBook;
 import org.zkoss.zss.model.SBookSeries;
+import org.zkoss.zss.model.impl.sys.utils.RefUtils;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.sys.dependency.Ref.RefType;
 
@@ -50,12 +51,6 @@ public class DependencyTableImplV4 extends DependencyTableAdv {
 		this._books = series;
 	}
 
-	private Rectangle getRectangeFromRef(Ref ref)
-	{
-		return RectangleFloat.create(ref.getRow(),ref.getColumn(),
-				(float) 0.5 + ref.getLastRow(), (float) 0.5 + ref.getLastColumn());
-	}
-
 	@Override
 	public void add(Ref dependant, Ref precedent) {
 		if (precedent.getType()==RefType.CELL) {
@@ -68,7 +63,7 @@ public class DependencyTableImplV4 extends DependencyTableAdv {
 			dependants.add(dependant);
 		}
 		else if (precedent.getType()==RefType.AREA)
-			depGraph = depGraph.add(dependant, getRectangeFromRef(precedent));
+			depGraph = depGraph.add(dependant, RefUtils.refToRect(precedent));
 		Set<Ref> precedents = _map.get(dependant);
 		if(precedents == null) {
 			precedents = new LinkedHashSet<>();
@@ -158,7 +153,7 @@ public class DependencyTableImplV4 extends DependencyTableAdv {
 				result.addAll(dep);
 			}
 		}
-		depGraph.search(getRectangeFromRef(precedent))
+		depGraph.search(RefUtils.refToRect(precedent))
 				.toBlocking().toIterable()
 				.forEach(e->result.add(e.value()));
 		return result;
