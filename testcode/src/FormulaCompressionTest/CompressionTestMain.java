@@ -3,6 +3,7 @@ package FormulaCompressionTest;
 import FormulaCompressionTest.runners.BaseTestRunner;
 import FormulaCompressionTest.runners.AsyncTestRunner;
 import FormulaCompressionTest.runners.SyncTestRunner;
+import FormulaCompressionTest.tests.testmaintenance.TestDelete;
 import FormulaCompressionTest.utils.Util;
 import FormulaCompressionTest.tests.*;
 
@@ -60,7 +61,7 @@ public class CompressionTestMain {
     /**
      * CONSTANTS, Not configured by users
      * */
-    public static final int         ASYNC_COMPRESS_CONSTANT = 20;
+    public static final int         ASYNC_COMPRESS_CONSTANT = 1;
 
     /**
      * Variables set based on the configuration
@@ -89,6 +90,9 @@ public class CompressionTestMain {
                 break;
             case "comp":
                 EngineFactory.dependencyTableClazz = DependencyTableComp.class;
+                break;
+            case "async":
+                EngineFactory.dependencyTableClazz = DependencyTableASync.class;
                 break;
             default:
                 System.out.println("Dependency table class " + depTableString
@@ -119,6 +123,9 @@ public class CompressionTestMain {
                 break;
             case "expschedule":
                 oneTest = new TestExpSchedule(Integer.parseInt(testArgs[0]), Integer.parseInt(testArgs[1]));
+                break;
+            case "delete":
+                oneTest = new TestDelete(Integer.parseInt(testArgs[0]));
                 break;
             default:
                 System.out.println("Spreadsheet " + sheetString
