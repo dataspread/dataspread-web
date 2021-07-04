@@ -156,7 +156,6 @@ public class CompressionTestMain {
                     defultProperties.getProperty("depTableClassString"));
             depTableCacheSize = Integer.parseInt(systemProperties.getProperty("depTableCacheSize",
                     defultProperties.getProperty("depTableCacheSize")));
-
             spreadsheetString = systemProperties.getProperty("spreadsheetString",
                     defultProperties.getProperty("spreadsheetString"));
             testArgs = new String[Integer.parseInt(systemProperties.getProperty("numTestArgs",
