@@ -85,8 +85,8 @@ public class LogUtils {
                                         String bookname,
                                         String sheetname) throws SQLException {
         String query = "DELETE FROM " + logTableName +
-                " WHERE bookname = ? " +
-                " AND sheetname = ? ";
+                " WHERE dep_bookname = ? " +
+                " AND dep_sheetname = ? ";
         PreparedStatement retStmt = dbContext.getConnection().prepareStatement(query);
         retStmt.setString(1, bookname);
         retStmt.setString(2, sheetname);

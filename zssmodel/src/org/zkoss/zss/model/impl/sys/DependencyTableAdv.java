@@ -34,4 +34,23 @@ public abstract class DependencyTableAdv implements DependencyTable, Serializabl
 	abstract public void adjustSheetIndex(String bookName, int index, int size); //ZSS-815
 
 	abstract public void moveSheetIndex(String bookName, int oldIndex, int newIndex); //ZSS-820
+
+	protected long lookupTime = 0;
+	protected long addBatchTime = 0;
+	protected long refreshCacheTime = 0;
+
+	@Override
+	public long getLastLookupTime() {
+		return lookupTime;
+	}
+
+	@Override
+	public long getLastAddBatchTime() {
+		return addBatchTime;
+	}
+
+	@Override
+	public long getLastRefreshCacheTime() {
+		return refreshCacheTime;
+	}
 }

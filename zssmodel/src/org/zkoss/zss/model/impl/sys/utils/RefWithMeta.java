@@ -1,7 +1,8 @@
 package org.zkoss.zss.model.impl.sys.utils;
 
-import org.zkoss.zss.model.impl.RefImpl;
 import org.zkoss.zss.model.sys.dependency.Ref;
+
+import java.util.Objects;
 
 public class RefWithMeta {
 
@@ -23,5 +24,19 @@ public class RefWithMeta {
 
     public PatternType getPatternType() {
         return edgeMeta.patternType;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof RefWithMeta)) return false;
+        RefWithMeta that = (RefWithMeta) o;
+        return Objects.equals(ref, that.ref) &&
+                Objects.equals(edgeMeta, that.edgeMeta);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(ref, edgeMeta);
     }
 }

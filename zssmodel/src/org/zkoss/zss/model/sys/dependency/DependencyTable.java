@@ -32,7 +32,6 @@ import java.util.List;
  * @since 3.5.0
  */
 public interface DependencyTable {
-    long getLastLookupTime();
 
 	//GetBackwardDependents
 	Set<Ref> getDependents(Ref precedent);
@@ -51,11 +50,14 @@ public interface DependencyTable {
 
 
 	default void configDepedencyTable(int cacheSize, int compConstant) {}
-	default void addBatch(List<Pair<Ref, Ref>> edgeBatch) {}
+	default void addBatch(String bookName, String sheetName, List<Pair<Ref, Ref>> edgeBatch) {}
 	default List<Pair<Ref, Ref>> getLoadedBatch(String bookName, String sheetName) {return null;}
 	default void refreshCache(String bookName, String sheetName) {}
 
-		/**
+	default long getLastLookupTime() {return 0L;}
+	default long getLastAddBatchTime() {return 0L;}
+	default long getLastRefreshCacheTime() {return 0L;}
+	/**
 	 * @since 3.5.0
 	 */
 	public interface RefFilter{

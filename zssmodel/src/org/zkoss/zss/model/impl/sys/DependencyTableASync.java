@@ -42,6 +42,7 @@ public class DependencyTableASync extends DependencyTableAdv {
         LinkedHashSet<Ref> result = new LinkedHashSet<>();
 
         if (RefUtils.isValidRef(precedent)) {
+            long start = System.currentTimeMillis();
             findDeps(precedent).forEach(result::add);
 
             if (insertEntryNum != 0) {
@@ -53,6 +54,7 @@ public class DependencyTableASync extends DependencyTableAdv {
                             findDeps(logEntry.dep).forEach(result::add);
                         });
             }
+            lookupTime = System.currentTimeMillis() - start;
         }
 
         return result;
@@ -97,11 +99,13 @@ public class DependencyTableASync extends DependencyTableAdv {
     }
 
     @Override
-    public void addBatch(List<Pair<Ref, Ref>> edgeBatch) {
+    public void addBatch(String bookName, String sheetName, List<Pair<Ref, Ref>> edgeBatch) {
+        long start = System.currentTimeMillis();
         Map<Ref, List<Ref>> compressedGraph =
                 ASyncCompressorUtils.buildCompressedGraph(edgeBatch, compressionConst);
         insertCompressedGraph(compressedGraph);
         insertFullGraph(edgeBatch);
+        addBatchTime = System.currentTimeMillis() - start;
     }
 
     @Override
@@ -131,6 +135,8 @@ public class DependencyTableASync extends DependencyTableAdv {
 
     @Override
     public void refreshCache(String bookName, String sheetName) {
+        long start = System.currentTimeMillis();
+
         boolean isInsertOnly = false;
         LogUtils.getLogEntries(logTableName, bookName, sheetName, isInsertOnly).forEach(oneLog -> {
             if (oneLog.isInsert) performOneInsert(oneLog.id, oneLog.prec, oneLog.dep);
@@ -142,6 +148,8 @@ public class DependencyTableASync extends DependencyTableAdv {
                 ASyncCompressorUtils.buildCompressedGraph(
                         getFullDependency(bookName, sheetName), compressionConst);
         insertCompressedGraph(compressedGraph);
+
+        refreshCacheTime = System.currentTimeMillis() - start;
     }
 
     private void performOneInsert(int logId, Ref prec, Ref dep) {
@@ -185,6 +193,7 @@ public class DependencyTableASync extends DependencyTableAdv {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        connection.close();
     }
 
     private List<Pair<Ref, Ref>> getFullDependency(String bookName,

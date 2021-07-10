@@ -14,7 +14,8 @@ public class PatternTools {
 
     public static boolean isCompressibleTypeOne(Ref lastCandPrec, Ref prec,
                                          Direction direction) {
-        return shiftRef(lastCandPrec, direction).equals(prec);
+        Ref shiftedRef = shiftRef(lastCandPrec, direction);
+        return shiftedRef != null && shiftedRef.equals(prec);
     }
 
     // Only called after isCompressibleTypeOne is true

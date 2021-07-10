@@ -48,9 +48,21 @@ public abstract class BaseTest {
                 .refreshCache(book.getBookName(),sheet.getSheetName());
     }
 
+    public long getLastAddBatchTime() {
+        return sheet.getDependencyTable().getLastAddBatchTime();
+    }
+
+    public long getLastLookupTime() {
+        return sheet.getDependencyTable().getLastLookupTime();
+    }
+
+    public long getLastRefreshCacheTime() {
+        return sheet.getDependencyTable().getLastRefreshCacheTime();
+    }
+
     public void loadBatch() {
         List<Pair<Ref, Ref>> loadedBatch = sheet.getDependencyTable().getLoadedBatch(book.getBookName(), sheet.getSheetName());
-        sheet.getDependencyTable().addBatch(loadedBatch);
+        sheet.getDependencyTable().addBatch(book.getBookName(), sheet.getSheetName(), loadedBatch);
     }
 
     /**
@@ -115,13 +127,11 @@ public abstract class BaseTest {
      * @return A list that contains all dependents of this test
      * case's updated cell.
      */
-    public List<Ref> getDependenciesOfUpdatedCell(TestStats testStats) {
+    public List<Ref> getDependenciesOfUpdatedCell() {
         if (dependencies == null) {
-            long startTime = System.currentTimeMillis();
             dependencies =
                     new ArrayList<>(this.getSheet().getDependencyTable()
                             .getDependents(this.getCellToUpdate()));
-            testStats.totalGetDependentsTime = System.currentTimeMillis() - startTime;
         }
         return dependencies;
     }
@@ -131,7 +141,7 @@ public abstract class BaseTest {
         List<Ref> dependenciesMultpl = new ArrayList<>();
         Set<CellRegion> dependenciesSingle = new HashSet<>();
         for (Ref dependency :
-                Util.addAndReturn(getDependenciesOfUpdatedCell(testStats), getCellToUpdate())) {
+                Util.addAndReturn(getDependenciesOfUpdatedCell(), getCellToUpdate())) {
             if (dependency.getCellCount() == 1) {
                 dependenciesSingle.add(new CellRegion(dependency));
             } else {

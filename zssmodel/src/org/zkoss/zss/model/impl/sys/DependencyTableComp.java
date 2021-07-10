@@ -40,14 +40,14 @@ public class DependencyTableComp extends DependencyTableAdv {
     private int logEntryNum = 0;
     private int insertEntryNum = 0;
 
+    private boolean refreshCacheMode = false;
+    private Map<Ref, List<RefWithMeta>> _mapFullCache = new HashMap<>();
+    private Map<Ref, List<RefWithMeta>> _reverseMapFullCache = new HashMap<>();
+
     private CompressInfoComparator compressInfoComparator = new CompressInfoComparator();
 
     public DependencyTableComp() {}
 
-    @Override
-    public long getLastLookupTime() {
-        return 0;
-    }
 
     @Override
     public Set<Ref> getDependents(Ref precedent) {
@@ -55,6 +55,7 @@ public class DependencyTableComp extends DependencyTableAdv {
         LinkedHashSet<Ref> result = new LinkedHashSet<>();
 
         if (RefUtils.isValidRef(precedent)) {
+            long start = System.currentTimeMillis();
             getDependentsInternal(precedent, result, isDirectDep);
 
             if (insertEntryNum != 0) {
@@ -65,6 +66,7 @@ public class DependencyTableComp extends DependencyTableAdv {
                             getDependentsInternal(logEntry.dep, result, isDirectDep);
                         });
             }
+            lookupTime = System.currentTimeMillis() - start;
         }
 
         return result;
@@ -79,12 +81,13 @@ public class DependencyTableComp extends DependencyTableAdv {
     public Set<Ref> getDirectDependents(Ref precedent) {
 
         // enforce consuming all unprocessed log entries
-        refreshCache(precedent.getBookName(), precedent.getSheetName());
+        //  refreshCache(precedent.getBookName(), precedent.getSheetName());
 
-        boolean isDirectDep = true;
-        LinkedHashSet<Ref> result = new LinkedHashSet<>() ;
-        if (RefUtils.isValidRef(precedent)) getDependentsInternal(precedent, result, isDirectDep);
-        return result;
+        //  boolean isDirectDep = true;
+        //  LinkedHashSet<Ref> result = new LinkedHashSet<>() ;
+        //  if (RefUtils.isValidRef(precedent)) getDependentsInternal(precedent, result, isDirectDep);
+        // return result;
+        return new LinkedHashSet<>();
     }
 
     @Override
@@ -115,78 +118,98 @@ public class DependencyTableComp extends DependencyTableAdv {
     }
 
     @Override
-    public void addBatch(List<Pair<Ref, Ref>> edgeBatch) {
+    public void addBatch(String bookName, String sheetName, List<Pair<Ref, Ref>> edgeBatch) {
+        long start = System.currentTimeMillis();
+
+        _rectToRefCache = RTree.create();
+        rebuildRectToRefCache(bookName, sheetName);
+
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             DBContext dbContext = new DBContext(connection);
             LinkedList<EdgeUpdate> updateCache = new LinkedList<>();
+            boolean isInsert = true;
             edgeBatch.forEach(oneEdge -> {
                 Ref prec = oneEdge.getX();
                 Ref dep = oneEdge.getY();
 
-                CompressInfo selectedInfo = null;
-                Pair<CompressInfo, EdgeUpdate> updatePair =
-                        findCompressInfoInUpdateCache(prec, dep, updateCache);
-                if (updatePair != null) {
-                    selectedInfo = updatePair.getX();
-                    EdgeUpdate updateMatch = updatePair.getY();
-                    if (!selectedInfo.isDuplicate) {
-                        updateCache.remove(updateMatch);
-                        Ref newPrec = selectedInfo.prec.getBoundingBox(selectedInfo.candPrec);
-                        Ref newDep = selectedInfo.dep.getBoundingBox(selectedInfo.candDep);
-                        Pair<Offset, Offset> offsetPair = computeOffset(newPrec, newDep, selectedInfo.compType);
-                        updateMatch.updateEdge(newPrec, newDep,
-                                new EdgeMeta(selectedInfo.compType, offsetPair.getX(), offsetPair.getY()));
-                        updateCache.addFirst(updateMatch);
-                    }
-                } else {
-                    try {
-                        LinkedList<CompressInfo> compressInfoList = findCompressInfo(prec, dep);
-                        if (!compressInfoList.isEmpty()) {
-                            selectedInfo = Collections.min(compressInfoList, compressInfoComparator);
-
-                            Ref newPrec = selectedInfo.prec.getBoundingBox(selectedInfo.candPrec);
-                            Ref newDep = selectedInfo.dep.getBoundingBox(selectedInfo.candDep);
-                            Pair<Offset, Offset> offsetPair = computeOffset(newPrec, newDep, selectedInfo.compType);
-
-                            EdgeUpdate evicted = addToUpdateCache(updateCache, newPrec, newDep,
-                                    new EdgeMeta(selectedInfo.compType, offsetPair.getX(), offsetPair.getY()));
-                            if (evicted != null) {
-                                deleteDBEntry(dbContext, evicted.oldPrec, evicted.oldDep, evicted.oldEdgeMeta);
-                                insertDBEntry(dbContext, evicted.newPrec, evicted.newDep, evicted.newEdgeMeta.patternType,
-                                        evicted.newEdgeMeta.startOffset, evicted.newEdgeMeta.endOffset);
-                            }
-                        } else {
-                            EdgeMeta noTypeEdgeMeta = new EdgeMeta(PatternType.NOTYPE,
-                                    Offset.noOffset, Offset.noOffset);
-                            EdgeUpdate evicted = addToUpdateCache(updateCache, prec, dep, noTypeEdgeMeta);
-                            if (evicted != null) {
-                                deleteDBEntry(dbContext, evicted.oldPrec, evicted.oldDep, evicted.oldEdgeMeta);
-                                insertDBEntry(dbContext, evicted.newPrec, evicted.newDep, evicted.newEdgeMeta.patternType,
-                                        evicted.newEdgeMeta.startOffset, evicted.newEdgeMeta.endOffset);
-                            }
-                        }
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-                }
+                fastModify(prec, dep, isInsert, updateCache, dbContext);
             });
 
-            // Flush the update cache
-            updateCache.forEach(edgeUpdate -> {
-                if (edgeUpdate.hasUpdate()) {
-                    try {
-                        deleteDBEntry(dbContext, edgeUpdate.oldPrec, edgeUpdate.oldDep, edgeUpdate.oldEdgeMeta);
-                        insertDBEntry(dbContext, edgeUpdate.newPrec, edgeUpdate.newDep, edgeUpdate.newEdgeMeta.patternType,
-                                edgeUpdate.newEdgeMeta.startOffset, edgeUpdate.newEdgeMeta.endOffset);
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
-
+            flushUpdateCache(updateCache, dbContext);
             connection.commit();
         } catch (Exception e) {
             e.printStackTrace();
+        }
+
+        maintainRectToRefCache(bookName, sheetName);
+
+        addBatchTime = System.currentTimeMillis() - start;
+    }
+
+    // Flush the update cache
+    private void flushUpdateCache(LinkedList<EdgeUpdate> updateCache,
+                                  DBContext dbContext) {
+        updateCache.forEach(edgeUpdate -> {
+            if (edgeUpdate.hasUpdate()) {
+                try {
+                    deleteDBEntry(dbContext, edgeUpdate.oldPrec, edgeUpdate.oldDep, edgeUpdate.oldEdgeMeta);
+                    insertDBEntry(dbContext, edgeUpdate.newPrec, edgeUpdate.newDep, edgeUpdate.newEdgeMeta.patternType,
+                            edgeUpdate.newEdgeMeta.startOffset, edgeUpdate.newEdgeMeta.endOffset);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    private void fastModify(Ref prec, Ref dep, boolean isInsert,
+                            LinkedList<EdgeUpdate> updateCache,
+                            DBContext dbContext) {
+        CompressInfo selectedInfo = null;
+        Pair<CompressInfo, EdgeUpdate> updatePair =
+                findCompressInfoInUpdateCache(prec, dep, updateCache);
+        if (updatePair != null) {
+            selectedInfo = updatePair.getX();
+            EdgeUpdate updateMatch = updatePair.getY();
+            if (!selectedInfo.isDuplicate) {
+                updateCache.remove(updateMatch);
+                Ref newPrec = selectedInfo.prec.getBoundingBox(selectedInfo.candPrec);
+                Ref newDep = selectedInfo.dep.getBoundingBox(selectedInfo.candDep);
+                Pair<Offset, Offset> offsetPair = computeOffset(newPrec, newDep, selectedInfo.compType);
+                updateMatch.updateEdge(newPrec, newDep,
+                        new EdgeMeta(selectedInfo.compType, offsetPair.getX(), offsetPair.getY()));
+                updateCache.addFirst(updateMatch);
+            }
+        } else {
+            try {
+                LinkedList<CompressInfo> compressInfoList = findCompressInfo(prec, dep);
+                if (!compressInfoList.isEmpty()) {
+                    selectedInfo = Collections.min(compressInfoList, compressInfoComparator);
+
+                    Ref newPrec = selectedInfo.prec.getBoundingBox(selectedInfo.candPrec);
+                    Ref newDep = selectedInfo.dep.getBoundingBox(selectedInfo.candDep);
+                    Pair<Offset, Offset> offsetPair = computeOffset(newPrec, newDep, selectedInfo.compType);
+
+                    EdgeUpdate evicted = addToUpdateCache(updateCache, newPrec, newDep,
+                            new EdgeMeta(selectedInfo.compType, offsetPair.getX(), offsetPair.getY()));
+                    if (evicted != null) {
+                        deleteDBEntry(dbContext, evicted.oldPrec, evicted.oldDep, evicted.oldEdgeMeta);
+                        insertDBEntry(dbContext, evicted.newPrec, evicted.newDep, evicted.newEdgeMeta.patternType,
+                                evicted.newEdgeMeta.startOffset, evicted.newEdgeMeta.endOffset);
+                    }
+                } else {
+                    EdgeMeta noTypeEdgeMeta = new EdgeMeta(PatternType.NOTYPE,
+                            Offset.noOffset, Offset.noOffset);
+                    EdgeUpdate evicted = addToUpdateCache(updateCache, prec, dep, noTypeEdgeMeta);
+                    if (evicted != null) {
+                        deleteDBEntry(dbContext, evicted.oldPrec, evicted.oldDep, evicted.oldEdgeMeta);
+                        insertDBEntry(dbContext, evicted.newPrec, evicted.newDep, evicted.newEdgeMeta.patternType,
+                                evicted.newEdgeMeta.startOffset, evicted.newEdgeMeta.endOffset);
+                    }
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -204,28 +227,135 @@ public class DependencyTableComp extends DependencyTableAdv {
             Pair<Ref, Ref> oneEdge = new Pair<>(oneLog.prec, oneLog.dep);
             loadedBatch.addLast(oneEdge);
         });
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
-            DBContext dbContext = new DBContext(connection);
-            LogUtils.deleteLoadedLogs(dbContext, logTableName, bookName, sheetName);
-            logEntryNum -= loadedBatch.size();
-            insertEntryNum -= loadedBatch.size();
-            connection.commit();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+
+        deleteAllLogs(bookName, sheetName);
         return loadedBatch;
     }
 
     @Override
     public void refreshCache(String bookName, String sheetName) {
+        long start = System.currentTimeMillis();
+
+        refreshCacheMode = true;
+
+        loadEverything(bookName, sheetName);
         boolean isInsertOnly = false;
         LogUtils.getLogEntries(logTableName, bookName, sheetName, isInsertOnly)
                 .forEach(logEntry -> {
-                    if (logEntry.isInsert) performOneInsert(logEntry.id, logEntry.prec, logEntry.dep);
-                    else performOneDelete(logEntry.id, logEntry.dep);
+                    if (logEntry.isInsert) performOneInsert(logEntry.prec, logEntry.dep);
+                    else performOneDelete(logEntry.dep);
                 });
 
+        updateDBFromCache(bookName, sheetName);
+        updateCache();
+        deleteAllLogs(bookName, sheetName);
+        refreshCacheMode = false;
+
         maintainRectToRefCache(bookName, sheetName);
+
+        refreshCacheTime = System.currentTimeMillis() - start;
+    }
+
+    private void loadEverything(String bookName, String sheetName) {
+        _rectToRefCache = RTree.create();
+        String selectQuery =
+                "  SELECT range::box, dep_range::box, pattern_type, offsetRange::box" +
+                        "  FROM " + dependencyTableName +
+                        "  WHERE  bookname  = ?" +
+                        "  AND    sheetname =  ?";
+
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(selectQuery)) {
+            stmt.setString(1, bookName);
+            stmt.setString(2, sheetName);
+
+            ResultSet rs =  stmt.executeQuery();
+            while(rs.next())
+            {
+                PGbox range = (PGbox) rs.getObject(1);
+                Ref prec = RefUtils.boxToRef(range, bookName, sheetName);
+                PGbox dep_range = (PGbox) rs.getObject(2);
+                Ref dep = RefUtils.boxToRef(dep_range, bookName, sheetName);
+                PatternType patternType = PatternType.values()[rs.getInt(3)];
+                PGbox offsetRange = (PGbox) rs.getObject(4);
+                Offset startOffset = new Offset((int) offsetRange.point[0].x,
+                        (int) offsetRange.point[0].y);
+                Offset endOffset = new Offset((int) offsetRange.point[1].x,
+                        (int) offsetRange.point[1].y);
+                EdgeMeta edgeMeta =
+                        new EdgeMeta(patternType, startOffset, endOffset);
+                insertMemEntry(prec, dep, edgeMeta);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void updateDBFromCache(String bookname, String sheetname) {
+        String deleteQuery =
+                "DELETE FROM " + dependencyTableName +
+                        " WHERE  bookname  = ?" +
+                        " AND    sheetname =  ?";
+
+        String insertQuery = "INSERT INTO " + dependencyTableName +
+                " VALUES (?,?,?,?,?,?,?,?,?)";
+
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            PreparedStatement delStmt = connection.prepareStatement(deleteQuery);
+            delStmt.setString(1, bookname);
+            delStmt.setString(2, sheetname);
+            delStmt.execute();
+
+            _mapFullCache.forEach((Ref prec, List<RefWithMeta> depList) -> depList.forEach((RefWithMeta depWithMeta) -> {
+                Ref dep = depWithMeta.getRef();
+                PatternType patternType = depWithMeta.getPatternType();
+                Offset startOffset = depWithMeta.getEdgeMeta().startOffset;
+                Offset endOffset = depWithMeta.getEdgeMeta().endOffset;
+
+                PreparedStatement retStmt = null;
+                try {
+                    retStmt = connection.prepareStatement(insertQuery);
+                    retStmt.setString(1, bookname);
+                    retStmt.setString(2, sheetname);
+                    retStmt.setObject(3, RefUtils.refToPGBox(prec), Types.OTHER);
+                    retStmt.setString(4, bookname);
+                    retStmt.setString(5, sheetname);
+                    retStmt.setObject(6, RefUtils.refToPGBox(dep), Types.OTHER);
+                    retStmt.setBoolean(7, true);
+                    retStmt.setInt(8, patternType.ordinal());
+                    retStmt.setObject(9, RefUtils.offsetToPGBox(startOffset, endOffset));
+                    retStmt.execute();
+                } catch (SQLException throwables) {
+                    throwables.printStackTrace();
+                }
+            }));
+
+            connection.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void updateCache() {
+        _mapCache = new LruCache<>(CACHE_SIZE);
+        _mapFullCache.forEach((Ref prec, List<RefWithMeta> depList) -> _mapCache.put(prec, depList));
+        _mapFullCache = new HashMap<>();
+
+        _reverseMapCache = new LruCache<>(CACHE_SIZE);
+        _reverseMapFullCache.forEach((Ref dep, List<RefWithMeta> precList) -> _reverseMapCache.put(dep, precList));
+        _reverseMapFullCache = new HashMap<>();
+    }
+
+    private void deleteAllLogs(String bookName, String sheetName) {
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+            DBContext dbContext = new DBContext(connection);
+            LogUtils.deleteLoadedLogs(dbContext, logTableName, bookName, sheetName);
+            logEntryNum = 0;
+            insertEntryNum = 0;
+            connection.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     private void getDependentsInternal(Ref precUpdate,
@@ -268,14 +398,11 @@ public class DependencyTableComp extends DependencyTableAdv {
         return evicted;
     }
 
-    private void performOneInsert(int id, Ref prec, Ref dep) {
+    private void performOneInsert(Ref prec, Ref dep) {
         LinkedList<CompressInfo> compressInfoList = findCompressInfo(prec, dep);
 
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             DBContext dbContext = new DBContext(connection);
-            LogUtils.deleteLogEntry(dbContext, logTableName, id);
-            logEntryNum -= 1;
-            insertEntryNum -= 1;
             if (compressInfoList.isEmpty()) {
                 insertDBEntry(dbContext, prec, dep, PatternType.NOTYPE,
                         Offset.noOffset, Offset.noOffset);
@@ -376,19 +503,22 @@ public class DependencyTableComp extends DependencyTableAdv {
                                Ref dep,
                                EdgeMeta edgeMeta) throws SQLException {
         deleteMemEntry(prec, dep, edgeMeta);
-        String query = "DELETE FROM " + dependencyTableName +
-                " WHERE  bookname  = ?" +
-                " AND    sheetname =  ?" +
-                " AND    range ~= ?" +
-                " AND    dep_range ~= ?" +
-                " AND    offsetRange ~= ?";
-        PreparedStatement retStmt = dbContext.getConnection().prepareStatement(query);
-        retStmt.setString(1, prec.getBookName());
-        retStmt.setString(2, prec.getSheetName());
-        retStmt.setObject(3, RefUtils.refToPGBox(prec), Types.OTHER);
-        retStmt.setObject(4, RefUtils.refToPGBox(dep), Types.OTHER);
-        retStmt.setObject(5, RefUtils.offsetToPGBox(edgeMeta.startOffset, edgeMeta.endOffset), Types.OTHER);
-        retStmt.execute();
+
+        if (!refreshCacheMode) {
+            String query = "DELETE FROM " + dependencyTableName +
+                    " WHERE  bookname  = ?" +
+                    " AND    sheetname =  ?" +
+                    " AND    range ~= ?" +
+                    " AND    dep_range ~= ?" +
+                    " AND    offsetRange ~= ?";
+            PreparedStatement retStmt = dbContext.getConnection().prepareStatement(query);
+            retStmt.setString(1, prec.getBookName());
+            retStmt.setString(2, prec.getSheetName());
+            retStmt.setObject(3, RefUtils.refToPGBox(prec), Types.OTHER);
+            retStmt.setObject(4, RefUtils.refToPGBox(dep), Types.OTHER);
+            retStmt.setObject(5, RefUtils.offsetToPGBox(edgeMeta.startOffset, edgeMeta.endOffset), Types.OTHER);
+            retStmt.execute();
+        }
 
         refNum -= 1;
     }
@@ -401,19 +531,22 @@ public class DependencyTableComp extends DependencyTableAdv {
                                Offset startOffset,
                                Offset endOffset) throws SQLException {
         insertMemEntry(newPrec, newDep, new EdgeMeta(patternType, startOffset, endOffset));
-        String query = "INSERT INTO " + dependencyTableName +
-                " VALUES (?,?,?,?,?,?,?,?,?)";
-        PreparedStatement retStmt = dbContext.getConnection().prepareStatement(query);
-        retStmt.setString(1, newPrec.getBookName());
-        retStmt.setString(2, newPrec.getSheetName());
-        retStmt.setObject(3, RefUtils.refToPGBox(newPrec), Types.OTHER);
-        retStmt.setString(4, newDep.getBookName());
-        retStmt.setString(5, newDep.getSheetName());
-        retStmt.setObject(6, RefUtils.refToPGBox(newDep), Types.OTHER);
-        retStmt.setBoolean(7, true);
-        retStmt.setInt(8, patternType.ordinal());
-        retStmt.setObject(9, RefUtils.offsetToPGBox(startOffset, endOffset));
-        retStmt.execute();
+
+        if (!refreshCacheMode) {
+            String query = "INSERT INTO " + dependencyTableName +
+                    " VALUES (?,?,?,?,?,?,?,?,?)";
+            PreparedStatement retStmt = dbContext.getConnection().prepareStatement(query);
+            retStmt.setString(1, newPrec.getBookName());
+            retStmt.setString(2, newPrec.getSheetName());
+            retStmt.setObject(3, RefUtils.refToPGBox(newPrec), Types.OTHER);
+            retStmt.setString(4, newDep.getBookName());
+            retStmt.setString(5, newDep.getSheetName());
+            retStmt.setObject(6, RefUtils.refToPGBox(newDep), Types.OTHER);
+            retStmt.setBoolean(7, true);
+            retStmt.setInt(8, patternType.ordinal());
+            retStmt.setObject(9, RefUtils.offsetToPGBox(startOffset, endOffset));
+            retStmt.execute();
+        }
 
         refNum += 1;
     }
@@ -421,39 +554,63 @@ public class DependencyTableComp extends DependencyTableAdv {
     private void deleteMemEntry(Ref prec,
                                 Ref dep,
                                 EdgeMeta edgeMeta) {
-        // This is not very efficient, but it is correct
-        _mapCache.remove(prec);
-        _reverseMapCache.remove(dep);
+        if (refreshCacheMode) {
+            List<RefWithMeta> depList = _mapFullCache.get(prec);
+            if (depList != null) {
+                depList.remove(new RefWithMeta(dep, edgeMeta));
+                if (depList.isEmpty()) _mapFullCache.remove(prec);
+            }
+
+            List<RefWithMeta> precList = _reverseMapFullCache.get(dep);
+            if (precList != null) {
+                precList.remove(new RefWithMeta(prec, edgeMeta));
+                if (precList.isEmpty()) _reverseMapFullCache.remove(dep);
+            }
+        } else { // This is not very efficient, but it is correct
+            _mapCache.remove(prec);
+            _reverseMapCache.remove(dep);
+        }
+
+        _rectToRefCache = _rectToRefCache.delete(prec, RefUtils.refToRect(prec));
+        _rectToRefCache = _rectToRefCache.delete(dep, RefUtils.refToRect(dep));
     }
 
     private void insertMemEntry(Ref prec,
                                 Ref dep,
                                 EdgeMeta edgeMeta) {
-        if (_mapCache.containsKey(prec)) {
-            List<RefWithMeta> depList = _mapCache.get(prec);
+        if (refreshCacheMode) {
+            List<RefWithMeta> depList = _mapFullCache.getOrDefault(prec, new LinkedList<>());
             depList.add(new RefWithMeta(dep, edgeMeta));
-            _mapCache.put(prec, depList);
+            _mapFullCache.put(prec, depList);
+
+            List<RefWithMeta> precList = _reverseMapFullCache.getOrDefault(dep, new LinkedList<>());
+            precList.add(new RefWithMeta(prec, edgeMeta));
+            _reverseMapFullCache.put(dep, precList);
+
+        } else {
+            if (_mapCache.containsKey(prec)) {
+                List<RefWithMeta> depList = _mapCache.get(prec);
+                depList.add(new RefWithMeta(dep, edgeMeta));
+                _mapCache.put(prec, depList);
+            }
+
+            if (_reverseMapCache.containsKey(dep)) {
+                List<RefWithMeta> precList = _reverseMapCache.get(dep);
+                precList.add(new RefWithMeta(prec, edgeMeta));
+                _reverseMapCache.put(dep, precList);
+            }
         }
 
-        if (_reverseMapCache.containsKey(dep)) {
-            List<RefWithMeta> precList = _reverseMapCache.get(dep);
-            precList.add(new RefWithMeta(prec, edgeMeta));
-            _reverseMapCache.put(dep, precList);
-        }
+        _rectToRefCache = _rectToRefCache.add(prec, RefUtils.refToRect(prec));
+        _rectToRefCache = _rectToRefCache.add(dep, RefUtils.refToRect(dep));
     }
 
-    private void performOneDelete(int id, Ref delDep) {
+    private void performOneDelete(Ref delDep) {
         assert (delDep.getRow() == delDep.getLastRow() &&
                 delDep.getColumn() == delDep.getLastColumn());
 
         AutoRollbackConnection connection = DBHandler.instance.getConnection();
         DBContext dbContext = new DBContext(connection);
-        try {
-            LogUtils.deleteLogEntry(dbContext, logTableName, id);
-            logEntryNum -= 1;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
         findOverlappingRefs(delDep).forEachRemaining(depRange -> {
             findPrecs(depRange).forEach(precRangeWithMeta -> {
                 Ref precRange = precRangeWithMeta.getRef();
@@ -469,16 +626,21 @@ public class DependencyTableComp extends DependencyTableAdv {
                     Ref newPrec = pair.getX();
                     Ref newDep = pair.getY().getRef();
                     EdgeMeta newEdgeMeta = pair.getY().getEdgeMeta();
-                    try {
-                        insertDBEntry(dbContext, newPrec, newDep, newEdgeMeta.patternType,
-                                newEdgeMeta.startOffset, newEdgeMeta.endOffset);
-                    } catch (SQLException e) {
-                        e.printStackTrace();
+                    if (newDep.getType() == Ref.RefType.CELL) {
+                        performOneInsert(newPrec, newDep);
+                    } else  {
+                        try {
+                            insertDBEntry(dbContext, newPrec, newDep, newEdgeMeta.patternType,
+                                    newEdgeMeta.startOffset, newEdgeMeta.endOffset);
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
                     }
                 });
             });
         });
         connection.commit();
+        connection.close();
     }
 
     private List<Pair<Ref, RefWithMeta>> deleteOneCell(Ref prec, Ref dep,
@@ -628,19 +790,29 @@ public class DependencyTableComp extends DependencyTableAdv {
     }
 
     private Iterable<RefWithMeta> findPrecs(Ref dep) {
-        List<RefWithMeta> precIter = _reverseMapCache.get(dep);
-        if (precIter == null || precIter.isEmpty()) {
-            precIter = findPrecsFromDB(dep);
-            _reverseMapCache.put(dep, precIter);
+        List<RefWithMeta> precIter;
+        if (refreshCacheMode) {
+            precIter = _reverseMapFullCache.getOrDefault(dep, new LinkedList<>());
+        } else {
+            precIter = _reverseMapCache.get(dep);
+            if (precIter == null || precIter.isEmpty()) {
+                precIter = findPrecsFromDB(dep);
+                _reverseMapCache.put(dep, precIter);
+            }
         }
         return precIter;
     }
 
     private Iterable<RefWithMeta> findDeps(Ref prec) {
-        List<RefWithMeta> depIter = _mapCache.get(prec);
-        if (depIter == null || depIter.isEmpty()) {
-            depIter = findDepsFromDB(prec);
-            _mapCache.put(prec, depIter);
+        List<RefWithMeta> depIter = null;
+        if (refreshCacheMode) {
+            depIter = _mapFullCache.getOrDefault(prec, new LinkedList<>());
+        } else {
+            depIter = _mapCache.get(prec);
+            if (depIter == null || depIter.isEmpty()) {
+                depIter = findDepsFromDB(prec);
+                _mapCache.put(prec, depIter);
+            }
         }
         return depIter;
     }
