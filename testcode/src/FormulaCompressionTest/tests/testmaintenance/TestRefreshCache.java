@@ -8,14 +8,16 @@ import org.zkoss.zss.model.sys.dependency.Ref;
 import java.util.List;
 import java.util.Random;
 
-public class TestAddBatch extends BaseTest {
+public class TestRefreshCache extends BaseTest {
 
     private final int rows;
+    private final int modifyRows;
     private int answer;
 
-    public TestAddBatch(final int rows) {
+    public TestRefreshCache(final int rows, final int modifyRows) {
         super();
         this.rows = rows;
+        this.modifyRows = modifyRows;
     }
 
     @Override
@@ -34,6 +36,14 @@ public class TestAddBatch extends BaseTest {
             sheet.getCell(i, 0).setValue(num);
             sheet.getCell(i, 1).setFormulaValue("SUM(A1:A" + (i + 1) + ")");
             answer += num;
+        }
+
+        List<Pair<Ref, Ref>> loadedBatch =
+                sheet.getDependencyTable().getLoadedBatch(book.getBookName(), sheet.getSheetName());
+        sheet.getDependencyTable().addBatch(book.getBookName(), sheet.getSheetName(), loadedBatch);
+
+        for (int i = 1; i< modifyRows; i++) {
+            sheet.getCell(i, 1).setFormulaValue("A" + (i + 1) + " + B" + (i));
         }
 
         sheet.setDelayComputation(false);
@@ -56,16 +66,13 @@ public class TestAddBatch extends BaseTest {
 
     @Override
     public Ref getCellToUpdate() {
-        return sheet.getCell(rows - 1, 0).getRef();
+        return sheet.getCell(0, 0).getRef();
     }
 
     @Override
     public void updateCell() {
-        // refreshDepTable();
-        List<Pair<Ref, Ref>> loadedBatch =
-                sheet.getDependencyTable().getLoadedBatch(book.getBookName(), sheet.getSheetName());
-        sheet.getDependencyTable().addBatch(book.getBookName(), sheet.getSheetName(), loadedBatch);
-        sheet.getCell(rows - 1, 0).setValue(20);
+        refreshDepTable();
+        sheet.getCell(0, 0).setValue(20);
     }
 
     @Override
@@ -79,6 +86,6 @@ public class TestAddBatch extends BaseTest {
 
     @Override
     public String toString() {
-        return "TestAddBatch" + rows;
+        return "TestRefreshCache" + rows;
     }
 }

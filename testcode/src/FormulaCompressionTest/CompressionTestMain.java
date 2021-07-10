@@ -4,6 +4,7 @@ import FormulaCompressionTest.runners.BaseTestRunner;
 import FormulaCompressionTest.runners.AsyncTestRunner;
 import FormulaCompressionTest.runners.SyncTestRunner;
 import FormulaCompressionTest.tests.testmaintenance.TestDelete;
+import FormulaCompressionTest.tests.testmaintenance.TestRefreshCache;
 import FormulaCompressionTest.utils.Util;
 import FormulaCompressionTest.tests.*;
 
@@ -126,6 +127,9 @@ public class CompressionTestMain {
                 break;
             case "delete":
                 oneTest = new TestDelete(Integer.parseInt(testArgs[0]));
+                break;
+            case "refreshcache":
+                oneTest = new TestRefreshCache(Integer.parseInt(testArgs[0]), Integer.parseInt(testArgs[1]));
                 break;
             default:
                 System.out.println("Spreadsheet " + sheetString

@@ -35,7 +35,9 @@ public class TestStats {
     public long     numberOfCellsToUpdate = 0;
     public long     startNumberOfDependents = 0;
     public long     finalNumberOfDependents = 0;
-    public long     totalGetDependentsTime = 0;
+    public long     getDependentsTime = 0;
+    public long     addBatchTime = 0;
+    public long     refreshCacheTime = 0;
     public String   testCase = "";
 
     public void writeStatsToFile (String outFolder) {
@@ -61,7 +63,7 @@ public class TestStats {
                     + "Update cell end time: "              + updateCellFinalTime                           + "\n"
                     + "Total time to update cells (ms): "   + (updateCellFinalTime - updateCellStartTime)   + "\n"
                     + "Total time after the update (ms): "  + (touchedTime - updateCellFinalTime)           + "\n"
-                    + "Total time of getting dependents (ms): "  + totalGetDependentsTime                   + "\n"
+                    + "Total time of getting dependents (ms): "  + getDependentsTime                        + "\n"
                     + "Area under curve: "                  + area                                          + "\n"
                     + "Curve: "
             );
@@ -80,7 +82,9 @@ public class TestStats {
                     + "Number of cells updated: "           + updatedCells                                  + "\n"
                     + "Total time to update cells (ms): "   + (updateCellFinalTime - updateCellStartTime)   + "\n"
                     + "Total time after the update (ms): "  + (touchedTime - updateCellFinalTime)           + "\n"
-                    + "Total time of getting dependents (ms): "  + totalGetDependentsTime                   + "\n"
+                    + "Total time of getting dependents (ms): "  + getDependentsTime                        + "\n"
+                    + "Total time of adding the batch (ms): "    + addBatchTime                             + "\n"
+                    + "Total time of refreshing the cache (ms): " + refreshCacheTime                        + "\n"
                     + "Area under curve: "                  + area                                          + "\n"
             );
 
