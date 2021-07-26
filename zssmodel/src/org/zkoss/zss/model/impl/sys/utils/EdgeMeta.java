@@ -1,6 +1,6 @@
 package org.zkoss.zss.model.impl.sys.utils;
 
-import org.zkoss.zss.model.sys.dependency.Ref;
+import java.util.Objects;
 
 public class EdgeMeta {
 
@@ -15,4 +15,18 @@ public class EdgeMeta {
         this.endOffset = endOffset;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof EdgeMeta)) return false;
+        EdgeMeta edgeMeta = (EdgeMeta) o;
+        return patternType == edgeMeta.patternType &&
+                Objects.equals(startOffset, edgeMeta.startOffset) &&
+                Objects.equals(endOffset, edgeMeta.endOffset);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(patternType, startOffset, endOffset);
+    }
 }
