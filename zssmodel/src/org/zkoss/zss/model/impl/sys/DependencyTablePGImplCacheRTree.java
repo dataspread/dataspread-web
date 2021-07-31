@@ -147,19 +147,20 @@ public class DependencyTablePGImplCacheRTree extends DependencyTableAdv {
 
         // Refresh the caches and R-trees for the cell references above
         Rectangle dependantRect = this.refToRectangle(dependant);
-        Iterator<Entry<Set<Ref>, Rectangle>> precedents = this.prcToDepRTree.search(dependantRect).toBlocking().getIterator();
+        Iterator<Entry<Set<Ref>, Rectangle>> precedents = this.depToPrcRTree.search(dependantRect).toBlocking().getIterator();
         if (precedents.hasNext()) {
             this.depToPrcRTree.delete(this.depToPrcCache.getIfPresent(dependantRect), dependantRect);
             this.depToPrcCache.invalidate(dependantRect);
-            this.getDirectPrecedents(dependant);
         }
         Rectangle precedentRect = this.refToRectangle(precedent);
         Iterator<Entry<Set<Ref>, Rectangle>> dependents = this.prcToDepRTree.search(precedentRect).toBlocking().getIterator();
         if (dependents.hasNext()) {
             this.prcToDepRTree.delete(this.prcToDepCache.getIfPresent(precedentRect), precedentRect);
             this.prcToDepCache.invalidate(precedentRect);
-            this.getDirectDependents(precedent);
         }
+        this.getDirectPrecedents(dependant);
+        this.getDirectDependents(precedent);
+
     }
 
     public void clear() {
