@@ -39,6 +39,10 @@ public class TestStats {
     public long     addBatchTime = 0;
     public long     refreshCacheTime = 0;
     public String   testCase = "";
+    public boolean  isSyncRunner = false;
+    public String   dependencyTableClass = "";
+    public String[] testArgs = new String[0];
+    public int      cacheSize = 0;
 
     public void writeStatsToFile (String outFolder) {
         Path debugPath = Paths.get(outFolder + "/" + debugStatsOutFileName);
@@ -48,6 +52,10 @@ public class TestStats {
             prw.println("Report:\n\n"
                     + "TestCase: "                          + testCase                                      + "\n"
                     + "Correct: "                           + isCorrect                                     + "\n"
+                    + "isSyncRunner: "                      + isSyncRunner                                  + "\n"
+                    + "dependencyTableClass: "              + dependencyTableClass                          + "\n"
+                    + "cacheSize: "                         + cacheSize                                     + "\n"
+                    + genTestArgsString(testArgs)
                     + "Touched time: "                      + touchedTime                                   + "\n"
                     + "Test start time: "                   + testStartTime                                 + "\n"
                     + "Test end time: "                     + testFinalTime                                 + "\n"
@@ -91,6 +99,14 @@ public class TestStats {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private String genTestArgsString(String[] testArgs) {
+        StringBuilder testArgsString = new StringBuilder();
+        for (int i = 0; i < testArgs.length; i++) {
+            testArgsString.append("testArg").append(i + 1).append(": ").append(testArgs[i]).append("\n");
+        }
+        return testArgsString.toString();
     }
 
 }

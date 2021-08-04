@@ -32,12 +32,12 @@ public class AsyncTestRunner extends BaseTestRunner {
 
     @Override
     protected void runAfter(BaseTest testCase) {
-        super.testStats.area = DirtyManagerLog.instance.getAreaUnderCurve(
-                Util.getSheetCells(testCase.getSheet(), testCase.getRegion())
-                , super.testStats.updateCellFinalTime
-                , super.testStats.updateCellStartTime
-                , super.testStats.curve
-        );
+        // super.testStats.area = DirtyManagerLog.instance.getAreaUnderCurve(
+        //         Util.getSheetCells(testCase.getSheet(), testCase.getRegion())
+        //         , super.testStats.updateCellFinalTime
+        //         , super.testStats.updateCellStartTime
+        //         , super.testStats.curve
+        // );
     }
 
 }

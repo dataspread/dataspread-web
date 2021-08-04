@@ -25,8 +25,9 @@ public class FormulaAsyncSchedulerTesting extends FormulaAsyncScheduler {
     private boolean started = false;
     private boolean shutdownCompleted = false;
 
-    private final PriorityQueue<CellItem> pq = new PriorityQueue<>(new CellItemCompare());
-    private final Queue<SCell> queue = new LinkedList<>();
+    // private final PriorityQueue<CellItem> pq = new PriorityQueue<>(new CellItemCompare());
+    // private final Queue<SCell> queue = new LinkedList<>();
+    private final List<SCell> dirtyList = new LinkedList<>();
     private final Set<Ref> computedCells = new HashSet<>();
 
     private static final int MAX_QUEUE_SIZE = 2000;
@@ -126,32 +127,49 @@ public class FormulaAsyncSchedulerTesting extends FormulaAsyncScheduler {
                 for (DirtyManager.DirtyRecord dirtyRecord : dirtyRecordSet) {
                     SSheet sheet = BookBindings.getSheetByRef(dirtyRecord.region);
                     Collection<SCell> cells = sheet.getCells(new CellRegion(dirtyRecord.region));
-                    queue.addAll(cells);
+                    // queue.addAll(cells);
+                    dirtyList.addAll(cells);
                     DirtyManager.dirtyManagerInstance.removeDirtyRegion(dirtyRecord.region,
                             dirtyRecord.trxId);
                 }
-                while (!queue.isEmpty() || !pq.isEmpty()) {
-                    // Replenish the priority queue if possible
-                    while (!queue.isEmpty() && pq.size() < MAX_QUEUE_SIZE) {
-                        SCell cell = queue.poll();
-                        int priority = getPriorityPrecedentsCount(cell);
-                        pq.add(new CellItem(cell, priority));
-                    }
-                    // See if there is a cell to be computed
-                    if (!pq.isEmpty()) {
-                        SCell cell = pq.poll().cell;
-                        computeCell(computedCells, cell.getSheet(), cell);
-                    }
+
+                Collections.sort(dirtyList, new SortbyPos());
+                while (!dirtyList.isEmpty()) {
+                    SCell cell = dirtyList.remove(0);
+                    computeCell(computedCells, cell.getSheet(), cell);
                 }
+
+                // while (!queue.isEmpty() || !pq.isEmpty()) {
+                //     // Replenish the priority queue if possible
+                //     while (!queue.isEmpty() && pq.size() < MAX_QUEUE_SIZE) {
+                //         SCell cell = queue.poll();
+                //         int priority = getPriorityPrecedentsCount(cell);
+                //         pq.add(new CellItem(cell, priority));
+                //     }
+                //     // See if there is a cell to be computed
+                //     if (!pq.isEmpty()) {
+                //         SCell cell = pq.poll().cell;
+                //         computeCell(computedCells, cell.getSheet(), cell);
+                //     }
+                // }
             }
         }
         shutdownCompleted = true;
-        pq.clear();
-        queue.clear();
+        //pq.clear();
+        //queue.clear();
         if (TRACK_COMPUTED_CELLS) {
             computedCells.clear();
         }
     }
+
+    private static class SortbyPos implements Comparator<SCell>
+    {
+        public int compare(SCell a, SCell b)
+        {
+            return a.getRowIndex() - b.getRowIndex();
+        }
+    }
+
 
     private int getPriorityRandomCellHash(SCell cell) {
         return ((cell.getRowIndex()+21)*29+11)%17;
