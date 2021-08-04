@@ -154,7 +154,7 @@ public class CompressionTestMain {
 
             outFolder = systemProperties.getProperty("outFolder", defultProperties.getProperty("outFolder"));
 
-            useSyncRunner = systemProperties.getProperty("userSyncRunner", defultProperties.getProperty("useSyncRunner"))
+            useSyncRunner = systemProperties.getProperty("useSyncRunner", defultProperties.getProperty("useSyncRunner"))
                     .toLowerCase().equals("true");
             depTableClassString = systemProperties.getProperty("depTableClassString",
                     defultProperties.getProperty("depTableClassString"));
@@ -195,6 +195,9 @@ public class CompressionTestMain {
         System.out.println(Util.getCurrentTime() + ": Running test...");
         testRunner.run(oneTest);
         System.out.println(Util.getCurrentTime() + ": Done!");
+
+        testRunner.collectConfigInfo(useSyncRunner, depTableClassString,
+                testArgs, depTableCacheSize);
 
         testRunner.dumpStatdata();
 

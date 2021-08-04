@@ -29,7 +29,7 @@ public abstract class BaseTestRunner implements FormulaAsyncListener {
     private boolean testStarted;
     private String statsOutFolder;
 
-    private final boolean PRIORITIZE = false;
+    private final boolean PRIORITIZE = true;
 
     public BaseTestRunner() {}
 
@@ -154,6 +154,16 @@ public abstract class BaseTestRunner implements FormulaAsyncListener {
 
     public void dumpStatdata() {
         this.testStats.writeStatsToFile(statsOutFolder);
+    }
+
+    public void collectConfigInfo(boolean isSyncRunner,
+                                  String   dependencyTableClass,
+                                  String[] testArgs,
+                                  int cacheSize) {
+        this.testStats.isSyncRunner = isSyncRunner;
+        this.testStats.dependencyTableClass = dependencyTableClass;
+        this.testStats.testArgs = testArgs;
+        this.testStats.cacheSize = cacheSize;
     }
 
     private void reset() {
