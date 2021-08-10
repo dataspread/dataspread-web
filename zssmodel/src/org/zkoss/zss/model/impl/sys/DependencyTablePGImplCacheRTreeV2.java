@@ -1,19 +1,17 @@
 package org.zkoss.zss.model.impl.sys;
 
-import com.github.davidmoten.rtree.geometry.internal.RectangleFloat;
 import com.github.davidmoten.rtree.geometry.Rectangle;
-import com.github.davidmoten.rtree.Entries;
 import com.github.davidmoten.rtree.Entry;
 import com.github.davidmoten.rtree.RTree;
-import org.postgresql.geometric.PGbox;
-import com.google.common.cache.*;
-
 import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
+import org.model.LruCache;
 
+import org.zkoss.zss.model.impl.sys.utils.RefUtils;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.impl.RefImpl;
 import org.zkoss.zss.model.SBookSeries;
+import org.postgresql.geometric.PGbox;
 import org.zkoss.util.logging.Log;
 
 import java.sql.PreparedStatement;
@@ -25,43 +23,23 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.*;
 
-public class DependencyTablePGImplCacheRTree extends DependencyTableAdv {
+public class DependencyTablePGImplCacheRTreeV2 extends DependencyTableAdv {
 
     private static final long serialVersionUID = 1L;
     private static final Log _logger = Log.lookup(DependencyTablePGImpl.class.getName());
     private long lastLookupTime;
 
     private static int CACHE_SIZE = 1000000;
+    private final LruCache<Ref, Set<Ref>> depToPrcCache = new LruCache<>(CACHE_SIZE);
+    private final LruCache<Ref, Set<Ref>> prcToDepCache = new LruCache<>(CACHE_SIZE);
+    private RTree<Ref, Rectangle> rectToRefCache  = RTree.create();
+    private int refNum = 0;
 
-    // These R-Trees allow us to get the dependents / precedents of a cell that
-    // lies within a cached range.
-    private RTree<Set<Ref>, Rectangle> depToPrcRTree = RTree.create();
-    private RTree<Set<Ref>, Rectangle> prcToDepRTree = RTree.create();
-
-    // When an eviction occurs, the corresponding R-Tree entry is also deleted.
-    private RemovalListener<Rectangle, Set<Ref>> depToPrcListener = removalNotification -> {
-        if (removalNotification.wasEvicted() && removalNotification.getCause() == RemovalCause.SIZE) {
-            depToPrcRTree.delete(removalNotification.getValue(), removalNotification.getKey());
-        }
-    };
-    private RemovalListener<Rectangle, Set<Ref>> prcToDepListener = removalNotification -> {
-        if (removalNotification.wasEvicted() && removalNotification.getCause() == RemovalCause.SIZE) {
-            depToPrcRTree.delete(removalNotification.getValue(), removalNotification.getKey());
-        }
-    };
-
-    // These caches are mainly used to keep the size of the R-Tree restricted to
-    // cache size defined above.
-    private final Cache<Rectangle, Set<Ref>> depToPrcCache = CacheBuilder.newBuilder().maximumSize(CACHE_SIZE).removalListener(depToPrcListener).build();
-    private final Cache<Rectangle, Set<Ref>> prcToDepCache = CacheBuilder.newBuilder().maximumSize(CACHE_SIZE).removalListener(prcToDepListener).build();
-
-    public DependencyTablePGImplCacheRTree() {
+    public DependencyTablePGImplCacheRTreeV2() {
         lastLookupTime = 0;
     }
 
     /**
-     *
-     * Applies `func` to `src` and all nodes reachable from `src`.
      *
      * @param src The node to start DFS from.
      * @param neighbors A function that takes a node as input and returns a set of
@@ -69,6 +47,7 @@ public class DependencyTablePGImplCacheRTree extends DependencyTableAdv {
      * @param func A function that accepts a node as input and performs some operation
      * on it.
      *
+     * Applies `func` to `src` and all nodes reachable from `src`.
      */
     private void dfs (Ref src, Function<Ref, Set<Ref>> neighbors, Consumer<Ref> func) {
         Set<Ref> visitedSet = new HashSet<>();
@@ -85,18 +64,16 @@ public class DependencyTablePGImplCacheRTree extends DependencyTableAdv {
 
     /**
      *
-     * Converts a cell range to a rectangle object.
-     *
-     * @param ref The cell range to convert to a rectangle.
-     * @return A Rectangle instance that can be used for R-Tree queries.
+     * @param ref
+     * @return All refs that overlap with ref.
      */
-    private Rectangle refToRectangle (Ref ref) {
-        return RectangleFloat.create(
-                ref.getRow(),
-                ref.getColumn(),
-                (float) 0.5 + ref.getLastRow(),
-                (float) 0.5 + ref.getLastColumn()
-        );
+    private Set<Ref> getNeighbors(Ref ref) {
+        Iterator<Entry<Ref, Rectangle>> neighborsIter = this.rectToRefCache.search(RefUtils.refToRect(ref)).toBlocking().getIterator();
+        Set<Ref> neighbors = new HashSet<>();
+        while (neighborsIter.hasNext()) {
+            neighbors.add(neighborsIter.next().value());
+        }
+        return neighbors;
     }
 
     @Override
@@ -139,27 +116,36 @@ public class DependencyTablePGImplCacheRTree extends DependencyTableAdv {
     @Override
     public void add(Ref dependant, Ref precedent) {
 
-        // Update the DB
+        // Update the DB and ref count
         String insertQuery = "INSERT INTO dependency VALUES (?,?,?,?,?,?,?)";
         addQuery(insertQuery, dependant, precedent);
         insertQuery = "INSERT INTO full_dependency VALUES (?,?,?,?,?,?,?)";
         addQuery(insertQuery, dependant, precedent);
+        this.refNum += 2;
 
-        // Refresh the caches and R-trees for the cell references above
-        Rectangle dependantRect = this.refToRectangle(dependant);
-        Iterator<Entry<Set<Ref>, Rectangle>> precedents = this.depToPrcRTree.search(dependantRect).toBlocking().getIterator();
-        if (precedents.hasNext()) {
-            this.depToPrcRTree.delete(this.depToPrcCache.getIfPresent(dependantRect), dependantRect);
-            this.depToPrcCache.invalidate(dependantRect);
+        // Update the caches
+        Set<Ref> deps = this.prcToDepCache.get(precedent);
+        if (deps != null) {
+            deps.add(precedent);
+            this.prcToDepCache.put(precedent, deps);
+        } else {
+            this.prcToDepCache.put(precedent, new HashSet<>());
         }
-        Rectangle precedentRect = this.refToRectangle(precedent);
-        Iterator<Entry<Set<Ref>, Rectangle>> dependents = this.prcToDepRTree.search(precedentRect).toBlocking().getIterator();
-        if (dependents.hasNext()) {
-            this.prcToDepRTree.delete(this.prcToDepCache.getIfPresent(precedentRect), precedentRect);
-            this.prcToDepCache.invalidate(precedentRect);
+        Set<Ref> precs = this.depToPrcCache.get(dependant);
+        if (precs != null) {
+            precs.add(dependant);
+            this.depToPrcCache.put(dependant, precs);
+        } else {
+            this.depToPrcCache.put(dependant, new HashSet<>());
         }
-        this.getDirectPrecedents(dependant);
-        this.getDirectDependents(precedent);
+
+        // Update the RTree if it exists
+        if (this.refNum > CACHE_SIZE) {
+            this.rectToRefCache = RTree.create();
+        } else {
+            this.rectToRefCache = this.rectToRefCache.add(precedent, RefUtils.refToRect(precedent));
+            this.rectToRefCache = this.rectToRefCache.add(dependant, RefUtils.refToRect(dependant));
+        }
 
     }
 
@@ -167,16 +153,33 @@ public class DependencyTablePGImplCacheRTree extends DependencyTableAdv {
         throw new UnsupportedOperationException();
     }
 
+    private void rebuildRectToRefCache(String bookName, String sheetName) {
+        String selectQuery =
+                " SELECT range, dep_range FROM dependency" +
+                        " WHERE bookname = ?    " +
+                        " AND sheetname = ?     ";
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(selectQuery)) {
+            stmt.setString(1, bookName);
+            stmt.setString(2, sheetName);
+            ResultSet rs =  stmt.executeQuery();
+            while(rs.next()) {
+                PGbox range = (PGbox) rs.getObject(1);
+                this.rectToRefCache = this.rectToRefCache.add(RefUtils.boxToRef(range, bookName, sheetName),
+                        RefUtils.boxToRect(range));
+
+                PGbox dep_range = (PGbox) rs.getObject(2);
+                this.rectToRefCache = this.rectToRefCache.add(RefUtils.boxToRef(dep_range, bookName, sheetName),
+                        RefUtils.boxToRect(dep_range));
+            }
+            connection.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public void clearDependents(Ref dependant) {
-
-        // Update the caches
-        Rectangle rect = this.refToRectangle(dependant);
-        this.depToPrcRTree.delete(this.depToPrcCache.getIfPresent(rect), rect);
-        this.depToPrcCache.invalidate(rect);
-        this.prcToDepRTree.delete(this.prcToDepCache.getIfPresent(rect), rect);
-        this.prcToDepCache.invalidate(rect);
-
         String deleteQuery = "DELETE FROM dependency" +
                 " WHERE dep_bookname  = ?" +
                 " AND   dep_sheetname =  ?" +
@@ -195,6 +198,34 @@ public class DependencyTablePGImplCacheRTree extends DependencyTableAdv {
             e.printStackTrace();
         }
 
+        // Update ref count
+        this.refNum--;
+
+        // Maintain prc -> dep cache
+        Set<Ref> precs = this.depToPrcCache.get(dependant);
+        if (precs != null) {
+            precs.forEach((prc) -> {
+                if (prcToDepCache.containsKey(prc)) {
+                    this.prcToDepCache.put(prc, this.getDependents(prc));
+                }
+            });
+        }
+
+        // Maintain dep -> prc cache
+        this.depToPrcCache.remove(dependant);
+        this.depToPrcCache.keySet().forEach((dep) -> {
+            this.depToPrcCache.get(dep).remove(dependant);
+        });
+
+        // Rebuild RTree if necessary
+        if (this.refNum < CACHE_SIZE) {
+            if (this.rectToRefCache.isEmpty()) {
+                this.rebuildRectToRefCache(dependant.getBookName(), dependant.getSheetName());
+            } else {
+                this.rectToRefCache = this.rectToRefCache.delete(dependant, RefUtils.refToRect(dependant));
+            }
+        }
+
     }
 
     @Override
@@ -210,7 +241,7 @@ public class DependencyTablePGImplCacheRTree extends DependencyTableAdv {
     public Set<Ref> getActualDependents(Ref precedent) {
         if (precedent == null) { return new HashSet<>(); }
         Set<Ref> dependents = new HashSet<>();
-        this.dfs(precedent, this::getDirectDependents, (n) -> { if (!precedent.equals(n)) dependents.add(n); });
+        this.dfs(precedent, this::getNeighbors, (n) -> { if (!precedent.equals(n)) dependents.add(n); });
         return dependents;
     }
 
@@ -253,12 +284,8 @@ public class DependencyTablePGImplCacheRTree extends DependencyTableAdv {
     @Override
     public Set<Ref> getDirectDependents(Ref precedent) {
 
-        Rectangle precedentRect = this.refToRectangle(precedent);
-        Iterator<Entry<Set<Ref>, Rectangle>> dependents = this.prcToDepRTree.search(precedentRect).toBlocking().getIterator();
-        if (dependents.hasNext()) {
-            Set<Ref> result = new HashSet<>();
-            while (dependents.hasNext()) result.addAll(dependents.next().value());
-            return result;
+        if (this.prcToDepCache.containsKey(precedent)) {
+            return this.prcToDepCache.get(precedent);
         }
 
         String selectQuery = "SELECT dep_bookname, dep_sheetname, dep_range  FROM dependency " +
@@ -267,8 +294,7 @@ public class DependencyTablePGImplCacheRTree extends DependencyTableAdv {
                 " AND   range && ?";
 
         Set<Ref> refs = getDependentsQuery(precedent, selectQuery);
-        this.prcToDepCache.put(precedentRect, refs);
-        this.prcToDepRTree = this.prcToDepRTree.add(Entries.entry(refs, precedentRect));
+        this.prcToDepCache.put(precedent, refs);
         return refs;
 
     }
@@ -287,12 +313,8 @@ public class DependencyTablePGImplCacheRTree extends DependencyTableAdv {
     @Override
     public Set<Ref> getDirectPrecedents(Ref dependent) {
 
-        Rectangle dependentRect = this.refToRectangle(dependent);
-        Iterator<Entry<Set<Ref>, Rectangle>> precedents = this.depToPrcRTree.search(dependentRect).toBlocking().getIterator();
-        if (precedents.hasNext()) {
-            Set<Ref> result = new HashSet<>();
-            while (precedents.hasNext()) result.addAll(precedents.next().value());
-            return result;
+        if (this.depToPrcCache.containsKey(dependent)) {
+            return this.depToPrcCache.get(dependent);
         }
 
         String selectQuery = "SELECT bookname, sheetname, range FROM dependency " +
@@ -301,8 +323,7 @@ public class DependencyTablePGImplCacheRTree extends DependencyTableAdv {
                 " AND   dep_range && ?";
 
         Set<Ref> refs = getDependentsQuery(dependent, selectQuery);
-        this.depToPrcCache.put(dependentRect, refs);
-        this.depToPrcRTree = this.depToPrcRTree.add(Entries.entry(refs, dependentRect));
+        this.depToPrcCache.put(dependent, refs);
         return refs;
 
     }
