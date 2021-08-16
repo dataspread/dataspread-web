@@ -62,16 +62,63 @@ public class DependencyTablePGImplCacheRTreeV2 extends DependencyTableAdv {
         }
     }
 
+    private void findOverlappingRefsHelper(HashSet<Ref> resultSet,
+                                           String selectQuery,
+                                           Ref updateRef) {
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(selectQuery)) {
+            stmt.setString(1, updateRef.getBookName());
+            stmt.setString(2, updateRef.getSheetName());
+            stmt.setObject(3, RefUtils.refToPGBox(updateRef), Types.OTHER);
+
+            ResultSet rs =  stmt.executeQuery();
+            while(rs.next())
+            {
+                PGbox range = (PGbox) rs.getObject(1);
+                Ref resRef = RefUtils.boxToRef(range, updateRef.getBookName(), updateRef.getSheetName());
+                resultSet.add(resRef);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private Iterator<Ref> findOverlappingRefsFromDB(Ref updateRef) {
+        String selectQueryA =
+                "  SELECT range::box from dependency" +
+                        "  WHERE  bookname  = ?" +
+                        "  AND    sheetname =  ?" +
+                        "  AND    range && ?";
+
+        String selectQueryB =
+                "  SELECT dep_range::box from dependency" +
+                        "  WHERE  dep_bookname  = ?" +
+                        "  AND    dep_sheetname =  ?" +
+                        "  AND    dep_range && ?";
+
+        HashSet<Ref> resultSet = new HashSet<>();
+        findOverlappingRefsHelper(resultSet, selectQueryA, updateRef);
+        findOverlappingRefsHelper(resultSet, selectQueryB, updateRef);
+        return resultSet.iterator();
+    }
+
     /**
      *
      * @param ref
      * @return All refs that overlap with ref.
      */
     private Set<Ref> getNeighbors(Ref ref) {
-        Iterator<Entry<Ref, Rectangle>> neighborsIter = this.rectToRefCache.search(RefUtils.refToRect(ref)).toBlocking().getIterator();
+        Iterator<Entry<Ref, Rectangle>> rTreeIter = this.rectToRefCache.search(RefUtils.refToRect(ref)).toBlocking().getIterator();
         Set<Ref> neighbors = new HashSet<>();
-        while (neighborsIter.hasNext()) {
-            neighbors.add(neighborsIter.next().value());
+        if (rTreeIter.hasNext()) {
+            while (rTreeIter.hasNext()) {
+                neighbors.add(rTreeIter.next().value());
+            }
+        } else {
+            Iterator<Ref> dbIter = this.findOverlappingRefsFromDB(ref);
+            while (dbIter.hasNext()) {
+                neighbors.add(dbIter.next());
+            }
         }
         return neighbors;
     }
@@ -141,7 +188,9 @@ public class DependencyTablePGImplCacheRTreeV2 extends DependencyTableAdv {
 
         // Update the RTree if it exists
         if (this.refNum > CACHE_SIZE) {
-            this.rectToRefCache = RTree.create();
+            if (!this.rectToRefCache.isEmpty()) {
+                this.rectToRefCache = RTree.create();
+            }
         } else {
             this.rectToRefCache = this.rectToRefCache.add(precedent, RefUtils.refToRect(precedent));
             this.rectToRefCache = this.rectToRefCache.add(dependant, RefUtils.refToRect(dependant));
@@ -201,25 +250,22 @@ public class DependencyTablePGImplCacheRTreeV2 extends DependencyTableAdv {
         // Update ref count
         this.refNum--;
 
-        // Maintain prc -> dep cache
+        // Maintain cache
+        this.depToPrcCache.remove(dependant);
         Set<Ref> precs = this.depToPrcCache.get(dependant);
         if (precs != null) {
             precs.forEach((prc) -> {
-                if (prcToDepCache.containsKey(prc)) {
-                    this.prcToDepCache.put(prc, this.getDependents(prc));
+                Set<Ref> depSet = prcToDepCache.get(prc);
+                depSet.remove(dependant);
+                if (depSet.isEmpty()) {
+                    prcToDepCache.remove(prc);
                 }
             });
         }
 
-        // Maintain dep -> prc cache
-        this.depToPrcCache.remove(dependant);
-        this.depToPrcCache.keySet().forEach((dep) -> {
-            this.depToPrcCache.get(dep).remove(dependant);
-        });
-
         // Rebuild RTree if necessary
         if (this.refNum < CACHE_SIZE) {
-            if (this.rectToRefCache.isEmpty()) {
+            if (this.rectToRefCache.isEmpty() && this.refNum > 0) {
                 this.rebuildRectToRefCache(dependant.getBookName(), dependant.getSheetName());
             } else {
                 this.rectToRefCache = this.rectToRefCache.delete(dependant, RefUtils.refToRect(dependant));
