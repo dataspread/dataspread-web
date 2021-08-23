@@ -9,7 +9,7 @@
 		<zk.version>7.0.3</zk.version>
         <blockstore.version>1.0.0</blockstore.version>
 		<zpoi.version>3.9.8</zpoi.version>
-		<jsoup.version>1.7.3</jsoup.version>
+		<jsoup.version>1.14.2</jsoup.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 	<version>3.8.1</version>
