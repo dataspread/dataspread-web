@@ -74,7 +74,7 @@ public class SheetImpl extends AbstractSheetAdv {
     }
 
     /* Shoud be more then prefetch region */
-    final int CACHE_SIZE = Library.getIntProperty("CacheSize", 5000000);
+    final int CACHE_SIZE = Library.getIntProperty("CacheSize", 2 * 5000000);
     ;
     private final String _id;
 	private final IndexPool<AbstractRowAdv> _rows = new IndexPool<AbstractRowAdv>(){

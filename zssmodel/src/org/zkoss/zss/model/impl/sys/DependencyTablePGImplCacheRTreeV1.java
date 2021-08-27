@@ -25,7 +25,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.*;
 
-public class DependencyTablePGImplCacheRTree extends DependencyTableAdv {
+public class DependencyTablePGImplCacheRTreeV1 extends DependencyTableAdv {
 
     private static final long serialVersionUID = 1L;
     private static final Log _logger = Log.lookup(DependencyTablePGImpl.class.getName());
@@ -55,7 +55,7 @@ public class DependencyTablePGImplCacheRTree extends DependencyTableAdv {
     private final Cache<Rectangle, Set<Ref>> depToPrcCache = CacheBuilder.newBuilder().maximumSize(CACHE_SIZE).removalListener(depToPrcListener).build();
     private final Cache<Rectangle, Set<Ref>> prcToDepCache = CacheBuilder.newBuilder().maximumSize(CACHE_SIZE).removalListener(prcToDepListener).build();
 
-    public DependencyTablePGImplCacheRTree() {
+    public DependencyTablePGImplCacheRTreeV1() {
         lastLookupTime = 0;
     }
 
@@ -147,19 +147,20 @@ public class DependencyTablePGImplCacheRTree extends DependencyTableAdv {
 
         // Refresh the caches and R-trees for the cell references above
         Rectangle dependantRect = this.refToRectangle(dependant);
-        Iterator<Entry<Set<Ref>, Rectangle>> precedents = this.prcToDepRTree.search(dependantRect).toBlocking().getIterator();
+        Iterator<Entry<Set<Ref>, Rectangle>> precedents = this.depToPrcRTree.search(dependantRect).toBlocking().getIterator();
         if (precedents.hasNext()) {
             this.depToPrcRTree.delete(this.depToPrcCache.getIfPresent(dependantRect), dependantRect);
             this.depToPrcCache.invalidate(dependantRect);
-            this.getDirectPrecedents(dependant);
         }
         Rectangle precedentRect = this.refToRectangle(precedent);
         Iterator<Entry<Set<Ref>, Rectangle>> dependents = this.prcToDepRTree.search(precedentRect).toBlocking().getIterator();
         if (dependents.hasNext()) {
             this.prcToDepRTree.delete(this.prcToDepCache.getIfPresent(precedentRect), precedentRect);
             this.prcToDepCache.invalidate(precedentRect);
-            this.getDirectDependents(precedent);
         }
+        this.getDirectPrecedents(dependant);
+        this.getDirectDependents(precedent);
+
     }
 
     public void clear() {
