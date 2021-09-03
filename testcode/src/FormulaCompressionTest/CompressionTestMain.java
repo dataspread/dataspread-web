@@ -52,6 +52,7 @@ public class CompressionTestMain {
     public static boolean     useSyncRunner  = false;
     public static String      depTableClassString = "PGImpl";
     public static int         depTableCacheSize = 5000;
+    public static boolean     skipExecution = false;
 
     /**
      * Workload configuration
@@ -62,7 +63,7 @@ public class CompressionTestMain {
     /**
      * CONSTANTS, Not configured by users
      * */
-    public static final int         ASYNC_COMPRESS_CONSTANT = 1;
+    public static final int         ASYNC_COMPRESS_CONSTANT = 20;
 
     /**
      * Variables set based on the configuration
@@ -76,18 +77,22 @@ public class CompressionTestMain {
         Util.createDirectory(outputPath);
     }
 
-    private static void configTestRunner (boolean useSyncRunner, String outFolder) {
+    private static void configTestRunner (boolean useSyncRunner,
+                                          String outFolder,
+                                          boolean skipExecution) {
         if (useSyncRunner) testRunner = new SyncTestRunner();
         else testRunner = new AsyncTestRunner();
 
         testRunner.setStatsOutFolder(outFolder);
+        testRunner.setSkipExecution(skipExecution);
     }
 
     // TODO: add more dependencyTable options
     private static void configDependencyTable (String depTableString) {
         switch(depTableString.toLowerCase()) {
             case "pgimpl":
-                EngineFactory.dependencyTableClazz = DependencyTablePGImpl.class;
+                // EngineFactory.dependencyTableClazz = DependencyTablePGImpl.class;
+                EngineFactory.dependencyTableClazz = DependencyTablePGImplCacheRTreeV2.class;
                 break;
             case "comp":
                 EngineFactory.dependencyTableClazz = DependencyTableComp.class;
@@ -156,6 +161,8 @@ public class CompressionTestMain {
 
             useSyncRunner = systemProperties.getProperty("useSyncRunner", defultProperties.getProperty("useSyncRunner"))
                     .toLowerCase().equals("true");
+            skipExecution = systemProperties.getProperty("skipExecution", defultProperties.getProperty("skipExecution"))
+                    .toLowerCase().equals("true");
             depTableClassString = systemProperties.getProperty("depTableClassString",
                     defultProperties.getProperty("depTableClassString"));
             depTableCacheSize = Integer.parseInt(systemProperties.getProperty("depTableCacheSize",
@@ -186,7 +193,7 @@ public class CompressionTestMain {
         readConfig();
 
         CompressionTestMain.basicSetup(outFolder);
-        CompressionTestMain.configTestRunner(useSyncRunner, outFolder);
+        CompressionTestMain.configTestRunner(useSyncRunner, outFolder, skipExecution);
         CompressionTestMain.configDependencyTable(depTableClassString);
         CompressionTestMain.genTestCase(spreadsheetString,
                 depTableCacheSize, ASYNC_COMPRESS_CONSTANT);

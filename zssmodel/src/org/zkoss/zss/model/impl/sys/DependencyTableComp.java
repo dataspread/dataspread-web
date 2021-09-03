@@ -29,7 +29,7 @@ public class DependencyTableComp extends DependencyTableAdv {
     private final String dependencyTableName = DBHandler.compressDependency;
     private final String logTableName = DBHandler.stagedLog;
 
-    private int CACHE_SIZE = 1000000;
+    private int CACHE_SIZE = 1000000000;
     private final int UPDATE_CACHE_SIZE = 100;
 
     /** Map<dependant, precedent> */
@@ -123,7 +123,6 @@ public class DependencyTableComp extends DependencyTableAdv {
 
         _rectToRefCache = RTree.create();
         rebuildRectToRefCache(bookName, sheetName);
-
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
             DBContext dbContext = new DBContext(connection);
             LinkedList<EdgeUpdate> updateCache = new LinkedList<>();
@@ -217,6 +216,8 @@ public class DependencyTableComp extends DependencyTableAdv {
     @Override
     public void configDepedencyTable(int cacheSize, int compConstant) {
         CACHE_SIZE = cacheSize/3;
+        _mapCache = new LruCache<>(CACHE_SIZE);
+        _reverseMapCache = new LruCache<>(CACHE_SIZE);
     }
 
     @Override

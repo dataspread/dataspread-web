@@ -48,6 +48,8 @@ public class TestStats {
         Path debugPath = Paths.get(outFolder + "/" + debugStatsOutFileName);
         Path corePath = Paths.get(outFolder + "/" + coreStatsOutFileName);
 
+        if (getDependentsTime == 0) getDependentsTime = 1;
+
         try (PrintWriter prw = new PrintWriter(new FileWriter(debugPath.toFile(), true))) {
             prw.println("Report:\n\n"
                     + "TestCase: "                          + testCase                                      + "\n"

@@ -151,17 +151,16 @@ public abstract class BaseTest {
         for (CellRegion sheetCell : getCells()) {
             boolean matched = false;
             if (dependenciesSingle.contains(sheetCell)) {
-                testStats.numberOfCellsToUpdate++;
                 matched = true;
             }
             for (Ref dependency : dependenciesMultpl) {
                 CellRegion reg = new CellRegion(dependency);
                 if (reg.contains(sheetCell)) {
-                    testStats.numberOfCellsToUpdate++;
                     matched = true;
                 }
             }
             if (matched) {
+                testStats.numberOfCellsToUpdate++;
                 cellsToUpdateSet.add(sheetCell);
             }
         }

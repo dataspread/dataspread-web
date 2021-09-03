@@ -112,6 +112,7 @@ public class DependencyTableASync extends DependencyTableAdv {
     public void configDepedencyTable(int cacheSize, int compConstant) {
         CACHE_SIZE = cacheSize;
         compressionConst = compConstant;
+        _mapCache = new LruCache<>(CACHE_SIZE);
     }
 
     public List<Pair<Ref, Ref>> getLoadedBatch(String bookName, String sheetName) {
