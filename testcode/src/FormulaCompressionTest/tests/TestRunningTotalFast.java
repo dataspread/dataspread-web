@@ -33,8 +33,8 @@ public class TestRunningTotalFast extends BaseTest {
             answer += num;
         }
 
-        // refreshDepTable();
         loadBatch();
+        refreshDepTable();
         sheet.setDelayComputation(false);
     }
 

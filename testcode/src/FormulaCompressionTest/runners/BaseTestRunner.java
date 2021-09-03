@@ -28,6 +28,7 @@ public abstract class BaseTestRunner implements FormulaAsyncListener {
     private Set<CellRegion> cellsToUpdateSet;
     private boolean testStarted;
     private String statsOutFolder;
+    private boolean skipExecution;
 
     private final boolean PRIORITIZE = true;
 
@@ -35,6 +36,10 @@ public abstract class BaseTestRunner implements FormulaAsyncListener {
 
     public void setStatsOutFolder(String outputFolder) {
         this.statsOutFolder = outputFolder;
+    }
+
+    public void setSkipExecution(boolean skipExecution) {
+        this.skipExecution = skipExecution;
     }
 
     /**
@@ -68,14 +73,20 @@ public abstract class BaseTestRunner implements FormulaAsyncListener {
         testCase.updateCell();
         this.testStats.updateCellFinalTime = System.currentTimeMillis();
         this.testStats.getDependentsTime = testCase.getLastLookupTime();
-        FormulaAsyncScheduler.getScheduler().start();
-        this.runAfterUpdate(testCase);
-        testCase.execAfterUpdate();
+
+        if (!skipExecution || !(this instanceof AsyncTestRunner)) {
+            FormulaAsyncScheduler.getScheduler().start();
+            this.runAfterUpdate(testCase);
+            testCase.execAfterUpdate();
+            testCase.touchAll();
+            this.testStats.touchedTime = System.currentTimeMillis();
+            this.testStats.isCorrect = testCase.verify();
+            this.runAfter(testCase);
+        } else {
+            this.testStats.touchedTime = System.currentTimeMillis();
+        }
+
         this.testStats.refreshCacheTime = testCase.getLastRefreshCacheTime();
-        testCase.touchAll();
-        this.testStats.touchedTime = System.currentTimeMillis();
-        this.testStats.isCorrect = testCase.verify();
-        this.runAfter(testCase);
     }
 
     /**
