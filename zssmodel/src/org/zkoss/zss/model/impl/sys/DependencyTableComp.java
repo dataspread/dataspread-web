@@ -734,6 +734,11 @@ public class DependencyTableComp extends DependencyTableAdv {
 
         // Otherwise, find the compression type
         Direction direction = findAdjacencyDirection(dep, candDep);
+        if (direction == Direction.NODIRECTION) {
+            return new CompressInfo(false, Direction.NODIRECTION, PatternType.NOTYPE,
+                    prec, dep, candPrec, candDep, metaData);
+        }
+
         Ref lastCandPrec = findLastPrec(candPrec, candDep, metaData, direction);
         PatternType compressType =
                 findCompPatternHelper(direction, prec, dep, candPrec, candDep, lastCandPrec);
