@@ -6,5 +6,6 @@ public enum PatternType {
     TYPETWO,   // Relative start, Absolute end
     TYPETHREE, // Absolute start, Relative end
     TYPEFOUR,  // Absolute start, Absolute end
+    TYPEFIVE,  // Relative + Relative with gap 1
     NOTYPE
 }

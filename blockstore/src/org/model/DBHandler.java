@@ -215,10 +215,6 @@ public class DBHandler {
                     "dep_sheetname TEXT    NOT NULL," +
                     "dep_range     BOX     NOT NULL," +
                     "must_expand   BOOLEAN NOT NULL," +
-                    "FOREIGN KEY (bookname, sheetname) REFERENCES sheets (bookname, sheetname)" +
-                    " ON DELETE CASCADE ON UPDATE CASCADE," +
-                    "FOREIGN KEY (dep_bookname, dep_sheetname) REFERENCES sheets (bookname, sheetname)" +
-                    " ON DELETE CASCADE ON UPDATE CASCADE," +
                     " UNIQUE (oid) ) WITH oids";
             stmt.execute(createTable);
 
@@ -246,10 +242,6 @@ public class DBHandler {
                     "dep_sheetname TEXT    NOT NULL," +
                     "dep_range     BOX     NOT NULL," +
                     "must_expand   BOOLEAN NOT NULL," +
-                    "FOREIGN KEY (bookname, sheetname) REFERENCES sheets (bookname, sheetname)" +
-                    " ON DELETE CASCADE ON UPDATE CASCADE," +
-                    "FOREIGN KEY (dep_bookname, dep_sheetname) REFERENCES sheets (bookname, sheetname)" +
-                    " ON DELETE CASCADE ON UPDATE CASCADE," +
                     " UNIQUE (oid) ) WITH oids";
             stmt.execute(createTable);
 
@@ -279,10 +271,6 @@ public class DBHandler {
                     "must_expand   BOOLEAN NOT NULL," +
                     "pattern_type  INTEGER NOT NULL," +
                     "offsetRange   BOX     NOT NULL," +
-                    "FOREIGN KEY (bookname, sheetname) REFERENCES sheets (bookname, sheetname)" +
-                    " ON DELETE CASCADE ON UPDATE CASCADE," +
-                    "FOREIGN KEY (dep_bookname, dep_sheetname) REFERENCES sheets (bookname, sheetname)" +
-                    " ON DELETE CASCADE ON UPDATE CASCADE," +
                     " UNIQUE (oid) ) WITH oids";
             stmt.execute(createTable);
 
@@ -311,8 +299,6 @@ public class DBHandler {
                     "dep_sheetname TEXT    NOT NULL," +
                     "dep_range     BOX     NOT NULL," +
                     "isInsert      BOOLEAN NOT NULL," +
-                    "FOREIGN KEY (dep_bookname, dep_sheetname) REFERENCES sheets (bookname, sheetname)" +
-                    " ON DELETE CASCADE ON UPDATE CASCADE," +
                     " UNIQUE (oid) ) WITH oids";
             stmt.execute(createTable);
 

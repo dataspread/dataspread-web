@@ -14,6 +14,7 @@ import org.model.DBHandler;
 import org.postgresql.geometric.PGbox;
 import org.zkoss.util.Pair;
 import org.zkoss.zss.model.SBookSeries;
+import org.zkoss.zss.model.impl.RefImpl;
 import org.zkoss.zss.model.impl.sys.utils.*;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
@@ -30,7 +31,7 @@ public class DependencyTableComp extends DependencyTableAdv {
     private final String logTableName = DBHandler.stagedLog;
 
     private int CACHE_SIZE = 1000000000;
-    private final int UPDATE_CACHE_SIZE = 100;
+    private final int UPDATE_CACHE_SIZE = 1000000000;
 
     /** Map<dependant, precedent> */
     protected LruCache<Ref, List<RefWithMeta>> _mapCache = new LruCache<>(CACHE_SIZE);
@@ -48,6 +49,14 @@ public class DependencyTableComp extends DependencyTableAdv {
 
     public DependencyTableComp() {}
 
+    public Map<Ref, List<RefWithMeta>> getAllEdges() {
+        HashMap<Ref, List<RefWithMeta>> retMap = new HashMap<>();
+        _reverseMapCache.keySet().forEach(key -> {
+            retMap.put(key, _reverseMapCache.get(key));
+        });
+
+        return retMap;
+    }
 
     @Override
     public Set<Ref> getDependents(Ref precedent) {
@@ -433,9 +442,7 @@ public class DependencyTableComp extends DependencyTableAdv {
     private Pair<CompressInfo, EdgeUpdate> findCompressInfoInUpdateCache(Ref prec, Ref dep,
                                                                    LinkedList<EdgeUpdate> updateCache) {
         Pair<CompressInfo, EdgeUpdate> updatePair = null;
-        Iterator<EdgeUpdate> edgeUpdateIter = updateCache.iterator();
-        while (edgeUpdateIter.hasNext()) {
-            EdgeUpdate oneUpdate = edgeUpdateIter.next();
+        for (EdgeUpdate oneUpdate : updateCache) {
             CompressInfo compRes = findCompressionPattern(prec, dep,
                     oneUpdate.newPrec, oneUpdate.newDep, oneUpdate.newEdgeMeta);
             Boolean isDuplicate = compRes.isDuplicate;
@@ -445,6 +452,23 @@ public class DependencyTableComp extends DependencyTableAdv {
                 break;
             }
         }
+
+        if (dep.getColumn() == 3 && dep.getRow() == 25) {
+            int a = 1;
+        }
+
+        if (updatePair == null) {
+            for (EdgeUpdate oneUpdate: updateCache) {
+                CompressInfo compRes = findCompressionPatternGapOne(prec, dep,
+                        oneUpdate.newPrec, oneUpdate.newDep, oneUpdate.newEdgeMeta);
+                PatternType compType = compRes.compType;
+                if (compType != PatternType.NOTYPE) {
+                    updatePair = new Pair<>(compRes, oneUpdate);
+                    break;
+                }
+            }
+        }
+
         return updatePair;
     }
 
@@ -480,6 +504,7 @@ public class DependencyTableComp extends DependencyTableAdv {
         switch (compType) {
             case TYPEZERO:
             case TYPEONE:
+            case TYPEFIVE:
                 startOffset = RefUtils.refToOffset(prec, dep, true);
                 endOffset = RefUtils.refToOffset(prec, dep, false);
                 break;
@@ -733,7 +758,13 @@ public class DependencyTableComp extends DependencyTableAdv {
                     prec, dep, candPrec, candDep, metaData);
 
         // Otherwise, find the compression type
+        // Guarantee the adjacency
         Direction direction = findAdjacencyDirection(dep, candDep);
+        if (direction == Direction.NODIRECTION) {
+            return new CompressInfo(false, Direction.NODIRECTION, PatternType.NOTYPE,
+                    prec, dep, candPrec, candDep, metaData);
+        }
+
         Ref lastCandPrec = findLastPrec(candPrec, candDep, metaData, direction);
         PatternType compressType =
                 findCompPatternHelper(direction, prec, dep, candPrec, candDep, lastCandPrec);
@@ -742,6 +773,36 @@ public class DependencyTableComp extends DependencyTableAdv {
         else if (curCompType == compressType) retCompType = compressType;
 
         return new CompressInfo(false, direction, retCompType,
+                prec, dep, candPrec, candDep, metaData);
+    }
+
+    private CompressInfo findCompressionPatternGapOne(Ref prec, Ref dep,
+                                                      Ref candPrec, Ref candDep, EdgeMeta metaData) {
+        if (dep.getColumn() == candDep.getColumn() && candDep.getLastRow() - dep.getRow() == -2) {
+            if (metaData.patternType == PatternType.NOTYPE) {
+                Offset offsetStartA = RefUtils.refToOffset(prec, dep, true);
+                Offset offsetStartB = RefUtils.refToOffset(candPrec, candDep, true);
+
+                Offset offsetEndA = RefUtils.refToOffset(prec, dep, false);
+                Offset offsetEndB = RefUtils.refToOffset(candPrec, candDep, false);
+
+                if (offsetStartA.equals(offsetStartB) &&
+                        offsetEndA.equals(offsetEndB)) {
+                    return new CompressInfo(false, Direction.TODOWN, PatternType.TYPEFIVE,
+                            prec, dep, candPrec, candDep, metaData);
+                }
+            } else if (metaData.patternType == PatternType.TYPEFIVE) {
+                Offset offsetStartA = RefUtils.refToOffset(prec, dep, true);
+                Offset offsetEndA = RefUtils.refToOffset(prec, dep, false);
+
+                if (offsetStartA.equals(metaData.startOffset) &&
+                        offsetEndA.equals(metaData.endOffset)) {
+                    return new CompressInfo(false, Direction.TODOWN, PatternType.TYPEFIVE,
+                            prec, dep, candPrec, candDep, metaData);
+                }
+            }
+        }
+        return new CompressInfo(false, Direction.NODIRECTION, PatternType.NOTYPE,
                 prec, dep, candPrec, candDep, metaData);
     }
 
