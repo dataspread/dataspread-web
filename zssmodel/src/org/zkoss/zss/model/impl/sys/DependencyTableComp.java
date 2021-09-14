@@ -453,10 +453,6 @@ public class DependencyTableComp extends DependencyTableAdv {
             }
         }
 
-        if (dep.getColumn() == 3 && dep.getRow() == 25) {
-            int a = 1;
-        }
-
         if (updatePair == null) {
             for (EdgeUpdate oneUpdate: updateCache) {
                 CompressInfo compRes = findCompressionPatternGapOne(prec, dep,
@@ -798,6 +794,29 @@ public class DependencyTableComp extends DependencyTableAdv {
                 if (offsetStartA.equals(metaData.startOffset) &&
                         offsetEndA.equals(metaData.endOffset)) {
                     return new CompressInfo(false, Direction.TODOWN, PatternType.TYPEFIVE,
+                            prec, dep, candPrec, candDep, metaData);
+                }
+            }
+        } else if (dep.getRow() == candDep.getRow() && candDep.getLastColumn() - dep.getColumn() == -2) {
+            if (metaData.patternType == PatternType.NOTYPE) {
+                Offset offsetStartA = RefUtils.refToOffset(prec, dep, true);
+                Offset offsetStartB = RefUtils.refToOffset(candPrec, candDep, true);
+
+                Offset offsetEndA = RefUtils.refToOffset(prec, dep, false);
+                Offset offsetEndB = RefUtils.refToOffset(candPrec, candDep, false);
+
+                if (offsetStartA.equals(offsetStartB) &&
+                        offsetEndA.equals(offsetEndB)) {
+                    return new CompressInfo(false, Direction.TORIGHT, PatternType.TYPEFIVE,
+                            prec, dep, candPrec, candDep, metaData);
+                }
+            } else if (metaData.patternType == PatternType.TYPEFIVE) {
+                Offset offsetStartA = RefUtils.refToOffset(prec, dep, true);
+                Offset offsetEndA = RefUtils.refToOffset(prec, dep, false);
+
+                if (offsetStartA.equals(metaData.startOffset) &&
+                        offsetEndA.equals(metaData.endOffset)) {
+                    return new CompressInfo(false, Direction.TORIGHT, PatternType.TYPEFIVE,
                             prec, dep, candPrec, candDep, metaData);
                 }
             }

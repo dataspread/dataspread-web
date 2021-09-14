@@ -150,7 +150,7 @@ public class SizeTestMain {
             BufferedWriter bw = new BufferedWriter(fw);
             PrintWriter out = new PrintWriter(bw)) {
 
-            StringBuilder outpuStr = new StringBuilder(fileName + ",\t" + totalEdges);
+            StringBuilder outpuStr = new StringBuilder(fileName + ",\t" + deDuplicateEdges);
             outpuStr.append(",\t").append(totalFormulae);
             outpuStr.append(",\t").append(totalNodes);
             outpuStr.append(",\t").append(tacoEdges);
@@ -160,7 +160,7 @@ public class SizeTestMain {
                 outpuStr.append(",\t").append(compEdges[i]);
                 outpuStr.append(",\t").append(uncompEdges[i]);
             }
-            outpuStr.append(",\t").append(deDuplicateEdges);
+            outpuStr.append(",\t").append(totalEdges);
             out.println(outpuStr);
 
         } catch (IOException e) {
