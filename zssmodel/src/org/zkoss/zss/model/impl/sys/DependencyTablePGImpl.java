@@ -3,9 +3,14 @@ package org.zkoss.zss.model.impl.sys;
 import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
 import org.postgresql.geometric.PGbox;
+import org.zkoss.util.Pair;
 import org.zkoss.util.logging.Log;
 import org.zkoss.zss.model.SBookSeries;
 import org.zkoss.zss.model.impl.RefImpl;
+import org.zkoss.zss.model.impl.sys.utils.EdgeMeta;
+import org.zkoss.zss.model.impl.sys.utils.Offset;
+import org.zkoss.zss.model.impl.sys.utils.PatternType;
+import org.zkoss.zss.model.impl.sys.utils.RefUtils;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
 import java.sql.PreparedStatement;
@@ -13,6 +18,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -23,11 +30,8 @@ import java.util.Set;
 public class DependencyTablePGImpl extends DependencyTableAdv {
 	private static final long serialVersionUID = 1L;
 	private static final Log _logger = Log.lookup(DependencyTablePGImpl.class.getName());
-    private long lastLookupTime;
 
-    public DependencyTablePGImpl() {
-        lastLookupTime = 0;
-    }
+    public DependencyTablePGImpl() { }
 
 	@Override
 	public void setBookSeries(SBookSeries series) {
@@ -65,8 +69,8 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
 	public void add(Ref dependant, Ref precedent) {
 		String insertQuery = "INSERT INTO dependency VALUES (?,?,?,?,?,?,?)";
 		addQuery(insertQuery, dependant, precedent);
-		insertQuery = "INSERT INTO full_dependency VALUES (?,?,?,?,?,?,?)";
-		addQuery(insertQuery, dependant, precedent);
+		// insertQuery = "INSERT INTO full_dependency VALUES (?,?,?,?,?,?,?)";
+		// addQuery(insertQuery, dependant, precedent);
 	}
 
 	public void clear() {
@@ -95,22 +99,27 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
         }
 	}
 
-    @Override
-    public long getLastLookupTime() {
-        try {
-            return lastLookupTime;
-        } finally {
-            lastLookupTime = 0;
-        }
-    }
-
+	// The following SQL statements are changed for testing,
+	// assuming we only have one book and sheet
 	@Override
 	public Set<Ref> getActualDependents(Ref precedent) {
+		// String selectQuery = "WITH RECURSIVE deps AS (" +
+		// 		"  SELECT dep_bookname, dep_sheetname, dep_range::text, must_expand FROM full_dependency" +
+		// 		"  WHERE  bookname  = ?" +
+		// 		"  AND    sheetname =  ?" +
+		// 		"  AND    range && ?" +
+		// 		"  UNION " +
+		// 		"  SELECT d.dep_bookname, d.dep_sheetname, d.dep_range::text, d.must_expand FROM full_dependency d" +
+		// 		"    INNER JOIN deps t" +
+		// 		"    ON  d.bookname   =  t.dep_bookname" +
+		// 		"    AND t.must_expand" +
+		// 		"    AND d.sheetname =  t.dep_sheetname" +
+		// 		"    AND d.range      && t.dep_range::box)" +
+		// 		" SELECT dep_bookname, dep_sheetname, dep_range::box FROM deps";
+
 		String selectQuery = "WITH RECURSIVE deps AS (" +
 				"  SELECT dep_bookname, dep_sheetname, dep_range::text, must_expand FROM full_dependency" +
-				"  WHERE  bookname  = ?" +
-				"  AND    sheetname =  ?" +
-				"  AND    range && ?" +
+				"  WHERE  range && ?" +
 				"  UNION " +
 				"  SELECT d.dep_bookname, d.dep_sheetname, d.dep_range::text, d.must_expand FROM full_dependency d" +
 				"    INNER JOIN deps t" +
@@ -125,19 +134,32 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
 
     @Override
 	public Set<Ref> getDependents(Ref precedent) {
-        String selectQuery = "WITH RECURSIVE deps AS (" +
-                "  SELECT dep_bookname, dep_sheetname, dep_range::text, must_expand FROM dependency" +
-                "  WHERE  bookname  = ?" +
-                "  AND    sheetname =  ?" +
-                "  AND    range && ?" +
-                "  UNION " +
-                "  SELECT d.dep_bookname, d.dep_sheetname, d.dep_range::text, d.must_expand FROM dependency d" +
-                "    INNER JOIN deps t" +
-                "    ON  d.bookname   =  t.dep_bookname" +
-                "    AND t.must_expand" +
+        // String selectQuery = "WITH RECURSIVE deps AS (" +
+        //         "  SELECT dep_bookname, dep_sheetname, dep_range::text, must_expand FROM dependency" +
+        //         "  WHERE  bookname  = ?" +
+        //         "  AND    sheetname =  ?" +
+        //         "  AND    range && ?" +
+        //         "  UNION " +
+        //         "  SELECT d.dep_bookname, d.dep_sheetname, d.dep_range::text, d.must_expand FROM dependency d" +
+        //         "    INNER JOIN deps t" +
+        //         "    ON  d.bookname   =  t.dep_bookname" +
+        //         "    AND t.must_expand" +
+		// 		"    AND d.sheetname =  t.dep_sheetname" +
+        //         "    AND d.range      && t.dep_range::box)" +
+        //         " SELECT dep_bookname, dep_sheetname, dep_range::box FROM deps";
+
+		String selectQuery = "WITH RECURSIVE deps AS (" +
+		        "  SELECT dep_bookname, dep_sheetname, dep_range::text, must_expand FROM dependency" +
+		        "  WHERE  range && ?" +
+		        "  UNION " +
+		        "  SELECT d.dep_bookname, d.dep_sheetname, d.dep_range::text, d.must_expand FROM dependency d" +
+		        "    INNER JOIN deps t" +
+		        "    ON  d.bookname   =  t.dep_bookname" +
+		        "    AND t.must_expand" +
 				"    AND d.sheetname =  t.dep_sheetname" +
-                "    AND d.range      && t.dep_range::box)" +
-                " SELECT dep_bookname, dep_sheetname, dep_range::box FROM deps";
+		        "    AND d.range      && t.dep_range::box)" +
+		        " SELECT dep_bookname, dep_sheetname, dep_range::box FROM deps";
+
         return getDependentsQuery(precedent, selectQuery);
 	}
 
@@ -147,9 +169,9 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
         long startTime = System.currentTimeMillis();
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
              PreparedStatement stmt = connection.prepareStatement(selectQuery)) {
-            stmt.setString(1, precedent.getBookName());
-            stmt.setString(2, precedent.getSheetName());
-            stmt.setObject(3, new PGbox(precedent.getRow(),
+            // stmt.setString(1, precedent.getBookName());
+            // stmt.setString(2, precedent.getSheetName());
+            stmt.setObject(1, new PGbox(precedent.getRow(),
                     precedent.getColumn(), precedent.getLastRow(),
                     precedent.getLastColumn()), Types.OTHER);
 
@@ -169,16 +191,18 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        lastLookupTime += System.currentTimeMillis() - startTime;
+        lookupTime = System.currentTimeMillis() - startTime;
         return result;
     }
 
 	@Override
 	public Set<Ref> getDirectDependents(Ref precedent) {
-        String selectQuery = "SELECT dep_bookname, dep_sheetname, dep_range  FROM dependency " +
-                " WHERE bookname = ? " +
-                " AND   sheetname = ? " +
-                " AND   range && ?";
+        // String selectQuery = "SELECT dep_bookname, dep_sheetname, dep_range  FROM dependency " +
+        //         " WHERE bookname = ? " +
+        //         " AND   sheetname = ? " +
+        //         " AND   range && ?";
+		String selectQuery = "SELECT dep_bookname, dep_sheetname, dep_range  FROM dependency " +
+				" WHERE   range && ?";
         return getDependentsQuery(precedent, selectQuery);
 	}
 
@@ -195,14 +219,96 @@ public class DependencyTablePGImpl extends DependencyTableAdv {
 	//ZSS-648
 	@Override
 	public Set<Ref> getDirectPrecedents(Ref dependent) {
-        String selectQuery = "SELECT bookname, sheetname, range FROM dependency " +
-                " WHERE dep_bookname = ? " +
-                " AND   dep_sheetname = ? " +
-                " AND   dep_range && ?";
+        // String selectQuery = "SELECT bookname, sheetname, range FROM dependency " +
+        //         " WHERE dep_bookname = ? " +
+        //         " AND   dep_sheetname = ? " +
+        //         " AND   dep_range && ?";
+
+		String selectQuery = "SELECT bookname, sheetname, range FROM dependency " +
+				" WHERE   dep_range && ?";
         return getDependentsQuery(dependent, selectQuery);
 	}
 
-	//ZSS-815
+	@Override
+	public void addBatch(String bookName, String sheetName, List<Pair<Ref, Ref>> edgeBatch) {
+		long start = System.currentTimeMillis();
+
+		String insertQuery = "INSERT INTO dependency VALUES (?,?,?,?,?,?,?)";
+		AutoRollbackConnection connection = DBHandler.instance.getConnection();
+
+		edgeBatch.forEach(pair -> {
+			Ref prec = pair.getX();
+			Ref dep = pair.getY();
+
+			try {
+				PreparedStatement stmt = connection.prepareStatement(insertQuery);
+				stmt.setString(1, prec.getBookName());
+				stmt.setString(2, prec.getSheetName());
+				stmt.setObject(3, new PGbox(prec.getRow(),
+						prec.getColumn(), prec.getLastRow(),
+						prec.getLastColumn()), Types.OTHER);
+				stmt.setString(4, dep.getBookName());
+				stmt.setString(5, dep.getSheetName());
+				stmt.setObject(6, new PGbox(dep.getRow(),
+						dep.getColumn(), dep.getLastRow(),
+						dep.getLastColumn()), Types.OTHER);
+				stmt.setBoolean(7, true);
+				stmt.execute();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+
+		});
+
+		connection.commit();
+		connection.close();
+
+		addBatchTime = System.currentTimeMillis() - start;
+	}
+
+	@Override
+	public List<Pair<Ref, Ref>> getLoadedBatch(String bookName, String sheetName) {
+		String selectQuery =
+				"  SELECT range::box, dep_range::box " +
+						"  FROM " + DBHandler.dependency +
+						"  WHERE  bookname  = ?" +
+						"  AND    sheetname =  ?";
+
+		String deleteQuery =
+				" DELETE FROM " + DBHandler.dependency +
+				"  WHERE  bookname  = ?" +
+				"  AND    sheetname =  ?";
+
+		List<Pair<Ref, Ref>> result = new LinkedList<>();
+		try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+			 PreparedStatement stmt = connection.prepareStatement(selectQuery)) {
+			stmt.setString(1, bookName);
+			stmt.setString(2, sheetName);
+
+			ResultSet rs =  stmt.executeQuery();
+			while(rs.next())
+			{
+				PGbox range = (PGbox) rs.getObject(1);
+				Ref prec = RefUtils.boxToRef(range, bookName, sheetName);
+				PGbox dep_range = (PGbox) rs.getObject(2);
+				Ref dep = RefUtils.boxToRef(dep_range, bookName, sheetName);
+				result.add(new Pair<>(prec, dep));
+			}
+
+			PreparedStatement delStmt = connection.prepareStatement(deleteQuery);
+			delStmt.setString(1, bookName);
+			delStmt.setString(2, sheetName);
+			delStmt.execute();
+
+			connection.commit();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return result;
+	}
+
+		//ZSS-815
 	@Override
 	public void adjustSheetIndex(String bookName, int index, int size) {
 		// do nothing

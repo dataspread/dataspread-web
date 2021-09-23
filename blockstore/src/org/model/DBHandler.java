@@ -17,6 +17,12 @@ public class DBHandler {
     private DataSource ds;
     DBListener dbListener;
 
+    public static final String dependency = "dependency";
+    public static final String fullDependency = "full_dependency";
+    public static final String compressDependency = "compress_dependency";
+    public static final String stagedLog = "staged_log";
+    public static final String userBooks = "user_books";
+
     public static void connectToDB(String url, String driver, String userName, String password) {
         DBHandler.instance = new DBHandler();
         PoolProperties p = new PoolProperties();
@@ -67,6 +73,8 @@ public class DBHandler {
             createDependencyTable(dbContext);
             createFullDependencyTable(dbContext);
             createTypeConversionTable(dbContext);
+            createCompressDependencyTable(dbContext);
+            createStagedLog(dbContext);
             connection.commit();
             //dbListener = new DBListener();
             //dbListener.start();
@@ -150,7 +158,7 @@ public class DBHandler {
     private void createUserBooksTable(DBContext dbContext) {
         AutoRollbackConnection connection = dbContext.getConnection();
         try (Statement stmt = connection.createStatement()) {
-            String createTable = "CREATE TABLE IF NOT EXISTS user_books (" +
+            String createTable = "CREATE TABLE IF NOT EXISTS " + userBooks + " (" +
                     "authtoken  TEXT NOT NULL," +
                     "booktable  TEXT NOT NULL," +
                     "role   TEXT NOT NULL" +
@@ -199,7 +207,7 @@ public class DBHandler {
         try (Statement stmt = connection.createStatement()) {
             stmt.execute("CREATE EXTENSION IF NOT EXISTS  btree_gist");
 
-            String createTable = "CREATE TABLE  IF NOT  EXISTS  dependency (" +
+            String createTable = "CREATE TABLE  IF NOT  EXISTS " + dependency + " (" +
                     "bookname      TEXT    NOT NULL," +
                     "sheetname     TEXT    NOT NULL," +
                     "range         BOX     NOT NULL," +
@@ -207,19 +215,15 @@ public class DBHandler {
                     "dep_sheetname TEXT    NOT NULL," +
                     "dep_range     BOX     NOT NULL," +
                     "must_expand   BOOLEAN NOT NULL," +
-                    "FOREIGN KEY (bookname, sheetname) REFERENCES sheets (bookname, sheetname)" +
-                    " ON DELETE CASCADE ON UPDATE CASCADE," +
-                    "FOREIGN KEY (dep_bookname, dep_sheetname) REFERENCES sheets (bookname, sheetname)" +
-                    " ON DELETE CASCADE ON UPDATE CASCADE," +
                     " UNIQUE (oid) ) WITH oids";
             stmt.execute(createTable);
 
-            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx1 " +
-                    " ON dependency using GIST (bookname, sheetname, range)");
-            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx2 " +
-                    "ON dependency using GIST (dep_bookname, dep_sheetname, dep_range)");
-            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx3 " +
-                    "ON dependency (must_expand)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx1 ON "
+                            + dependency + " using GIST (bookname, sheetname, range)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx2 ON "
+                            + dependency + " using GIST (dep_bookname, dep_sheetname, dep_range)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx3 ON "
+                            + dependency + " (must_expand)");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -230,7 +234,7 @@ public class DBHandler {
         try (Statement stmt = connection.createStatement()) {
             stmt.execute("CREATE EXTENSION IF NOT EXISTS  btree_gist");
 
-            String createTable = "CREATE TABLE  IF NOT  EXISTS  full_dependency (" +
+            String createTable = "CREATE TABLE  IF NOT  EXISTS " + fullDependency + " (" +
                     "bookname      TEXT    NOT NULL," +
                     "sheetname     TEXT    NOT NULL," +
                     "range         BOX     NOT NULL," +
@@ -238,19 +242,68 @@ public class DBHandler {
                     "dep_sheetname TEXT    NOT NULL," +
                     "dep_range     BOX     NOT NULL," +
                     "must_expand   BOOLEAN NOT NULL," +
-                    "FOREIGN KEY (bookname, sheetname) REFERENCES sheets (bookname, sheetname)" +
-                    " ON DELETE CASCADE ON UPDATE CASCADE," +
-                    "FOREIGN KEY (dep_bookname, dep_sheetname) REFERENCES sheets (bookname, sheetname)" +
-                    " ON DELETE CASCADE ON UPDATE CASCADE," +
                     " UNIQUE (oid) ) WITH oids";
             stmt.execute(createTable);
 
-            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx1 " +
-                    " ON full_dependency using GIST (bookname, sheetname, range)");
-            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx2 " +
-                    "ON full_dependency using GIST (dep_bookname, dep_sheetname, dep_range)");
-            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx3 " +
-                    "ON full_dependency (must_expand)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx1 ON " +
+                    fullDependency + " using GIST (bookname, sheetname, range)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx2 ON " +
+                    fullDependency + " using GIST (dep_bookname, dep_sheetname, dep_range)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx3 ON " +
+                    fullDependency + " (must_expand)");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void createCompressDependencyTable(DBContext dbContext) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute("CREATE EXTENSION IF NOT EXISTS  btree_gist");
+
+            String createTable = "CREATE TABLE  IF NOT  EXISTS " + compressDependency + " (" +
+                    "bookname      TEXT    NOT NULL," +
+                    "sheetname     TEXT    NOT NULL," +
+                    "range         BOX     NOT NULL," +
+                    "dep_bookname  TEXT    NOT NULL," +
+                    "dep_sheetname TEXT    NOT NULL," +
+                    "dep_range     BOX     NOT NULL," +
+                    "must_expand   BOOLEAN NOT NULL," +
+                    "pattern_type  INTEGER NOT NULL," +
+                    "offsetRange   BOX     NOT NULL," +
+                    " UNIQUE (oid) ) WITH oids";
+            stmt.execute(createTable);
+
+            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx1 ON " +
+                    compressDependency + " using GIST (bookname, sheetname, range)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx2 ON " +
+                    compressDependency + " using GIST (dep_bookname, dep_sheetname, dep_range)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx3 ON " +
+                    compressDependency + " (must_expand)");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void createStagedLog(DBContext dbContext) {
+        AutoRollbackConnection connection = dbContext.getConnection();
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute("CREATE EXTENSION IF NOT EXISTS  btree_gist");
+
+            String createTable = "CREATE TABLE  IF NOT  EXISTS " + stagedLog + " (" +
+                    "logID         INTEGER NOT NULL," +
+                    "bookname      TEXT    ," +
+                    "sheetname     TEXT    ," +
+                    "range         BOX     ," +
+                    "dep_bookname  TEXT    NOT NULL," +
+                    "dep_sheetname TEXT    NOT NULL," +
+                    "dep_range     BOX     NOT NULL," +
+                    "isInsert      BOOLEAN NOT NULL," +
+                    " UNIQUE (oid) ) WITH oids";
+            stmt.execute(createTable);
+
+            stmt.execute("CREATE INDEX IF NOT EXISTS dependency_idx1 ON "
+                    + stagedLog + " using GIST (bookname, sheetname, range)");
         } catch (SQLException e) {
             e.printStackTrace();
         }

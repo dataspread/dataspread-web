@@ -10,6 +10,8 @@ public abstract class DirtyManager {
     //static public DirtyManager dirtyManagerInstance = new DirtyManagerPGImpl();
     static public DirtyManager dirtyManagerInstance = new DirtyManagerMemImpl();
 
+    abstract public void reset();
+
     /* Check if the given region is dirty
     *  Return the trxId that made this region dirty
     *  -1 if the target is not dirty */
@@ -57,6 +59,15 @@ public abstract class DirtyManager {
         @Override
         public int compareTo(Object o) {
             return this.toString().compareTo(o.toString());
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + trxId;
+            result = prime * result + region.hashCode();
+            return result;
         }
 
         @Override

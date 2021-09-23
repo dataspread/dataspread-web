@@ -41,7 +41,8 @@ import java.util.*;
 @EnableScheduling
 public class GeneralController implements FormulaAsyncListener {
     public GeneralController() {
-        FormulaAsyncScheduler.initFormulaAsyncListener(this);
+        // FormulaAsyncScheduler.initFormulaAsyncListener(this);
+        FormulaAsyncScheduler.getScheduler().setFormulaAsyncListener(this);
     }
 
     @Scheduled(fixedDelay = 250)

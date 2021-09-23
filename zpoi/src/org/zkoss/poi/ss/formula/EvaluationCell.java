@@ -44,4 +44,6 @@ public interface EvaluationCell {
 	int getErrorCellValue();
 
 	int getCachedFormulaResultType();
+
+	default boolean evalFormula(boolean isSync) {return true;}
 }
