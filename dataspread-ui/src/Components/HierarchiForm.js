@@ -239,7 +239,7 @@ export default class HierarchiForm extends Component {
         return null;
     }
     render() {
-
+        console.log("hierarch")
         if(this.state.navPanelOpen !== true){
             return null;
         }
