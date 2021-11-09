@@ -7,10 +7,20 @@ public class EdgeMeta {
     public final PatternType patternType;
     public final Offset startOffset;
     public final Offset endOffset;
+    public int gapLength;
 
     public EdgeMeta(PatternType patternType,
                     Offset startOffset, Offset endOffset) {
         this.patternType = patternType;
+        this.gapLength = 0;
+        this.startOffset = startOffset;
+        this.endOffset = endOffset;
+    }
+
+    public EdgeMeta(PatternType patternType, int gapLength,
+                    Offset startOffset, Offset endOffset) {
+        this.patternType = patternType;
+        this.gapLength = gapLength;
         this.startOffset = startOffset;
         this.endOffset = endOffset;
     }
@@ -21,8 +31,13 @@ public class EdgeMeta {
         if (!(o instanceof EdgeMeta)) return false;
         EdgeMeta edgeMeta = (EdgeMeta) o;
         return patternType == edgeMeta.patternType &&
-                Objects.equals(startOffset, edgeMeta.startOffset) &&
-                Objects.equals(endOffset, edgeMeta.endOffset);
+                Objects.equals(this.startOffset, edgeMeta.startOffset) &&
+                Objects.equals(this.endOffset, edgeMeta.endOffset) &&
+                Objects.equals(this.gapLength, edgeMeta.gapLength);
+    }
+
+    public void setGapLength(int gapLength) {
+        this.gapLength = gapLength;
     }
 
     @Override
