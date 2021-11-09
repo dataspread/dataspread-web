@@ -26,6 +26,21 @@ import static org.zkoss.zss.model.impl.sys.utils.PatternTools.*;
 
 public class DependencyTableComp extends DependencyTableAdv {
 
+    private static class MemLog {
+
+        public MemLog(int logID, Ref precedent, Ref dependent, boolean isInsert) {
+            this.logID = logID;
+            this.precedent = precedent;
+            this.dependent = dependent;
+            this.isInsert = isInsert;
+        }
+
+        int logID;
+        Ref precedent;
+        Ref dependent;
+        boolean isInsert;
+    }
+
     private final String dependencyTableName = DBHandler.compressDependency;
     private final String logTableName = DBHandler.stagedLog;
 
@@ -45,6 +60,7 @@ public class DependencyTableComp extends DependencyTableAdv {
     private Map<Ref, List<RefWithMeta>> _reverseMapFullCache = new HashMap<>();
 
     private CompressInfoComparator compressInfoComparator = new CompressInfoComparator();
+    private List<MemLog> memLogs = new LinkedList<>();
 
     public DependencyTableComp() {}
 
@@ -92,9 +108,10 @@ public class DependencyTableComp extends DependencyTableAdv {
 
     @Override
     public void add(Ref dependent, Ref precedent) {
-        String insertQuery = "INSERT INTO " + logTableName
-                + " VALUES (?,?,?,?,?,?,?,TRUE)";
-        LogUtils.appendOneLog(insertQuery, logEntryNum, precedent, dependent);
+        // String insertQuery = "INSERT INTO " + logTableName
+        //         + " VALUES (?,?,?,?,?,?,?,TRUE)";
+        // LogUtils.appendOneLog(insertQuery, logEntryNum, precedent, dependent);
+        memLogs.add(new MemLog(logEntryNum, precedent, dependent, true));
         logEntryNum += 1;
         insertEntryNum += 1;
     }
@@ -224,12 +241,17 @@ public class DependencyTableComp extends DependencyTableAdv {
     public List<Pair<Ref, Ref>> getLoadedBatch(String bookName, String sheetName) {
         boolean isInsertOnly = false;
         LinkedList<Pair<Ref, Ref>> loadedBatch = new LinkedList<>();
-        LogUtils.getLogEntries(logTableName, bookName, sheetName, isInsertOnly).forEach(oneLog -> {
-            Pair<Ref, Ref> oneEdge = new Pair<>(oneLog.prec, oneLog.dep);
+        // LogUtils.getLogEntries(logTableName, bookName, sheetName, isInsertOnly).forEach(oneLog -> {
+        //     Pair<Ref, Ref> oneEdge = new Pair<>(oneLog.prec, oneLog.dep);
+        //     loadedBatch.addLast(oneEdge);
+        // });
+
+        // deleteAllLogs(bookName, sheetName);
+        memLogs.forEach(memLog -> {
+            Pair<Ref, Ref> oneEdge = new Pair<>(memLog.precedent, memLog.dependent);
             loadedBatch.addLast(oneEdge);
         });
-
-        deleteAllLogs(bookName, sheetName);
+        memLogs = new LinkedList<>();
         return loadedBatch;
     }
 
