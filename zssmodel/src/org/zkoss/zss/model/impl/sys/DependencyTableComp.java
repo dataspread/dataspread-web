@@ -784,43 +784,33 @@ public class DependencyTableComp extends DependencyTableAdv {
 
     private CompressInfo findCompressionPatternGapOneToN(Ref prec, Ref dep,
                                                       Ref candPrec, Ref candDep, EdgeMeta metaData, int N) {
-        Direction patternDirection = Direction.NODIRECTION;
+        Direction direction = Direction.NODIRECTION;
+        PatternType pattern = PatternType.NOTYPE;
+        // if (dep.getColumn() == candDep.getColumn() && dep.getRow() - candDep.getLastRow() == gapLength + 1) {
+        if (dep.getColumn() == candDep.getColumn() && dep.getRow() != candDep.getRow()) {
+            direction = Direction.TODOWN;
+        //} else if (dep.getRow() == candDep.getRow() && dep.getColumn() - candDep.getLastColumn() == gapLength + 1) {
+        } else if (dep.getColumn() != candDep.getColumn() && dep.getRow() == candDep.getRow()) {
+            direction = Direction.TORIGHT;
+        }
+        if (direction == Direction.NODIRECTION) {
+            return new CompressInfo(false, Direction.NODIRECTION, PatternType.NOTYPE,
+                    prec, dep, candPrec, candDep, metaData);
+        }
         for (int gapLength = 1; gapLength <= N; gapLength++) {
-            if (dep.getColumn() == candDep.getColumn() && dep.getRow() - candDep.getLastRow()  == gapLength + 1) {
-                patternDirection = Direction.TODOWN;
-            } else if (dep.getRow() == candDep.getRow() && dep.getColumn() - candDep.getLastColumn() == gapLength + 1) {
-                patternDirection = Direction.TORIGHT;
-            }
-            if (patternDirection != Direction.NODIRECTION) {
-                if (metaData.patternType == PatternType.NOTYPE) {
-                    Offset offsetStartA = RefUtils.refToOffset(prec, dep, true);
-                    Offset offsetStartB = RefUtils.refToOffset(candPrec, candDep, true);
-
-                    Offset offsetEndA = RefUtils.refToOffset(prec, dep, false);
-                    Offset offsetEndB = RefUtils.refToOffset(candPrec, candDep, false);
-
-                    if (offsetStartA.equals(offsetStartB) &&
-                            offsetEndA.equals(offsetEndB)) {
-                        metaData.setGapLength(gapLength);
-                        return new CompressInfo(false, patternDirection, PatternType.TYPEFIVE,
-                                prec, dep, candPrec, candDep, metaData);
-                    }
-                } else if (metaData.patternType == PatternType.TYPEFIVE) {
-                    Offset offsetStartA = RefUtils.refToOffset(prec, dep, true);
-                    Offset offsetEndA = RefUtils.refToOffset(prec, dep, false);
-
-                    if (offsetStartA.equals(metaData.startOffset) &&
-                            offsetEndA.equals(metaData.endOffset)) {
-                        metaData.setGapLength(gapLength);
-                        return new CompressInfo(false, patternDirection, PatternType.TYPEFIVE,
-                                prec, dep, candPrec, candDep, metaData);
-                    }
-                }
+            if (isCompressibleTypeFive(candPrec, candDep, prec, dep, direction, gapLength, metaData)) {
+                metaData.setGapLength(gapLength);
+                pattern = PatternType.TYPEFIVE;
+                break;
+            } else if (isCompressibleTypeSix(candPrec, candDep, prec, dep, direction, gapLength)) {
+                metaData.setGapLength(gapLength);
+                pattern = PatternType.TYPESIX;
+                break;
             }
 
         }
 
-        return new CompressInfo(false, Direction.NODIRECTION, PatternType.NOTYPE,
+        return new CompressInfo(false, direction, pattern,
                 prec, dep, candPrec, candDep, metaData);
     }
 
@@ -855,7 +845,7 @@ public class DependencyTableComp extends DependencyTableAdv {
         findOverlappingRefs(ref).forEachRemaining(res::addLast);
         Arrays.stream(Direction.values()).filter(direction -> direction != Direction.NODIRECTION)
                 .forEach(direction ->
-                        findOverlappingRefs(shiftRef(ref, direction))
+                        findOverlappingRefs(shiftRef(ref, direction, 1))
                                 .forEachRemaining(adjRef -> {
                                     if (isValidAdjacency(adjRef, ref)) res.addLast(adjRef); // valid adjacency
                                 })
