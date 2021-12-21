@@ -2,6 +2,7 @@ package org.zkoss.zss.model.impl.sys.utils;
 
 import org.zkoss.util.Pair;
 import org.zkoss.zss.model.impl.RefImpl;
+import org.zkoss.zss.model.impl.sys.DependencyTableComp;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
 import java.util.Arrays;
@@ -14,7 +15,7 @@ public class PatternTools {
 
     public static boolean isCompressibleTypeOne(Ref lastCandPrec, Ref prec,
                                          Direction direction) {
-        Ref shiftedRef = shiftRef(lastCandPrec, direction);
+        Ref shiftedRef = shiftRef(lastCandPrec, direction, 1);
         return shiftedRef != null && shiftedRef.equals(prec);
     }
 
@@ -24,9 +25,9 @@ public class PatternTools {
         boolean isTypeZero = false;
         for (Direction direction: Direction.values()) {
             if (direction != Direction.NODIRECTION && !isTypeZero) {
-                Ref shiftedRef = shiftRef(prec, direction);
+                Ref shiftedRef = shiftRef(prec, direction, 1);
                 if (shiftedRef != null && shiftedRef.equals(dep)) { // check adjacency
-                    Ref lastCandDep = shiftRef(lastCandPrec, direction);
+                    Ref lastCandDep = shiftRef(lastCandPrec, direction, 1);
                     isTypeZero = (lastCandDep != null && lastCandDep.equals(prec)) ||
                             lastCandPrec.equals(dep);
                 }
@@ -50,6 +51,42 @@ public class PatternTools {
             return isShrinkedStart(lastCandPrec, prec, direction);
         else
             return isExtendedStart(lastCandPrec, prec, direction);
+    }
+
+    public static boolean isCompressibleTypeFour(Ref lastCandPrec, Ref prec) {
+        return lastCandPrec.equals(prec);
+    }
+
+    public static boolean isCompressibleTypeFive(Ref candPrec, Ref candDep,
+                                                 Ref prec, Ref dep,
+                                                 Direction direction, int gapLength, EdgeMeta metaData) {
+        if (dep.getColumn() == candDep.getColumn() && dep.getRow() - candDep.getLastRow() == gapLength + 1 ||
+            dep.getRow() == candDep.getRow() && dep.getColumn() - candDep.getLastColumn() == gapLength + 1) {
+            if (metaData.patternType == PatternType.NOTYPE) {
+                Offset offsetStartA = RefUtils.refToOffset(prec, dep, true);
+                Offset offsetStartB = RefUtils.refToOffset(candPrec, candDep, true);
+
+                Offset offsetEndA = RefUtils.refToOffset(prec, dep, false);
+                Offset offsetEndB = RefUtils.refToOffset(candPrec, candDep, false);
+
+                return offsetStartA.equals(offsetStartB) &&
+                        offsetEndA.equals(offsetEndB);
+            } else if (metaData.patternType == PatternType.TYPEFIVE) {
+                Offset offsetStartA = RefUtils.refToOffset(prec, dep, true);
+                Offset offsetEndA = RefUtils.refToOffset(prec, dep, false);
+
+                return offsetStartA.equals(metaData.startOffset) &&
+                        offsetEndA.equals(metaData.endOffset);
+            }
+        }
+        return false;
+    }
+
+    public static boolean isCompressibleTypeSix(Ref candPrec, Ref candDep,
+                                                Ref prec, Ref dep,
+                                                Direction direction, int gapLength) {
+        Ref shiftedRef = shiftRef(candDep, direction, gapLength + 1);
+        return candPrec.equals(prec) && shiftedRef != null && shiftedRef.equals(dep);
     }
 
     public static boolean isExtendedEnd(Ref lastCandPrec, Ref prec,
@@ -112,40 +149,36 @@ public class PatternTools {
         } else return false;
     }
 
-    public static boolean isCompressibleTypeFour(Ref lastCandPrec, Ref prec) {
-        return lastCandPrec.equals(prec);
-    }
-
-    public static Ref shiftRef(Ref ref, Direction direction) {
+    public static Ref shiftRef(Ref ref, Direction direction, int step) {
         Ref res = null;
         switch (direction) {
             case TOLEFT:
                 if (ref.getColumn() != FIRST_COL) {
                     res = new RefImpl(ref.getBookName(),
                             ref.getSheetName(),
-                            ref.getRow(), ref.getColumn() - SHIFT_STEP,
-                            ref.getLastRow(), ref.getLastColumn() - SHIFT_STEP);
+                            ref.getRow(), ref.getColumn() - step,
+                            ref.getLastRow(), ref.getLastColumn() - step);
                 }
                 break;
             case TORIGHT:
                 res = new RefImpl(ref.getBookName(),
                         ref.getSheetName(),
-                        ref.getRow(), ref.getColumn() + SHIFT_STEP,
-                        ref.getLastRow(), ref.getLastColumn() + SHIFT_STEP);
+                        ref.getRow(), ref.getColumn() + step,
+                        ref.getLastRow(), ref.getLastColumn() + step);
                 break;
             case TOUP:
                 if (ref.getRow() != FIRST_ROW) {
                     res = new RefImpl(ref.getBookName(),
                             ref.getSheetName(),
-                            ref.getRow() - SHIFT_STEP, ref.getColumn(),
-                            ref.getLastRow() - SHIFT_STEP, ref.getLastColumn());
+                            ref.getRow() - step, ref.getColumn(),
+                            ref.getLastRow() - step, ref.getLastColumn());
                 }
                 break;
             default: // TODOWN
                 res = new RefImpl(ref.getBookName(),
                         ref.getSheetName(),
-                        ref.getRow() + SHIFT_STEP, ref.getColumn(),
-                        ref.getLastRow() + SHIFT_STEP, ref.getLastColumn());
+                        ref.getRow() + step, ref.getColumn(),
+                        ref.getLastRow() + step, ref.getLastColumn());
         }
         return res;
     }

@@ -21,10 +21,10 @@ public class SizeTestMain {
     /**
      * DB Connection Configuration
      * */
-    public static String      url         = "jdbc:postgresql://127.0.0.1:5432/dbtest";
+    public static String      url         = "jdbc:postgresql://127.0.0.1:5432/SizeTest";
     public static String      dbDriver    = "org.postgresql.Driver";
-    public static String      userName    = "totemtang";
-    public static String      password    = "1234";
+    public static String      userName    = "dataspreaduser";
+    public static String      password    = "password";
 
 
     public static void main (String[] args) {
@@ -95,8 +95,9 @@ public class SizeTestMain {
                     int patternIdx = precMeta.getEdgeMeta().patternType.ordinal();
                     compEdges[patternIdx] = compEdges[patternIdx] + 1;
 
-                    int compressCount =
-                            precMeta.getPatternType() == PatternType.TYPEFIVE ? (dep.getCellCount() + 1)/2 : dep.getCellCount();
+                    int compressCount = (dep.getCellCount() + precMeta.getEdgeMeta().gapLength) /
+                            (precMeta.getEdgeMeta().gapLength + 1);
+
                     uncompEdges[patternIdx] = uncompEdges[patternIdx] + compressCount;
                 });
             });
