@@ -21,6 +21,7 @@ import org.model.LruCache;
 
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.zkoss.zss.model.impl.sys.utils.PatternTools.*;
 
@@ -45,7 +46,7 @@ public class DependencyTableComp extends DependencyTableAdv {
     private final String logTableName = DBHandler.stagedLog;
 
     private int CACHE_SIZE = 1000000000;
-    private final int UPDATE_CACHE_SIZE = 100;
+    private final int UPDATE_CACHE_SIZE = 1000000000;
 
     /** Map<dependant, precedent> */
     protected LruCache<Ref, List<RefWithMeta>> _mapCache = new LruCache<>(CACHE_SIZE);
@@ -111,9 +112,11 @@ public class DependencyTableComp extends DependencyTableAdv {
         // String insertQuery = "INSERT INTO " + logTableName
         //         + " VALUES (?,?,?,?,?,?,?,TRUE)";
         // LogUtils.appendOneLog(insertQuery, logEntryNum, precedent, dependent);
-        memLogs.add(new MemLog(logEntryNum, precedent, dependent, true));
-        logEntryNum += 1;
-        insertEntryNum += 1;
+        if (RefUtils.isValidRef(precedent) && RefUtils.isValidRef(dependent)) {
+            memLogs.add(new MemLog(logEntryNum, precedent, dependent, true));
+            logEntryNum += 1;
+            insertEntryNum += 1;
+        }
     }
 
     @Override
@@ -138,26 +141,40 @@ public class DependencyTableComp extends DependencyTableAdv {
     public void addBatch(String bookName, String sheetName, List<Pair<Ref, Ref>> edgeBatch) {
         long start = System.currentTimeMillis();
 
+        refreshCacheMode = true;
+
         _rectToRefCache = RTree.create();
-        rebuildRectToRefCache(bookName, sheetName);
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
-            DBContext dbContext = new DBContext(connection);
-            LinkedList<EdgeUpdate> updateCache = new LinkedList<>();
-            boolean isInsert = true;
-            edgeBatch.forEach(oneEdge -> {
-                Ref prec = oneEdge.getX();
-                Ref dep = oneEdge.getY();
+        edgeBatch.forEach(logEntry -> {
+            Ref prec = logEntry.getX();
+            Ref dep = logEntry.getY();
+            performOneInsert(prec, dep);
+        });
 
-                fastModify(prec, dep, isInsert, updateCache, dbContext);
-            });
-
-            flushUpdateCache(updateCache, dbContext);
-            connection.commit();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        updateDBFromCache(bookName, sheetName);
+        updateCache();
+        refreshCacheMode = false;
 
         maintainRectToRefCache(bookName, sheetName);
+
+        // rebuildRectToRefCache(bookName, sheetName);
+        // try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+        //     DBContext dbContext = new DBContext(connection);
+        //     LinkedList<EdgeUpdate> updateCache = new LinkedList<>();
+        //     boolean isInsert = true;
+        //     edgeBatch.forEach(oneEdge -> {
+        //         Ref prec = oneEdge.getX();
+        //         Ref dep = oneEdge.getY();
+
+        //         fastModify(prec, dep, isInsert, updateCache, dbContext);
+        //     });
+
+        //     flushUpdateCache(updateCache, dbContext);
+        //     connection.commit();
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // }
+
+        // maintainRectToRefCache(bookName, sheetName);
 
         addBatchTime = System.currentTimeMillis() - start;
     }
@@ -384,6 +401,7 @@ public class DependencyTableComp extends DependencyTableAdv {
     private void getDependentsInternal(Ref precUpdate,
                                        LinkedHashSet<Ref> result,
                                        boolean isDirectDep) {
+        AtomicReference<RTree<Ref, Rectangle>> resultSet = new AtomicReference<>(RTree.create());
         Queue<Ref> updateQueue = new LinkedList<>();
         updateQueue.add(precUpdate);
         while (!updateQueue.isEmpty()) {
@@ -396,18 +414,38 @@ public class DependencyTableComp extends DependencyTableAdv {
                 findDeps(precRef).forEach(depRefWithMeta -> {
                     Ref depUpdateRef = findUpdateDepRef(precRef, depRefWithMeta.getRef(),
                             depRefWithMeta.getEdgeMeta(), realUpdateRef);
-                    if (!isContained(result, depUpdateRef)) {
-                        result.add(depUpdateRef);
-                        if (!isDirectDep) updateQueue.add(depUpdateRef);
-                    }
+                    LinkedList<Ref> overlapRef = getNonOverlapRef(resultSet.get(), depUpdateRef);
+                    overlapRef.forEach(olRef -> {
+                        resultSet.set(resultSet.get().add(olRef, RefUtils.refToRect(olRef)));
+                        result.add(olRef);
+                        if (!isDirectDep) updateQueue.add(olRef);
+                    });
                 });
             }
         }
     }
 
-    private boolean isContained(LinkedHashSet<Ref> result, Ref input) {
-        return result.stream().anyMatch(ref -> isSubsume(ref, input));
+    private Boolean isContained(RTree<Ref, Rectangle> resultSet, Ref input) {
+        return resultSet.search(getRectangleFromRef(input)).exists(entry -> {
+            Ref ref = entry.value();
+            return isSubsume(ref, input);
+        }).toBlocking().single();
     }
+
+    private LinkedList<Ref> getNonOverlapRef(RTree<Ref, Rectangle> resultSet, Ref input) {
+        LinkedList<Ref> retRefList = new LinkedList<>();
+        retRefList.addLast(input);
+        resultSet.search(getRectangleFromRef(input)).forEach(refRectangleEntry -> {
+            Ref ref = refRectangleEntry.value();
+            int length = retRefList.size();
+            for (int i = 0; i < length; i++) {
+                Ref inputRef = retRefList.removeFirst();
+                inputRef.getNonOverlap(ref).forEach(retRefList::addLast);
+            }
+        });
+        return retRefList;
+    }
+
 
     private EdgeUpdate addToUpdateCache(LinkedList<EdgeUpdate> updateCache,
                                   Ref prec, Ref dep, EdgeMeta edgeMeta) {
@@ -813,8 +851,14 @@ public class DependencyTableComp extends DependencyTableAdv {
 
     private Rectangle getRectangleFromRef(Ref ref)
     {
-        return RectangleFloat.create(ref.getRow(),ref.getColumn(),
-                (float) 0.5 + ref.getLastRow(), (float) 0.5 + ref.getLastColumn());
+        float x1 = ref.getRow();
+        float y1 = ref.getColumn();
+        float x2 = (float) 0.5 + ref.getLastRow();
+        float y2 = (float) 0.5 + ref.getLastColumn();
+        if (x2 < x1 || y2 < y1) {
+            int a = 0;
+        }
+        return RectangleFloat.create(x1, y1, x2, y2);
     }
 
     private Iterable<RefWithMeta> findPrecs(Ref dep) {

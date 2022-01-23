@@ -20,6 +20,7 @@ import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -274,6 +275,50 @@ public class RefImpl implements Ref, Serializable {
 		if (col1 > col2) return null; // no overlapping
 
 		return new RefImpl(this.bookName, this.sheetName, row1, col1, row2, col2);
+	}
+
+	@Override
+	public Set<Ref> getNonOverlap(Ref target1) {
+		Set<Ref> retSet = new HashSet<>();
+
+		if (getOverlap(target1) == null) retSet.add(this);
+		else {
+
+			RefImpl target = (RefImpl) target1;
+			int rRow = this._row;
+			int rCol = this._column;
+			int rLastRow = this._lastRow;
+			int rLastCol = this._lastColumn;
+			if (rRow <= rLastRow && rCol <= rLastCol && rCol < target._column) {
+				Ref leftRef = new RefImpl(this.bookName, this.sheetName,
+						rRow, rCol, rLastRow, Math.min(rLastCol, target._column - 1));
+				retSet.add(leftRef);
+				rCol = target._column;
+			}
+
+			if (rRow <= rLastRow && rCol <= rLastCol && rRow < target._row) {
+				Ref upRef = new RefImpl(this.bookName, this.sheetName,
+						rRow, rCol, Math.min(rLastRow, target._row - 1), rLastCol);
+				retSet.add(upRef);
+				rRow = target._row;
+			}
+
+
+			if (rRow <= rLastRow && rCol <= rLastCol && rLastRow > target._lastRow) {
+				Ref downRef = new RefImpl(this.bookName, this.sheetName,
+						Math.max(rRow, target._lastRow + 1), rCol, rLastRow, rLastCol);
+				retSet.add(downRef);
+				rLastRow = target._lastRow;
+			}
+
+
+			if (rRow <= rLastRow && rCol <= rLastCol && rLastCol > target._lastColumn) {
+				Ref rightRef = new RefImpl(this.bookName, this.sheetName,
+						rRow, Math.max(rCol, target._lastColumn + 1), rLastRow, rLastCol);
+				retSet.add(rightRef);
+			}
+		}
+		return retSet;
 	}
 
 	@Override

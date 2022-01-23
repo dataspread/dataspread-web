@@ -125,7 +125,7 @@ public class CompressionTestMain {
                 oneTest = new TestRandom(Integer.parseInt(testArgs[0]));
                 break;
             case "customsheet":
-                oneTest = new TestCustomSheet(Paths.get(testArgs[0]));
+                oneTest = new TestCustomSheet(Paths.get(testArgs[0]), testArgs[1]);
                 break;
             case "expschedule":
                 oneTest = new TestExpSchedule(Integer.parseInt(testArgs[0]), Integer.parseInt(testArgs[1]));
@@ -209,5 +209,4 @@ public class CompressionTestMain {
         testRunner.dumpStatdata();
 
     }
-
 }
