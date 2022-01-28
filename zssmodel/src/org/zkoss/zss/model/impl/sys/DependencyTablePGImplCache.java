@@ -57,7 +57,7 @@ public class DependencyTablePGImplCache extends DependencyTableAdv {
     }
 
     @Override
-    public void configDepedencyTable(int cacheSize, int compConstant) {
+    public void configDepedencyTable(int cacheSize, int compConstant, boolean memOnly) {
         CACHE_SIZE = cacheSize;
     }
 

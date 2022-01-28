@@ -147,7 +147,7 @@ public abstract class BaseTestRunner implements FormulaAsyncListener {
             this.testStats.testStartTime = System.currentTimeMillis();
             this.runSetup(testCase);
             this.runTest(testCase);
-            testCase.cleanup();
+            testCase.cleanup(testStats);
             this.testStats.testFinalTime = System.currentTimeMillis();
 
             // Wait for the test to finish

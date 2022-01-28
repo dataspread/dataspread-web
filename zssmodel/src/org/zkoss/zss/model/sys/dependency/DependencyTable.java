@@ -48,8 +48,7 @@ public interface DependencyTable {
 
 	Set<Ref> searchPrecedents(RefFilter filter);
 
-
-	default void configDepedencyTable(int cacheSize, int compConstant) {}
+	default void configDepedencyTable(int cacheSize, int compConstant, boolean memOnly) {}
 	default void addBatch(String bookName, String sheetName, List<Pair<Ref, Ref>> edgeBatch) {}
 	default List<Pair<Ref, Ref>> getLoadedBatch(String bookName, String sheetName) {return null;}
 	default void refreshCache(String bookName, String sheetName) {}

@@ -44,9 +44,18 @@ public class TestStats {
     public String[] testArgs = new String[0];
     public int      cacheSize = 0;
 
+    // Stats for TACO
+    private final String tacoStatsOutFileName = "taco.stat";
+    public String filename = "";
+    public String updatedCell = "";
+    public long totalEdges = 0L;
+    public long tacoEdges = 0L;
+    public String tacoBreakdown = "";
+
     public void writeStatsToFile (String outFolder) {
         Path debugPath = Paths.get(outFolder + "/" + debugStatsOutFileName);
         Path corePath = Paths.get(outFolder + "/" + coreStatsOutFileName);
+        Path tacoPath = Paths.get(outFolder + "/" + tacoStatsOutFileName);
 
         if (getDependentsTime == 0) getDependentsTime = 1;
 
@@ -100,6 +109,14 @@ public class TestStats {
 
         } catch (IOException e) {
             e.printStackTrace();
+        }
+
+        if (filename.compareToIgnoreCase("") != 0) {
+            try (PrintWriter prw = new PrintWriter(new FileWriter(tacoPath.toFile(), true))) {
+                prw.println(filename + "," + totalEdges + "," + tacoEdges + "," + tacoBreakdown + "," + updatedCell);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 

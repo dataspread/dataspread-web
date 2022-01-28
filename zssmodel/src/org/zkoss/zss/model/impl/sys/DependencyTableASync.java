@@ -27,8 +27,13 @@ public class DependencyTableASync extends DependencyTableAdv {
     private int compressionConst = 1;
 
     protected LruCache<Ref, List<Ref>> _mapCache = new LruCache<>(CACHE_SIZE);
+    private Map<Ref, List<Ref>> _mapFullCache = new HashMap<>();
+    private Map<Ref, List<Ref>> _reverseMapFullCache = new HashMap<>();
     private int logEntryNum = 0;
     private int insertEntryNum = 0;
+
+    private List<LogUtils.MemLog> memLogs = new LinkedList<>();
+    private boolean memOnly = false;
 
     public DependencyTableASync() {}
 
@@ -46,13 +51,12 @@ public class DependencyTableASync extends DependencyTableAdv {
             findDeps(precedent).forEach(result::add);
 
             if (insertEntryNum != 0) {
-                final boolean isInsertOnly = true;
-                LogUtils.getLogEntries(logTableName, precedent.getBookName(),
-                        precedent.getSheetName(), isInsertOnly)
-                        .forEach(logEntry -> {
-                            findDeps(logEntry.prec).forEach(result::add);
-                            findDeps(logEntry.dep).forEach(result::add);
-                        });
+                memLogs.forEach(memLog -> {
+                    if (memLog.isInsert) {
+                        findDeps(memLog.precedent).forEach(result::add);
+                        findDeps(memLog.dependent).forEach(result::add);
+                    }
+                });
             }
             lookupTime = System.currentTimeMillis() - start;
         }
@@ -73,11 +77,14 @@ public class DependencyTableASync extends DependencyTableAdv {
 
     @Override
     public void add(Ref dependent, Ref precedent) {
-        String insertQuery = "INSERT INTO " + logTableName
-                + " VALUES (?,?,?,?,?,?,?,TRUE)";
-        LogUtils.appendOneLog(insertQuery, logEntryNum, precedent, dependent);
-        logEntryNum += 1;
-        insertEntryNum += 1;
+        // String insertQuery = "INSERT INTO " + logTableName
+        //         + " VALUES (?,?,?,?,?,?,?,TRUE)";
+        // LogUtils.appendOneLog(insertQuery, logEntryNum, precedent, dependent);
+        if (RefUtils.isValidRef(precedent) && RefUtils.isValidRef(dependent)) {
+            memLogs.add(new LogUtils.MemLog(logEntryNum, precedent, dependent, true));
+            logEntryNum += 1;
+            insertEntryNum += 1;
+        }
     }
 
     @Override
@@ -87,10 +94,13 @@ public class DependencyTableASync extends DependencyTableAdv {
 
     @Override
     public void clearDependents(Ref dependent) {
-        String deleteQuery = "INSERT INTO " + logTableName
-                + " VALUES (?,?,?,?,?,?,?,FALSE)";
-        LogUtils.appendOneLog(deleteQuery, logEntryNum, null, dependent);
-        logEntryNum += 1;
+        // String deleteQuery = "INSERT INTO " + logTableName
+        //         + " VALUES (?,?,?,?,?,?,?,FALSE)";
+        // LogUtils.appendOneLog(deleteQuery, logEntryNum, null, dependent);
+        if (RefUtils.isValidRef(dependent)) {
+            memLogs.add(new LogUtils.MemLog(logEntryNum, null, dependent, false));
+            logEntryNum += 1;
+        }
     }
 
     @Override
@@ -109,28 +119,40 @@ public class DependencyTableASync extends DependencyTableAdv {
     }
 
     @Override
-    public void configDepedencyTable(int cacheSize, int compConstant) {
-        CACHE_SIZE = cacheSize;
+    public void configDepedencyTable(int cacheSize, int compConstant, boolean memOnly) {
+        this.memOnly = memOnly;
+        if (!memOnly) {
+            CACHE_SIZE = cacheSize;
+            _mapCache = new LruCache<>(CACHE_SIZE);
+        }
         compressionConst = compConstant;
-        _mapCache = new LruCache<>(CACHE_SIZE);
     }
 
     public List<Pair<Ref, Ref>> getLoadedBatch(String bookName, String sheetName) {
-        boolean isInsertOnly = false;
+        // boolean isInsertOnly = false;
+        // LinkedList<Pair<Ref, Ref>> loadedBatch = new LinkedList<>();
+        // LogUtils.getLogEntries(logTableName, bookName, sheetName, isInsertOnly).forEach(oneLog -> {
+        //     Pair<Ref, Ref> oneEdge = new Pair<>(oneLog.prec, oneLog.dep);
+        //     loadedBatch.addLast(oneEdge);
+        // });
+        // try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+        //     DBContext dbContext = new DBContext(connection);
+        //     LogUtils.deleteLoadedLogs(dbContext, logTableName, bookName, sheetName);
+        //     logEntryNum -= loadedBatch.size();
+        //     insertEntryNum -= loadedBatch.size();
+        //     connection.commit();
+        // } catch (SQLException e) {
+        //     e.printStackTrace();
+        // }
+        // return loadedBatch;
         LinkedList<Pair<Ref, Ref>> loadedBatch = new LinkedList<>();
-        LogUtils.getLogEntries(logTableName, bookName, sheetName, isInsertOnly).forEach(oneLog -> {
-            Pair<Ref, Ref> oneEdge = new Pair<>(oneLog.prec, oneLog.dep);
+        memLogs.forEach(memLog -> {
+            Pair<Ref, Ref> oneEdge = new Pair<>(memLog.precedent, memLog.dependent);
             loadedBatch.addLast(oneEdge);
         });
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
-            DBContext dbContext = new DBContext(connection);
-            LogUtils.deleteLoadedLogs(dbContext, logTableName, bookName, sheetName);
-            logEntryNum -= loadedBatch.size();
-            insertEntryNum -= loadedBatch.size();
-            connection.commit();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        memLogs = new LinkedList<>();
+        logEntryNum = 0;
+        insertEntryNum = 0;
         return loadedBatch;
     }
 
@@ -138,11 +160,18 @@ public class DependencyTableASync extends DependencyTableAdv {
     public void refreshCache(String bookName, String sheetName) {
         long start = System.currentTimeMillis();
 
-        boolean isInsertOnly = false;
-        LogUtils.getLogEntries(logTableName, bookName, sheetName, isInsertOnly).forEach(oneLog -> {
-            if (oneLog.isInsert) performOneInsert(oneLog.id, oneLog.prec, oneLog.dep);
-            else performOneDelete(oneLog.id, oneLog.dep);
+        memLogs.forEach(memLog -> {
+            if (memLog.isInsert) performOneInsert(memLog.logID, memLog.precedent, memLog.dependent);
+            else performOneDelete(memLog.logID, memLog.dependent);
         });
+        logEntryNum = 0;
+        insertEntryNum = 0;
+
+        // boolean isInsertOnly = false;
+        // LogUtils.getLogEntries(logTableName, bookName, sheetName, isInsertOnly).forEach(oneLog -> {
+        //     if (oneLog.isInsert) performOneInsert(oneLog.id, oneLog.prec, oneLog.dep);
+        //     else performOneDelete(oneLog.id, oneLog.dep);
+        // });
 
         deleteCompressedGraph(bookName, sheetName);
         Map<Ref, List<Ref>> compressedGraph =
@@ -153,76 +182,111 @@ public class DependencyTableASync extends DependencyTableAdv {
         refreshCacheTime = System.currentTimeMillis() - start;
     }
 
+    private void insertMemEntry(Ref prec, Ref dep) {
+        List<Ref> depList = _mapFullCache.getOrDefault(prec, new LinkedList<>());
+        depList.add(dep);
+        _mapFullCache.put(prec, depList);
+
+        List<Ref> precList = _reverseMapFullCache.getOrDefault(dep, new LinkedList<>());
+        precList.add(prec);
+        _reverseMapFullCache.put(dep, precList);
+    }
+
     private void performOneInsert(int logId, Ref prec, Ref dep) {
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
-            DBContext dbContext = new DBContext(connection);
-            LogUtils.deleteLogEntry(dbContext, logTableName, logId);
-            logEntryNum -= 1;
-            insertEntryNum -= 1;
+        logEntryNum -= 1;
+        insertEntryNum -= 1;
+        if (memOnly) {
+            insertMemEntry(prec, dep);
+        } else {
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection()) {
+                DBContext dbContext = new DBContext(connection);
+                LogUtils.deleteLogEntry(dbContext, logTableName, logId);
 
-            String insertQuery = "INSERT INTO " + fullDependencyTblName + " VALUES (?,?,?,?,?,?,?)";
-            addQuery(insertQuery, dep, prec);
+                String insertQuery = "INSERT INTO " + fullDependencyTblName + " VALUES (?,?,?,?,?,?,?)";
+                addQuery(insertQuery, dep, prec);
 
-            connection.commit();
-        } catch (SQLException e) {
-            e.printStackTrace();
+                connection.commit();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     private void performOneDelete(int logId, Ref dep) {
-        AutoRollbackConnection connection = DBHandler.instance.getConnection();
-        DBContext dbContext = new DBContext(connection);
-        try {
-            LogUtils.deleteLogEntry(dbContext, logTableName, logId);
-            logEntryNum -= 1;
+        logEntryNum -= 1;
+        if (memOnly) {
+            List<Ref> precList = _reverseMapFullCache.remove(dep);
+            if (precList != null) {
+                precList.forEach(prec -> {
+                    List<Ref> depList = _mapFullCache.get(prec);
+                    if (depList != null) {
+                        depList.remove(dep);
+                        if (depList.isEmpty()) _mapFullCache.remove(prec);
+                    }
+                });
+            }
+        } else {
+            AutoRollbackConnection connection = DBHandler.instance.getConnection();
+            DBContext dbContext = new DBContext(connection);
+            try {
+                LogUtils.deleteLogEntry(dbContext, logTableName, logId);
 
-            String deleteQuery = "DELETE FROM " + fullDependencyTblName +
-                    " WHERE dep_bookname  = ?" +
-                    " AND   dep_sheetname =  ?" +
-                    " AND   dep_range && ?";
+                String deleteQuery = "DELETE FROM " + fullDependencyTblName +
+                        " WHERE dep_bookname  = ?" +
+                        " AND   dep_sheetname =  ?" +
+                        " AND   dep_range && ?";
 
-            PreparedStatement stmt = connection.prepareStatement(deleteQuery);
-            stmt.setString(1, dep.getBookName());
-            stmt.setString(2, dep.getSheetName());
-            stmt.setObject(3, new PGbox(dep.getRow(),
-                    dep.getColumn(), dep.getLastRow(),
-                    dep.getLastColumn()), Types.OTHER);
+                PreparedStatement stmt = connection.prepareStatement(deleteQuery);
+                stmt.setString(1, dep.getBookName());
+                stmt.setString(2, dep.getSheetName());
+                stmt.setObject(3, new PGbox(dep.getRow(),
+                        dep.getColumn(), dep.getLastRow(),
+                        dep.getLastColumn()), Types.OTHER);
 
-            stmt.execute();
+                stmt.execute();
 
-            connection.commit();
-        } catch (SQLException e) {
-            e.printStackTrace();
+                connection.commit();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            connection.close();
         }
-        connection.close();
     }
 
     private List<Pair<Ref, Ref>> getFullDependency(String bookName,
                                                    String sheetName) {
         List<Pair<Ref, Ref>> result = new LinkedList<>();
-        String selectQuery = "  SELECT range::box, dep_range::box " +
-                        "  FROM " + fullDependencyTblName +
-                        "  WHERE  bookname  = ?" +
-                        "  AND    sheetname =  ?";
+        if (memOnly) {
+           _mapFullCache.forEach((prec, depList) -> {
+               depList.forEach(dep -> {
+                   result.add(new Pair<>(prec, dep));
+               });
+           });
+        } else {
+            String selectQuery = "  SELECT range::box, dep_range::box " +
+                    "  FROM " + fullDependencyTblName +
+                    "  WHERE  bookname  = ?" +
+                    "  AND    sheetname =  ?";
 
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-             PreparedStatement stmt = connection.prepareStatement(selectQuery)) {
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+                 PreparedStatement stmt = connection.prepareStatement(selectQuery)) {
 
-            stmt.setString(1, bookName);
-            stmt.setString(2, sheetName);
-            ResultSet rs =  stmt.executeQuery();
+                stmt.setString(1, bookName);
+                stmt.setString(2, sheetName);
+                ResultSet rs =  stmt.executeQuery();
 
-            while(rs.next())
-            {
-                PGbox range = (PGbox) rs.getObject(1);
-                PGbox dep_range = (PGbox) rs.getObject(2);
-                Ref prec = RefUtils.boxToRef(range, bookName, sheetName);
-                Ref dep = RefUtils.boxToRef(dep_range, bookName, sheetName);
-                result.add(new Pair<>(prec, dep));
+                while(rs.next())
+                {
+                    PGbox range = (PGbox) rs.getObject(1);
+                    PGbox dep_range = (PGbox) rs.getObject(2);
+                    Ref prec = RefUtils.boxToRef(range, bookName, sheetName);
+                    Ref dep = RefUtils.boxToRef(dep_range, bookName, sheetName);
+                    result.add(new Pair<>(prec, dep));
+                }
+
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
 
         return result;
@@ -231,8 +295,10 @@ public class DependencyTableASync extends DependencyTableAdv {
     private Iterable<Ref> findDeps(Ref prec) {
         List<Ref> depIter = _mapCache.get(prec);
         if (depIter == null || depIter.isEmpty()) {
-            depIter = findDepsFromDB(prec);
-            _mapCache.put(prec, depIter);
+            if (!memOnly) {
+                depIter = findDepsFromDB(prec);
+                _mapCache.put(prec, depIter);
+            }
         }
         return depIter;
     }
@@ -270,26 +336,29 @@ public class DependencyTableASync extends DependencyTableAdv {
     }
 
     private void deleteCompressedGraph(String bookName, String sheetName) {
-        String deleteQuery = "DELETE FROM " + dependencyTableName +
-                " WHERE dep_bookname  = ?" +
-                " AND   dep_sheetname =  ?";
+        _mapCache.clear();
+        if (!memOnly) {
+            String deleteQuery = "DELETE FROM " + dependencyTableName +
+                    " WHERE dep_bookname  = ?" +
+                    " AND   dep_sheetname =  ?";
 
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-             PreparedStatement stmt = connection.prepareStatement(deleteQuery)) {
-            stmt.setString(1, bookName);
-            stmt.setString(2, sheetName);
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+                 PreparedStatement stmt = connection.prepareStatement(deleteQuery)) {
+                stmt.setString(1, bookName);
+                stmt.setString(2, sheetName);
 
-            stmt.execute();
-            connection.commit();
-        } catch (SQLException e) {
-            e.printStackTrace();
+                stmt.execute();
+                connection.commit();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     private void insertCompressedGraph(Map<Ref, List<Ref>> compressedGraph) {
         String insertQuery = "INSERT INTO " + dependencyTableName + " VALUES (?,?,?,?,?,?,?)";
         compressedGraph.forEach((prec, dependants) -> {
-            dependants.forEach(dep -> addQuery(insertQuery, dep, prec));
+            if (!memOnly) dependants.forEach(dep -> addQuery(insertQuery, dep, prec));
             _mapCache.put(prec, dependants);
         });
     }
@@ -299,7 +368,8 @@ public class DependencyTableASync extends DependencyTableAdv {
         fullGraph.forEach(edge -> {
             Ref prec = edge.getX();
             Ref dep = edge.getY();
-            addQuery(insertQuery, dep, prec);
+            if (!memOnly) addQuery(insertQuery, dep, prec);
+            else insertMemEntry(prec, dep);
         });
     }
 

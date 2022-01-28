@@ -33,14 +33,17 @@ public class DependencyTablePGImplCacheRTreeV2 extends DependencyTableAdv {
 
     private final String logTableName = DBHandler.stagedLog;
 
-    private static int CACHE_SIZE = 1000000;
-    private static int MAX_CACHE = 100000000;
+    private static int MAX_CACHE = Integer.MAX_VALUE;
+    private static int CACHE_SIZE = MAX_CACHE;
     private LruCache<Ref, Set<Ref>> depToPrcCache = new LruCache<>(CACHE_SIZE);
     private LruCache<Ref, Set<Ref>> prcToDepCache = new LruCache<>(CACHE_SIZE);
     private RTree<Ref, Rectangle> rectToRefCache  = RTree.create();
     private int refNum = 0;
     private int logEntryNum = 0;
     private int insertEntryNum = 0;
+
+    private List<LogUtils.MemLog> memLogs = new LinkedList<>();
+    private boolean memOnly = false;
 
     public DependencyTablePGImplCacheRTreeV2() {}
 
@@ -119,7 +122,7 @@ public class DependencyTablePGImplCacheRTreeV2 extends DependencyTableAdv {
             while (rTreeIter.hasNext()) {
                 neighbors.add(rTreeIter.next().value());
             }
-        } else {
+        } else if (!memOnly) {
             Iterator<Ref> dbIter = this.findOverlappingRefsFromDB(ref);
             while (dbIter.hasNext()) {
                 neighbors.add(dbIter.next());
@@ -129,10 +132,13 @@ public class DependencyTablePGImplCacheRTreeV2 extends DependencyTableAdv {
     }
 
     @Override
-    public void configDepedencyTable(int cacheSize, int compConstant) {
-        CACHE_SIZE = cacheSize;
-        depToPrcCache = new LruCache<>(CACHE_SIZE);
-        prcToDepCache = new LruCache<>(CACHE_SIZE);
+    public void configDepedencyTable(int cacheSize, int compConstant, boolean memOnly) {
+        this.memOnly = memOnly;
+        if (!memOnly) {
+            CACHE_SIZE = cacheSize;
+            depToPrcCache = new LruCache<>(CACHE_SIZE);
+            prcToDepCache = new LruCache<>(CACHE_SIZE);
+        }
     }
 
     @Override
@@ -147,6 +153,7 @@ public class DependencyTablePGImplCacheRTreeV2 extends DependencyTableAdv {
     }
 
     private void addQuery(String insertQuery, Ref dependant, Ref precedent) {
+        if (memOnly) return;
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
              PreparedStatement stmt = connection.prepareStatement(insertQuery)) {
             stmt.setString(1, precedent.getBookName());
@@ -170,92 +177,26 @@ public class DependencyTablePGImplCacheRTreeV2 extends DependencyTableAdv {
     @Override
     public void addBatch(String bookName, String sheetName, List<Pair<Ref, Ref>> edgeBatch) {
         long start = System.currentTimeMillis();
-
-        String insertQuery = "INSERT INTO dependency VALUES (?,?,?,?,?,?,?)";
-        // AutoRollbackConnection connection = DBHandler.instance.getConnection();
-
         edgeBatch.forEach(pair -> {
             Ref prec = pair.getX();
             Ref dep = pair.getY();
-
             performOneInsert(prec, dep);
-            // try {
-            //     PreparedStatement stmt = connection.prepareStatement(insertQuery);
-            //     stmt.setString(1, prec.getBookName());
-            //     stmt.setString(2, prec.getSheetName());
-            //     stmt.setObject(3, new PGbox(prec.getRow(),
-            //             prec.getColumn(), prec.getLastRow(),
-            //             prec.getLastColumn()), Types.OTHER);
-            //     stmt.setString(4, dep.getBookName());
-            //     stmt.setString(5, dep.getSheetName());
-            //     stmt.setObject(6, new PGbox(dep.getRow(),
-            //             dep.getColumn(), dep.getLastRow(),
-            //             dep.getLastColumn()), Types.OTHER);
-            //     stmt.setBoolean(7, true);
-            //     stmt.execute();
-            // } catch (SQLException e) {
-            //     e.printStackTrace();
-            // }
-
         });
-
-        // connection.commit();
-        // connection.close();
 
         addBatchTime = System.currentTimeMillis() - start;
     }
 
     @Override
     public List<Pair<Ref, Ref>> getLoadedBatch(String bookName, String sheetName) {
-
-        boolean isInsertOnly = false;
         LinkedList<Pair<Ref, Ref>> loadedBatch = new LinkedList<>();
-        LogUtils.getLogEntries(logTableName, bookName, sheetName, isInsertOnly).forEach(oneLog -> {
-            Pair<Ref, Ref> oneEdge = new Pair<>(oneLog.prec, oneLog.dep);
+        memLogs.forEach(memLog -> {
+            Pair<Ref, Ref> oneEdge = new Pair<>(memLog.precedent, memLog.dependent);
             loadedBatch.addLast(oneEdge);
         });
-
-        deleteAllLogs(bookName, sheetName);
+        memLogs = new LinkedList<>();
+        logEntryNum = 0;
+        insertEntryNum = 0;
         return loadedBatch;
-
-        // String selectQuery =
-        //         "  SELECT range::box, dep_range::box " +
-        //                 "  FROM " + DBHandler.dependency +
-        //                 "  WHERE  bookname  = ?" +
-        //                 "  AND    sheetname =  ?";
-
-        // String deleteQuery =
-        //         " DELETE FROM " + DBHandler.dependency +
-        //                 "  WHERE  bookname  = ?" +
-        //                 "  AND    sheetname =  ?";
-
-        // List<Pair<Ref, Ref>> result = new LinkedList<>();
-        // try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-        //      PreparedStatement stmt = connection.prepareStatement(selectQuery)) {
-        //     stmt.setString(1, bookName);
-        //     stmt.setString(2, sheetName);
-
-        //     ResultSet rs =  stmt.executeQuery();
-        //     while(rs.next())
-        //     {
-        //         PGbox range = (PGbox) rs.getObject(1);
-        //         Ref prec = RefUtils.boxToRef(range, bookName, sheetName);
-        //         PGbox dep_range = (PGbox) rs.getObject(2);
-        //         Ref dep = RefUtils.boxToRef(dep_range, bookName, sheetName);
-        //         result.add(new Pair<>(prec, dep));
-        //     }
-
-        //     PreparedStatement delStmt = connection.prepareStatement(deleteQuery);
-        //     delStmt.setString(1, bookName);
-        //     delStmt.setString(2, sheetName);
-        //     delStmt.execute();
-
-        //     connection.commit();
-        // } catch (SQLException e) {
-        //     e.printStackTrace();
-        // }
-
-        // return result;
     }
 
     private void deleteAllLogs(String bookName, String sheetName) {
@@ -274,18 +215,19 @@ public class DependencyTablePGImplCacheRTreeV2 extends DependencyTableAdv {
     public void refreshCache(String bookName, String sheetName) {
         long start = System.currentTimeMillis();
 
-        boolean isInsertOnly = false;
-        LogUtils.getLogEntries(logTableName, bookName, sheetName, isInsertOnly)
-                .forEach(logEntry -> {
-                    if (logEntry.isInsert) performOneInsert(logEntry.prec, logEntry.dep);
-                    else performOneDelete(logEntry.dep);
-                });
-        deleteAllLogs(bookName, sheetName);
+        memLogs.forEach(memLog -> {
+            if (memLog.isInsert) performOneInsert(memLog.precedent, memLog.dependent);
+            else performOneDelete(memLog.dependent);
+        });
+        logEntryNum = 0;
+        insertEntryNum = 0;
 
-        if (refNum > CACHE_SIZE) { // discard _rectToRefCache
-            rectToRefCache = RTree.create();
-        } else if (rectToRefCache.isEmpty() && refNum > 0) { // rebuild the cache if necessary
-            rebuildRectToRefCache(bookName, sheetName);
+        if (!memOnly) {
+            if (refNum > CACHE_SIZE) { // discard _rectToRefCache
+                rectToRefCache = RTree.create();
+            } else if (rectToRefCache.isEmpty() && refNum > 0) { // rebuild the cache if necessary
+                rebuildRectToRefCache(bookName, sheetName);
+            }
         }
 
         refreshCacheTime = System.currentTimeMillis() - start;
@@ -293,11 +235,16 @@ public class DependencyTablePGImplCacheRTreeV2 extends DependencyTableAdv {
 
     @Override
     public void add(Ref dependent, Ref precedent) {
-        String insertQuery = "INSERT INTO " + logTableName
-                + " VALUES (?,?,?,?,?,?,?,TRUE)";
-        LogUtils.appendOneLog(insertQuery, logEntryNum, precedent, dependent);
-        logEntryNum += 1;
-        insertEntryNum += 1;
+        // String insertQuery = "INSERT INTO " + logTableName
+        //         + " VALUES (?,?,?,?,?,?,?,TRUE)";
+        // LogUtils.appendOneLog(insertQuery, logEntryNum, precedent, dependent);
+        // logEntryNum += 1;
+        // insertEntryNum += 1;
+        if (RefUtils.isValidRef(precedent) && RefUtils.isValidRef(dependent)) {
+            memLogs.add(new LogUtils.MemLog(logEntryNum, precedent, dependent, true));
+            logEntryNum += 1;
+            insertEntryNum += 1;
+        }
     }
 
     private void performOneInsert(Ref precedent, Ref dependant) {
@@ -312,7 +259,6 @@ public class DependencyTablePGImplCacheRTreeV2 extends DependencyTableAdv {
         // Update the caches
         Set<Ref> deps = this.prcToDepCache.get(precedent);
         if (deps != null) {
-            // deps.add(precedent);
             deps.add(dependant);
             this.prcToDepCache.put(precedent, deps);
         } else {
@@ -322,7 +268,6 @@ public class DependencyTablePGImplCacheRTreeV2 extends DependencyTableAdv {
         }
         Set<Ref> precs = this.depToPrcCache.get(dependant);
         if (precs != null) {
-            // precs.add(dependant);
             precs.add(precedent);
             this.depToPrcCache.put(dependant, precs);
         } else {
@@ -331,17 +276,7 @@ public class DependencyTablePGImplCacheRTreeV2 extends DependencyTableAdv {
             this.depToPrcCache.put(dependant, newPrecSet);
         }
 
-        // Update the RTree if it exists
-        // if (this.refNum > CACHE_SIZE) {
-        //     if (!this.rectToRefCache.isEmpty()) {
-        //         this.rectToRefCache = RTree.create();
-        //     }
-        // } else {
-        //     this.rectToRefCache = this.rectToRefCache.add(precedent, RefUtils.refToRect(precedent));
-        //     this.rectToRefCache = this.rectToRefCache.add(dependant, RefUtils.refToRect(dependant));
-        // }
-
-        if (!this.rectToRefCache.isEmpty()) {
+        if (!this.rectToRefCache.isEmpty() || memOnly) {
             this.rectToRefCache = this.rectToRefCache.add(precedent, RefUtils.refToRect(precedent));
             this.rectToRefCache = this.rectToRefCache.add(dependant, RefUtils.refToRect(dependant));
         }
@@ -378,29 +313,35 @@ public class DependencyTablePGImplCacheRTreeV2 extends DependencyTableAdv {
 
     @Override
     public void clearDependents(Ref dependent) {
-        String deleteQuery = "INSERT INTO " + logTableName
-                + " VALUES (?,?,?,?,?,?,?,FALSE)";
-        LogUtils.appendOneLog(deleteQuery, logEntryNum, null, dependent);
-        logEntryNum += 1;
+        // String deleteQuery = "INSERT INTO " + logTableName
+        //         + " VALUES (?,?,?,?,?,?,?,FALSE)";
+        // LogUtils.appendOneLog(deleteQuery, logEntryNum, null, dependent);
+        // logEntryNum += 1;
+        if (RefUtils.isValidRef(dependent)) {
+            memLogs.add(new LogUtils.MemLog(logEntryNum, null, dependent, false));
+            logEntryNum += 1;
+        }
     }
 
     private void performOneDelete(Ref dependant) {
-        String deleteQuery = "DELETE FROM dependency" +
-                " WHERE dep_bookname  = ?" +
-                " AND   dep_sheetname =  ?" +
-                " AND   dep_range && ?";
+        if (!memOnly) {
+            String deleteQuery = "DELETE FROM dependency" +
+                    " WHERE dep_bookname  = ?" +
+                    " AND   dep_sheetname =  ?" +
+                    " AND   dep_range && ?";
 
-        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-             PreparedStatement stmt = connection.prepareStatement(deleteQuery)) {
-            stmt.setString(1, dependant.getBookName());
-            stmt.setString(2, dependant.getSheetName());
-            stmt.setObject(3, new PGbox(dependant.getRow(),
-                    dependant.getColumn(), dependant.getLastRow(),
-                    dependant.getLastColumn()), Types.OTHER);
-            stmt.execute();
-            connection.commit();
-        } catch (SQLException e) {
-            e.printStackTrace();
+            try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+                 PreparedStatement stmt = connection.prepareStatement(deleteQuery)) {
+                stmt.setString(1, dependant.getBookName());
+                stmt.setString(2, dependant.getSheetName());
+                stmt.setObject(3, new PGbox(dependant.getRow(),
+                        dependant.getColumn(), dependant.getLastRow(),
+                        dependant.getLastColumn()), Types.OTHER);
+                stmt.execute();
+                connection.commit();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
 
         // Maintain cache
@@ -424,7 +365,7 @@ public class DependencyTablePGImplCacheRTreeV2 extends DependencyTableAdv {
 
         // Update ref count
         this.refNum--;
-        if (!this.rectToRefCache.isEmpty()) {
+        if (!this.rectToRefCache.isEmpty() || memOnly) {
             this.rectToRefCache = this.rectToRefCache.delete(dependant, RefUtils.refToRect(dependant));
         }
         // Rebuild RTree if necessary
@@ -551,7 +492,7 @@ public class DependencyTablePGImplCacheRTreeV2 extends DependencyTableAdv {
             return this.prcToDepCache.get(precedent);
         }
 
-        if (CACHE_SIZE >= MAX_CACHE) return new HashSet<>();
+        if (CACHE_SIZE >= MAX_CACHE || memOnly) return new HashSet<>();
 
         String selectQuery = "SELECT dep_bookname, dep_sheetname, dep_range  FROM dependency " +
                 " WHERE bookname = ? " +
@@ -581,6 +522,8 @@ public class DependencyTablePGImplCacheRTreeV2 extends DependencyTableAdv {
         if (this.depToPrcCache.containsKey(dependent)) {
             return this.depToPrcCache.get(dependent);
         }
+
+        if (CACHE_SIZE >= MAX_CACHE || memOnly) return new HashSet<>();
 
         String selectQuery = "SELECT bookname, sheetname, range FROM dependency " +
                 " WHERE dep_bookname = ? " +

@@ -54,11 +54,11 @@ public class RefUtils {
 
     public static Offset refToOffset(Ref prec, Ref dep, boolean isStart) {
         if (isStart) {
-            return new Offset(dep.getLastRow() - prec.getLastRow(),
-                    dep.getLastColumn() - prec.getLastColumn());
-        } else {
             return new Offset(dep.getRow() - prec.getRow(),
                     dep.getColumn() - prec.getColumn());
+        } else {
+            return new Offset(dep.getLastRow() - prec.getLastRow(),
+                    dep.getLastColumn() - prec.getLastColumn());
         }
     }
 }

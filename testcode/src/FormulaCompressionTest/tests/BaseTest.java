@@ -7,6 +7,7 @@ import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
 import org.zkoss.util.Pair;
 import org.zkoss.zss.model.impl.BookImpl;
+import org.zkoss.zss.model.impl.sys.DependencyTableComp;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SSheet;
@@ -40,8 +41,10 @@ public abstract class BaseTest {
     }
 
     public void configDepTable(int depTblCacheSize,
-                               int compConstant) {
-        sheet.getDependencyTable().configDepedencyTable(depTblCacheSize, compConstant);
+                               int compConstant,
+                               boolean memOnly) {
+        sheet.getDependencyTable()
+                .configDepedencyTable(depTblCacheSize, compConstant, memOnly);
     }
 
     public void refreshDepTable() {
@@ -211,7 +214,20 @@ public abstract class BaseTest {
         );
     }
 
-    public void cleanup() {
+    public void cleanup(TestStats testStats) {
+
+        if (sheet.getDependencyTable() instanceof DependencyTableComp) {
+            if (this instanceof TestCustomSheet) {
+                TestCustomSheet testCustomSheet = (TestCustomSheet) this;
+                DependencyTableComp depTblComp = (DependencyTableComp) sheet.getDependencyTable();
+                testStats.filename = testCustomSheet.getFileName();
+                testStats.updatedCell = testCustomSheet.getUpdatedCell();
+                testStats.totalEdges = depTblComp.getTotalEdges();
+                testStats.tacoEdges = depTblComp.getCompEdges();
+                testStats.tacoBreakdown = depTblComp.getTACOBreakdown();
+            }
+        }
+
         // Clean up sheet table
         while (book.getNumOfSheet() > 0) {
             book.deleteSheet(book.getSheet(0));
