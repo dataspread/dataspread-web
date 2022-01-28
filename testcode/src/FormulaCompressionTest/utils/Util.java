@@ -1,6 +1,7 @@
 package FormulaCompressionTest.utils;
 
 import FormulaCompressionTest.CompressionTestMain;
+import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SBook;
@@ -13,6 +14,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -92,6 +95,31 @@ public class Util {
                     CompressionTestMain.userName,
                     CompressionTestMain.password
             );
+            preCleanup();
+        }
+    }
+
+    public static void preCleanup() {
+        String deleteUserBooks = "DELETE FROM " + DBHandler.userBooks;
+        String deleteSheets = "DELETE FROM SHEETS";
+        String deleteBooks = "DELETE FROM BOOKS";
+        String deleteFullDep = "DELETE FROM " + DBHandler.fullDependency;
+        String deleteDep = "DELETE FROM " + DBHandler.dependency;
+        String deleteCompDep = "DELETE FROM " + DBHandler.compressDependency;
+        String deleteLog = "DELETE FROM " + DBHandler.stagedLog;
+        try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
+             Statement deletStmt = connection.createStatement();) {
+            deletStmt.execute(deleteUserBooks);
+            deletStmt.execute(deleteSheets);
+            deletStmt.execute(deleteBooks);
+            deletStmt.execute(deleteFullDep);
+            deletStmt.execute(deleteDep);
+            deletStmt.execute(deleteCompDep);
+            deletStmt.execute(deleteLog);
+            connection.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.exit(-1);
         }
     }
 

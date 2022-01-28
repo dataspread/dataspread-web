@@ -53,6 +53,8 @@ public class CompressionTestMain {
     public static String      depTableClassString = "PGImpl";
     public static int         depTableCacheSize = 5000;
     public static boolean     skipExecution = false;
+    public static boolean     memOnly = false;
+    public static String      direction = "column";
 
     /**
      * Workload configuration
@@ -110,7 +112,8 @@ public class CompressionTestMain {
     // TODO: add more test cases and make all test cases configurable
     private static void genTestCase(String sheetString,
                                     int depTblCacheSize,
-                                    int compConstant) {
+                                    int compConstant,
+                                    boolean memOnly) {
         switch (sheetString.toLowerCase()) {
             case "runningtotalslow":
                 oneTest = new TestRunningTotalSlow(Integer.parseInt(testArgs[0]));
@@ -125,13 +128,13 @@ public class CompressionTestMain {
                 oneTest = new TestRandom(Integer.parseInt(testArgs[0]));
                 break;
             case "customsheet":
-                oneTest = new TestCustomSheet(Paths.get(testArgs[0]));
+                oneTest = new TestCustomSheet(Paths.get(testArgs[0]), testArgs[1]);
                 break;
             case "expschedule":
                 oneTest = new TestExpSchedule(Integer.parseInt(testArgs[0]), Integer.parseInt(testArgs[1]));
                 break;
             case "delete":
-                oneTest = new TestDelete(Integer.parseInt(testArgs[0]));
+                oneTest = new TestCustomSheetDelete(Paths.get(testArgs[0]), testArgs[1], direction);
                 break;
             case "refreshcache":
                 oneTest = new TestRefreshCache(Integer.parseInt(testArgs[0]), Integer.parseInt(testArgs[1]));
@@ -142,7 +145,7 @@ public class CompressionTestMain {
                 System.exit(-1);
         }
 
-        oneTest.configDepTable(depTblCacheSize, compConstant);
+        oneTest.configDepTable(depTblCacheSize, compConstant, memOnly);
     }
 
     private static void readConfig() {
@@ -163,6 +166,9 @@ public class CompressionTestMain {
                     .toLowerCase().equals("true");
             skipExecution = systemProperties.getProperty("skipExecution", defultProperties.getProperty("skipExecution"))
                     .toLowerCase().equals("true");
+            memOnly = systemProperties.getProperty("memOnly", defultProperties.getProperty("memOnly"))
+                    .toLowerCase().equals("true");
+            direction = systemProperties.getProperty("direction", defultProperties.getProperty("direction")).toLowerCase();
             depTableClassString = systemProperties.getProperty("depTableClassString",
                     defultProperties.getProperty("depTableClassString"));
             depTableCacheSize = Integer.parseInt(systemProperties.getProperty("depTableCacheSize",
@@ -196,7 +202,7 @@ public class CompressionTestMain {
         CompressionTestMain.configTestRunner(useSyncRunner, outFolder, skipExecution);
         CompressionTestMain.configDependencyTable(depTableClassString);
         CompressionTestMain.genTestCase(spreadsheetString,
-                depTableCacheSize, ASYNC_COMPRESS_CONSTANT);
+                depTableCacheSize, ASYNC_COMPRESS_CONSTANT, memOnly);
 
         // Run the test
         System.out.println(Util.getCurrentTime() + ": Running test...");
@@ -209,5 +215,4 @@ public class CompressionTestMain {
         testRunner.dumpStatdata();
 
     }
-
 }

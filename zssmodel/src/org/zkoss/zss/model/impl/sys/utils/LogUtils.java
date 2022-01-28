@@ -14,6 +14,21 @@ import java.util.LinkedList;
 
 public class LogUtils {
 
+    public static class MemLog {
+
+        public MemLog(int logID, Ref precedent, Ref dependent, boolean isInsert) {
+            this.logID = logID;
+            this.precedent = precedent;
+            this.dependent = dependent;
+            this.isInsert = isInsert;
+        }
+
+        public int logID;
+        public Ref precedent;
+        public Ref dependent;
+        public boolean isInsert;
+    }
+
     public static LinkedList<LogEntry> getLogEntries(
             String logTableName,
             String bookName,

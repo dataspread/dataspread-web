@@ -7,6 +7,7 @@ import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
 import org.zkoss.util.Pair;
 import org.zkoss.zss.model.impl.BookImpl;
+import org.zkoss.zss.model.impl.sys.DependencyTableComp;
 import org.zkoss.zss.model.sys.dependency.Ref;
 import org.zkoss.zss.model.CellRegion;
 import org.zkoss.zss.model.SSheet;
@@ -14,6 +15,7 @@ import org.zkoss.zss.model.SBook;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.*;
 
 /**
@@ -39,8 +41,10 @@ public abstract class BaseTest {
     }
 
     public void configDepTable(int depTblCacheSize,
-                               int compConstant) {
-        sheet.getDependencyTable().configDepedencyTable(depTblCacheSize, compConstant);
+                               int compConstant,
+                               boolean memOnly) {
+        sheet.getDependencyTable()
+                .configDepedencyTable(depTblCacheSize, compConstant, memOnly);
     }
 
     public void refreshDepTable() {
@@ -60,8 +64,19 @@ public abstract class BaseTest {
         return sheet.getDependencyTable().getLastRefreshCacheTime();
     }
 
+    public static Comparator<Pair<Ref, Ref>> columWiseComp =
+            (pairA, pairB) -> {
+                Ref refA = pairA.getY();
+                Ref refB = pairB.getY();
+
+                int colResult = Integer.compare(refA.getColumn(), refB.getColumn());
+                if (colResult == 0) return Integer.compare(refA.getRow(), refB.getRow());
+                else return colResult;
+            };
+
     public void loadBatch() {
         List<Pair<Ref, Ref>> loadedBatch = sheet.getDependencyTable().getLoadedBatch(book.getBookName(), sheet.getSheetName());
+        loadedBatch.sort(columWiseComp);
         sheet.getDependencyTable().addBatch(book.getBookName(), sheet.getSheetName(), loadedBatch);
     }
 
@@ -148,22 +163,32 @@ public abstract class BaseTest {
                 dependenciesMultpl.add(dependency);
             }
         }
-        for (CellRegion sheetCell : getCells()) {
-            boolean matched = false;
-            if (dependenciesSingle.contains(sheetCell)) {
-                matched = true;
-            }
-            for (Ref dependency : dependenciesMultpl) {
-                CellRegion reg = new CellRegion(dependency);
-                if (reg.contains(sheetCell)) {
-                    matched = true;
+        cellsToUpdateSet.addAll(dependenciesSingle);
+        testStats.numberOfCellsToUpdate += dependenciesSingle.size();
+        for (Ref cellrange: dependenciesMultpl){
+            for (int row = cellrange.getRow(); row <= cellrange.getLastRow(); row++) {
+                for (int col = cellrange.getColumn(); col <= cellrange.getLastColumn(); col++) {
+                    cellsToUpdateSet.add(new CellRegion(row, col));
+                    testStats.numberOfCellsToUpdate++;
                 }
             }
-            if (matched) {
-                testStats.numberOfCellsToUpdate++;
-                cellsToUpdateSet.add(sheetCell);
-            }
         }
+        // for (CellRegion sheetCell : getCells()) {
+        //     boolean matched = false;
+        //     if (dependenciesSingle.contains(sheetCell)) {
+        //         matched = true;
+        //     }
+        //     for (Ref dependency : dependenciesMultpl) {
+        //         CellRegion reg = new CellRegion(dependency);
+        //         if (reg.contains(sheetCell)) {
+        //             matched = true;
+        //         }
+        //     }
+        //     if (matched) {
+        //         testStats.numberOfCellsToUpdate++;
+        //         cellsToUpdateSet.add(sheetCell);
+        //     }
+        // }
     }
 
     /**
@@ -189,7 +214,20 @@ public abstract class BaseTest {
         );
     }
 
-    public void cleanup() {
+    public void cleanup(TestStats testStats) {
+
+        if (sheet.getDependencyTable() instanceof DependencyTableComp) {
+            if (this instanceof TestCustomSheet) {
+                TestCustomSheet testCustomSheet = (TestCustomSheet) this;
+                DependencyTableComp depTblComp = (DependencyTableComp) sheet.getDependencyTable();
+                testStats.filename = testCustomSheet.getFileName();
+                testStats.updatedCell = testCustomSheet.getUpdatedCell();
+                testStats.totalEdges = depTblComp.getTotalEdges();
+                testStats.tacoEdges = depTblComp.getCompEdges();
+                testStats.tacoBreakdown = depTblComp.getTACOBreakdown();
+            }
+        }
+
         // Clean up sheet table
         while (book.getNumOfSheet() > 0) {
             book.deleteSheet(book.getSheet(0));
@@ -200,10 +238,19 @@ public abstract class BaseTest {
 
         // Clean up other tables
         String query = "DELETE FROM " + DBHandler.userBooks + " WHERE booktable = ?";
+        String deleteFullDep = "DELETE FROM " + DBHandler.fullDependency;
+        String deleteDep = "DELETE FROM " + DBHandler.dependency;
+        String deleteCompDep = "DELETE FROM " + DBHandler.compressDependency;
+        String deleteLog = "DELETE FROM " + DBHandler.stagedLog;
         try (AutoRollbackConnection connection = DBHandler.instance.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
+             PreparedStatement statement = connection.prepareStatement(query);
+             Statement deletStmt = connection.createStatement();) {
             statement.setString(1, book.getId());
             statement.execute();
+            deletStmt.execute(deleteFullDep);
+            deletStmt.execute(deleteDep);
+            deletStmt.execute(deleteCompDep);
+            deletStmt.execute(deleteLog);
             connection.commit();
         } catch (SQLException e) {
             e.printStackTrace();

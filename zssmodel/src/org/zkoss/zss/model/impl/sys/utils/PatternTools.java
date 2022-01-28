@@ -1,20 +1,19 @@
 package org.zkoss.zss.model.impl.sys.utils;
 
-import org.zkoss.util.Pair;
 import org.zkoss.zss.model.impl.RefImpl;
 import org.zkoss.zss.model.sys.dependency.Ref;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class PatternTools {
-    private final static int SHIFT_STEP = 1;
+    public final static int DEFAULT_SHIFT_STEP = 1;
     private final static int FIRST_ROW = 0;
     private final static int FIRST_COL = 0;
 
     public static boolean isCompressibleTypeOne(Ref lastCandPrec, Ref prec,
                                          Direction direction) {
-        Ref shiftedRef = shiftRef(lastCandPrec, direction);
+        Ref shiftedRef = shiftRef(lastCandPrec, direction, DEFAULT_SHIFT_STEP);
         return shiftedRef != null && shiftedRef.equals(prec);
     }
 
@@ -24,9 +23,9 @@ public class PatternTools {
         boolean isTypeZero = false;
         for (Direction direction: Direction.values()) {
             if (direction != Direction.NODIRECTION && !isTypeZero) {
-                Ref shiftedRef = shiftRef(prec, direction);
+                Ref shiftedRef = shiftRef(prec, direction, DEFAULT_SHIFT_STEP);
                 if (shiftedRef != null && shiftedRef.equals(dep)) { // check adjacency
-                    Ref lastCandDep = shiftRef(lastCandPrec, direction);
+                    Ref lastCandDep = shiftRef(lastCandPrec, direction, DEFAULT_SHIFT_STEP);
                     isTypeZero = (lastCandDep != null && lastCandDep.equals(prec)) ||
                             lastCandPrec.equals(dep);
                 }
@@ -116,42 +115,42 @@ public class PatternTools {
         return lastCandPrec.equals(prec);
     }
 
-    public static Ref shiftRef(Ref ref, Direction direction) {
+    public static Ref shiftRef(Ref ref, Direction direction, int shift_step) {
         Ref res = null;
         switch (direction) {
             case TOLEFT:
                 if (ref.getColumn() != FIRST_COL) {
                     res = new RefImpl(ref.getBookName(),
                             ref.getSheetName(),
-                            ref.getRow(), ref.getColumn() - SHIFT_STEP,
-                            ref.getLastRow(), ref.getLastColumn() - SHIFT_STEP);
+                            ref.getRow(), ref.getColumn() - shift_step,
+                            ref.getLastRow(), ref.getLastColumn() - shift_step);
                 }
                 break;
             case TORIGHT:
                 res = new RefImpl(ref.getBookName(),
                         ref.getSheetName(),
-                        ref.getRow(), ref.getColumn() + SHIFT_STEP,
-                        ref.getLastRow(), ref.getLastColumn() + SHIFT_STEP);
+                        ref.getRow(), ref.getColumn() + shift_step,
+                        ref.getLastRow(), ref.getLastColumn() + shift_step);
                 break;
             case TOUP:
                 if (ref.getRow() != FIRST_ROW) {
                     res = new RefImpl(ref.getBookName(),
                             ref.getSheetName(),
-                            ref.getRow() - SHIFT_STEP, ref.getColumn(),
-                            ref.getLastRow() - SHIFT_STEP, ref.getLastColumn());
+                            ref.getRow() - shift_step, ref.getColumn(),
+                            ref.getLastRow() - shift_step, ref.getLastColumn());
                 }
                 break;
             default: // TODOWN
                 res = new RefImpl(ref.getBookName(),
                         ref.getSheetName(),
-                        ref.getRow() + SHIFT_STEP, ref.getColumn(),
-                        ref.getLastRow() + SHIFT_STEP, ref.getLastColumn());
+                        ref.getRow() + shift_step, ref.getColumn(),
+                        ref.getLastRow() + shift_step, ref.getLastColumn());
         }
         return res;
     }
 
     // what is the adjacency direction of refA relative to refB
-    public static Direction findAdjacencyDirection(Ref refA, Ref refB) {
+    public static Direction findAdjacencyDirection(Ref refA, Ref refB, int shiftStep) {
         int adjFirstRow = refA.getRow();
         int adjFirstCol = refA.getColumn();
         int adjLastRow = refA.getLastRow();
@@ -163,27 +162,28 @@ public class PatternTools {
         int lastCol = refB.getLastColumn();
 
         if (adjFirstRow == firstRow && adjLastRow == lastRow
-                && adjLastCol + SHIFT_STEP == firstCol) { // To Left
+                && adjLastCol + shiftStep == firstCol) { // To Left
             return Direction.TOLEFT;
         } else if (adjFirstRow == firstRow && adjLastRow == lastRow
-                && lastCol + SHIFT_STEP == adjFirstCol) { // To Right
+                && lastCol + shiftStep == adjFirstCol) { // To Right
             return Direction.TORIGHT;
         } else if (adjFirstCol == firstCol && adjLastCol == lastCol
-                && adjLastRow + SHIFT_STEP == firstRow)
+                && adjLastRow + shiftStep == firstRow)
             return Direction.TOUP;
         else if (adjFirstCol == firstCol && adjLastCol == lastCol
-                && lastRow + SHIFT_STEP == adjFirstRow)
+                && lastRow + shiftStep == adjFirstRow)
             return Direction.TODOWN;
         else
             return Direction.NODIRECTION;
     }
 
-    public static boolean isValidAdjacency(Ref adjRef, Ref ref) {
-        return findAdjacencyDirection(adjRef, ref) != Direction.NODIRECTION;
+    public static boolean isValidAdjacency(Ref adjRef, Ref ref, int shiftStep) {
+        return findAdjacencyDirection(adjRef, ref, shiftStep) != Direction.NODIRECTION;
     }
 
-    public static Ref findUpdateDepRef(Ref prec, Ref dep,
-                                       EdgeMeta edgeMeta, Ref precRange) {
+    public static Set<Ref> findUpdateDepRef(Ref prec, Ref dep,
+                                            EdgeMeta edgeMeta, Ref precRange) {
+        Set<Ref> retSet = new HashSet<>();
         int row = -1;
         int col = -1;
         int lastRow = -1;
@@ -194,40 +194,72 @@ public class PatternTools {
         int endRowOffset = edgeMeta.endOffset.getRowOffset();
         int endColOffset = edgeMeta.endOffset.getColOffset();
 
+        int inputRow = precRange.getRow();
+        int inputCol = precRange.getColumn();
+        int inputLastRow = precRange.getLastRow();
+        int inputLastCol = precRange.getLastColumn();
+
+        if (dep.getColumn() == dep.getLastColumn()) { // Column-wise
+            inputCol = prec.getColumn();
+            inputLastCol = prec.getLastColumn();
+        } else { // Row-wise
+            inputRow = prec.getRow();
+            inputLastRow = prec.getLastRow();
+        }
+
         PatternType patternType;
         if (edgeMeta.patternType != PatternType.TYPEZERO)
             patternType = edgeMeta.patternType;
         else { // TYPEZERO
-            if (startRowOffset == 1 || startColOffset == 1) patternType = PatternType.TYPETWO;
-            else if (startRowOffset == -1 || startColOffset == -1) patternType = PatternType.TYPETHREE;
+            if (startRowOffset == 1 || startColOffset == 1) patternType = PatternType.TYPETHREE;
+            else if (startRowOffset == -1 || startColOffset == -1) patternType = PatternType.TYPETWO;
             else throw new RuntimeException("TYPE ZERO offset (" + startRowOffset + ","
                         + startColOffset + ") wrong");
         }
 
         switch (patternType) {
             case TYPEONE: // relative start, relative end
-                row = precRange.getRow() + startRowOffset;
-                col = precRange.getColumn() + startColOffset;
-                lastRow = precRange.getLastRow() + endRowOffset;
-                lastCol = precRange.getLastColumn() + endColOffset;
+            case TYPEFIVE:
+            case TYPESIX:
+            case TYPESEVEN:
+            case TYPEEIGHT:
+            case TYPENINE:
+            case TYPETEN:
+            case TYPEELEVEN:
+                row = inputRow + endRowOffset;
+                col = inputCol + endColOffset;
+                lastRow = inputLastRow + startRowOffset;
+                lastCol = inputLastCol + startColOffset;
+                if (patternType != PatternType.TYPEONE) {
+                    int gapSize = patternType.ordinal() - PatternType.TYPEFIVE.ordinal() + 1;
+                    retSet = findRefSetForGapType(prec.getBookName(), prec.getSheetName(),
+                            Math.max(row, dep.getRow()),
+                            Math.max(col, dep.getColumn()),
+                            Math.min(lastRow, dep.getLastRow()),
+                            Math.min(lastCol, dep.getLastColumn()),
+                            dep.getRow(), dep.getColumn(),
+                            dep.getLastRow(), dep.getLastColumn(),
+                            gapSize);
+                    return retSet;
+                }
                 break;
 
             case TYPETWO: // relative start, fixed end
-                row = precRange.getRow() + startRowOffset;
-                col = precRange.getColumn() + startColOffset;
+                row = dep.getRow();
+                col = dep.getColumn();
+                lastRow = inputLastRow + startRowOffset;
+                lastCol = inputLastCol + startColOffset;
+                break;
+
+            case TYPETHREE: // fixed start, relative end
+                row = inputRow + endRowOffset;
+                col = inputCol + endColOffset;
                 lastRow = dep.getLastRow();
                 lastCol = dep.getLastColumn();
                 break;
 
-            case TYPETHREE: // fixed start, relative end
-                row = dep.getRow();
-                col = dep.getColumn();
-                lastRow = precRange.getLastRow() + endRowOffset;
-                lastCol = precRange.getLastColumn() + endColOffset;
-                break;
-
             default: //case TYPEFOUR: fixed start, fixed end
-                     //case NOTYPE
+                //case NOTYPE
                 row = dep.getRow();
                 col = dep.getColumn();
                 lastRow = dep.getLastRow();
@@ -237,10 +269,36 @@ public class PatternTools {
 
         assert edgeMeta.patternType != PatternType.NOTYPE || (row == lastRow && col == lastCol);
 
-        return new RefImpl(
+        retSet.add(new RefImpl(
                 prec.getBookName(),
                 prec.getSheetName(),
-                row, col, lastRow, lastCol);
+                row, col, lastRow, lastCol).getOverlap(dep));
+
+        return retSet;
+    }
+
+    public static Set<Ref> findRefSetForGapType(String bookName,
+                                                String sheetName,
+                                                int iRow, int iCol,
+                                                int iLastRow, int iLastCol,
+                                                int row, int col,
+                                                int lastRow, int lastCol,
+                                                int gapSize) {
+        Set<Ref> refSet = new HashSet<>();
+        if (row == lastRow) {
+            for (int colVar = col; colVar <= lastCol; colVar += (gapSize + 1)) {
+                if (colVar >= iCol && colVar <= iLastCol)
+                    refSet.add(new RefImpl(bookName, sheetName, row, colVar));
+            }
+        } else if (col == lastCol) {
+            for (int rowVar = row; rowVar <= lastRow; rowVar += (gapSize + 1)) {
+                if (rowVar >= iRow && rowVar <= iLastRow)
+                    refSet.add(new RefImpl(bookName, sheetName, rowVar, col));
+            }
+        } else {
+            assert(false);
+        }
+        return refSet;
     }
 
     public static Ref findUpdatePrecRef(Ref prec, Ref dep,
@@ -261,8 +319,8 @@ public class PatternTools {
             patternType = edgeMeta.patternType;
         else { // TYPEZERO
             if (isDirectPrec) patternType = PatternType.TYPEONE;
-            else if (startRowOffset == 1 || startColOffset == 1) patternType = PatternType.TYPETWO;
-            else if (startRowOffset == -1 || startColOffset == -1) patternType = PatternType.TYPETHREE;
+            else if (startRowOffset == 1 || startColOffset == 1) patternType = PatternType.TYPETHREE;
+            else if (startRowOffset == -1 || startColOffset == -1) patternType = PatternType.TYPETWO;
             else throw new RuntimeException("TYPE ZERO offset (" + startRowOffset + ","
                         + startColOffset + ") wrong");
         }
@@ -270,24 +328,24 @@ public class PatternTools {
         switch (patternType) {
 
             case TYPEONE: // relative start, relative end
-                row = depRange.getRow() - endRowOffset;
-                col = depRange.getColumn() - endColOffset;
-                lastRow = depRange.getLastRow() - startRowOffset;
-                lastCol = depRange.getLastColumn() - startColOffset;
+                row = depRange.getRow() - startRowOffset;
+                col = depRange.getColumn() - startColOffset;
+                lastRow = depRange.getLastRow() - endRowOffset;
+                lastCol = depRange.getLastColumn() - endColOffset;
                 break;
 
             case TYPETWO: // relative start, fixed end
-                row = prec.getRow();
-                col = prec.getColumn();
-                lastRow = depRange.getLastRow() - startRowOffset;
-                lastCol = depRange.getLastColumn() - startColOffset;
+                row = depRange.getRow() - startRowOffset;
+                col = depRange.getColumn() - startColOffset;
+                lastRow = prec.getLastRow();
+                lastCol = prec.getLastColumn();
                 break;
 
             case TYPETHREE: // fixed start, relative end
-                row = depRange.getRow() - endRowOffset;
-                col = depRange.getColumn() - endColOffset;
-                lastRow = prec.getLastRow();
-                lastCol = prec.getLastColumn();
+                row = prec.getRow();
+                col = prec.getColumn();
+                lastRow = depRange.getLastRow() - endRowOffset;
+                lastCol = depRange.getLastColumn() - endColOffset;
                 break;
 
             default: // TYPEFOUR: fixed start, fixed end
@@ -303,6 +361,39 @@ public class PatternTools {
                 prec.getBookName(),
                 prec.getSheetName(),
                 row, col, lastRow, lastCol);
+    }
+
+    public static Ref findValidGapRef(Ref ref, Ref subRef, int gapSize) {
+        int newRow = -1, newCol = -1, newLastRow = -1, newLastCol = -1;
+        if (ref.getRow() == ref.getLastRow()) {
+            newRow = newLastRow = ref.getRow();
+            newCol = findFirstMatch(ref.getColumn(), subRef.getColumn(), gapSize);
+            newLastCol = findLastMatch(ref.getLastColumn(), subRef.getLastColumn(), gapSize);
+            if (newCol > newLastCol) newCol = -1;
+        } else if (ref.getColumn() == ref.getLastColumn()) {
+            newCol = newLastCol = ref.getColumn();
+            newRow = findFirstMatch(ref.getRow(), subRef.getRow(), gapSize);
+            newLastRow = findLastMatch(ref.getLastRow(), subRef.getLastRow(), gapSize);
+            if (newRow > newLastRow) newRow = -1;
+        } else {
+            assert false;
+        }
+        if (newRow == -1 || newCol == -1 || newLastRow == -1 || newLastCol == -1) {
+            return null;
+        } else {
+            return new RefImpl(ref.getBookName(), ref.getSheetName(),
+                    newRow, newCol, newLastRow, newLastCol);
+        }
+    }
+
+    private static int findFirstMatch(int start, int subStart, int gapSize) {
+        int div = (subStart - start + gapSize - 1)/gapSize;
+        return start + div * gapSize;
+    }
+
+    private static int findLastMatch(int end, int subEnd, int gapSize) {
+        int div = (end - subEnd + gapSize - 1)/gapSize;
+        return end - div * gapSize;
     }
 
     public static Ref findLastPrec(Ref prec, Ref dep,

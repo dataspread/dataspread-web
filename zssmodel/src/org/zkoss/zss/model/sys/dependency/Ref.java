@@ -38,6 +38,7 @@ public interface Ref {
 
 	int getCellCount();
 	Ref getOverlap(Ref target);
+	Set<Ref> getNonOverlap(Ref target);
 
 	void addPrecedent(Ref precedent);
 

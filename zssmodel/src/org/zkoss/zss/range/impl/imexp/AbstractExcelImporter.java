@@ -19,6 +19,7 @@ package org.zkoss.zss.range.impl.imexp;
 import org.model.AutoRollbackConnection;
 import org.model.DBHandler;
 import org.zkoss.poi.hssf.usermodel.HSSFRichTextString;
+import org.zkoss.poi.ss.formula.FormulaParseException;
 import org.zkoss.poi.ss.formula.eval.*;
 import org.zkoss.poi.ss.formula.ptg.FuncVarPtg;
 import org.zkoss.poi.ss.formula.ptg.Ptg;
@@ -161,9 +162,11 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 			importNamedRange();
 			for (int i = 0; i < numberOfSheet; i++) {
 				SSheet sheet = book.getSheet(i);
+				sheet.setDelayComputation(true);
 				Sheet poiSheet = workbook.getSheetAt(i);
 				for (Row poiRow : poiSheet) {
-					importRow(poiRow, sheet, connection, true);
+					// importRow(poiRow, sheet, connection, true);
+					importRow(poiRow, sheet, connection, false);
 				}
 				importColumn(poiSheet, sheet);
 				importMergedRegions(poiSheet, sheet);
@@ -171,6 +174,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 				importValidation(poiSheet, sheet);
 				importAutoFilter(poiSheet, sheet);
 				importSheetProtection(poiSheet, sheet); //ZSS-576
+				sheet.setDelayComputation(false);
 			}
 			connection.commit();
 		} finally {
@@ -426,7 +430,7 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 	protected SCell importCell(Cell poiCell, int row, SSheet sheet, AutoRollbackConnection connection, boolean updateToDB) {
 
 		SCell cell = sheet.getCell(row, poiCell.getColumnIndex());
-		cell.setCellStyle(importCellStyle(poiCell.getCellStyle()));
+		// cell.setCellStyle(importCellStyle(poiCell.getCellStyle()));
 
 		switch (poiCell.getCellType()) {
 		case Cell.CELL_TYPE_NUMERIC:
@@ -445,7 +449,9 @@ abstract public class AbstractExcelImporter extends AbstractImporter {
 			cell.setBooleanValue(poiCell.getBooleanCellValue(),connection, updateToDB);
 			break;
 		case Cell.CELL_TYPE_FORMULA:
-			cell.setFormulaValue(poiCell.getCellFormula(),connection, updateToDB);
+			try {
+				cell.setFormulaValue(poiCell.getCellFormula(),connection, updateToDB);
+			} catch (FormulaParseException | InvalidFormulaException ignored) {}
 			//ZSS-873
 			if (isImportCache() && !poiCell.isCalcOnLoad() && !mustCalc(cell)) {
 				ValueEval val = null;
