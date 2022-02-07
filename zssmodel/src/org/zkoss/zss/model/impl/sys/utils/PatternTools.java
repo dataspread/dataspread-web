@@ -36,23 +36,23 @@ public class PatternTools {
 
     // Relative start, fixed end
     public static boolean isCompressibleTypeTwo(Ref lastCandPrec, Ref prec,
-                                         Direction direction) {
-        if (direction == Direction.TODOWN || direction == Direction.TORIGHT)
-            return isExtendedEnd(lastCandPrec, prec, direction);
-        else
-            return isShrinkedEnd(lastCandPrec, prec, direction);
-    }
-
-    public static boolean isCompressibleTypeThree(Ref lastCandPrec, Ref prec,
-                                           Direction direction) {
+                                                Direction direction) {
         if (direction == Direction.TODOWN || direction == Direction.TORIGHT)
             return isShrinkedStart(lastCandPrec, prec, direction);
         else
             return isExtendedStart(lastCandPrec, prec, direction);
     }
 
+    public static boolean isCompressibleTypeThree(Ref lastCandPrec, Ref prec,
+                                                  Direction direction) {
+        if (direction == Direction.TODOWN || direction == Direction.TORIGHT)
+            return isExtendedEnd(lastCandPrec, prec, direction);
+        else
+            return isShrinkedEnd(lastCandPrec, prec, direction);
+    }
+
     public static boolean isExtendedEnd(Ref lastCandPrec, Ref prec,
-                                 Direction direction) {
+                                        Direction direction) {
         if (direction == Direction.TODOWN) {
             return (lastCandPrec.getRow() == prec.getRow() &&
                     lastCandPrec.getColumn() == prec.getColumn() &&
@@ -67,7 +67,7 @@ public class PatternTools {
     }
 
     public static boolean isShrinkedEnd(Ref lastCandPrec, Ref prec,
-                                 Direction direction) {
+                                        Direction direction) {
         if (direction == Direction.TOUP) {
             return (lastCandPrec.getRow() == prec.getRow() &&
                     lastCandPrec.getColumn() == prec.getColumn() &&
@@ -82,30 +82,30 @@ public class PatternTools {
     }
 
     public static boolean isShrinkedStart(Ref lastCandPrec, Ref prec,
-                                   Direction direction) {
+                                          Direction direction) {
         if (direction == Direction.TODOWN) {
-            return (lastCandPrec.getRow() - 1 == prec.getRow() &&
+            return (lastCandPrec.getRow() + 1 == prec.getRow() &&
                     lastCandPrec.getColumn() == prec.getColumn() &&
                     lastCandPrec.getLastRow() == prec.getLastRow() &&
                     lastCandPrec.getLastColumn() == prec.getLastColumn());
         } else if (direction == Direction.TORIGHT) {
             return (lastCandPrec.getRow() == prec.getRow() &&
-                    lastCandPrec.getColumn() - 1 == prec.getColumn() &&
+                    lastCandPrec.getColumn() + 1 == prec.getColumn() &&
                     lastCandPrec.getLastRow() == prec.getLastRow() &&
                     lastCandPrec.getLastColumn() == prec.getLastColumn());
         } else return false;
     }
 
     public static boolean isExtendedStart(Ref lastCandPrec, Ref prec,
-                                 Direction direction) {
+                                          Direction direction) {
         if (direction == Direction.TOUP) {
-            return (lastCandPrec.getRow() + 1 == prec.getRow() &&
+            return (lastCandPrec.getRow() - 1 == prec.getRow() &&
                     lastCandPrec.getColumn() == prec.getColumn() &&
                     lastCandPrec.getLastRow() == prec.getLastRow() &&
                     lastCandPrec.getLastColumn() == prec.getLastColumn());
         } else if (direction == Direction.TOLEFT) {
             return (lastCandPrec.getRow() == prec.getRow() &&
-                    lastCandPrec.getColumn() + 1 == prec.getColumn() &&
+                    lastCandPrec.getColumn() - 1 == prec.getColumn() &&
                     lastCandPrec.getLastRow() == prec.getLastRow() &&
                     lastCandPrec.getLastColumn() == prec.getLastColumn());
         } else return false;
