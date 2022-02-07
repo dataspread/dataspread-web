@@ -140,7 +140,9 @@ public class DependencyTableComp extends DependencyTableAdv {
         edgeBatch.forEach(logEntry -> {
             Ref prec = logEntry.getX();
             Ref dep = logEntry.getY();
-            performOneInsert(prec, dep);
+            if (prec.getSheetName().compareToIgnoreCase("#Ref") != 0) {
+                performOneInsert(prec, dep);
+            }
         });
 
         updateDBFromCache(bookName, sheetName);
@@ -447,7 +449,9 @@ public class DependencyTableComp extends DependencyTableAdv {
             int length = retRefList.size();
             for (int i = 0; i < length; i++) {
                 Ref inputRef = retRefList.removeFirst();
-                inputRef.getNonOverlap(ref).forEach(retRefList::addLast);
+                if (ref.getType() != Ref.RefType.CELL && inputRef.getType() != Ref.RefType.CELL) {
+                    inputRef.getNonOverlap(ref).forEach(retRefList::addLast);
+                }
             }
         });
         return retRefList;
