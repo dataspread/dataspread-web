@@ -992,6 +992,7 @@ public class DependencyTableComp extends DependencyTableAdv {
                 _mapCache.put(prec, depIter);
             }
         }
+        if (depIter == null) depIter = new LinkedList<>();
         return depIter;
     }
 
