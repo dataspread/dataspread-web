@@ -6,7 +6,7 @@
 	<groupId>io.github.dataspread</groupId>
 	<artifactId>zssmodel</artifactId>
 	<properties>
-		<zk.version>7.0.3</zk.version>
+		<zk.version>9.6.0.2</zk.version>
         <blockstore.version>1.0.0</blockstore.version>
 		<zpoi.version>3.9.8</zpoi.version>
 		<jsoup.version>1.7.3</jsoup.version>
